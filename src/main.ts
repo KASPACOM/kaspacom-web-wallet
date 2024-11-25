@@ -1,6 +1,11 @@
 import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/core/app.config';
 import { AppComponent } from './app/app.component';
+import * as kaspa from '../public/kaspa/kaspa';
 
-bootstrapApplication(AppComponent, appConfig)
-  .catch((err) => console.error(err));
+kaspa.default('./kaspa/kaspa_bg.wasm').then(() => {
+  bootstrapApplication(AppComponent, appConfig).catch((err) =>
+    console.error(err)
+  );
+})
+

@@ -1,0 +1,25 @@
+<div class="dashboard-container">
+    <h2>Welcome to Your Wallet Dashboard</h2>
+  
+    <div class="user-info">
+      <h3>User Information</h3>
+      <p><strong>Username:</strong> {{ user.username }}</p>
+      <p><strong>Email:</strong> {{ user.email }}</p>
+    </div>
+  
+    <div class="wallet-info">
+      <h3>Your Wallets</h3>
+      <div *ngIf="wallets.length > 0; else noWallets">
+        <div *ngFor="let wallet of wallets" class="wallet-item">
+          <h4>Wallet Name: {{ wallet.name }}</h4>
+          <h4>Wallet Address: {{ wallet.address }}</h4>
+          <p><strong>Balance:</strong> {{ wallet.balance }} KAS</p>
+          <button (click)="goToWallet(wallet.id)">View Wallet</button>
+        </div>
+      </div>
+      <ng-template #noWallets>
+        <p>No wallets found. Please add a wallet.</p>
+      </ng-template>
+    </div>
+  </div>
+  

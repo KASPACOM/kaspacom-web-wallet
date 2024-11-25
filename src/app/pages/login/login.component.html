@@ -1,0 +1,22 @@
+<div class="login-container">
+  <h2>Login</h2>
+  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+    <div>
+      <label for="password">Password</label>
+      <input
+        type="password"
+        id="password"
+        formControlName="password"
+        placeholder="Enter your password"
+        required
+      />
+      <div *ngIf="password?.invalid && password?.touched" class="error-message">
+        Password is required.
+      </div>
+    </div>
+    <button type="submit" [disabled]="loginForm.invalid">Login</button>
+  </form>
+  <div *ngIf="loginError" class="error-message">
+    Incorrect password. Please try again.
+  </div>
+</div>

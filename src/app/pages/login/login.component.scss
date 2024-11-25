@@ -1,0 +1,27 @@
+.login-container {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+  }
+  
+  .error-message {
+    color: red;
+    font-size: 12px;
+    margin-top: 5px;
+  }
+  
+  button {
+    width: 100%;
+    padding: 10px;
+    background-color: #4caf50;
+    border: none;
+    color: white;
+    cursor: pointer;
+  }
+  
+  button:disabled {
+    background-color: #c7c7c7;
+  }
+  

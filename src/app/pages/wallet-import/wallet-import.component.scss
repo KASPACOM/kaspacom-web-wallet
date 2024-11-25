@@ -1,0 +1,37 @@
+.wallet-import-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+  }
+  
+  .selection-buttons {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .selection-buttons button {
+    padding: 10px;
+    background-color: #4caf50;
+    border: none;
+    color: white;
+    cursor: pointer;
+  }
+  
+  button:disabled {
+    background-color: #c7c7c7;
+  }
+  
+  input, select {
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0;
+  }
+  
+  .error-message {
+    color: red;
+    font-size: 12px;
+    margin-top: 5px;
+  }
+  

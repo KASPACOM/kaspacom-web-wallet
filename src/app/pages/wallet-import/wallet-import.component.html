@@ -1,0 +1,62 @@
+<div class="wallet-import-container">
+    <h2>Import Wallet</h2>
+    <div class="selection-buttons">
+      <button type="button" (click)="selectPrivateKey()">Private Key</button>
+      <button type="button" (click)="selectMnemonic()">Mnemonic</button>
+    </div>
+  
+    <form [formGroup]="walletImportForm" (ngSubmit)="onSubmit()">
+      <!-- Private Key input -->
+      <div *ngIf="selectedType === 'privateKey'">
+        <label for="privateKey">Private Key</label>
+        <input
+          type="text"
+          id="privateKey"
+          formControlName="privateKey"
+          placeholder="Enter your private key"
+          required
+        />
+        <div *ngIf="privateKey?.invalid && privateKey?.touched" class="error-message">
+          Private key is required.
+        </div>
+      </div>
+  
+      <!-- Mnemonic input -->
+      <div *ngIf="selectedType === 'mnemonic'">
+        <label for="mnemonic">Mnemonic Phrase</label>
+        <select formControlName="mnemonicLength" (change)="onMnemonicLengthChange($event)">
+          <option value="12">12 Words</option>
+          <option value="24">24 Words</option>
+        </select>
+  
+        <div *ngIf="mnemonicLength === 12">
+          <input
+            type="text"
+            formControlName="mnemonic12"
+            placeholder="Enter 12-word mnemonic"
+            required
+          />
+        </div>
+  
+        <div *ngIf="mnemonicLength === 24">
+          <input
+            type="text"
+            formControlName="mnemonic24"
+            placeholder="Enter 24-word mnemonic"
+            required
+          />
+        </div>
+  
+        <div *ngIf="mnemonicOrPrivateKey?.invalid && mnemonicOrPrivateKey?.touched" class="error-message">
+          Mnemonic is required.
+        </div>
+      </div>
+  
+      <button type="submit" [disabled]="walletImportForm && walletImportForm.invalid">Import Wallet</button>
+    </form>
+  
+    <div *ngIf="importError" class="error-message">
+      {{ importError }}
+    </div>
+  </div>
+  

@@ -1,0 +1,5 @@
+import { SavedWalletData } from './saved-wallet-data';
+
+export interface UserWalletsData {
+  wallets: SavedWalletData[];
+}

@@ -36,7 +36,7 @@ export class LoginComponent implements OnInit {
 
 
     // For faster developments
-    // this.passwordManagerService.checkAndLoadPassword('123-asd').then((result) => this.router.navigate(['/dashboard']));   
+    this.passwordManagerService.checkAndLoadPassword('123-asd').then((result) => this.router.navigate(['/add-wallet']));   
   }
 
   get password() {
@@ -58,7 +58,7 @@ export class LoginComponent implements OnInit {
         // Add navigation logic here
 
         if (await this.walletService.getWalletsCount() === 0) {
-          this.router.navigate(['/import-wallet']);
+          this.router.navigate(['/add-wallet']);
         } else {
           this.router.navigate(['/dashboard']);
         }

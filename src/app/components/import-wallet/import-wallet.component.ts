@@ -11,16 +11,16 @@ import { WalletService } from '../../services/wallet.service';
 import { NgIf } from '@angular/common';
 
 @Component({
-  selector: 'app-wallet-import',
+  selector: 'import-wallet',
   standalone: true,
-  templateUrl: './wallet-import.component.html',
-  styleUrls: ['./wallet-import.component.scss'],
+  templateUrl: './import-wallet.component.html',
+  styleUrls: ['./import-wallet.component.scss'],
   imports: [FormsModule, ReactiveFormsModule, NgIf],
 })
-export class WalletImportComponent implements OnInit {
+export class ImportWalletComponent implements OnInit {
   walletImportForm: FormGroup = new FormGroup({});
   selectedType: 'privateKey' | 'mnemonic' = 'privateKey'; // Default selection is Private Key
-  mnemonicLength: number = 12; // Default to 12-word mnemonic
+  mnemonicLength: string = '12'; // Default to 12-word mnemonic
   importError: string | null = null;
 
   constructor(
@@ -30,16 +30,9 @@ export class WalletImportComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.walletImportForm = this.fb.group({
-      privateKey: ['', Validators.required],
-      mnemonicLength: [this.mnemonicLength, Validators.required],
-      mnemonic12: ['', Validators.required],
-      mnemonic24: ['', Validators.required],
-    });
+    this.walletImportForm = this.fb.group({});
 
     this.selectPrivateKey();
-
-    console.log(this.walletImportForm);
   }
 
   // Getter methods for the form controls
@@ -58,33 +51,50 @@ export class WalletImportComponent implements OnInit {
   get mnemonicOrPrivateKey() {
     return this.selectedType === 'privateKey'
       ? this.privateKey
-      : this.mnemonicLength === 12
+      : this.mnemonicLength === '12'
       ? this.mnemonic12
       : this.mnemonic24;
   }
 
   selectPrivateKey() {
     this.selectedType = 'privateKey';
-    this.walletImportForm
-      .get('privateKey')
-      ?.setValidators([Validators.required]);
-    this.walletImportForm.get('mnemonic12')?.clearValidators();
-    this.walletImportForm.get('mnemonic24')?.clearValidators();
-    this.walletImportForm.get('mnemonicLength')?.clearValidators();
-    this.walletImportForm.updateValueAndValidity();
+    this.walletImportForm.reset();
+    this.walletImportForm.addControl(
+      'privateKey',
+      this.fb.control('', [Validators.required])
+    );
   }
 
   selectMnemonic() {
     this.selectedType = 'mnemonic';
-    this.walletImportForm.get('privateKey')?.clearValidators();
-    this.walletImportForm
-      .get('mnemonicLength')
-      ?.setValidators([Validators.required]);
-    this.walletImportForm.updateValueAndValidity();
+    this.walletImportForm.reset();
+    
+
+    this.walletImportForm.addControl(
+      'mnemonicLength',
+      this.fb.control('', [Validators.required, Validators.minLength(12)])
+    );
+
+    // Add the correct mnemonic field and validator
+    if (this.mnemonicLength === '12') {
+      this.walletImportForm.addControl(
+        'mnemonic',
+        this.fb.control('', [Validators.required, Validators.minLength(12)])
+      );
+    } else {
+      this.walletImportForm.addControl(
+        'mnemonic',
+        this.fb.control('', [Validators.required, Validators.minLength(24)])
+      );
+    }
   }
 
   onMnemonicLengthChange(event: any) {
-    this.mnemonicLength = event.target.value;
+    // Update form validation when the mnemonic length changes
+    if (this.selectedType === 'mnemonic') {
+      this.walletImportForm.reset();
+      this.selectMnemonic();
+    }
   }
 
   async onSubmit() {
@@ -96,19 +106,22 @@ export class WalletImportComponent implements OnInit {
       importData = formValue.privateKey.trim();
     } else {
       importData =
-        this.mnemonicLength === 12
+        this.mnemonicLength === '12'
           ? formValue.mnemonic12.trim()
           : formValue.mnemonic24.trim();
     }
 
     try {
       const walletCount = await this.walletService.getWalletsCount();
-      const walletData = await this.walletService.addWalletPrivateKey('Saved Wallet ' + walletCount, importData);
+      const walletData: { sucess: boolean; error?: string } = await this.walletService.addWalletPrivateKey(
+        'Saved Wallet ' + walletCount,
+        importData
+      );
 
-      if (walletData) {
-        this.router.navigate(['/dashboard']);
+      if (walletData && walletData.sucess) {
+        this.router.navigate(['/wallet-selection']);
       } else {
-        this.importError = 'Failed to import wallet.';
+        this.importError = walletData?.error || 'Failed to import wallet.';
       }
     } catch (error) {
       console.error('Error importing wallet:', error);

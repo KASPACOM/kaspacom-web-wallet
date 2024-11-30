@@ -1,0 +1,7 @@
+<div>
+  <button (click)="selectedAction = 'add'">Add Wallet</button>
+  <button (click)="selectedAction = 'import'">Import Wallet</button>
+  <p *ngIf="selectedAction === 'add'">Add wallet selected</p>
+  <import-wallet *ngIf="selectedAction === 'import'"></import-wallet>
+</div>
+

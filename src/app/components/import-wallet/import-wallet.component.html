@@ -23,31 +23,21 @@
   
       <!-- Mnemonic input -->
       <div *ngIf="selectedType === 'mnemonic'">
-        <label for="mnemonic">Mnemonic Phrase</label>
-        <select formControlName="mnemonicLength" (change)="onMnemonicLengthChange($event)">
+        <label for="mnemonicLength">Mnemonic Phrase</label>
+        <select [(ngModel)]="mnemonicLength" [ngModelOptions]="{standalone: true}" (change)="onMnemonicLengthChange($event)" >
           <option value="12">12 Words</option>
           <option value="24">24 Words</option>
         </select>
   
-        <div *ngIf="mnemonicLength === 12">
           <input
             type="text"
-            formControlName="mnemonic12"
-            placeholder="Enter 12-word mnemonic"
+            formControlName="mnemonic"
+            placeholder="Enter mnemonic"
             required
           />
-        </div>
   
-        <div *ngIf="mnemonicLength === 24">
-          <input
-            type="text"
-            formControlName="mnemonic24"
-            placeholder="Enter 24-word mnemonic"
-            required
-          />
-        </div>
   
-        <div *ngIf="mnemonicOrPrivateKey?.invalid && mnemonicOrPrivateKey?.touched" class="error-message">
+        <div *ngIf="mnemonicOrPrivateKey?.touched" class="error-message">
           Mnemonic is required.
         </div>
       </div>

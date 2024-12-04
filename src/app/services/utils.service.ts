@@ -40,4 +40,8 @@ export class UtilsHelper {
 
     throw lastError;
   }
+
+  isNullOrEmptyString(str: string) {
+    return !str || str.trim().length === 0;
+  }
 }

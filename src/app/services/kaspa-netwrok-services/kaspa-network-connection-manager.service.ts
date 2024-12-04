@@ -28,6 +28,12 @@ export class KaspaNetworkConnectionManagerService {
     );
   }
 
+  private setSignalStatusIfChanged(status: RpcConnectionStatus) {
+    if (this.connectionStatusSignal() != status) {
+      this.connectionStatusSignal.set(status);
+    }
+  }
+
   private async handleConnection() {
     console.log('Trying to connect to RPC...');
 
@@ -45,6 +51,14 @@ export class KaspaNetworkConnectionManagerService {
 
     try {
       const currentRpc = await this.rpcService.refreshRpc();
+      currentRpc!.addEventListener('disconnect', () => {
+        console.log('disconnected from RPC');
+        if (this.rpcService.getRpc() == currentRpc) {
+          console.log('current connection reset');
+          this.setSignalStatusIfChanged(RpcConnectionStatus.DISCONNECTED);
+          this.waitForConnection();
+        }
+      });
       await currentRpc!.connect();
 
       if (reachedTimeout) {
@@ -119,7 +133,7 @@ export class KaspaNetworkConnectionManagerService {
       this.isTryingToConnect = true;
       this.initPromise();
       this.handleConnection();
-      this.connectionStatusSignal.set(RpcConnectionStatus.CONNECTING);
+      this.setSignalStatusIfChanged(RpcConnectionStatus.CONNECTING);
     }
 
     try {
@@ -129,14 +143,14 @@ export class KaspaNetworkConnectionManagerService {
         throw new Error('Rpc not connected');
       }
 
-      this.connectionStatusSignal.set(
+      this.setSignalStatusIfChanged(
         this.rpcService.getRpc()!.isConnected
           ? RpcConnectionStatus.CONNECTED
           : RpcConnectionStatus.DISCONNECTED
       );
     } catch (err) {
       console.log('catch connectionPromise');
-      this.connectionStatusSignal.set(RpcConnectionStatus.DISCONNECTED);
+      this.setSignalStatusIfChanged(RpcConnectionStatus.DISCONNECTED);
 
       throw err;
     } finally {

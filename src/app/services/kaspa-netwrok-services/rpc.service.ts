@@ -20,11 +20,11 @@ export class RpcService {
 
   refreshRpc() {
     this.RPC = new RpcClient({
+      resolver: new Resolver(),
       encoding: Encoding.Borsh,
       networkId: this.network,
     });
 
-    this.RPC.setResolver(new Resolver());
     return this.getRpc();
   }
 

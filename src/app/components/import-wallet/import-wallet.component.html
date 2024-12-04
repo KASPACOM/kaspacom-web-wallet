@@ -24,11 +24,11 @@
       <!-- Mnemonic input -->
       <div *ngIf="selectedType === 'mnemonic'">
         <label for="mnemonicLength">Mnemonic Phrase</label>
-        <select [(ngModel)]="mnemonicLength" [ngModelOptions]="{standalone: true}" (change)="onMnemonicLengthChange($event)" >
+        <select [(ngModel)]="mnemonicLength" [ngModelOptions]="{standalone: true}" >
           <option value="12">12 Words</option>
           <option value="24">24 Words</option>
         </select>
-  
+
           <input
             type="text"
             formControlName="mnemonic"
@@ -36,13 +36,25 @@
             required
           />
   
-  
-        <div *ngIf="mnemonicOrPrivateKey?.touched" class="error-message">
-          Mnemonic is required.
-        </div>
+          <label for="derivedPath">Derived Path</label>
+          <input
+            type="text"
+            formControlName="derivedPath"
+            placeholder="Enter derived path"
+            [value]="walletImportForm.get('derivedPath')?.value"
+          />
+
+          <label for="passphrase">Passphrase</label>
+          <input
+            type="text"
+            formControlName="passphrase"
+            placeholder="Enter passphrase(optional)"
+            [value]="walletImportForm.get('passphrase')?.value"
+          />
+
       </div>
   
-      <button type="submit" [disabled]="walletImportForm && walletImportForm.invalid">Import Wallet</button>
+      <button type="submit">Import Wallet</button>
     </form>
   
     <div *ngIf="importError" class="error-message">

@@ -9,6 +9,8 @@ import {
 import { Router } from '@angular/router';
 import { WalletService } from '../../services/wallet.service';
 import { NgIf } from '@angular/common';
+import { DEFAULT_DERIVED_PATH } from '../../config/consts';
+import { UtilsHelper } from '../../services/utils.service';
 
 @Component({
   selector: 'import-wallet',
@@ -26,11 +28,17 @@ export class ImportWalletComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private walletService: WalletService,
-    private router: Router
+    private router: Router,
+    private utils: UtilsHelper,
   ) {}
 
   ngOnInit(): void {
-    this.walletImportForm = this.fb.group({});
+    this.walletImportForm = this.fb.group({
+      privateKey: [''],
+      mnemonic: [''],
+      derivedPath: [DEFAULT_DERIVED_PATH],
+      passphrase: [''],
+    });
 
     this.selectPrivateKey();
   }
@@ -40,88 +48,52 @@ export class ImportWalletComponent implements OnInit {
     return this.walletImportForm.get('privateKey');
   }
 
-  get mnemonic12() {
-    return this.walletImportForm.get('mnemonic12');
+  get mnemonic() {
+    return this.walletImportForm.get('mnemonic');
   }
 
-  get mnemonic24() {
-    return this.walletImportForm.get('mnemonic24');
+  get derivedPath() {
+    return this.walletImportForm.get('derivedPath');
   }
 
-  get mnemonicOrPrivateKey() {
-    return this.selectedType === 'privateKey'
-      ? this.privateKey
-      : this.mnemonicLength === '12'
-      ? this.mnemonic12
-      : this.mnemonic24;
+  get passphrase() {
+    return this.walletImportForm.get('passphrase');
   }
 
   selectPrivateKey() {
     this.selectedType = 'privateKey';
-    this.walletImportForm.reset();
-    this.walletImportForm.addControl(
-      'privateKey',
-      this.fb.control('', [Validators.required])
-    );
   }
 
   selectMnemonic() {
     this.selectedType = 'mnemonic';
-    this.walletImportForm.reset();
-    
-
-    this.walletImportForm.addControl(
-      'mnemonicLength',
-      this.fb.control('', [Validators.required, Validators.minLength(12)])
-    );
-
-    // Add the correct mnemonic field and validator
-    if (this.mnemonicLength === '12') {
-      this.walletImportForm.addControl(
-        'mnemonic',
-        this.fb.control('', [Validators.required, Validators.minLength(12)])
-      );
-    } else {
-      this.walletImportForm.addControl(
-        'mnemonic',
-        this.fb.control('', [Validators.required, Validators.minLength(24)])
-      );
-    }
-  }
-
-  onMnemonicLengthChange(event: any) {
-    // Update form validation when the mnemonic length changes
-    if (this.selectedType === 'mnemonic') {
-      this.walletImportForm.reset();
-      this.selectMnemonic();
-    }
   }
 
   async onSubmit() {
     const formValue = this.walletImportForm.value;
-    let importData: string;
-    const walletData = {};
-
-    if (this.selectedType === 'privateKey') {
-      importData = formValue.privateKey.trim();
-    } else {
-      importData =
-        this.mnemonicLength === '12'
-          ? formValue.mnemonic12.trim()
-          : formValue.mnemonic24.trim();
-    }
+    let walletAdditionResult: { sucess: boolean; error?: string } | null = null;
 
     try {
       const walletCount = await this.walletService.getWalletsCount();
-      const walletData: { sucess: boolean; error?: string } = await this.walletService.addWalletPrivateKey(
-        'Saved Wallet ' + walletCount,
-        importData
-      );
 
-      if (walletData && walletData.sucess) {
+      if (this.selectedType === 'privateKey') {
+        walletAdditionResult = await this.walletService.addWalletFromPrivateKey(
+          'Saved Wallet ' + walletCount,
+          formValue.privateKey.trim()
+        );
+      } else {
+        walletAdditionResult = await this.walletService.addWalletFromMemonic(
+          'Saved Wallet ' + walletCount,
+          formValue.mnemonic.trim(),
+          formValue.derivedPath.trim(),
+          this.utils.isNullOrEmptyString(formValue.passphrase) ? undefined : formValue.passphrase 
+        );
+      }
+
+      if (walletAdditionResult && walletAdditionResult.sucess) {
         this.router.navigate(['/wallet-selection']);
       } else {
-        this.importError = walletData?.error || 'Failed to import wallet.';
+        this.importError =
+          walletAdditionResult?.error || 'Failed to import wallet.';
       }
     } catch (error) {
       console.error('Error importing wallet:', error);

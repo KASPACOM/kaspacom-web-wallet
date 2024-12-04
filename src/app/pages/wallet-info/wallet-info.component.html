@@ -1,0 +1,41 @@
+<div *ngIf="wallet; else loadingMessage">
+  <h2>Wallet Information</h2>
+
+  <!-- Wallet Balance -->
+  <div class="wallet-balance">
+    <h3>Wallet Name:</h3>
+    <p>{{ wallet.getName() }}</p>
+    <h3>Wallet Address:</h3>
+    <p>{{ wallet.getAddress() }}</p>
+    <h3>Balance:</h3>
+    <div *ngIf="wallet.getWalletUtxoStateBalanceSignal()() !== undefined; esle loadingData">
+      <p>Current: {{ wallet.getWalletUtxoStateBalanceSignal()()!.mature | sompiToNumber }} KAS</p>
+      <p>Pending: {{ wallet.getWalletUtxoStateBalanceSignal()()!.pending | sompiToNumber }} KAS</p>
+      <p>Outgoing: {{ wallet.getWalletUtxoStateBalanceSignal()()!.outgoing | sompiToNumber }} KAS</p>
+    </div>
+    <ng-template #loadingData>
+      <p>Loading...</p>
+    </ng-template>
+
+  </div>
+
+  <!-- KRC20 Tokens -->
+  <div class="krc20-tokens">
+    <h3>KRC20 Tokens:</h3>
+    <ng-container *ngIf="tokens && tokens.length > 0; else loadingTokens">
+      <ul>
+        <li *ngFor="let token of tokens">
+          <strong>{{ token.ticker }}</strong> ({{ token.ticker }}): {{ token.balance }}
+        </li>
+      </ul>
+    </ng-container>
+    <ng-template #loadingTokens>
+      <p>Loading tokens...</p>
+    </ng-template>
+  </div>
+</div>
+
+<ng-template #loadingMessage>
+  <p>Loading...</p>
+</ng-template>
+

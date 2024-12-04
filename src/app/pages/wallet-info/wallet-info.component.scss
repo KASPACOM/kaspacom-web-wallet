@@ -1,0 +1,24 @@
+.wallet-info {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  max-width: 400px;
+  background-color: #f9f9f9;
+}
+
+.wallet-info h2 {
+  margin-top: 0;
+}
+
+.wallet-balance,
+.krc20-tokens {
+  margin: 16px 0;
+}
+
+ul {
+  padding-left: 20px;
+}
+
+li {
+  margin: 8px 0;
+}

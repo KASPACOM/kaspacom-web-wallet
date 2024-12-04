@@ -2,5 +2,6 @@ export interface SavedWalletData {
     id: number;
     name: string;
     privateKey: string;
-    memonic?: string;
+    mnemonic?: string;
+    derivedPath?: string;
 }

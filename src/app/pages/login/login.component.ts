@@ -34,9 +34,9 @@ export class LoginComponent implements OnInit {
       password: ['', [Validators.required]],
     });
 
-
-    // For faster developments
-    this.passwordManagerService.checkAndLoadPassword('123-asd').then((result) => this.router.navigate(['/add-wallet']));   
+    // for faster development
+    this.loginForm.get('password')?.setValue('123-asd');
+    this.onSubmit();
   }
 
   get password() {
@@ -60,7 +60,8 @@ export class LoginComponent implements OnInit {
         if (await this.walletService.getWalletsCount() === 0) {
           this.router.navigate(['/add-wallet']);
         } else {
-          this.router.navigate(['/dashboard']);
+          await this.walletService.selectCurrentWalletFromLocalStoage();
+          this.router.navigate(['/wallet-info']);
         }
         
       } else {

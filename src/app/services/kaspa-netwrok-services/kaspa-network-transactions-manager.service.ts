@@ -1,4 +1,4 @@
-import { Injectable, NgModule } from '@angular/core';
+import { Injectable, NgModule, Signal } from '@angular/core';
 import {
   addressFromScriptPublicKey,
   IUtxoEntry,
@@ -7,12 +7,16 @@ import {
   PrivateKey,
   ScriptBuilder,
   UtxoEntryReference,
+  UtxoProcessor,
 } from '../../../../public/kaspa/kaspa';
 import { RpcService } from './rpc.service';
 import { KaspaNetworkConnectionManagerService } from './kaspa-network-connection-manager.service';
 import { UtilsHelper } from '../utils.service';
 import { KRC20OperationDataInterface } from '../../types/kaspa-network/krc20-operations-data.interface';
 import { TotalBalanceWithUtxosInterface } from '../../types/kaspa-network/total-balance-with-utxos.interface';
+import { UtxoContextProcessorInterface } from '../../types/kaspa-network/utxo-context-processor.interface';
+import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
+import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
 
 // export const MINIMAL_AMOUNT_TO_SEND = kaspaToSompi('0.2');
 const TIME_TO_WAIT_BEFORE_TRANSACTION_RECEIVED_CHECK = 120 * 1000;
@@ -50,7 +54,7 @@ export class KaspaNetworkTransactionsManagerService {
     return await fn();
   }
 
-  getConnectionStatusSignal() {
+  getConnectionStatusSignal(): Signal<RpcConnectionStatus> {
     return this.connectionManager.getConnectionStatusSignal();
   }
 
@@ -77,6 +81,22 @@ export class KaspaNetworkTransactionsManagerService {
       script: script,
       p2shaAddress: scriptAddress,
     };
+  }
+
+  async initUtxoProcessorManager(
+    address: string
+  ): Promise<UtxoProcessorManager> {
+    return await this.connectAndDo(async () => {
+      const utxoProcessonManager = new UtxoProcessorManager(
+        this.rpcService.getRpc()!,
+        this.rpcService.getNetwork(),
+        address
+      );
+
+      await utxoProcessonManager.init();
+
+      return utxoProcessonManager;
+    });
   }
 
   //   async calculateTransactionFeeAndLimitToMax(transactionData, maxPriorityFee): Promise<FeesCalculation> {
@@ -357,9 +377,12 @@ export class KaspaNetworkTransactionsManagerService {
   //     };
   //   }
 
-    convertPrivateKeyToAddress(privateKey: string): string {
-      return new PrivateKey(privateKey).toPublicKey().toAddress(this.rpcService.getNetwork()).toString();
-    }
+  convertPrivateKeyToAddress(privateKey: string): string {
+    return new PrivateKey(privateKey)
+      .toPublicKey()
+      .toAddress(this.rpcService.getNetwork())
+      .toString();
+  }
 
   //   async getEstimatedPriorityFeeRate(): Promise<number> {
   //     const estimatedFees = await this.rpcService.getRpc().getFeeEstimate({});

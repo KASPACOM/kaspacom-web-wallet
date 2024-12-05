@@ -1,21 +1,31 @@
 import { KaspaNetworkTransactionsManagerService } from './kaspa-network-transactions-manager.service';
 import {
+  IPaymentOutput,
   Mnemonic,
   PrivateKey,
-  UtxoProcessor,
   XPrv,
 } from '../../../../public/kaspa/kaspa';
-import { effect, Injectable, Signal } from '@angular/core';
-import { DEFAULT_DERIVED_PATH } from '../../config/consts';
+import { Injectable, Signal } from '@angular/core';
+import { DEFAULT_DERIVED_PATH, ERROR_CODES } from '../../config/consts';
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
+import {
+  TransferKasAction,
+  WalletAction,
+  WalletActionType,
+} from '../../types/wallet-action';
+import { WalletService } from '../wallet.service';
+import { AppWallet } from '../../classes/AppWallet';
 
+const MINIMAL_TRANSACTION_MASS = 10000n;
+export const MINIMAL_AMOUNT_TO_SEND = 20000000n;
+const KASPA_AMOUNT_FOR_KRC20_ACTION = 300000000n;
 @Injectable({
   providedIn: 'root',
 })
 export class KaspaNetworkActionsService {
   constructor(
-    private readonly transactionsManager: KaspaNetworkTransactionsManagerService
+    private readonly transactionsManager: KaspaNetworkTransactionsManagerService,
   ) {}
 
   getConnectionStatusSignal(): Signal<RpcConnectionStatus> {
@@ -95,5 +105,55 @@ export class KaspaNetworkActionsService {
     address: string
   ): Promise<UtxoProcessorManager> {
     return await this.transactionsManager.initUtxoProcessorManager(address);
+  }
+
+  async doWalletAction(action: WalletAction, wallet: AppWallet): Promise<{
+    success: boolean;
+    errorCode?: number;
+    result?: any;
+  }> {
+    if (action.type === WalletActionType.TRANSFER_KAS) {
+      const actionData = action.data as TransferKasAction;
+      const payments: IPaymentOutput[] = [
+        {
+          address: actionData.to,
+          amount: actionData.amount,
+        },
+      ];
+
+      return await this.transactionsManager.doKaspaTransferTransactionWithUtxoProcessor(
+        wallet,
+        payments,
+        action.priorityFee || 0n,
+        actionData.sendAll
+      );
+    }
+
+    return {
+      success: false,
+      errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
+    }
+  }
+
+  async getMinimalRequiredAmountForAction(
+    action: WalletAction
+  ): Promise<bigint> {
+    if (action.type === WalletActionType.TRANSFER_KAS) {
+      return (
+        action.data.amount +
+        (action.priorityFee || 0n) +
+        MINIMAL_TRANSACTION_MASS
+      );
+    }
+
+    if (action.type === WalletActionType.KRC20_ACTION) {
+      return (
+        action.data.amount +
+        (action.priorityFee || 0n) +
+        MINIMAL_TRANSACTION_MASS
+      );
+    }
+
+    throw new Error('Invalid action type');
   }
 }

@@ -6,6 +6,9 @@ import * as _ from 'lodash';
 import { AppWallet } from '../classes/AppWallet';
 import { LOCAL_STORAGE_KEYS } from '../config/consts';
 import { RpcConnectionStatus } from '../types/kaspa-network/rpc-connection-status.enum';
+import { AssetType, TransferableAsset } from '../types/transferable-asset';
+import { KasplexKrc20Service } from './kasplex-api/kasplex-api.service';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -15,7 +18,8 @@ export class WalletService {
 
   constructor(
     private readonly passwordManagerService: PasswordManagerService,
-    private readonly kaspaNetworkActionsService: KaspaNetworkActionsService
+    private readonly kaspaNetworkActionsService: KaspaNetworkActionsService,
+    private readonly kasplexService: KasplexKrc20Service
   ) {
     // On rpc status change
     effect(() => {
@@ -196,12 +200,38 @@ export class WalletService {
     return this.currentWallet;
   }
 
-  async getCurrentWallet(): Promise<AppWallet | undefined> {
+  getCurrentWallet(): AppWallet | undefined {
     return this.currentWallet;
   }
 
   async deselectCurrentWallet(): Promise<void> {
     localStorage.removeItem(LOCAL_STORAGE_KEYS.CURRENT_SELECTED_WALLET);
     this.currentWallet = undefined;
+  }
+
+  async getAllAvailableAssetsForCurrentWallet(): Promise<TransferableAsset[]> {
+    if (!this.currentWallet) {
+      return [];
+    }
+    const krc20tokens = await firstValueFrom(
+      this.kasplexService.getWalletTokenList(this.currentWallet.getAddress())
+    );
+
+    return [
+      {
+        ticker: 'TKAS',
+        type: AssetType.KAS,
+        availableAmount:
+          this.currentWallet.getWalletUtxoStateBalanceSignal()()?.mature || 0n,
+        name: 'TKAS',
+      },
+    ].concat(
+      krc20tokens.result.map((token) => ({
+        ticker: token.tick,
+        type: AssetType.KRC20,
+        availableAmount: BigInt(token.balance),
+        name: token.tick,
+      }))
+    );
   }
 }

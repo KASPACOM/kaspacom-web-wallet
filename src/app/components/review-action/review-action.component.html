@@ -1,0 +1,36 @@
+<div class="transaction-review-container">
+  <ng-container *ngIf="action; else noAction">
+
+    <div class="transaction-header">
+      <h2>Transaction Review</h2>
+      <p>Please review the details below before proceeding.</p>
+    </div>
+
+    <ng-container *ngIf="action?.type === WalletActionType.TRANSFER_KAS">
+      <h3>Transfer Kaspa</h3>
+      <div class="transaction-details">
+        <div class="detail">
+          <div class="label">Sender:</div>
+          <div class="value">{{ walletAddress }}</div>
+        </div>
+        <div class="detail">
+          <div class="label">Recipient:</div>
+          <div class="value">{{ transferKasActionData.to }}</div>
+        </div>
+        <div class="detail">
+          <div class="label">Amount:</div>
+          <div class="value">{{ transferKasActionData.amount | sompiToNumber }} KAS</div>
+        </div>
+      </div>
+    </ng-container>
+
+    <div class="transaction-actions">
+      <button class="accept-btn" (click)="acceptTransaction()">Accept</button>
+      <button class="reject-btn" (click)="rejectTransaction()">Reject</button>
+    </div>
+  </ng-container>
+
+  <ng-template #noAction>
+    <p>No action to review.</p>
+  </ng-template>
+</div>

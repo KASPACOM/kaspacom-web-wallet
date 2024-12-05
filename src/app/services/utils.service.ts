@@ -1,4 +1,9 @@
 import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
+import { KASPA_NETWORKS } from '../config/consts';
+
+const WALLET_ADDRESS_VALIDATION_REGEX_MAINNET = /^kaspa:(q|p)[a-z0-9]{54,90}$/;
+const WALLET_ADDRESS_VALIDATION_REGEX_TESTNET = /^kaspatest:(q|p)[a-z0-9]{54,90}$/;
 
 @Injectable({
   providedIn: 'root',
@@ -44,4 +49,12 @@ export class UtilsHelper {
   isNullOrEmptyString(str: string) {
     return !str || str.trim().length === 0;
   }
+
+
+  isValidWalletAddress(address: string) {
+    const regex = environment.kaspaNetwork == KASPA_NETWORKS.MAINNET ? WALLET_ADDRESS_VALIDATION_REGEX_MAINNET : WALLET_ADDRESS_VALIDATION_REGEX_TESTNET;
+
+    return regex.test(address);
+  }
+
 }

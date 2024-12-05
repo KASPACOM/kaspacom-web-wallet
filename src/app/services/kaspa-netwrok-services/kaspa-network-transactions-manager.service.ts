@@ -1,6 +1,12 @@
 import { Injectable, NgModule, Signal } from '@angular/core';
 import {
   addressFromScriptPublicKey,
+  createTransactions,
+  FeeSource,
+  ICreateTransactions,
+  IFees,
+  IGeneratorSettingsObject,
+  IPaymentOutput,
   IUtxoEntry,
   Opcodes,
   PendingTransaction,
@@ -17,6 +23,9 @@ import { TotalBalanceWithUtxosInterface } from '../../types/kaspa-network/total-
 import { UtxoContextProcessorInterface } from '../../types/kaspa-network/utxo-context-processor.interface';
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
+import { ERROR_CODES } from '../../config/consts';
+import { MINIMAL_AMOUNT_TO_SEND } from './kaspa-network-actions.service';
+import { AppWallet } from '../../classes/AppWallet';
 
 // export const MINIMAL_AMOUNT_TO_SEND = kaspaToSompi('0.2');
 const TIME_TO_WAIT_BEFORE_TRANSACTION_RECEIVED_CHECK = 120 * 1000;
@@ -117,169 +126,194 @@ export class KaspaNetworkTransactionsManagerService {
   //     return finalFees;
   //   }
 
-  //   // ================================================================
-  //   // DO TRANSACTIONS WITH UTXOS PROCESSOR
-  //   // ================================================================
+  // ================================================================
+  // DO TRANSACTIONS WITH UTXOS PROCESSOR
+  // ================================================================
 
-  //   private async doTransactionWithUtxoProcessor(
-  //     privateKey: PrivateKey,
-  //     maxPriorityFee: bigint,
-  //     outputs: IPaymentOutput[],
-  //     additionalOptions: DoTransactionOptions = {},
-  //   ) {
-  //     const additionalKrc20TransactionPriorityFee = additionalOptions.additionalKrc20TransactionPriorityFee || 0n;
-  //     const sendAll = additionalOptions.sendAll || false;
-  //     let totalPaymentsAmount = outputs.reduce((previousValue, currentValue) => previousValue + currentValue.amount, 0n);
+  private async doTransactionWithUtxoProcessor(
+    utxoProcessonManager: UtxoProcessorManager,
+    privateKey: PrivateKey,
+    priorityFee: bigint,
+    outputs: IPaymentOutput[],
+    additionalOptions: DoTransactionOptions = {}
+  ): Promise<{
+    success: boolean;
+    errorCode?: number;
+    result?: ICreateTransactions;
+  }> {
+    const additionalKrc20TransactionPriorityFee =
+      additionalOptions.additionalKrc20TransactionPriorityFee || 0n;
+    const sendAll = additionalOptions.sendAll || false;
+    let totalPaymentsAmount = outputs.reduce(
+      (previousValue, currentValue) => previousValue + currentValue.amount,
+      0n
+    );
 
-  //     return await this.connectAndDo<ICreateTransactions>(async () => {
-  //       return await UtxoProcessorManager.useUtxoProcessorManager<ICreateTransactions>(
-  //         this.rpcService.getRpc(),
-  //         this.rpcService.getNetwork(),
-  //         this.convertPrivateKeyToPublicKey(privateKey),
-  //         async (context, utxoProcessonManager) => {
-  //           if (sendAll) {
-  //             await utxoProcessonManager.waitForPendingUtxoToFinish();
-  //             const remeaingAmountToSend = context.balance.mature - (totalPaymentsAmount - outputs[0].amount);
+    return await this.connectAndDo<{
+      success: boolean;
+      errorCode?: number;
+      result?: ICreateTransactions;
+    }>(async () => {
+      const context = utxoProcessonManager.getContext()!;
 
-  //             if (remeaingAmountToSend <= MINIMAL_AMOUNT_TO_SEND) {
-  //               throw new NotEnoughBalanceError();
-  //             }
+      if (sendAll) {
+        await utxoProcessonManager.waitForPendingUtxoToFinish();
+        const remeaingAmountToSend =
+          context.balance!.mature - (totalPaymentsAmount - outputs[0].amount);
 
-  //             outputs[0].amount = remeaingAmountToSend;
-  //             totalPaymentsAmount = outputs.reduce((previousValue, currentValue) => previousValue + currentValue.amount, 0n);
-  //           } else {
-  //             if (
-  //               context.balance.mature < totalPaymentsAmount + additionalKrc20TransactionPriorityFee + MINIMAL_AMOUNT_TO_SEND &&
-  //               context.balance.pending > 0n
-  //             ) {
-  //               await utxoProcessonManager.waitForPendingUtxoToFinish();
-  //             }
+        if (remeaingAmountToSend <= MINIMAL_AMOUNT_TO_SEND) {
+          return {
+            success: false,
+            errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
+          };
+        }
 
-  //             if (context.balance.mature < totalPaymentsAmount) {
-  //               throw new NotEnoughBalanceError();
-  //             }
-  //           }
+        outputs[0].amount = remeaingAmountToSend;
+        totalPaymentsAmount = outputs.reduce(
+          (previousValue, currentValue) => previousValue + currentValue.amount,
+          0n
+        );
+      } else {
+        if (
+          context.balance!.mature <
+            totalPaymentsAmount +
+              additionalKrc20TransactionPriorityFee +
+              MINIMAL_AMOUNT_TO_SEND &&
+          context.balance!.pending > 0n
+        ) {
+          await utxoProcessonManager.waitForPendingUtxoToFinish();
+        }
 
-  //           const baseTransactionData: IGeneratorSettingsObject = {
-  //             priorityEntries: additionalOptions.priorityEntries || [],
-  //             entries: context,
-  //             outputs,
-  //             feeRate: 1.0,
-  //             changeAddress: this.convertPrivateKeyToPublicKey(privateKey),
-  //             priorityFee: {
-  //               amount: additionalKrc20TransactionPriorityFee,
-  //               source: sendAll ? FeeSource.ReceiverPays : FeeSource.SenderPays,
-  //             },
-  //             networkId: this.rpcService.getNetwork(),
-  //           };
+        if (context.balance!.mature < totalPaymentsAmount) {
+          return {
+            success: false,
+            errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
+          };
+        }
+      }
 
-  //           const { priorityFee } = await this.calculateTransactionFeeAndLimitToMax(baseTransactionData, Infinity);
-  //           const currentNeededPriorityFee = priorityFee > maxPriorityFee ? maxPriorityFee : priorityFee;
+      const baseTransactionData: IGeneratorSettingsObject = {
+        priorityEntries: additionalOptions.priorityEntries || [],
+        entries: context,
+        outputs,
+        changeAddress: this.convertPrivateKeyToAddress(privateKey.toString()),
+        priorityFee: {
+          amount: additionalKrc20TransactionPriorityFee + priorityFee,
+          source: sendAll ? FeeSource.ReceiverPays : FeeSource.SenderPays,
+        },
+        networkId: this.rpcService.getNetwork(),
+      };
 
-  //           (baseTransactionData.priorityFee as IFees).amount =
-  //             currentNeededPriorityFee > additionalKrc20TransactionPriorityFee
-  //               ? currentNeededPriorityFee
-  //               : additionalKrc20TransactionPriorityFee;
+      if (
+        !sendAll &&
+        context.balance!.mature <
+          totalPaymentsAmount +
+            MINIMAL_AMOUNT_TO_SEND +
+            (baseTransactionData.priorityFee as IFees).amount &&
+        context.balance!.pending > 0n
+      ) {
+        await utxoProcessonManager.waitForPendingUtxoToFinish();
+      }
 
-  //           if (
-  //             !sendAll &&
-  //             context.balance.mature <
-  //               totalPaymentsAmount + MINIMAL_AMOUNT_TO_SEND + (baseTransactionData.priorityFee as IFees).amount &&
-  //             context.balance.pending > 0n
-  //           ) {
-  //             await utxoProcessonManager.waitForPendingUtxoToFinish();
-  //           }
+      if (
+        context.balance!.mature < totalPaymentsAmount ||
+        (outputs.length && outputs[0].amount <= MINIMAL_AMOUNT_TO_SEND)
+      ) {
+        return {
+          success: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
+        };
+      }
 
-  //           if (context.balance.mature < totalPaymentsAmount || (outputs.length && outputs[0].amount <= MINIMAL_AMOUNT_TO_SEND)) {
-  //             throw new NotEnoughBalanceError();
-  //           }
+      const currentTransactions = await this.utils.retryOnError(async () => {
+        return await createTransactions(baseTransactionData);
+      });
 
-  //           const currentTransactions = await this.utils.retryOnError(async () => {
-  //             return await createTransactions(baseTransactionData);
-  //           });
+      console.log(
+        'current transaction amount',
+        currentTransactions.transactions.length
+      );
+      console.log('current transaction summry', currentTransactions.summary);
 
-  //           console.log('current transaction amount', currentTransactions.transactions.length);
-  //           console.log('current transaction summry', currentTransactions.summary);
+      if (additionalOptions.notifyCreatedTransactions) {
+        await additionalOptions.notifyCreatedTransactions(
+          currentTransactions.summary.finalTransactionId!
+        );
+      }
 
-  //           if (additionalOptions.notifyCreatedTransactions) {
-  //             await additionalOptions.notifyCreatedTransactions(currentTransactions.summary.finalTransactionId);
-  //           }
+      const transactionsLeftToSend: PendingTransaction[] = [
+        ...currentTransactions.transactions,
+      ];
 
-  //           const transactionsLeftToSend: PendingTransaction[] = [...currentTransactions.transactions];
+      while (transactionsLeftToSend.length > 0) {
+        const transaction = transactionsLeftToSend[0];
+        const isFinalTransaction = transactionsLeftToSend.length == 1;
 
-  //           while (transactionsLeftToSend.length > 0) {
-  //             const transaction = transactionsLeftToSend[0];
-  //             const isFinalTransaction = transactionsLeftToSend.length == 1;
+        if (
+          additionalOptions.specialSignTransactionFunc &&
+          isFinalTransaction
+        ) {
+          await additionalOptions.specialSignTransactionFunc(transaction);
+        } else {
+          transaction.sign([privateKey]);
+        }
 
-  //             if (additionalOptions.specialSignTransactionFunc && isFinalTransaction) {
-  //               await additionalOptions.specialSignTransactionFunc(transaction);
-  //             } else {
-  //               transaction.sign([privateKey]);
-  //             }
+        await this.connectAndDo(async () => {
+          let transactionPromise = null;
 
-  //             await this.connectAndDo(async () => {
-  //               let transactionReciever = null;
+          if (isFinalTransaction) {
+            transactionPromise = utxoProcessonManager.getTransactionPromise(
+              transaction.id
+            );
+          }
 
-  //               if (isFinalTransaction) {
-  //                 transactionReciever = new TransacionReciever(
-  //                   this.rpcService.getRpc(),
-  //                   this.convertPrivateKeyToPublicKey(privateKey),
-  //                   transaction.id,
-  //                   sendAll,
-  //                 );
+          await transaction.submit(this.rpcService.getRpc()!);
+          transactionsLeftToSend.shift();
 
-  //                 await transactionReciever.registerEventHandlers();
-  //               }
+          if (isFinalTransaction) {
+            try {
+              await transactionPromise!;
+            } catch (error) {
+              console.error('Transaction not received', error);
 
-  //               let isTransactionRecieverDisposed = false;
+              // await this.verifyTransactionReceivedOnKaspaApi(
+              //   transaction.id,
+              //   additionalOptions.stopOnApplicationClosing
+              // );
+            }
+          }
+        });
+      }
 
-  //               try {
-  //                 await transaction.submit(this.rpcService.getRpc());
-  //                 transactionsLeftToSend.shift();
+      return {
+        success: true,
+        result: currentTransactions,
+      };
+    });
+  }
 
-  //                 if (isFinalTransaction) {
-  //                   try {
-  //                     await transactionReciever.waitForTransactionCompletion();
-  //                   } catch (error) {
-  //                     isTransactionRecieverDisposed = true;
-  //                     await transactionReciever.dispose();
-
-  //                     if (additionalOptions.stopOnApplicationClosing && ImportantPromisesManager.isApplicationClosing()) {
-  //                       throw new ApplicationIsClosingError();
-  //                     }
-
-  //                     console.log(`Transaction ${transaction.id} not received, trying to get from api...`, new Date());
-  //                     await this.verifyTransactionReceivedOnKaspaApi(transaction.id, additionalOptions.stopOnApplicationClosing);
-  //                   }
-  //                 }
-  //               } catch (error) {
-  //                 throw error;
-  //               } finally {
-  //                 if (isFinalTransaction && !isTransactionRecieverDisposed) {
-  //                   await transactionReciever.dispose();
-  //                 }
-  //               }
-  //             });
-  //           }
-
-  //           return currentTransactions;
-  //         },
-  //       );
-  //     });
-  //   }
-
-  //   async doKaspaTransferTransactionWithUtxoProcessor(
-  //     privateKey: PrivateKey,
-  //     payments: IPaymentOutput[],
-  //     maxPriorityFee: bigint,
-  //     sendAll = false, // Sends all the remains to the first payment
-  //     notifyCreatedTransactions: (transactionId: string) => Promise<any> = null,
-  //   ) {
-  //     return await this.doTransactionWithUtxoProcessor(privateKey, maxPriorityFee, payments, {
-  //       notifyCreatedTransactions,
-  //       sendAll,
-  //     });
-  //   }
+  async doKaspaTransferTransactionWithUtxoProcessor(
+    wallet: AppWallet,
+    payments: IPaymentOutput[],
+    priorityFee: bigint,
+    sendAll = false, // Sends all the remains to the first payment
+    notifyCreatedTransactions?: (transactionId: string) => Promise<any>
+  ): Promise<{
+    success: boolean;
+    errorCode?: number;
+    result?: ICreateTransactions;
+  }> {
+    return await this.doTransactionWithUtxoProcessor(
+      wallet.getUtxoProcessorManager()!,
+      wallet.getPrivateKey(),
+      priorityFee,
+      payments,
+      {
+        notifyCreatedTransactions,
+        sendAll,
+      }
+    );
+  }
 
   //   async doKrc20CommitTransactionWithUtxoProcessor(
   //     privateKey: PrivateKey,

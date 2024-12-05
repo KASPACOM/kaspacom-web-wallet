@@ -104,10 +104,16 @@ export class AppWallet {
     this.walletStateBalance = undefined;
   }
 
+  getUtxoProcessorManager(): UtxoProcessorManager | undefined {
+    return this.utxoProcessorManager;
+  }
+
+  // This is only update once
   getBalanaceSignal(): Signal<undefined | TotalBalanceWithUtxosInterface> {
     return this.balanceSignal.asReadonly();
   }
 
+  // This is keeps updating
   getWalletUtxoStateBalanceSignal(): Signal<undefined | BalanceData> {
     return this.walletStateBalance || signal(undefined);
   }

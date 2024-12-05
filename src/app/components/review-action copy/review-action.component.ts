@@ -1,11 +1,9 @@
 import { Component } from '@angular/core';
-import { JsonPipe, NgFor, NgIf } from '@angular/common';
-import { Krc20Action, TransferKasAction, WalletAction, WalletActionType } from '../../types/wallet-action';
+import { NgFor, NgIf } from '@angular/common';
+import { TransferKasAction, WalletAction, WalletActionType } from '../../types/wallet-action';
 import { WalletService } from '../../services/wallet.service';
 import { SompiToNumberPipe } from '../../pipes/sompi-to-number.pipe';
 import { WalletActionResult } from '../../types/wallet-action-result';
-import { CompletedActionReview } from '../completed-action-review/completed-action-review.component';
-import { KRC20OperationType } from '../../types/kaspa-network/krc20-operations-data.interface';
 
 const TIMEOUT = 2 * 60 * 1000;
 
@@ -14,11 +12,10 @@ const TIMEOUT = 2 * 60 * 1000;
   standalone: true,
   templateUrl: './review-action.component.html',
   styleUrls: ['./review-action.component.scss'],
-  imports: [NgIf, NgFor, SompiToNumberPipe, CompletedActionReview, JsonPipe],
+  imports: [NgIf, NgFor, SompiToNumberPipe],
 })
 export class ReviewActionComponent {
   public WalletActionType = WalletActionType;
-  public KRC20OperationType = KRC20OperationType;
 
   private resolve:
     | ((result: { isApproved: boolean; priorityFee?: bigint }) => void)
@@ -104,10 +101,6 @@ export class ReviewActionComponent {
 
   protected get transferKasActionData(): TransferKasAction {
     return this.action?.data as TransferKasAction;
-  }
-
-  protected get krc20ActionData(): Krc20Action {
-    return this.action?.data as Krc20Action;
   }
 
   protected get walletAddress(): string {

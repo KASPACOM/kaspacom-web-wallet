@@ -1,4 +1,6 @@
-export type WalletAction = {
+import { KRC20OperationDataInterface } from "./kaspa-network/krc20-operations-data.interface";
+
+export interface WalletAction {
   type: WalletActionType;
   data: TransferKasAction | Krc20Action;
   priorityFee?: bigint;
@@ -9,13 +11,12 @@ export enum WalletActionType {
   KRC20_ACTION = 'krc20-action',
 }
 
-export type TransferKasAction = {
+export interface TransferKasAction {
   amount: bigint;
   to: string;
   sendAll?: boolean;
 };
 
-export type Krc20Action = {
-  amount: bigint;
-  assetId: string;
-};
+export interface Krc20Action {
+  operationData: KRC20OperationDataInterface;
+}

@@ -206,6 +206,7 @@ export class WalletService {
 
   async deselectCurrentWallet(): Promise<void> {
     localStorage.removeItem(LOCAL_STORAGE_KEYS.CURRENT_SELECTED_WALLET);
+    await this.currentWallet?.stopListiningToWalletActions();
     this.currentWallet = undefined;
   }
 

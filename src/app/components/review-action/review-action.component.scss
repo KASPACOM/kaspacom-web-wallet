@@ -3,17 +3,18 @@
   border: 1px solid #e0e0e0;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  max-width: 450px;
   margin: 0 auto;
   padding: 20px;
   font-family: 'Roboto', sans-serif;
   color: #333;
   word-wrap: break-word; /* Allow long text to break and wrap */
+  word-break: break-all;
 }
 
 .transaction-header {
   text-align: center;
   margin-bottom: 20px;
+  word-break: break-word;
 }
 
 .transaction-header h2 {
@@ -54,7 +55,7 @@
   color: #000;
   font-family: monospace;
   word-wrap: break-word; /* Ensure long addresses wrap correctly */
-  max-width: calc(100% - 100px); /* Allow value to stretch within the container */
+  word-break: break-all;
   overflow-wrap: break-word; /* For breaking long words like wallet addresses */
   white-space: normal; /* Prevent text from being truncated */
 }
@@ -94,3 +95,49 @@
 .reject-btn:hover {
   background-color: #e53935;
 }
+
+.progress-container {
+  height: 20px;
+  margin-top: 10px;
+  background-color: #e0e0e0;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #4caf50;
+  transition: width 0.3s ease;
+  text-align: center;
+}
+.progress-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.transaction-operation-data-details {
+  margin-top: 20px;
+
+  h3 {
+    margin-bottom: 10px;
+  }
+
+  .detail {
+    flex-direction: column;
+    max-width: calc(50vw - 90px);
+  }
+
+  .value {
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    padding: 10px;
+    min-height: 150px;
+    overflow: auto;
+    max-width: 100%;
+  }
+}
+

@@ -14,6 +14,11 @@ import {
   MINIMAL_AMOUNT_TO_SEND,
 } from './kaspa-netwrok-services/kaspa-network-actions.service';
 import { ReviewActionComponent } from '../components/review-action/review-action.component';
+import { WalletActionResult } from '../types/wallet-action-result';
+import { Krc20OperationDataService } from './kaspa-netwrok-services/krc20-operation-data.service';
+import { KRC20OperationType } from '../types/kaspa-network/krc20-operations-data.interface';
+import { KasplexKrc20Service } from './kasplex-api/kasplex-api.service';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -24,7 +29,9 @@ export class WalletActionService {
   constructor(
     private walletService: WalletService,
     private utils: UtilsHelper,
-    private kaspaNetworkActionsService: KaspaNetworkActionsService
+    private kaspaNetworkActionsService: KaspaNetworkActionsService,
+    private krc20OperationDataService: Krc20OperationDataService,
+    private kasplexService: KasplexKrc20Service,
   ) {}
 
   registerViewingComponent(component: ReviewActionComponent): void {
@@ -50,9 +57,11 @@ export class WalletActionService {
       return {
         type: WalletActionType.KRC20_ACTION,
         data: {
-          amount,
-          assetId: asset.ticker,
-          to: targetWalletAddress,
+          operationData: this.krc20OperationDataService.getTransferData(
+            asset.ticker,
+            amount,
+            targetWalletAddress
+          ),
         },
       };
     }
@@ -82,12 +91,30 @@ export class WalletActionService {
 
     action.priorityFee = result.priorityFee || action.priorityFee;
 
-    const actionResult = await this.doWalletAction(action);
+    const actionSteps = this.getActionSteps(action);
+    let currentStep = 0;
 
-    return {
-      success: true,
-      result: actionResult,
-    };
+    await this.showTransactionLoaderToUser(0);
+
+    const actionResult = await this.doWalletAction(action, async (data) => {
+      console.log('notify update', data);
+      this.showTransactionLoaderToUser(
+        Math.round((currentStep / actionSteps) * 100)
+      );
+
+      currentStep++;
+    });
+
+    console.log('FINISHED ACTION', actionResult);
+
+    if (!actionResult.success) {
+      alert(actionResult.errorCode);
+      return actionResult;
+    }
+
+    await this.showTransactionResultToUser(actionResult.result!);
+
+    return actionResult;
   }
 
   private async showApprovalDialogToUser(action: WalletAction): Promise<{
@@ -103,10 +130,31 @@ export class WalletActionService {
     return await this.viewingComponent.requestUserConfirmation(action);
   }
 
-  private async doWalletAction(action: WalletAction): Promise<any> {
+  private async showTransactionLoaderToUser(progress?: number | undefined) {
+    if (!this.viewingComponent) {
+      return;
+    }
+
+    this.viewingComponent.showActionLoader(progress);
+  }
+
+  private async showTransactionResultToUser(result: WalletActionResult) {
+    if (!this.viewingComponent) {
+      return;
+    }
+    this.viewingComponent.showActionLoader(100);
+    this.viewingComponent.setActionResult(result);
+  }
+
+  private async doWalletAction(action: WalletAction, notifyUpdate: (transactionId: string) => Promise<any>): Promise<{
+    success: boolean;
+    errorCode?: number;
+    result?: WalletActionResult;
+  }> {
     return await this.kaspaNetworkActionsService.doWalletAction(
       action,
-      this.walletService.getCurrentWallet()!
+      this.walletService.getCurrentWallet()!,
+      notifyUpdate,
     );
   }
 
@@ -207,8 +255,51 @@ export class WalletActionService {
   async validateKrc20Action(
     action: Krc20Action
   ): Promise<{ isValidated: boolean; errorCode?: number }> {
+
+    if (action.operationData.op == KRC20OperationType.TRANSFER) {
+      if (this.utils.isNullOrEmptyString(action.operationData.to!)) {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ADDRESS,
+        };
+      }
+
+      if (!this.utils.isValidWalletAddress(action.operationData.to!)) {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ADDRESS,
+        };
+      }
+
+      const currentBalance = await firstValueFrom(this.kasplexService.getTokenWalletBalanceInfo(
+        this.walletService.getCurrentWallet()!.getAddress(),
+        action.operationData.tick));
+
+      if (!currentBalance) {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
+        }; 
+      }
+
+      if (BigInt(currentBalance.balance) < BigInt(action.operationData.amt || '0')) {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
+        };
+      }
+    }
+
     return {
       isValidated: true,
     };
+  }
+
+  private getActionSteps(action: WalletAction): number {
+    if (action.type == WalletActionType.KRC20_ACTION) {
+      return 3;
+    }
+
+    return 2;
   }
 }

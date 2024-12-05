@@ -1,0 +1,55 @@
+/* Container for the entire component */
+.action-review-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+/* Card style for the action details */
+.action-review-card {
+  width: 100%;
+  background: linear-gradient(135deg, #ffffff, #e0f7fa);
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  padding: 20px;
+}
+
+
+/* Header section styling */
+.action-review-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.action-review-header h2 {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #00796b;
+  margin: 0;
+  word-break: break-word;
+}
+
+/* Content section styling */
+.action-review-content {
+  font-size: 1rem;
+  color: #333;
+  line-height: 1.5;
+}
+
+/* Paragraphs inside the content */
+.action-review-content p {
+  margin: 10px 0;
+}
+
+/* Highlighted text (labels) */
+.action-review-content strong {
+  color: #004d40;
+}
+
+/* Smooth transitions for interactive elements */
+.action-review-content p:hover {
+  color: #00796b;
+  transition: color 0.2s ease;
+}

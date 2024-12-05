@@ -1,11 +1,13 @@
 import { Injectable, NgModule, Signal } from '@angular/core';
 import {
+  Address,
   addressFromScriptPublicKey,
   createTransactions,
   FeeSource,
   ICreateTransactions,
   IFees,
   IGeneratorSettingsObject,
+  IGetUtxosByAddressesResponse,
   IPaymentOutput,
   IUtxoEntry,
   Opcodes,
@@ -26,6 +28,7 @@ import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-st
 import { ERROR_CODES } from '../../config/consts';
 import { MINIMAL_AMOUNT_TO_SEND } from './kaspa-network-actions.service';
 import { AppWallet } from '../../classes/AppWallet';
+import { KASPA_AMOUNT_FOR_KRC20_ACTION } from './krc20-operation-data.service';
 
 // export const MINIMAL_AMOUNT_TO_SEND = kaspaToSompi('0.2');
 const TIME_TO_WAIT_BEFORE_TRANSACTION_RECEIVED_CHECK = 120 * 1000;
@@ -39,7 +42,6 @@ type DoTransactionOptions = {
   additionalKrc20TransactionPriorityFee?: bigint;
   priorityEntries?: IUtxoEntry[];
   sendAll?: boolean;
-  stopOnApplicationClosing?: boolean;
 };
 
 @Injectable({
@@ -67,18 +69,25 @@ export class KaspaNetworkTransactionsManagerService {
     return this.connectionManager.getConnectionStatusSignal();
   }
 
+  private toUint8Array(data: string): Uint8Array {
+    return new TextEncoder().encode(data);
+  }
+
   createP2SHAddressScript(
     data: KRC20OperationDataInterface,
     privateKey: PrivateKey
-  ) {
+  ): {
+    script: ScriptBuilder;
+    p2shaAddress: Address;
+  } {
     const script = new ScriptBuilder()
       .addData(privateKey.toPublicKey().toXOnlyPublicKey().toString())
       .addOp(Opcodes.OpCheckSig)
       .addOp(Opcodes.OpFalse)
       .addOp(Opcodes.OpIf)
-      .addData(Buffer.from('kasplex'))
+      .addData(this.toUint8Array('kasplex'))
       .addI64(0n)
-      .addData(Buffer.from(JSON.stringify(data)))
+      .addData(this.toUint8Array(JSON.stringify(data)))
       .addOp(Opcodes.OpEndIf);
 
     const scriptAddress = addressFromScriptPublicKey(
@@ -86,9 +95,13 @@ export class KaspaNetworkTransactionsManagerService {
       this.rpcService.getNetwork()
     );
 
+    if (!scriptAddress) {
+      throw new Error('Failed to create P2SH address');
+    }
+
     return {
-      script: script,
-      p2shaAddress: scriptAddress,
+      script,
+      p2shaAddress: scriptAddress!,
     };
   }
 
@@ -278,7 +291,6 @@ export class KaspaNetworkTransactionsManagerService {
 
               // await this.verifyTransactionReceivedOnKaspaApi(
               //   transaction.id,
-              //   additionalOptions.stopOnApplicationClosing
               // );
             }
           }
@@ -315,68 +327,164 @@ export class KaspaNetworkTransactionsManagerService {
     );
   }
 
-  //   async doKrc20CommitTransactionWithUtxoProcessor(
-  //     privateKey: PrivateKey,
-  //     krc20transactionData: KRC20OperationDataInterface,
-  //     maxPriorityFee: bigint = 0n,
-  //     baseTransactionAmount = KRC20_BASE_TRANSACTION_AMOUNT,
-  //     notifyCreatedTransactions: (transactionId: string) => Promise<any> = null,
-  //     stopOnApplicationClosing: boolean = false,
-  //   ) {
-  //     const scriptAndScriptAddress = this.createP2SHAddressScript(krc20transactionData, privateKey);
+  async doKrc20ActionTransactionWithUtxoProcessor(
+    wallet: AppWallet,
+    krc20transactionData: KRC20OperationDataInterface,
+    priorityFee: bigint,
+    transactionFeeAmount: bigint,
+    notifyCreatedTransactions?: (transactionId: string) => Promise<any>
+  ): Promise<{
+    success: boolean;
+    errorCode?: number;
+    result?: {
+      commit?: ICreateTransactions;
+      reveal?: ICreateTransactions;
+    };
+  }> {
+    const commitTransactionResult =
+      await this.doKrc20CommitTransactionWithUtxoProcessor(
+        wallet.getUtxoProcessorManager()!,
+        wallet.getPrivateKey(),
+        krc20transactionData,
+        priorityFee,
+        notifyCreatedTransactions
+      );
 
-  //     const outputs = [
-  //       {
-  //         address: scriptAndScriptAddress.p2shaAddress.toString(),
-  //         amount: baseTransactionAmount,
-  //       },
-  //     ];
+    if (!commitTransactionResult.success) {
+      return {
+        success: false,
+        errorCode: commitTransactionResult.errorCode,
+      };
+    }
 
-  //     return await this.doTransactionWithUtxoProcessor(privateKey, maxPriorityFee, outputs, {
-  //       notifyCreatedTransactions,
-  //       stopOnApplicationClosing,
-  //     });
-  //   }
+    const revealTransactionResult =
+      await this.doKrc20RevealTransactionWithUtxoProcessor(
+        wallet.getUtxoProcessorManager()!,
+        wallet.getPrivateKey(),
+        krc20transactionData,
+        transactionFeeAmount,
+        priorityFee,
+        notifyCreatedTransactions
+      );
 
-  //   async doKrc20RevealTransactionWithUtxoProcessor(
-  //     privateKey: PrivateKey,
-  //     krc20transactionData: KRC20OperationDataInterface,
-  //     transactionFeeAmount: bigint,
-  //     maxPriorityFee: bigint = 0n,
-  //     notifyCreatedTransactions: (transactionId: string) => Promise<any> = null,
-  //     stopOnApplicationClosing: boolean = false,
-  //   ) {
-  //     const scriptAndScriptAddress = this.createP2SHAddressScript(krc20transactionData, privateKey);
+    if (!revealTransactionResult.success) {
+      return {
+        success: false,
+        errorCode: revealTransactionResult.errorCode,
+        result: {
+          commit: commitTransactionResult.result,
+        }
+      };
+    }
 
-  //     const revealUTXOs = await this.connectAndDo<IGetUtxosByAddressesResponse>(async () => {
-  //       return await this.rpcService.getRpc().getUtxosByAddresses({
-  //         addresses: [scriptAndScriptAddress.p2shaAddress.toString()],
-  //       });
-  //     });
+    return {
+      success: true,
+      result: {
+        commit: commitTransactionResult.result,
+        reveal: revealTransactionResult.result,
+      }
+    }
+  }
 
-  //     const priorityEntries = [revealUTXOs.entries[0]];
+  async doKrc20CommitTransactionWithUtxoProcessor(
+    utxoProcessonManager: UtxoProcessorManager,
+    privateKey: PrivateKey,
+    krc20transactionData: KRC20OperationDataInterface,
+    priorityFee: bigint = 0n,
+    notifyCreatedTransactions?: (transactionId: string) => Promise<any>
+  ): Promise<{
+    success: boolean;
+    errorCode?: number;
+    result?: ICreateTransactions;
+  }> {
+    const scriptAndScriptAddress = this.createP2SHAddressScript(
+      krc20transactionData,
+      privateKey
+    );
 
-  //     const specialSignTransactionFunc = async (transaction: PendingTransaction) => {
-  //       transaction.sign([privateKey], false);
-  //       const ourOutput = transaction.transaction.inputs.findIndex((input) => input.signatureScript === '');
+    const outputs = [
+      {
+        address: scriptAndScriptAddress.p2shaAddress.toString(),
+        amount: KASPA_AMOUNT_FOR_KRC20_ACTION,
+      },
+    ];
 
-  //       if (ourOutput !== -1) {
-  //         const signature = await transaction.createInputSignature(ourOutput, privateKey);
+    return await this.doTransactionWithUtxoProcessor(
+      utxoProcessonManager,
+      privateKey,
+      priorityFee,
+      outputs,
+      {
+        notifyCreatedTransactions,
+      }
+    );
+  }
 
-  //         transaction.fillInput(ourOutput, scriptAndScriptAddress.script.encodePayToScriptHashSignatureScript(signature));
-  //       }
-  //     };
+  async doKrc20RevealTransactionWithUtxoProcessor(
+    utxoProcessonManager: UtxoProcessorManager,
+    privateKey: PrivateKey,
+    krc20transactionData: KRC20OperationDataInterface,
+    transactionFeeAmount: bigint,
+    priorityFee: bigint = 0n,
+    notifyCreatedTransactions?: (transactionId: string) => Promise<any>
+  ): Promise<{
+    success: boolean;
+    errorCode?: number;
+    result?: ICreateTransactions;
+  }> {
+    const scriptAndScriptAddress = this.createP2SHAddressScript(
+      krc20transactionData,
+      privateKey
+    );
 
-  //     const outputs = [];
+    const revealUTXOs = await this.connectAndDo<IGetUtxosByAddressesResponse>(
+      async () => {
+        return await this.rpcService.getRpc()!.getUtxosByAddresses({
+          addresses: [scriptAndScriptAddress.p2shaAddress.toString()],
+        });
+      }
+    );
 
-  //     return await this.doTransactionWithUtxoProcessor(privateKey, maxPriorityFee, outputs, {
-  //       notifyCreatedTransactions,
-  //       specialSignTransactionFunc,
-  //       additionalKrc20TransactionPriorityFee: transactionFeeAmount,
-  //       priorityEntries,
-  //       stopOnApplicationClosing,
-  //     });
-  //   }
+    const priorityEntries = [revealUTXOs.entries[0]];
+
+    const specialSignTransactionFunc = async (
+      transaction: PendingTransaction
+    ) => {
+      transaction.sign([privateKey], false);
+      const ourOutput = transaction.transaction.inputs.findIndex(
+        (input) => input.signatureScript === ''
+      );
+
+      if (ourOutput !== -1) {
+        const signature = await transaction.createInputSignature(
+          ourOutput,
+          privateKey
+        );
+
+        transaction.fillInput(
+          ourOutput,
+          scriptAndScriptAddress.script.encodePayToScriptHashSignatureScript(
+            signature
+          )
+        );
+      }
+    };
+
+    const outputs: IPaymentOutput[] = [];
+
+    return await this.doTransactionWithUtxoProcessor(
+      utxoProcessonManager,
+      privateKey,
+      priorityFee,
+      outputs,
+      {
+        notifyCreatedTransactions,
+        specialSignTransactionFunc,
+        additionalKrc20TransactionPriorityFee: transactionFeeAmount,
+        priorityEntries,
+      }
+    );
+  }
 
   //   // ================================================================
   //   // OTHER

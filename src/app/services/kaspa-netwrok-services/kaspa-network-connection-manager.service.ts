@@ -81,6 +81,8 @@ export class KaspaNetworkConnectionManagerService {
       }
     } catch (err) {
       console.error('Failed connecting RPC', err);
+      this.waitForConnection().catch((err) => console.error(err));
+
 
       if (!reachedTimeout) {
         this.connectionMadeReject!('Failed connecting to RPC');

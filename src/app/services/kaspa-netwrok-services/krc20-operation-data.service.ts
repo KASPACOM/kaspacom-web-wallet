@@ -1,0 +1,69 @@
+import { Injectable } from '@angular/core';
+import {
+  KRC20OperationDataInterface,
+  KRC20OperationType,
+} from '../../types/kaspa-network/krc20-operations-data.interface';
+
+export const KRC20_TRANSACTIONS_PRICE = {
+  DEPLOY: 100000000000n,
+  MINT: 100000000n,
+  TRANSFER: 1816n,
+};
+
+export const KASPA_AMOUNT_FOR_KRC20_ACTION = 300000000n;
+
+@Injectable({
+  providedIn: 'root',
+})
+export class Krc20OperationDataService {
+  getTransferData(
+    ticker: string,
+    amount: bigint,
+    to: string
+  ): KRC20OperationDataInterface {
+    return {
+      p: 'krc-20',
+      op: KRC20OperationType.TRANSFER,
+      tick: ticker,
+      to: to,
+      amt: String(amount),
+    };
+  }
+
+  // Need to check to see if works
+  getMintData(ticker: string): KRC20OperationDataInterface {
+    return {
+      p: 'krc-20',
+      op: KRC20OperationType.MINT,
+      tick: ticker,
+    };
+  }
+
+  getDeployData(
+    ticker: string,
+    max: number,
+    lim: number
+  ): KRC20OperationDataInterface {
+    return {
+      p: 'krc-20',
+      op: KRC20OperationType.DEPLOY,
+      tick: ticker,
+      max: String(max),
+      lim: String(lim),
+    };
+  }
+
+
+  getPriceForOperation(type: KRC20OperationType): bigint {
+    switch (type) {
+      case KRC20OperationType.MINT:
+        return KRC20_TRANSACTIONS_PRICE.MINT;
+      case KRC20OperationType.DEPLOY:
+        return KRC20_TRANSACTIONS_PRICE.DEPLOY;
+      case KRC20OperationType.TRANSFER:
+        return KRC20_TRANSACTIONS_PRICE.TRANSFER;
+      default:
+        throw new Error('Invalid operation type');
+    }
+  }
+}

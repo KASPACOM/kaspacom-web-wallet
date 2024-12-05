@@ -1,6 +1,8 @@
 <div class="wallet-info-container">
   <div *ngIf="wallet; else loadingMessage">
     <h2>Wallet Information</h2>
+    <button (click)="goToSelectWallet()">Change Wallet</button>
+    
 
     <!-- Wallet Balance -->
     <div class="wallet-balance">

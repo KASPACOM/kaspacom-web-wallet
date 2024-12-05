@@ -54,7 +54,6 @@ export class KasplexKrc20Service {
           ? {
               address,
               ...results[0],
-              balance: results[0].balance / 1e8,
             }
           : null;
       }),

@@ -5,6 +5,7 @@ import {
   UtxoProcessor,
 } from '../../../public/kaspa/kaspa';
 import { BalanceData, BalanceEvent } from '../types/kaspa-network/balance-event.interface';
+import { UtxoChangedEvent } from '../types/kaspa-network/utxo-changed-event.interface';
 
 const WAIT_TIMEOUT = 2 * 60 * 1000;
 const REJECT_TRANSACTION_TIMEOUT = 2 * 60 * 1000;
@@ -214,11 +215,32 @@ export class UtxoProcessorManager {
     return promise;
   }
 
-  private utxoChangedEventListener(event: any) {
+  private utxoChangedEventListener(event: UtxoChangedEvent) {
     console.log('utxoChangedEventListener', event);
+
+    const addedEntry = event.data.added.find(
+      (entry: any) => entry.address.payload === this.publicAddress.toString().split(':')[1],
+    );
+
+    if (addedEntry) {
+      const addedEventTrxId = addedEntry.outpoint.transactionId;
+
+      if (this.transactionPromises[addedEventTrxId]) {
+        this.resolveTransaction(addedEventTrxId);
+      }
+    }
+
   }
 
-  async rejectTransaction(transactionId: string) {
+  resolveTransaction(transactionId: string) {
+    if (this.transactionPromises[transactionId]) {
+      this.transactionPromises[transactionId].resolve();
+      clearTimeout(this.transactionPromises[transactionId].timeout);
+      delete this.transactionPromises[transactionId];
+    }
+  }
+
+  rejectTransaction(transactionId: string) {
     if (this.transactionPromises[transactionId]) {
       this.transactionPromises[transactionId].reject('TIMEOUT ON TRANSACTION');
       delete this.transactionPromises[transactionId];

@@ -94,4 +94,8 @@ export class WalletInfoComponent implements OnInit, AfterViewInit {
 
     this.tokens = tokens;
   }
+
+  goToSelectWallet() {
+    this.router.navigate(['/wallet-selection']);
+  }
 }

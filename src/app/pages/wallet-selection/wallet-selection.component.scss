@@ -17,6 +17,12 @@
   
   .wallet-info {
     margin-top: 20px;
+
+    .title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
   }
   
   .wallet-item {
@@ -27,8 +33,8 @@
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   }
   
-  h4 {
-    color: #4caf50;
+  p {
+    word-break: break-all;
   }
   
   button {
@@ -38,6 +44,7 @@
     color: white;
     cursor: pointer;
     border-radius: 5px;
+    height: 32px;
   }
   
   button:hover {
@@ -54,4 +61,14 @@
   
   .delete-wallet-button:hover {
     background-color: #e53935;
+  }
+
+  .wallet-actions {
+    button {
+      margin-right: 10px;
+    }
+  }
+
+  .update-wallet-button {
+    margin-left: 5px;
   }

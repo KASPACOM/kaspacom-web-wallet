@@ -52,6 +52,10 @@ export class AppWallet {
     return this.name;
   }
 
+  setName(name: string) {
+    this.name = name;
+  }
+
   getPrivateKey(): PrivateKey {
     return this.privateKey;
   }

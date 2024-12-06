@@ -1,27 +1,51 @@
 import { NgIf } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  ChangeDetectorRef,
+  Component,
+  OnInit,
+  signal,
+  ViewChild,
+} from '@angular/core';
+import {
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { Router } from '@angular/router';
 import { PasswordManagerService } from '../../services/password-manager.service';
+import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
 
 @Component({
   selector: 'app-set-password',
   standalone: true,
   templateUrl: './set-password.component.html',
   styleUrls: ['./set-password.component.scss'],
-  imports: [FormsModule, ReactiveFormsModule, NgIf]
+  imports: [FormsModule, ReactiveFormsModule, NgIf, ZXingScannerModule],
 })
 export class SetPasswordComponent implements OnInit {
-  passwordForm: FormGroup;
+  @ViewChild('scanner') scanner: ZXingScannerComponent | undefined;
 
-  constructor(private fb: FormBuilder, private router: Router, private readonly passwordManagerService: PasswordManagerService) {
+  passwordForm: FormGroup;
+  protected isScanning = signal(false);
+
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private readonly passwordManagerService: PasswordManagerService,
+    private cdr: ChangeDetectorRef
+  ) {
     // Initialize the form with validation rules
-    this.passwordForm = this.fb.group({
-      password: ['', [Validators.required, Validators.minLength(6)]],  // Min length of 6 characters
-      confirmPassword: ['', [Validators.required]]
-    }, {
-      validators: this.passwordMatchValidator  // Custom validator to match password and confirm password
-    });
+    this.passwordForm = this.fb.group(
+      {
+        password: ['', [Validators.required, Validators.minLength(6)]], // Min length of 6 characters
+        confirmPassword: ['', [Validators.required]],
+      },
+      {
+        validators: this.passwordMatchValidator, // Custom validator to match password and confirm password
+      }
+    );
   }
 
   ngOnInit(): void {}
@@ -59,5 +83,21 @@ export class SetPasswordComponent implements OnInit {
   // Getter for confirmPassword control (to easily check validation in the template)
   get confirmPassword() {
     return this.passwordForm.get('confirmPassword');
+  }
+
+  canScanQrCode(): boolean {
+    return true;
+  }
+
+  importFromQrCode() {
+    this.isScanning.set(true);
+    this.cdr.detectChanges();
+    this.scanner!.scanComplete.subscribe((result) => {
+      if (result) {
+        this.isScanning.set(false);
+        this.passwordManagerService.importFromQr(result.getText());
+        this.router.navigate(['/login']);
+      }
+    });
   }
 }

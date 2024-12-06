@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
-import { ENCRYPTED_MESSAGE_VALUE, LOCAL_STORAGE_KEYS } from '../config/consts';
+import { LOCAL_STORAGE_KEYS } from '../config/consts';
 import { EncryptionService } from './encryption.service';
 import { UserWalletsData } from '../types/user-wallets-data';
+import { version } from '../../../package.json';
+import { UtilsHelper } from './utils.service';
 
 @Injectable({
   providedIn: 'root',
@@ -9,61 +11,128 @@ import { UserWalletsData } from '../types/user-wallets-data';
 export class PasswordManagerService {
   private password: string | null = null;
 
-  constructor(private readonly encryptionService: EncryptionService) {}
+  constructor(
+    private readonly encryptionService: EncryptionService,
+    private utils: UtilsHelper
+  ) {}
 
   isUserHasSavedPassword(): boolean {
-    return !!localStorage.getItem(LOCAL_STORAGE_KEYS.ENCRYPTED_MESSAGE);
+    return !!localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA);
   }
 
-  async setSavedPassword(password: string): Promise<void> {
-    const encryptedMessage = await this.encryptionService.encrypt(ENCRYPTED_MESSAGE_VALUE, password);
-    localStorage.setItem(LOCAL_STORAGE_KEYS.ENCRYPTED_MESSAGE, encryptedMessage);
+  async setSavedPassword(
+    password: string,
+    force: boolean = false
+  ): Promise<void> {
+    if (localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA) && !force) {
+      throw new Error('Password already set');
+    }
+
+    await this.saveWalletsData(this.getInitializedWalletsData(), password);
   }
 
-  async checkAndLoadPassword(password: string): Promise<boolean> {
-    const encryptedMessage = localStorage.getItem(LOCAL_STORAGE_KEYS.ENCRYPTED_MESSAGE);
+  async checkPassword(password: string): Promise<boolean> {
+    return !!(await this.getUserDataWithPassword(password));
+  }
+
+  importFromQr(encryptedUserData: string): boolean {
+    const encryptedMessage = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA);
+
+    if (encryptedMessage) {
+      throw new Error('Data already found');
+    }
+
+    localStorage.setItem(LOCAL_STORAGE_KEYS.USER_DATA, encryptedUserData);
+
+    return true;
+  }
+
+  async getUserDataWithPassword(
+    password: string
+  ): Promise<UserWalletsData | null> {
+    const encryptedMessage = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA);
+
     if (!encryptedMessage) {
-      return false;
+      return null;
     }
 
     try {
-      const decryptedMessage = await this.encryptionService.decrypt(encryptedMessage, password);
-    
-      if (decryptedMessage === ENCRYPTED_MESSAGE_VALUE) {
-        this.password = password;
-        return true;
+      const UserDataJson = await this.encryptionService.decrypt(
+        encryptedMessage,
+        password
+      );
+
+      if (UserDataJson) {
+
+        const userData: UserWalletsData = JSON.parse(UserDataJson);
+        
+        if (userData.version) {
+          return userData;
+        }
+
+        return null;
       }
     } catch (error) {
-      console.error('Error decrypting message:', error);
+      console.error('Error decrypting data:', error);
+      return null;
+    }
+
+    return null;
+  }
+
+  async checkAndLoadPassword(password: string): Promise<boolean> {
+    const userData = await this.getUserDataWithPassword(password);
+
+    if (!userData) {
       return false;
     }
 
+    this.password = password;
 
-    return false;
-  }
-  
-  async getWalletsData(): Promise<UserWalletsData> {
-    if (!this.password) {
-      throw new Error('Password not set');
-    }
-
-    const encryptedMessage = localStorage.getItem(LOCAL_STORAGE_KEYS.WALLETS_DATA);
-    if (!encryptedMessage) {
-      return {
-        wallets: [],
-      }
-    }
-
-    return JSON.parse(await this.encryptionService.decrypt(encryptedMessage, this.password));
-  }
-
-  async saveWalletsData(walletsData: UserWalletsData): Promise<boolean> {
-    if (!this.password) {
-      return false;
-    }
-
-    const encryptedMessage = await this.encryptionService.encrypt(JSON.stringify(walletsData), this.password);
-    localStorage.setItem(LOCAL_STORAGE_KEYS.WALLETS_DATA, encryptedMessage);
     return true;
+  }
+
+  async getUserData(): Promise<UserWalletsData> {
+    const userData = await this.getUserDataWithPassword(this.password!);
+
+    if (!userData) {
+      throw new Error('User data not found');
+    }
+
+    return userData;
+  }
+
+  getInitializedWalletsData(): UserWalletsData {
+    return {
+      wallets: [],
+      version,
+    };
+  }
+
+  async saveWalletsData(
+    walletsData: UserWalletsData,
+    password: string
+  ): Promise<boolean> {
+    if (!password || this.utils.isNullOrEmptyString(password)) {
+      return false;
+    }
+
+    const encryptedMessage = await this.encryptionService.encrypt(
+      JSON.stringify(walletsData),
+      password
+    );
+
+    localStorage.setItem(LOCAL_STORAGE_KEYS.USER_DATA, encryptedMessage);
+    return true;
+  }
+
+  async saveWalletsDataWithStoredPassword(
+    walletsData: UserWalletsData
+  ): Promise<boolean> {
+    if (!this.password) {
+      return false;
+    }
+
+    return this.saveWalletsData(walletsData, this.password);
   }
 }

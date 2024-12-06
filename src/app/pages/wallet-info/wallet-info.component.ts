@@ -52,6 +52,7 @@ export class WalletInfoComponent implements OnInit, AfterViewInit {
 
     if (!this.wallet) {
       this.router.navigate(['/wallet-selection']);
+      return;
     }
 
     this.loadKrc20Tokens();

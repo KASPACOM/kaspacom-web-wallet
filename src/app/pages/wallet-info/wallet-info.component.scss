@@ -90,6 +90,19 @@ ng-template {
   color: #888;
 }
 
+.change-wallet-button {
+  background-color: #4caf50;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.change-wallet-button:hover {
+  background-color: #45a049;
+}
+
 @media (max-width: 768px) {
   .wallet-info-container {
     flex-direction: column;

@@ -9,6 +9,7 @@ import { RpcConnectionStatus } from '../types/kaspa-network/rpc-connection-statu
 import { AssetType, TransferableAsset } from '../types/transferable-asset';
 import { KasplexKrc20Service } from './kasplex-api/kasplex-api.service';
 import { firstValueFrom } from 'rxjs';
+import { UtilsHelper } from './utils.service';
 
 @Injectable({
   providedIn: 'root',
@@ -19,7 +20,8 @@ export class WalletService {
   constructor(
     private readonly passwordManagerService: PasswordManagerService,
     private readonly kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private readonly kasplexService: KasplexKrc20Service
+    private readonly kasplexService: KasplexKrc20Service,
+    private readonly utilsService: UtilsHelper
   ) {
     // On rpc status change
     effect(() => {
@@ -55,7 +57,7 @@ export class WalletService {
     }
 
     const currentWalletsData =
-      await this.passwordManagerService.getWalletsData();
+      await this.passwordManagerService.getUserData();
 
     if (
       currentWalletsData.wallets.find(
@@ -113,12 +115,12 @@ export class WalletService {
   }
 
   async deleteWallet(walletId: number): Promise<boolean> {
-    const walletsData = await this.passwordManagerService.getWalletsData();
+    const walletsData = await this.passwordManagerService.getUserData();
     const wallets = walletsData.wallets.filter(
       (wallet) => wallet.id !== walletId
     );
     walletsData.wallets = wallets;
-    return await this.passwordManagerService.saveWalletsData(walletsData);
+    return await this.passwordManagerService.saveWalletsDataWithStoredPassword(walletsData);
   }
 
   generateMnemonic(wordsCount: number = 12): string {
@@ -136,19 +138,19 @@ export class WalletService {
   }
 
   private async addWalletData(walletData: SavedWalletData): Promise<boolean> {
-    const walletsData = await this.passwordManagerService.getWalletsData();
+    const walletsData = await this.passwordManagerService.getUserData();
     walletsData.wallets.push(walletData);
 
-    return await this.passwordManagerService.saveWalletsData(walletsData);
+    return await this.passwordManagerService.saveWalletsDataWithStoredPassword(walletsData);
   }
 
   async getWalletsCount(): Promise<number> {
-    const walletsData = await this.passwordManagerService.getWalletsData();
+    const walletsData = await this.passwordManagerService.getUserData();
     return walletsData.wallets.length;
   }
 
   async getAllWallets(): Promise<AppWallet[]> {
-    const wallets = (await this.passwordManagerService.getWalletsData())
+    const wallets = (await this.passwordManagerService.getUserData())
       .wallets;
 
     return wallets.map(
@@ -157,7 +159,7 @@ export class WalletService {
   }
 
   async getWalletById(id: number): Promise<AppWallet | undefined> {
-    const allWalletsData = await this.passwordManagerService.getWalletsData();
+    const allWalletsData = await this.passwordManagerService.getUserData();
     const walletData = allWalletsData?.wallets?.find(
       (wallet) => wallet.id === id
     );
@@ -234,5 +236,23 @@ export class WalletService {
         name: token.tick,
       }))
     );
+  }
+
+  async updateWalletName(wallet: AppWallet, newName: string): Promise<boolean> {
+    if (this.utilsService.isNullOrEmptyString(newName)) {
+      return false;
+
+    }
+    const walletsData = await this.passwordManagerService.getUserData();
+
+    const walletData = walletsData.wallets.find(w => w.id === wallet.getId());
+
+    if (walletData) {
+      walletData.name = newName;
+    } else {
+      return false;
+    }
+
+    return await this.passwordManagerService.saveWalletsDataWithStoredPassword(walletsData);
   }
 }

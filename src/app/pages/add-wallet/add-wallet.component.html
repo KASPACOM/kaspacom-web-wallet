@@ -1,7 +1,11 @@
 <div>
-  <button (click)="selectedAction = 'create'">Create Wallet</button>
-  <button (click)="selectedAction = 'import'">Import Wallet</button>
-  <import-wallet *ngIf="selectedAction === 'import'"></import-wallet>
-  <create-wallet *ngIf="selectedAction === 'create'"></create-wallet>
+  <div class="action-buttons">
+    <button class="create-wallet" (click)="selectedAction = 'create'">Create Wallet</button>
+    <button class="import-wallet" (click)="selectedAction = 'import'">Import Wallet</button>
+  </div>
+  <div class="action-content">
+    <import-wallet *ngIf="selectedAction === 'import'"></import-wallet>
+    <create-wallet *ngIf="selectedAction === 'create'"></create-wallet>
+  </div>
 </div>
 

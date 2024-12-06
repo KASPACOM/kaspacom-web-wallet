@@ -1,26 +1,79 @@
+/* Login Component Styles */
 .login-container {
-    margin: 0 auto;
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-  }
-  
-  .error-message {
-    color: red;
-    font-size: 12px;
-    margin-top: 5px;
-  }
-  
-  button {
-    width: 100%;
-    padding: 10px;
-    background-color: #4caf50;
-    border: none;
-    color: white;
-    cursor: pointer;
-  }
-  
-  button:disabled {
-    background-color: #c7c7c7;
-  }
-  
+  width: 100%;
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.login-container h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #333;
+  text-align: center;
+}
+
+.login-container form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.login-container label {
+  font-size: 14px;
+  color: #555;
+}
+
+.login-container input[type="password"] {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.login-container input[type="password"]:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 4px rgba(0, 123, 255, 0.2);
+}
+
+.error-message {
+  font-size: 13px;
+  color: #ff4d4f;
+}
+
+.login-container button {
+  padding: 10px 15px;
+  font-size: 16px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.login-container button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.login-container button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.login-container div {
+  display: flex;
+  flex-direction: column;
+}
+
+.login-container .error-message:last-child {
+  margin-top: 10px;
+  text-align: center;
+}

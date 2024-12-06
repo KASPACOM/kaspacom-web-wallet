@@ -51,8 +51,6 @@ export class EncryptionService {
     const salt = crypto.getRandomValues(new Uint8Array(this.SALT_LENGTH));
     const iv = crypto.getRandomValues(new Uint8Array(this.IV_LENGTH));
 
-    console.log('new salt iv');
-
     // Derive key from password and salt
     const key = await this.deriveKey(password, salt);
 

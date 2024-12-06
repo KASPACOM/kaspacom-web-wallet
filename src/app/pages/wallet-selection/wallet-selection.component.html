@@ -1,21 +1,37 @@
 <div class="wallet-selection-container">
     <h2>Please select your wallet</h2>
+    
+    <export-wallets-qr></export-wallets-qr>
   
     <div class="wallet-info">
-      <h3>Your Wallets</h3>
-      <button (click)="addWallet()" class="add-wallet-button">Add Wallet</button>
+      <div class="title">
+        <h3>Your Wallets</h3>
+        <button (click)="addWallet()" class="add-wallet-button">Add Wallet</button>  
+      </div>
       <div *ngIf="wallets && wallets.length > 0; else nowalletsByAddress">
         <div *ngFor="let wallet of wallets" class="wallet-item">
-          <h4>Wallet Name: {{ wallet.getName() }}</h4>
-          <h4>Wallet Address: {{ wallet.getAddress() }}</h4>
-          <ng-container *ngIf="wallet.getTotalBalanceAsSignal() !== undefined; else loading">
-            <p><strong>Balance:</strong> {{ wallet.getTotalBalanceAsSignal() }} KAS</p>
-          </ng-container>
-          <ng-template #loading>
-            <p>Loading balance...</p>
-          </ng-template>
-          <button (click)="selectWallet(wallet)">Select Wallet</button>
-          <button (click)="deleteWallet(wallet)" class="delete-wallet-button">Delete Wallet</button>
+          <p><strong>Wallet Name:</strong> 
+
+          <input 
+            type="text" 
+            [value]="wallet.getName()" 
+            (input)="onNameInput($event, wallet)"
+          />
+          <button (click)="updateWalletName(wallet!)" class="update-wallet-button">Save Name</button>
+        </p>
+              <p><strong>Wallet Address:</strong> {{ wallet.getAddress() }}</p>
+            <p><strong>Balance:</strong>
+              <ng-container *ngIf="wallet.getTotalBalanceAsSignal() !== undefined; else loading">
+                {{ wallet.getTotalBalanceAsSignal() }} KAS
+              </ng-container>
+              <ng-template #loading>
+                Loading...
+              </ng-template>
+            </p>
+            <div class="wallet-actions">
+              <button (click)="selectWallet(wallet)">Select Wallet</button>
+              <button (click)="deleteWallet(wallet)" class="delete-wallet-button">Delete Wallet</button>
+            </div>
         </div>
       </div>
       <ng-template #nowalletsByAddress>

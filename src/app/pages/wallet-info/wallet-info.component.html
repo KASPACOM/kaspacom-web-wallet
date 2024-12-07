@@ -1,4 +1,5 @@
 <div class="wallet-info-container" *ngIf="wallet">
+  <div class="wallet-info-section">
   <div *ngIf="wallet; else loadingMessage">
     <h2>Wallet Information</h2>
     <button (click)="goToSelectWallet()" class="change-wallet-button">Change Wallet</button>
@@ -25,8 +26,8 @@
     <!-- KRC20 Tokens -->
     <div class="krc20-tokens">
       <h3>KRC20 Tokens:</h3>
-      <ng-container *ngIf="tokens && tokens.length > 0; else loadingTokens">
-        <ul>
+      <ng-container *ngIf="tokens; else loadingTokens">
+        <ul class="krc20-token-list">
           <li *ngFor="let token of tokens">
             <strong>{{ token.ticker }}</strong> {{ token.balance }}
           </li>
@@ -41,11 +42,121 @@
     <div>
       <review-action #reviewActionComponent></review-action>
     </div>
-    <div class="send-assets-container">
-      <send-asset></send-asset>
+  <!-- Tabs -->
+   <div class="tabs-container">
+    <div class="tabs">
+      <button
+        class="tab-button"
+        [class.active]="activeTab === 'send'"
+        (click)="switchTab('send')"
+      >
+        Send Asset
+      </button>
+      <button
+        class="tab-button"
+        [class.active]="activeTab === 'mint'"
+        (click)="switchTab('mint')"
+      >
+        Mint
+      </button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+      <div *ngIf="activeTab === 'send'" class="send-assets-container">
+        <send-asset></send-asset>
+      </div>
+      <div *ngIf="activeTab === 'mint'" class="mint-container">
+        <mint></mint>
+      </div>
     </div>
   </div>
-</div>
+  </div>
+  </div>
+  <div class="transactions-info-section">
+    <div class="tabs-container">
+      <div class="tabs">
+        <button
+          class="tab-button"
+          [class.active]="infoActiveTab === 'utxos'"
+          (click)="switchInfoTab('utxos')"
+        >
+          UTXOs
+        </button>
+        <button
+          class="tab-button"
+          [class.active]="infoActiveTab === 'kaspa-transactions'"
+          (click)="switchInfoTab('kaspa-transactions')"
+        >
+          Kaspa Transactions History
+        </button>
+      </div>
+  
+      <!-- Tab Content -->
+      <div class="tab-content">
+        <div *ngIf="infoActiveTab === 'utxos'" class="utxos">
+          <h2>UTXOs</h2>
+
+          <ul *ngIf="wallet?.getBalanceSignal() !== undefined && wallet?.getBalanceSignal()!() !== undefined; else noUtxos" class="">
+            <li *ngFor="let utxo of wallet.getBalanceSignal()()!.utxoEntries">
+              <div><strong>
+                {{ utxo.amount | sompiToNumber }} KAS
+              </strong>
+            </div>
+              <div class="utxo-transaction-id">
+                {{ utxo.outpoint.transactionId }}
+              </div>
+            </li>
+          </ul>
+          <ng-template #noUtxos>
+            <p>Loading...</p>
+          </ng-template>
+    
+          </div>
+    
+          <div *ngIf="infoActiveTab === 'kaspa-transactions'" class="transactions-history-container">
+            <h2 class="transactions-title">Kaspa Transactions History</h2>
+            
+            <ul *ngIf="kaspaTransactionsHistoryMapped !== undefined; else LoadingTransactions" class="transactions-list">
+              <li *ngFor="let tx of kaspaTransactionsHistoryMapped" class="transaction-item">
+                <div class="transaction-header">
+                  <strong>Transaction ID:</strong> <span class="transaction-id">{{ tx.id }}</span>
+                </div>
+                <div class="transaction-details">
+                  <div class="transaction-confirmation">
+                    <strong>Confirmed:</strong> 
+                    <span class="confirmation-status">{{ tx.confirmed ? 'Yes' : 'No' }}</span>
+                  </div>
+                  <div class="transaction-time">
+                    <strong>Time:</strong> 
+                    <span class="transaction-date">{{ tx.date | date: 'dd/MM/yyyy, HH:mm:ss' }}</span>
+                  </div>
+                  <div class="transaction-amount">
+                    <strong>Amount: <span [class.plus]="tx.totalForThisWallet > 0" [class.minus]="tx.totalForThisWallet < 0">{{ tx.totalForThisWallet > 0 ? '+' : '' }}{{ tx.totalForThisWallet | sompiToNumber }} KAS</span></strong>
+                    <div class="transaction-senders">
+                      <span *ngFor="let sender of tx.senders | keyvalue" class="sender">
+                        -{{ sender.value | sompiToNumber }} KAS 
+                        <span class="sender-address">(sent from {{ sender.key }})</span>
+                      </span>
+                    </div>
+                    <div class="transaction-receivers">
+                      <span *ngFor="let receiver of tx.receivers | keyvalue" class="receiver">
+                        +{{ receiver.value | sompiToNumber }} KAS 
+                        <span class="receiver-address">(received in {{ receiver.key }})</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <ng-template #LoadingTransactions>
+            <p>Loading...</p>
+          </ng-template>
+        </div>
+      </div>
+    </div>  
+  </div>
 
 <ng-template #loadingMessage>
   <p>Loading...</p>

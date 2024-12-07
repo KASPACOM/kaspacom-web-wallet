@@ -49,7 +49,8 @@ export class UtxoProcessorManager {
   constructor(
     private readonly rpc: RpcClient,
     private readonly network: string,
-    private readonly publicAddress: string
+    private readonly publicAddress: string,
+    private readonly onBalanceUpdate: () => Promise<any>,
   ) {
     this.processorHandlerWithBind = this.processorEventListener.bind(this);
     this.balanceEventHandlerWithBind = this.balanceEventHandler.bind(this);
@@ -87,12 +88,14 @@ export class UtxoProcessorManager {
   private async balanceEventHandler(event: BalanceEvent) {
     if (event.type == 'pending') {
       this.walletBalanceStateSignal.set(event.data.balance);
+      this.onBalanceUpdate();
 
       if (!this.isBalancedResolved) {
         this.initBalancePromiseAndTimeout();
       }
     } else if (event.type == 'balance') {
       this.walletBalanceStateSignal.set(event.data.balance);
+      this.onBalanceUpdate();
 
       if (!this.isBalancedResolved) {
         const currentHasPending = event.data.balance.pending > 0;
@@ -216,8 +219,6 @@ export class UtxoProcessorManager {
   }
 
   private utxoChangedEventListener(event: UtxoChangedEvent) {
-    console.log('utxoChangedEventListener', event);
-
     const addedEntry = event.data.added.find(
       (entry: any) => entry.address.payload === this.publicAddress.toString().split(':')[1],
     );

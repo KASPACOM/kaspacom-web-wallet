@@ -1,5 +1,11 @@
 <header class="app-header">
   <h3 class="app-header-name">Kaspa Wallet</h3>
+    <h3 *ngIf="getWalletsWaitingActionsCount() !== 0">
+      You have {{ getWalletsWaitingActionsCount() }} pending actions
+    </h3>
+    <h3 *ngIf="getActiveWalletActionProcessors().length !== 0">
+      Active Wallets: {{ getActiveWalletActionProcessors().join(', ') }} 
+    </h3>
   <h3 class="app-header-rpc-status">RPC STATUS: {{ getRpcConnectionStatus()() }}</h3>
 </header>
 

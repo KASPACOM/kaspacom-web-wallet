@@ -29,6 +29,7 @@ export class AppWallet {
 
   constructor(
     savedWalletData: SavedWalletData,
+    shoudLoadBalance: boolean,
     private kaspaNetworkActionsService: KaspaNetworkActionsService
   ) {
     this.id = savedWalletData.id;
@@ -36,12 +37,10 @@ export class AppWallet {
     this.privateKey = new PrivateKey(savedWalletData.privateKey);
     this.mnemonic = savedWalletData.mnemonic;
     this.derivedPath = savedWalletData.derivedPath;
-    this.kaspaNetworkActionsService
-      .getWalletBalanceAndUtxos(this.getAddress())
-      .then((value) => this.balanceSignal.set(value))
-      .catch(() => {
-        console.error('Failed to load balance for wallet ' + this.getAddress());
-      });
+
+    if (shoudLoadBalance) {
+      this.refreshBalance();
+    }
   }
 
   getId(): number {
@@ -94,7 +93,8 @@ export class AppWallet {
       this.isSettingUtxoProcessorManager = true;
       this.utxoProcessorManager =
         await this.kaspaNetworkActionsService.initUtxoProcessorManager(
-          this.getAddress()
+          this.getAddress(),
+          async () => await this.refreshBalance(),
         );
 
       this.walletStateBalance = this.utxoProcessorManager.getUtxoBalanceStateSignal();
@@ -113,8 +113,17 @@ export class AppWallet {
   }
 
   // This is only update once
-  getBalanaceSignal(): Signal<undefined | TotalBalanceWithUtxosInterface> {
+  getBalanceSignal(): Signal<undefined | TotalBalanceWithUtxosInterface> {
     return this.balanceSignal.asReadonly();
+  }
+
+  refreshBalance() {
+    this.kaspaNetworkActionsService
+      .getWalletBalanceAndUtxos(this.getAddress())
+      .then((value) => this.balanceSignal.set(value))
+      .catch(() => {
+        console.error('Failed to load balance for wallet ' + this.getAddress());
+      });
   }
 
   // This is keeps updating

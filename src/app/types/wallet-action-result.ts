@@ -11,6 +11,12 @@ export interface WalletActionResult {
     type: WalletActionResultType;
 }
 
+export interface WalletActionResultWithError {
+    success: boolean;
+    errorCode?: number;
+    result?: WalletActionResult;
+}
+
 export interface KasTransferActionResult extends WalletActionResult {
     type: WalletActionResultType.KasTransfer;
     to: string;

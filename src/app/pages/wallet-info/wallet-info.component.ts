@@ -1,8 +1,14 @@
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { WalletService } from '../../services/wallet.service'; // Assume you have a service to fetch wallets
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { NgFor, NgIf } from '@angular/common';
+import { CommonModule, NgFor, NgIf, Time } from '@angular/common';
 import { AppWallet } from '../../classes/AppWallet';
 import { firstValueFrom, map, tap } from 'rxjs';
 import { KasplexKrc20Service } from '../../services/kasplex-api/kasplex-api.service';
@@ -11,6 +17,12 @@ import { SompiToNumberPipe } from '../../pipes/sompi-to-number.pipe';
 import { SendAssetComponent } from '../../components/send-asset/send-asset.component';
 import { ReviewActionComponent } from '../../components/review-action/review-action.component';
 import { WalletActionService } from '../../services/wallet-action.service';
+import { MintComponent } from '../../components/mint/mint.component';
+import { KaspaApiService } from '../../services/kaspa-api/kaspa-api.service';
+import {
+  FullTransactionResponse,
+  FullTransactionResponseItem,
+} from '../../services/kaspa-api/dtos/full-transaction-response.dto';
 
 @Component({
   selector: 'wallet-info',
@@ -24,10 +36,12 @@ import { WalletActionService } from '../../services/wallet-action.service';
     NgFor,
     SompiToNumberPipe,
     SendAssetComponent,
+    MintComponent,
     ReviewActionComponent,
+    CommonModule,
   ],
 })
-export class WalletInfoComponent implements OnInit, AfterViewInit {
+export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('reviewActionComponent')
   reviewActionComponent!: ReviewActionComponent;
 
@@ -35,19 +49,38 @@ export class WalletInfoComponent implements OnInit, AfterViewInit {
   protected tokens: undefined | { ticker: string; balance: number }[] =
     undefined;
 
+  protected kaspaTransactionsHistory: undefined | FullTransactionResponse =
+    undefined;
+  protected kaspaTransactionsHistoryMapped:
+    | undefined
+    | {
+        id: string;
+        senders: Record<string, bigint>;
+        receivers: Record<string, bigint>;
+        totalForThisWallet: bigint;
+        date: Date;
+        confirmed: boolean;
+      }[] = undefined;
+
   private paginationPrevTokenKey?: string | null;
   private paginationNextTokenKey?: string | null;
   private paginationDirection?: 'next' | 'prev' | null;
+
+  protected activeTab: 'send' | 'mint' = 'send'; // Default to Send Asset tab
+  protected infoActiveTab: 'utxos' | 'kaspa-transactions' = 'utxos';
+
+  private refreshDataTimeout: NodeJS.Timeout | undefined;
 
   constructor(
     private walletService: WalletService, // Inject wallet service
     private router: Router,
     private kasplexService: KasplexKrc20Service,
     private kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private walletActionService: WalletActionService
+    private walletActionService: WalletActionService,
+    private kaspaApiService: KaspaApiService
   ) {}
 
-  async ngOnInit(): Promise<void> {
+  ngOnInit(): void {
     this.wallet = this.walletService.getCurrentWallet();
 
     if (!this.wallet) {
@@ -55,7 +88,13 @@ export class WalletInfoComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.loadKrc20Tokens();
+    this.loadData();
+  }
+
+  ngOnDestroy(): void {
+    if (this.refreshDataTimeout) {
+      clearInterval(this.refreshDataTimeout);
+    }
   }
 
   ngAfterViewInit(): void {
@@ -96,7 +135,100 @@ export class WalletInfoComponent implements OnInit, AfterViewInit {
     this.tokens = tokens;
   }
 
+  async loadUserTransactions() {
+    this.kaspaTransactionsHistory = await firstValueFrom(
+      this.kaspaApiService.getFullTransactions(this.wallet!.getAddress())
+    );
+
+    this.kaspaTransactionsHistoryMapped = this.kaspaTransactionsHistory.map(tx =>
+      this.transformTransactionData(tx)
+    );
+  }
+
+  getPagesTransactions(itemsPerPage: number = 50): FullTransactionResponse {
+    if (this.kaspaTransactionsHistory) {
+      return this.kaspaTransactionsHistory.slice(0, itemsPerPage);
+    }
+
+    return [];
+  }
+
   goToSelectWallet() {
     this.router.navigate(['/wallet-selection']);
+  }
+
+  switchTab(tab: 'send' | 'mint') {
+    this.activeTab = tab;
+  }
+
+  switchInfoTab(tab: 'utxos' | 'kaspa-transactions') {
+    this.infoActiveTab = tab;
+  }
+
+  transformTransactionData(transaction: FullTransactionResponseItem): {
+    id: string;
+    senders: Record<string, bigint>;
+    receivers: Record<string, bigint>;
+    totalForThisWallet: bigint;
+    date: Date;
+    confirmed: boolean;
+  } {
+    const senders = transaction.inputs.reduce((acc, input) => {
+      const address = input.previous_outpoint_address;
+      if (!acc[address]) {
+        acc[address] = BigInt(0);
+      }
+      acc[address] += BigInt(input.previous_outpoint_amount);
+      return acc;
+    }, {} as Record<string, bigint>);
+
+    const receivers = transaction.outputs.reduce((acc, output) => {
+      const address = output.script_public_key_address;
+      if (!acc[address]) {
+        acc[address] = BigInt(0);
+      }
+      acc[address] += BigInt(output.amount);
+      return acc;
+    }, {} as Record<string, bigint>);
+
+    const totalForThisWallet =
+    (receivers[this.wallet!.getAddress()] ||
+      BigInt(0)) - (senders[this.wallet!.getAddress()] || BigInt(0));
+
+
+    delete senders[this.wallet!.getAddress()];
+    delete receivers[this.wallet!.getAddress()];
+
+    
+    const walletsInBoth = Object.keys(senders).filter(
+      (address) => !!receivers[address]
+    );
+
+    for (const address of walletsInBoth) {
+      senders[address] = senders[address] - receivers[address];
+      delete receivers[address];
+    }
+
+
+    return {
+      id: transaction.transaction_id,
+      senders,
+      receivers,
+      totalForThisWallet,
+      date: new Date(transaction.block_time),
+      confirmed: transaction.is_accepted,
+    };
+  }
+
+  async loadData() {
+
+    await Promise.all([
+      this.loadKrc20Tokens(),
+      this.loadUserTransactions(),
+    ]);
+
+    this.refreshDataTimeout = setTimeout(() => {
+      this.loadData();
+    }, 20 * 1000);
   }
 }

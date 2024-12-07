@@ -1,6 +1,7 @@
 export const LOCAL_STORAGE_KEYS = {
     USER_DATA: 'userData',
     CURRENT_SELECTED_WALLET: 'currentSelectedWallet',
+    UNFINISHED_KRC20_ACTIONS: 'unfinishedKRC20Actions',
 }
 
 export const KASPA_NETWORKS = {
@@ -18,6 +19,8 @@ export const ERROR_CODES = {
         INVALID_ADDRESS: 1004,
         INSUFFICIENT_BALANCE: 1005,
         USER_REJECTED: 1006,
+        TICKER_NOT_FOUND: 1007,
+        TOKEN_NOT_IN_MINTABLE_STATE: 1008
 
     }
 }

@@ -28,7 +28,7 @@ export class WalletSelectionComponent implements OnInit {
   }
 
   async loadWallets() {
-    const result = await this.walletService.getAllWallets();
+    const result = await this.walletService.getAllWallets(true)();
 
     this.wallets = result;
   }

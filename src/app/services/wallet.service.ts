@@ -1,4 +1,10 @@
-import { effect, Injectable, signal, WritableSignal } from '@angular/core';
+import {
+  effect,
+  Injectable,
+  Signal,
+  signal,
+  WritableSignal,
+} from '@angular/core';
 import { PasswordManagerService } from './password-manager.service';
 import { SavedWalletData } from '../types/saved-wallet-data';
 import { KaspaNetworkActionsService } from './kaspa-netwrok-services/kaspa-network-actions.service';
@@ -16,6 +22,7 @@ import { UtilsHelper } from './utils.service';
 })
 export class WalletService {
   private currentWallet: AppWallet | undefined = undefined;
+  private allWalletsSignal = signal<AppWallet[] | undefined>(undefined);
 
   constructor(
     private readonly passwordManagerService: PasswordManagerService,
@@ -56,8 +63,7 @@ export class WalletService {
       };
     }
 
-    const currentWalletsData =
-      await this.passwordManagerService.getUserData();
+    const currentWalletsData = await this.passwordManagerService.getUserData();
 
     if (
       currentWalletsData.wallets.find(
@@ -120,7 +126,9 @@ export class WalletService {
       (wallet) => wallet.id !== walletId
     );
     walletsData.wallets = wallets;
-    return await this.passwordManagerService.saveWalletsDataWithStoredPassword(walletsData);
+    return await this.passwordManagerService.saveWalletsDataWithStoredPassword(
+      walletsData
+    );
   }
 
   generateMnemonic(wordsCount: number = 12): string {
@@ -141,34 +149,54 @@ export class WalletService {
     const walletsData = await this.passwordManagerService.getUserData();
     walletsData.wallets.push(walletData);
 
-    return await this.passwordManagerService.saveWalletsDataWithStoredPassword(walletsData);
+    return await this.passwordManagerService.saveWalletsDataWithStoredPassword(
+      walletsData
+    );
   }
 
-  async getWalletsCount(): Promise<number> {
+  getWalletsCount(): number {
+    return this.allWalletsSignal()?.length || 0;
+  }
+
+  async loadWallets(loadBalance: boolean = false): Promise<void> {
     const walletsData = await this.passwordManagerService.getUserData();
-    return walletsData.wallets.length;
-  }
-
-  async getAllWallets(): Promise<AppWallet[]> {
-    const wallets = (await this.passwordManagerService.getUserData())
-      .wallets;
-
-    return wallets.map(
-      (wallet) => new AppWallet(wallet, this.kaspaNetworkActionsService)
+    this.allWalletsSignal.set(
+      walletsData.wallets.map(
+        (wallet) =>
+          new AppWallet(wallet, loadBalance, this.kaspaNetworkActionsService)
+      )
     );
   }
 
-  async getWalletById(id: number): Promise<AppWallet | undefined> {
-    const allWalletsData = await this.passwordManagerService.getUserData();
-    const walletData = allWalletsData?.wallets?.find(
-      (wallet) => wallet.id === id
-    );
-
-    if (walletData) {
-      return new AppWallet(walletData, this.kaspaNetworkActionsService);
+  getAllWallets(loadBalance: boolean = false): Signal<AppWallet[] | undefined> {
+    if (loadBalance) {
+      this.allWalletsSignal()?.forEach((wallet) => {
+        wallet.refreshBalance();
+      });
     }
 
-    return undefined;
+    return this.allWalletsSignal.asReadonly();
+  }
+
+  getAllWalletsById(): { [id: number]: AppWallet } | undefined {
+    const wallets = this.getAllWallets()();
+    return wallets?.reduce((obj, wallet) => {
+      obj[wallet.getId()] = wallet;
+      return obj;
+    }, {} as { [key: number]: AppWallet });
+  }
+
+  getWalletById(
+    id: number,
+    loadBalance: boolean = false
+  ): AppWallet | undefined {
+    const wallet = this.getAllWalletsById()?.[id];
+
+    if (wallet && loadBalance) {
+      wallet.refreshBalance();
+    }
+
+    return wallet;
   }
 
   async selectCurrentWalletFromLocalStoage(): Promise<void> {
@@ -178,15 +206,15 @@ export class WalletService {
     await this.selectCurrentWallet(Number(walletId), true);
   }
 
-  async selectCurrentWallet(
+  selectCurrentWallet(
     walletId: number,
     skipLocalStorage: boolean = false
-  ): Promise<AppWallet | undefined> {
+  ): AppWallet | undefined {
     if (this.currentWallet) {
-      await this.deselectCurrentWallet();
+      this.deselectCurrentWallet();
     }
 
-    this.currentWallet = await this.getWalletById(walletId);
+    this.currentWallet = this.getWalletById(walletId, true);
 
     if (!this.currentWallet) {
       return undefined;
@@ -241,11 +269,10 @@ export class WalletService {
   async updateWalletName(wallet: AppWallet, newName: string): Promise<boolean> {
     if (this.utilsService.isNullOrEmptyString(newName)) {
       return false;
-
     }
     const walletsData = await this.passwordManagerService.getUserData();
 
-    const walletData = walletsData.wallets.find(w => w.id === wallet.getId());
+    const walletData = walletsData.wallets.find((w) => w.id === wallet.getId());
 
     if (walletData) {
       walletData.name = newName;
@@ -253,6 +280,8 @@ export class WalletService {
       return false;
     }
 
-    return await this.passwordManagerService.saveWalletsDataWithStoredPassword(walletsData);
+    return await this.passwordManagerService.saveWalletsDataWithStoredPassword(
+      walletsData
+    );
   }
 }

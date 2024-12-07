@@ -112,9 +112,10 @@ export class KaspaNetworkActionsService {
   }
 
   async initUtxoProcessorManager(
-    address: string
+    address: string,
+    onBalanceUpdate: () => Promise<any>,
   ): Promise<UtxoProcessorManager> {
-    return await this.transactionsManager.initUtxoProcessorManager(address);
+    return await this.transactionsManager.initUtxoProcessorManager(address, onBalanceUpdate);
   }
 
   async doWalletAction(

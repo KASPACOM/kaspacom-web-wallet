@@ -22,11 +22,8 @@ export class AppComponent {
 
   async ngOnInit() {
     if (this.passwordManagerService.isUserHasSavedPassword()) {
-      console.log('User has saved password');
-
       this.router.navigate(['/login']);
     } else {
-      console.log('User has not saved password');
       this.router.navigate(['/set-password']);    
     }
   }

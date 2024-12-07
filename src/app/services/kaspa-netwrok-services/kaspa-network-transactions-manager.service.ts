@@ -25,10 +25,12 @@ import { TotalBalanceWithUtxosInterface } from '../../types/kaspa-network/total-
 import { UtxoContextProcessorInterface } from '../../types/kaspa-network/utxo-context-processor.interface';
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
-import { ERROR_CODES } from '../../config/consts';
+import { ERROR_CODES, LOCAL_STORAGE_KEYS } from '../../config/consts';
 import { MINIMAL_AMOUNT_TO_SEND } from './kaspa-network-actions.service';
 import { AppWallet } from '../../classes/AppWallet';
 import { KASPA_AMOUNT_FOR_KRC20_ACTION } from './krc20-operation-data.service';
+import { Krc20Action } from '../../types/wallet-action';
+import { UnfinishedKrc20Action } from '../../types/kaspa-network/unfinished-krc20-action.interface';
 
 // export const MINIMAL_AMOUNT_TO_SEND = kaspaToSompi('0.2');
 const TIME_TO_WAIT_BEFORE_TRANSACTION_RECEIVED_CHECK = 120 * 1000;
@@ -106,13 +108,15 @@ export class KaspaNetworkTransactionsManagerService {
   }
 
   async initUtxoProcessorManager(
-    address: string
+    address: string,
+    onBalanceUpdate: () => Promise<any>
   ): Promise<UtxoProcessorManager> {
     return await this.connectAndDo(async () => {
       const utxoProcessonManager = new UtxoProcessorManager(
         this.rpcService.getRpc()!,
         this.rpcService.getNetwork(),
-        address
+        address,
+        onBalanceUpdate
       );
 
       await utxoProcessonManager.init();
@@ -347,7 +351,19 @@ export class KaspaNetworkTransactionsManagerService {
         wallet.getPrivateKey(),
         krc20transactionData,
         priorityFee,
-        notifyCreatedTransactions
+        async (transactionId) => {
+          await this.addUnfinishedKrc20ActionOnLocalStorage(
+            {
+              createdAtTimestamp: Date.now(),
+              operationData: krc20transactionData,
+              walletAddress: wallet.getAddress(),
+            }
+          )
+
+          if (notifyCreatedTransactions) {
+            await notifyCreatedTransactions(transactionId);
+          }
+        }
       );
 
     if (!commitTransactionResult.success) {
@@ -373,17 +389,23 @@ export class KaspaNetworkTransactionsManagerService {
         errorCode: revealTransactionResult.errorCode,
         result: {
           commit: commitTransactionResult.result,
-        }
+        },
       };
     }
+
+    await this.removeUnfinishedActionOnLocalStorage({
+      operationData: krc20transactionData,
+      walletAddress: wallet.getAddress(),
+      createdAtTimestamp: Date.now(),
+    })
 
     return {
       success: true,
       result: {
         commit: commitTransactionResult.result,
         reveal: revealTransactionResult.result,
-      }
-    }
+      },
+    };
   }
 
   async doKrc20CommitTransactionWithUtxoProcessor(
@@ -607,4 +629,52 @@ export class KaspaNetworkTransactionsManagerService {
   //   getWalletAddressFromScriptPublicKey(scriptPublicKey: string): string {
   //     return addressFromScriptPublicKey(scriptPublicKey, this.rpcService.getNetwork()).toString();
   //   }
+
+  async updateUnfinishedKrc20ActionOnLocalStorage(
+    updateFunction: (
+      data: UnfinishedKrc20Action[]
+    ) => Promise<UnfinishedKrc20Action[]>
+  ): Promise<void> {
+    const actions = this.getUnfinishedKrc20Actions();
+    localStorage.setItem(
+      LOCAL_STORAGE_KEYS.UNFINISHED_KRC20_ACTIONS,
+      JSON.stringify(await updateFunction(actions))
+    );
+  }
+
+  async addUnfinishedKrc20ActionOnLocalStorage(
+    action: UnfinishedKrc20Action
+  ): Promise<void> {
+    await this.updateUnfinishedKrc20ActionOnLocalStorage(async (data) => {
+      data.push(action);
+
+      return data;
+    });
+  }
+
+  async removeUnfinishedActionOnLocalStorage(
+    action: UnfinishedKrc20Action
+  ): Promise<void> {
+    await this.updateUnfinishedKrc20ActionOnLocalStorage(async (data) => {
+      const index = data.findIndex(
+        (item) =>
+          JSON.stringify(item.operationData) ===
+            JSON.stringify(action.operationData) &&
+          action.walletAddress == item.walletAddress
+      );
+      if (index !== -1) {
+        data.splice(index, 1);
+      }
+
+      return data;
+    });
+  }
+
+  getUnfinishedKrc20Actions(): UnfinishedKrc20Action[] {
+    const totalActionsJson = localStorage.getItem(
+      LOCAL_STORAGE_KEYS.UNFINISHED_KRC20_ACTIONS
+    );
+    const totalActions = JSON.parse(totalActionsJson || '[]') as UnfinishedKrc20Action[];
+    return totalActions;
+  }
 }

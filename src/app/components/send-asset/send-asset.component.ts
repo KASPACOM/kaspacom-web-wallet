@@ -54,7 +54,7 @@ export class SendAssetComponent implements OnInit {
       });
 
       const action: WalletAction =
-        await this.walletActionService.createTransferWalletActionFromAsset(
+        this.walletActionService.createTransferWalletActionFromAsset(
           selectedAsset!,
           this.recipientAddress,
           this.kaspaNetworkActionsService.kaspaToSompiFromNumber(this.amount!)

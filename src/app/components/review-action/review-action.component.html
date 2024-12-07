@@ -1,0 +1,109 @@
+<div class="transaction-review-container">
+  <ng-container *ngIf="action; else noAction">
+
+    <div class="transaction-header">
+      <h2>Transaction Review</h2>
+      <p>Please review the details below before proceeding.</p>
+    </div>
+
+    <ng-container *ngIf="action?.type === WalletActionType.TRANSFER_KAS">
+      <h3>Transfer Kaspa</h3>
+      <div class="transaction-details">
+        <div class="detail">
+          <div class="label">Sender:</div>
+          <div class="value">{{ walletAddress }}</div>
+        </div>
+        <div class="detail">
+          <div class="label">Recipient:</div>
+          <div class="value">{{ transferKasActionData.to }}</div>
+        </div>
+        <div class="detail">
+          <div class="label">Amount:</div>
+          <div class="value">{{ transferKasActionData.amount | sompiToNumber }} KAS</div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="action?.type === WalletActionType.KRC20_ACTION">
+      <ng-container *ngIf="krc20ActionData.operationData.op === KRC20OperationType.TRANSFER">
+        <h3>Transfer KRC20 Token</h3>
+        <div class="transaction-details">
+          <div class="detail">
+            <div class="label">Ticker:</div>
+            <div class="value">{{ krc20ActionData.operationData.tick }}</div>
+          </div>
+          <div class="detail">
+            <div class="label">Sender:</div>
+            <div class="value">{{ walletAddress }}</div>
+          </div>
+          <div class="detail">
+            <div class="label">Recipient:</div>
+            <div class="value">{{ krc20ActionData.operationData.to }}</div>
+          </div>
+          <div class="detail">
+            <div class="label">Amount:</div>
+            <div class="value">{{ krc20ActionData.operationData.amt! | sompiToNumber }} {{ krc20ActionData.operationData.tick }}</div>
+          </div>
+        </div>
+      </ng-container>
+      <ng-container *ngIf="krc20ActionData.operationData.op === KRC20OperationType.MINT">
+        <h3>Mint KRC20 Token</h3>
+        <div class="transaction-details">
+          <div class="detail">
+            <div class="label">Ticker:</div>
+            <div class="value">{{ krc20ActionData.operationData.tick }}</div>
+          </div>
+          <div class="detail">
+            <div class="label">Wallet:</div>
+            <div class="value">{{ walletAddress }}</div>
+          </div>
+        </div>
+      </ng-container>
+      <ng-container *ngIf="krc20ActionData.operationData.op === KRC20OperationType.DEPLOY">
+        <h3>Deploy KRC20 Token</h3>
+        <div class="transaction-details">
+          <div class="detail">
+            <div class="label">Sender:</div>
+            <div class="value">{{ walletAddress }}</div>
+          </div>
+
+        </div>
+      </ng-container>
+
+      <div class="transaction-operation-data-details">
+        <div class="detail">
+          <div class="label">Operation Data:</div>
+          <div class="value">
+            <pre>{{ krc20ActionData.operationData | json }}</pre>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <div class="transaction-actions">
+      <button class="accept-btn" (click)="acceptTransaction()">Accept</button>
+      <button class="reject-btn" (click)="rejectTransaction()">Reject</button>
+    </div>
+  </ng-container>
+
+  <ng-template #noAction>
+    <ng-container *ngIf="showLoader || result; else noActionToShow">
+      <ng-container *ngIf="showLoader">
+        <p *ngIf="!result">Performing action...</p>
+        <p *ngIf="result">Action Completed</p>
+        <div class="progress-container">
+          <div class="progress-bar" [style.width.%]="progress"></div>
+          <div class="progress-label">{{ progress }}%</div>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="result">
+        <completed-action-review [actionResult]="result"></completed-action-review>
+      </ng-container>
+    </ng-container>
+
+    <ng-template #noActionToShow>
+      <p>No action to review.</p>
+    </ng-template>
+  </ng-template>
+</div>

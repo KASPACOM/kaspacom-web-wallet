@@ -1,6 +1,16 @@
 import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/core/app.config';
 import { AppComponent } from './app/app.component';
+import * as kaspa from '../public/kaspa/kaspa';
 
-bootstrapApplication(AppComponent, appConfig)
-  .catch((err) => console.error(err));
+kaspa.default('./kaspa/kaspa_bg.wasm').then(() => {
+  kaspa.initWASM32Bindings({ validateClassNames: false });
+  bootstrapApplication(AppComponent, appConfig).catch((err) =>
+    console.error(err)
+  );
+
+  const el = document.getElementById('application-loader-startup');
+  if (el) el.remove();
+});
+
+export class MainModule {}

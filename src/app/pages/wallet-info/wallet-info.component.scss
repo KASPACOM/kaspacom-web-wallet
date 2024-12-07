@@ -1,0 +1,246 @@
+.wallet-info {
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 20px;
+  background-color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 20px;
+}
+
+.wallet-info h2 {
+  font-size: 1.5rem;
+  color: #333;
+  margin-top: 0;
+  text-align: center;
+}
+
+.wallet-info h3 {
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 5px;
+  color: #666;
+}
+
+.wallet-info p {
+  font-size: 1rem;
+  color: #444;
+  margin: 5px 0;
+}
+
+.wallet-balance,
+.krc20-tokens {
+  margin-bottom: 20px;
+
+  p {
+    word-break: break-all;
+  }
+}
+
+.wallet-info-section, .transactions-info-section {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.wallet-info-section, .transactions-info-section > div {
+  padding: 20px;
+  flex: 1;
+}
+
+.krc20-token-list {
+  list-style-type: none;
+  padding-left: 0;
+  margin-top: 10px;
+}
+
+.krc20-token-list li {
+  font-size: 1rem;
+  color: #444;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.secondary-component {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.secondary-component > div {
+  margin-bottom: 20px;
+}
+
+.send-assets-container {
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.send-assets-container h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+ng-template {
+  color: #888;
+}
+
+.change-wallet-button {
+  background-color: #4caf50;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.change-wallet-button:hover {
+  background-color: #45a049;
+}
+
+.utxo-transaction-id {
+  font-size: 10px;
+}
+
+@media (max-width: 768px) {
+  .wallet-info-section, .transactions-info-section {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .wallet-info,
+  .secondary-component {
+    width: 100%;
+    max-width: 100%;
+    margin: 10px 0;
+  }
+}
+
+.tabs {
+  display: flex;
+
+  .tab-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-bottom: none;
+    background-color: #f1f1f1;
+    border-radius: 5px 5px 0 0;
+    transition: background 0.3s;
+
+    &.active {
+      background-color: #fff;
+      font-weight: bold;
+      border-bottom: 2px solid #007bff;
+    }
+
+    &:hover {
+      background-color: #eaeaea;
+    }
+  }
+}
+
+
+.transactions-info-section {
+  margin-bottom: 100px;
+
+  .transactions-history-container {
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .transactions-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 15px;
+  }
+  
+  .transactions-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .transaction-item {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    background-color: #fff;
+    transition: box-shadow 0.3s ease;
+  }
+  
+  .transaction-item:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .transaction-header {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #555;
+  }
+  
+  .transaction-id {
+    font-family: monospace;
+    color: #007bff;
+  }
+  
+  .transaction-details {
+    font-size: 14px;
+    color: #666;
+  }
+  
+  .transaction-confirmation,
+  .transaction-time {
+    margin-bottom: 8px;
+  }
+  
+  .confirmation-status {
+    font-weight: bold;
+    color: #007bff;
+  }
+  
+  .transaction-date {
+    font-style: italic;
+  }
+  
+  .transaction-amount {
+    margin-top: 10px;
+
+    .plus {
+      color: #8bc34a;
+    }
+
+    .minus {
+      color: #f44336;
+    }
+  }
+  
+  .transaction-senders .sender,
+  .transaction-receivers .receiver {
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+  .sender-address,
+  .receiver-address {
+    font-style: italic;
+    color: #888;
+  }
+  
+  .transaction-total {
+    margin-top: 10px;
+    font-weight: bold;
+    color: #333;
+  }
+  
+}
+

@@ -1,0 +1,64 @@
+<div class="wallet-import-container">
+    <h2>Import Wallet</h2>
+    <div class="selection-buttons">
+      <button type="button" (click)="selectPrivateKey()">Private Key</button>
+      <button type="button" (click)="selectMnemonic()">Mnemonic</button>
+    </div>
+  
+    <form [formGroup]="walletImportForm" (ngSubmit)="onSubmit()">
+      <!-- Private Key input -->
+      <div *ngIf="selectedType === 'privateKey'">
+        <label for="privateKey">Private Key</label>
+        <input
+          type="text"
+          id="privateKey"
+          formControlName="privateKey"
+          placeholder="Enter your private key"
+          required
+        />
+        <div *ngIf="privateKey?.invalid && privateKey?.touched" class="error-message">
+          Private key is required.
+        </div>
+      </div>
+  
+      <!-- Mnemonic input -->
+      <div *ngIf="selectedType === 'mnemonic'">
+        <label for="mnemonicLength">Mnemonic Phrase</label>
+        <select [(ngModel)]="mnemonicLength" [ngModelOptions]="{standalone: true}" >
+          <option value="12">12 Words</option>
+          <option value="24">24 Words</option>
+        </select>
+
+          <input
+            type="text"
+            formControlName="mnemonic"
+            placeholder="Enter mnemonic"
+            required
+          />
+  
+          <label for="derivedPath">Derived Path</label>
+          <input
+            type="text"
+            formControlName="derivedPath"
+            placeholder="Enter derived path"
+            [value]="walletImportForm.get('derivedPath')?.value"
+          />
+
+          <label for="passphrase">Passphrase</label>
+          <input
+            type="text"
+            formControlName="passphrase"
+            placeholder="Enter passphrase(optional)"
+            [value]="walletImportForm.get('passphrase')?.value"
+          />
+
+      </div>
+  
+      <button type="submit">Import Wallet</button>
+    </form>
+  
+    <div *ngIf="importError" class="error-message">
+      {{ importError }}
+    </div>
+  </div>
+  

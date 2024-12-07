@@ -1,0 +1,40 @@
+<div class="create-wallet-container">
+    <h2>Create wallet</h2>
+  
+  
+      <!-- Mnemonic input -->
+      <div>
+        <label for="mnemonicLength">Mnemonic Phrase</label>
+        <select [(ngModel)]="mnemonicLength" [ngModelOptions]="{standalone: true}" >
+          <option value="12">12 Words</option>  
+          <option value="24">24 Words</option>
+        </select>
+
+        <input
+        type="text"
+        placeholder="Mnemonic"
+        [value]="mnemonic"
+        readonly
+      />
+
+      <input
+      type="text"
+      placeholder="Password (optional)"
+      [(ngModel)]="password"
+    />
+  
+      </div>
+  
+      <button type="button" (click)="createWallet()">Create Wallet</button>
+      <button type="button" (click)="refreshMnemonic()">Refresh Mnemonic</button>
+
+<div>
+  <label for="walletAddress">Wallet Address</label>
+  <input type="text" id="walletAddress" [value]="getWalletAddress()" readonly />
+</div>
+  
+    <div *ngIf="creationError" class="error-message">
+      {{ creationError }}
+    </div>
+  </div>
+  

@@ -1,0 +1,13 @@
+<div class="mint-asset">
+  <h2>Mint Token</h2>
+
+  <label for="tickerInput">Token:</label>
+  <input
+    id="tickerInput"
+    type="text"
+    [(ngModel)]="selectedToken"
+    placeholder="Enter token ticker"
+  />
+
+  <button (click)="mintToken()" [disabled]="isTokenNameEmpty()">Mint</button>
+</div>

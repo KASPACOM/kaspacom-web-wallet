@@ -1,0 +1,31 @@
+<div class="container">
+  <button class="action-button" (click)="handleButtonClick()" *ngIf="!showQrCode()">Sync With Mobile</button>
+
+  <!-- Password Prompt -->
+  <div *ngIf="showPasswordPrompt()">
+    <div class="password-prompt">
+      <label for="password">Enter Your Password:</label>
+      <input id="password" type="password" #passwordInput />
+      <button class="verify-button" (click)="verifyPassword(passwordInput.value)">
+        Submit
+      </button>
+    </div>
+  </div>
+
+  <!-- QR Code and Warning -->
+  <div *ngIf="showQrCode()" class="qr-display">
+    <button class="action-button" (click)="hideQr()">Hide QR Code</button>
+
+    <p>
+      Scan this QR code with your mobile wallet to sync your wallet.
+    </p>
+
+    <div *ngIf="encryptedUserData">
+      <qrcode [qrdata]="encryptedUserData()!"></qrcode>
+    </div>
+
+    <p class="warning">
+      Warning: Do not share this QR code with anyone.
+    </p>
+  </div>
+</div>

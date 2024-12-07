@@ -1,4 +1,4 @@
-import { Injectable, Signal, signal } from '@angular/core';
+import { effect, Injectable, Signal, signal } from '@angular/core';
 import {
   Krc20Action,
   TransferKasAction,
@@ -24,6 +24,9 @@ import { KRC20OperationType } from '../types/kaspa-network/krc20-operations-data
 import { KasplexKrc20Service } from './kasplex-api/kasplex-api.service';
 import { firstValueFrom } from 'rxjs';
 import { TokenState } from './kasplex-api/dtos/token-list-info.dto';
+import { RpcConnectionStatus } from '../types/kaspa-network/rpc-connection-status.enum';
+import { AppWallet } from '../classes/AppWallet';
+import { toObservable } from '@angular/core/rxjs-interop';
 
 @Injectable({
   providedIn: 'root',
@@ -44,7 +47,36 @@ export class WalletActionService {
     private kaspaNetworkActionsService: KaspaNetworkActionsService,
     private krc20OperationDataService: Krc20OperationDataService,
     private kasplexService: KasplexKrc20Service
-  ) {}
+  ) {
+    this.actionsListByWallet.set({});
+    this.isActionsRunningByWallet.set({});
+
+    toObservable(
+      this.kaspaNetworkActionsService.getConnectionStatusSignal()
+    ).subscribe((status) => {
+      if (status == RpcConnectionStatus.CONNECTED) {
+        for (const walletId of this.getWalletIdsThatHaveWork()) {
+          this.walletService
+            .getWalletById(walletId)
+            ?.startListiningToWalletActions();
+        }
+        if (this.walletService.getCurrentWallet()) {
+          this.walletService
+            .getCurrentWallet()
+            ?.startListiningToWalletActions();
+        }
+      } else {
+        for (const walletId of this.getWalletIdsThatHaveWork()) {
+          this.walletService
+            .getWalletById(walletId)
+            ?.stopListiningToWalletActions();
+        }
+        if (this.walletService.getCurrentWallet()) {
+          this.walletService.getCurrentWallet()?.stopListiningToWalletActions();
+        }
+      }
+    });
+  }
 
   registerViewingComponent(component: ReviewActionComponent): void {
     this.viewingComponent = component;
@@ -172,8 +204,8 @@ export class WalletActionService {
     notifyUpdate: (transactionId: string) => Promise<any>
   ): Promise<WalletActionResultWithError> {
     const walletId = this.walletService.getCurrentWallet()!.getId();
-    let resolve: ((walletActionResult: WalletActionResultWithError) => void);
-    let reject: ((error: any) => void);
+    let resolve: (walletActionResult: WalletActionResultWithError) => void;
+    let reject: (error: any) => void;
 
     const promise: Promise<WalletActionResultWithError> =
       new Promise<WalletActionResultWithError>((res, rej) => {
@@ -181,15 +213,13 @@ export class WalletActionService {
         reject = rej;
       });
 
-    const actionsListByWallet =
-      this.actionsListByWallet()![walletId] || [];
+    const actionsListByWallet = this.actionsListByWallet()![walletId] || [];
 
     actionsListByWallet.push({
       action,
       promise,
       reject: reject!,
       resolve: resolve!,
-      wallet: this.walletService.getCurrentWallet()!,
       notifyUpdate,
     });
 
@@ -210,12 +240,20 @@ export class WalletActionService {
       return;
     }
 
+    const wallet = this.walletService.getWalletById(walletId);
+
     this.isActionsRunningByWallet.set({
       ...this.isActionsRunningByWallet(),
       [walletId]: true,
     });
+    wallet?.setIsCurrentlyActive(true);
 
     try {
+
+      if (!wallet) {
+        throw new Error('Wallet not found');
+      }
+
       while (
         this.actionsListByWallet()[walletId] &&
         this.actionsListByWallet()[walletId].length > 0
@@ -231,7 +269,7 @@ export class WalletActionService {
         try {
           const result = await this.kaspaNetworkActionsService.doWalletAction(
             action.action,
-            action.wallet,
+            wallet,
             action.notifyUpdate
           );
 
@@ -247,6 +285,11 @@ export class WalletActionService {
         ...this.isActionsRunningByWallet(),
         [walletId]: false,
       });
+      wallet?.setIsCurrentlyActive(false);
+
+      if (this.walletService.getCurrentWallet()?.getId() != walletId) {
+        wallet?.stopListiningToWalletActions();
+      }
     }
   }
 
@@ -436,5 +479,23 @@ export class WalletActionService {
     [walletId: number]: boolean;
   }> {
     return this.isActionsRunningByWallet.asReadonly();
+  }
+
+  getWalletIdsThatHaveWork(): number[] {
+    const busyWallets = [];
+
+    for (let walletId in this.isActionsRunningByWallet()) {
+      if (this.isActionsRunningByWallet()[+walletId]) {
+        busyWallets.push(+walletId);
+      }
+    }
+
+    for (let walletId in this.actionsListByWallet()) {
+      if (this.actionsListByWallet()[+walletId].length > 0) {
+        busyWallets.push(+walletId);
+      }
+    }
+
+    return Array.from(new Set(busyWallets));
   }
 }

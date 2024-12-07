@@ -11,7 +11,6 @@ import { KaspaNetworkActionsService } from './kaspa-netwrok-services/kaspa-netwo
 import * as _ from 'lodash';
 import { AppWallet } from '../classes/AppWallet';
 import { LOCAL_STORAGE_KEYS } from '../config/consts';
-import { RpcConnectionStatus } from '../types/kaspa-network/rpc-connection-status.enum';
 import { AssetType, TransferableAsset } from '../types/transferable-asset';
 import { KasplexKrc20Service } from './kasplex-api/kasplex-api.service';
 import { firstValueFrom } from 'rxjs';
@@ -21,7 +20,7 @@ import { UtilsHelper } from './utils.service';
   providedIn: 'root',
 })
 export class WalletService {
-  private currentWallet: AppWallet | undefined = undefined;
+  private currentWalletSignal = signal<AppWallet | undefined>(undefined);
   private allWalletsSignal = signal<AppWallet[] | undefined>(undefined);
 
   constructor(
@@ -29,23 +28,7 @@ export class WalletService {
     private readonly kaspaNetworkActionsService: KaspaNetworkActionsService,
     private readonly kasplexService: KasplexKrc20Service,
     private readonly utilsService: UtilsHelper
-  ) {
-    // On rpc status change
-    effect(() => {
-      if (
-        this.kaspaNetworkActionsService.getConnectionStatusSignal()() ==
-        RpcConnectionStatus.CONNECTED
-      ) {
-        if (this.currentWallet) {
-          this.currentWallet.startListiningToWalletActions();
-        }
-      } else {
-        if (this.currentWallet) {
-          this.currentWallet.stopListiningToWalletActions();
-        }
-      }
-    });
-  }
+  ) {}
 
   async addWalletFromPrivateKey(
     name: string,
@@ -121,14 +104,27 @@ export class WalletService {
   }
 
   async deleteWallet(walletId: number): Promise<boolean> {
+    const appWallet = this.getWalletById(walletId);
+
+    if (appWallet?.isCurrentlyActive()) {
+      return false;
+    }
+
     const walletsData = await this.passwordManagerService.getUserData();
     const wallets = walletsData.wallets.filter(
       (wallet) => wallet.id !== walletId
     );
     walletsData.wallets = wallets;
-    return await this.passwordManagerService.saveWalletsDataWithStoredPassword(
-      walletsData
-    );
+    const result =
+      await this.passwordManagerService.saveWalletsDataWithStoredPassword(
+        walletsData
+      );
+
+    this.allWalletsSignal.update((oldValue) => {
+      return oldValue?.filter((wallet) => wallet.getId() !== walletId) || [];
+    });
+
+    return result;
   }
 
   generateMnemonic(wordsCount: number = 12): string {
@@ -149,9 +145,17 @@ export class WalletService {
     const walletsData = await this.passwordManagerService.getUserData();
     walletsData.wallets.push(walletData);
 
-    return await this.passwordManagerService.saveWalletsDataWithStoredPassword(
-      walletsData
-    );
+    const result =
+      await this.passwordManagerService.saveWalletsDataWithStoredPassword(
+        walletsData
+      );
+
+    this.allWalletsSignal.update((oldValue) => [
+      ...(oldValue || []),
+      new AppWallet(walletData, true, this.kaspaNetworkActionsService),
+    ]);
+
+    return result;
   }
 
   getWalletsCount(): number {
@@ -210,13 +214,17 @@ export class WalletService {
     walletId: number,
     skipLocalStorage: boolean = false
   ): AppWallet | undefined {
-    if (this.currentWallet) {
+    if (walletId == this.currentWalletSignal()?.getId()) {
+      return this.currentWalletSignal();
+    }
+
+    if (this.currentWalletSignal()) {
       this.deselectCurrentWallet();
     }
 
-    this.currentWallet = this.getWalletById(walletId, true);
+    this.currentWalletSignal.set(this.getWalletById(walletId, true));
 
-    if (!this.currentWallet) {
+    if (!this.currentWalletSignal()) {
       return undefined;
     }
 
@@ -225,27 +233,39 @@ export class WalletService {
       walletId.toString()
     );
 
-    this.currentWallet.startListiningToWalletActions();
+    this.getCurrentWallet()?.startListiningToWalletActions();
 
-    return this.currentWallet;
+    return this.currentWalletSignal();
   }
 
   getCurrentWallet(): AppWallet | undefined {
-    return this.currentWallet;
+    return this.currentWalletSignal();
+  }
+
+  getCurrentWalletSignal(): Signal<AppWallet | undefined> {
+    return this.currentWalletSignal.asReadonly();
   }
 
   async deselectCurrentWallet(): Promise<void> {
-    localStorage.removeItem(LOCAL_STORAGE_KEYS.CURRENT_SELECTED_WALLET);
-    await this.currentWallet?.stopListiningToWalletActions();
-    this.currentWallet = undefined;
+    if (this.currentWalletSignal()) {
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.CURRENT_SELECTED_WALLET);
+
+      if (!this.currentWalletSignal()?.isCurrentlyActive()) {
+        this.currentWalletSignal()?.stopListiningToWalletActions();
+      }
+
+      this.currentWalletSignal.set(undefined);
+    }
   }
 
   async getAllAvailableAssetsForCurrentWallet(): Promise<TransferableAsset[]> {
-    if (!this.currentWallet) {
+    if (!this.getCurrentWallet()) {
       return [];
     }
     const krc20tokens = await firstValueFrom(
-      this.kasplexService.getWalletTokenList(this.currentWallet.getAddress())
+      this.kasplexService.getWalletTokenList(
+        this.getCurrentWallet()!.getAddress()
+      )
     );
 
     return [
@@ -253,7 +273,8 @@ export class WalletService {
         ticker: 'TKAS',
         type: AssetType.KAS,
         availableAmount:
-          this.currentWallet.getWalletUtxoStateBalanceSignal()()?.mature || 0n,
+          this.getCurrentWallet()?.getWalletUtxoStateBalanceSignal()()
+            ?.mature || 0n,
         name: 'TKAS',
       },
     ].concat(

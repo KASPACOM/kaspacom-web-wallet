@@ -13,7 +13,6 @@ export interface WalletActionListItem {
   promise: Promise<WalletActionResultWithError>;
   resolve: (result: WalletActionResultWithError) => void;
   reject: (error: any) => void;
-  wallet: AppWallet;
   notifyUpdate: (transactionId: string) => Promise<any>;
 }
 

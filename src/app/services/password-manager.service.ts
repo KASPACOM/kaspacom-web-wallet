@@ -106,6 +106,7 @@ export class PasswordManagerService {
     return {
       wallets: [],
       version,
+      id: crypto.randomUUID(),
     };
   }
 

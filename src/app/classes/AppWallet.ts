@@ -26,6 +26,7 @@ export class AppWallet {
   private utxoProcessorManager: UtxoProcessorManager | undefined = undefined;
   private isSettingUtxoProcessorManager = false;
   private walletStateBalance: Signal<undefined | BalanceData> | undefined = undefined;
+  private isCurrentlyActiveSingal = signal(false);
 
   constructor(
     savedWalletData: SavedWalletData,
@@ -82,6 +83,8 @@ export class AppWallet {
   }
 
   async startListiningToWalletActions() {
+    console.log('STARTT LISTENING WALLET ' + this.getName());
+
     if (
       this.kaspaNetworkActionsService.getConnectionStatusSignal()() !==
       RpcConnectionStatus.CONNECTED
@@ -102,10 +105,19 @@ export class AppWallet {
   }
 
   async stopListiningToWalletActions() {
+    console.log('STOP LISTENING WALLET ' + this.getName());
     await this.utxoProcessorManager?.dispose();
     this.utxoProcessorManager = undefined;
     this.isSettingUtxoProcessorManager = false;
     this.walletStateBalance = undefined;
+  }
+
+  isCurrentlyActive(): boolean {
+    return this.isCurrentlyActiveSingal();
+  }
+
+  setIsCurrentlyActive(isActive: boolean) {
+    this.isCurrentlyActiveSingal.set(isActive);
   }
 
   getUtxoProcessorManager(): UtxoProcessorManager | undefined {

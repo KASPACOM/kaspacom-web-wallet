@@ -9,8 +9,19 @@ kaspa.default('./kaspa/kaspa_bg.wasm').then(() => {
     console.error(err)
   );
 
-  const el = document.getElementById('application-loader-startup');
-  if (el) el.remove();
+  const removeLoader = () => {
+    const el = document.getElementById('application-loader-startup');
+    if (el) el.remove();
+  };
+
+  window.addEventListener('load', () => {
+    removeLoader();
+  });
+
+  if (document.readyState === 'complete') {
+    removeLoader();
+    window.removeEventListener('load', removeLoader);
+  }
 });
 
 export class MainModule {}

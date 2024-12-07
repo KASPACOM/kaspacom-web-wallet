@@ -42,7 +42,7 @@ jobs:
 
     - name: Deploy to S3 OLD
       run: |
-        aws s3 sync dist/kaspiano-front-v2/browser s3://${{ env.S3_BUCKET_NAME }}/ --delete
+        aws s3 sync dist/wallet-front-new/browser s3://${{ env.S3_BUCKET_NAME }}/ --delete
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

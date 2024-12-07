@@ -1,0 +1,8 @@
+# Assigning code ownership to a team for specific branches
+# Syntax: @org/team-name <path> <branch>
+
+# Assigning to main branch
+/main @KASPIANO/Approvers
+
+# Assigning to develop branch
+/develop @KASPIANO/Approvers

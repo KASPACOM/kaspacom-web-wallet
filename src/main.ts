@@ -8,20 +8,6 @@ kaspa.default('./kaspa/kaspa_bg.wasm').then(() => {
   bootstrapApplication(AppComponent, appConfig).catch((err) =>
     console.error(err)
   );
-
-  const removeLoader = () => {
-    const el = document.getElementById('application-loader-startup');
-    if (el) el.remove();
-  };
-
-  window.addEventListener('load', () => {
-    removeLoader();
-  });
-
-  if (document.readyState === 'complete') {
-    removeLoader();
-    window.removeEventListener('load', removeLoader);
-  }
 });
 
 export class MainModule {}

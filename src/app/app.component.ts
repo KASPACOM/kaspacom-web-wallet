@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { PasswordManagerService } from './services/password-manager.service';
 import { AppHeaderComponent } from './components/app-header/app-header.component';
@@ -12,7 +12,7 @@ import { KaspaNetworkActionsService } from './services/kaspa-netwrok-services/ka
   styleUrl: './app.component.scss',
   providers: [KaspaNetworkActionsService]
 })
-export class AppComponent {
+export class AppComponent implements OnInit, AfterViewInit {
   title = 'kaspiano-wallet';
 
   constructor(
@@ -25,6 +25,13 @@ export class AppComponent {
       this.router.navigate(['/login']);
     } else {
       this.router.navigate(['/set-password']);    
+    }
+  }
+
+  ngAfterViewInit(): void {
+    const applicationLoader = document.getElementById('application-loader-startup');
+    if (applicationLoader) {
+      applicationLoader.remove();
     }
   }
 

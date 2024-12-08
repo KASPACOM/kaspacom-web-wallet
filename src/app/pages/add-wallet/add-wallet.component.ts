@@ -11,5 +11,5 @@ imports: [ImportWalletComponent, CreateWalletComponent, NgIf],
   styleUrl: './add-wallet.component.scss',
 })
 export class AddWalletComponent {
-  selectedAction: 'create' | 'import' | null = 'import';
+  selectedAction: 'create' | 'import' | null = 'create';
 }

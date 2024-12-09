@@ -35,7 +35,6 @@ export class AppComponent implements OnInit, AfterViewInit {
       let loader = this.renderer.selectRootElement('#application-loader-startup');
       if (loader.style.display != "none") loader.style.display = "none"; //hide loader
       loader.remove();
-      console.log("removed loader");
   }
 
 }

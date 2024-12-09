@@ -54,24 +54,35 @@ export class WalletActionService {
     toObservable(
       this.kaspaNetworkActionsService.getConnectionStatusSignal()
     ).subscribe((status) => {
+      const walletsThatHaveWork = this.getWalletIdsThatHaveWork();
       if (status == RpcConnectionStatus.CONNECTED) {
-        for (const walletId of this.getWalletIdsThatHaveWork()) {
+        for (const walletId of walletsThatHaveWork) {
           this.walletService
             .getWalletById(walletId)
             ?.startListiningToWalletActions();
         }
-        if (this.walletService.getCurrentWallet()) {
+        if (
+          this.walletService.getCurrentWallet() &&
+          !walletsThatHaveWork.includes(
+            this.walletService.getCurrentWallet()!.getId()
+          )
+        ) {
           this.walletService
             .getCurrentWallet()
             ?.startListiningToWalletActions();
         }
       } else {
-        for (const walletId of this.getWalletIdsThatHaveWork()) {
+        for (const walletId of walletsThatHaveWork) {
           this.walletService
             .getWalletById(walletId)
             ?.stopListiningToWalletActions();
         }
-        if (this.walletService.getCurrentWallet()) {
+        if (
+          this.walletService.getCurrentWallet() &&
+          !walletsThatHaveWork.includes(
+            this.walletService.getCurrentWallet()!.getId()
+          )
+        ) {
           this.walletService.getCurrentWallet()?.stopListiningToWalletActions();
         }
       }
@@ -85,7 +96,8 @@ export class WalletActionService {
   createTransferWalletActionFromAsset(
     asset: TransferableAsset,
     targetWalletAddress: string,
-    amount: bigint
+    amount: bigint,
+    wallet: AppWallet,
   ): WalletAction {
     if (asset.type === AssetType.KAS) {
       return {
@@ -93,6 +105,7 @@ export class WalletActionService {
         data: {
           amount,
           to: targetWalletAddress,
+          sendAll: wallet.getWalletUtxoStateBalanceSignal()()?.mature && wallet.getWalletUtxoStateBalanceSignal()()?.mature == amount,
         },
       };
     }
@@ -122,10 +135,20 @@ export class WalletActionService {
     };
   }
 
+  createCompoundUtxosAction(): WalletAction {
+    return {
+      type: WalletActionType.COMPOUND_UTXOS,
+      data: {},
+    };
+  }
+
   async validateAndDoActionAfterApproval(
     action: WalletAction
   ): Promise<{ success: boolean; errorCode?: number; result?: any }> {
-    const validationResult = await this.validateAction(action);
+    const validationResult = await this.validateAction(
+      action,
+      this.walletService.getCurrentWallet()!
+    );
     if (!validationResult.isValidated) {
       return {
         success: false,
@@ -150,15 +173,12 @@ export class WalletActionService {
     await this.showTransactionLoaderToUser(0);
 
     const actionResult = await this.doWalletAction(action, async (data) => {
-      console.log('notify update', data);
       this.showTransactionLoaderToUser(
         Math.round((currentStep / actionSteps) * 100)
       );
 
       currentStep++;
     });
-
-    console.log('FINISHED ACTION', actionResult);
 
     if (!actionResult.success) {
       alert(actionResult.errorCode);
@@ -223,6 +243,22 @@ export class WalletActionService {
       notifyUpdate,
     });
 
+    const globalScope: any = window as any;
+
+    if (globalScope.repeatAction) {
+      for (let i = 1; i < globalScope.repeatAction; i++) {
+        actionsListByWallet.push({
+          action,
+          promise,
+          reject: reject!,
+          resolve: resolve!,
+          notifyUpdate,
+        });
+      }
+
+      globalScope.repeatAction = undefined;
+    }
+
     this.actionsListByWallet.set({
       ...this.actionsListByWallet(),
       [walletId]: actionsListByWallet,
@@ -249,7 +285,6 @@ export class WalletActionService {
     wallet?.setIsCurrentlyActive(true);
 
     try {
-
       if (!wallet) {
         throw new Error('Wallet not found');
       }
@@ -260,20 +295,37 @@ export class WalletActionService {
       ) {
         const actionsList = this.actionsListByWallet()[walletId];
         const action = actionsList!.shift()!;
-
+        
         this.actionsListByWallet.set({
           ...this.actionsListByWallet(),
           [walletId]: actionsList,
         });
 
         try {
-          const result = await this.kaspaNetworkActionsService.doWalletAction(
-            action.action,
-            wallet,
-            action.notifyUpdate
-          );
+          await this.kaspaNetworkActionsService.connectAndDo(async () => {
+            await wallet.waitForUtxoProcessorToBeReady();
 
-          action.resolve(result);
+            const validationResult = await this.validateAction(
+              action.action,
+              wallet
+            );
+
+            if (!validationResult.isValidated) {
+              action.resolve({
+                success: false,
+                errorCode: validationResult.errorCode,
+              });
+            } else {
+              const result =
+                await this.kaspaNetworkActionsService.doWalletAction(
+                  action.action,
+                  wallet,
+                  action.notifyUpdate
+                );
+
+              action.resolve(result);
+            }
+          });
         } catch (error) {
           action.reject(error);
         }
@@ -294,9 +346,10 @@ export class WalletActionService {
   }
 
   private async validateAction(
-    action: WalletAction
+    action: WalletAction,
+    wallet: AppWallet
   ): Promise<{ isValidated: boolean; errorCode?: number }> {
-    if (!this.walletService.getCurrentWallet()) {
+    if (!wallet) {
       return {
         isValidated: false,
         errorCode: ERROR_CODES.WALLET_ACTION.WALLET_NOT_SELECTED,
@@ -311,14 +364,20 @@ export class WalletActionService {
     switch (action.type) {
       case WalletActionType.TRANSFER_KAS:
         validationResult = await this.validateTransferKasAction(
-          action.data as TransferKasAction
+          action.data as TransferKasAction,
+          wallet
         );
         break;
       case WalletActionType.KRC20_ACTION:
         validationResult = await this.validateKrc20Action(
-          action.data as Krc20Action
+          action.data as Krc20Action,
+          wallet
         );
         break;
+      case WalletActionType.COMPOUND_UTXOS: {
+        validationResult = await this.validateCompoundUtxosAction(wallet);
+        break;
+      }
     }
 
     if (
@@ -328,9 +387,7 @@ export class WalletActionService {
       )
     ) {
       const currentBalance =
-        this.walletService
-          .getCurrentWallet()
-          ?.getWalletUtxoStateBalanceSignal()()?.mature || 0n;
+        wallet?.getWalletUtxoStateBalanceSignal()()?.mature || 0n;
 
       const requiredKaspaAmount =
         await this.kaspaNetworkActionsService.getMinimalRequiredAmountForAction(
@@ -348,8 +405,26 @@ export class WalletActionService {
     return validationResult;
   }
 
-  async validateTransferKasAction(
-    action: TransferKasAction
+  private async validateCompoundUtxosAction(
+    wallet: AppWallet
+  ): Promise<{ isValidated: boolean; errorCode?: number }> {
+    await wallet.getUtxoProcessorManager()?.waitForPendingUtxoToFinish();
+
+    if ((wallet.getBalanceSignal()()?.utxoEntries.length || 0) < 2) {
+      return {
+        isValidated: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.NO_UTXOS_TO_COMPOUND,
+      };
+    }
+
+    return {
+      isValidated: true,
+    };
+  }
+
+  private async validateTransferKasAction(
+    action: TransferKasAction,
+    wallet: AppWallet
   ): Promise<{ isValidated: boolean; errorCode?: number }> {
     if (action.amount <= MINIMAL_AMOUNT_TO_SEND) {
       return {
@@ -373,8 +448,7 @@ export class WalletActionService {
     }
 
     const currentBalance =
-      this.walletService.getCurrentWallet()?.getWalletUtxoStateBalanceSignal()()
-        ?.mature || 0n;
+      wallet.getWalletUtxoStateBalanceSignal()()?.mature || 0n;
     if (currentBalance < action.amount) {
       return {
         isValidated: false,
@@ -387,8 +461,9 @@ export class WalletActionService {
     };
   }
 
-  async validateKrc20Action(
-    action: Krc20Action
+  private async validateKrc20Action(
+    action: Krc20Action,
+    wallet: AppWallet
   ): Promise<{ isValidated: boolean; errorCode?: number }> {
     if (action.operationData.op == KRC20OperationType.TRANSFER) {
       if (this.utils.isNullOrEmptyString(action.operationData.to!)) {
@@ -407,7 +482,7 @@ export class WalletActionService {
 
       const currentBalance = await firstValueFrom(
         this.kasplexService.getTokenWalletBalanceInfo(
-          this.walletService.getCurrentWallet()!.getAddress(),
+          wallet.getAddress(),
           action.operationData.tick
         )
       );

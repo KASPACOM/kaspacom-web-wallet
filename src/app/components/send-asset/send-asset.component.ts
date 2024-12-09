@@ -43,21 +43,21 @@ export class SendAssetComponent implements OnInit {
 
   // Handle the send action
   async sendAsset(): Promise<void> {
+    if (!this.walletService.getCurrentWallet()) {
+      return;
+    }
+
     if (this.isFormValid()) {
       const selectedAsset = this.assets?.find(
         (asset) => this.selectedAsset == this.getAssetId(asset)
       );
-      console.log('Sending Asset:', {
-        asset: selectedAsset,
-        amount: this.amount,
-        address: this.recipientAddress,
-      });
 
       const action: WalletAction =
         this.walletActionService.createTransferWalletActionFromAsset(
           selectedAsset!,
           this.recipientAddress,
-          this.kaspaNetworkActionsService.kaspaToSompiFromNumber(this.amount!)
+          this.kaspaNetworkActionsService.kaspaToSompiFromNumber(this.amount!),
+          this.walletService.getCurrentWallet()!,
         );
 
       const result =

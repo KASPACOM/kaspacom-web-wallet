@@ -15,6 +15,7 @@ import { AssetType, TransferableAsset } from '../types/transferable-asset';
 import { KasplexKrc20Service } from './kasplex-api/kasplex-api.service';
 import { firstValueFrom } from 'rxjs';
 import { UtilsHelper } from './utils.service';
+import { RpcConnectionStatus } from '../types/kaspa-network/rpc-connection-status.enum';
 
 @Injectable({
   providedIn: 'root',
@@ -233,7 +234,12 @@ export class WalletService {
       walletId.toString()
     );
 
-    this.getCurrentWallet()?.startListiningToWalletActions();
+    if (
+      this.kaspaNetworkActionsService.getConnectionStatusSignal()() ==
+      RpcConnectionStatus.CONNECTED
+    ) {
+      this.getCurrentWallet()?.startListiningToWalletActions();
+    }
 
     return this.currentWalletSignal();
   }

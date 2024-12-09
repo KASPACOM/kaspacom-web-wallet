@@ -24,6 +24,16 @@
       </div>
     </ng-container>
 
+    <ng-container *ngIf="action?.type === WalletActionType.COMPOUND_UTXOS">
+      <h3>Compound UTXOs</h3>
+      <div class="transaction-details">
+        <div class="detail">
+          <div class="label">Wallet:</div>
+          <div class="value">{{ walletAddress }}</div>
+        </div>
+      </div>
+    </ng-container>
+
     <ng-container *ngIf="action?.type === WalletActionType.KRC20_ACTION">
       <ng-container *ngIf="krc20ActionData.operationData.op === KRC20OperationType.TRANSFER">
         <h3>Transfer KRC20 Token</h3>
@@ -79,6 +89,7 @@
         </div>
       </div>
     </ng-container>
+
 
     <div class="transaction-actions">
       <button class="accept-btn" (click)="acceptTransaction()">Accept</button>

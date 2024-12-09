@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { SompiToNumberPipe } from '../../pipes/sompi-to-number.pipe';
 import {
+  CompoundUtxosActionResult,
   KasTransferActionResult,
   Krc20ActionResult,
   MessageSigningActionResult,
@@ -40,4 +41,10 @@ export class CompletedActionReview {
       ? (this.actionResult as MessageSigningActionResult)
       : undefined;
   }
+
+get compoundUtxosActionResult(): CompoundUtxosActionResult | undefined {
+  return this.actionResult.type === WalletActionResultType.CompoundUtxos
+    ? (this.actionResult as CompoundUtxosActionResult)
+    : undefined;
+}
 }

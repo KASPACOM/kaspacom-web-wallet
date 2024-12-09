@@ -23,6 +23,7 @@ import {
   FullTransactionResponse,
   FullTransactionResponseItem,
 } from '../../services/kaspa-api/dtos/full-transaction-response.dto';
+import { UnfinishedKrc20Action } from '../../types/kaspa-network/unfinished-krc20-action.interface';
 
 @Component({
   selector: 'wallet-info',
@@ -49,6 +50,8 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
   protected tokens: undefined | { ticker: string; balance: number }[] =
     undefined;
 
+  protected unfinishedAction: undefined | UnfinishedKrc20Action = undefined;
+
   protected kaspaTransactionsHistory: undefined | FullTransactionResponse =
     undefined;
   protected kaspaTransactionsHistoryMapped:
@@ -70,6 +73,7 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
   protected infoActiveTab: 'utxos' | 'kaspa-transactions' = 'utxos';
 
   private refreshDataTimeout: NodeJS.Timeout | undefined;
+  private setUnfinishedActionsTimeout: NodeJS.Timeout | undefined;
 
   constructor(
     private walletService: WalletService, // Inject wallet service
@@ -89,11 +93,13 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.loadData();
+    this.checkForUnfinishedActions();
   }
 
   ngOnDestroy(): void {
     if (this.refreshDataTimeout) {
-      clearInterval(this.refreshDataTimeout);
+      clearTimeout(this.refreshDataTimeout);
+      clearTimeout(this.setUnfinishedActionsTimeout);
     }
   }
 
@@ -218,7 +224,11 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async loadData() {
-    await Promise.all([this.loadKrc20Tokens(), this.loadUserTransactions()]);
+    try {
+      await Promise.all([this.loadKrc20Tokens(), this.loadUserTransactions()]);
+    } catch (error) {
+      console.error(error);
+    }
 
     this.refreshDataTimeout = setTimeout(() => {
       this.loadData();
@@ -229,5 +239,35 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
     await this.walletActionService.validateAndDoActionAfterApproval(
       this.walletActionService.createCompoundUtxosAction()
     );
+  }
+
+  async checkForUnfinishedActions() {
+    try {
+      this.unfinishedAction =
+      await this.kaspaNetworkActionsService.getWalletUnfinishedActions(
+        this.wallet!
+      );
+    } catch (error) {
+      console.error(error);
+    }
+
+    this.setUnfinishedActionsTimeout = setTimeout(() => {
+      this.checkForUnfinishedActions();
+    }, 60 * 1000);
+
+  }
+
+  async finishUnfinishedAction() {
+    if (!this.unfinishedAction) {
+      return;
+    }
+
+    await this.walletActionService.validateAndDoActionAfterApproval(
+      this.walletActionService.createUnfinishedKrc20Action(
+        this.unfinishedAction!.operationData!
+      )
+    );
+
+    this.checkForUnfinishedActions();
   }
 }

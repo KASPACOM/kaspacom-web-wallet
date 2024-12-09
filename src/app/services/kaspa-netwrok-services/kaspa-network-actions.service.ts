@@ -27,6 +27,8 @@ import {
   KASPA_AMOUNT_FOR_KRC20_ACTION,
   Krc20OperationDataService,
 } from './krc20-operation-data.service';
+import { UnfinishedKrc20Action } from '../../types/kaspa-network/unfinished-krc20-action.interface';
+import { KRC20OperationDataInterface } from '../../types/kaspa-network/krc20-operations-data.interface';
 
 const MINIMAL_TRANSACTION_MASS = 10000n;
 export const MINIMAL_AMOUNT_TO_SEND = 20000000n;
@@ -121,9 +123,12 @@ export class KaspaNetworkActionsService {
 
   async initUtxoProcessorManager(
     address: string,
-    onBalanceUpdate: () => Promise<any>,
+    onBalanceUpdate: () => Promise<any>
   ): Promise<UtxoProcessorManager> {
-    return await this.transactionsManager.initUtxoProcessorManager(address, onBalanceUpdate);
+    return await this.transactionsManager.initUtxoProcessorManager(
+      address,
+      onBalanceUpdate
+    );
   }
 
   async doWalletAction(
@@ -175,7 +180,7 @@ export class KaspaNetworkActionsService {
         return {
           success: false,
           errorCode: ERROR_CODES.WALLET_ACTION.NO_UTXOS_TO_COMPOUND,
-        }
+        };
       }
 
       const payments: IPaymentOutput[] = [
@@ -216,7 +221,8 @@ export class KaspaNetworkActionsService {
           this.krc20OperationDataService.getPriceForOperation(
             actionData.operationData.op
           ),
-          notifyUpdate
+          notifyUpdate,
+          actionData.revealOnly,
         );
 
       if (!result.success) {
@@ -224,12 +230,12 @@ export class KaspaNetworkActionsService {
         return {
           success: false,
           errorCode: result.errorCode,
-        }
+        };
       }
 
       const actionResult: Krc20ActionResult = {
         type: WalletActionResultType.Krc20Action,
-        commitTransactionId: result.result!.commit!.summary.finalTransactionId!,
+        commitTransactionId: result.result!.commit?.summary.finalTransactionId!,
         revealTransactionId: result.result!.reveal!.summary.finalTransactionId!,
         performedByWallet: wallet.getAddress(),
         ticker: actionData.operationData.tick,
@@ -271,12 +277,27 @@ export class KaspaNetworkActionsService {
     }
 
     if (action.type === WalletActionType.COMPOUND_UTXOS) {
-      return (
-        (action.priorityFee || 0n) +
-        MINIMAL_AMOUNT_TO_SEND
-      );
+      return (action.priorityFee || 0n) + MINIMAL_AMOUNT_TO_SEND;
     }
 
     throw new Error('Invalid action type');
+  }
+
+  async getWalletUnfinishedActions(
+    wallet: AppWallet
+  ): Promise<UnfinishedKrc20Action | undefined> {
+    return await this.transactionsManager.checkUnfinishedTransactionsForUserAndGetOne(
+      wallet
+    );
+  }
+
+  async doesUnfinishedActionHasKasInScriptWallet(
+    wallet: AppWallet,
+    action: KRC20OperationDataInterface
+  ) {
+    return this.transactionsManager.doesUnfinishedActionHasKasInScriptWallet(
+      wallet,
+      action
+    );
   }
 }

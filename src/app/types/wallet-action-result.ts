@@ -4,6 +4,7 @@ export enum WalletActionResultType {
     KasTransfer = 'kas-transfer',
     Krc20Action = 'krc20action',
     MessageSigning = 'message-signing',
+    CompoundUtxos = 'compound-utxos',
 }
 
 export interface WalletActionResult {
@@ -22,6 +23,11 @@ export interface KasTransferActionResult extends WalletActionResult {
     to: string;
     amount: bigint;
     sendAll?: boolean;
+    transactionId: string;
+}
+
+export interface CompoundUtxosActionResult extends WalletActionResult {
+    type: WalletActionResultType.CompoundUtxos;
     transactionId: string;
 }
 

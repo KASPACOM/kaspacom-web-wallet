@@ -7,8 +7,8 @@ import {
 import { BalanceData, BalanceEvent } from '../types/kaspa-network/balance-event.interface';
 import { UtxoChangedEvent } from '../types/kaspa-network/utxo-changed-event.interface';
 
-const WAIT_TIMEOUT = 2 * 60 * 1000;
-const REJECT_TRANSACTION_TIMEOUT = 2 * 60 * 1000;
+const WAIT_TIMEOUT = 20 * 1000;
+const REJECT_TRANSACTION_TIMEOUT = 20 * 1000;
 
 export class UtxoProcessorManager {
   private processor: UtxoProcessor | undefined = undefined;
@@ -205,7 +205,7 @@ export class UtxoProcessorManager {
     });
 
     const timeout = setTimeout(() => {
-      this.rejectTransaction;
+      this.rejectTransaction(transactionId);
     }, REJECT_TRANSACTION_TIMEOUT);
 
     this.transactionPromises[transactionId] = {
@@ -219,7 +219,7 @@ export class UtxoProcessorManager {
   }
 
   private utxoChangedEventListener(event: UtxoChangedEvent) {
-    const addedEntry = event.data.added.find(
+    const addedEntry = event.data?.added?.find(
       (entry: any) => entry.address.payload === this.publicAddress.toString().split(':')[1],
     );
 

@@ -28,6 +28,10 @@ export class AppWallet {
   private walletStateBalance: Signal<undefined | BalanceData> | undefined = undefined;
   private isCurrentlyActiveSingal = signal(false);
 
+  private waitForWalletProcessorToBeReadyPromise: Promise<void> | undefined = undefined;
+  private waitForWalletProcessorToBeReadyResolve: (()=> void) | undefined = undefined;
+  private isWaitForWalletProccessorResolved: boolean = false;
+
   constructor(
     savedWalletData: SavedWalletData,
     shoudLoadBalance: boolean,
@@ -38,6 +42,9 @@ export class AppWallet {
     this.privateKey = new PrivateKey(savedWalletData.privateKey);
     this.mnemonic = savedWalletData.mnemonic;
     this.derivedPath = savedWalletData.derivedPath;
+    this.waitForWalletProcessorToBeReadyPromise = new Promise((res) => {
+      this.waitForWalletProcessorToBeReadyResolve = res;
+    })
 
     if (shoudLoadBalance) {
       this.refreshBalance();
@@ -101,6 +108,8 @@ export class AppWallet {
         );
 
       this.walletStateBalance = this.utxoProcessorManager.getUtxoBalanceStateSignal();
+      this.waitForWalletProcessorToBeReadyResolve!();
+      this.isWaitForWalletProccessorResolved = true;
     }
   }
 
@@ -110,6 +119,14 @@ export class AppWallet {
     this.utxoProcessorManager = undefined;
     this.isSettingUtxoProcessorManager = false;
     this.walletStateBalance = undefined;
+
+    if (this.isWaitForWalletProccessorResolved) {
+      this.isWaitForWalletProccessorResolved = false;
+      this.waitForWalletProcessorToBeReadyPromise = new Promise((res) => {
+        this.waitForWalletProcessorToBeReadyResolve = res;
+      })
+    }
+
   }
 
   isCurrentlyActive(): boolean {
@@ -141,5 +158,9 @@ export class AppWallet {
   // This is keeps updating
   getWalletUtxoStateBalanceSignal(): Signal<undefined | BalanceData> {
     return this.walletStateBalance || signal(undefined);
+  }
+
+  waitForUtxoProcessorToBeReady(): Promise<void> {
+    return this.waitForWalletProcessorToBeReadyPromise!;
   }
 }

@@ -16,6 +16,12 @@
         <p><strong>Transaction ID:</strong> {{ kasTransferActionResult.transactionId }}</p>
       </div>
 
+      <div *ngIf="compoundUtxosActionResult">
+        <h3>Compound UTXOs</h3>
+        <p><strong>Wallet:</strong> {{ actionResult.performedByWallet }}</p>
+        <p><strong>Transaction ID:</strong> {{ compoundUtxosActionResult.transactionId }}</p>
+      </div>
+
       <div *ngIf="krc20ActionResult">
         <ng-container *ngIf="krc20ActionResult.operationData.op === KRC20OperationType.TRANSFER">
           <h3>Transfer KRC20 Token Transaction</h3>

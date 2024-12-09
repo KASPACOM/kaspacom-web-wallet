@@ -31,4 +31,5 @@ export interface CompoundUtxosAction {};
 
 export interface Krc20Action {
   operationData: KRC20OperationDataInterface;
+  revealOnly?: boolean;
 }

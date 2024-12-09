@@ -1,8 +1,15 @@
 <div class="wallet-info-container" *ngIf="wallet">
   <div class="wallet-info-section">
   <div *ngIf="wallet; else loadingMessage">
-    <h2>Wallet Information</h2>
-    <button (click)="goToSelectWallet()" class="change-wallet-button">Change Wallet</button>
+    <div class="wallet-info-header">
+      <h2>Wallet Information</h2>
+      <button (click)="goToSelectWallet()" class="change-wallet-button">Change Wallet</button>
+    </div>
+
+    <div class="unfinished-action" *ngIf="unfinishedAction">
+      <p class="unfinished-action-message">You have unfinished Krc20 action.</p>
+      <button class="finish-action-button" (click)="finishUnfinishedAction()">Finish Action</button>
+    </div>
     
 
     <!-- Wallet Balance -->

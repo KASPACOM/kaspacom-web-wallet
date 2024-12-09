@@ -15,7 +15,6 @@ export class RpcService {
   }
 
   getRpc() {
-    (window as any).rpc = this.RPC;
     return this.RPC;
   }
 

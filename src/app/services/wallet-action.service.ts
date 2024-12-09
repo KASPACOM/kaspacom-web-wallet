@@ -20,7 +20,7 @@ import {
   WalletActionResultWithError,
 } from '../types/wallet-action-result';
 import { Krc20OperationDataService } from './kaspa-netwrok-services/krc20-operation-data.service';
-import { KRC20OperationType } from '../types/kaspa-network/krc20-operations-data.interface';
+import { KRC20OperationDataInterface, KRC20OperationType } from '../types/kaspa-network/krc20-operations-data.interface';
 import { KasplexKrc20Service } from './kasplex-api/kasplex-api.service';
 import { firstValueFrom } from 'rxjs';
 import { TokenState } from './kasplex-api/dtos/token-list-info.dto';
@@ -139,6 +139,16 @@ export class WalletActionService {
     return {
       type: WalletActionType.COMPOUND_UTXOS,
       data: {},
+    };
+  }
+
+  createUnfinishedKrc20Action(operationData: KRC20OperationDataInterface): WalletAction {
+    return {
+      type: WalletActionType.KRC20_ACTION,
+      data: {
+        operationData,
+        revealOnly: true,
+      },
     };
   }
 
@@ -501,6 +511,20 @@ export class WalletActionService {
           isValidated: false,
           errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
         };
+      }
+
+      if (action.revealOnly) {
+        const hasAction = await this.kaspaNetworkActionsService.doesUnfinishedActionHasKasInScriptWallet(
+          wallet,
+          action.operationData,
+        )
+
+        if (!hasAction) {
+          return {
+            isValidated: false,
+            errorCode: ERROR_CODES.WALLET_ACTION.REVEAL_WITH_NO_COMMIT_ACTION,
+          }
+        }
       }
 
       return { isValidated: false };

@@ -1,10 +1,9 @@
-import { AppWallet } from "../classes/AppWallet";
 import { KRC20OperationDataInterface } from "./kaspa-network/krc20-operations-data.interface";
 import { WalletActionResultWithError } from "./wallet-action-result";
 
 export interface WalletAction {
   type: WalletActionType;
-  data: TransferKasAction | Krc20Action;
+  data: TransferKasAction | Krc20Action | CompoundUtxosAction;
   priorityFee?: bigint;
 };
 
@@ -19,6 +18,7 @@ export interface WalletActionListItem {
 export enum WalletActionType {
   TRANSFER_KAS = 'transfer-kas',
   KRC20_ACTION = 'krc20-action',
+  COMPOUND_UTXOS = 'compound-utxos'
 }
 
 export interface TransferKasAction {
@@ -26,6 +26,8 @@ export interface TransferKasAction {
   to: string;
   sendAll?: boolean;
 };
+
+export interface CompoundUtxosAction {};
 
 export interface Krc20Action {
   operationData: KRC20OperationDataInterface;

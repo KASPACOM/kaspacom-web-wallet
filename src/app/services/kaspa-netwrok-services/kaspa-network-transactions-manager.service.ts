@@ -15,26 +15,22 @@ import {
   PrivateKey,
   ScriptBuilder,
   UtxoEntryReference,
-  UtxoProcessor,
 } from '../../../../public/kaspa/kaspa';
 import { RpcService } from './rpc.service';
 import { KaspaNetworkConnectionManagerService } from './kaspa-network-connection-manager.service';
 import { UtilsHelper } from '../utils.service';
 import { KRC20OperationDataInterface } from '../../types/kaspa-network/krc20-operations-data.interface';
 import { TotalBalanceWithUtxosInterface } from '../../types/kaspa-network/total-balance-with-utxos.interface';
-import { UtxoContextProcessorInterface } from '../../types/kaspa-network/utxo-context-processor.interface';
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
 import { ERROR_CODES, LOCAL_STORAGE_KEYS } from '../../config/consts';
 import { MINIMAL_AMOUNT_TO_SEND } from './kaspa-network-actions.service';
 import { AppWallet } from '../../classes/AppWallet';
 import { KASPA_AMOUNT_FOR_KRC20_ACTION } from './krc20-operation-data.service';
-import { Krc20Action } from '../../types/wallet-action';
 import { UnfinishedKrc20Action } from '../../types/kaspa-network/unfinished-krc20-action.interface';
 
-// export const MINIMAL_AMOUNT_TO_SEND = kaspaToSompi('0.2');
-const TIME_TO_WAIT_BEFORE_TRANSACTION_RECEIVED_CHECK = 120 * 1000;
-const NUMBER_OF_MINUTES_TO_KEEP_CHECKING_TRANSACTION_RECEIVED = 25 * 12;
+// const TIME_TO_WAIT_BEFORE_TRANSACTION_RECEIVED_CHECK = 120 * 1000;
+// const NUMBER_OF_MINUTES_TO_KEEP_CHECKING_TRANSACTION_RECEIVED = 25 * 12;
 
 type DoTransactionOptions = {
   notifyCreatedTransactions?: (transactionId: string) => Promise<any>;

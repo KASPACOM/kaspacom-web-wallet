@@ -95,7 +95,15 @@
       <!-- Tab Content -->
       <div class="tab-content">
         <div *ngIf="infoActiveTab === 'utxos'" class="utxos">
-          <h2>UTXOs</h2>
+          <div class="utxo-header">
+            <h2>UTXOs ({{ (wallet.getBalanceSignal()()?.utxoEntries?.length || 'Loading...') }}) </h2>
+            <div *ngIf="(wallet.getBalanceSignal()()?.utxoEntries?.length || 0) > 1" class="compound-utxos-button-container">
+              <button class="compound-utxos-button" (click)="compoundUtxos()">
+                Compound UTXOs
+              </button>
+            </div>
+
+          </div>
 
           <ul *ngIf="wallet?.getBalanceSignal() !== undefined && wallet?.getBalanceSignal()!() !== undefined; else noUtxos" class="">
             <li *ngFor="let utxo of wallet.getBalanceSignal()()!.utxoEntries">

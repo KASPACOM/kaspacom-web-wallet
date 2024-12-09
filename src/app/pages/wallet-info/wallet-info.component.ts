@@ -140,8 +140,8 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
       this.kaspaApiService.getFullTransactions(this.wallet!.getAddress())
     );
 
-    this.kaspaTransactionsHistoryMapped = this.kaspaTransactionsHistory.map(tx =>
-      this.transformTransactionData(tx)
+    this.kaspaTransactionsHistoryMapped = this.kaspaTransactionsHistory.map(
+      (tx) => this.transformTransactionData(tx)
     );
   }
 
@@ -192,14 +192,12 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
     }, {} as Record<string, bigint>);
 
     const totalForThisWallet =
-    (receivers[this.wallet!.getAddress()] ||
-      BigInt(0)) - (senders[this.wallet!.getAddress()] || BigInt(0));
-
+      (receivers[this.wallet!.getAddress()] || BigInt(0)) -
+      (senders[this.wallet!.getAddress()] || BigInt(0));
 
     delete senders[this.wallet!.getAddress()];
     delete receivers[this.wallet!.getAddress()];
 
-    
     const walletsInBoth = Object.keys(senders).filter(
       (address) => !!receivers[address]
     );
@@ -208,7 +206,6 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
       senders[address] = senders[address] - receivers[address];
       delete receivers[address];
     }
-
 
     return {
       id: transaction.transaction_id,
@@ -221,14 +218,16 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async loadData() {
-
-    await Promise.all([
-      this.loadKrc20Tokens(),
-      this.loadUserTransactions(),
-    ]);
+    await Promise.all([this.loadKrc20Tokens(), this.loadUserTransactions()]);
 
     this.refreshDataTimeout = setTimeout(() => {
       this.loadData();
     }, 20 * 1000);
+  }
+
+  async compoundUtxos() {
+    await this.walletActionService.validateAndDoActionAfterApproval(
+      this.walletActionService.createCompoundUtxosAction()
+    );
   }
 }

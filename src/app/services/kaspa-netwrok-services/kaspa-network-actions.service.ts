@@ -17,6 +17,7 @@ import {
 } from '../../types/wallet-action';
 import { AppWallet } from '../../classes/AppWallet';
 import {
+  CompoundUtxosActionResult,
   KasTransferActionResult,
   Krc20ActionResult,
   WalletActionResult,
@@ -37,6 +38,13 @@ export class KaspaNetworkActionsService {
     private readonly transactionsManager: KaspaNetworkTransactionsManagerService,
     private readonly krc20OperationDataService: Krc20OperationDataService
   ) {}
+
+  async connectAndDo<T>(
+    fn: () => Promise<T>,
+    attempts: number = Infinity
+  ): Promise<T> {
+    return await this.transactionsManager.connectAndDo<T>(fn, attempts);
+  }
 
   getConnectionStatusSignal(): Signal<RpcConnectionStatus> {
     return this.transactionsManager.getConnectionStatusSignal();
@@ -160,6 +168,44 @@ export class KaspaNetworkActionsService {
       };
     }
 
+    if (action.type == WalletActionType.COMPOUND_UTXOS) {
+      await wallet.getUtxoProcessorManager()?.waitForPendingUtxoToFinish();
+
+      if ((wallet.getBalanceSignal()()?.utxoEntries.length || 0) < 2) {
+        return {
+          success: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.NO_UTXOS_TO_COMPOUND,
+        }
+      }
+
+      const payments: IPaymentOutput[] = [
+        {
+          address: wallet.getAddress(),
+          amount: 0n,
+        },
+      ];
+
+      const result =
+        await this.transactionsManager.doKaspaTransferTransactionWithUtxoProcessor(
+          wallet,
+          payments,
+          action.priorityFee || 0n,
+          true,
+          notifyUpdate
+        );
+
+      const actionResult: CompoundUtxosActionResult = {
+        transactionId: result.result!.summary.finalTransactionId!,
+        performedByWallet: wallet.getAddress(),
+        type: WalletActionResultType.CompoundUtxos,
+      };
+
+      return {
+        success: true,
+        result: actionResult,
+      };
+    }
+
     if (action.type === WalletActionType.KRC20_ACTION) {
       const actionData = action.data as Krc20Action;
       const result =
@@ -221,6 +267,13 @@ export class KaspaNetworkActionsService {
         this.krc20OperationDataService.getPriceForOperation(
           (action.data as Krc20Action).operationData.op
         )
+      );
+    }
+
+    if (action.type === WalletActionType.COMPOUND_UTXOS) {
+      return (
+        (action.priorityFee || 0n) +
+        MINIMAL_AMOUNT_TO_SEND
       );
     }
 

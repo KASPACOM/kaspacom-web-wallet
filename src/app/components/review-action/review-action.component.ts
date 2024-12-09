@@ -67,9 +67,11 @@ export class ReviewActionComponent {
 
   // COMPONENT MANAGEMENT
   private clearData() {
+    clearTimeout(this.timeout!);
     this.resolve = undefined;
     this.action = undefined;
     this.result = undefined;
+    this.timeout = undefined;
   }
 
   private resolveActionAndClear(isApproved: boolean, priorityFee?: bigint) {

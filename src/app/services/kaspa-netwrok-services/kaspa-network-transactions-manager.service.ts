@@ -332,7 +332,8 @@ export class KaspaNetworkTransactionsManagerService {
     krc20transactionData: KRC20OperationDataInterface,
     priorityFee: bigint,
     transactionFeeAmount: bigint,
-    notifyCreatedTransactions?: (transactionId: string) => Promise<any>
+    notifyCreatedTransactions?: (transactionId: string) => Promise<any>,
+    revealOnly: boolean = false
   ): Promise<{
     success: boolean;
     errorCode?: number;
@@ -341,32 +342,35 @@ export class KaspaNetworkTransactionsManagerService {
       reveal?: ICreateTransactions;
     };
   }> {
-    const commitTransactionResult =
-      await this.doKrc20CommitTransactionWithUtxoProcessor(
-        wallet.getUtxoProcessorManager()!,
-        wallet.getPrivateKey(),
-        krc20transactionData,
-        priorityFee,
-        async (transactionId) => {
-          await this.addUnfinishedKrc20ActionOnLocalStorage(
-            {
+    let commitTransactionResult:
+      | { success: boolean; errorCode?: number; result?: ICreateTransactions }
+      | undefined = undefined;
+    if (!revealOnly) {
+      commitTransactionResult =
+        await this.doKrc20CommitTransactionWithUtxoProcessor(
+          wallet.getUtxoProcessorManager()!,
+          wallet.getPrivateKey(),
+          krc20transactionData,
+          priorityFee,
+          async (transactionId) => {
+            await this.addUnfinishedKrc20ActionOnLocalStorage({
               createdAtTimestamp: Date.now(),
               operationData: krc20transactionData,
               walletAddress: wallet.getAddress(),
+            });
+
+            if (notifyCreatedTransactions) {
+              await notifyCreatedTransactions(transactionId);
             }
-          )
-
-          if (notifyCreatedTransactions) {
-            await notifyCreatedTransactions(transactionId);
           }
-        }
-      );
+        );
 
-    if (!commitTransactionResult.success) {
-      return {
-        success: false,
-        errorCode: commitTransactionResult.errorCode,
-      };
+      if (!commitTransactionResult.success) {
+        return {
+          success: false,
+          errorCode: commitTransactionResult.errorCode,
+        };
+      }
     }
 
     const revealTransactionResult =
@@ -384,7 +388,7 @@ export class KaspaNetworkTransactionsManagerService {
         success: false,
         errorCode: revealTransactionResult.errorCode,
         result: {
-          commit: commitTransactionResult.result,
+          commit: commitTransactionResult?.result,
         },
       };
     }
@@ -393,12 +397,12 @@ export class KaspaNetworkTransactionsManagerService {
       operationData: krc20transactionData,
       walletAddress: wallet.getAddress(),
       createdAtTimestamp: Date.now(),
-    })
+    });
 
     return {
       success: true,
       result: {
-        commit: commitTransactionResult.result,
+        commit: commitTransactionResult?.result,
         reveal: revealTransactionResult.result,
       },
     };
@@ -666,11 +670,63 @@ export class KaspaNetworkTransactionsManagerService {
     });
   }
 
+  async checkUnfinishedTransactionsForUserAndGetOne(
+    wallet: AppWallet,
+    timeAgo: number = 2 * 60 * 1000
+  ): Promise<UnfinishedKrc20Action | undefined> {
+    let actions = this.getUnfinishedKrc20Actions();
+    let walletUnfinishedActions = actions.filter(
+      (item) =>
+        item.walletAddress === wallet.getAddress() &&
+        item.createdAtTimestamp < Date.now() - timeAgo
+    );
+    let currentUnfinishedAction: UnfinishedKrc20Action | undefined = undefined;
+
+    while (walletUnfinishedActions.length > 0 && !currentUnfinishedAction) {
+      currentUnfinishedAction = walletUnfinishedActions[0];
+
+      const hasMoney = await this.doesUnfinishedActionHasKasInScriptWallet(
+        wallet,
+        currentUnfinishedAction.operationData
+      );
+
+      if (hasMoney) {
+        break;
+      } else {
+        await this.removeUnfinishedActionOnLocalStorage(
+          currentUnfinishedAction
+        );
+        currentUnfinishedAction = undefined;
+      }
+
+      actions = this.getUnfinishedKrc20Actions();
+      walletUnfinishedActions = actions.filter(
+        (item) => item.walletAddress === wallet.getAddress()
+      );
+    }
+
+    return currentUnfinishedAction;
+  }
+
   getUnfinishedKrc20Actions(): UnfinishedKrc20Action[] {
     const totalActionsJson = localStorage.getItem(
       LOCAL_STORAGE_KEYS.UNFINISHED_KRC20_ACTIONS
     );
-    const totalActions = JSON.parse(totalActionsJson || '[]') as UnfinishedKrc20Action[];
+    const totalActions = JSON.parse(
+      totalActionsJson || '[]'
+    ) as UnfinishedKrc20Action[];
     return totalActions;
+  }
+
+  async doesUnfinishedActionHasKasInScriptWallet(
+    wallet: AppWallet,
+    action: KRC20OperationDataInterface
+  ): Promise<boolean> {
+    const script = this.createP2SHAddressScript(action, wallet.getPrivateKey());
+    const hasMoney = await this.getWalletTotalBalanceAndUtxos(
+      script.p2shaAddress.toString()
+    );
+
+    return hasMoney.totalBalance > 0n;
   }
 }

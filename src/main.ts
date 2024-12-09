@@ -8,5 +8,6 @@ kaspa.default('./kaspa/kaspa_bg.wasm').then(() => {
   bootstrapApplication(AppComponent, appConfig).catch((err) =>
     console.error(err)
   );
+});
 
 export class MainModule {}

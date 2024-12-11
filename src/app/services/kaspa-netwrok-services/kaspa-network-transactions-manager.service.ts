@@ -40,7 +40,10 @@ import { TotalBalanceWithUtxosInterface } from '../../types/kaspa-network/total-
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
 import { ERROR_CODES, LOCAL_STORAGE_KEYS } from '../../config/consts';
-import { MAX_TRANSACTION_FEE, MINIMAL_AMOUNT_TO_SEND } from './kaspa-network-actions.service';
+import {
+  MAX_TRANSACTION_FEE,
+  MINIMAL_AMOUNT_TO_SEND,
+} from './kaspa-network-actions.service';
 import { AppWallet } from '../../classes/AppWallet';
 import {
   KASPA_AMOUNT_FOR_KRC20_ACTION,
@@ -357,7 +360,7 @@ export class KaspaNetworkTransactionsManagerService {
     commission?: {
       address: string;
       amount: bigint;
-    },
+    }
   ): Promise<Transaction> {
     const scriptAndScriptAddress = this.createP2SHAddressScriptForKrc20Action(
       krc20transactionData,
@@ -384,12 +387,14 @@ export class KaspaNetworkTransactionsManagerService {
       throw new Error('Utxo entry not found, please check your inputs');
     }
 
-    const inputs: ITransactionInput[] = [{
-      previousOutpoint: entry.outpoint,
-      utxo: entry,
-      sequence: 0n,
-      sigOpCount: 1,
-    }];
+    const inputs: ITransactionInput[] = [
+      {
+        previousOutpoint: entry.outpoint,
+        utxo: entry,
+        sequence: 0n,
+        sigOpCount: 1,
+      },
+    ];
 
     const outputs: ITransactionOutput[] = [
       {
@@ -400,31 +405,9 @@ export class KaspaNetworkTransactionsManagerService {
 
     if (commission) {
       outputs.push({
-        scriptPublicKey: payToAddressScript((window as any).cwallet!.getAddress()),
-        value: commission.amount,
-      })
-      outputs.push({
         scriptPublicKey: payToAddressScript(commission.address),
         value: commission.amount,
       });
-
-
-      const commissionUtxo1 = (window as any).cwallet!.getBalanceSignal()()!.utxoEntries[0];
-      const commissionUtxo2 = (window as any).cwallet!.getBalanceSignal()()!.utxoEntries[1];
-
-      inputs.push({
-        previousOutpoint: commissionUtxo1.outpoint,
-        utxo: commissionUtxo1,
-        sequence: 0n,
-        sigOpCount: 1,  
-      })
-
-      inputs.push({
-        previousOutpoint: commissionUtxo2.outpoint,
-        utxo: commissionUtxo2,
-        sequence: 0n,
-        sigOpCount: 1,  
-      })
     }
 
     let transaction = new Transaction({
@@ -449,17 +432,6 @@ export class KaspaNetworkTransactionsManagerService {
         signature
       );
 
-      if (commission) {
-        const signature = createInputSignature(
-          transaction,
-          2,
-          (window as any).cwallet!.getPrivateKey(),
-          SighashType.SingleAnyOneCanPay
-        );
-
-        transaction.inputs[2].signatureScript = signature;
-
-      }
     console.log(transaction.serializeToSafeJSON());
 
     return transaction;
@@ -477,7 +449,11 @@ export class KaspaNetworkTransactionsManagerService {
         (total, output) => total + output.value,
         0n
       );
-      const totalRequiredOutputs = totalOutputs + priorityFee + MINIMAL_AMOUNT_TO_SEND + MAX_TRANSACTION_FEE;
+      const totalRequiredOutputs =
+        totalOutputs +
+        priorityFee +
+        MINIMAL_AMOUNT_TO_SEND +
+        MAX_TRANSACTION_FEE;
 
       let utxos = wallet.getBalanceSignal()()
         ? [...wallet.getBalanceSignal()()!.utxoEntries]
@@ -591,8 +567,6 @@ export class KaspaNetworkTransactionsManagerService {
         .getRpc()!
         .submitTransaction({ transaction });
 
-      console.log('resultlttt', result);
-
       return result.transactionId;
     });
   }
@@ -681,7 +655,7 @@ export class KaspaNetworkTransactionsManagerService {
         this.krc20OperationDataService.getSendData(krc20transactionData.tick),
         revealTransactionResult.result!.summary!.finalTransactionId!,
         psktOptions.totalPrice,
-        psktOptions.commission,
+        psktOptions.commission
       );
     }
 

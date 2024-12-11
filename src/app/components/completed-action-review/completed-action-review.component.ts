@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { SompiToNumberPipe } from '../../pipes/sompi-to-number.pipe';
 import {
+  BuyKrc20PsktActionResult,
   CompoundUtxosActionResult,
   KasTransferActionResult,
   Krc20ActionResult,
@@ -10,6 +11,7 @@ import {
   WalletActionResultType,
 } from '../../types/wallet-action-result';
 import { KRC20OperationType } from '../../types/kaspa-network/krc20-operations-data.interface';
+import { PsktTransaction } from '../../types/kaspa-network/pskt-transaction.interface';
 
 @Component({
   selector: 'completed-action-review',
@@ -42,9 +44,25 @@ export class CompletedActionReview {
       : undefined;
   }
 
-get compoundUtxosActionResult(): CompoundUtxosActionResult | undefined {
-  return this.actionResult.type === WalletActionResultType.CompoundUtxos
-    ? (this.actionResult as CompoundUtxosActionResult)
-    : undefined;
-}
+  get compoundUtxosActionResult(): CompoundUtxosActionResult | undefined {
+    return this.actionResult.type === WalletActionResultType.CompoundUtxos
+      ? (this.actionResult as CompoundUtxosActionResult)
+      : undefined;
+  }
+
+  get buyKrc20PsktActionResult(): BuyKrc20PsktActionResult | undefined {
+    return this.actionResult.type === WalletActionResultType.BuyKrc20Pskt
+      ? (this.actionResult as BuyKrc20PsktActionResult)
+      : undefined;
+  }
+
+  get buyKrc20PsktActionResultAmount(): bigint | undefined {
+    if (!this.buyKrc20PsktActionResult) {
+      return undefined;
+    }
+    
+    const transactionData: PsktTransaction = JSON.parse(this.buyKrc20PsktActionResult.psktTransactionJson);
+
+    return transactionData.outputs.reduce((acc, output) => acc + BigInt(output.value), BigInt(0));
+  }
 }

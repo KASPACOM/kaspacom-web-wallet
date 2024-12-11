@@ -3,7 +3,7 @@ import { WalletActionResultWithError } from "./wallet-action-result";
 
 export interface WalletAction {
   type: WalletActionType;
-  data: TransferKasAction | Krc20Action | CompoundUtxosAction;
+  data: TransferKasAction | Krc20Action | CompoundUtxosAction | BuyKrc20PsktAction;
   priorityFee?: bigint;
 };
 
@@ -18,7 +18,8 @@ export interface WalletActionListItem {
 export enum WalletActionType {
   TRANSFER_KAS = 'transfer-kas',
   KRC20_ACTION = 'krc20-action',
-  COMPOUND_UTXOS = 'compound-utxos'
+  COMPOUND_UTXOS = 'compound-utxos',
+  BUY_KRC20_PSKT = 'buy-krc20-pskt',
 }
 
 export interface TransferKasAction {
@@ -32,4 +33,20 @@ export interface CompoundUtxosAction {};
 export interface Krc20Action {
   operationData: KRC20OperationDataInterface;
   revealOnly?: boolean;
+  isCancel?: boolean;
+  transactionId?: string;
+  amount?: bigint;
+  psktData?: ActionWithPsktGenerationData;
+}
+
+export interface ActionWithPsktGenerationData {
+  totalPrice: bigint;
+  commission?: {
+    address: string;
+    amount: bigint;
+  }
+}
+
+export interface BuyKrc20PsktAction {
+  psktTransactionJson: string;
 }

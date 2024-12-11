@@ -32,6 +32,22 @@
           <p><strong>Commit Transaction ID:</strong> {{ krc20ActionResult.commitTransactionId }}</p>
           <p><strong>Reveal Transaction ID:</strong> {{ krc20ActionResult.revealTransactionId }}</p>
         </ng-container>
+        <ng-container *ngIf="krc20ActionResult.operationData.op === KRC20OperationType.LIST">
+          <h3>List KRC20 Token Transaction</h3>
+          <p><strong>Ticker:</strong> {{ krc20ActionResult.operationData.tick }}</p>
+          <p><strong>Wallet:</strong> {{ actionResult.performedByWallet }}</p>
+          <p><strong>Amount:</strong> {{ krc20ActionResult.operationData.amt! | sompiToNumber }} {{ krc20ActionResult.operationData.tick }}</p>
+          <p><strong>Price:</strong> {{ krc20ActionResult.psktData!.totalPrice! | sompiToNumber }} KAS</p>
+          <p><strong>Commit Transaction ID:</strong> {{ krc20ActionResult.commitTransactionId }}</p>
+          <p><strong>Reveal Transaction ID:</strong> {{ krc20ActionResult.revealTransactionId }}</p>
+        </ng-container>
+        <ng-container *ngIf="krc20ActionResult.operationData.op === KRC20OperationType.SEND && krc20ActionResult.isCancel">
+          <h3>Cancel KRC20 Token Listing</h3>
+          <p><strong>Ticker:</strong> {{ krc20ActionResult.operationData.tick }}</p>
+          <p><strong>Wallet:</strong> {{ actionResult.performedByWallet }}</p>
+          <p><strong>Amount:</strong> {{ krc20ActionResult.amount! | sompiToNumber }} {{ krc20ActionResult.operationData.tick }}</p>
+          <p><strong>Transaction ID:</strong> {{ krc20ActionResult.revealTransactionId }}</p>
+        </ng-container>
         <ng-container *ngIf="krc20ActionResult.operationData.op === KRC20OperationType.MINT">
           <h3>Mint KRC20 Token Transaction</h3>
           <p><strong>Ticker:</strong> {{ krc20ActionResult.operationData.tick }}</p>
@@ -52,6 +68,13 @@
         <p><strong>Wallet:</strong> {{ actionResult.performedByWallet }}</p>
         <p><strong>Message:</strong> {{ messageSigningResult.message }}</p>
         <p><strong>Encrypted Signed Message:</strong> {{ messageSigningResult.encryptedSignedMessage }}</p>
+      </div>
+
+      <div *ngIf="buyKrc20PsktActionResult">
+        <h3>Buy KRC20 Token Transaction</h3>
+        <p><strong>Wallet:</strong> {{ actionResult.performedByWallet }}</p>
+        <p><strong>Transaction ID:</strong> {{ buyKrc20PsktActionResult.transactionId }}</p>
+        <p><strong>Total Amount:</strong> {{ buyKrc20PsktActionResultAmount }}</p>
       </div>
     </div>
   </div>

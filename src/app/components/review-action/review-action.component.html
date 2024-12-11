@@ -1,6 +1,5 @@
 <div class="transaction-review-container">
   <ng-container *ngIf="action; else noAction">
-
     <div class="transaction-header">
       <h2>Transaction Review</h2>
       <p>Please review the details below before proceeding.</p>
@@ -19,7 +18,9 @@
         </div>
         <div class="detail">
           <div class="label">Amount:</div>
-          <div class="value">{{ transferKasActionData.amount | sompiToNumber }} KAS</div>
+          <div class="value">
+            {{ transferKasActionData.amount | sompiToNumber }} KAS
+          </div>
         </div>
       </div>
     </ng-container>
@@ -35,7 +36,9 @@
     </ng-container>
 
     <ng-container *ngIf="action?.type === WalletActionType.KRC20_ACTION">
-      <ng-container *ngIf="krc20ActionData.operationData.op === KRC20OperationType.TRANSFER">
+      <ng-container
+        *ngIf="krc20ActionData.operationData.op === KRC20OperationType.TRANSFER"
+      >
         <h3>Transfer KRC20 Token</h3>
         <div class="transaction-details">
           <div class="detail">
@@ -52,11 +55,16 @@
           </div>
           <div class="detail">
             <div class="label">Amount:</div>
-            <div class="value">{{ krc20ActionData.operationData.amt! | sompiToNumber }} {{ krc20ActionData.operationData.tick }}</div>
+            <div class="value">
+              {{ krc20ActionData.operationData.amt! | sompiToNumber }}
+              {{ krc20ActionData.operationData.tick }}
+            </div>
           </div>
         </div>
       </ng-container>
-      <ng-container *ngIf="krc20ActionData.operationData.op === KRC20OperationType.MINT">
+      <ng-container
+        *ngIf="krc20ActionData.operationData.op === KRC20OperationType.MINT"
+      >
         <h3>Mint KRC20 Token</h3>
         <div class="transaction-details">
           <div class="detail">
@@ -69,14 +77,68 @@
           </div>
         </div>
       </ng-container>
-      <ng-container *ngIf="krc20ActionData.operationData.op === KRC20OperationType.DEPLOY">
+      <ng-container
+        *ngIf="krc20ActionData.operationData.op === KRC20OperationType.DEPLOY"
+      >
         <h3>Deploy KRC20 Token</h3>
         <div class="transaction-details">
           <div class="detail">
             <div class="label">Sender:</div>
             <div class="value">{{ walletAddress }}</div>
           </div>
+        </div>
+      </ng-container>
 
+      <ng-container
+        *ngIf="krc20ActionData.operationData.op === KRC20OperationType.LIST"
+      >
+        <h3>List KRC20 Token</h3>
+        <div class="transaction-details">
+          <div class="detail">
+            <div class="label">Ticker:</div>
+            <div class="value">{{ krc20ActionData.operationData.tick }}</div>
+          </div>
+          <div class="detail">
+            <div class="label">Wallet:</div>
+            <div class="value">{{ walletAddress }}</div>
+          </div>
+        </div>
+        <div class="detail">
+          <div class="label">Amount:</div>
+          <div class="value">
+            {{ krc20ActionData.operationData.amt! | sompiToNumber }}
+          </div>
+        </div>
+        <div class="detail">
+          <div class="label">Price:</div>
+          <div class="value">
+            {{ krc20ActionData.psktData!.totalPrice! | sompiToNumber }} KAS
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-container
+        *ngIf="
+          krc20ActionData.operationData.op === KRC20OperationType.SEND &&
+          krc20ActionData.isCancel
+        "
+      >
+        <h3>Cancel KRC20 Token Listing</h3>
+        <div class="transaction-details">
+          <div class="detail">
+            <div class="label">Ticker:</div>
+            <div class="value">{{ krc20ActionData.operationData.tick }}</div>
+          </div>
+          <div class="detail">
+            <div class="label">Wallet:</div>
+            <div class="value">{{ walletAddress }}</div>
+          </div>
+          <div class="detail">
+            <div class="label">Amount:</div>
+            <div class="value">
+              {{ krc20ActionData.amount! | sompiToNumber }}
+            </div>
+          </div>
         </div>
       </ng-container>
 
@@ -90,6 +152,23 @@
       </div>
     </ng-container>
 
+    <ng-container *ngIf="action?.type === WalletActionType.BUY_KRC20_PSKT">
+      <h3>Buy KRC20 Token Transaction</h3>
+      <div class="detail">
+        <div class="label">Wallet:</div>
+        <div class="value">{{ walletAddress }}</div>
+      </div>
+      <div *ngFor="let output of buyKrc20PsktTransactoin.outputs">
+        <div class="detail">
+          <div class="label">Amount:</div>
+          <div class="value">{{ output.value | sompiToNumber }} KAS</div>
+        </div>
+        <div class="detail">
+          <div class="label">To:</div>
+          <div class="value">{{ output.scriptPublicKey }}</div>
+        </div>
+      </div>
+    </ng-container>
 
     <div class="transaction-actions">
       <button class="accept-btn" (click)="acceptTransaction()">Accept</button>
@@ -109,7 +188,9 @@
       </ng-container>
 
       <ng-container *ngIf="result">
-        <completed-action-review [actionResult]="result"></completed-action-review>
+        <completed-action-review
+          [actionResult]="result"
+        ></completed-action-review>
       </ng-container>
     </ng-container>
 

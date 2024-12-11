@@ -39,6 +39,23 @@ export class Krc20OperationDataService {
     };
   }
 
+  getListData(ticker: string, amount: bigint): KRC20OperationDataInterface {
+    return {
+      p: 'krc-20',
+      op: KRC20OperationType.LIST,
+      tick: ticker,
+      amt: String(amount),
+    };
+  }
+
+  getSendData(ticker: string): KRC20OperationDataInterface {
+    return {
+      p: 'krc-20',
+      op: KRC20OperationType.SEND,
+      tick: ticker,
+    };
+  }
+
   getDeployData(
     ticker: string,
     max: number,
@@ -53,7 +70,6 @@ export class Krc20OperationDataService {
     };
   }
 
-
   getPriceForOperation(type: KRC20OperationType): bigint {
     switch (type) {
       case KRC20OperationType.MINT:
@@ -61,6 +77,10 @@ export class Krc20OperationDataService {
       case KRC20OperationType.DEPLOY:
         return KRC20_TRANSACTIONS_PRICE.DEPLOY;
       case KRC20OperationType.TRANSFER:
+        return KRC20_TRANSACTIONS_PRICE.TRANSFER;
+      case KRC20OperationType.LIST:
+        return KRC20_TRANSACTIONS_PRICE.TRANSFER;
+      case KRC20OperationType.SEND:
         return KRC20_TRANSACTIONS_PRICE.TRANSFER;
       default:
         throw new Error('Invalid operation type');

@@ -1,5 +1,6 @@
 import { effect, Injectable, Signal, signal } from '@angular/core';
 import {
+  BuyKrc20PsktAction,
   Krc20Action,
   TransferKasAction,
   WalletAction,
@@ -20,13 +21,17 @@ import {
   WalletActionResultWithError,
 } from '../types/wallet-action-result';
 import { Krc20OperationDataService } from './kaspa-netwrok-services/krc20-operation-data.service';
-import { KRC20OperationDataInterface, KRC20OperationType } from '../types/kaspa-network/krc20-operations-data.interface';
+import {
+  KRC20OperationDataInterface,
+  KRC20OperationType,
+} from '../types/kaspa-network/krc20-operations-data.interface';
 import { KasplexKrc20Service } from './kasplex-api/kasplex-api.service';
 import { firstValueFrom } from 'rxjs';
 import { TokenState } from './kasplex-api/dtos/token-list-info.dto';
 import { RpcConnectionStatus } from '../types/kaspa-network/rpc-connection-status.enum';
 import { AppWallet } from '../classes/AppWallet';
 import { toObservable } from '@angular/core/rxjs-interop';
+import { PsktTransaction } from '../types/kaspa-network/pskt-transaction.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -97,7 +102,7 @@ export class WalletActionService {
     asset: TransferableAsset,
     targetWalletAddress: string,
     amount: bigint,
-    wallet: AppWallet,
+    wallet: AppWallet
   ): WalletAction {
     if (asset.type === AssetType.KAS) {
       return {
@@ -105,7 +110,9 @@ export class WalletActionService {
         data: {
           amount,
           to: targetWalletAddress,
-          sendAll: wallet.getWalletUtxoStateBalanceSignal()()?.mature && wallet.getWalletUtxoStateBalanceSignal()()?.mature == amount,
+          sendAll:
+            wallet.getWalletUtxoStateBalanceSignal()()?.mature &&
+            wallet.getWalletUtxoStateBalanceSignal()()?.mature == amount,
         },
       };
     }
@@ -142,12 +149,64 @@ export class WalletActionService {
     };
   }
 
-  createUnfinishedKrc20Action(operationData: KRC20OperationDataInterface): WalletAction {
+  createUnfinishedKrc20Action(
+    operationData: KRC20OperationDataInterface
+  ): WalletAction {
     return {
       type: WalletActionType.KRC20_ACTION,
       data: {
         operationData,
         revealOnly: true,
+      },
+    };
+  }
+
+  createListKrc20Action(
+    ticker: string,
+    amount: bigint,
+    totalPrice: bigint,
+    commission?: {
+      address: string;
+      amount: bigint;
+    }
+  ): WalletAction {
+    return {
+      type: WalletActionType.KRC20_ACTION,
+      data: {
+        operationData: this.krc20OperationDataService.getListData(
+          ticker,
+          amount
+        ),
+        psktData: {
+          totalPrice,
+          commission,
+        },
+      },
+    };
+  }
+
+  createBuyKrc20Action(psktDataJson: string) {
+    return {
+      type: WalletActionType.BUY_KRC20_PSKT,
+      data: {
+        psktTransactionJson: psktDataJson,
+      },
+    };
+  }
+
+  createCancelListingKrc20Action(
+    ticker: string,
+    transactionId: string,
+    amount: bigint
+  ): WalletAction {
+    return {
+      type: WalletActionType.KRC20_ACTION,
+      data: {
+        operationData: this.krc20OperationDataService.getSendData(ticker),
+        revealOnly: true,
+        isCancel: true,
+        transactionId,
+        amount,
       },
     };
   }
@@ -305,7 +364,7 @@ export class WalletActionService {
       ) {
         const actionsList = this.actionsListByWallet()[walletId];
         const action = actionsList!.shift()!;
-        
+
         this.actionsListByWallet.set({
           ...this.actionsListByWallet(),
           [walletId]: actionsList,
@@ -384,10 +443,16 @@ export class WalletActionService {
           wallet
         );
         break;
-      case WalletActionType.COMPOUND_UTXOS: {
+      case WalletActionType.COMPOUND_UTXOS:
         validationResult = await this.validateCompoundUtxosAction(wallet);
         break;
-      }
+
+      case WalletActionType.BUY_KRC20_PSKT:
+        validationResult = await this.validateBuyKrc20PsktAction(
+          action.data as BuyKrc20PsktAction,
+          wallet
+        );
+        break;
     }
 
     if (
@@ -471,10 +536,40 @@ export class WalletActionService {
     };
   }
 
+  private async validateBuyKrc20PsktAction(
+    action: BuyKrc20PsktAction,
+    wallet: AppWallet
+  ): Promise<{ isValidated: boolean; errorCode?: number }> {
+    // TODO: VALIDATE
+    console.log('NNED TO VALIDATE');
+
+    return {
+      isValidated: true,
+    };
+  }
+
   private async validateKrc20Action(
     action: Krc20Action,
     wallet: AppWallet
   ): Promise<{ isValidated: boolean; errorCode?: number }> {
+    if (
+      action.revealOnly &&
+      action.operationData.op != KRC20OperationType.SEND
+    ) {
+      const hasAction =
+        await this.kaspaNetworkActionsService.doesUnfinishedActionHasKasInScriptWallet(
+          wallet,
+          action.operationData
+        );
+
+      if (!hasAction) {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.REVEAL_WITH_NO_COMMIT_ACTION,
+        };
+      }
+    }
+
     if (action.operationData.op == KRC20OperationType.TRANSFER) {
       if (this.utils.isNullOrEmptyString(action.operationData.to!)) {
         return {
@@ -513,21 +608,7 @@ export class WalletActionService {
         };
       }
 
-      if (action.revealOnly) {
-        const hasAction = await this.kaspaNetworkActionsService.doesUnfinishedActionHasKasInScriptWallet(
-          wallet,
-          action.operationData,
-        )
-
-        if (!hasAction) {
-          return {
-            isValidated: false,
-            errorCode: ERROR_CODES.WALLET_ACTION.REVEAL_WITH_NO_COMMIT_ACTION,
-          }
-        }
-      }
-
-      return { isValidated: false };
+      return { isValidated: true };
     }
 
     if (action.operationData.op == KRC20OperationType.MINT) {
@@ -549,6 +630,60 @@ export class WalletActionService {
         };
       }
 
+      return {
+        isValidated: true,
+      };
+    }
+
+    if (action.operationData.op == KRC20OperationType.LIST) {
+      if (this.utils.isNullOrEmptyString(action.operationData.amt!)) {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_AMOUNT,
+        };
+      }
+
+      if (BigInt(action.operationData.amt!) <= 0n) {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_AMOUNT,
+        };
+      }
+
+      if (!(action.psktData?.totalPrice && action.psktData.totalPrice > 0n)) {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_AMOUNT,
+        };
+      }
+
+      const currentBalance = await firstValueFrom(
+        this.kasplexService.getTokenWalletBalanceInfo(
+          wallet.getAddress(),
+          action.operationData.tick
+        )
+      );
+
+      if (!currentBalance) {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
+        };
+      }
+
+      if (
+        BigInt(currentBalance.balance) < BigInt(action.operationData.amt || '0')
+      ) {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
+        };
+      }
+
+      return { isValidated: true };
+    }
+
+    if (action.operationData.op == KRC20OperationType.SEND) {
       return {
         isValidated: true,
       };

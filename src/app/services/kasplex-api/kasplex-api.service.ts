@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { catchError, map, Observable, of } from 'rxjs';
 import { GetTokenWalletInfoDto } from './dtos/get-token-wallet-info.dto';
 import { GetTokenInfoResponse, GetTokenListResponse } from './dtos/token-list-info.dto';
 import { environment } from '../../../environments/environment';
+import { ListingInfoResponse } from './dtos/listing-info-response.dto';
 
 @Injectable({ providedIn: 'root' })
 export class KasplexKrc20Service {
@@ -82,6 +83,20 @@ export class KasplexKrc20Service {
     const url = `${this.baseurl}/krc20/token/${ticker}`;
 
     return this.httpClient.get<GetTokenInfoResponse>(url);
+  }
+
+  
+  getListingInfo(ticker: string, walletAddress?: string): Observable<ListingInfoResponse> {
+    const url = `${this.baseurl}/krc20/market/${ticker}`;
+
+    const params: {address?: string} = {};
+
+    if (walletAddress) {
+      params.address = walletAddress;
+    }
+
+    return this.httpClient.get<ListingInfoResponse>(url, { params });
+
   }
 
   // getWalletActivity(

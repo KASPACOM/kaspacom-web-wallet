@@ -66,6 +66,20 @@
       >
         Mint
       </button>
+      <button
+      class="tab-button"
+      [class.active]="activeTab === 'list'"
+      (click)="switchTab('list')"
+    >
+      List
+    </button>
+    <button
+    class="tab-button"
+    [class.active]="activeTab === 'buy'"
+    (click)="switchTab('buy')"
+  >
+    Buy
+  </button>
     </div>
 
     <!-- Tab Content -->
@@ -75,6 +89,12 @@
       </div>
       <div *ngIf="activeTab === 'mint'" class="mint-container">
         <mint></mint>
+      </div>
+      <div *ngIf="activeTab === 'list'" class="list-container">
+        <list-krc20-token></list-krc20-token>
+      </div>
+      <div *ngIf="activeTab === 'buy'" class="list-container">
+        <buy-krc20-token></buy-krc20-token>
       </div>
     </div>
   </div>

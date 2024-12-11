@@ -10,6 +10,8 @@ import { DEFAULT_DERIVED_PATH, ERROR_CODES } from '../../config/consts';
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
 import {
+  ActionWithPsktGenerationData,
+  BuyKrc20PsktAction,
   Krc20Action,
   TransferKasAction,
   WalletAction,
@@ -17,6 +19,7 @@ import {
 } from '../../types/wallet-action';
 import { AppWallet } from '../../classes/AppWallet';
 import {
+  BuyKrc20PsktActionResult,
   CompoundUtxosActionResult,
   KasTransferActionResult,
   Krc20ActionResult,
@@ -28,7 +31,11 @@ import {
   Krc20OperationDataService,
 } from './krc20-operation-data.service';
 import { UnfinishedKrc20Action } from '../../types/kaspa-network/unfinished-krc20-action.interface';
-import { KRC20OperationDataInterface } from '../../types/kaspa-network/krc20-operations-data.interface';
+import {
+  KRC20OperationDataInterface,
+  KRC20OperationType,
+} from '../../types/kaspa-network/krc20-operations-data.interface';
+import { PsktTransaction } from '../../types/kaspa-network/pskt-transaction.interface';
 
 const MINIMAL_TRANSACTION_MASS = 10000n;
 export const MINIMAL_AMOUNT_TO_SEND = 20000000n;
@@ -213,6 +220,7 @@ export class KaspaNetworkActionsService {
 
     if (action.type === WalletActionType.KRC20_ACTION) {
       const actionData = action.data as Krc20Action;
+
       const result =
         await this.transactionsManager.doKrc20ActionTransactionWithUtxoProcessor(
           wallet,
@@ -223,6 +231,8 @@ export class KaspaNetworkActionsService {
           ),
           notifyUpdate,
           actionData.revealOnly,
+          actionData.transactionId,
+          actionData.psktData
         );
 
       if (!result.success) {
@@ -240,11 +250,39 @@ export class KaspaNetworkActionsService {
         performedByWallet: wallet.getAddress(),
         ticker: actionData.operationData.tick,
         operationData: actionData.operationData,
+        psktData: actionData.psktData,
+        isCancel: actionData.isCancel,
+        amount: actionData.amount,
+        psktTransaction: result.result?.pskt
+          ? result.result?.pskt.serializeToSafeJSON()
+          : undefined,
       };
 
       return {
         success: true,
         result: actionResult,
+      };
+    }
+
+    if (action.type == WalletActionType.BUY_KRC20_PSKT) {
+      const result =
+        await this.transactionsManager.completePsktTransactionForSendOperation(
+          wallet,
+          (action.data as BuyKrc20PsktAction).psktTransactionJson
+          // action.priorityFee || 0n,
+        );
+
+      const resultData: BuyKrc20PsktActionResult = {
+        type: WalletActionResultType.BuyKrc20Pskt,
+        psktTransactionJson: (action.data as BuyKrc20PsktAction)
+          .psktTransactionJson,
+        transactionId: result,
+        performedByWallet: wallet.getAddress(),
+      };
+
+      return {
+        success: true,
+        result: resultData,
       };
     }
 
@@ -278,6 +316,15 @@ export class KaspaNetworkActionsService {
 
     if (action.type === WalletActionType.COMPOUND_UTXOS) {
       return (action.priorityFee || 0n) + MINIMAL_AMOUNT_TO_SEND;
+    }
+
+    if (action.type === WalletActionType.BUY_KRC20_PSKT) {
+      const data = (action.data as BuyKrc20PsktAction);
+      const pskt: PsktTransaction = JSON.parse(data.psktTransactionJson);
+
+      const totalOutputs = pskt.outputs.reduce((acc, curr) => acc + BigInt(curr.value), 0n);
+
+      return (action.priorityFee || 0n) + totalOutputs + MINIMAL_AMOUNT_TO_SEND;
     }
 
     throw new Error('Invalid action type');

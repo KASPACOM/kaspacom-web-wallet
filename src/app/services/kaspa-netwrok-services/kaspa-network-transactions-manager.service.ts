@@ -1,7 +1,8 @@
-import { Injectable, NgModule, Signal } from '@angular/core';
+import { Injectable, Signal } from '@angular/core';
 import {
   Address,
   addressFromScriptPublicKey,
+  createInputSignature,
   createTransactions,
   FeeSource,
   ICreateTransactions,
@@ -9,28 +10,42 @@ import {
   IGeneratorSettingsObject,
   IGetUtxosByAddressesResponse,
   IPaymentOutput,
+  ITransaction,
+  ITransactionInput,
+  ITransactionOutput,
   IUtxoEntry,
   Opcodes,
+  payToAddressScript,
   PendingTransaction,
   PrivateKey,
+  PSKT,
+  PublicKey,
   ScriptBuilder,
+  SighashType,
+  signScriptHash,
+  signTransaction,
+  Transaction,
   UtxoEntryReference,
 } from '../../../../public/kaspa/kaspa';
 import { RpcService } from './rpc.service';
 import { KaspaNetworkConnectionManagerService } from './kaspa-network-connection-manager.service';
 import { UtilsHelper } from '../utils.service';
-import { KRC20OperationDataInterface } from '../../types/kaspa-network/krc20-operations-data.interface';
+import {
+  KRC20OperationDataInterface,
+  KRC20OperationType,
+} from '../../types/kaspa-network/krc20-operations-data.interface';
 import { TotalBalanceWithUtxosInterface } from '../../types/kaspa-network/total-balance-with-utxos.interface';
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
 import { ERROR_CODES, LOCAL_STORAGE_KEYS } from '../../config/consts';
 import { MINIMAL_AMOUNT_TO_SEND } from './kaspa-network-actions.service';
 import { AppWallet } from '../../classes/AppWallet';
-import { KASPA_AMOUNT_FOR_KRC20_ACTION } from './krc20-operation-data.service';
+import {
+  KASPA_AMOUNT_FOR_KRC20_ACTION,
+  Krc20OperationDataService,
+} from './krc20-operation-data.service';
 import { UnfinishedKrc20Action } from '../../types/kaspa-network/unfinished-krc20-action.interface';
-
-// const TIME_TO_WAIT_BEFORE_TRANSACTION_RECEIVED_CHECK = 120 * 1000;
-// const NUMBER_OF_MINUTES_TO_KEEP_CHECKING_TRANSACTION_RECEIVED = 25 * 12;
+import { ActionWithPsktGenerationData } from '../../types/wallet-action';
 
 type DoTransactionOptions = {
   notifyCreatedTransactions?: (transactionId: string) => Promise<any>;
@@ -49,7 +64,8 @@ export class KaspaNetworkTransactionsManagerService {
   constructor(
     private readonly rpcService: RpcService,
     private readonly connectionManager: KaspaNetworkConnectionManagerService,
-    private readonly utils: UtilsHelper
+    private readonly utils: UtilsHelper,
+    private readonly krc20OperationDataService: Krc20OperationDataService
   ) {}
 
   async connectAndDo<T>(
@@ -71,21 +87,25 @@ export class KaspaNetworkTransactionsManagerService {
     return new TextEncoder().encode(data);
   }
 
-  createP2SHAddressScript(
+  createP2SHAddressScriptForKrc20Action(
     data: KRC20OperationDataInterface,
-    privateKey: PrivateKey
+    publicKey: PublicKey
   ): {
     script: ScriptBuilder;
     p2shaAddress: Address;
   } {
+    const fixedData = {
+      ...data,
+      tick: data.tick.toLowerCase(),
+    };
     const script = new ScriptBuilder()
-      .addData(privateKey.toPublicKey().toXOnlyPublicKey().toString())
+      .addData(publicKey.toXOnlyPublicKey().toString())
       .addOp(Opcodes.OpCheckSig)
       .addOp(Opcodes.OpFalse)
       .addOp(Opcodes.OpIf)
       .addData(this.toUint8Array('kasplex'))
       .addI64(0n)
-      .addData(this.toUint8Array(JSON.stringify(data)))
+      .addData(this.toUint8Array(JSON.stringify(fixedData)))
       .addOp(Opcodes.OpEndIf);
 
     const scriptAddress = addressFromScriptPublicKey(
@@ -327,19 +347,188 @@ export class KaspaNetworkTransactionsManagerService {
     );
   }
 
+  async createPsktTransactionForSendOperation(
+    wallet: AppWallet,
+    krc20transactionData: KRC20OperationDataInterface,
+    unxoEntryTransactionId: string,
+    amount: bigint,
+    commission?: {
+      address: string;
+      amount: bigint;
+    }
+  ): Promise<Transaction> {
+    const scriptAndScriptAddress = this.createP2SHAddressScriptForKrc20Action(
+      krc20transactionData,
+      wallet.getPrivateKey().toPublicKey()
+    );
+
+    const revealUTXOs = await this.connectAndDo<IGetUtxosByAddressesResponse>(
+      async () => {
+        return await this.rpcService.getRpc()!.getUtxosByAddresses({
+          addresses: [scriptAndScriptAddress.p2shaAddress.toString()],
+        });
+      }
+    );
+
+    let entry: UtxoEntryReference | undefined = revealUTXOs.entries[0];
+
+    if (unxoEntryTransactionId) {
+      entry = revealUTXOs.entries.find(
+        (entry) => entry.outpoint.transactionId === unxoEntryTransactionId
+      );
+    }
+
+    if (!entry) {
+      throw new Error('Utxo entry not found, please check your inputs');
+    }
+
+    const input: ITransactionInput = {
+      previousOutpoint: entry.outpoint,
+      utxo: entry,
+      sequence: 0n,
+      sigOpCount: 1,
+    };
+
+    const outputs: ITransactionOutput[] = [
+      {
+        scriptPublicKey: payToAddressScript(wallet.getAddress()),
+        value: amount + entry.amount,
+      },
+    ];
+
+    if (commission) {
+      outputs.push({
+        scriptPublicKey: payToAddressScript(commission.address),
+        value: commission.amount,
+      });
+    }
+
+    let transaction = new Transaction({
+      version: 0,
+      lockTime: 0n,
+      inputs: [input],
+      outputs,
+      subnetworkId: '0000000000000000000000000000000000000000',
+      gas: 0n,
+      payload: '',
+    });
+
+    const signature = createInputSignature(
+      transaction,
+      0,
+      wallet.getPrivateKey(),
+      SighashType.SingleAnyOneCanPay
+    );
+
+    transaction.inputs[0].signatureScript =
+      scriptAndScriptAddress.script.encodePayToScriptHashSignatureScript(
+        signature
+      );
+    console.log(transaction.serializeToSafeJSON());
+
+    return transaction;
+  }
+
+  async completePsktTransactionForSendOperation(
+    wallet: AppWallet,
+    transactionJson: string
+  ): Promise<string> {
+    const transaction = Transaction.deserializeFromSafeJSON(transactionJson);
+
+    return await this.connectAndDo(async () => {
+      const totalOutputs = transaction.outputs.reduce(
+        (total, output) => total + output.value,
+        0n
+      );
+
+      let utxos = wallet.getBalanceSignal()()
+        ? [...wallet.getBalanceSignal()()!.utxoEntries]
+        : [];
+
+      if (!utxos) {
+        throw new Error('No utxos found');
+      }
+
+      utxos = utxos.sort((a, b) => Number(b.amount - a.amount));
+
+      const utxosToUse = [];
+      let utxosSum = 0n;
+
+      while (utxosSum < totalOutputs && utxos.length > 0) {
+        const utxo = utxos.shift()!;
+        utxosToUse.push(utxo);
+        utxosSum += utxo.amount;
+      }
+
+      if (utxosSum < totalOutputs) {
+        throw new Error('Not enough utxos to complete transaction');
+      }
+
+      const change = utxosSum - totalOutputs;
+
+      const buyerInputs: ITransactionInput[] = utxosToUse.map((utxo) => ({
+        previousOutpoint: utxo.outpoint,
+        utxo: utxo,
+        sequence: 0n,
+        sigOpCount: 1,
+      }));
+
+      let index = transaction.inputs.length;
+
+      transaction.inputs = [...transaction.inputs, ...buyerInputs];
+
+      // console.log(transaction.serializeToSafeJSON());
+
+      // signTransaction(transaction, [wallet.getPrivateKey()], false);
+
+      // console.log(transaction.serializeToSafeJSON());
+
+      transaction.outputs = [
+        transaction.outputs[0],
+        {
+          scriptPublicKey: payToAddressScript(wallet.getAddress()),
+          value: change,
+        },
+        ...transaction.outputs.slice(1),
+      ];
+
+      for (let i = index; i < transaction.inputs.length; i++) {
+        const signature = createInputSignature(
+          transaction,
+          index,
+          wallet.getPrivateKey(),
+          SighashType.All
+        );
+
+        transaction.inputs[i].signatureScript = signature;
+      }
+
+      console.log(transaction);
+
+      const result = await this.rpcService
+        .getRpc()!
+        .submitTransaction({ transaction });
+
+      return result.transactionId;
+    });
+  }
+
   async doKrc20ActionTransactionWithUtxoProcessor(
     wallet: AppWallet,
     krc20transactionData: KRC20OperationDataInterface,
     priorityFee: bigint,
     transactionFeeAmount: bigint,
     notifyCreatedTransactions?: (transactionId: string) => Promise<any>,
-    revealOnly: boolean = false
+    revealOnly: boolean = false,
+    transactionId?: string,
+    psktOptions?: ActionWithPsktGenerationData
   ): Promise<{
     success: boolean;
     errorCode?: number;
     result?: {
       commit?: ICreateTransactions;
       reveal?: ICreateTransactions;
+      pskt?: Transaction;
     };
   }> {
     let commitTransactionResult:
@@ -380,7 +569,8 @@ export class KaspaNetworkTransactionsManagerService {
         krc20transactionData,
         transactionFeeAmount,
         priorityFee,
-        notifyCreatedTransactions
+        notifyCreatedTransactions,
+        transactionId
       );
 
     if (!revealTransactionResult.success) {
@@ -399,11 +589,24 @@ export class KaspaNetworkTransactionsManagerService {
       createdAtTimestamp: Date.now(),
     });
 
+    let psktTransaction = undefined;
+
+    if (psktOptions) {
+      psktTransaction = await this.createPsktTransactionForSendOperation(
+        wallet,
+        this.krc20OperationDataService.getSendData(krc20transactionData.tick),
+        revealTransactionResult.result!.summary!.finalTransactionId!,
+        psktOptions.totalPrice,
+        psktOptions.commission
+      );
+    }
+
     return {
       success: true,
       result: {
         commit: commitTransactionResult?.result,
         reveal: revealTransactionResult.result,
+        pskt: psktTransaction,
       },
     };
   }
@@ -419,9 +622,9 @@ export class KaspaNetworkTransactionsManagerService {
     errorCode?: number;
     result?: ICreateTransactions;
   }> {
-    const scriptAndScriptAddress = this.createP2SHAddressScript(
+    const scriptAndScriptAddress = this.createP2SHAddressScriptForKrc20Action(
       krc20transactionData,
-      privateKey
+      privateKey.toPublicKey()
     );
 
     const outputs = [
@@ -448,15 +651,17 @@ export class KaspaNetworkTransactionsManagerService {
     krc20transactionData: KRC20OperationDataInterface,
     transactionFeeAmount: bigint,
     priorityFee: bigint = 0n,
-    notifyCreatedTransactions?: (transactionId: string) => Promise<any>
+    notifyCreatedTransactions?: (transactionId: string) => Promise<any>,
+    revealTransactionId: string | undefined = undefined
   ): Promise<{
     success: boolean;
     errorCode?: number;
     result?: ICreateTransactions;
   }> {
-    const scriptAndScriptAddress = this.createP2SHAddressScript(
+    // console.log(privateKey.toPublicKey().toString(), 'pub ky');
+    const scriptAndScriptAddress = this.createP2SHAddressScriptForKrc20Action(
       krc20transactionData,
-      privateKey
+      privateKey.toPublicKey()
     );
 
     const revealUTXOs = await this.connectAndDo<IGetUtxosByAddressesResponse>(
@@ -467,7 +672,22 @@ export class KaspaNetworkTransactionsManagerService {
       }
     );
 
-    const priorityEntries = [revealUTXOs.entries[0]];
+    let entry: UtxoEntryReference | undefined = revealUTXOs.entries[0];
+
+    if (revealTransactionId) {
+      entry = revealUTXOs.entries.find(
+        (entry) => entry.outpoint.transactionId === revealTransactionId
+      );
+    }
+
+    if (!entry) {
+      return {
+        success: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.REVEAL_TRANSACTION_NOT_FOUND,
+      };
+    }
+
+    const priorityEntries = [entry];
 
     const specialSignTransactionFunc = async (
       transaction: PendingTransaction
@@ -494,6 +714,18 @@ export class KaspaNetworkTransactionsManagerService {
 
     const outputs: IPaymentOutput[] = [];
 
+    if (krc20transactionData.op === KRC20OperationType.LIST) {
+      const sendTransaction = this.createP2SHAddressScriptForKrc20Action(
+        this.krc20OperationDataService.getSendData(krc20transactionData.tick),
+        privateKey.toPublicKey()
+      );
+
+      outputs.push({
+        address: sendTransaction.p2shaAddress.toString(),
+        amount: KASPA_AMOUNT_FOR_KRC20_ACTION,
+      });
+    }
+
     return await this.doTransactionWithUtxoProcessor(
       utxoProcessonManager,
       privateKey,
@@ -511,35 +743,6 @@ export class KaspaNetworkTransactionsManagerService {
   //   // ================================================================
   //   // OTHER
   //   // ================================================================
-
-  //   /**
-  //    *
-  //    * @param privateKey To Send From
-  //    * @param priorityFee Will Aplly twice for both transactions
-  //    * @param transactionData Krc20 Command Data
-  //    * @param transactionFeeAmount transfer - minimal, mint - 1kas, deploy - 1000kas
-  //    * @returns reveal transaction id
-  //    */
-  //   async createKrc20TransactionAndDoReveal(
-  //     privateKey: PrivateKey,
-  //     krc20transactionData: KRC20OperationDataInterface,
-  //     transactionFeeAmount: bigint,
-  //     maxPriorityFee: bigint = 0n,
-  //   ): Promise<Krc20TransactionsResult> {
-  //     const commitTransaction = await this.doKrc20CommitTransaction(privateKey, krc20transactionData, maxPriorityFee);
-
-  //     const revealTransaction = await this.doKrc20RevealTransaction(
-  //       privateKey,
-  //       krc20transactionData,
-  //       transactionFeeAmount,
-  //       maxPriorityFee,
-  //     );
-
-  //     return {
-  //       commitTransactionId: commitTransaction.summary.finalTransactionId,
-  //       revealTransactionId: revealTransaction.summary.finalTransactionId,
-  //     };
-  //   }
 
   convertPrivateKeyToAddress(privateKey: string): string {
     return new PrivateKey(privateKey)
@@ -722,7 +925,10 @@ export class KaspaNetworkTransactionsManagerService {
     wallet: AppWallet,
     action: KRC20OperationDataInterface
   ): Promise<boolean> {
-    const script = this.createP2SHAddressScript(action, wallet.getPrivateKey());
+    const script = this.createP2SHAddressScriptForKrc20Action(
+      action,
+      wallet.getPrivateKey().toPublicKey()
+    );
     const hasMoney = await this.getWalletTotalBalanceAndUtxos(
       script.p2shaAddress.toString()
     );

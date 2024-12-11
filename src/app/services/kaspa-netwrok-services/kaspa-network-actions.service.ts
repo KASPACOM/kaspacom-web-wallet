@@ -39,6 +39,7 @@ import { PsktTransaction } from '../../types/kaspa-network/pskt-transaction.inte
 
 const MINIMAL_TRANSACTION_MASS = 10000n;
 export const MINIMAL_AMOUNT_TO_SEND = 20000000n;
+export const MAX_TRANSACTION_FEE = 20000n
 @Injectable({
   providedIn: 'root',
 })

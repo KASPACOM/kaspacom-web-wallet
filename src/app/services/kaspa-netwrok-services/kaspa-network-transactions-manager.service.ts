@@ -1,7 +1,9 @@
-import { Injectable, Signal } from '@angular/core';
+import { Injectable, input, Signal } from '@angular/core';
 import {
   Address,
   addressFromScriptPublicKey,
+  calculateTransactionFee,
+  calculateTransactionMass,
   createInputSignature,
   createTransactions,
   FeeSource,
@@ -38,7 +40,7 @@ import { TotalBalanceWithUtxosInterface } from '../../types/kaspa-network/total-
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
 import { ERROR_CODES, LOCAL_STORAGE_KEYS } from '../../config/consts';
-import { MINIMAL_AMOUNT_TO_SEND } from './kaspa-network-actions.service';
+import { MAX_TRANSACTION_FEE, MINIMAL_AMOUNT_TO_SEND } from './kaspa-network-actions.service';
 import { AppWallet } from '../../classes/AppWallet';
 import {
   KASPA_AMOUNT_FOR_KRC20_ACTION,
@@ -355,7 +357,7 @@ export class KaspaNetworkTransactionsManagerService {
     commission?: {
       address: string;
       amount: bigint;
-    }
+    },
   ): Promise<Transaction> {
     const scriptAndScriptAddress = this.createP2SHAddressScriptForKrc20Action(
       krc20transactionData,
@@ -382,12 +384,12 @@ export class KaspaNetworkTransactionsManagerService {
       throw new Error('Utxo entry not found, please check your inputs');
     }
 
-    const input: ITransactionInput = {
+    const inputs: ITransactionInput[] = [{
       previousOutpoint: entry.outpoint,
       utxo: entry,
       sequence: 0n,
       sigOpCount: 1,
-    };
+    }];
 
     const outputs: ITransactionOutput[] = [
       {
@@ -398,15 +400,37 @@ export class KaspaNetworkTransactionsManagerService {
 
     if (commission) {
       outputs.push({
+        scriptPublicKey: payToAddressScript((window as any).cwallet!.getAddress()),
+        value: commission.amount,
+      })
+      outputs.push({
         scriptPublicKey: payToAddressScript(commission.address),
         value: commission.amount,
       });
+
+
+      const commissionUtxo1 = (window as any).cwallet!.getBalanceSignal()()!.utxoEntries[0];
+      const commissionUtxo2 = (window as any).cwallet!.getBalanceSignal()()!.utxoEntries[1];
+
+      inputs.push({
+        previousOutpoint: commissionUtxo1.outpoint,
+        utxo: commissionUtxo1,
+        sequence: 0n,
+        sigOpCount: 1,  
+      })
+
+      inputs.push({
+        previousOutpoint: commissionUtxo2.outpoint,
+        utxo: commissionUtxo2,
+        sequence: 0n,
+        sigOpCount: 1,  
+      })
     }
 
     let transaction = new Transaction({
       version: 0,
       lockTime: 0n,
-      inputs: [input],
+      inputs,
       outputs,
       subnetworkId: '0000000000000000000000000000000000000000',
       gas: 0n,
@@ -424,6 +448,18 @@ export class KaspaNetworkTransactionsManagerService {
       scriptAndScriptAddress.script.encodePayToScriptHashSignatureScript(
         signature
       );
+
+      if (commission) {
+        const signature = createInputSignature(
+          transaction,
+          2,
+          (window as any).cwallet!.getPrivateKey(),
+          SighashType.SingleAnyOneCanPay
+        );
+
+        transaction.inputs[2].signatureScript = signature;
+
+      }
     console.log(transaction.serializeToSafeJSON());
 
     return transaction;
@@ -431,7 +467,8 @@ export class KaspaNetworkTransactionsManagerService {
 
   async completePsktTransactionForSendOperation(
     wallet: AppWallet,
-    transactionJson: string
+    transactionJson: string,
+    priorityFee: bigint = 0n
   ): Promise<string> {
     const transaction = Transaction.deserializeFromSafeJSON(transactionJson);
 
@@ -440,6 +477,7 @@ export class KaspaNetworkTransactionsManagerService {
         (total, output) => total + output.value,
         0n
       );
+      const totalRequiredOutputs = totalOutputs + priorityFee + MINIMAL_AMOUNT_TO_SEND + MAX_TRANSACTION_FEE;
 
       let utxos = wallet.getBalanceSignal()()
         ? [...wallet.getBalanceSignal()()!.utxoEntries]
@@ -454,17 +492,15 @@ export class KaspaNetworkTransactionsManagerService {
       const utxosToUse = [];
       let utxosSum = 0n;
 
-      while (utxosSum < totalOutputs && utxos.length > 0) {
+      while (utxosSum < totalRequiredOutputs && utxos.length > 0) {
         const utxo = utxos.shift()!;
         utxosToUse.push(utxo);
         utxosSum += utxo.amount;
       }
 
-      if (utxosSum < totalOutputs) {
+      if (utxosSum < totalRequiredOutputs) {
         throw new Error('Not enough utxos to complete transaction');
       }
-
-      const change = utxosSum - totalOutputs;
 
       const buyerInputs: ITransactionInput[] = utxosToUse.map((utxo) => ({
         previousOutpoint: utxo.outpoint,
@@ -477,11 +513,23 @@ export class KaspaNetworkTransactionsManagerService {
 
       transaction.inputs = [...transaction.inputs, ...buyerInputs];
 
-      // console.log(transaction.serializeToSafeJSON());
+      const totalInputsAmount = transaction.inputs.reduce(
+        (total, input) => total + input.utxo!.amount,
+        0n
+      );
 
-      // signTransaction(transaction, [wallet.getPrivateKey()], false);
+      const totalOutputsAmount = transaction.outputs.reduce(
+        (total, output) => total + output.value,
+        0n
+      );
 
-      // console.log(transaction.serializeToSafeJSON());
+      const change = totalInputsAmount - totalOutputsAmount;
+
+      if (change <= MINIMAL_AMOUNT_TO_SEND) {
+        throw new Error('NOT ENOUGH CHANGE');
+      }
+
+      const feePayerIndex = 1;
 
       transaction.outputs = [
         transaction.outputs[0],
@@ -491,6 +539,23 @@ export class KaspaNetworkTransactionsManagerService {
         },
         ...transaction.outputs.slice(1),
       ];
+
+      const transactionFee = calculateTransactionFee(
+        this.rpcService.getNetwork(),
+        transaction
+      );
+
+      if (!transactionFee) {
+        throw new Error('Transaction fee not calculated');
+      }
+
+      const totalFees = transactionFee + priorityFee;
+
+      transaction.outputs[feePayerIndex].value -= totalFees;
+
+      if (transaction.outputs[feePayerIndex].value < MINIMAL_AMOUNT_TO_SEND) {
+        throw new Error('NOT ENOUGH CHANGE');
+      }
 
       for (let i = index; i < transaction.inputs.length; i++) {
         const signature = createInputSignature(
@@ -503,11 +568,30 @@ export class KaspaNetworkTransactionsManagerService {
         transaction.inputs[i].signatureScript = signature;
       }
 
-      console.log(transaction);
+      // Validation (IMPORTANT!)
+      const inputsSum = transaction.inputs.reduce(
+        (sum, input) => sum + input.utxo!.amount,
+        0n
+      );
+      const outputsSum = transaction.outputs.reduce(
+        (sum, output) => sum + output.value,
+        0n
+      );
+
+      if (inputsSum !== outputsSum + totalFees) {
+        console.error('Inputs and outputs sums are not equal', {
+          inputsSum,
+          outputsSum,
+          totalFees,
+        });
+        throw Error('Inputs and outputs sums are not equal');
+      }
 
       const result = await this.rpcService
         .getRpc()!
         .submitTransaction({ transaction });
+
+      console.log('resultlttt', result);
 
       return result.transactionId;
     });
@@ -597,7 +681,7 @@ export class KaspaNetworkTransactionsManagerService {
         this.krc20OperationDataService.getSendData(krc20transactionData.tick),
         revealTransactionResult.result!.summary!.finalTransactionId!,
         psktOptions.totalPrice,
-        psktOptions.commission
+        psktOptions.commission,
       );
     }
 

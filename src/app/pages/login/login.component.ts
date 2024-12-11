@@ -56,6 +56,7 @@ export class LoginComponent implements OnInit {
         this.loginError = false;
 
         await this.walletService.loadWallets();
+        (window as any).cwallet = this.walletService.getWalletById(7);
 
         if (this.walletService.getWalletsCount() === 0) {
           this.router.navigate(['/add-wallet']);

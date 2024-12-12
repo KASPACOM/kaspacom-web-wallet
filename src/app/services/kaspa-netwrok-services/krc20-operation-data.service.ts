@@ -11,6 +11,7 @@ export const KRC20_TRANSACTIONS_PRICE = {
 };
 
 export const KASPA_AMOUNT_FOR_KRC20_ACTION = 300000000n;
+export const KASPA_AMOUNT_FOR_LIST_KRC20_ACTION = 200000000n;
 
 @Injectable({
   providedIn: 'root',

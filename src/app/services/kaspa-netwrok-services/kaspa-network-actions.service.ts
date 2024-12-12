@@ -39,7 +39,7 @@ import { PsktTransaction } from '../../types/kaspa-network/pskt-transaction.inte
 
 const MINIMAL_TRANSACTION_MASS = 10000n;
 export const MINIMAL_AMOUNT_TO_SEND = 20000000n;
-export const MAX_TRANSACTION_FEE = 20000n
+export const MAX_TRANSACTION_FEE = 20000n;
 @Injectable({
   providedIn: 'root',
 })
@@ -269,15 +269,14 @@ export class KaspaNetworkActionsService {
       const result =
         await this.transactionsManager.completePsktTransactionForSendOperation(
           wallet,
-          (action.data as BuyKrc20PsktAction).psktTransactionJson
-          // action.priorityFee || 0n,
+          (action.data as BuyKrc20PsktAction).psktTransactionJson,
+          action.priorityFee || 0n
         );
 
       const resultData: BuyKrc20PsktActionResult = {
         type: WalletActionResultType.BuyKrc20Pskt,
-        psktTransactionJson: (action.data as BuyKrc20PsktAction)
-          .psktTransactionJson,
-        transactionId: result,
+        psktTransactionJson: result.psktTransaction,
+        transactionId: result.transactionId,
         performedByWallet: wallet.getAddress(),
       };
 
@@ -320,10 +319,13 @@ export class KaspaNetworkActionsService {
     }
 
     if (action.type === WalletActionType.BUY_KRC20_PSKT) {
-      const data = (action.data as BuyKrc20PsktAction);
+      const data = action.data as BuyKrc20PsktAction;
       const pskt: PsktTransaction = JSON.parse(data.psktTransactionJson);
 
-      const totalOutputs = pskt.outputs.reduce((acc, curr) => acc + BigInt(curr.value), 0n);
+      const totalOutputs = pskt.outputs.reduce(
+        (acc, curr) => acc + BigInt(curr.value),
+        0n
+      );
 
       return (action.priorityFee || 0n) + totalOutputs + MINIMAL_AMOUNT_TO_SEND;
     }
@@ -346,6 +348,12 @@ export class KaspaNetworkActionsService {
     return this.transactionsManager.doesUnfinishedActionHasKasInScriptWallet(
       wallet,
       action
+    );
+  }
+
+  getWalletAddressFromScriptPublicKey(scriptPublicKey: string): string {
+    return this.transactionsManager.getWalletAddressFromScriptPublicKey(
+      scriptPublicKey
     );
   }
 }

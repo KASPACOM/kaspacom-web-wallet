@@ -3,7 +3,6 @@ import {
   Address,
   addressFromScriptPublicKey,
   calculateTransactionFee,
-  calculateTransactionMass,
   createInputSignature,
   createTransactions,
   FeeSource,
@@ -12,7 +11,6 @@ import {
   IGeneratorSettingsObject,
   IGetUtxosByAddressesResponse,
   IPaymentOutput,
-  ITransaction,
   ITransactionInput,
   ITransactionOutput,
   IUtxoEntry,
@@ -20,12 +18,9 @@ import {
   payToAddressScript,
   PendingTransaction,
   PrivateKey,
-  PSKT,
   PublicKey,
   ScriptBuilder,
   SighashType,
-  signScriptHash,
-  signTransaction,
   Transaction,
   UtxoEntryReference,
 } from '../../../../public/kaspa/kaspa';
@@ -47,6 +42,7 @@ import {
 import { AppWallet } from '../../classes/AppWallet';
 import {
   KASPA_AMOUNT_FOR_KRC20_ACTION,
+  KASPA_AMOUNT_FOR_LIST_KRC20_ACTION,
   Krc20OperationDataService,
 } from './krc20-operation-data.service';
 import { UnfinishedKrc20Action } from '../../types/kaspa-network/unfinished-krc20-action.interface';
@@ -230,13 +226,19 @@ export class KaspaNetworkTransactionsManagerService {
         }
       }
 
+      let finalPriorityFee = priorityFee;
+
+      if (additionalKrc20TransactionPriorityFee > priorityFee) {
+        finalPriorityFee = additionalKrc20TransactionPriorityFee;
+      }
+
       const baseTransactionData: IGeneratorSettingsObject = {
         priorityEntries: additionalOptions.priorityEntries || [],
         entries: context,
         outputs,
         changeAddress: this.convertPrivateKeyToAddress(privateKey.toString()),
         priorityFee: {
-          amount: additionalKrc20TransactionPriorityFee + priorityFee,
+          amount: finalPriorityFee,
           source: sendAll ? FeeSource.ReceiverPays : FeeSource.SenderPays,
         },
         networkId: this.rpcService.getNetwork(),
@@ -440,8 +442,12 @@ export class KaspaNetworkTransactionsManagerService {
   async completePsktTransactionForSendOperation(
     wallet: AppWallet,
     transactionJson: string,
-    priorityFee: bigint = 0n
-  ): Promise<string> {
+    priorityFee: bigint = 0n,
+    signOnly: boolean = false
+  ): Promise<{
+    psktTransaction: string;
+    transactionId?: string;
+  }> {
     const transaction = Transaction.deserializeFromSafeJSON(transactionJson);
 
     return await this.connectAndDo(async () => {
@@ -563,11 +569,19 @@ export class KaspaNetworkTransactionsManagerService {
         throw Error('Inputs and outputs sums are not equal');
       }
 
-      const result = await this.rpcService
-        .getRpc()!
-        .submitTransaction({ transaction });
+      const result: { psktTransaction: string; transactionId?: string } = {
+        psktTransaction: transaction.serializeToSafeJSON(),
+      };
 
-      return result.transactionId;
+      if (!signOnly) {
+        const transactionResult = await this.rpcService
+          .getRpc()!
+          .submitTransaction({ transaction });
+
+        result.transactionId = transactionResult.transactionId;
+      }
+
+      return result;
     });
   }
 
@@ -780,7 +794,7 @@ export class KaspaNetworkTransactionsManagerService {
 
       outputs.push({
         address: sendTransaction.p2shaAddress.toString(),
-        amount: KASPA_AMOUNT_FOR_KRC20_ACTION,
+        amount: KASPA_AMOUNT_FOR_LIST_KRC20_ACTION,
       });
     }
 
@@ -992,5 +1006,24 @@ export class KaspaNetworkTransactionsManagerService {
     );
 
     return hasMoney.totalBalance > 0n;
+  }
+
+  getWalletAddressFromScriptPublicKey(scriptPublicKey: string): string {
+    const result = addressFromScriptPublicKey(
+      scriptPublicKey,
+      this.rpcService.getNetwork()
+    );
+
+    if (!result) {
+      throw new Error('Invalid script public key');
+    }
+
+    const address = result.toString();
+
+    if (this.utils.isNullOrEmptyString(address)) {
+      throw new Error('Invalid script public key');
+    }
+
+    return address;
   }
 }

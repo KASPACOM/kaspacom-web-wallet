@@ -53,6 +53,6 @@ export interface MessageSigningActionResult extends WalletActionResult {
 
 export interface BuyKrc20PsktActionResult extends WalletActionResult {
     type: WalletActionResultType.BuyKrc20Pskt;
-    transactionId: string;
+    transactionId?: string;
     psktTransactionJson: string;
 }

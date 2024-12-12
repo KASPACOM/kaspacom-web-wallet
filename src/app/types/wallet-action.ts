@@ -49,4 +49,5 @@ export interface ActionWithPsktGenerationData {
 
 export interface BuyKrc20PsktAction {
   psktTransactionJson: string;
+  signOnly: boolean;
 }

@@ -57,12 +57,6 @@ export class ListKrc20Component implements OnInit {
           selectedAsset!.ticker,
           this.kaspaNetworkActionsService.kaspaToSompiFromNumber(this.amount!),
           this.kaspaNetworkActionsService.kaspaToSompiFromNumber(this.totalPrice!),
-          {
-            amount: this.kaspaNetworkActionsService.kaspaToSompiFromNumber(
-              5
-            ),
-            address: "kaspatest:qq357v269w74lcp4t803jvqhyxj6y2jmkf00n44unhpcz85tvgzzqkxj3pr84",
-          }
         );
 
       const result =

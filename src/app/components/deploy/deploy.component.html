@@ -1,0 +1,37 @@
+<div class="deploy-asset">
+  <h2>Deploy Token</h2>
+
+  <label for="tickerInput">Ticker:</label>
+  <input
+    id="tickerInput"
+    type="text"
+    [(ngModel)]="selectedToken"
+    placeholder="Enter token ticker"
+  />
+
+  <label for="maxSupply">Max Supply:</label>
+  <input
+    id="maxSupply"
+    type="number"
+    [(ngModel)]="maxSupply"
+    placeholder="Enter max supply"
+  />
+
+  <label for="limitPerMint">Limit Per Mint:</label>
+  <input
+    id="limitPerMint"
+    type="number"
+    [(ngModel)]="limitPerMint"
+    placeholder="Enter limit per mint"
+  />
+
+  <label for="preAllocation">Pre Allocation:</label>
+  <input
+    id="preAllocation"
+    type="number"
+    [(ngModel)]="preAllocation"
+    placeholder="Enter pre allocation"
+  />
+
+  <button (click)="deployToken()">Deploy</button>
+</div>

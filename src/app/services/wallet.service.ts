@@ -268,11 +268,6 @@ export class WalletService {
     if (!this.getCurrentWallet()) {
       return [];
     }
-    const krc20tokens = await firstValueFrom(
-      this.kasplexService.getWalletTokenList(
-        this.getCurrentWallet()!.getAddress()
-      )
-    );
 
     return [
       {
@@ -283,14 +278,23 @@ export class WalletService {
             ?.mature || 0n,
         name: 'TKAS',
       },
-    ].concat(
-      krc20tokens.result.map((token) => ({
-        ticker: token.tick,
-        type: AssetType.KRC20,
-        availableAmount: BigInt(token.balance),
-        name: token.tick,
-      }))
+      ...(await this.getKrc20AvailableAssetsForCurrentWallet())
+    ];
+  }
+
+  async getKrc20AvailableAssetsForCurrentWallet(): Promise<TransferableAsset[]> {
+    const krc20tokens = await firstValueFrom(
+      this.kasplexService.getWalletTokenList(
+        this.getCurrentWallet()!.getAddress()
+      )
     );
+
+    return krc20tokens.result.map((token) => ({
+      ticker: token.tick,
+      type: AssetType.KRC20,
+      availableAmount: BigInt(token.balance),
+      name: token.tick,
+    }));
   }
 
   async updateWalletName(wallet: AppWallet, newName: string): Promise<boolean> {

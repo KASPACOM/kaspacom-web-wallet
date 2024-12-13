@@ -24,6 +24,11 @@ import {
   FullTransactionResponseItem,
 } from '../../services/kaspa-api/dtos/full-transaction-response.dto';
 import { UnfinishedKrc20Action } from '../../types/kaspa-network/unfinished-krc20-action.interface';
+import { ListKrc20Component } from '../../components/list-krc20-component/list-krc20-component.component';
+import { BuyKrc20Component } from '../../components/buy-krc20-component/buy-krc20.component';
+import { DeployComponent } from '../../components/deploy/deploy.component';
+
+type ActionTabs = 'send' | 'mint' | 'deploy' | 'list' | 'buy';
 
 @Component({
   selector: 'wallet-info',
@@ -40,6 +45,9 @@ import { UnfinishedKrc20Action } from '../../types/kaspa-network/unfinished-krc2
     MintComponent,
     ReviewActionComponent,
     CommonModule,
+    ListKrc20Component,
+    BuyKrc20Component,
+    DeployComponent,
   ],
 })
 export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -69,7 +77,7 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
   private paginationNextTokenKey?: string | null;
   private paginationDirection?: 'next' | 'prev' | null;
 
-  protected activeTab: 'send' | 'mint' = 'send'; // Default to Send Asset tab
+  protected activeTab: ActionTabs = 'deploy'; // Default to Send Asset tab
   protected infoActiveTab: 'utxos' | 'kaspa-transactions' = 'utxos';
 
   private refreshDataTimeout: NodeJS.Timeout | undefined;
@@ -163,7 +171,7 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
     this.router.navigate(['/wallet-selection']);
   }
 
-  switchTab(tab: 'send' | 'mint') {
+  switchTab(tab: ActionTabs) {
     this.activeTab = tab;
   }
 

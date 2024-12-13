@@ -1,0 +1,41 @@
+<div class="list-asset">
+  <h2>List Asset</h2>
+
+  <!-- Asset Selection -->
+   <div *ngIf="assets && assets.length > 0; else noAssetsToChoose">
+    <label for="assetInput" >Choose Asset:</label>
+    <select id="assetInput" [(ngModel)]="selectedAsset">
+      <option *ngFor="let asset of assets" [value]="getAssetId(asset)">
+        {{ asset.name }}
+      </option>
+    </select>
+  
+   </div>
+   <ng-template #noAssetsToChoose>
+    <p>Loading...</p>
+  </ng-template>
+
+  <!-- Amount Input -->
+  <label for="amount">Amount:</label>
+  <input
+    id="amount"
+    type="number"
+    [(ngModel)]="amount"
+    min="0"
+    placeholder="Enter amount"
+  />
+
+  <!-- Address Input -->
+  <label for="totalPrice">Total Price (KAS):</label>
+  <input
+    id="totalPrice"
+    type="text"
+    [(ngModel)]="totalPrice"
+    placeholder="Enter total price in kaspa"
+  />
+
+  <!-- Send Button -->
+  <button (click)="sendAsset()" [disabled]="!isFormValid()">Send</button>
+</div>
+
+  

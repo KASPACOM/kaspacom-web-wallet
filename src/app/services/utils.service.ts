@@ -46,8 +46,12 @@ export class UtilsHelper {
     throw lastError;
   }
 
-  isNullOrEmptyString(str: string) {
+  isNullOrEmptyString(str: string | undefined | null): boolean {
     return !str || str.trim().length === 0;
+  }
+
+  isNumberString(str: string): boolean {
+    return /^\d+(\.\d+)?$/.test(str);
   }
 
 

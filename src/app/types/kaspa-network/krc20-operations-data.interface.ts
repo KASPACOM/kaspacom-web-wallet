@@ -34,5 +34,7 @@ export interface KRC20OperationDataInterface {
     MINT = 'mint',
     DEPLOY = 'deploy',
     TRANSFER = 'transfer',
+    LIST = 'list',
+    SEND = 'send',
   }
   

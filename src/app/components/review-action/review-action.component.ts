@@ -26,6 +26,7 @@ const TIMEOUT = 2 * 60 * 1000;
 export class ReviewActionComponent {
   public WalletActionType = WalletActionType;
   public KRC20OperationType = KRC20OperationType;
+  public Number = Number;
 
   private resolve:
     | ((result: { isApproved: boolean; priorityFee?: bigint }) => void)

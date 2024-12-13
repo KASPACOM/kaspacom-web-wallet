@@ -43,7 +43,7 @@
         <div class="transaction-details">
           <div class="detail">
             <div class="label">Ticker:</div>
-            <div class="value">{{ krc20ActionData.operationData.tick }}</div>
+            <div class="value">{{ krc20ActionData.operationData.tick.toUpperCase() }}</div>
           </div>
           <div class="detail">
             <div class="label">Sender:</div>
@@ -57,7 +57,7 @@
             <div class="label">Amount:</div>
             <div class="value">
               {{ krc20ActionData.operationData.amt! | sompiToNumber }}
-              {{ krc20ActionData.operationData.tick }}
+              {{ krc20ActionData.operationData.tick.toUpperCase() }}
             </div>
           </div>
         </div>
@@ -69,7 +69,7 @@
         <div class="transaction-details">
           <div class="detail">
             <div class="label">Ticker:</div>
-            <div class="value">{{ krc20ActionData.operationData.tick }}</div>
+            <div class="value">{{ krc20ActionData.operationData.tick.toUpperCase() }}</div>
           </div>
           <div class="detail">
             <div class="label">Wallet:</div>
@@ -83,8 +83,20 @@
         <h3>Deploy KRC20 Token</h3>
         <div class="transaction-details">
           <div class="detail">
-            <div class="label">Sender:</div>
-            <div class="value">{{ walletAddress }}</div>
+            <div class="label">Ticker:</div>
+            <div class="value">{{ krc20ActionData.operationData.tick.toUpperCase() }}</div>
+          </div>
+          <div class="detail">
+            <div class="label">Max Supply:</div>
+            <div class="value">{{ krc20ActionData.operationData.max! | sompiToNumber }}</div>
+          </div>
+          <div class="detail">
+            <div class="label">Tokens Per Mint:</div>
+            <div class="value">{{ krc20ActionData.operationData.lim! | sompiToNumber }}</div>
+          </div>
+          <div class="detail">
+            <div class="label">Pre Allocation:</div>
+            <div class="value">{{ krc20ActionData.operationData.pre! | sompiToNumber }} ({{ (Number(krc20ActionData.operationData.pre!) / Number(krc20ActionData.operationData.max!) * 100).toFixed(2) }}%)</div>
           </div>
         </div>
       </ng-container>
@@ -96,7 +108,7 @@
         <div class="transaction-details">
           <div class="detail">
             <div class="label">Ticker:</div>
-            <div class="value">{{ krc20ActionData.operationData.tick }}</div>
+            <div class="value">{{ krc20ActionData.operationData.tick.toUpperCase() }}</div>
           </div>
           <div class="detail">
             <div class="label">Wallet:</div>
@@ -127,7 +139,7 @@
         <div class="transaction-details">
           <div class="detail">
             <div class="label">Ticker:</div>
-            <div class="value">{{ krc20ActionData.operationData.tick }}</div>
+            <div class="value">{{ krc20ActionData.operationData.tick.toUpperCase() }}</div>
           </div>
           <div class="detail">
             <div class="label">Wallet:</div>

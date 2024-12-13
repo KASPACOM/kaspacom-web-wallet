@@ -59,6 +59,9 @@
           <h3>Deploy KRC20 Token Transaction</h3>
           <p><strong>Ticker:</strong> {{ krc20ActionResult.operationData.tick }}</p>
           <p><strong>Wallet:</strong> {{ actionResult.performedByWallet }}</p>
+          <p><strong>Max Supply:</strong> {{ krc20ActionResult.operationData.max! | sompiToNumber }}</p>
+          <p><strong>Tokens Per Mint:</strong> {{ krc20ActionResult.operationData.lim! | sompiToNumber }}</p>
+          <p><strong>Pre Allocation:</strong> {{ krc20ActionResult.operationData.pre! | sompiToNumber }} ({{ (Number(krc20ActionResult.operationData.pre!) / Number(krc20ActionResult.operationData.max!) * 100).toFixed(2) }}%)</p>
           <p><strong>Commit Transaction ID:</strong> {{ krc20ActionResult.commitTransactionId }}</p>
           <p><strong>Reveal Transaction ID:</strong> {{ krc20ActionResult.revealTransactionId }}</p>
         </ng-container>

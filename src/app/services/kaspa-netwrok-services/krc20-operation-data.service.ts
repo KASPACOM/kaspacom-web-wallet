@@ -59,8 +59,9 @@ export class Krc20OperationDataService {
 
   getDeployData(
     ticker: string,
-    max: number,
-    lim: number
+    max: bigint,
+    lim: bigint,
+    pre: bigint,
   ): KRC20OperationDataInterface {
     return {
       p: 'krc-20',
@@ -68,6 +69,7 @@ export class Krc20OperationDataService {
       tick: ticker,
       max: String(max),
       lim: String(lim),
+      pre: String(pre),
     };
   }
 

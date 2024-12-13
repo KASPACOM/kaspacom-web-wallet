@@ -23,6 +23,7 @@ import { PsktTransaction } from '../../types/kaspa-network/pskt-transaction.inte
 export class CompletedActionReview {
   public WalletActionResultType = WalletActionResultType;
   public KRC20OperationType = KRC20OperationType;
+  public Number = Number;
 
   @Input() actionResult!: WalletActionResult;
 

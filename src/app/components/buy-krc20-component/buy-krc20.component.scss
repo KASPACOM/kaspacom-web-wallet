@@ -1,0 +1,55 @@
+.buy-asset {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+
+  .asset-title {
+    text-align: center;
+  }
+
+  .asset-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    .asset-item {
+      padding: 10px 0;
+      border-bottom: 1px solid #ccc;
+
+      .asset-label {
+        display: inline-block;
+        width: 100px;
+        font-weight: bold;
+      }
+
+      .asset-value {
+        display: inline-block;
+      }
+    }
+  }
+
+  .buy-button {
+    width: 100%;
+    padding: 10px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .buy-button:disabled {
+    background-color: #ccc;
+  }
+}
+
+  .cancel-button {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    padding: 10px;
+    margin-top: 10px;
+  }

@@ -1,11 +1,18 @@
 import { Component } from '@angular/core';
 import { JsonPipe, NgFor, NgIf } from '@angular/common';
-import { Krc20Action, TransferKasAction, WalletAction, WalletActionType } from '../../types/wallet-action';
+import {
+  BuyKrc20PsktAction,
+  Krc20Action,
+  TransferKasAction,
+  WalletAction,
+  WalletActionType,
+} from '../../types/wallet-action';
 import { WalletService } from '../../services/wallet.service';
 import { SompiToNumberPipe } from '../../pipes/sompi-to-number.pipe';
 import { WalletActionResult } from '../../types/wallet-action-result';
 import { CompletedActionReview } from '../completed-action-review/completed-action-review.component';
 import { KRC20OperationType } from '../../types/kaspa-network/krc20-operations-data.interface';
+import { PsktTransaction } from '../../types/kaspa-network/pskt-transaction.interface';
 
 const TIMEOUT = 2 * 60 * 1000;
 
@@ -19,6 +26,7 @@ const TIMEOUT = 2 * 60 * 1000;
 export class ReviewActionComponent {
   public WalletActionType = WalletActionType;
   public KRC20OperationType = KRC20OperationType;
+  public Number = Number;
 
   private resolve:
     | ((result: { isApproved: boolean; priorityFee?: bigint }) => void)
@@ -34,9 +42,7 @@ export class ReviewActionComponent {
   // Result
   protected result: WalletActionResult | undefined = undefined;
 
-
   constructor(private walletService: WalletService) {}
-
 
   // PUBLIC ACTIONS
   public requestUserConfirmation(action: WalletAction): Promise<{
@@ -50,7 +56,7 @@ export class ReviewActionComponent {
     return this.initAction(action);
   }
 
-  public showActionLoader(progress?: number | undefined) { 
+  public showActionLoader(progress?: number | undefined) {
     this.showLoader = true;
     this.progress = progress;
   }
@@ -63,7 +69,6 @@ export class ReviewActionComponent {
   public setActionResult(result: WalletActionResult) {
     this.result = result;
   }
-
 
   // COMPONENT MANAGEMENT
   private clearData() {
@@ -112,8 +117,15 @@ export class ReviewActionComponent {
     return this.action?.data as Krc20Action;
   }
 
+  protected get buyKrc20PsktActionData(): BuyKrc20PsktAction {
+    return this.action?.data as BuyKrc20PsktAction;
+  }
+
+  protected get buyKrc20PsktTransactoin(): PsktTransaction {
+    return JSON.parse(this.buyKrc20PsktActionData?.psktTransactionJson);
+  }
+
   protected get walletAddress(): string {
     return this.walletService.getCurrentWallet()?.getAddress() || '';
   }
-  
 }

@@ -1,9 +1,14 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { catchError, map, Observable, of } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { catchError, firstValueFrom, map, Observable, of } from 'rxjs';
 import { GetTokenWalletInfoDto } from './dtos/get-token-wallet-info.dto';
-import { GetTokenInfoResponse, GetTokenListResponse } from './dtos/token-list-info.dto';
+import {
+  GetTokenInfoResponse,
+  GetTokenListResponse,
+} from './dtos/token-list-info.dto';
 import { environment } from '../../../environments/environment';
+import { ListingInfoResponse } from './dtos/listing-info-response.dto';
+import { OperationDetailsResponse } from './dtos/operation-details-response';
 
 @Injectable({ providedIn: 'root' })
 export class KasplexKrc20Service {
@@ -84,71 +89,52 @@ export class KasplexKrc20Service {
     return this.httpClient.get<GetTokenInfoResponse>(url);
   }
 
-  // getWalletActivity(
-  //   address: string,
-  //   paginationKey: string | null = null,
-  //   direction: string | null = null
-  // ): Observable<ant> {
-  //   let queryParam = '';
-  //   if (paginationKey && direction) {
-  //     queryParam = `&${direction}=${paginationKey}`;
-  //   }
+  getListingInfo(
+    ticker: string,
+    walletAddress?: string,
+    txid?: string
+  ): Observable<ListingInfoResponse> {
+    const url = `${this.baseurl}/krc20/market/${ticker}`;
 
-  //   const url = `${this.baseurl}/krc20/oplist?address=${address}${queryParam}`;
+    const params: { address?: string; txid?: string } = {};
 
-  //   return this.httpClient
-  //     .get<{ result: any[]; next: string | null; prev: string | null }>(url)
-  //     .pipe(
-  //       map((response) => {
-  //         const operations = response.result;
+    if (walletAddress) {
+      params.address = walletAddress;
+    }
 
-  //         if (operations.length === 0) {
-  //           return {
-  //             activityItems: [],
-  //             next: null,
-  //             prev: null,
-  //           };
-  //         }
+    if (txid) {
+      params.txid = txid;
+    }
 
-  //         const activityItems: TokenRowActivityItem[] = operations.map((op) => {
-  //           let type: string;
-  //           switch (op.op) {
-  //             case 'transfer':
-  //               type = 'Transfer';
-  //               break;
-  //             case 'mint':
-  //               type = 'Mint';
-  //               break;
-  //             case 'deploy':
-  //               type = 'Deploy';
-  //               break;
-  //             default:
-  //               type = 'Unknown';
-  //               break;
-  //           }
+    return this.httpClient.get<ListingInfoResponse>(url, { params });
+  }
 
-  //           const amount = op.amt
-  //             ? (parseInt(op.amt) / 100000000).toFixed(2)
-  //             : '---';
+  getOperationDetails(
+    operationTransactionId: string,
+  ): Observable<OperationDetailsResponse> {
+    const url = `${this.baseurl}/krc20/op/${operationTransactionId}`;
 
-  //           return {
-  //             ticker: op.tick,
-  //             amount,
-  //             type,
-  //             time: new Date(parseInt(op.mtsAdd)).toLocaleString(),
-  //           };
-  //         });
+    return this.httpClient.get<OperationDetailsResponse>(url);
+  }
 
-  //         return {
-  //           activityItems,
-  //           next: response.next || null,
-  //           prev: response.prev || null,
-  //         };
-  //       }),
-  //       catchError((err) => {
-  //         console.error('Error fetching wallet activity:', err);
-  //         return of({ activityItems: [], next: null, prev: null });
-  //       })
-  //     );
-  // }
+  async isListingStillExists(
+    ticker: string,
+    walletAddress: string,
+    txid: string
+  ): Promise<boolean> {
+    const result = await firstValueFrom(
+      this.getListingInfo(ticker, walletAddress, txid)
+    );
+
+    if (result.message != 'successful') {
+      console.error(
+        `Error fetching token info for ${ticker} at address ${walletAddress}:`,
+        result
+      );
+      throw new Error(result.message);
+    }
+
+    return result.result.length > 0;
+  }
+
 }

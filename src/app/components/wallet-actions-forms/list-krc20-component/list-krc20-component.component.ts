@@ -1,13 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { WalletService } from '../../services/wallet.service';
+import { WalletService } from '../../../services/wallet.service';
 import { NgFor, NgIf } from '@angular/common';
-import { TransferableAsset } from '../../types/transferable-asset';
-import { WalletAction, WalletActionType } from '../../types/wallet-action';
-import { KaspaNetworkActionsService } from '../../services/kaspa-netwrok-services/kaspa-network-actions.service';
-import { WalletActionService } from '../../services/wallet-action.service';
-import { ERROR_CODES } from '../../config/consts';
+import { TransferableAsset } from '../../../types/transferable-asset';
+import { WalletAction, WalletActionType } from '../../../types/wallet-action';
+import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
+import { WalletActionService } from '../../../services/wallet-action.service';
+import { ERROR_CODES } from '../../../config/consts';
 
 @Component({
   selector: 'list-krc20-token',

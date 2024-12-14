@@ -1,10 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { WalletService } from '../../services/wallet.service';
 import { NgIf } from '@angular/common';
-import { DEFAULT_DERIVED_PATH } from '../../config/consts';
-import { UtilsHelper } from '../../services/utils.service';
+import { WalletService } from '../../../services/wallet.service';
+import { UtilsHelper } from '../../../services/utils.service';
+import { DEFAULT_DERIVED_PATH } from '../../../config/consts';
 
 @Component({
   selector: 'create-wallet',

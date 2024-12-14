@@ -6,13 +6,13 @@ import {
   TransferKasAction,
   WalletAction,
   WalletActionType,
-} from '../../types/wallet-action';
-import { WalletService } from '../../services/wallet.service';
-import { SompiToNumberPipe } from '../../pipes/sompi-to-number.pipe';
-import { WalletActionResult } from '../../types/wallet-action-result';
+} from '../../../types/wallet-action';
+import { WalletService } from '../../../services/wallet.service';
+import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
+import { WalletActionResult } from '../../../types/wallet-action-result';
 import { CompletedActionReview } from '../completed-action-review/completed-action-review.component';
-import { KRC20OperationType } from '../../types/kaspa-network/krc20-operations-data.interface';
-import { PsktTransaction } from '../../types/kaspa-network/pskt-transaction.interface';
+import { KRC20OperationType } from '../../../types/kaspa-network/krc20-operations-data.interface';
+import { PsktTransaction } from '../../../types/kaspa-network/pskt-transaction.interface';
 
 const TIMEOUT = 2 * 60 * 1000;
 

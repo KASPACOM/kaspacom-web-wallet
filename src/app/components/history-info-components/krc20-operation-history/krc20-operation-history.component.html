@@ -1,0 +1,97 @@
+<div class="krc20-operations-history">
+  <h2 class="title">Krc20 Operations History</h2>
+
+  <ul
+    *ngIf="operations !== undefined; else LoadingOperations"
+    class="operations-list"
+  >
+    <li *ngFor="let op of operations" class="operation-item">
+      <div [ngClass]="{
+        'operation-header': true,
+        'operation-header-deploy': op.op === KRC20OperationType.DEPLOY,
+        'operation-header-list': op.op === KRC20OperationType.LIST,
+        'operation-header-mint': op.op === KRC20OperationType.MINT,
+        'operation-header-send': op.op === KRC20OperationType.SEND,
+        'operation-header-transfer': op.op === KRC20OperationType.TRANSFER
+      }">
+        <strong>{{ getOperationTitle(op) }}</strong>
+      </div>
+      <div class="operation-details">
+        <div class="operation-ticker">
+          <strong>Ticker:</strong>
+          <span>{{ op.tick }}</span>
+        </div>
+        <div class="operation-balance">
+          <strong>Balance:</strong>
+          <span
+            [ngClass]="{
+              'balance-positive': getOperationWalletBalance(op).balance > 0,
+              'balance-negative': getOperationWalletBalance(op).balance < 0,
+              'balance-locked': getOperationWalletBalance(op).isLocked
+            }"
+          >
+            <span>
+              {{ getOperationWalletBalance(op).balance > 0 && !getOperationWalletBalance(op).isLocked ? "+" : ""
+              }}{{ getOperationWalletBalance(op).balance | sompiToNumber }}
+            </span>
+            <span *ngIf="getOperationWalletBalance(op).isLocked">(Locked)</span>
+          </span>
+        </div>
+        <div class="operation-confirmation">
+          <strong>Status:</strong>
+          <span
+            [ngClass]="{
+              'confirmation-status-success':
+                op.opAccept === AcceptedStatus.Accepted &&
+                op.txAccept === AcceptedStatus.Accepted,
+              'confirmation-status-failed':
+                op.opAccept !== AcceptedStatus.Accepted ||
+                op.txAccept !== AcceptedStatus.Accepted
+            }"
+          >
+            {{
+              op.opAccept === AcceptedStatus.Accepted &&
+              op.txAccept === AcceptedStatus.Accepted
+                ? "Success"
+                : "Failed"
+            }}
+          </span>
+        </div>
+        <div class="operation-max" *ngIf="!isNullOrEmptyString(op.max)">
+          <strong>Total Tokens:</strong>
+          <span>{{ op.max! | sompiToNumber }}</span>
+        </div>
+        <div class="operation-pre" *ngIf="!isNullOrEmptyString(op.max)">
+          <strong>Pre Allocation:</strong>
+          <span>
+            {{ op.pre || "0" | sompiToNumber }}
+            <span *ngIf="op.max"
+              >({{
+                ((Number(op.pre) / Number(op.max)) * 100).toFixed(2)
+              }}%)</span
+            >
+          </span>
+        </div>
+        <div class="operation-limit" *ngIf="!isNullOrEmptyString(op.lim)">
+          <strong>Mint Limit:</strong>
+          <span>{{ op.lim! | sompiToNumber }}</span>
+        </div>
+        <div class="operation-from" *ngIf="op.from && (op.op == KRC20OperationType.TRANSFER || op.op == KRC20OperationType.SEND) && wallet.getAddress() != op.from">
+          <strong>From:</strong>
+          <span>{{ op.from }}</span>
+        </div>
+        <div class="operation-to" *ngIf="op.to && (op.op == KRC20OperationType.TRANSFER || op.op == KRC20OperationType.SEND) && wallet.getAddress() != op.to">
+          <strong>To:</strong>
+          <span>{{ op.to }}</span>
+        </div>
+        <div class="operation-error" *ngIf="!isNullOrEmptyString(op.opError)">
+          <strong>Error:</strong>
+          <span class="operation-error-message">{{ op.opError }}</span>
+        </div>
+      </div>
+    </li>
+  </ul>
+  <ng-template #LoadingOperations>
+    <p>Loading...</p>
+  </ng-template>
+</div>

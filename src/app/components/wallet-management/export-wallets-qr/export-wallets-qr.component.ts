@@ -1,9 +1,9 @@
 import { NgIf } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import { QRCodeComponent, QRCodeModule } from 'angularx-qrcode';
-import { PasswordManagerService } from '../../services/password-manager.service';
-import { UserWalletsData } from '../../types/user-wallets-data';
-import { LOCAL_STORAGE_KEYS } from '../../config/consts';
+import { PasswordManagerService } from '../../../services/password-manager.service';
+import { UserWalletsData } from '../../../types/user-wallets-data';
+import { LOCAL_STORAGE_KEYS } from '../../../config/consts';
 
 @Component({
   selector: 'export-wallets-qr',

@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
-import { UtilsHelper } from '../../services/utils.service';
+import { UtilsHelper } from '../../../services/utils.service';
 import { FormsModule } from '@angular/forms';
-import { WalletActionService } from '../../services/wallet-action.service';
-import { KaspaNetworkActionsService } from '../../services/kaspa-netwrok-services/kaspa-network-actions.service';
+import { WalletActionService } from '../../../services/wallet-action.service';
+import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 
 @Component({
   selector: 'deploy',

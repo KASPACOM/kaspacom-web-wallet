@@ -1,13 +1,13 @@
 import { Component, effect, signal } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { WalletService } from '../../services/wallet.service';
+import { WalletService } from '../../../services/wallet.service';
 import { NgFor, NgIf } from '@angular/common';
-import { KaspaNetworkActionsService } from '../../services/kaspa-netwrok-services/kaspa-network-actions.service';
-import { WalletActionService } from '../../services/wallet-action.service';
-import { KasplexKrc20Service } from '../../services/kasplex-api/kasplex-api.service';
-import { ListingInfoEntry } from '../../services/kasplex-api/dtos/listing-info-response.dto';
+import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
+import { WalletActionService } from '../../../services/wallet-action.service';
+import { KasplexKrc20Service } from '../../../services/kasplex-api/kasplex-api.service';
+import { ListingInfoEntry } from '../../../services/kasplex-api/dtos/listing-info-response.dto';
 import { firstValueFrom } from 'rxjs';
-import { SompiToNumberPipe } from '../../pipes/sompi-to-number.pipe';
+import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
 
 @Component({
   selector: 'buy-krc20-token',

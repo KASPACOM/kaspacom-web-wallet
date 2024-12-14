@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
-import { SompiToNumberPipe } from '../../pipes/sompi-to-number.pipe';
+import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
 import {
   BuyKrc20PsktActionResult,
   CompoundUtxosActionResult,
@@ -9,9 +9,9 @@ import {
   MessageSigningActionResult,
   WalletActionResult,
   WalletActionResultType,
-} from '../../types/wallet-action-result';
-import { KRC20OperationType } from '../../types/kaspa-network/krc20-operations-data.interface';
-import { PsktTransaction } from '../../types/kaspa-network/pskt-transaction.interface';
+} from '../../../types/wallet-action-result';
+import { KRC20OperationType } from '../../../types/kaspa-network/krc20-operations-data.interface';
+import { PsktTransaction } from '../../../types/kaspa-network/pskt-transaction.interface';
 
 @Component({
   selector: 'completed-action-review',

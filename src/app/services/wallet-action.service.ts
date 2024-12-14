@@ -15,7 +15,7 @@ import {
   KaspaNetworkActionsService,
   MINIMAL_AMOUNT_TO_SEND,
 } from './kaspa-netwrok-services/kaspa-network-actions.service';
-import { ReviewActionComponent } from '../components/review-action/review-action.component';
+import { ReviewActionComponent } from '../components/wallet-actions-reviews/review-action/review-action.component';
 import {
   WalletActionResult,
   WalletActionResultWithError,
@@ -696,12 +696,21 @@ export class WalletActionService {
       let currentBalance;
 
       try {
-        currentBalance = await firstValueFrom(
+        const response = await firstValueFrom(
           this.kasplexService.getTokenWalletBalanceInfo(
             wallet.getAddress(),
             action.operationData.tick
           )
         );
+
+        if (!response?.result?.[0]) {
+          return {
+            isValidated: false,
+            errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
+          };
+        }
+
+        currentBalance = response.result[0];
       } catch (error) {
         console.error(error);
 
@@ -790,12 +799,21 @@ export class WalletActionService {
       let currentBalance;
 
       try {
-        currentBalance = await firstValueFrom(
+        const response = await firstValueFrom(
           this.kasplexService.getTokenWalletBalanceInfo(
             wallet.getAddress(),
             action.operationData.tick
           )
         );
+
+        if (!response?.result?.[0]) {
+          return {
+            isValidated: false,
+            errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
+          };
+        }
+
+        currentBalance = response.result[0];
       } catch (error) {
         console.error(error);
 

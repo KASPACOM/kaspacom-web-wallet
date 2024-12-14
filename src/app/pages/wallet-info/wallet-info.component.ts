@@ -10,25 +10,27 @@ import { WalletService } from '../../services/wallet.service'; // Assume you hav
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule, NgFor, NgIf, Time } from '@angular/common';
 import { AppWallet } from '../../classes/AppWallet';
-import { firstValueFrom, map, tap } from 'rxjs';
+import { catchError, firstValueFrom, map, of, tap } from 'rxjs';
 import { KasplexKrc20Service } from '../../services/kasplex-api/kasplex-api.service';
 import { KaspaNetworkActionsService } from '../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { SompiToNumberPipe } from '../../pipes/sompi-to-number.pipe';
-import { SendAssetComponent } from '../../components/send-asset/send-asset.component';
-import { ReviewActionComponent } from '../../components/review-action/review-action.component';
+import { SendAssetComponent } from '../../components/wallet-actions-forms/send-asset/send-asset.component';
+import { ReviewActionComponent } from '../../components/wallet-actions-reviews/review-action/review-action.component';
 import { WalletActionService } from '../../services/wallet-action.service';
-import { MintComponent } from '../../components/mint/mint.component';
+import { MintComponent } from '../../components/wallet-actions-forms/mint/mint.component';
 import { KaspaApiService } from '../../services/kaspa-api/kaspa-api.service';
-import {
-  FullTransactionResponse,
-  FullTransactionResponseItem,
-} from '../../services/kaspa-api/dtos/full-transaction-response.dto';
+import { FullTransactionResponse } from '../../services/kaspa-api/dtos/full-transaction-response.dto';
 import { UnfinishedKrc20Action } from '../../types/kaspa-network/unfinished-krc20-action.interface';
-import { ListKrc20Component } from '../../components/list-krc20-component/list-krc20-component.component';
-import { BuyKrc20Component } from '../../components/buy-krc20-component/buy-krc20.component';
-import { DeployComponent } from '../../components/deploy/deploy.component';
+import { ListKrc20Component } from '../../components/wallet-actions-forms/list-krc20-component/list-krc20-component.component';
+import { BuyKrc20Component } from '../../components/wallet-actions-forms/buy-krc20-component/buy-krc20.component';
+import { DeployComponent } from '../../components/wallet-actions-forms/deploy/deploy.component';
+import { UtxosListComponent } from '../../components/history-info-components/utxos-list/utxos-list.component';
+import { TransactionHistoryComponent } from '../../components/history-info-components/transaction-history/transaction-history.component';
+import { Krc20OperationHistoryComponent } from '../../components/history-info-components/krc20-operation-history/krc20-operation-history.component';
+import { OperationDetails } from '../../services/kasplex-api/dtos/operation-details-response';
 
 type ActionTabs = 'send' | 'mint' | 'deploy' | 'list' | 'buy';
+type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
 
 @Component({
   selector: 'wallet-info',
@@ -48,6 +50,9 @@ type ActionTabs = 'send' | 'mint' | 'deploy' | 'list' | 'buy';
     ListKrc20Component,
     BuyKrc20Component,
     DeployComponent,
+    UtxosListComponent,
+    TransactionHistoryComponent,
+    Krc20OperationHistoryComponent,
   ],
 })
 export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -62,23 +67,15 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
 
   protected kaspaTransactionsHistory: undefined | FullTransactionResponse =
     undefined;
-  protected kaspaTransactionsHistoryMapped:
-    | undefined
-    | {
-        id: string;
-        senders: Record<string, bigint>;
-        receivers: Record<string, bigint>;
-        totalForThisWallet: bigint;
-        date: Date;
-        confirmed: boolean;
-      }[] = undefined;
+
+  protected krc20OperationHistory: undefined | OperationDetails[] = undefined;
 
   private paginationPrevTokenKey?: string | null;
   private paginationNextTokenKey?: string | null;
   private paginationDirection?: 'next' | 'prev' | null;
 
-  protected activeTab: ActionTabs = 'deploy'; // Default to Send Asset tab
-  protected infoActiveTab: 'utxos' | 'kaspa-transactions' = 'utxos';
+  protected activeTab: ActionTabs = 'send'; // Default to Send Asset tab
+  protected infoActiveTab: InfoTabs = 'utxos';
 
   private refreshDataTimeout: NodeJS.Timeout | undefined;
   private setUnfinishedActionsTimeout: NodeJS.Timeout | undefined;
@@ -123,7 +120,7 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
         ? this.paginationNextTokenKey
         : this.paginationPrevTokenKey;
 
-    const tokens: { ticker: string; balance: number }[] = await firstValueFrom(
+    this.tokens = await firstValueFrom(
       this.kasplexService
         .getWalletTokenList(
           this.wallet!.getAddress(),
@@ -142,20 +139,57 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
                 BigInt(+token.balance)
               ),
             }));
+          }),
+          catchError((err) => {
+            console.error(
+              `Error fetching token list for address ${this.wallet!.getAddress()}:`,
+              err
+            );
+
+            return of(undefined);
           })
         )
     );
+  }
 
-    this.tokens = tokens;
+  async loadKrc20Operations() {
+    this.krc20OperationHistory = await firstValueFrom(
+      this.kasplexService
+        .getWalletOperationHistory(
+          this.wallet!.getAddress(),
+        )
+        .pipe(
+          // tap((response) => {
+          //   this.paginationPrevTokenKey = response.prev;
+          //   this.paginationNextTokenKey = response.next;
+          // }),
+          map((response) => {
+            return response.result;
+          }),
+          catchError((err) => {
+            console.error(
+              `Error fetching krc20 operation list for address ${this.wallet!.getAddress()}:`,
+              err
+            );
+
+            return of(undefined);
+          })
+        )
+    );
   }
 
   async loadUserTransactions() {
     this.kaspaTransactionsHistory = await firstValueFrom(
-      this.kaspaApiService.getFullTransactions(this.wallet!.getAddress())
-    );
+      this.kaspaApiService.getFullTransactions(this.wallet!.getAddress()).pipe(
+        catchError((err) => {
+          console.error(
+            `Error fetching transactions list for address ${this.wallet!.getAddress()}:`,
+            err
+          );
 
-    this.kaspaTransactionsHistoryMapped = this.kaspaTransactionsHistory.map(
-      (tx) => this.transformTransactionData(tx)
+          return of(undefined);
+        })
+      )
     );
   }
 
@@ -175,65 +209,17 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
     this.activeTab = tab;
   }
 
-  switchInfoTab(tab: 'utxos' | 'kaspa-transactions') {
+  switchInfoTab(tab: InfoTabs) {
     this.infoActiveTab = tab;
-  }
-
-  transformTransactionData(transaction: FullTransactionResponseItem): {
-    id: string;
-    senders: Record<string, bigint>;
-    receivers: Record<string, bigint>;
-    totalForThisWallet: bigint;
-    date: Date;
-    confirmed: boolean;
-  } {
-    const senders = transaction.inputs.reduce((acc, input) => {
-      const address = input.previous_outpoint_address;
-      if (!acc[address]) {
-        acc[address] = BigInt(0);
-      }
-      acc[address] += BigInt(input.previous_outpoint_amount);
-      return acc;
-    }, {} as Record<string, bigint>);
-
-    const receivers = transaction.outputs.reduce((acc, output) => {
-      const address = output.script_public_key_address;
-      if (!acc[address]) {
-        acc[address] = BigInt(0);
-      }
-      acc[address] += BigInt(output.amount);
-      return acc;
-    }, {} as Record<string, bigint>);
-
-    const totalForThisWallet =
-      (receivers[this.wallet!.getAddress()] || BigInt(0)) -
-      (senders[this.wallet!.getAddress()] || BigInt(0));
-
-    delete senders[this.wallet!.getAddress()];
-    delete receivers[this.wallet!.getAddress()];
-
-    const walletsInBoth = Object.keys(senders).filter(
-      (address) => !!receivers[address]
-    );
-
-    for (const address of walletsInBoth) {
-      senders[address] = senders[address] - receivers[address];
-      delete receivers[address];
-    }
-
-    return {
-      id: transaction.transaction_id,
-      senders,
-      receivers,
-      totalForThisWallet,
-      date: new Date(transaction.block_time),
-      confirmed: transaction.is_accepted,
-    };
   }
 
   async loadData() {
     try {
-      await Promise.all([this.loadKrc20Tokens(), this.loadUserTransactions()]);
+      await Promise.all([
+        this.loadKrc20Tokens(),
+        this.loadUserTransactions(),
+        this.loadKrc20Operations(),
+      ]);
     } catch (error) {
       console.error(error);
     }
@@ -243,18 +229,12 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 20 * 1000);
   }
 
-  async compoundUtxos() {
-    await this.walletActionService.validateAndDoActionAfterApproval(
-      this.walletActionService.createCompoundUtxosAction()
-    );
-  }
-
   async checkForUnfinishedActions() {
     try {
       this.unfinishedAction =
-      await this.kaspaNetworkActionsService.getWalletUnfinishedActions(
-        this.wallet!
-      );
+        await this.kaspaNetworkActionsService.getWalletUnfinishedActions(
+          this.wallet!
+        );
     } catch (error) {
       console.error(error);
     }
@@ -262,7 +242,6 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
     this.setUnfinishedActionsTimeout = setTimeout(() => {
       this.checkForUnfinishedActions();
     }, 60 * 1000);
-
   }
 
   async finishUnfinishedAction() {

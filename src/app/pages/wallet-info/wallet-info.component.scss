@@ -102,9 +102,6 @@ ng-template {
   background-color: #45a049;
 }
 
-.utxo-transaction-id {
-  font-size: 10px;
-}
 
 @media (max-width: 768px) {
   .wallet-info-section, .transactions-info-section {
@@ -147,132 +144,9 @@ ng-template {
 
 
 .transactions-info-section {
-  margin-bottom: 100px;
-
-  .transactions-history-container {
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
-  .transactions-title {
-    font-size: 24px;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 15px;
-  }
-  
-  .transactions-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  
-  .transaction-item {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 10px;
-    background-color: #fff;
-    transition: box-shadow 0.3s ease;
-  }
-  
-  .transaction-item:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-  
-  .transaction-header {
-    font-size: 18px;
-    margin-bottom: 10px;
-    color: #555;
-  }
-  
-  .transaction-id {
-    font-family: monospace;
-    color: #007bff;
-  }
-  
-  .transaction-details {
-    font-size: 14px;
-    color: #666;
-  }
-  
-  .transaction-confirmation,
-  .transaction-time {
-    margin-bottom: 8px;
-  }
-  
-  .confirmation-status {
-    font-weight: bold;
-    color: #007bff;
-  }
-  
-  .transaction-date {
-    font-style: italic;
-  }
-  
-  .transaction-amount {
-    margin-top: 10px;
-
-    .plus {
-      color: #8bc34a;
-    }
-
-    .minus {
-      color: #f44336;
-    }
-  }
-  
-  .transaction-senders .sender,
-  .transaction-receivers .receiver {
-    display: block;
-    margin-bottom: 5px;
-  }
-  
-  .sender-address,
-  .receiver-address {
-    font-style: italic;
-    color: #888;
-  }
-  
-  .transaction-total {
-    margin-top: 10px;
-    font-weight: bold;
-    color: #333;
-  }
-  
+  margin-bottom: 100px;  
 }
 
-  
-.compound-utxos-button {
-  background-color: #4caf50;
-  color: white;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background 0.3s;
-  
-  &:hover {
-    background-color: #45a049;
-  }
-  
-  &:disabled {
-    background-color: #c7c7c7;
-    cursor: not-allowed;
-  }
-}
-
-.utxo-header {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-}
-
-.compound-utxos-button-container {
-  margin-left: 10px;
-}
 
 .wallet-info-header {
   display: flex;

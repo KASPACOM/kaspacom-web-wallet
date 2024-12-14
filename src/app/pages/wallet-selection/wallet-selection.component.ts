@@ -4,7 +4,7 @@ import { WalletService } from '../../services/wallet.service'; // Assume you hav
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgFor, NgIf } from '@angular/common';
 import { AppWallet } from '../../classes/AppWallet';
-import { ExportWalletsQrComponent } from '../../components/export-wallets-qr/export-wallets-qr.component';
+import { ExportWalletsQrComponent } from '../../components/wallet-management/export-wallets-qr/export-wallets-qr.component';
 
 @Component({
   selector: 'wallet-selection',

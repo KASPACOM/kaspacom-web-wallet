@@ -17,11 +17,11 @@
         <strong>{{ getOperationTitle(op) }}</strong>
       </div>
       <div class="operation-details">
-        <div class="operation-ticker">
+        <div class="operation-detail">
           <strong>Ticker:</strong>
           <span>{{ op.tick }}</span>
         </div>
-        <div class="operation-balance">
+        <div class="operation-detail">
           <strong>Balance:</strong>
           <span
             [ngClass]="{
@@ -37,7 +37,7 @@
             <span *ngIf="getOperationWalletBalance(op).isLocked">(Locked)</span>
           </span>
         </div>
-        <div class="operation-confirmation">
+        <div class="operation-detail">
           <strong>Status:</strong>
           <span
             [ngClass]="{
@@ -57,11 +57,11 @@
             }}
           </span>
         </div>
-        <div class="operation-max" *ngIf="!isNullOrEmptyString(op.max)">
+        <div class="operation-detail" *ngIf="!isNullOrEmptyString(op.max)">
           <strong>Total Tokens:</strong>
           <span>{{ op.max! | sompiToNumber }}</span>
         </div>
-        <div class="operation-pre" *ngIf="!isNullOrEmptyString(op.max)">
+        <div class="operation-detail" *ngIf="!isNullOrEmptyString(op.max)">
           <strong>Pre Allocation:</strong>
           <span>
             {{ op.pre || "0" | sompiToNumber }}
@@ -72,19 +72,19 @@
             >
           </span>
         </div>
-        <div class="operation-limit" *ngIf="!isNullOrEmptyString(op.lim)">
+        <div class="operation-detail" *ngIf="!isNullOrEmptyString(op.lim)">
           <strong>Mint Limit:</strong>
           <span>{{ op.lim! | sompiToNumber }}</span>
         </div>
-        <div class="operation-from" *ngIf="op.from && (op.op == KRC20OperationType.TRANSFER || op.op == KRC20OperationType.SEND) && wallet.getAddress() != op.from">
+        <div class="operation-detail" *ngIf="op.from && (op.op == KRC20OperationType.TRANSFER || op.op == KRC20OperationType.SEND) && wallet.getAddress() != op.from">
           <strong>From:</strong>
           <span>{{ op.from }}</span>
         </div>
-        <div class="operation-to" *ngIf="op.to && (op.op == KRC20OperationType.TRANSFER || op.op == KRC20OperationType.SEND) && wallet.getAddress() != op.to">
+        <div class="operation-detail" *ngIf="op.to && (op.op == KRC20OperationType.TRANSFER || op.op == KRC20OperationType.SEND) && wallet.getAddress() != op.to">
           <strong>To:</strong>
           <span>{{ op.to }}</span>
         </div>
-        <div class="operation-error" *ngIf="!isNullOrEmptyString(op.opError)">
+        <div class="operation-detail" *ngIf="!isNullOrEmptyString(op.opError)">
           <strong>Error:</strong>
           <span class="operation-error-message">{{ op.opError }}</span>
         </div>
@@ -95,3 +95,4 @@
     <p>Loading...</p>
   </ng-template>
 </div>
+

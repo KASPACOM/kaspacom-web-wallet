@@ -74,15 +74,7 @@
         background-color: #f9f9f9;
         border-radius: 0 0 10px 10px;
 
-        .operation-ticker,
-        .operation-balance,
-        .operation-confirmation,
-        .operation-max,
-        .operation-pre,
-        .operation-limit,
-        .operation-to,
-        .operation-from,
-        .operation-error {
+        .operation-detail {
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -103,28 +95,24 @@
           }
         }
 
-        .operation-balance {
-          .balance-positive {
-            color: #28a745; /* Green for success */
-          }
-
-          .balance-negative {
-            color: #dc3545; /* Red for danger */
-          }
-
-          .balance-locked {
-            color: #17a2b8; /* Yellow for warning */
-          }
+        .balance-positive {
+          color: #28a745; /* Green for success */
         }
 
-        .operation-confirmation {
-          .confirmation-status-success {
-            color: #28a745; /* Green for success */
-          }
+        .balance-negative {
+          color: #dc3545; /* Red for danger */
+        }
 
-          .confirmation-status-failed {
-            color: #dc3545; /* Red for danger */
-          }
+        .balance-locked {
+          color: #17a2b8; /* Yellow for warning */
+        }
+
+        .confirmation-status-success {
+          color: #28a745; /* Green for success */
+        }
+
+        .confirmation-status-failed {
+          color: #dc3545; /* Red for danger */
         }
       }
     }

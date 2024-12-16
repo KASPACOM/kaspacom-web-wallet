@@ -13,6 +13,8 @@ import { WalletActionResult } from '../../../types/wallet-action-result';
 import { CompletedActionReview } from '../completed-action-review/completed-action-review.component';
 import { KRC20OperationType } from '../../../types/kaspa-network/krc20-operations-data.interface';
 import { PsktTransaction } from '../../../types/kaspa-network/pskt-transaction.interface';
+import { PriorityFeeSelectionComponent } from '../priority-fee-selection/priority-fee-selection.component';
+import { AppWallet } from '../../../classes/AppWallet';
 
 const TIMEOUT = 2 * 60 * 1000;
 
@@ -21,7 +23,7 @@ const TIMEOUT = 2 * 60 * 1000;
   standalone: true,
   templateUrl: './review-action.component.html',
   styleUrls: ['./review-action.component.scss'],
-  imports: [NgIf, NgFor, SompiToNumberPipe, CompletedActionReview, JsonPipe],
+  imports: [NgIf, NgFor, SompiToNumberPipe, CompletedActionReview, JsonPipe, PriorityFeeSelectionComponent],
 })
 export class ReviewActionComponent {
   public WalletActionType = WalletActionType;
@@ -41,13 +43,13 @@ export class ReviewActionComponent {
 
   // Result
   protected result: WalletActionResult | undefined = undefined;
+  protected currentPriorityFee: bigint | undefined = undefined;
 
   constructor(private walletService: WalletService) {}
 
   // PUBLIC ACTIONS
   public requestUserConfirmation(action: WalletAction): Promise<{
     isApproved: boolean;
-    priorityFee?: bigint;
   }> {
     if (this.resolve) {
       this.resolveActionAndClear(false);
@@ -102,11 +104,20 @@ export class ReviewActionComponent {
   }
 
   protected acceptTransaction() {
-    this.resolveActionAndClear(true, 0n);
+    if (this.currentPriorityFee === undefined) {
+      return;
+    }
+
+    this.resolveActionAndClear(true, this.currentPriorityFee!);
   }
 
   protected rejectTransaction() {
     this.resolveActionAndClear(false);
+  }
+
+  setCurrentPriorityFee(priorityFee: bigint | undefined) {
+    console.log('priority fee selected', priorityFee);
+    this.currentPriorityFee = priorityFee;
   }
 
   protected get transferKasActionData(): TransferKasAction {
@@ -127,5 +138,13 @@ export class ReviewActionComponent {
 
   protected get walletAddress(): string {
     return this.walletService.getCurrentWallet()?.getAddress() || '';
+  }
+
+  protected get wallet(): AppWallet {
+    return this.walletService.getCurrentWallet()!;
+  }
+
+  isAvailableForApproval(): boolean {
+    return this.currentPriorityFee !== undefined;
   }
 }

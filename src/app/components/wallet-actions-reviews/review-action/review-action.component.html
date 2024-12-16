@@ -182,8 +182,10 @@
       </div>
     </ng-container>
 
+    <priority-fee-selection [action]="action" [wallet]="wallet" (priorityFeeSelected)="setCurrentPriorityFee($event)"></priority-fee-selection>
+
     <div class="transaction-actions">
-      <button class="accept-btn" (click)="acceptTransaction()">Accept</button>
+      <button class="accept-btn" (click)="acceptTransaction()" [disabled]="!isAvailableForApproval()">Accept</button>
       <button class="reject-btn" (click)="rejectTransaction()">Reject</button>
     </div>
   </ng-container>

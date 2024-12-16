@@ -1,5 +1,6 @@
 import { KaspaNetworkTransactionsManagerService } from './kaspa-network-transactions-manager.service';
 import {
+  IFeeEstimate,
   IPaymentOutput,
   Mnemonic,
   PrivateKey,
@@ -10,7 +11,6 @@ import { DEFAULT_DERIVED_PATH, ERROR_CODES } from '../../config/consts';
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
 import {
-  ActionWithPsktGenerationData,
   BuyKrc20PsktAction,
   Krc20Action,
   TransferKasAction,
@@ -40,6 +40,9 @@ import { PsktTransaction } from '../../types/kaspa-network/pskt-transaction.inte
 const MINIMAL_TRANSACTION_MASS = 10000n;
 export const MINIMAL_AMOUNT_TO_SEND = 20000000n;
 export const MAX_TRANSACTION_FEE = 20000n;
+
+const ESTIMATED_REVEAL_ACTION = 1715n;
+const ESTIMATED_LIST_REVEAL_ACTION = 3274n;
 @Injectable({
   providedIn: 'root',
 })
@@ -139,6 +142,108 @@ export class KaspaNetworkActionsService {
     );
   }
 
+  // Should be synced with doWalletAction
+  async estimateWalletActionMass(
+    action: WalletAction,
+    wallet: AppWallet
+  ): Promise<bigint[]> {
+    if (action.type === WalletActionType.TRANSFER_KAS) {
+      const actionData = action.data as TransferKasAction;
+      const payments: IPaymentOutput[] = [
+        {
+          address: actionData.to,
+          amount: actionData.amount,
+        },
+      ];
+
+      const result =
+        await this.transactionsManager.doKaspaTransferTransactionWithUtxoProcessor(
+          wallet,
+          payments,
+          action.priorityFee || 0n,
+          actionData.sendAll,
+          async () => {},
+          true
+        );
+
+      if (!result.success) {
+        throw new Error('Failed to estimate transaction mass');
+      }
+
+      return result.result!.transactions.map((t) => t.mass);
+    }
+
+    if (action.type == WalletActionType.COMPOUND_UTXOS) {
+      await wallet.getUtxoProcessorManager()?.waitForPendingUtxoToFinish();
+
+      const payments: IPaymentOutput[] = [
+        {
+          address: wallet.getAddress(),
+          amount: 0n,
+        },
+      ];
+
+      const result =
+        await this.transactionsManager.doKaspaTransferTransactionWithUtxoProcessor(
+          wallet,
+          payments,
+          action.priorityFee || 0n,
+          true,
+          async () => {},
+          true
+        );
+
+      return result.result!.transactions.map((t) => t.mass);
+    }
+
+    if (action.type === WalletActionType.KRC20_ACTION) {
+      const actionData = action.data as Krc20Action;
+
+      const result =
+        await this.transactionsManager.doKrc20ActionTransactionWithUtxoProcessor(
+          wallet,
+          actionData.operationData,
+          action.priorityFee || 0n,
+          this.krc20OperationDataService.getPriceForOperation(
+            actionData.operationData.op
+          ),
+          async () => {},
+          actionData.revealOnly,
+          actionData.transactionId,
+          actionData.psktData,
+          true,
+        );
+
+      if (!result.success) {
+        throw new Error('Failed to estimate transaction mass');
+      }
+
+      return [
+        ...(result.result!.commit?.transactions.map((t) => t.mass) || []),
+        actionData.operationData.op == KRC20OperationType.LIST ? ESTIMATED_LIST_REVEAL_ACTION : ESTIMATED_REVEAL_ACTION,
+      ];
+    }
+
+    if (action.type == WalletActionType.BUY_KRC20_PSKT) {
+      const result =
+        await this.transactionsManager.completePsktTransactionForSendOperation(
+          wallet,
+          (action.data as BuyKrc20PsktAction).psktTransactionJson,
+          action.priorityFee || 0n,
+          true
+        );
+
+      if (!result.transactionFee) {
+        throw new Error('Failed to estimate transaction mass');
+      }
+
+      return [result.transactionFee];
+    }
+
+    throw new Error('No such action type');
+  }
+
+  // Shoult be synced with estimateWalletActionMass
   async doWalletAction(
     action: WalletAction,
     wallet: AppWallet,
@@ -355,5 +460,9 @@ export class KaspaNetworkActionsService {
     return this.transactionsManager.getWalletAddressFromScriptPublicKey(
       scriptPublicKey
     );
+  }
+
+  async getEstimateFeeRates(): Promise<IFeeEstimate> {
+    return await this.transactionsManager.getEstimateFeeRates();
   }
 }

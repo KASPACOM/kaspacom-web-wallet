@@ -17,8 +17,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 100%;
     margin-top: 20px;
+    padding: 0;
 
     .operation-item {
       display: flex;
@@ -87,6 +87,7 @@
 
           strong {
             font-weight: 700;
+            min-width: 100px;
           }
 
           &-message {
@@ -136,5 +137,3 @@
     }
   }
 }
-
-

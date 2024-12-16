@@ -15,6 +15,7 @@ type MappedTransaction = {
   totalForThisWallet: bigint;
   date: Date;
   confirmed: boolean;
+  fee: bigint;
 };
 
 @Component({
@@ -62,6 +63,9 @@ export class TransactionHistoryComponent {
       return acc;
     }, {} as Record<string, bigint>);
 
+    const fee = Object.values(senders).reduce((acc, val) => acc + val, 0n) -
+      Object.values(receivers).reduce((acc, val) => acc + val, 0n);
+
     const totalForThisWallet =
       (receivers[this.wallet!.getAddress()] || BigInt(0)) -
       (senders[this.wallet!.getAddress()] || BigInt(0));
@@ -85,6 +89,7 @@ export class TransactionHistoryComponent {
       totalForThisWallet,
       date: new Date(transaction.block_time),
       confirmed: transaction.is_accepted,
+      fee,
     };
   }
 }

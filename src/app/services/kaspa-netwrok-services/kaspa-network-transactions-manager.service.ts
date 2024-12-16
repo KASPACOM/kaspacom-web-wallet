@@ -7,6 +7,7 @@ import {
   createTransactions,
   FeeSource,
   ICreateTransactions,
+  IFeeEstimate,
   IFees,
   IGeneratorSettingsObject,
   IGetUtxosByAddressesResponse,
@@ -56,6 +57,7 @@ type DoTransactionOptions = {
   additionalKrc20TransactionPriorityFee?: bigint;
   priorityEntries?: IUtxoEntry[];
   sendAll?: boolean;
+  estimateOnly?: boolean;
 };
 
 @Injectable({
@@ -141,24 +143,6 @@ export class KaspaNetworkTransactionsManagerService {
       return utxoProcessonManager;
     });
   }
-
-  //   async calculateTransactionFeeAndLimitToMax(transactionData, maxPriorityFee): Promise<FeesCalculation> {
-  //     const finalFees = await this.utils.retryOnError(async () => {
-  //       const currentTransaction = await createTransactions(transactionData);
-
-  //       // console.log('calculateTransactionFeeAndLimitToMax', currentTransaction.summary);
-
-  //       const fees = await this.getTransactionFees(currentTransaction);
-
-  //       return fees;
-  //     });
-
-  //     if (finalFees.priorityFee > maxPriorityFee) {
-  //       throw new PriorityFeeTooHighError();
-  //     }
-
-  //     return finalFees;
-  //   }
 
   // ================================================================
   // DO TRANSACTIONS WITH UTXOS PROCESSOR
@@ -275,6 +259,14 @@ export class KaspaNetworkTransactionsManagerService {
       );
       console.log('current transaction summry', currentTransactions.summary);
 
+      if (additionalOptions.estimateOnly) {
+        return {
+          success: true,
+          result: currentTransactions,
+        };
+      }
+
+
       if (additionalOptions.notifyCreatedTransactions) {
         await additionalOptions.notifyCreatedTransactions(
           currentTransactions.summary.finalTransactionId!
@@ -336,7 +328,8 @@ export class KaspaNetworkTransactionsManagerService {
     payments: IPaymentOutput[],
     priorityFee: bigint,
     sendAll = false, // Sends all the remains to the first payment
-    notifyCreatedTransactions?: (transactionId: string) => Promise<any>
+    notifyCreatedTransactions?: (transactionId: string) => Promise<any>,
+    estimateOnly: boolean = false,
   ): Promise<{
     success: boolean;
     errorCode?: number;
@@ -350,6 +343,7 @@ export class KaspaNetworkTransactionsManagerService {
       {
         notifyCreatedTransactions,
         sendAll,
+        estimateOnly,
       }
     );
   }
@@ -447,6 +441,7 @@ export class KaspaNetworkTransactionsManagerService {
   ): Promise<{
     psktTransaction: string;
     transactionId?: string;
+    transactionFee?: bigint;
   }> {
     const transaction = Transaction.deserializeFromSafeJSON(transactionJson);
 
@@ -569,8 +564,9 @@ export class KaspaNetworkTransactionsManagerService {
         throw Error('Inputs and outputs sums are not equal');
       }
 
-      const result: { psktTransaction: string; transactionId?: string } = {
+      const result: { psktTransaction: string; transactionFee?: bigint; transactionId?: string } = {
         psktTransaction: transaction.serializeToSafeJSON(),
+        transactionFee: transactionFee,
       };
 
       if (!signOnly) {
@@ -593,7 +589,8 @@ export class KaspaNetworkTransactionsManagerService {
     notifyCreatedTransactions?: (transactionId: string) => Promise<any>,
     revealOnly: boolean = false,
     transactionId?: string,
-    psktOptions?: ActionWithPsktGenerationData
+    psktOptions?: ActionWithPsktGenerationData,
+    estimateOnly: boolean = false,
   ): Promise<{
     success: boolean;
     errorCode?: number;
@@ -623,13 +620,23 @@ export class KaspaNetworkTransactionsManagerService {
             if (notifyCreatedTransactions) {
               await notifyCreatedTransactions(transactionId);
             }
-          }
+          },
+          estimateOnly,
         );
 
       if (!commitTransactionResult.success) {
         return {
           success: false,
           errorCode: commitTransactionResult.errorCode,
+        };
+      }
+
+      if (estimateOnly) {
+        return {
+          success: true,
+          result: {
+            commit: commitTransactionResult.result,
+          },
         };
       }
     }
@@ -642,7 +649,8 @@ export class KaspaNetworkTransactionsManagerService {
         transactionFeeAmount,
         priorityFee,
         notifyCreatedTransactions,
-        transactionId
+        transactionId,
+        estimateOnly
       );
 
     if (!revealTransactionResult.success) {
@@ -688,7 +696,8 @@ export class KaspaNetworkTransactionsManagerService {
     privateKey: PrivateKey,
     krc20transactionData: KRC20OperationDataInterface,
     priorityFee: bigint = 0n,
-    notifyCreatedTransactions?: (transactionId: string) => Promise<any>
+    notifyCreatedTransactions?: (transactionId: string) => Promise<any>,
+    estimateOnly: boolean = false
   ): Promise<{
     success: boolean;
     errorCode?: number;
@@ -713,6 +722,7 @@ export class KaspaNetworkTransactionsManagerService {
       outputs,
       {
         notifyCreatedTransactions,
+        estimateOnly,
       }
     );
   }
@@ -724,7 +734,8 @@ export class KaspaNetworkTransactionsManagerService {
     transactionFeeAmount: bigint,
     priorityFee: bigint = 0n,
     notifyCreatedTransactions?: (transactionId: string) => Promise<any>,
-    revealTransactionId: string | undefined = undefined
+    revealTransactionId: string | undefined = undefined,
+    estimateOnly: boolean = false,
   ): Promise<{
     success: boolean;
     errorCode?: number;
@@ -808,6 +819,7 @@ export class KaspaNetworkTransactionsManagerService {
         specialSignTransactionFunc,
         additionalKrc20TransactionPriorityFee: transactionFeeAmount,
         priorityEntries,
+        estimateOnly,
       }
     );
   }
@@ -823,32 +835,11 @@ export class KaspaNetworkTransactionsManagerService {
       .toString();
   }
 
-  //   async getEstimatedPriorityFeeRate(): Promise<number> {
-  //     const estimatedFees = await this.rpcService.getRpc().getFeeEstimate({});
-
-  //     return estimatedFees.estimate.priorityBucket.feerate;
-  //   }
-
-  //   async getTransactionFees(transactionData: ICreateTransactions): Promise<FeesCalculation> {
-  //     const estimatedFeeRate = await this.getEstimatedPriorityFeeRate();
-  //     const massAndFeeRate = BigInt(Math.ceil(Number(transactionData.summary.mass) * estimatedFeeRate));
-  //     const maxFee = transactionData.summary.fees > massAndFeeRate ? transactionData.summary.fees : massAndFeeRate;
-
-  //     const priorityFee = maxFee - transactionData.summary.fees < 0 ? 0n : maxFee - transactionData.summary.fees;
-
-  //     return {
-  //       originalFee: transactionData.summary.fees,
-  //       mass: transactionData.summary.mass,
-  //       maxFee: maxFee,
-  //       priorityFee: priorityFee,
-  //       estimatedNetworkFee: estimatedFeeRate,
-  //     };
-  //   }
-
-  //   async getWalletTotalBalance(address: string): Promise<bigint> {
-  //     const result = await this.getWalletTotalBalanceAndUtxos(address);
-  //     return result.totalBalance;
-  //   }
+    async getEstimateFeeRates(): Promise<IFeeEstimate> {
+      const fees = await this.rpcService.getRpc()!.getFeeEstimate({});
+      
+      return fees.estimate;
+    }
 
   async getWalletTotalBalanceAndUtxos(
     address: string

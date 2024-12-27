@@ -6,9 +6,12 @@ import {
   ViewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { WalletService } from '../../services/wallet.service'; // Assume you have a service to fetch wallets
+import { WalletAction, WalletActionType } from '../../types/wallet-action';
+import { KRC20OperationType } from '../../types/kaspa-network/krc20-operations-data.interface';
+import { WalletService } from '../../services/wallet.service';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { CommonModule, NgFor, NgIf, Time } from '@angular/common';
+import { first } from 'rxjs';
+import { CommonModule, NgFor, NgIf } from '@angular/common';
 import { AppWallet } from '../../classes/AppWallet';
 import { catchError, firstValueFrom, map, of, tap } from 'rxjs';
 import { KasplexKrc20Service } from '../../services/kasplex-api/kasplex-api.service';

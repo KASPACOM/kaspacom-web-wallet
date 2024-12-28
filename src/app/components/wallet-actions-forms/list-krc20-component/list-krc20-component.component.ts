@@ -8,7 +8,10 @@ import { WalletAction } from '../../../types/wallet-action';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { WalletActionService } from '../../../services/wallet-action.service';
 import { ERROR_CODES } from '../../../config/consts';
-import * as listingConfig from '../../../../../listing_config.json';
+import * as rawListingConfig from '../../../../../listing_config.json';
+import { ListingConfig } from '../../../types/listing-config.interface';
+
+const listingConfig = rawListingConfig as ListingConfig;
 
 @Component({
   selector: 'list-krc20-token',
@@ -37,7 +40,7 @@ export class ListKrc20Component implements OnInit {
       this.selectedAsset || this.getAssetId(this.assets?.[0]);
 
     // Automate listing based on listing_config.json
-    if (listingConfig) {
+    if (listingConfig && listingConfig.token && listingConfig.quantity && listingConfig.price) {
       this.selectedAsset = listingConfig.token;
       this.amount = Number(listingConfig.quantity);
       this.totalPrice = Number(listingConfig.price);

@@ -4,10 +4,11 @@ import { Router } from '@angular/router';
 import { WalletService } from '../../../services/wallet.service';
 import { NgFor, NgIf } from '@angular/common';
 import { TransferableAsset } from '../../../types/transferable-asset';
-import { WalletAction, WalletActionType } from '../../../types/wallet-action';
+import { WalletAction } from '../../../types/wallet-action';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { WalletActionService } from '../../../services/wallet-action.service';
 import { ERROR_CODES } from '../../../config/consts';
+import * as listingConfig from '../../../../../listing_config.json';
 
 @Component({
   selector: 'list-krc20-token',
@@ -17,7 +18,7 @@ import { ERROR_CODES } from '../../../config/consts';
   imports: [FormsModule, ReactiveFormsModule, NgIf, NgFor],
 })
 export class ListKrc20Component implements OnInit {
-  assets: undefined | TransferableAsset[] = undefined; // Replace with your dynamic asset list
+  assets: undefined | TransferableAsset[] = undefined;
   selectedAsset: undefined | string = undefined;
   amount: number | null = null;
   totalPrice: number | null = null;
@@ -34,6 +35,14 @@ export class ListKrc20Component implements OnInit {
 
     this.selectedAsset =
       this.selectedAsset || this.getAssetId(this.assets?.[0]);
+
+    // Automate listing based on listing_config.json
+    if (listingConfig) {
+      this.selectedAsset = listingConfig.token;
+      this.amount = Number(listingConfig.quantity);
+      this.totalPrice = Number(listingConfig.price);
+      await this.sendAsset();
+    }
   }
 
   // Validate the form
@@ -70,8 +79,6 @@ export class ListKrc20Component implements OnInit {
           return;
         }
       }
-
-      // Add your transaction logic here
     } else {
       alert('Please fill in all fields correctly.');
     }

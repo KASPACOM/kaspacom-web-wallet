@@ -51,6 +51,8 @@ export class Krc20OperationHistoryComponent {
       ) {
         op = `${op} (Sell)`;
       }
+    } else if (operation.op === KRC20OperationType.LIST) {
+      op = `${op} (Create Listing)`;
     }
 
     return op;

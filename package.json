@@ -1,6 +1,7 @@
 {
   "name": "wallet-front-new",
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -8,7 +9,8 @@
     "build:dev": "ng build --configuration development",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:wallet-front-new": "node dist/wallet-front-new/server/server.mjs"
+    "serve:ssr:wallet-front-new": "node dist/wallet-front-new/server/server.mjs",
+    "test:listing": "tsx src/app/components/wallet-actions-forms/list-krc20-component/listing-test.ts"
   },
   "private": true,
   "dependencies": {
@@ -48,6 +50,7 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "npm": "^10.9.1",
+    "tsx": "^4.19.2",
     "typescript": "~5.4.2"
   }
 }

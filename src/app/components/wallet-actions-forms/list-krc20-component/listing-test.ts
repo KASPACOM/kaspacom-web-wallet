@@ -1,14 +1,10 @@
 import { WalletAction, WalletActionType } from '../../../types/wallet-action';
 import { KRC20OperationType } from '../../../types/kaspa-network/krc20-operations-data.interface';
+import * as fs from 'fs';
 
-// Input data for the listing
-const listingData = {
-  token: "DARKI",
-  quantity: "20000",
-  price: "666",
-  action: "sell",
-  walletAddress: "kaspa:qzagv3jy9eagjqf5jugdsmqqaey49lf80t672t27jyv85z3nhujkuxq5k8rag"
-};
+// Read listing data from listing_config.json
+const rawData = fs.readFileSync('listing_config.json', 'utf-8');
+const listingData = JSON.parse(rawData);
 
 // Create the listing operation data following the same structure as Krc20OperationDataService
 const listingOperationData = {
@@ -23,13 +19,13 @@ const listingAction: WalletAction = {
   type: WalletActionType.KRC20_ACTION,
   data: {
     operationData: listingOperationData,
-    psktData: {
-      totalPrice: BigInt(listingData.price),
-    },
+      psktData: {
+        totalPrice: parseFloat(listingData.price),
+      },
   },
 };
 
-// The listing action can now be used to create a PSKT order
+// Output the listing action that can be used to create a PSKT order
 console.log('Listing Action:', JSON.stringify(listingAction, (_, value) =>
   typeof value === 'bigint' ? value.toString() : value
 , 2));
@@ -40,10 +36,10 @@ This creates a listing action that matches the frontend implementation:
 2. Contains listing operation data with:
    - Protocol: krc-20
    - Operation: LIST
-   - Token ticker: DARKI
-   - Amount: 20000
+   - Token ticker: from listing_config.json
+   - Amount: from listing_config.json
 3. Includes PSKT data with:
-   - Total price: 666 (as bigint)
+   - Total price: from listing_config.json (as bigint)
 
 This action can be used with the Kaspiano API to create and confirm the PSKT order.
 */

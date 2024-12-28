@@ -4,6 +4,4 @@ export interface Environment {
   kasplexApiBaseurl: string;
   kaspaApiBaseurl: string;
   kaspaNetwork: string;
-  mongodbUri: string;
-  walletAddress: string;
 }

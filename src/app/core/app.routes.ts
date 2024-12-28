@@ -11,6 +11,5 @@ export const routes: Routes = [
     { path: 'add-wallet', component: AddWalletComponent },
     { path: 'wallet-selection', component: WalletSelectionComponent },
     { path: 'wallet-info', component: WalletInfoComponent },
-    { path: 'api/check-orders', },
-    { path: '**', redirectTo: '' },
+    { path: '**', redirectTo: '' },  
 ];

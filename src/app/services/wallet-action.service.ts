@@ -2,6 +2,7 @@ import { effect, Injectable, Signal, signal } from '@angular/core';
 import {
   BuyKrc20PsktAction,
   Krc20Action,
+  SignMessage,
   TransferKasAction,
   WalletAction,
   WalletActionListItem,
@@ -33,6 +34,10 @@ import { AppWallet } from '../classes/AppWallet';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { PsktTransaction } from '../types/kaspa-network/pskt-transaction.interface';
 import { OperationDetailsResponse } from './kasplex-api/dtos/operation-details-response';
+
+const INSTANT_ACTIONS: { [key: string]: boolean } = {
+  [WalletActionType.SIGN_MESSAGE]: true,
+};
 
 @Injectable({
   providedIn: 'root',
@@ -235,6 +240,15 @@ export class WalletActionService {
     };
   }
 
+  createSignMessageAction(message: string): WalletAction {
+    return {
+      type: WalletActionType.SIGN_MESSAGE,
+      data: {
+        message,
+      },
+    };
+  }
+
   async validateAndDoActionAfterApproval(
     action: WalletAction
   ): Promise<{ success: boolean; errorCode?: number; result?: any }> {
@@ -316,6 +330,14 @@ export class WalletActionService {
     action: WalletAction,
     notifyUpdate: (transactionId: string) => Promise<any>
   ): Promise<WalletActionResultWithError> {
+    if (INSTANT_ACTIONS[action.type]) {
+      return this.kaspaNetworkActionsService.doWalletAction(
+        action,
+        this.walletService.getCurrentWallet()!,
+        notifyUpdate
+      );
+    }
+
     const walletId = this.walletService.getCurrentWallet()!.getId();
     let resolve: (walletActionResult: WalletActionResultWithError) => void;
     let reject: (error: any) => void;
@@ -477,13 +499,30 @@ export class WalletActionService {
           wallet
         );
         break;
+
+      case WalletActionType.SIGN_MESSAGE:
+        if (
+          this.utils.isNullOrEmptyString((action.data as SignMessage).message)
+        ) {
+          validationResult = {
+            isValidated: false,
+            errorCode: ERROR_CODES.WALLET_ACTION.INVALID_MESSAGE_TO_SIGN,
+          };
+        } else {
+          validationResult = {
+            isValidated: true,
+          };
+        }
+
+        break;
     }
 
     if (
       !(
         action.type == WalletActionType.TRANSFER_KAS &&
         (action.data as TransferKasAction).sendAll
-      )
+      ) &&
+      action.type != WalletActionType.SIGN_MESSAGE
     ) {
       const currentBalance =
         wallet?.getWalletUtxoStateBalanceSignal()()?.mature || 0n;

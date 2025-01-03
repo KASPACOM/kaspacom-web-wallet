@@ -69,8 +69,8 @@
 
       <div *ngIf="messageSigningResult">
         <p><strong>Wallet:</strong> {{ actionResult.performedByWallet }}</p>
-        <p><strong>Message:</strong> {{ messageSigningResult.message }}</p>
-        <p><strong>Encrypted Signed Message:</strong> {{ messageSigningResult.encryptedSignedMessage }}</p>
+        <p><strong>Message:</strong> {{ messageSigningResult.originalMessage }}</p>
+        <p><strong>Encrypted Signed Message:</strong> {{ messageSigningResult.signedMessage }}</p>
       </div>
 
       <div *ngIf="buyKrc20PsktActionResult">

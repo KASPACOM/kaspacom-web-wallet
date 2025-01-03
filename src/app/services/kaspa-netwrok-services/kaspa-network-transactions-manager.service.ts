@@ -22,6 +22,7 @@ import {
   PublicKey,
   ScriptBuilder,
   SighashType,
+  signMessage,
   Transaction,
   UtxoEntryReference,
 } from '../../../../public/kaspa/kaspa';
@@ -266,7 +267,6 @@ export class KaspaNetworkTransactionsManagerService {
         };
       }
 
-
       if (additionalOptions.notifyCreatedTransactions) {
         await additionalOptions.notifyCreatedTransactions(
           currentTransactions.summary.finalTransactionId!
@@ -329,7 +329,7 @@ export class KaspaNetworkTransactionsManagerService {
     priorityFee: bigint,
     sendAll = false, // Sends all the remains to the first payment
     notifyCreatedTransactions?: (transactionId: string) => Promise<any>,
-    estimateOnly: boolean = false,
+    estimateOnly: boolean = false
   ): Promise<{
     success: boolean;
     errorCode?: number;
@@ -564,7 +564,11 @@ export class KaspaNetworkTransactionsManagerService {
         throw Error('Inputs and outputs sums are not equal');
       }
 
-      const result: { psktTransaction: string; transactionFee?: bigint; transactionId?: string } = {
+      const result: {
+        psktTransaction: string;
+        transactionFee?: bigint;
+        transactionId?: string;
+      } = {
         psktTransaction: transaction.serializeToSafeJSON(),
         transactionFee: transactionFee,
       };
@@ -590,7 +594,7 @@ export class KaspaNetworkTransactionsManagerService {
     revealOnly: boolean = false,
     transactionId?: string,
     psktOptions?: ActionWithPsktGenerationData,
-    estimateOnly: boolean = false,
+    estimateOnly: boolean = false
   ): Promise<{
     success: boolean;
     errorCode?: number;
@@ -621,7 +625,7 @@ export class KaspaNetworkTransactionsManagerService {
               await notifyCreatedTransactions(transactionId);
             }
           },
-          estimateOnly,
+          estimateOnly
         );
 
       if (!commitTransactionResult.success) {
@@ -735,7 +739,7 @@ export class KaspaNetworkTransactionsManagerService {
     priorityFee: bigint = 0n,
     notifyCreatedTransactions?: (transactionId: string) => Promise<any>,
     revealTransactionId: string | undefined = undefined,
-    estimateOnly: boolean = false,
+    estimateOnly: boolean = false
   ): Promise<{
     success: boolean;
     errorCode?: number;
@@ -835,11 +839,11 @@ export class KaspaNetworkTransactionsManagerService {
       .toString();
   }
 
-    async getEstimateFeeRates(): Promise<IFeeEstimate> {
-      const fees = await this.rpcService.getRpc()!.getFeeEstimate({});
-      
-      return fees.estimate;
-    }
+  async getEstimateFeeRates(): Promise<IFeeEstimate> {
+    const fees = await this.rpcService.getRpc()!.getFeeEstimate({});
+
+    return fees.estimate;
+  }
 
   async getWalletTotalBalanceAndUtxos(
     address: string
@@ -1016,5 +1020,21 @@ export class KaspaNetworkTransactionsManagerService {
     }
 
     return address;
+  }
+
+  signMessage(
+    privateKey: PrivateKey,
+    message: string
+  ): {
+    signedMessage: string;
+    publickey: string;
+  } {
+    return {
+      signedMessage: signMessage({
+        message,
+        privateKey: privateKey,
+      }),
+      publickey: privateKey.toPublicKey().toString(),
+    };
   }
 }

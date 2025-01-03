@@ -1,7 +1,8 @@
 <div class="transaction-review-container">
   <ng-container *ngIf="action; else noAction">
     <div class="transaction-header">
-      <h2>Transaction Review</h2>
+      <h2 *ngIf="isActionHasPriorityFee">Transaction Review</h2>
+      <h2 *ngIf="!isActionHasPriorityFee">Action Review</h2>
       <p>Please review the details below before proceeding.</p>
     </div>
 
@@ -182,7 +183,20 @@
       </div>
     </ng-container>
 
-    <priority-fee-selection [action]="action" [wallet]="wallet" (priorityFeeSelected)="setCurrentPriorityFee($event)"></priority-fee-selection>
+    <ng-container *ngIf="action?.type === WalletActionType.SIGN_MESSAGE">
+      <h3>Signature Request</h3>
+      <h4>This action is gas free and will not cost you anything, or give any permission to the requested entity.</h4>
+      <div class="detail">
+        <div class="label">Wallet:</div>
+        <div class="value">{{ walletAddress }}</div>
+      </div>
+      <div class="detail-signing-message">
+        <div class="label">Message:</div>
+        <div class="value">{{ signMessageActionData.message }}</div>
+      </div>
+    </ng-container>
+
+    <priority-fee-selection *ngIf="isActionHasPriorityFee" [action]="action" [wallet]="wallet" (priorityFeeSelected)="setCurrentPriorityFee($event)"></priority-fee-selection>
 
     <div class="transaction-actions">
       <button class="accept-btn" (click)="acceptTransaction()" [disabled]="!isAvailableForApproval()">Accept</button>

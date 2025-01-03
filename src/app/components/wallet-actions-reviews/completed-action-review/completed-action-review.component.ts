@@ -6,7 +6,7 @@ import {
   CompoundUtxosActionResult,
   KasTransferActionResult,
   Krc20ActionResult,
-  MessageSigningActionResult,
+  SignedMessageActionResult,
   WalletActionResult,
   WalletActionResultType,
 } from '../../../types/wallet-action-result';
@@ -39,9 +39,9 @@ export class CompletedActionReview {
       : undefined;
   }
 
-  get messageSigningResult(): MessageSigningActionResult | undefined {
+  get messageSigningResult(): SignedMessageActionResult | undefined {
     return this.actionResult.type === WalletActionResultType.MessageSigning
-      ? (this.actionResult as MessageSigningActionResult)
+      ? (this.actionResult as SignedMessageActionResult)
       : undefined;
   }
 

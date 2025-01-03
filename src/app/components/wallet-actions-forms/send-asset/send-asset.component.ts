@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { WalletService } from '../../../services/wallet.service';
 import { NgFor, NgIf } from '@angular/common';
 import { TransferableAsset } from '../../../types/transferable-asset';
@@ -57,7 +56,7 @@ export class SendAssetComponent implements OnInit {
           selectedAsset!,
           this.recipientAddress,
           this.kaspaNetworkActionsService.kaspaToSompiFromNumber(this.amount!),
-          this.walletService.getCurrentWallet()!,
+          this.walletService.getCurrentWallet()!
         );
 
       const result =

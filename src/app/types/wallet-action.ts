@@ -1,11 +1,16 @@
-import { KRC20OperationDataInterface } from "./kaspa-network/krc20-operations-data.interface";
-import { WalletActionResultWithError } from "./wallet-action-result";
+import { KRC20OperationDataInterface } from './kaspa-network/krc20-operations-data.interface';
+import { WalletActionResultWithError } from './wallet-action-result';
 
 export interface WalletAction {
   type: WalletActionType;
-  data: TransferKasAction | Krc20Action | CompoundUtxosAction | BuyKrc20PsktAction;
+  data:
+    | TransferKasAction
+    | Krc20Action
+    | CompoundUtxosAction
+    | BuyKrc20PsktAction
+    | SignMessage;
   priorityFee?: bigint;
-};
+}
 
 export interface WalletActionListItem {
   action: WalletAction;
@@ -20,15 +25,16 @@ export enum WalletActionType {
   KRC20_ACTION = 'krc20-action',
   COMPOUND_UTXOS = 'compound-utxos',
   BUY_KRC20_PSKT = 'buy-krc20-pskt',
+  SIGN_MESSAGE = 'sign-message',
 }
 
 export interface TransferKasAction {
   amount: bigint;
   to: string;
   sendAll?: boolean;
-};
+}
 
-export interface CompoundUtxosAction {};
+export interface CompoundUtxosAction {}
 
 export interface Krc20Action {
   operationData: KRC20OperationDataInterface;
@@ -44,10 +50,14 @@ export interface ActionWithPsktGenerationData {
   commission?: {
     address: string;
     amount: bigint;
-  }
+  };
 }
 
 export interface BuyKrc20PsktAction {
   psktTransactionJson: string;
   signOnly: boolean;
+}
+
+export interface SignMessage {
+  message: string;
 }

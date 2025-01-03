@@ -45,14 +45,15 @@ export interface Krc20ActionResult extends WalletActionResult {
     psktTransaction?:string;
 }
 
-export interface MessageSigningActionResult extends WalletActionResult {
-    type: WalletActionResultType.MessageSigning;
-    message: string;
-    encryptedSignedMessage: string;
-}
-
 export interface BuyKrc20PsktActionResult extends WalletActionResult {
     type: WalletActionResultType.BuyKrc20Pskt;
     transactionId?: string;
     psktTransactionJson: string;
+}
+
+export interface SignedMessageActionResult extends WalletActionResult {
+    type: WalletActionResultType.MessageSigning;
+    originalMessage: string;
+    signedMessage: string;
+    publicKey: string;
 }

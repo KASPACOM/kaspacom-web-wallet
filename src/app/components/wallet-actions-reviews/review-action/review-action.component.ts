@@ -3,6 +3,7 @@ import { JsonPipe, NgFor, NgIf } from '@angular/common';
 import {
   BuyKrc20PsktAction,
   Krc20Action,
+  SignMessage,
   TransferKasAction,
   WalletAction,
   WalletActionType,
@@ -104,7 +105,7 @@ export class ReviewActionComponent {
   }
 
   protected acceptTransaction() {
-    if (this.currentPriorityFee === undefined) {
+    if (!this.isAvailableForApproval()) {
       return;
     }
 
@@ -132,6 +133,10 @@ export class ReviewActionComponent {
     return this.action?.data as BuyKrc20PsktAction;
   }
 
+  protected get signMessageActionData(): SignMessage {
+    return this.action?.data as SignMessage;
+  }
+
   protected get buyKrc20PsktTransactoin(): PsktTransaction {
     return JSON.parse(this.buyKrc20PsktActionData?.psktTransactionJson);
   }
@@ -145,6 +150,10 @@ export class ReviewActionComponent {
   }
 
   isAvailableForApproval(): boolean {
-    return this.currentPriorityFee !== undefined;
+    return this.currentPriorityFee !== undefined || !this.isActionHasPriorityFee;
+  }
+
+  protected get isActionHasPriorityFee() {
+    return this.action && this.action?.type !== WalletActionType.SIGN_MESSAGE;
   }
 }

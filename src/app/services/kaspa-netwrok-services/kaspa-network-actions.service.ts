@@ -13,6 +13,7 @@ import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-st
 import {
   BuyKrc20PsktAction,
   Krc20Action,
+  SignMessage,
   TransferKasAction,
   WalletAction,
   WalletActionType,
@@ -23,6 +24,7 @@ import {
   CompoundUtxosActionResult,
   KasTransferActionResult,
   Krc20ActionResult,
+  SignedMessageActionResult,
   WalletActionResult,
   WalletActionResultType,
 } from '../../types/wallet-action-result';
@@ -383,6 +385,23 @@ export class KaspaNetworkActionsService {
         psktTransactionJson: result.psktTransaction,
         transactionId: result.transactionId,
         performedByWallet: wallet.getAddress(),
+      };
+
+      return {
+        success: true,
+        result: resultData,
+      };
+    }
+
+    if (action.type == WalletActionType.SIGN_MESSAGE) {
+      const result = await this.transactionsManager.signMessage(wallet.getPrivateKey(), (action.data as SignMessage).message)
+
+      const resultData: SignedMessageActionResult = {
+        type: WalletActionResultType.MessageSigning,
+        performedByWallet: wallet.getAddress(), 
+        originalMessage: (action.data as SignMessage).message,
+        signedMessage: result.signedMessage,
+        publicKey: result.publickey,
       };
 
       return {

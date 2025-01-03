@@ -38,27 +38,45 @@
   justify-content: space-between;
   padding: 12px 0;
   border-bottom: 1px solid #e0e0e0;
+  
+  .label {
+    font-weight: bold;
+    color: #555;
+    min-width: 80px; /* Ensure labels have consistent width */
+    flex-shrink: 0; /* Prevent label from shrinking */
+  }
+
+  .value {
+    color: #000;
+    font-family: monospace;
+    word-wrap: break-word; /* Ensure long addresses wrap correctly */
+    word-break: break-all;
+    overflow-wrap: break-word; /* For breaking long words like wallet addresses */
+    white-space: normal; /* Prevent text from being truncated */
+  }
+}
+
+.detail-signing-message {
+  display: flex;
+  flex-direction: column;
+  max-width: calc(50vw - 90px);
+
+  .label {
+    margin-bottom: 10px;
+  }
+
+  .value {
+    white-space: pre-wrap;
+    overflow: auto;
+    background-color: #f9f9f9;
+    word-break: break-word;
+  }
 }
 
 .detail:last-child {
   border-bottom: none;
 }
 
-.label {
-  font-weight: bold;
-  color: #555;
-  min-width: 80px; /* Ensure labels have consistent width */
-  flex-shrink: 0; /* Prevent label from shrinking */
-}
-
-.value {
-  color: #000;
-  font-family: monospace;
-  word-wrap: break-word; /* Ensure long addresses wrap correctly */
-  word-break: break-all;
-  overflow-wrap: break-word; /* For breaking long words like wallet addresses */
-  white-space: normal; /* Prevent text from being truncated */
-}
 
 .transaction-actions {
   display: flex;

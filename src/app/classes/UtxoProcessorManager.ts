@@ -45,6 +45,7 @@ export class UtxoProcessorManager {
   } = {};
 
   private walletBalanceStateSignal = signal<BalanceData | undefined>(undefined);
+  private isInitialized = false;
 
   constructor(
     private readonly rpc: RpcClient,
@@ -66,11 +67,40 @@ export class UtxoProcessorManager {
   }
 
   async init() {
-    await this.registerEventHandlers();
+    try {
+      if (this.isInitialized) {
+        console.warn('UtxoProcessorManager already initialized');
+        return;
+      }
+
+      await this.registerEventHandlers();
+      this.isInitialized = true;
+      console.log('UtxoProcessorManager initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize UtxoProcessorManager:', error);
+      throw error;
+    }
   }
 
   getContext(): UtxoContext | undefined {
+    if (!this.context || !this.processor || !this.isInitialized) {
+      console.warn('UTXO context not ready - processor may not be initialized');
+      return undefined;
+    }
     return this.context;
+  }
+
+  async validateContext(): Promise<boolean> {
+    if (!this.context || !this.processor || !this.isInitialized) {
+      return false;
+    }
+    try {
+      await this.waitForPendingUtxoToFinish();
+      return true;
+    } catch (error) {
+      console.error('Error validating UTXO context:', error);
+      return false;
+    }
   }
 
   private initBalancePromiseAndTimeout() {
@@ -88,14 +118,14 @@ export class UtxoProcessorManager {
   private async balanceEventHandler(event: BalanceEvent) {
     if (event.type == 'pending') {
       this.walletBalanceStateSignal.set(event.data.balance);
-      this.onBalanceUpdate();
+      await this.onBalanceUpdate();
 
       if (!this.isBalancedResolved) {
         this.initBalancePromiseAndTimeout();
       }
     } else if (event.type == 'balance') {
       this.walletBalanceStateSignal.set(event.data.balance);
-      this.onBalanceUpdate();
+      await this.onBalanceUpdate();
 
       if (!this.isBalancedResolved) {
         const currentHasPending = event.data.balance.pending > 0;
@@ -115,11 +145,15 @@ export class UtxoProcessorManager {
     clearTimeout(this.processorEventListenerTimeout);
 
     try {
-      await this.context!.clear();
-      await this.context!.trackAddresses([this.publicAddress]);
+      if (!this.context) {
+        throw new Error('Context not initialized');
+      }
+      await this.context.clear();
+      await this.context.trackAddresses([this.publicAddress]);
       this.initBalancePromiseAndTimeout();
       this.processorEventListenerResolve!();
     } catch (error) {
+      console.error('Processor event listener error:', error);
       this.processorEventListenerReject!(error);
     }
   }
@@ -129,18 +163,27 @@ export class UtxoProcessorManager {
       throw new Error('This object can be used only once');
     }
 
-    this.rpc.subscribeUtxosChanged([this.publicAddress]);
-    await this.rpc.addEventListener(this.utxoChangedEventListenerWithBind!);
-
-    (window as any).test = () => {
-      this.rpc.disconnect();
-    };
-
-    await this.registerProcessor();
+    try {
+      this.rpc.subscribeUtxosChanged([this.publicAddress]);
+      await this.rpc.addEventListener(this.utxoChangedEventListenerWithBind!);
+      await this.registerProcessor();
+    } catch (error) {
+      console.error('Failed to register event handlers:', error);
+      throw error;
+    }
   }
 
   async dispose(): Promise<void> {
-    await this.stopAndUnregisterProcessor();
+    try {
+      await this.stopAndUnregisterProcessor();
+      this.isInitialized = false;
+      this.context = undefined;
+      this.processor = undefined;
+      console.log('UtxoProcessorManager disposed successfully');
+    } catch (error) {
+      console.error('Error during UtxoProcessorManager disposal:', error);
+      throw error;
+    }
   }
 
   private async registerProcessor() {
@@ -157,43 +200,56 @@ export class UtxoProcessorManager {
       this.processorEventListenerReject = reject;
     });
 
-    this.processor!.addEventListener(
+    if (!this.processor) {
+      throw new Error('Processor not initialized');
+    }
+
+    this.processor.addEventListener(
       'utxo-proc-start',
       this.processorHandlerWithBind!
     );
-    this.processor!.addEventListener(
+    this.processor.addEventListener(
       'balance',
       this.balanceEventHandlerWithBind!
     );
-    this.processor!.addEventListener(
+    this.processor.addEventListener(
       'pending',
       this.balanceEventHandlerWithBind!
     );
-    await this.processor!.start();
+    await this.processor.start();
     
     return await this.processorEventListenerPromise;
   }
 
   private async stopAndUnregisterProcessor() {
-    await this.processor!.stop();
-    this.processor!.removeEventListener(
-      'utxo-proc-start',
-      this.processorHandlerWithBind
-    );
-    this.processor!.removeEventListener(
-      'balance',
-      this.balanceEventHandlerWithBind
-    );
-    this.processor!.removeEventListener(
-      'pending',
-      this.balanceEventHandlerWithBind
-    );
+    if (!this.processor) {
+      return;
+    }
 
-    this.rpc.unsubscribeUtxosChanged([this.publicAddress]);
-    this.rpc.removeEventListener(
-      'utxos-changed',
-      this.utxoChangedEventListenerWithBind
-    );
+    try {
+      await this.processor.stop();
+      this.processor.removeEventListener(
+        'utxo-proc-start',
+        this.processorHandlerWithBind
+      );
+      this.processor.removeEventListener(
+        'balance',
+        this.balanceEventHandlerWithBind
+      );
+      this.processor.removeEventListener(
+        'pending',
+        this.balanceEventHandlerWithBind
+      );
+
+      this.rpc.unsubscribeUtxosChanged([this.publicAddress]);
+      this.rpc.removeEventListener(
+        'utxos-changed',
+        this.utxoChangedEventListenerWithBind
+      );
+    } catch (error) {
+      console.error('Error stopping processor:', error);
+      throw error;
+    }
   }
 
   async getTransactionPromise(transactionId: string) {
@@ -230,7 +286,6 @@ export class UtxoProcessorManager {
         this.resolveTransaction(addedEventTrxId);
       }
     }
-
   }
 
   resolveTransaction(transactionId: string) {
@@ -249,6 +304,9 @@ export class UtxoProcessorManager {
   }
 
   async waitForPendingUtxoToFinish() {
+    if (!this.isInitialized) {
+      throw new Error('Cannot wait for pending UTXO - processor not initialized');
+    }
     if (this.balancePromise) {
       await this.balancePromise;
     }

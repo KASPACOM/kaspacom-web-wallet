@@ -102,6 +102,13 @@
           >
             Deploy
           </button>
+          <button
+            class="tab-button"
+            [class.active]="activeTab === 'inscription'"
+            (click)="switchTab('inscription')"
+          >
+            KNS Inscription
+          </button>
           <!-- This is for development -->
           <!-- <button
             class="tab-button"
@@ -129,6 +136,9 @@
           </div>
           <div *ngIf="activeTab === 'deploy'" class="deploy-container">
             <deploy></deploy>
+          </div>
+          <div *ngIf="activeTab === 'inscription'" class="inscription-container">
+            <app-test-inscription></app-test-inscription>
           </div>
           <!-- This is for development -->
           <!-- <div *ngIf="activeTab === 'list'" class="list-container">

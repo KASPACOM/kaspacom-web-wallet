@@ -146,13 +146,23 @@ export class AppWallet {
     return this.balanceSignal.asReadonly();
   }
 
-  refreshBalance() {
-    this.kaspaNetworkActionsService
-      .getWalletBalanceAndUtxos(this.getAddress())
-      .then((value) => this.balanceSignal.set(value))
-      .catch(() => {
-        console.error('Failed to load balance for wallet ' + this.getAddress());
-      });
+  async refreshBalance() {
+    try {
+      // Ensure UTXO processor is initialized and ready
+      if (!this.utxoProcessorManager && !this.isSettingUtxoProcessorManager) {
+        await this.startListiningToWalletActions();
+      }
+
+      // Wait for processor to be ready before proceeding
+      if (this.utxoProcessorManager) {
+        await this.waitForUtxoProcessorToBeReady();
+      }
+      
+      const value = await this.kaspaNetworkActionsService.getWalletBalanceAndUtxos(this.getAddress());
+      this.balanceSignal.set(value);
+    } catch (error) {
+      console.error('Failed to load balance for wallet ' + this.getAddress(), error);
+    }
   }
 
   // This is keeps updating

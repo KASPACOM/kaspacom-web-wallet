@@ -25,6 +25,8 @@ import {
   signMessage,
   Transaction,
   UtxoEntryReference,
+  XOnlyPublicKey,
+  type HexString,
 } from '../../../../public/kaspa/kaspa';
 import { RpcService } from './rpc.service';
 import { KaspaNetworkConnectionManagerService } from './kaspa-network-connection-manager.service';
@@ -127,22 +129,35 @@ export class KaspaNetworkTransactionsManagerService {
     };
   }
 
+  private utxoProcessorManager: UtxoProcessorManager | null = null;
+
   async initUtxoProcessorManager(
     address: string,
     onBalanceUpdate: () => Promise<any>
   ): Promise<UtxoProcessorManager> {
     return await this.connectAndDo(async () => {
-      const utxoProcessonManager = new UtxoProcessorManager(
+      if (this.utxoProcessorManager) {
+        return this.utxoProcessorManager;
+      }
+
+      this.utxoProcessorManager = new UtxoProcessorManager(
         this.rpcService.getRpc()!,
         this.rpcService.getNetwork(),
         address,
         onBalanceUpdate
       );
 
-      await utxoProcessonManager.init();
+      await this.utxoProcessorManager.init();
 
-      return utxoProcessonManager;
+      return this.utxoProcessorManager;
     });
+  }
+
+  getUtxoProcessorManager(): UtxoProcessorManager {
+    if (!this.utxoProcessorManager) {
+      throw new Error('UTXO processor manager not initialized');
+    }
+    return this.utxoProcessorManager;
   }
 
   // ================================================================
@@ -173,7 +188,17 @@ export class KaspaNetworkTransactionsManagerService {
       errorCode?: number;
       result?: ICreateTransactions;
     }>(async () => {
-      const context = utxoProcessonManager.getContext()!;
+      // Wait for UTXO processor to be ready and get context
+      await utxoProcessonManager.waitForPendingUtxoToFinish();
+      const context = utxoProcessonManager.getContext();
+      
+      if (!context) {
+        console.error('UTXO context not initialized');
+        return {
+          success: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE
+        };
+      }
 
       if (sendAll) {
         await utxoProcessonManager.waitForPendingUtxoToFinish();
@@ -826,6 +851,215 @@ export class KaspaNetworkTransactionsManagerService {
         estimateOnly,
       }
     );
+  }
+
+  // ================================================================
+  // INSCRIPTIONS
+  // ================================================================
+
+  async createTextInscription(
+    wallet: AppWallet,
+    text: string,
+    priorityFee: bigint = 0n
+  ): Promise<{
+    success: boolean;
+    errorCode?: number;
+    result?: ICreateTransactions;
+  }> {
+    const utxoManager = wallet.getUtxoProcessorManager();
+    if (!utxoManager) {
+      console.error('UTXO processor manager not initialized');
+      throw new Error('UTXO processor manager not initialized');
+    }
+
+    if (!utxoManager.getContext()) {
+      console.error('UTXO context not initialized');
+      throw new Error('UTXO context not initialized');
+    }
+
+    console.log('Creating text inscription with:', {
+      walletAddress: wallet.getAddress(),
+      text,
+      priorityFee: priorityFee.toString(),
+      utxoContext: utxoManager.getContext()
+    });
+
+    const script = new ScriptBuilder()
+      .addData(wallet.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString() as HexString)
+      .addOp(Opcodes.OpCheckSig)
+      .addOp(Opcodes.OpFalse)
+      .addOp(Opcodes.OpIf)
+      .addData(this.toUint8Array('kns'))
+      .addI64(0n)
+      .addData(this.toUint8Array(text))
+      .addOp(Opcodes.OpEndIf);
+
+    const scriptAddress = addressFromScriptPublicKey(
+      script.createPayToScriptHashScript(),
+      this.rpcService.getNetwork()
+    );
+
+    if (!scriptAddress) {
+      throw new Error('Failed to create inscription script address');
+    }
+
+    const outputs = [{
+      address: scriptAddress.toString(),
+      amount: KASPA_AMOUNT_FOR_KRC20_ACTION // Reusing KRC20 amount for inscriptions
+    }];
+
+    return await this.doTransactionWithUtxoProcessor(
+      wallet.getUtxoProcessorManager()!,
+      wallet.getPrivateKey(),
+      priorityFee,
+      outputs,
+      {
+        notifyCreatedTransactions: async (txId) => {
+          console.log('Text inscription transaction created:', txId);
+        }
+      }
+    );
+  }
+
+  async createDomainInscription(
+    wallet: AppWallet,
+    domainName: string,
+    suffix: string = 'kas',
+    priorityFee: bigint = 0n
+  ): Promise<{
+    success: boolean;
+    errorCode?: number;
+    result?: ICreateTransactions;
+  }> {
+    // Validate domain name length
+    if (domainName.length < 1) {
+      throw new Error('Domain name must be at least 1 character long');
+    }
+
+    const inscriptionData = JSON.stringify({
+      op: "create",
+      p: "domain",
+      v: domainName,
+      s: suffix
+    }, null, 0);
+
+    const script = new ScriptBuilder()
+      .addData(wallet.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString() as HexString)
+      .addOp(Opcodes.OpCheckSig)
+      .addOp(Opcodes.OpFalse)
+      .addOp(Opcodes.OpIf)
+      .addData(this.toUint8Array('kns'))
+      .addI64(0n)
+      .addData(this.toUint8Array(inscriptionData))
+      .addOp(Opcodes.OpEndIf);
+
+    const scriptAddress = addressFromScriptPublicKey(
+      script.createPayToScriptHashScript(),
+      this.rpcService.getNetwork()
+    );
+
+    if (!scriptAddress) {
+      throw new Error('Failed to create domain inscription script address');
+    }
+
+    // Calculate domain fee based on length
+    const domainFee = this.calculateDomainFee(domainName.length);
+
+    const outputs = [
+      {
+        address: scriptAddress.toString(),
+        amount: KASPA_AMOUNT_FOR_KRC20_ACTION
+      },
+      {
+        // KNS receiving address for testnet
+        address: 'kaspatest:qq9h47etjv6x8jgcla0ecnp8mgrkfxm70ch3k60es5a50ypsf4h6sak3g0lru',
+        amount: domainFee
+      }
+    ];
+
+    return await this.doTransactionWithUtxoProcessor(
+      wallet.getUtxoProcessorManager()!,
+      wallet.getPrivateKey(),
+      priorityFee,
+      outputs,
+      {
+        notifyCreatedTransactions: async (txId) => {
+          console.log('Domain inscription transaction created:', txId);
+        }
+      }
+    );
+  }
+
+  async createBinaryInscription(
+    wallet: AppWallet,
+    fileData: Uint8Array,
+    mimeType: string,
+    priorityFee: bigint = 0n
+  ): Promise<{
+    success: boolean;
+    errorCode?: number;
+    result?: ICreateTransactions;
+  }> {
+    // Convert binary data to hex string
+    const hexData = Array.from(fileData)
+      .map(byte => byte.toString(16).padStart(2, '0'))
+      .join('');
+
+    const script = new ScriptBuilder()
+      .addData(wallet.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString() as HexString)
+      .addOp(Opcodes.OpCheckSig)
+      .addOp(Opcodes.OpFalse)
+      .addOp(Opcodes.OpIf)
+      .addData(this.toUint8Array('kns'))
+      .addOp(1)
+      .addOp(1)
+      .addData(this.toUint8Array(mimeType))
+      .addI64(0n)
+      .addData(this.toUint8Array(hexData))
+      .addOp(Opcodes.OpEndIf);
+
+    const scriptAddress = addressFromScriptPublicKey(
+      script.createPayToScriptHashScript(),
+      this.rpcService.getNetwork()
+    );
+
+    if (!scriptAddress) {
+      throw new Error('Failed to create binary inscription script address');
+    }
+
+    const outputs = [{
+      address: scriptAddress.toString(),
+      amount: KASPA_AMOUNT_FOR_KRC20_ACTION
+    }];
+
+    return await this.doTransactionWithUtxoProcessor(
+      wallet.getUtxoProcessorManager()!,
+      wallet.getPrivateKey(),
+      priorityFee,
+      outputs,
+      {
+        notifyCreatedTransactions: async (txId) => {
+          console.log('Binary inscription transaction created:', txId);
+        }
+      }
+    );
+  }
+
+  private calculateDomainFee(length: number): bigint {
+    // Domain fee calculation based on character length
+    const fees: { [key: number]: bigint } = {
+      1: 6n,
+      2: 5n,
+      3: 4n,
+      4: 3n,
+      5: 2n
+    };
+
+    // Default to lowest fee for longer domains
+    const fee = fees[length] || 2n;
+    
+    // Convert to Kaspa units (assuming fee is in whole Kaspa)
+    return fee * BigInt(1e8); // 1 Kaspa = 100000000 sompi
   }
 
   //   // ================================================================

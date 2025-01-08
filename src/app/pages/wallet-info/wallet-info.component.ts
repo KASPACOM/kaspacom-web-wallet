@@ -24,12 +24,13 @@ import { UnfinishedKrc20Action } from '../../types/kaspa-network/unfinished-krc2
 import { ListKrc20Component } from '../../components/wallet-actions-forms/list-krc20-component/list-krc20-component.component';
 import { BuyKrc20Component } from '../../components/wallet-actions-forms/buy-krc20-component/buy-krc20.component';
 import { DeployComponent } from '../../components/wallet-actions-forms/deploy/deploy.component';
+import { TestInscriptionComponent } from '../../components/wallet-actions-forms/test-inscription/test-inscription.component';
 import { UtxosListComponent } from '../../components/history-info-components/utxos-list/utxos-list.component';
 import { TransactionHistoryComponent } from '../../components/history-info-components/transaction-history/transaction-history.component';
 import { Krc20OperationHistoryComponent } from '../../components/history-info-components/krc20-operation-history/krc20-operation-history.component';
 import { OperationDetails } from '../../services/kasplex-api/dtos/operation-details-response';
 
-type ActionTabs = 'send' | 'mint' | 'deploy' | 'list' | 'buy';
+type ActionTabs = 'send' | 'mint' | 'deploy' | 'list' | 'buy' | 'inscription';
 type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
 
 @Component({
@@ -50,6 +51,7 @@ type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
     ListKrc20Component,
     BuyKrc20Component,
     DeployComponent,
+    TestInscriptionComponent,
     UtxosListComponent,
     TransactionHistoryComponent,
     Krc20OperationHistoryComponent,
@@ -159,10 +161,6 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
           this.wallet!.getAddress(),
         )
         .pipe(
-          // tap((response) => {
-          //   this.paginationPrevTokenKey = response.prev;
-          //   this.paginationNextTokenKey = response.next;
-          // }),
           map((response) => {
             return response.result;
           }),

@@ -90,8 +90,6 @@ export class AppWallet {
   }
 
   async startListiningToWalletActions() {
-    console.log('STARTT LISTENING WALLET ' + this.getName());
-
     if (
       this.kaspaNetworkActionsService.getConnectionStatusSignal()() !==
       RpcConnectionStatus.CONNECTED
@@ -114,7 +112,6 @@ export class AppWallet {
   }
 
   async stopListiningToWalletActions() {
-    console.log('STOP LISTENING WALLET ' + this.getName());
     await this.utxoProcessorManager?.dispose();
     this.utxoProcessorManager = undefined;
     this.isSettingUtxoProcessorManager = false;

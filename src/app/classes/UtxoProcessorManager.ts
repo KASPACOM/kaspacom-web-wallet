@@ -4,11 +4,15 @@ import {
   UtxoContext,
   UtxoProcessor,
 } from '../../../public/kaspa/kaspa';
-import { BalanceData, BalanceEvent } from '../types/kaspa-network/balance-event.interface';
+import {
+  BalanceData,
+  BalanceEvent,
+} from '../types/kaspa-network/balance-event.interface';
 import { UtxoChangedEvent } from '../types/kaspa-network/utxo-changed-event.interface';
 
 const WAIT_TIMEOUT = 20 * 1000;
 const REJECT_TRANSACTION_TIMEOUT = 20 * 1000;
+const WAIT_TIMEOUT_FOR_UTXO_BALANCE = 20 * 1000;
 
 export class UtxoProcessorManager {
   private processor: UtxoProcessor | undefined = undefined;
@@ -34,6 +38,7 @@ export class UtxoProcessorManager {
 
   private balancePromise: undefined | Promise<any> = undefined;
   private balanceResolve: undefined | ((v?: any) => void) = undefined;
+  private balanceResolveTimeout: undefined | NodeJS.Timeout = undefined;
   private isBalancedResolved = true;
   private transactionPromises: {
     [transactionId: string]: {
@@ -50,7 +55,7 @@ export class UtxoProcessorManager {
     private readonly rpc: RpcClient,
     private readonly network: string,
     private readonly publicAddress: string,
-    private readonly onBalanceUpdate: () => Promise<any>,
+    private readonly onBalanceUpdate: () => Promise<any>
   ) {
     this.processorHandlerWithBind = this.processorEventListener.bind(this);
     this.balanceEventHandlerWithBind = this.balanceEventHandler.bind(this);
@@ -79,10 +84,45 @@ export class UtxoProcessorManager {
       this.balanceResolve = resolve;
     });
 
-    if (this.context?.balance?.pending === 0n) {
-      this.isBalancedResolved = true;
-      this.balanceResolve!();
+    if (this.balanceResolveTimeout) {
+      clearTimeout(this.balanceResolveTimeout);
+      this.balanceResolveTimeout = undefined;
     }
+
+    const balanceResolveTimeoutFunction = async () => {
+      try {
+        await this.processorEventListenerPromise;
+      } catch (error) {
+        console.error(error);
+        this.balanceResolveTimeout = undefined;
+        return;
+      }
+
+      await this.context?.clear();
+      await this.context?.trackAddresses([this.publicAddress]);
+      this.balanceResolveTimeout = setTimeout(
+        balanceResolveTimeoutFunction,
+        WAIT_TIMEOUT_FOR_UTXO_BALANCE
+      );
+    };
+
+    this.balanceResolveTimeout = setTimeout(
+      balanceResolveTimeoutFunction,
+      WAIT_TIMEOUT_FOR_UTXO_BALANCE
+    );
+
+    if (this.context?.balance?.pending === 0n) {
+      this.balanceReceived();
+    }
+  }
+
+  private balanceReceived() {
+    if (this.balanceResolveTimeout) {
+      clearTimeout(this.balanceResolveTimeout);
+      this.balanceResolveTimeout = undefined;
+    }
+    this.isBalancedResolved = true;
+    this.balanceResolve!();
   }
 
   private async balanceEventHandler(event: BalanceEvent) {
@@ -100,8 +140,7 @@ export class UtxoProcessorManager {
       if (!this.isBalancedResolved) {
         const currentHasPending = event.data.balance.pending > 0;
         if (!currentHasPending) {
-          this.isBalancedResolved = true;
-          this.balanceResolve!();
+          this.balanceReceived();
         }
       }
     }
@@ -140,7 +179,13 @@ export class UtxoProcessorManager {
   }
 
   async dispose(): Promise<void> {
+    if (this.balanceResolveTimeout) {
+      clearTimeout(this.balanceResolveTimeout);
+      this.balanceResolveTimeout = undefined;
+    }
+
     await this.stopAndUnregisterProcessor();
+    this.context!.clear();
   }
 
   private async registerProcessor() {
@@ -170,7 +215,7 @@ export class UtxoProcessorManager {
       this.balanceEventHandlerWithBind!
     );
     await this.processor!.start();
-    
+
     return await this.processorEventListenerPromise;
   }
 
@@ -180,14 +225,17 @@ export class UtxoProcessorManager {
       'utxo-proc-start',
       this.processorHandlerWithBind
     );
+    this.processor!.removeEventListener('utxo-proc-start');
     this.processor!.removeEventListener(
       'balance',
       this.balanceEventHandlerWithBind
     );
+    this.processor!.removeEventListener('balance');
     this.processor!.removeEventListener(
       'pending',
       this.balanceEventHandlerWithBind
     );
+    this.processor!.removeEventListener('pending');
 
     this.rpc.unsubscribeUtxosChanged([this.publicAddress]);
     this.rpc.removeEventListener(
@@ -220,7 +268,8 @@ export class UtxoProcessorManager {
 
   private utxoChangedEventListener(event: UtxoChangedEvent) {
     const addedEntry = event.data?.added?.find(
-      (entry: any) => entry.address.payload === this.publicAddress.toString().split(':')[1],
+      (entry: any) =>
+        entry.address.payload === this.publicAddress.toString().split(':')[1]
     );
 
     if (addedEntry) {
@@ -230,7 +279,6 @@ export class UtxoProcessorManager {
         this.resolveTransaction(addedEventTrxId);
       }
     }
-
   }
 
   resolveTransaction(transactionId: string) {

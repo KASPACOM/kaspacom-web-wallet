@@ -1,0 +1,60 @@
+<div class="test-inscription-container">
+  <h2>Test Inscription</h2>
+
+  <div class="form-section">
+    <h3>Commit Parameters</h3>
+    <div class="form-group">
+      <label>Outputs:</label>
+      <div *ngFor="let output of commit.outputs; let i = index">
+        <input [(ngModel)]="output.address" placeholder="Address">
+        <input type="number" [(ngModel)]="output.amount" placeholder="Amount">
+        <button (click)="commit.outputs.splice(i, 1)">Remove</button>
+      </div>
+      <button (click)="commit.outputs.push({address: '', amount: 0})">Add Output</button>
+    </div>
+    <div class="form-group">
+      <label>Priority Fee:</label>
+      <input type="number" [(ngModel)]="commit.priorityFee">
+    </div>
+  </div>
+
+  <div class="form-section">
+    <h3>Reveal Parameters</h3>
+    <div class="form-group">
+      <label>Outputs:</label>
+      <div *ngFor="let output of reveal.outputs; let i = index">
+        <input [(ngModel)]="output.address" placeholder="Address">
+        <input type="number" [(ngModel)]="output.amount" placeholder="Amount">
+        <button (click)="reveal.outputs.splice(i, 1)">Remove</button>
+      </div>
+      <button (click)="reveal.outputs.push({address: '', amount: 0})">Add Output</button>
+    </div>
+    <div class="form-group">
+      <label>Priority Fee:</label>
+      <input type="number" [(ngModel)]="reveal.priorityFee">
+    </div>
+  </div>
+
+  <div class="form-section">
+    <h3>Script</h3>
+    <textarea [(ngModel)]="script" placeholder="Enter script (hex encoded)"></textarea>
+  </div>
+
+  <div class="form-section">
+    <h3>Network</h3>
+    <select [(ngModel)]="networkId">
+      <option value="testnet-10">Testnet 10</option>
+      <option value="testnet-11">Testnet 11</option>
+      <option value="mainnet">Mainnet</option>
+      <option value="devnet">Devnet</option>
+    </select>
+  </div>
+
+  <div class="actions">
+    <button (click)="initializeWallet()">Initialize Wallet</button>
+    <button (click)="getUtxoEntries()">Get UTXO Entries</button>
+    <button (click)="getAccounts()">Get Accounts</button>
+    <button (click)="getNetwork()">Get Network</button>
+    <button (click)="handleCommitReveal()">Submit Commit/Reveal</button>
+  </div>
+</div>

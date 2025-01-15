@@ -1,4 +1,40 @@
 import { Injectable, input, Signal } from '@angular/core';
+
+interface DomainInscriptionData {
+  op: "create";
+  p: "domain";
+  v: string;  // domain name
+  s?: "kas";  // suffix (optional, defaults to .kas)
+}
+
+interface DomainVerificationResult {
+  success: boolean;
+  data?: {
+    id: string;
+    asset: string;
+    owner: string;
+  };
+  message?: string;
+}
+
+interface DomainRegistrationRequest {
+  domain: string;
+  ownerAddress: string;
+  publicKey: string;
+  network: string;
+  fee: number;
+}
+
+interface DomainRegistrationResponse {
+  script: string;
+  commitTx: any;
+  revealTx: any;
+}
+
+interface CommitRevealResult {
+  commitTxId: string;
+  revealTxId: string;
+}
 import {
   Address,
   addressFromScriptPublicKey,
@@ -864,130 +900,516 @@ export class KaspaNetworkTransactionsManagerService {
   ): Promise<{
     success: boolean;
     errorCode?: number;
-    result?: ICreateTransactions;
+    result?: any;
   }> {
-    const utxoManager = wallet.getUtxoProcessorManager();
-    if (!utxoManager) {
-      console.error('UTXO processor manager not initialized');
-      throw new Error('UTXO processor manager not initialized');
-    }
-
-    if (!utxoManager.getContext()) {
-      console.error('UTXO context not initialized');
-      throw new Error('UTXO context not initialized');
-    }
-
-    console.log('Creating text inscription with:', {
-      walletAddress: wallet.getAddress(),
-      text,
-      priorityFee: priorityFee.toString(),
-      utxoContext: utxoManager.getContext()
-    });
-
-    const script = new ScriptBuilder()
-      .addData(wallet.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString() as HexString)
-      .addOp(Opcodes.OpCheckSig)
-      .addOp(Opcodes.OpFalse)
-      .addOp(Opcodes.OpIf)
-      .addData(this.toUint8Array('kns'))
-      .addI64(0n)
-      .addData(this.toUint8Array(text))
-      .addOp(Opcodes.OpEndIf);
-
-    const scriptAddress = addressFromScriptPublicKey(
-      script.createPayToScriptHashScript(),
-      this.rpcService.getNetwork()
-    );
-
-    if (!scriptAddress) {
-      throw new Error('Failed to create inscription script address');
-    }
-
-    const outputs = [{
-      address: scriptAddress.toString(),
-      amount: KASPA_AMOUNT_FOR_KRC20_ACTION // Reusing KRC20 amount for inscriptions
-    }];
-
-    return await this.doTransactionWithUtxoProcessor(
-      wallet.getUtxoProcessorManager()!,
-      wallet.getPrivateKey(),
-      priorityFee,
-      outputs,
-      {
-        notifyCreatedTransactions: async (txId) => {
-          console.log('Text inscription transaction created:', txId);
-        }
+    try {
+      // Verify kasware is available
+      if (!(window as any).kasware) {
+        throw new Error('Kasware wallet not detected');
       }
-    );
+
+      // Get UTXO entries and network info from kasware
+      const entries = await (window as any).kasware.getUtxoEntries();
+      const [address] = await (window as any).kasware.getAccounts();
+      const publicKey = await (window as any).kasware.getPublicKey(address);
+      const network = await (window as any).kasware.getNetwork();
+      
+      // Convert amounts to sompi
+      const SOMPI = 100000000n;
+      const commitAmount = 0.001 * Number(SOMPI);
+      const revealAmount = 0.0005 * Number(SOMPI);
+      
+      // Determine network ID
+      let networkId = "testnet-10";
+      switch (network) {
+        case "kaspa_mainnet":
+          networkId = "mainnet";
+          break;
+        case "kaspa_testnet_11":
+          networkId = "testnet-11";
+          break;
+        case "kaspa_testnet_10":
+          networkId = "testnet-10";
+          break;
+        case "kaspa_devnet":
+          networkId = "devnet";
+          break;
+        default:
+          networkId = "testnet-10";
+          break;
+      }
+
+      // Create script for text inscription
+      const script = new ScriptBuilder()
+        .addData(wallet.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString() as HexString)
+        .addOp(Opcodes.OpCheckSig)
+        .addOp(Opcodes.OpFalse)
+        .addOp(Opcodes.OpIf)
+        .addData(this.toUint8Array('kns'))
+        .addI64(0n)
+        .addData(this.toUint8Array(text))
+        .addOp(Opcodes.OpEndIf);
+
+      // Create commit and reveal transactions
+      const scriptAddress = addressFromScriptPublicKey(
+        script.createPayToScriptHashScript(),
+        this.rpcService.getNetwork()
+      );
+
+      if (!scriptAddress) {
+        return {
+          success: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ADDRESS
+        };
+      }
+
+      // Verify kasware is available
+      if (!(window as any).kasware) {
+        throw new Error('Kasware wallet not detected');
+      }
+
+      // Convert BigInt amounts to strings for JSON serialization
+      const commit = {
+        priorityEntries: [],
+      entries: entries.map((e: IUtxoEntry) => ({
+          ...e,
+          amount: e.amount.toString()
+        })),
+        outputs: [{ 
+          address: scriptAddress.toString(), 
+          amount: KASPA_AMOUNT_FOR_KRC20_ACTION.toString() 
+        }],
+        changeAddress: address,
+        priorityFee: priorityFee.toString()
+      };
+
+      const reveal = {
+        outputs: [],
+        changeAddress: address,
+        priorityFee: (BigInt(priorityFee) + BigInt(1e6)).toString() // Add 0.01 KAS
+      };
+
+      // Create script and submit through kasware
+      const scriptHex = script.createPayToScriptHashScript().toString();
+      
+      try {
+        // Open kasware wallet UI
+        await (window as any).kasware.connect();
+        
+        const results = await (window as any).kasware.submitCommitReveal(
+          JSON.parse(JSON.stringify(commit)), // Ensure proper serialization
+          JSON.parse(JSON.stringify(reveal)), // Ensure proper serialization
+          scriptHex,
+          networkId
+        );
+
+        console.log('Kasware commit/reveal results:', results);
+        return {
+          success: true,
+          result: results
+        };
+      } catch (error: any) {
+        console.error('Kasware commit/reveal failed:', error);
+        return {
+          success: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
+          result: {
+            error: error.message
+          }
+        };
+      }
+    } catch (error) {
+      console.error('Text inscription failed:', error);
+      return {
+        success: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR
+      };
+    }
+  }
+
+  // Debug logging function
+  private logCommitRevealDetails(step: string, data: any) {
+    console.groupCollapsed(`[KNS Debug] ${step}`);
+    console.log(JSON.stringify(data, null, 2));
+    console.groupEnd();
   }
 
   async createDomainInscription(
     wallet: AppWallet,
-    domainName: string,
-    suffix: string = 'kas',
-    priorityFee: bigint = 0n
+    domain: string,
+    publicKey: XOnlyPublicKey,
+    entries: IUtxoEntry[],
+    address: string,
+    network: string
   ): Promise<{
-    success: boolean;
-    errorCode?: number;
-    result?: ICreateTransactions;
+    script: string;
+    commitData: any;
+    revealData: any;
+    networkId: string;
   }> {
-    // Validate domain name length
-    if (domainName.length < 1) {
-      throw new Error('Domain name must be at least 1 character long');
+    console.groupCollapsed('[KNS Domain Inscription]');
+    console.log('Starting domain inscription for:', domain);
+    console.log('Public Key:', publicKey.toString());
+    console.log('Network:', network);
+    console.log('UTXO Entries:', entries);
+    // Debug script for browser console
+    const debugScript = `
+      console.groupCollapsed('[KNS Debug Script]');
+      console.log('Run this in console to debug commit-reveal:');
+      console.log(\`
+        async function debugCommitReveal() {
+          try {
+            const wallet = window.kasware.getCurrentWallet();
+            const domain = prompt('Enter domain (1-5 chars):');
+            if (!domain || domain.length < 1 || domain.length > 5) {
+              throw new Error('Invalid domain length');
+            }
+            
+            const entries = await wallet.getUtxoEntries();
+            const address = await wallet.getAddress();
+            const publicKey = await wallet.getPublicKey(address);
+            const network = await wallet.getNetwork();
+            
+            console.groupCollapsed('[Commit Details]');
+            console.log('Domain:', domain);
+            console.log('Entries:', entries);
+            console.log('Address:', address);
+            console.log('Public Key:', publicKey);
+            console.log('Network:', network);
+            console.groupEnd();
+            
+            const result = await window.knsService.createDomainInscription(
+              wallet,
+              domain,
+              publicKey,
+              entries,
+              address,
+              network
+            );
+            
+            console.groupCollapsed('[Result Details]');
+            console.log('Script:', result.script);
+            console.log('Commit Data:', result.commitData);
+            console.log('Reveal Data:', result.revealData);
+            console.log('Network ID:', result.networkId);
+            console.groupEnd();
+            
+            return result;
+          } catch (error) {
+            console.error('Commit-Reveal Error:', error);
+            throw error;
+          }
+        }
+        debugCommitReveal().then(console.log).catch(console.error);
+      \`);
+      console.groupEnd();
+    `;
+    
+    // Execute debug script
+    eval(debugScript);
+    // Validate domain length (1-5 characters)
+    if (domain.length < 1 || domain.length > 5) {
+      throw new Error('Domain length must be between 1 and 5 characters');
     }
 
-    const inscriptionData = JSON.stringify({
+    // Format inscription data according to KNS spec
+    const inscriptionData: DomainInscriptionData = {
       op: "create",
       p: "domain",
-      v: domainName,
-      s: suffix
-    }, null, 0);
+      v: domain,
+      s: "kas" // Default to .kas suffix
+    };
 
-    const script = new ScriptBuilder()
-      .addData(wallet.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString() as HexString)
+    // Convert inscription data to compact JSON (no whitespace)
+    const compactInscriptionData = JSON.stringify(inscriptionData, null, 0);
+    console.log('Inscription Data:', compactInscriptionData);
+
+    const script = this.createInscriptionScript(publicKey, inscriptionData);
+    const fee = this.calculateFee(domain.length);
+    console.log('Domain Length:', domain.length, 'Fee:', fee);
+
+    // Hard-coded KNS receiving address for testnet 10
+    const p2shAddress = 'kaspatest:qq9h47etjv6x8jgcla0ecnp8mgrkfxm70ch3k60es5a50ypsf4h6sak3g0lru';
+
+    let networkId = 'testnet-10';
+    switch (network) {
+      case 'kaspa_mainnet':
+        networkId = 'mainnet';
+        break;
+      case 'kaspa_testnet_11':
+        networkId = 'testnet-11';
+        break;
+      case 'kaspa_testnet_10':
+        networkId = 'testnet-10';
+        break;
+      case 'kaspa_devnet':
+        networkId = 'devnet';
+        break;
+    }
+
+    // Ensure amounts are numbers
+    const commitAmount = 1; // 1 sompi for dust output
+    const revealAmount = Number(fee);
+
+    if (isNaN(revealAmount)) {
+      throw new Error('Invalid fee amount');
+    }
+
+    // Structure the transactions according to Kasware's expected format
+    // Increase dust amount and simplify output structure
+    const commitData = {
+      entries,
+      outputs: [{
+        address,
+        amount: 100 // Increased from 1 to 100 sompi for dust threshold
+      }],
+      changeAddress: address,
+      priorityFee: 0.01,
+      type: 'commit',
+      inscriptionProtocol: 'domain'
+    };
+
+    const revealData = {
+      outputs: [{
+        address: p2shAddress,
+        amount: revealAmount
+      }],
+      changeAddress: address,
+      priorityFee: 0.02,
+      type: 'reveal',
+      inscriptionProtocol: 'domain'
+    };
+
+    // Log the final data structures before returning
+    console.log('Commit Data:', JSON.stringify(commitData, null, 2));
+    console.log('Reveal Data:', JSON.stringify(revealData, null, 2));
+    console.log('Network ID:', networkId);
+    console.log('Script:', script.toString());
+
+    return {
+      script: script.toString(),
+      commitData,
+      revealData,
+      networkId,
+    };
+  }
+
+  private calculateFee(domainLength: number): number {
+    // Convert KAS to Sompi (1 KAS = 100,000,000 Sompi)
+    const kasToSompi = (kas: number) => kas * 100000000;
+    
+    if (domainLength === 1) return kasToSompi(6);
+    if (domainLength === 2) return kasToSompi(5);
+    if (domainLength === 3) return kasToSompi(4);
+    if (domainLength === 4) return kasToSompi(3);
+    return kasToSompi(2);
+  }
+
+  private createInscriptionScript(
+    publicKey: XOnlyPublicKey,
+    inscriptionData: DomainInscriptionData
+  ): ScriptBuilder {
+    const pubKeyHex = publicKey.toString();
+    const pubKeyBytes = this.hexToBytes(pubKeyHex);
+
+    return new ScriptBuilder()
+      .addData(pubKeyBytes)
       .addOp(Opcodes.OpCheckSig)
       .addOp(Opcodes.OpFalse)
       .addOp(Opcodes.OpIf)
       .addData(this.toUint8Array('kns'))
       .addI64(0n)
-      .addData(this.toUint8Array(inscriptionData))
+      .addData(this.toUint8Array(JSON.stringify(inscriptionData, null, 0)))
       .addOp(Opcodes.OpEndIf);
+  }
 
-    const scriptAddress = addressFromScriptPublicKey(
-      script.createPayToScriptHashScript(),
-      this.rpcService.getNetwork()
-    );
+  private hexToBytes(hex: string): Uint8Array {
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < hex.length; i += 2) {
+      bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+    }
+    return bytes;
+  }
 
-    if (!scriptAddress) {
-      throw new Error('Failed to create domain inscription script address');
+  private async verifyDomainOwnership(domain: string, ownerAddress: string): Promise<DomainVerificationResult> {
+    try {
+      const response = await fetch(`https://api.knsdomains.org/tn10/api/v1/${domain}/owner`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      
+      if (!data.success) {
+        return { success: false, message: data.message };
+      }
+      
+      if (data.data.owner.toLowerCase() !== ownerAddress.toLowerCase()) {
+        return { success: false, message: 'Address does not match domain owner' };
+      }
+      
+      return { success: true, data: data.data };
+    } catch (error) {
+      console.error('Domain verification failed:', error);
+      return { success: false, message: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  async prepareDomainRegistration(
+    domain: string,
+    publicKey: XOnlyPublicKey,
+    ownerAddress: string,
+    network: string
+  ): Promise<DomainRegistrationRequest> {
+    const fee = this.calculateFee(domain.length);
+    return {
+      domain,
+      ownerAddress,
+      publicKey: publicKey.toString(),
+      network,
+      fee
+    };
+  }
+
+  async processBackendResponse(response: DomainRegistrationResponse): Promise<{
+    script: string;
+    commitData: any;
+    revealData: any;
+  }> {
+    return {
+      script: response.script,
+      commitData: response.commitTx,
+      revealData: response.revealTx
+    };
+  }
+
+  async registerDomain(
+    domain: string,
+    publicKey: XOnlyPublicKey,
+    entries: IUtxoEntry[],
+    address: string,
+    network: string,
+    submitTx: (
+      commit: any,
+      reveal: any,
+      script: string,
+      networkId: string,
+      options?: any
+    ) => Promise<CommitRevealResult>,
+    backendRequest: (
+      request: DomainRegistrationRequest
+    ) => Promise<DomainRegistrationResponse>
+  ): Promise<CommitRevealResult> {
+    console.groupCollapsed('[KNS Register Domain] Starting Domain Registration');
+    console.log('Domain:', domain);
+    console.log('Public Key:', publicKey.toString());
+    console.log('Network:', network);
+    console.log('Address:', address);
+    console.log('UTXO Entries:', entries);
+    console.groupEnd();
+
+    try {
+    console.groupCollapsed('[KNS Register Domain] Commit-Reveal Details');
+    console.log('Domain:', domain);
+    console.log('Public Key:', publicKey.toString());
+    console.log('Network:', network);
+    console.log('Address:', address);
+    console.log('UTXO Entries:', entries);
+    console.groupCollapsed('[KNS Register Domain]');
+    console.log('Starting domain registration for:', domain);
+    console.log('Public Key:', publicKey.toString());
+    console.log('Network:', network);
+    console.log('UTXO Entries:', entries);
+    const maxRetries = 3;
+    const initialDelay = 1000; // 1 second
+    let attempt = 0;
+
+    while (attempt < maxRetries) {
+      try {
+        // Verify domain ownership
+        const verification = await this.verifyDomainOwnership(domain, address);
+        if (!verification.success) {
+          throw new Error(`Domain verification failed: ${verification.message}`);
+        }
+
+        // Prepare registration request
+        const registrationRequest = await this.prepareDomainRegistration(
+          domain,
+          publicKey,
+          address,
+          network
+        );
+
+        // Send to backend with retry
+        const backendResponse = await this.retryWithBackoff(
+          () => backendRequest(registrationRequest),
+          initialDelay,
+          maxRetries
+        );
+
+        // Process backend response
+        const { script, commitData, revealData } = 
+          await this.processBackendResponse(backendResponse);
+
+        // Submit transaction through Kasware with retry
+        console.groupCollapsed('[KNS Register Domain] Commit-Reveal Transaction Details');
+        console.log('Commit Data:', JSON.stringify(commitData, null, 2));
+        console.log('Reveal Data:', JSON.stringify(revealData, null, 2));
+        console.log('Script:', script);
+        console.log('Network:', network);
+        console.groupEnd();
+
+        const result = await this.retryWithBackoff(
+          () => submitTx(commitData, revealData, script, network, {
+            inscriptionProtocol: 'domain'
+          }),
+          initialDelay,
+          maxRetries
+        );
+
+        console.groupCollapsed('[KNS Register Domain] Transaction Results');
+        console.log('Commit Tx ID:', result.commitTxId);
+        console.log('Reveal Tx ID:', result.revealTxId);
+        console.groupEnd();
+
+        return result;
+      } catch (error) {
+        attempt++;
+        if (attempt >= maxRetries) {
+          throw error;
+        }
+        const delay = initialDelay * Math.pow(2, attempt);
+        console.warn(`Attempt ${attempt} failed. Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
     }
 
-    // Calculate domain fee based on length
-    const domainFee = this.calculateDomainFee(domainName.length);
+      throw new Error('Max retries exceeded for domain registration');
+    } catch (error) {
+      console.error('[KNS Register Domain] Error:', error);
+      throw error;
+    }
+  }
 
-    const outputs = [
-      {
-        address: scriptAddress.toString(),
-        amount: KASPA_AMOUNT_FOR_KRC20_ACTION
-      },
-      {
-        // KNS receiving address for testnet
-        address: 'kaspatest:qq9h47etjv6x8jgcla0ecnp8mgrkfxm70ch3k60es5a50ypsf4h6sak3g0lru',
-        amount: domainFee
-      }
-    ];
-
-    return await this.doTransactionWithUtxoProcessor(
-      wallet.getUtxoProcessorManager()!,
-      wallet.getPrivateKey(),
-      priorityFee,
-      outputs,
-      {
-        notifyCreatedTransactions: async (txId) => {
-          console.log('Domain inscription transaction created:', txId);
+  private async retryWithBackoff<T>(
+    fn: () => Promise<T>,
+    initialDelay: number,
+    maxRetries: number
+  ): Promise<T> {
+    let attempt = 0;
+    while (attempt < maxRetries) {
+      try {
+        return await fn();
+      } catch (error) {
+        attempt++;
+        if (attempt >= maxRetries) {
+          throw error;
         }
+        const delay = initialDelay * Math.pow(2, attempt);
+        console.warn(`Attempt ${attempt} failed. Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
-    );
+    }
+    throw new Error('Max retries exceeded');
   }
 
   async createBinaryInscription(

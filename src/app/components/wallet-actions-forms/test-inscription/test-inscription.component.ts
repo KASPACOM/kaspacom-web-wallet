@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PublicKey, XOnlyPublicKey } from '../../../../../public/kaspa/kaspa';
-import { knsInscriptionService } from '../../../services/kaspa-netwrok-services/kns-inscription.service';
+import { KNSInscriptionService, DomainVerificationResult } from '../../../services/kaspa-netwrok-services/kns-inscription.service';
 
 interface DomainInscription {
   domain: string;
@@ -19,8 +19,12 @@ interface DomainInscription {
     <div class="card">
       <div class="card-header">Test Multiple KNS Inscriptions</div>
       <div class="card-body">
-        <div class="alert alert-info" *ngIf="!kasware">
-          Please install Kasware wallet to proceed.
+        <div class="alert" [ngClass]="{
+          'alert-info': connectionState === 'disconnected',
+          'alert-warning': connectionState === 'connecting',
+          'alert-success': connectionState === 'connected'
+        }">
+          {{getConnectionStatus()}}
         </div>
 
         <!-- Protocol info -->
@@ -73,22 +77,59 @@ export class TestInscriptionComponent implements OnInit {
     { domain: 'zay', status: 'pending' }
   ];
 
-  constructor() {}
+  constructor(private knsInscriptionService: KNSInscriptionService) {}
 
   ngOnInit() {
     this.initializeKasware();
   }
 
+  public connectionState: 'disconnected' | 'connecting' | 'connected' = 'disconnected';
+  public connectionError?: string;
+
   private async initializeKasware() {
-    this.kasware = (window as any).kasware;
+    if (this.connectionState === 'connected') return;
     
-    if (!this.kasware) {
-      for (let i = 1; i < 10; i++) {
-        await new Promise(resolve => setTimeout(resolve, 100 * i));
+    this.connectionState = 'connecting';
+    this.connectionError = undefined;
+    
+    try {
+      const maxRetries = 5;
+      const initialDelay = 100;
+      const maxDelay = 5000;
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
         this.kasware = (window as any).kasware;
-        if (this.kasware) break;
+        
+        if (this.kasware) {
+          this.connectionState = 'connected';
+          return;
+        }
+        
+        // Exponential backoff with jitter
+        const delay = Math.min(
+          initialDelay * Math.pow(2, attempt - 1) + Math.random() * 100,
+          maxDelay
+        );
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
+      
+      throw new Error('Kasware wallet not detected after multiple attempts');
+    } catch (error) {
+      this.connectionState = 'disconnected';
+      this.connectionError = error instanceof Error ? error.message : 'Failed to connect to Kasware';
+      console.error('Kasware connection error:', error);
     }
+  }
+
+  getConnectionStatus(): string {
+    if (this.connectionState === 'connected') {
+      return 'Connected to Kasware';
+    }
+    if (this.connectionState === 'connecting') {
+      return 'Connecting to Kasware...';
+    }
+    return this.connectionError || 'Not connected to Kasware';
   }
 
   getStatusClass(status: string): string {
@@ -176,12 +217,45 @@ export class TestInscriptionComponent implements OnInit {
 
         try {
           const p2shAddress = "kaspatest:qq9h47etjv6x8jgcla0ecnp8mgrkfxm70ch3k60es5a50ypsf4h6sak3g0lru";
-          const { script, commitData, revealData, networkId } = await knsInscriptionService.createDomainInscription(
+          
+          // Add retry logic for domain verification
+          let verification: DomainVerificationResult | undefined;
+          let retries = 3;
+          let delay = 1000;
+          
+          while (retries > 0) {
+            try {
+              verification = await this.knsInscriptionService.verifyDomainOwnership(
+                inscription.domain, 
+                address
+              );
+              
+              if (!verification) {
+                throw new Error('Domain verification returned no result');
+              }
+              
+              if (!verification.success) {
+                throw new Error(
+                  `Domain verification failed: ${verification.message || 'Unknown error'} ` +
+                  `(Code: ${verification.errorCode || 'N/A'})`
+                );
+              }
+              break;
+            } catch (error) {
+              retries--;
+              if (retries === 0) throw error;
+              await new Promise(resolve => setTimeout(resolve, delay));
+              delay *= 2; // Exponential backoff
+            }
+          }
+
+          const { script, commitData, revealData, networkId } = await this.knsInscriptionService.createDomainInscription(
             inscription.domain,
             publicKey,
             entries,
             address,
-            network
+            network,
+            this.kasware
           );
 
           console.log('\nInscription preparation data:');
@@ -220,13 +294,32 @@ export class TestInscriptionComponent implements OnInit {
 
           // Submit using KasWare's submitCommitReveal method
           console.log('\nSubmitting to KasWare...');
+          console.log('Kasware object:', this.kasware);
+          console.log('Kasware submitCommitReveal exists:', typeof this.kasware.submitCommitReveal === 'function');
+          
+          if (!this.kasware || typeof this.kasware.submitCommitReveal !== 'function') {
+            throw new Error('Kasware submitCommitReveal method not available');
+          }
+
+          console.log('Commit data:', JSON.stringify(commit, null, 2));
+          console.log('Reveal data:', JSON.stringify(reveal, null, 2));
+          console.log('Script:', script);
+          console.log('Network ID:', networkId);
+
           const result = await this.kasware.submitCommitReveal(
             commit,
             reveal,
             script,
             networkId
           );
+          
           console.log('KasWare response:', result);
+          if (!result) {
+            throw new Error('No response from Kasware');
+          }
+          if (!result.commitTxId && !result.revealTxId) {
+            throw new Error('Missing transaction IDs in response');
+          }
 
           if (result && (result.commitTxId || result.revealTxId)) {
             inscription.status = 'success';

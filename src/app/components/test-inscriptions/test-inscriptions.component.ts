@@ -264,11 +264,35 @@ export class TestInscriptionsComponent implements OnInit {
         throw new Error(`Insufficient balance for domain registration. Please send some testnet KAS to ${this.testWallet.getAddress()}`);
       }
 
-      this.domainResult = await this.transactionManager.createDomainInscription(
-        this.testWallet,
-        "test123",
-        "kas",
-        0n
+      const domain = "test123";
+      const publicKey = this.testWallet.getPrivateKey().toPublicKey().toXOnlyPublicKey();
+      const entries = await this.transactionManager.getWalletUtxos(this.testWallet.getAddress());
+      const address = this.testWallet.getAddress();
+      const network = "testnet-10";
+      
+      this.domainResult = await this.transactionManager.registerDomain(
+        domain,
+        publicKey,
+        entries,
+        address,
+        network,
+        async (commitData, revealData, script, networkId) => {
+          // Submit transaction through Kasware
+          return await (window as any).kasware.submitCommitReveal(
+            commitData,
+            revealData,
+            script,
+            networkId
+          );
+        },
+        async (request) => {
+          // Mock backend request
+          return {
+            script: "mock-script",
+            commitTx: {},
+            revealTx: {}
+          };
+        }
       );
       console.log('Domain Inscription Result:', this.domainResult);
     } catch (error: any) {

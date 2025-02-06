@@ -590,11 +590,17 @@ export class KaspaNetworkActionsService {
     );
 
 
-    const hasMoney = await this.transactionsManager.getWalletTotalBalanceAndUtxos(
+    let utxos = (await this.transactionsManager.getWalletTotalBalanceAndUtxos(
       script.scriptAddress.toString()
-    );
+    )).utxoEntries;
 
-    return hasMoney.utxoEntries[0];
+    if (action.options?.commitTransactionId) {
+      utxos = utxos.filter(
+        (utxo) => utxo.outpoint.transactionId == action.options!.commitTransactionId
+      )
+    }
+
+    return utxos[0];
   }
 
 

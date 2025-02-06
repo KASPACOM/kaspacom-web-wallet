@@ -7,11 +7,10 @@ import {
   KasTransferActionResult,
   Krc20ActionResult,
   SignedMessageActionResult,
-  WalletActionResult,
-  WalletActionResultType,
 } from '../../../types/wallet-action-result';
 import { KRC20OperationType } from '../../../types/kaspa-network/krc20-operations-data.interface';
 import { PsktTransaction } from '../../../types/kaspa-network/pskt-transaction.interface';
+import { WalletActionResult, WalletActionResultType } from 'kaspacom-wallet-messages';
 
 @Component({
   selector: 'completed-action-review',

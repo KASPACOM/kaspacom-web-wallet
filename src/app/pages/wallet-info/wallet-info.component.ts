@@ -20,7 +20,7 @@ import { WalletActionService } from '../../services/wallet-action.service';
 import { MintComponent } from '../../components/wallet-actions-forms/mint/mint.component';
 import { KaspaApiService } from '../../services/kaspa-api/kaspa-api.service';
 import { FullTransactionResponse } from '../../services/kaspa-api/dtos/full-transaction-response.dto';
-import { UnfinishedKrc20Action } from '../../types/kaspa-network/unfinished-krc20-action.interface';
+import { UnfinishedCommitRevealAction } from '../../types/kaspa-network/unfinished-commit-reveal-action.interface';
 import { ListKrc20Component } from '../../components/wallet-actions-forms/list-krc20-component/list-krc20-component.component';
 import { BuyKrc20Component } from '../../components/wallet-actions-forms/buy-krc20-component/buy-krc20.component';
 import { DeployComponent } from '../../components/wallet-actions-forms/deploy/deploy.component';
@@ -63,7 +63,7 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
   protected tokens: undefined | { ticker: string; balance: number }[] =
     undefined;
 
-  protected unfinishedAction: undefined | UnfinishedKrc20Action = undefined;
+  protected unfinishedAction: undefined | UnfinishedCommitRevealAction = undefined;
 
   protected kaspaTransactionsHistory: undefined | FullTransactionResponse =
     undefined;
@@ -250,8 +250,8 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     await this.walletActionService.validateAndDoActionAfterApproval(
-      this.walletActionService.createUnfinishedKrc20Action(
-        this.unfinishedAction!.operationData!
+      this.walletActionService.createUnfinishedCommitRevealAction(
+        this.unfinishedAction!.operationData
       )
     );
 

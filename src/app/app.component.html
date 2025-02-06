@@ -1,4 +1,9 @@
 <div class="application-container">
-    <app-header></app-header>
-    <router-outlet></router-outlet>
+    <ng-container *ngIf="isAllowedDomain(); else notSupported">
+        <app-header></app-header>
+        <router-outlet></router-outlet>
+    </ng-container>
+    <ng-template #notSupported>
+        <p class="not-supported-url">This URL Is not allowed to use this application, If you see this message please report to us at Kaspa.com</p>
+    </ng-template>
 </div>

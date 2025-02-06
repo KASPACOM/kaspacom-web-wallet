@@ -61,4 +61,21 @@ export class UtilsHelper {
     return regex.test(address);
   }
 
+  stringifyWithBigInt(obj: any) {
+    return JSON.stringify(obj, (key, value) =>
+      typeof value === "bigint" ? value.toString() + 'n' : value
+    );
+  }
+
+  parseWithBigInt(jsonString: any) {
+    return JSON.parse(jsonString, (key, value) =>
+      typeof value === "string" && /^\d+n$/.test(value)
+        ? BigInt(value.slice(0, -1))
+        : value);
+  }
+
+  stringifyProtocolAction(action: any) {
+    return JSON.stringify(action, null, 0);
+  }
+
 }

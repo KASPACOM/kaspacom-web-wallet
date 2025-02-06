@@ -1,13 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { WalletService } from '../../../services/wallet.service';
 import { NgFor, NgIf } from '@angular/common';
 import { TransferableAsset } from '../../../types/transferable-asset';
 import { WalletAction, WalletActionType } from '../../../types/wallet-action';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { WalletActionService } from '../../../services/wallet-action.service';
-import { ERROR_CODES } from '../../../config/consts';
+import { ERROR_CODES } from 'kaspacom-wallet-messages';
+import { Krc20WalletActionService } from '../../../services/protocols/krc20/krc20-wallet-actions.service';
 
 @Component({
   selector: 'list-krc20-token',
@@ -25,7 +25,8 @@ export class ListKrc20Component implements OnInit {
   constructor(
     private walletService: WalletService,
     private kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private walletActionService: WalletActionService
+    private walletActionService: WalletActionService,
+    private krc20WalletActionService: Krc20WalletActionService,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -53,7 +54,8 @@ export class ListKrc20Component implements OnInit {
       );
 
       const action: WalletAction =
-        this.walletActionService.createListKrc20Action(
+        this.krc20WalletActionService.createListKrc20Action(
+          this.walletService.getCurrentWallet()!.getAddress(),
           selectedAsset!.ticker,
           this.kaspaNetworkActionsService.kaspaToSompiFromNumber(this.amount!),
           this.kaspaNetworkActionsService.kaspaToSompiFromNumber(this.totalPrice!),

@@ -1,141 +1,26 @@
 <div class="transaction-review-container">
-  <ng-container *ngIf="action; else noAction">
+  <ng-container *ngIf="action && currentActionDisplay; else noAction">
     <div class="transaction-header">
       <h2 *ngIf="isActionHasPriorityFee">Transaction Review</h2>
       <h2 *ngIf="!isActionHasPriorityFee">Action Review</h2>
       <p>Please review the details below before proceeding.</p>
     </div>
 
-    <ng-container *ngIf="action?.type === WalletActionType.TRANSFER_KAS">
-      <h3>Transfer Kaspa</h3>
-      <div class="transaction-details">
-        <div class="detail">
-          <div class="label">Sender:</div>
-          <div class="value">{{ walletAddress }}</div>
-        </div>
-        <div class="detail">
-          <div class="label">Recipient:</div>
-          <div class="value">{{ transferKasActionData.to }}</div>
-        </div>
-        <div class="detail">
-          <div class="label">Amount:</div>
-          <div class="value">
-            {{ transferKasActionData.amount | sompiToNumber }} KAS
-          </div>
-        </div>
-      </div>
-    </ng-container>
+    <h3>{{ currentActionDisplay.title }}</h3>
+    <h4 *ngIf="currentActionDisplay.subtitle">{{ currentActionDisplay.subtitle }}</h4>
+    <div [ngClass]="{'detail': !row.isCodeBlock, 'detail-signing-message': row.isCodeBlock}"
+      *ngFor="let row of currentActionDisplay.rows">
+      <div class="label">{{ row.fieldName }}:</div>
+      <div class="value">{{ row.fieldValue }}</div>
+    </div>
 
-    <ng-container *ngIf="action?.type === WalletActionType.COMPOUND_UTXOS">
-      <h3>Compound UTXOs</h3>
-      <div class="transaction-details">
-        <div class="detail">
-          <div class="label">Wallet:</div>
-          <div class="value">{{ walletAddress }}</div>
-        </div>
-      </div>
-    </ng-container>
+    <!-- <ng-container *ngIf="action?.type === WalletActionType.TRANSFER_KAS">
 
-    <ng-container *ngIf="action?.type === WalletActionType.KRC20_ACTION">
-      <ng-container
-        *ngIf="krc20ActionData.operationData.op === KRC20OperationType.TRANSFER"
-      >
-        <h3>Transfer KRC20 Token</h3>
-        <div class="transaction-details">
-          <div class="detail">
-            <div class="label">Ticker:</div>
-            <div class="value">{{ krc20ActionData.operationData.tick.toUpperCase() }}</div>
-          </div>
-          <div class="detail">
-            <div class="label">Sender:</div>
-            <div class="value">{{ walletAddress }}</div>
-          </div>
-          <div class="detail">
-            <div class="label">Recipient:</div>
-            <div class="value">{{ krc20ActionData.operationData.to }}</div>
-          </div>
-          <div class="detail">
-            <div class="label">Amount:</div>
-            <div class="value">
-              {{ krc20ActionData.operationData.amt! | sompiToNumber }}
-              {{ krc20ActionData.operationData.tick.toUpperCase() }}
-            </div>
-          </div>
-        </div>
-      </ng-container>
-      <ng-container
-        *ngIf="krc20ActionData.operationData.op === KRC20OperationType.MINT"
-      >
-        <h3>Mint KRC20 Token</h3>
-        <div class="transaction-details">
-          <div class="detail">
-            <div class="label">Ticker:</div>
-            <div class="value">{{ krc20ActionData.operationData.tick.toUpperCase() }}</div>
-          </div>
-          <div class="detail">
-            <div class="label">Wallet:</div>
-            <div class="value">{{ walletAddress }}</div>
-          </div>
-        </div>
-      </ng-container>
-      <ng-container
-        *ngIf="krc20ActionData.operationData.op === KRC20OperationType.DEPLOY"
-      >
-        <h3>Deploy KRC20 Token</h3>
-        <div class="transaction-details">
-          <div class="detail">
-            <div class="label">Ticker:</div>
-            <div class="value">{{ krc20ActionData.operationData.tick.toUpperCase() }}</div>
-          </div>
-          <div class="detail">
-            <div class="label">Max Supply:</div>
-            <div class="value">{{ krc20ActionData.operationData.max! | sompiToNumber }}</div>
-          </div>
-          <div class="detail">
-            <div class="label">Tokens Per Mint:</div>
-            <div class="value">{{ krc20ActionData.operationData.lim! | sompiToNumber }}</div>
-          </div>
-          <div class="detail">
-            <div class="label">Pre Allocation:</div>
-            <div class="value">{{ krc20ActionData.operationData.pre! | sompiToNumber }} ({{ (Number(krc20ActionData.operationData.pre!) / Number(krc20ActionData.operationData.max!) * 100).toFixed(2) }}%)</div>
-          </div>
-        </div>
-      </ng-container>
 
-      <ng-container
-        *ngIf="krc20ActionData.operationData.op === KRC20OperationType.LIST"
-      >
-        <h3>List KRC20 Token</h3>
-        <div class="transaction-details">
-          <div class="detail">
-            <div class="label">Ticker:</div>
-            <div class="value">{{ krc20ActionData.operationData.tick.toUpperCase() }}</div>
-          </div>
-          <div class="detail">
-            <div class="label">Wallet:</div>
-            <div class="value">{{ walletAddress }}</div>
-          </div>
-        </div>
-        <div class="detail">
-          <div class="label">Amount:</div>
-          <div class="value">
-            {{ krc20ActionData.operationData.amt! | sompiToNumber }}
-          </div>
-        </div>
-        <div class="detail">
-          <div class="label">Price:</div>
-          <div class="value">
-            {{ krc20ActionData.psktData!.totalPrice! | sompiToNumber }} KAS
-          </div>
-        </div>
-      </ng-container>
-
-      <ng-container
-        *ngIf="
+      <ng-container *ngIf="
           krc20ActionData.operationData.op === KRC20OperationType.SEND &&
           krc20ActionData.isCancel
-        "
-      >
+        ">
         <h3>Cancel KRC20 Token Listing</h3>
         <div class="transaction-details">
           <div class="detail">
@@ -165,6 +50,30 @@
       </div>
     </ng-container>
 
+    <ng-container *ngIf="action?.type === WalletActionType.COMMIT_REVEAL">
+
+      <ng-container *ngIf="krc20ActionData?.isCancel; else listingTemplate">
+        <h3>Cancel KRC20 Token Listing</h3>
+      </ng-container>
+      <ng-template #listingTemplate>
+        <h3>List KRC20 Token</h3>
+      </ng-template>
+
+      <h3>Do Protocol Action</h3>
+      <div class="detail">
+        <div class="label">Wallet:</div>
+        <div class="value">{{ walletAddress }}</div>
+      </div>
+      <div class="detail">
+        <div class="label">Protocol:</div>
+        <div class="value">{{ commitRevealActionData?.actionScript?.scriptProtocol || '-' }}</div>
+      </div>
+      <div class="detail-signing-message">
+        <div class="label">Action:</div>
+        <div class="value">{{ commitRevealActionData?.actionScript?.scriptDataStringify || '-'}}</div>
+      </div>
+    </ng-container>
+
     <ng-container *ngIf="action?.type === WalletActionType.BUY_KRC20_PSKT">
       <h3>Buy KRC20 Token Transaction</h3>
       <div class="detail">
@@ -181,22 +90,11 @@
           <div class="value">{{ output.scriptPublicKey }}</div>
         </div>
       </div>
-    </ng-container>
+    </ng-container> -->
 
-    <ng-container *ngIf="action?.type === WalletActionType.SIGN_MESSAGE">
-      <h3>Signature Request</h3>
-      <h4>This action is gas free and will not cost you anything, or give any permission to the requested entity.</h4>
-      <div class="detail">
-        <div class="label">Wallet:</div>
-        <div class="value">{{ walletAddress }}</div>
-      </div>
-      <div class="detail-signing-message">
-        <div class="label">Message:</div>
-        <div class="value">{{ signMessageActionData.message }}</div>
-      </div>
-    </ng-container>
 
-    <priority-fee-selection *ngIf="isActionHasPriorityFee" [action]="action" [wallet]="wallet" (priorityFeeSelected)="setCurrentPriorityFee($event)"></priority-fee-selection>
+    <priority-fee-selection *ngIf="isActionHasPriorityFee" [action]="action" [wallet]="wallet"
+      (priorityFeeSelected)="setCurrentPriorityFee($event)"></priority-fee-selection>
 
     <div class="transaction-actions">
       <button class="accept-btn" (click)="acceptTransaction()" [disabled]="!isAvailableForApproval()">Accept</button>
@@ -216,9 +114,7 @@
       </ng-container>
 
       <ng-container *ngIf="result">
-        <completed-action-review
-          [actionResult]="result"
-        ></completed-action-review>
+        <completed-action-review [actionResult]="result"></completed-action-review>
       </ng-container>
     </ng-container>
 

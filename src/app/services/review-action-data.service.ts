@@ -1,10 +1,11 @@
 import { Injectable } from "@angular/core";
-import { CommitRevealAction, CompoundUtxosAction, TransferKasAction, WalletAction, WalletActionType } from "../types/wallet-action";
+import { CommitRevealAction, CompoundUtxosAction, SignPsktTransactionAction, TransferKasAction, WalletAction, WalletActionType } from "../types/wallet-action";
 import { AppWallet } from "../classes/AppWallet";
 import { KaspaNetworkActionsService } from "./kaspa-netwrok-services/kaspa-network-actions.service";
 import { SignMessageActionInterface } from "kaspacom-wallet-messages";
 import { ActionDisplay } from "../types/action-display.type";
 import { BaseProtocolClassesService } from "./protocols/base-protocol-classes.service";
+import { Transaction } from "../../../public/kaspa/kaspa";
 
 
 @Injectable({
@@ -28,8 +29,8 @@ export class ReviewActionDataService {
                 return this.getCompoundUtxosActionDisplay(action.data, wallet);
             case WalletActionType.COMMIT_REVEAL:
                 return this.getCommitRevealActionDisplay(action.data, wallet);
-            // case WalletActionType.SIGN_PSKT_TRANSACTION:
-            //     return this.getSignPsktTransactionActionDisplay(action.data, wallet);
+            case WalletActionType.SIGN_PSKT_TRANSACTION:
+                return this.getSignPsktTransactionActionDisplay(action.data, wallet);
             case WalletActionType.SIGN_MESSAGE:
                 return this.getSignMessageActionDisplay(action.data, wallet);
             default:
@@ -120,27 +121,27 @@ export class ReviewActionDataService {
         }
     }
 
-    // private getSignPsktTransactionActionDisplay(actionData: SignPsktTransactionTransaction): ActionDisplay {
-    //     return {
-    //         title: "Buy KRC20 Token Transaction",
-    //         rows: [
-    //             {
-    //                 fieldName: "Wallet",
-    //                 fieldValue: actionData.wallet
-    //             },
-    //             {
-    //                 fieldName: "Amount",
-    //                 fieldValue: actionData.outputs[0].value.toString()
-    //             },
-    //             {
-    //                 fieldName: "To",
-    //                 fieldValue: actionData.outputs[0].scriptPublicKey
-    //             }
-    //         ]
-    //     }
-    // }
+    private getSignPsktTransactionActionDisplay(actionData: SignPsktTransactionAction, wallet: AppWallet): ActionDisplay {
+        const transactionData = Transaction.deserializeFromSafeJSON(actionData.psktTransactionJson);
 
+        const inputsSum = transactionData.inputs.reduce((sum, input) => sum + input.utxo!.amount, 0n);
+        
+        if (inputsSum > 0n && transactionData.outputs[0]) {
+            transactionData.outputs[0].value = transactionData.outputs[0].value - inputsSum;
+        }
 
+        return {
+            title: `Sign${actionData.submitTransaction ? ' & Submit' : ''} PSKT Transaction`,
+            rows: [
+                {
+                    fieldName: "Wallet",
+                    fieldValue: wallet.getAddress(),
+                },
+                {
+                    fieldName: "Payments",
+                    fieldValue: transactionData.outputs.map(output => `${this.kaspaNetworkActionsService.sompiToNumber(output.value)} KAS to ${this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(output.scriptPublicKey)}`).join('\n')
+                }
+            ]
+        }
+    }
 }
-
-

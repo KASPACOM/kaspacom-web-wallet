@@ -213,25 +213,6 @@ export class Krc20ActionsValidatorService implements ProtocolActionsValidatorInt
         return { isValidated: true };
     }
 
-    // TODO: IMPLEMENT
-    // if (
-    //     action.revealOnly &&
-    //     krc20Command.op != KRC20OperationType.SEND
-    // ) {
-    //     const hasAction =
-    //         await this.kaspaNetworkActionsService.doesUnfinishedActionHasKasInScriptWallet(
-    //             wallet,
-    //             krc20Command
-    //         );
-
-    //     if (!hasAction) {
-    //         return {
-    //             isValidated: false,
-    //             errorCode: ERROR_CODES.WALLET_ACTION.REVEAL_WITH_NO_COMMIT_ACTION,
-    //         };
-    //     }
-    // }
-
 
     private async checkWalletBalance(ticker: string, amount: string, wallet: AppWallet): Promise<{ isValidated: boolean; errorCode?: number; }> {
         let currentBalance;
@@ -285,3 +266,73 @@ export class Krc20ActionsValidatorService implements ProtocolActionsValidatorInt
 
 
 
+// Validation of PSKT for send
+
+// const sendTransactionId = transaction.inputs?.[0]?.transactionId;
+// const sellerWalletAddressScript = transaction.outputs?.[0]?.scriptPublicKey;
+
+// if (!(sendTransactionId && sellerWalletAddressScript)) {
+//   return {
+//     isValidated: false,
+//     errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
+//   };
+// }
+
+// let sellerWalletAddress: string;
+
+// try {
+//   sellerWalletAddress =
+//     this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(
+//       sellerWalletAddressScript
+//     );
+// } catch (error) {
+//   return {
+//     isValidated: false,
+//     errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
+//   };
+// }
+
+// let operationDetails: OperationDetailsResponse;
+
+// try {
+//   operationDetails = await firstValueFrom(
+//     this.kasplexService.getOperationDetails(sendTransactionId)
+//   );
+// } catch (error) {
+//   console.error(error);
+
+//   return {
+//     isValidated: false,
+//     errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
+//   };
+// }
+
+// if (!operationDetails?.result?.[0]) {
+//   return {
+//     isValidated: false,
+//     errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
+//   };
+// }
+
+// try {
+//   const isTransactionStillExists =
+//     await this.kasplexService.isListingStillExists(
+//       operationDetails.result[0].tick,
+//       sellerWalletAddress,
+//       sendTransactionId
+//     );
+
+//   if (!isTransactionStillExists) {
+//     return {
+//       isValidated: false,
+//       errorCode: ERROR_CODES.WALLET_ACTION.SEND_TRANSACTION_ALREADY_SPENT,
+//     };
+//   }
+// } catch (error) {
+//   console.error(error);
+
+//   return {
+//     isValidated: false,
+//     errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
+//   };
+// }

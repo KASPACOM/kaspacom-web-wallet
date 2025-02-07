@@ -1,4 +1,4 @@
-import { effect, Injectable, Signal, signal } from '@angular/core';
+import { Injectable, Signal, signal } from '@angular/core';
 import {
   SignPsktTransactionAction,
   CommitRevealAction,
@@ -18,13 +18,10 @@ import {
 } from './kaspa-netwrok-services/kaspa-network-actions.service';
 import { ReviewActionComponent } from '../components/wallet-actions-reviews/review-action/review-action.component';
 import { WalletActionResultWithError } from '../types/wallet-action-result';
-import { KasplexKrc20Service } from './kasplex-api/kasplex-api.service';
-import { firstValueFrom } from 'rxjs';
 import { RpcConnectionStatus } from '../types/kaspa-network/rpc-connection-status.enum';
 import { AppWallet } from '../classes/AppWallet';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { PsktTransaction } from '../types/kaspa-network/pskt-transaction.interface';
-import { OperationDetailsResponse } from './kasplex-api/dtos/operation-details-response';
 import { Krc20WalletActionService } from './protocols/krc20/krc20-wallet-actions.service';
 import { BaseProtocolClassesService } from './protocols/base-protocol-classes.service';
 
@@ -49,7 +46,6 @@ export class WalletActionService {
     private walletService: WalletService,
     private utils: UtilsHelper,
     private kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private kasplexService: KasplexKrc20Service,
     private krc20WalletActionService: Krc20WalletActionService,
     private baseProtocolClassesService: BaseProtocolClassesService,
   ) {
@@ -113,7 +109,7 @@ export class WalletActionService {
           to: targetWalletAddress,
           sendAll:
             !!(wallet.getWalletUtxoStateBalanceSignal()()?.mature &&
-            wallet.getWalletUtxoStateBalanceSignal()()?.mature == amount),
+              wallet.getWalletUtxoStateBalanceSignal()()?.mature == amount),
         },
       };
     }
@@ -145,7 +141,7 @@ export class WalletActionService {
           additionalOutputs: undefined,
           revealPriorityFee: undefined,
         }
-      }  
+      }
     }
 
     return {
@@ -162,18 +158,18 @@ export class WalletActionService {
     }
   }
 
-  // createBuyKrc20Action(
-  //   psktDataJson: string,
-  //   signOnly: boolean = false
-  // ): WalletAction {
-  //   return {
-  //     type: WalletActionType.SIGN_PSKT_TRANSACTION,
-  //     data: {
-  //       psktTransactionJson: psktDataJson,
-  //       signOnly,
-  //     },
-  //   };
-  // }
+  createSignPsktAction(
+    psktDataJson: string,
+    submitTransaction: boolean = false
+  ): WalletAction {
+    return {
+      type: WalletActionType.SIGN_PSKT_TRANSACTION,
+      data: {
+        psktTransactionJson: psktDataJson,
+        submitTransaction,
+      },
+    };
+  }
 
   createSignMessageAction(message: string): WalletAction {
     return {
@@ -577,8 +573,6 @@ export class WalletActionService {
       };
     }
 
-    // HERE WE NEED TO ADD KNS VALIDATION, KRC721 VALIDATIONS AND MORE
-
     return {
       isValidated: true,
     };
@@ -606,73 +600,21 @@ export class WalletActionService {
       };
     }
 
-    const sendTransactionId = transaction.inputs?.[0]?.transactionId;
-    const sellerWalletAddressScript = transaction.outputs?.[0]?.scriptPublicKey;
 
-    if (!(sendTransactionId && sellerWalletAddressScript)) {
-      return {
-        isValidated: false,
-        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
-      };
-    }
 
-    let sellerWalletAddress: string;
+    for (const input of transaction.inputs) {
+      const transactionInputWalletUtxos = await this.kaspaNetworkActionsService.getWalletBalanceAndUtxos(input.utxo.address);
 
-    try {
-      sellerWalletAddress =
-        this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(
-          sellerWalletAddressScript
-        );
-    } catch (error) {
-      return {
-        isValidated: false,
-        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
-      };
-    }
-
-    let operationDetails: OperationDetailsResponse;
-
-    try {
-      operationDetails = await firstValueFrom(
-        this.kasplexService.getOperationDetails(sendTransactionId)
+      const transactionInputUtxo = transactionInputWalletUtxos.utxoEntries.find((utxo) =>
+        utxo.outpoint.transactionId == input.transactionId
       );
-    } catch (error) {
-      console.error(error);
 
-      return {
-        isValidated: false,
-        errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
-      };
-    }
-
-    if (!operationDetails?.result?.[0]) {
-      return {
-        isValidated: false,
-        errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
-      };
-    }
-
-    try {
-      const isTransactionStillExists =
-        await this.kasplexService.isListingStillExists(
-          operationDetails.result[0].tick,
-          sellerWalletAddress,
-          sendTransactionId
-        );
-
-      if (!isTransactionStillExists) {
+      if (!transactionInputUtxo) {
         return {
           isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.SEND_TRANSACTION_ALREADY_SPENT,
-        };
+          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
+        }
       }
-    } catch (error) {
-      console.error(error);
-
-      return {
-        isValidated: false,
-        errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
-      };
     }
 
     return {

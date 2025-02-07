@@ -209,7 +209,7 @@ export class KaspaNetworkActionsService {
           wallet,
           (action.data as SignPsktTransactionAction).psktTransactionJson,
           action.priorityFee || 0n,
-          true
+          false,
         );
 
       if (!result.transactionFee) {

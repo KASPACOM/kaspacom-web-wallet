@@ -48,10 +48,9 @@ export class BuyKrc20Component {
   }
 
   async buy() {
-    // const action = this.krc20WalletActionService.createBuyKrc20Action((window as any).pskt as string);
+    const action = this.walletActionService.createSignPsktAction((window as any).pskt as string, true);
 
-    // console.log(await this.walletActionService.validateAndDoActionAfterApproval(action));
-    throw new Error('Method not implemented.');
+    console.log(await this.walletActionService.validateAndDoActionAfterApproval(action));
   }
 
   async cancel(data: ListingInfoEntry) {

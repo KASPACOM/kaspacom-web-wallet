@@ -28,8 +28,8 @@ export class ReviewActionDataService {
                 return this.getCompoundUtxosActionDisplay(action.data, wallet);
             case WalletActionType.COMMIT_REVEAL:
                 return this.getCommitRevealActionDisplay(action.data, wallet);
-            // case WalletActionType.BUY_KRC20_PSKT:
-            //     return this.getBuyKrc20PsktActionDisplay(action.data, wallet);
+            // case WalletActionType.SIGN_PSKT_TRANSACTION:
+            //     return this.getSignPsktTransactionActionDisplay(action.data, wallet);
             case WalletActionType.SIGN_MESSAGE:
                 return this.getSignMessageActionDisplay(action.data, wallet);
             default:
@@ -120,7 +120,7 @@ export class ReviewActionDataService {
         }
     }
 
-    // private getBuyKrc20PsktActionDisplay(actionData: BuyKrc20PsktTransaction): ActionDisplay {
+    // private getSignPsktTransactionActionDisplay(actionData: SignPsktTransactionTransaction): ActionDisplay {
     //     return {
     //         title: "Buy KRC20 Token Transaction",
     //         rows: [

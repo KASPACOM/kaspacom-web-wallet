@@ -1,10 +1,11 @@
 import { Injectable } from "@angular/core";
 import { ActionDisplay } from "../../../types/action-display.type";
 import { KRC20OperationDataInterface, KRC20OperationType } from "../../../types/kaspa-network/krc20-operations-data.interface";
-import { KaspaNetworkActionsService } from "../../kaspa-netwrok-services/kaspa-network-actions.service";
+import { KaspaNetworkActionsService, REVEAL_PSKT_AMOUNT } from "../../kaspa-netwrok-services/kaspa-network-actions.service";
 import { ProtocolCompletedActionDataInterface } from "../interfaces/protocol-completed-action-data.interface";
 import { CommitRevealActionResult } from "../../../types/wallet-action-result";
 import { CompletedActionDisplay } from "../../../types/completed-action-display.type";
+import { Transaction } from "../../../../../public/kaspa/kaspa";
 
 @Injectable({
     providedIn: 'root',
@@ -26,8 +27,9 @@ export class Krc20CompletedActionDataService implements ProtocolCompletedActionD
                 case KRC20OperationType.DEPLOY:
                     return this.getKrc20DeployActionDisplay(action, operationData);
                 case KRC20OperationType.LIST:
-                    return this.getKrc20ListActionDisplay(action ,operationData);
+                    return this.getKrc20ListActionDisplay(action, operationData);
                 case KRC20OperationType.SEND:
+                    return this.getKrc20CancelListActionDisplay(action, operationData);
                 // if (operationData.isCancel) {
                 //     return this.getKrc20CancelListActionDisplay(operationData, wallet);
                 // } else {
@@ -111,6 +113,14 @@ export class Krc20CompletedActionDataService implements ProtocolCompletedActionD
     }
 
     private getKrc20ListActionDisplay(action: CommitRevealActionResult, operationData: KRC20OperationDataInterface): ActionDisplay {
+        const transaction = Transaction.deserializeFromSafeJSON(action.revealPsktJson!);
+
+        const totalWalletOutputs = transaction.outputs
+            .filter(output => this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(output.scriptPublicKey) == action.performedByWallet)
+            .reduce((acc, output) => acc + output.value, 0n);
+
+        const totalAmount = totalWalletOutputs && totalWalletOutputs > 0n ? totalWalletOutputs - REVEAL_PSKT_AMOUNT : 0n
+            
         return {
             title: "List KRC20 Token Transaction",
             rows: [
@@ -126,33 +136,29 @@ export class Krc20CompletedActionDataService implements ProtocolCompletedActionD
                     fieldName: "Amount",
                     fieldValue: `${this.kaspaNetworkActionsService.sompiToNumber(BigInt(operationData.amt!)).toString()} ${operationData.tick.toUpperCase()}`
                 },
-                // {
-                //     fieldName: "Price",
-                //     fieldValue: `${this.kaspaNetworkActionsService.sompiToNumber(BigInt(action.psktData!.totalPrice!)).toString()} KAS`
-                // },
+                {
+                    fieldName: "Price",
+                    fieldValue: `${this.kaspaNetworkActionsService.sompiToNumber(totalAmount).toString()} KAS`
+                },
             ]
         }
     }
 
-    // private getKrc20CancelListActionDisplay(action: CommitRevealActionResult, operationData: KRC20OperationDataInterface): ActionDisplay {
-    //     return {
-    //         title: "Cancel KRC20 Token Listing",
-    //         rows: [
-    //             {
-    //                 fieldName: "Ticker",
-    //                 fieldValue: operationData.tick.toUpperCase()
-    //             },
-    //             {
-    //                 fieldName: "Wallet",
-    //                 fieldValue: wallet.getAddress()
-    //             },
-    //             {
-    //                 fieldName: "Amount",
-    //                 fieldValue: operationData.amount!.toString()
-    //             }
-    //         ]
-    //     }
-    // }
+    private getKrc20CancelListActionDisplay(action: CommitRevealActionResult, operationData: KRC20OperationDataInterface): ActionDisplay {
+        return {
+            title: "Cancel KRC20 Token Listing",
+            rows: [
+                {
+                    fieldName: "Ticker",
+                    fieldValue: operationData.tick.toUpperCase()
+                },
+                {
+                    fieldName: "Wallet",
+                    fieldValue: action.performedByWallet,
+                },
+            ]
+        }
+    }
 
     // private getKrc20SendActionDisplay(action: CommitRevealActionResult, operationData: KRC20OperationDataInterface): ActionDisplay {
     //     return {

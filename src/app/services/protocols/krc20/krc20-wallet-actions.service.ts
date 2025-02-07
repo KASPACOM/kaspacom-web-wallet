@@ -2,11 +2,10 @@ import { Injectable } from "@angular/core";
 import { WalletAction, WalletActionType } from "../../../types/wallet-action";
 import { KaspaScriptProtocolType } from "../../../types/kaspa-network/kaspa-script-protocol-type.enum";
 import { KRC20_TRANSACTIONS_PRICE, Krc20OperationDataService } from "./krc20-operation-data.service";
-import { KaspaNetworkActionsService } from "../../kaspa-netwrok-services/kaspa-network-actions.service";
+import { KaspaNetworkActionsService, REVEAL_PSKT_AMOUNT } from "../../kaspa-netwrok-services/kaspa-network-actions.service";
 import { UtilsHelper } from "../../utils.service";
 
 const CURRENT_PROTOCOL = KaspaScriptProtocolType.KASPLEX;
-const LIST_AMOUNT = 105000000n;
 
 
 @Injectable({
@@ -72,13 +71,11 @@ export class Krc20WalletActionService {
         walletAddress: string,
         ticker: string,
         amount: bigint,
-        totalPrice: bigint,
-        commission?: {
+        psktOutputs: {
             address: string;
             amount: bigint;
-        }
+        }[],
     ): WalletAction {
-
         const sendData = this.krc20OperationDataService.getSendData(ticker);
 
         const sendScript = this.kaspaNetworkActionsService.createGenericScriptFromString(
@@ -86,7 +83,6 @@ export class Krc20WalletActionService {
             this.utils.stringifyProtocolAction(sendData),
             walletAddress,
         )
-
         return {
             type: WalletActionType.COMMIT_REVEAL,
             data: {
@@ -97,8 +93,12 @@ export class Krc20WalletActionService {
                 options: {
                     additionalOutputs: [{
                         address: sendScript.scriptAddress,
-                        amount: LIST_AMOUNT,
-                    }]
+                        amount: REVEAL_PSKT_AMOUNT,
+                    }],
+                    revealPskt: {
+                        outputs: psktOutputs,
+                        script: sendScript,
+                    }
                 }
             },
         };

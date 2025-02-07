@@ -74,13 +74,13 @@
       </div>
     </ng-container>
 
-    <ng-container *ngIf="action?.type === WalletActionType.BUY_KRC20_PSKT">
+    <ng-container *ngIf="action?.type === WalletActionType.SIGN_PSKT_TRANSACTION">
       <h3>Buy KRC20 Token Transaction</h3>
       <div class="detail">
         <div class="label">Wallet:</div>
         <div class="value">{{ walletAddress }}</div>
       </div>
-      <div *ngFor="let output of buyKrc20PsktTransactoin.outputs">
+      <div *ngFor="let output of signPsktTransactionTransactoin.outputs">
         <div class="detail">
           <div class="label">Amount:</div>
           <div class="value">{{ output.value | sompiToNumber }} KAS</div>

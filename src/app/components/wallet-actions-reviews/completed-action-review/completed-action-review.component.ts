@@ -18,12 +18,12 @@ export class CompletedActionReview {
 
   @Input() actionResult!: WalletActionResult;
 
-  // get buyKrc20PsktActionResultAmount(): bigint | undefined {
-  //   if (!this.buyKrc20PsktActionResult) {
+  // get signPsktTransactionActionResultAmount(): bigint | undefined {
+  //   if (!this.signPsktTransactionActionResult) {
   //     return undefined;
   //   }
     
-  //   const transactionData: PsktTransaction = JSON.parse(this.buyKrc20PsktActionResult.psktTransactionJson);
+  //   const transactionData: PsktTransaction = JSON.parse(this.signPsktTransactionActionResult.psktTransactionJson);
 
   //   return transactionData.outputs.reduce((acc, output) => acc + BigInt(output.value), BigInt(0));
   // }

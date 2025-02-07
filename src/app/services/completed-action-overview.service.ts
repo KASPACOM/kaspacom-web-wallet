@@ -27,8 +27,8 @@ export class CompletedActionOverviewService {
                 return this.getCompoundUtxosActionDisplay(action as CompoundUtxosActionResult);
             case WalletActionResultType.CommitReveal:
                 return this.getCommitRevealActionDisplay(action as CommitRevealActionResult);
-            // case WalletActionResultType.BUY_KRC20_PSKT:
-            //     return this.getBuyKrc20PsktActionDisplay(action.data, wallet);
+            // case WalletActionResultType.SIGN_PSKT_TRANSACTION:
+            //     return this.getSignPsktTransactionActionDisplay(action.data, wallet);
             case WalletActionResultType.MessageSigning:
                 return this.getSignMessageActionDisplay(action as SignedMessageActionResult);
             default:
@@ -127,8 +127,6 @@ export class CompletedActionOverviewService {
             }
         }
 
-
-
         commitRevealData.rows = [
             ...commitRevealData.rows,
             {
@@ -144,7 +142,7 @@ export class CompletedActionOverviewService {
         return commitRevealData;
     }
 
-    // private getBuyKrc20PsktActionDisplay(actionData: BuyKrc20PsktTransaction): CompletedActionDisplay {
+    // private getSignPsktTransactionActionDisplay(actionData: SignPsktTransactionTransaction): CompletedActionDisplay {
     //     return {
     //         title: "Buy KRC20 Token Transaction",
     //         rows: [

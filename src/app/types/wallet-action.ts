@@ -1,12 +1,13 @@
 import { KaspaScriptProtocolType } from './kaspa-network/kaspa-script-protocol-type.enum';
 import { KRC20OperationDataInterface } from './kaspa-network/krc20-operations-data.interface';
+import { ScriptData } from './kaspa-network/script-data.interface';
 import { WalletActionResultWithError } from './wallet-action-result';
 
 
 export enum WalletActionType {
   TRANSFER_KAS = 'transfer-kas',
   COMPOUND_UTXOS = 'compound-utxos',
-  BUY_KRC20_PSKT = 'buy-krc20-pskt',
+  SIGN_PSKT_TRANSACTION = 'buy-krc20-pskt',
   SIGN_MESSAGE = 'sign-message',
   COMMIT_REVEAL = 'commit-reveal',
 }
@@ -15,7 +16,7 @@ export enum WalletActionType {
 type WalletActionDataMap = {
   [WalletActionType.TRANSFER_KAS]: TransferKasAction;
   [WalletActionType.COMPOUND_UTXOS]: CompoundUtxosAction;
-  [WalletActionType.BUY_KRC20_PSKT]: BuyKrc20PsktAction;
+  [WalletActionType.SIGN_PSKT_TRANSACTION]: SignPsktTransactionAction;
   [WalletActionType.SIGN_MESSAGE]: SignMessage;
   [WalletActionType.COMMIT_REVEAL]: CommitRevealAction;
 };
@@ -55,9 +56,9 @@ export interface ActionWithPsktGenerationData {
   };
 }
 
-export interface BuyKrc20PsktAction {
+export interface SignPsktTransactionAction {
   psktTransactionJson: string;
-  signOnly: boolean;
+  submitTransaction?: boolean;
 }
 
 export interface SignMessage {
@@ -73,5 +74,12 @@ export interface CommitRevealAction {
     revealPriorityFee?: bigint;
     additionalOutputs?: { address: string; amount: bigint }[];
     commitTransactionId?: string;
+    revealPskt?: {
+      outputs?: {
+        address: string;
+        amount: bigint;
+      }[];
+      script: ScriptData,
+    }
   };
 }

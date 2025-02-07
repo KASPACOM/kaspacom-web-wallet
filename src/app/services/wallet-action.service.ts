@@ -1,6 +1,6 @@
 import { effect, Injectable, Signal, signal } from '@angular/core';
 import {
-  BuyKrc20PsktAction,
+  SignPsktTransactionAction,
   CommitRevealAction,
   SignMessage,
   TransferKasAction,
@@ -167,7 +167,7 @@ export class WalletActionService {
   //   signOnly: boolean = false
   // ): WalletAction {
   //   return {
-  //     type: WalletActionType.BUY_KRC20_PSKT,
+  //     type: WalletActionType.SIGN_PSKT_TRANSACTION,
   //     data: {
   //       psktTransactionJson: psktDataJson,
   //       signOnly,
@@ -437,9 +437,9 @@ export class WalletActionService {
         validationResult = await this.validateCompoundUtxosAction(wallet);
         break;
 
-      case WalletActionType.BUY_KRC20_PSKT:
-        validationResult = await this.validateBuyKrc20PsktAction(
-          action.data as BuyKrc20PsktAction,
+      case WalletActionType.SIGN_PSKT_TRANSACTION:
+        validationResult = await this.validateSignPsktTransactionAction(
+          action.data as SignPsktTransactionAction,
           wallet
         );
         break;
@@ -584,8 +584,8 @@ export class WalletActionService {
     };
   }
 
-  private async validateBuyKrc20PsktAction(
-    action: BuyKrc20PsktAction,
+  private async validateSignPsktTransactionAction(
+    action: SignPsktTransactionAction,
     wallet: AppWallet
   ): Promise<{ isValidated: boolean; errorCode?: number }> {
     if (this.utils.isNullOrEmptyString(action.psktTransactionJson)) {

@@ -2,8 +2,10 @@ import { KaspaNetworkTransactionsManagerService, SUBMIT_REVEAL_MIN_UTXO_AMOUNT }
 import {
   IFeeEstimate,
   IPaymentOutput,
+  IScriptPublicKey,
   Mnemonic,
   PrivateKey,
+  ScriptPublicKey,
   UtxoEntryReference,
   XPrv,
 } from '../../../../public/kaspa/kaspa';
@@ -17,7 +19,7 @@ import {
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
 import {
-  BuyKrc20PsktAction,
+  SignPsktTransactionAction,
   CommitRevealAction,
   SignMessage,
   TransferKasAction,
@@ -26,21 +28,16 @@ import {
 } from '../../types/wallet-action';
 import { AppWallet } from '../../classes/AppWallet';
 import {
-  BuyKrc20PsktActionResult,
+  SignPsktTransactionActionResult,
   CommitRevealActionResult,
   CompoundUtxosActionResult,
   KasTransferActionResult,
-  Krc20ActionResult,
   SignedMessageActionResult,
 } from '../../types/wallet-action-result';
 import {
   Krc20OperationDataService,
 } from '../protocols/krc20/krc20-operation-data.service';
 import { UnfinishedCommitRevealAction } from '../../types/kaspa-network/unfinished-commit-reveal-action.interface';
-import {
-  KRC20OperationDataInterface,
-  KRC20OperationType,
-} from '../../types/kaspa-network/krc20-operations-data.interface';
 import { PsktTransaction } from '../../types/kaspa-network/pskt-transaction.interface';
 import { ScriptData } from '../../types/kaspa-network/script-data.interface';
 import { KaspaScriptProtocolType } from '../../types/kaspa-network/kaspa-script-protocol-type.enum';
@@ -49,6 +46,7 @@ import { UtilsHelper } from '../utils.service';
 const MINIMAL_TRANSACTION_MASS = 10000n;
 export const MINIMAL_AMOUNT_TO_SEND = 20000000n;
 export const MAX_TRANSACTION_FEE = 20000n;
+export const REVEAL_PSKT_AMOUNT = 105000000n;
 
 const ESTIMATED_REVEAL_ACTION = 1715n;
 @Injectable({
@@ -205,11 +203,11 @@ export class KaspaNetworkActionsService {
       return result.result!.transactions.map((t) => t.mass);
     }
 
-    if (action.type == WalletActionType.BUY_KRC20_PSKT) {
+    if (action.type == WalletActionType.SIGN_PSKT_TRANSACTION) {
       const result =
-        await this.transactionsManager.completePsktTransactionForSendOperation(
+        await this.transactionsManager.signPsktTransaction(
           wallet,
-          (action.data as BuyKrc20PsktAction).psktTransactionJson,
+          (action.data as SignPsktTransactionAction).psktTransactionJson,
           action.priorityFee || 0n,
           true
         );
@@ -232,7 +230,8 @@ export class KaspaNetworkActionsService {
           action.priorityFee || 0n,
           { commitTransactionId: action.data.options?.commitTransactionId },
           async () => { },
-          { estimateOnly: true }
+          { estimateOnly: true },
+          action.data.options?.additionalOutputs,
         );
 
       return [
@@ -326,16 +325,17 @@ export class KaspaNetworkActionsService {
       };
     }
 
-    if (action.type == WalletActionType.BUY_KRC20_PSKT) {
+    if (action.type == WalletActionType.SIGN_PSKT_TRANSACTION) {
       const result =
-        await this.transactionsManager.completePsktTransactionForSendOperation(
+        await this.transactionsManager.signPsktTransaction(
           wallet,
-          (action.data as BuyKrc20PsktAction).psktTransactionJson,
-          action.priorityFee || 0n
+          action.data.psktTransactionJson,
+          action.priorityFee || 0n,
+          action.data.submitTransaction
         );
 
-      const resultData: BuyKrc20PsktActionResult = {
-        type: WalletActionResultType.BuyKrc20Pskt,
+      const resultData: SignPsktTransactionActionResult = {
+        type: WalletActionResultType.SignPsktTransaction,
         psktTransactionJson: result.psktTransaction,
         transactionId: result.transactionId,
         performedByWallet: wallet.getAddress(),
@@ -381,8 +381,8 @@ export class KaspaNetworkActionsService {
           { commitTransactionId: actionData.options?.commitTransactionId },
           async (transactions) => {
             if (!transactions.revealTransactionId) {
-              const newActionsData = {...actionData};
-              newActionsData.options = {...newActionsData.options || {}};
+              const newActionsData = { ...actionData };
+              newActionsData.options = { ...newActionsData.options || {} };
               newActionsData.options.commitTransactionId = transactions.commitTransactionId;
 
               await this.addUnfinishedCommitRevealActionOnLocalStorage({
@@ -393,6 +393,8 @@ export class KaspaNetworkActionsService {
             }
             notifyUpdate(transactions.revealTransactionId || transactions.commitTransactionId!);
           },
+          {},
+          actionData.options?.additionalOutputs,
         );
 
       if (!result.success) {
@@ -409,6 +411,18 @@ export class KaspaNetworkActionsService {
         createdAtTimestamp: Date.now(),
       }, actionData.options?.commitTransactionId || result.result?.commit!);
 
+      let psktTransaction: string | undefined;
+
+      if (actionData.options?.revealPskt) {
+        psktTransaction = (await this.transactionsManager.createPsktTransactionForRevealOperation(
+          wallet,
+          actionData.options!.revealPskt!.script,
+          result.result?.reveal!,
+          actionData.options!.revealPskt!.outputs,
+        )).serializeToSafeJSON();
+      }
+
+
       const actionResult: CommitRevealActionResult = {
         type: WalletActionResultType.CommitReveal,
         commitTransactionId: actionData.options?.commitTransactionId || result.result?.commit!,
@@ -416,6 +430,7 @@ export class KaspaNetworkActionsService {
         performedByWallet: wallet.getAddress(),
         protocol: actionData.actionScript.scriptProtocol,
         protocolAction: actionData.actionScript.scriptDataStringify,
+        revealPsktJson: psktTransaction,
       };
 
       return {
@@ -445,8 +460,8 @@ export class KaspaNetworkActionsService {
       return (action.priorityFee || 0n) + MINIMAL_AMOUNT_TO_SEND;
     }
 
-    if (action.type === WalletActionType.BUY_KRC20_PSKT) {
-      const data = action.data as BuyKrc20PsktAction;
+    if (action.type === WalletActionType.SIGN_PSKT_TRANSACTION) {
+      const data = action.data as SignPsktTransactionAction;
       const pskt: PsktTransaction = JSON.parse(data.psktTransactionJson);
 
       const totalOutputs = pskt.outputs.reduce(
@@ -477,7 +492,7 @@ export class KaspaNetworkActionsService {
     throw new Error('Invalid action type');
   }
 
-  getWalletAddressFromScriptPublicKey(scriptPublicKey: string): string {
+  getWalletAddressFromScriptPublicKey(scriptPublicKey: string | IScriptPublicKey | ScriptPublicKey): string {
     return this.transactionsManager.getWalletAddressFromScriptPublicKey(
       scriptPublicKey
     );
@@ -519,7 +534,7 @@ export class KaspaNetworkActionsService {
         (item) =>
           this.utils.stringifyWithBigInt(item.operationData.actionScript) ===
           this.utils.stringifyWithBigInt(action.operationData.actionScript) &&
-          action.walletAddress == item.walletAddress && 
+          action.walletAddress == item.walletAddress &&
           commitTransactionId == item.commitTransactionId
       );
       if (index !== -1) {
@@ -616,6 +631,4 @@ export class KaspaNetworkActionsService {
       walletAddress
     );
   }
-
-
 }

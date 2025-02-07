@@ -30,8 +30,11 @@ export class Krc20ReviewActionDataService implements ProtocolReviewActionDataInt
                 case KRC20OperationType.DEPLOY:
                     return this.getKrc20DeployActionDisplay(operationData, wallet);
                 case KRC20OperationType.LIST:
-                    return this.getKrc20ListActionDisplay(operationData, wallet);
+                    return this.getKrc20ListActionDisplay(operationData, wallet, action);
                 case KRC20OperationType.SEND:
+                    if (!action.options?.additionalOutputs) {
+                        return this.getKrc20CancelListActionDisplay(operationData, wallet, action);
+                    }
                 // if (operationData.isCancel) {
                 //     return this.getKrc20CancelListActionDisplay(operationData, wallet);
                 // } else {
@@ -110,7 +113,17 @@ export class Krc20ReviewActionDataService implements ProtocolReviewActionDataInt
         }
     }
 
-    private getKrc20ListActionDisplay(operationData: KRC20OperationDataInterface, wallet: AppWallet): ActionDisplay {
+    private getKrc20ListActionDisplay(operationData: KRC20OperationDataInterface, wallet: AppWallet, action: CommitRevealAction): ActionDisplay {
+        let totalPrice = "Unknown";
+
+        if (action.options?.revealPskt) {
+            const totalAmount = action.options?.revealPskt?.outputs
+                ?.filter(output => output.address == wallet.getAddress())
+                .reduce((acc, output) => acc + output.amount, 0n);
+
+            totalPrice = totalAmount && totalAmount > 0n ? this.kaspaNetworkActionsService.sompiToNumber(totalAmount).toString() : totalPrice;
+        }
+
         return {
             title: "List KRC20 Token",
             rows: [
@@ -126,33 +139,33 @@ export class Krc20ReviewActionDataService implements ProtocolReviewActionDataInt
                     fieldName: "Amount",
                     fieldValue: `${this.kaspaNetworkActionsService.sompiToNumber(BigInt(operationData.amt!)).toString()} ${operationData.tick.toUpperCase()}`
                 },
-                // {
-                //     fieldName: "Price",
-                //     fieldValue: 'TODOODODOOO'
-                // }
+                {
+                    fieldName: "Price",
+                    fieldValue: totalPrice + ' KAS',
+                }
             ]
         }
     }
 
-    // private getKrc20CancelListActionDisplay(operationData: KRC20OperationDataInterface, wallet: AppWallet): ActionDisplay {
-    //     return {
-    //         title: "Cancel KRC20 Token Listing",
-    //         rows: [
-    //             {
-    //                 fieldName: "Ticker",
-    //                 fieldValue: operationData.tick.toUpperCase()
-    //             },
-    //             {
-    //                 fieldName: "Wallet",
-    //                 fieldValue: wallet.getAddress()
-    //             },
-    //             {
-    //                 fieldName: "Amount",
-    //                 fieldValue: operationData.amount!.toString()
-    //             }
-    //         ]
-    //     }
-    // }
+    private getKrc20CancelListActionDisplay(operationData: KRC20OperationDataInterface, wallet: AppWallet, action: CommitRevealAction): ActionDisplay {
+        return {
+            title: "Cancel KRC20 Token Listing",
+            rows: [
+                {
+                    fieldName: "Ticker",
+                    fieldValue: operationData.tick.toUpperCase()
+                },
+                {
+                    fieldName: "Wallet",
+                    fieldValue: wallet.getAddress()
+                },
+                {
+                    fieldName: "List Transaction Id",
+                    fieldValue: action.options!.commitTransactionId!,
+                }
+            ]
+        }
+    }
 
     // private getKrc20SendActionDisplay(operationData: KRC20OperationDataInterface, wallet: AppWallet): ActionDisplay {
     //     return {

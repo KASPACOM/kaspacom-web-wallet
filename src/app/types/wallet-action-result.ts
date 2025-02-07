@@ -22,20 +22,8 @@ export interface CompoundUtxosActionResult extends WalletActionResult {
     transactionId: string;
 }
 
-export interface Krc20ActionResult extends WalletActionResult {
-    type: WalletActionResultType.Krc20Action;
-    ticker: string;
-    commitTransactionId: string;
-    revealTransactionId: string;
-    operationData: KRC20OperationDataInterface;
-    psktData?: ActionWithPsktGenerationData;
-    isCancel?: boolean;
-    amount?: bigint;
-    psktTransaction?:string;
-}
-
-export interface BuyKrc20PsktActionResult extends WalletActionResult {
-    type: WalletActionResultType.BuyKrc20Pskt;
+export interface SignPsktTransactionActionResult extends WalletActionResult {
+    type: WalletActionResultType.SignPsktTransaction;
     transactionId?: string;
     psktTransactionJson: string;
 }
@@ -53,5 +41,6 @@ export interface CommitRevealActionResult extends WalletActionResult {
     revealTransactionId: string;
     protocol: KaspaScriptProtocolType;
     protocolAction: string;
+    revealPsktJson?: string;
     
 }

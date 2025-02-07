@@ -58,7 +58,10 @@ export class ListKrc20Component implements OnInit {
           this.walletService.getCurrentWallet()!.getAddress(),
           selectedAsset!.ticker,
           this.kaspaNetworkActionsService.kaspaToSompiFromNumber(this.amount!),
-          this.kaspaNetworkActionsService.kaspaToSompiFromNumber(this.totalPrice!),
+          [{
+            address: this.walletService.getCurrentWallet()!.getAddress(),
+            amount: this.kaspaNetworkActionsService.kaspaToSompiFromNumber(this.totalPrice!),
+          }],
         );
 
       const result =

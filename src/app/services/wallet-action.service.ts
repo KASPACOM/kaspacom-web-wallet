@@ -134,7 +134,20 @@ export class WalletActionService {
 
   createUnfinishedCommitRevealAction(
     commitRevealActionData: CommitRevealAction,
+    shouldFinish: boolean = false,
   ): WalletAction {
+
+    if (!shouldFinish) {
+      commitRevealActionData = {
+        ...commitRevealActionData,
+        options: {
+          ...(commitRevealActionData.options || 0),
+          additionalOutputs: undefined,
+          revealPriorityFee: undefined,
+        }
+      }  
+    }
+
     return {
       type: WalletActionType.COMMIT_REVEAL,
       data: commitRevealActionData,
@@ -384,9 +397,10 @@ export class WalletActionService {
     }
   }
 
-  private async validateAction(
+  async validateAction(
     action: WalletAction,
-    wallet: AppWallet
+    wallet: AppWallet,
+    checkAlsoProtocolData: boolean = false
   ): Promise<{ isValidated: boolean; errorCode?: number }> {
     if (!wallet) {
       return {
@@ -399,6 +413,18 @@ export class WalletActionService {
       isValidated: false,
       errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
     };
+
+    const isRevealOnly = action.type == WalletActionType.COMMIT_REVEAL && (action.data as CommitRevealAction).options?.commitTransactionId;
+
+    if (isRevealOnly) {
+      const actionData = action.data as CommitRevealAction;
+      // Retreive kas only, no need for validation
+      if (!(actionData.options?.additionalOutputs || actionData.options?.revealPriorityFee || checkAlsoProtocolData)) {
+        return {
+          isValidated: true,
+        }
+      }
+    }
 
     switch (action.type) {
       case WalletActionType.TRANSFER_KAS:
@@ -445,7 +471,8 @@ export class WalletActionService {
         action.type == WalletActionType.TRANSFER_KAS &&
         (action.data as TransferKasAction).sendAll
       ) &&
-      action.type != WalletActionType.SIGN_MESSAGE
+      action.type != WalletActionType.SIGN_MESSAGE &&
+      !isRevealOnly
     ) {
       const currentBalance =
         wallet?.getWalletUtxoStateBalanceSignal()()?.mature || 0n;
@@ -654,7 +681,7 @@ export class WalletActionService {
   }
 
   private getActionSteps(action: WalletAction): number {
-    if (action.type == WalletActionType.COMMIT_REVEAL) {
+    if (action.type == WalletActionType.COMMIT_REVEAL && !action.data?.options?.commitTransactionId) {
       return 3;
     }
 

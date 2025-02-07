@@ -235,8 +235,6 @@ export class KaspaNetworkActionsService {
           { estimateOnly: true }
         );
 
-      console.log(result);
-
       return [
         ...(result.result!.commitMass || []),
         ...(result.result!.revealMass || []),
@@ -397,12 +395,6 @@ export class KaspaNetworkActionsService {
           },
         );
 
-      await this.removeUnfinishedActionOnLocalStorage({
-        operationData: actionData,
-        walletAddress: wallet.getAddress(),
-        createdAtTimestamp: Date.now(),
-      });
-
       if (!result.success) {
         console.error('Failed do KRC20 action', result);
         return {
@@ -410,6 +402,12 @@ export class KaspaNetworkActionsService {
           errorCode: result.errorCode,
         };
       }
+
+      await this.removeUnfinishedActionOnLocalStorage({
+        operationData: actionData,
+        walletAddress: wallet.getAddress(),
+        createdAtTimestamp: Date.now(),
+      }, actionData.options?.commitTransactionId || result.result?.commit!);
 
       const actionResult: CommitRevealActionResult = {
         type: WalletActionResultType.CommitReveal,
@@ -513,14 +511,16 @@ export class KaspaNetworkActionsService {
   }
 
   async removeUnfinishedActionOnLocalStorage(
-    action: UnfinishedCommitRevealAction
+    action: UnfinishedCommitRevealAction,
+    commitTransactionId: string,
   ): Promise<void> {
     await this.updateUnfinishedCommitRevealActionOnLocalStorage(async (data) => {
       const index = data.findIndex(
         (item) =>
-          this.utils.stringifyWithBigInt(item.operationData) ===
-          this.utils.stringifyWithBigInt(action.operationData) &&
-          action.walletAddress == item.walletAddress
+          this.utils.stringifyWithBigInt(item.operationData.actionScript) ===
+          this.utils.stringifyWithBigInt(action.operationData.actionScript) &&
+          action.walletAddress == item.walletAddress && 
+          commitTransactionId == item.commitTransactionId
       );
       if (index !== -1) {
         data.splice(index, 1);
@@ -555,7 +555,8 @@ export class KaspaNetworkActionsService {
         break;
       } else {
         await this.removeUnfinishedActionOnLocalStorage(
-          currentUnfinishedAction
+          currentUnfinishedAction,
+          currentUnfinishedAction.commitTransactionId!,
         );
         currentUnfinishedAction = undefined;
       }

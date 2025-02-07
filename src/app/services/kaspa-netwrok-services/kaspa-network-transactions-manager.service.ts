@@ -15,6 +15,7 @@ import {
   ITransactionInput,
   ITransactionOutput,
   IUtxoEntry,
+  kaspaToSompi,
   Opcodes,
   payToAddressScript,
   PendingTransaction,
@@ -51,6 +52,7 @@ import { CommitRevealActionTransactions } from '../../types/kaspa-network/commit
 
 const MIN_TRANSACTION_FEE = 1817n;
 export const SUBMIT_REVEAL_MIN_UTXO_AMOUNT = 300000000n
+export const MIN_FOR_SUBMIT_REVEAL_OUTPUT = 100000000n
 
 type DoTransactionOptions = {
   notifyCreatedTransactions?: (transactionId: string) => Promise<any>;
@@ -570,7 +572,7 @@ export class KaspaNetworkTransactionsManagerService {
           throw new Error('Not enough wallet balance');
         }
 
-        let baseTransactionAmount = SUBMIT_REVEAL_MIN_UTXO_AMOUNT > operationCost ? SUBMIT_REVEAL_MIN_UTXO_AMOUNT : operationCost;
+        let baseTransactionAmount = SUBMIT_REVEAL_MIN_UTXO_AMOUNT - operationCost > MIN_FOR_SUBMIT_REVEAL_OUTPUT ? SUBMIT_REVEAL_MIN_UTXO_AMOUNT : operationCost + SUBMIT_REVEAL_MIN_UTXO_AMOUNT;
 
         baseTransactionAmount += totalOutputsAmount;
 

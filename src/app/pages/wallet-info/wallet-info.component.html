@@ -12,7 +12,10 @@
         <p class="unfinished-action-message">
           You have unfinished commit reveal action.
         </p>
-        <button class="finish-action-button" (click)="finishUnfinishedAction()">
+        <button class="finish-action-button" (click)="finishUnfinishedAction(false)">
+          Retreive Kas
+        </button>
+        <button class="finish-action-button" (click)="finishUnfinishedAction(true)" *ngIf="canCompleteUnfinishedAction">
           Finish Action
         </button>
       </div>

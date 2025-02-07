@@ -11,8 +11,6 @@ import { BaseProtocolClassesService } from "./protocols/base-protocol-classes.se
     providedIn: 'root',
 })
 export class ReviewActionDataService {
-
-
     constructor(private readonly kaspaNetworkActionsService: KaspaNetworkActionsService,
         private readonly baseProtocolClassesService: BaseProtocolClassesService,
     ) {

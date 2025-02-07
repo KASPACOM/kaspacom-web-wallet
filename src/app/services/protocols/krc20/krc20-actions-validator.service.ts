@@ -56,50 +56,14 @@ export class Krc20ActionsValidatorService implements ProtocolActionsValidatorInt
             };
         }
 
-        let currentBalance;
-
-        try {
-            const response = await firstValueFrom(
-                this.kasplexService.getTokenWalletBalanceInfo(
-                    wallet.getAddress(),
-                    krc20Command.tick
-                )
-            );
-
-            if (!response?.result?.[0]) {
-                return {
-                    isValidated: false,
-                    errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
-                };
+        if (!krc20Command.amt) {
+            return {
+                isValidated: false,
+                errorCode: ERROR_CODES.WALLET_ACTION.INVALID_AMOUNT,
             }
-
-            currentBalance = response.result[0];
-        } catch (error) {
-            console.error(error);
-
-            return {
-                isValidated: false,
-                errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
-            };
         }
 
-        if (!currentBalance) {
-            return {
-                isValidated: false,
-                errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
-            };
-        }
-
-        if (
-            BigInt(currentBalance.balance) < BigInt(krc20Command.amt || '0')
-        ) {
-            return {
-                isValidated: false,
-                errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
-            };
-        }
-
-        return { isValidated: true };
+        return await this.checkWalletBalance(krc20Command.tick, krc20Command.amt!, wallet);
     }
 
     private async validateMintKrc20Action(krc20Command: KRC20OperationDataInterface, wallet: AppWallet): Promise<{ isValidated: boolean; errorCode?: number; }> {
@@ -160,47 +124,11 @@ export class Krc20ActionsValidatorService implements ProtocolActionsValidatorInt
         //     };
         // }
 
-        let currentBalance;
-
-        try {
-            const response = await firstValueFrom(
-                this.kasplexService.getTokenWalletBalanceInfo(
-                    wallet.getAddress(),
-                    krc20Command.tick
-                )
-            );
-
-            if (!response?.result?.[0]) {
-                return {
-                    isValidated: false,
-                    errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
-                };
+        if (!krc20Command.amt) {
+            return {
+                isValidated: false,
+                errorCode: ERROR_CODES.WALLET_ACTION.INVALID_AMOUNT,
             }
-
-            currentBalance = response.result[0];
-        } catch (error) {
-            console.error(error);
-
-            return {
-                isValidated: false,
-                errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
-            };
-        }
-
-        if (!currentBalance) {
-            return {
-                isValidated: false,
-                errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
-            };
-        }
-
-        if (
-            BigInt(currentBalance.balance) < BigInt(krc20Command.amt || '0')
-        ) {
-            return {
-                isValidated: false,
-                errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
-            };
         }
 
         return { isValidated: true };
@@ -303,6 +231,54 @@ export class Krc20ActionsValidatorService implements ProtocolActionsValidatorInt
     //         };
     //     }
     // }
+
+
+    private async checkWalletBalance(ticker: string, amount: string, wallet: AppWallet): Promise<{ isValidated: boolean; errorCode?: number; }> {
+        let currentBalance;
+
+        try {
+            const response = await firstValueFrom(
+                this.kasplexService.getTokenWalletBalanceInfo(
+                    wallet.getAddress(),
+                    ticker
+                )
+            );
+
+            if (!response?.result?.[0]) {
+                return {
+                    isValidated: false,
+                    errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
+                };
+            }
+
+            currentBalance = response.result[0];
+        } catch (error) {
+            console.error(error);
+
+            return {
+                isValidated: false,
+                errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
+            };
+        }
+
+        if (!currentBalance) {
+            return {
+                isValidated: false,
+                errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
+            };
+        }
+
+        if (
+            BigInt(currentBalance.balance) < BigInt(amount || '0')
+        ) {
+            return {
+                isValidated: false,
+                errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
+            };
+        }
+
+        return { isValidated: true };
+    }
 
 }
 

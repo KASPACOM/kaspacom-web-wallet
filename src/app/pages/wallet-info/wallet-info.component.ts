@@ -64,6 +64,7 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
     undefined;
 
   protected unfinishedAction: undefined | UnfinishedCommitRevealAction = undefined;
+  protected canCompleteUnfinishedAction: boolean = false;
 
   protected kaspaTransactionsHistory: undefined | FullTransactionResponse =
     undefined;
@@ -231,10 +232,15 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async checkForUnfinishedActions() {
     try {
-      this.unfinishedAction =
-        await this.kaspaNetworkActionsService.getWalletUnfinishedActions(
-          this.wallet!
-        );
+      const unfinishedAction = await this.kaspaNetworkActionsService.getWalletUnfinishedActions(
+        this.wallet!
+      );
+
+      if (unfinishedAction) {
+        this.canCompleteUnfinishedAction = await this.checkIfCanFinishUnfinishedAction(unfinishedAction);
+      }
+      this.unfinishedAction = unfinishedAction;
+
     } catch (error) {
       console.error(error);
     }
@@ -244,14 +250,28 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 60 * 1000);
   }
 
-  async finishUnfinishedAction() {
+  async checkIfCanFinishUnfinishedAction(unfinishedAction: UnfinishedCommitRevealAction): Promise<boolean> {
+    const result = await this.walletActionService.validateAction(
+      this.walletActionService.createUnfinishedCommitRevealAction(
+        unfinishedAction.operationData,
+        true,
+      ),
+      this.walletService.getCurrentWallet()!,
+      true,
+    )
+
+    return result.isValidated;
+  }
+
+  async finishUnfinishedAction(shouldFinish?: boolean) {
     if (!this.unfinishedAction) {
       return;
     }
 
     await this.walletActionService.validateAndDoActionAfterApproval(
       this.walletActionService.createUnfinishedCommitRevealAction(
-        this.unfinishedAction!.operationData
+        this.unfinishedAction!.operationData,
+        shouldFinish
       )
     );
 

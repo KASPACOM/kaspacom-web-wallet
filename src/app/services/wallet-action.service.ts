@@ -10,7 +10,7 @@ import {
 } from '../types/wallet-action';
 import { AssetType, TransferableAsset } from '../types/transferable-asset';
 import { WalletService } from './wallet.service';
-import { ERROR_CODES, WalletActionResult } from 'kaspacom-wallet-messages';
+import { ERROR_CODES, WalletActionResult } from '../../../kaspacom-wallet-messages';
 import { UtilsHelper } from './utils.service';
 import {
   KaspaNetworkActionsService,

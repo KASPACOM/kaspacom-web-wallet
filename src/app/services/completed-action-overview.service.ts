@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { KaspaNetworkActionsService } from "./kaspa-netwrok-services/kaspa-network-actions.service";
-import { SignedMessageActionResult, SignMessageActionInterface, WalletActionResult, WalletActionResultType } from "kaspacom-wallet-messages";
+import { SignedMessageActionResult, SignMessageActionInterface, WalletActionResult, WalletActionResultType } from "../../../kaspacom-wallet-messages";
 import { BaseProtocolClassesService } from "./protocols/base-protocol-classes.service";
 import { CompletedActionDisplay } from "../types/completed-action-display.type";
 import { CommitRevealActionResult, CompoundUtxosActionResult, KasTransferActionResult, SignPsktTransactionActionResult } from "../types/wallet-action-result";

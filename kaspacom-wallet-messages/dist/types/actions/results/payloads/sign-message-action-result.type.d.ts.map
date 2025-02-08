@@ -1,0 +1,1 @@
+{"version":3,"file":"sign-message-action-result.type.d.ts","sourceRoot":"","sources":["../../../../../src/types/actions/results/payloads/sign-message-action-result.type.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,yBAA0B,SAAQ,kBAAkB;IACjE,IAAI,EAAE,sBAAsB,CAAC,cAAc,CAAC;IAC5C,eAAe,EAAE,MAAM,CAAC;IACxB,aAAa,EAAE,MAAM,CAAC;IACtB,SAAS,EAAE,MAAM,CAAC;CACrB"}

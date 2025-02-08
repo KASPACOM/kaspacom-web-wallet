@@ -1,4 +1,4 @@
-import { WalletActionResult, WalletActionResultType } from "kaspacom-wallet-messages";
+import { WalletActionResult, WalletActionResultType } from "../../../kaspacom-wallet-messages";
 import { KRC20OperationDataInterface } from "./kaspa-network/krc20-operations-data.interface";
 import { ActionWithPsktGenerationData } from "./wallet-action";
 import { KaspaScriptProtocolType } from "./kaspa-network/kaspa-script-protocol-type.enum";

@@ -39,7 +39,7 @@ import {
 import { TotalBalanceWithUtxosInterface } from '../../types/kaspa-network/total-balance-with-utxos.interface';
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
-import { ERROR_CODES } from 'kaspacom-wallet-messages';
+import { ERROR_CODES } from '../../../../kaspacom-wallet-messages';
 import {
   MAX_TRANSACTION_FEE,
   MINIMAL_AMOUNT_TO_SEND,

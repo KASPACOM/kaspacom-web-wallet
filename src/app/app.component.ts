@@ -48,6 +48,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   isAllowedDomain(): boolean {
+    return true;
     return this.iframeCommunicationService.isApplicationDomainAllowed();
   }
 

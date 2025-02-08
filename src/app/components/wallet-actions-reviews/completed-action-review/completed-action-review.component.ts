@@ -1,7 +1,7 @@
 import { Component, inject, Input } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
-import { WalletActionResult } from 'kaspacom-wallet-messages';
+import { WalletActionResult } from '../../../../../kaspacom-wallet-messages';
 import { CompletedActionOverviewService } from '../../../services/completed-action-overview.service';
 import { CompletedActionDisplay } from '../../../types/completed-action-display.type';
 

@@ -12,8 +12,8 @@ import {
   WalletActionTypeEnum,
   WalletMessageInterface,
   WalletMessageTypeEnum,
-} from 'kaspacom-wallet-messages';
-import { WalletActionRequestPayloadInterface } from 'kaspacom-wallet-messages/dist/types/payloads/actions/wallet-action-request-payload-interface';
+} from '../../../kaspacom-wallet-messages';
+import { WalletActionRequestPayloadInterface } from '../../../kaspacom-wallet-messages/dist/types/payloads/actions/wallet-action-request-payload-interface';
 import { WalletAction } from '../types/wallet-action';
 import { WalletActionResultWithError } from '../types/wallet-action-result';
 

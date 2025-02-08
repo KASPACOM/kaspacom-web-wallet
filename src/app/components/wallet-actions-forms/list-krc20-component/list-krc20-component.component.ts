@@ -6,7 +6,7 @@ import { TransferableAsset } from '../../../types/transferable-asset';
 import { WalletAction, WalletActionType } from '../../../types/wallet-action';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { WalletActionService } from '../../../services/wallet-action.service';
-import { ERROR_CODES } from 'kaspacom-wallet-messages';
+import { ERROR_CODES } from '../../../../../kaspacom-wallet-messages';
 import { Krc20WalletActionService } from '../../../services/protocols/krc20/krc20-wallet-actions.service';
 
 @Component({

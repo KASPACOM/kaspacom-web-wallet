@@ -131,13 +131,17 @@ export class IFrameCommunicationService {
 
     if (wallet) {
       const balance = wallet.getUtxoProcessorManager()?.getContext()
-        ?.balance?.mature;
+        ?.balance;
       message.payload = {
         walletAddress: wallet.getAddress(),
         balance:
-          balance === undefined
+          balance?.mature === undefined
             ? null
-            : this.kaspaNetworkActionsService.sompiToNumber(balance),
+            : {
+                current: this.kaspaNetworkActionsService.sompiToNumber(balance.mature),
+                pending: this.kaspaNetworkActionsService.sompiToNumber(balance.pending),
+                outgoing: this.kaspaNetworkActionsService.sompiToNumber(balance.outgoing),
+            },
       };
     }
     this.sendMessageToApp(message);

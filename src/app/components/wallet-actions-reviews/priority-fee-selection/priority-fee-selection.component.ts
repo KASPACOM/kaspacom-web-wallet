@@ -15,12 +15,12 @@ import {
 } from '@angular/common';
 import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
 import { CompletedActionReview } from '../completed-action-review/completed-action-review.component';
-import { Krc20Action, WalletAction, WalletActionType } from '../../../types/wallet-action';
+import { WalletAction, WalletActionType } from '../../../types/wallet-action';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { AppWallet } from '../../../classes/AppWallet';
 import { IFeeEstimate } from '../../../../../public/kaspa/kaspa';
 import { FormsModule } from '@angular/forms';
-import { Krc20OperationDataService } from '../../../services/kaspa-netwrok-services/krc20-operation-data.service';
+import { Krc20OperationDataService } from '../../../services/protocols/krc20/krc20-operation-data.service';
 
 type BucketFeeRate = {
   priorityFee: bigint;
@@ -56,10 +56,10 @@ export class PriorityFeeSelectionComponent implements OnChanges {
   protected currentOptions:
     | undefined
     | {
-        low: BucketFeeRate;
-        normal: BucketFeeRate;
-        priority: BucketFeeRate;
-      } = undefined;
+      low: BucketFeeRate;
+      normal: BucketFeeRate;
+      priority: BucketFeeRate;
+    } = undefined;
 
   protected customFee: number = 0;
   protected selectedOption: AvailableOption = 'normal';
@@ -68,7 +68,7 @@ export class PriorityFeeSelectionComponent implements OnChanges {
   constructor(
     protected kaspaNetworkActionsService: KaspaNetworkActionsService,
     protected krc20OperationsDataService: Krc20OperationDataService,
-  ) {}
+  ) { }
 
   async ngOnChanges(changes: SimpleChanges): Promise<void> {
     this.totalTransactionsMass = undefined;
@@ -161,14 +161,14 @@ export class PriorityFeeSelectionComponent implements OnChanges {
 
     return (
       this.totalTransactionsMass.reduce((a, b) => a + b, 0n) +
-      this.additionalPriorityFee * BigInt(this.totalTransactionsMass.length) + 
-      this.getKrc20ActionPrice()
+      this.additionalPriorityFee * BigInt(this.totalTransactionsMass.length) +
+      this.getAdditionalCommitActionPrice()
     );
   }
 
-  getKrc20ActionPrice(): bigint {
-    if (this.action.type == WalletActionType.KRC20_ACTION) {
-      return this.krc20OperationsDataService.getPriceForOperation((this.action.data as Krc20Action).operationData.op);
+  getAdditionalCommitActionPrice(): bigint {
+    if (this.action.type == WalletActionType.COMMIT_REVEAL) {
+      return this.action.data.options?.revealPriorityFee || 0n;
     }
 
     return 0n;

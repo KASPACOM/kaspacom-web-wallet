@@ -1,18 +1,7 @@
+import { WalletActionResult, WalletActionResultType } from "kaspacom-wallet-messages";
 import { KRC20OperationDataInterface } from "./kaspa-network/krc20-operations-data.interface";
 import { ActionWithPsktGenerationData } from "./wallet-action";
-
-export enum WalletActionResultType {
-    KasTransfer = 'kas-transfer',
-    Krc20Action = 'krc20action',
-    MessageSigning = 'message-signing',
-    CompoundUtxos = 'compound-utxos',
-    BuyKrc20Pskt = 'buy-krc20-pskt',
-}
-
-export interface WalletActionResult {
-    performedByWallet: string;
-    type: WalletActionResultType;
-}
+import { KaspaScriptProtocolType } from "./kaspa-network/kaspa-script-protocol-type.enum";
 
 export interface WalletActionResultWithError {
     success: boolean;
@@ -33,20 +22,8 @@ export interface CompoundUtxosActionResult extends WalletActionResult {
     transactionId: string;
 }
 
-export interface Krc20ActionResult extends WalletActionResult {
-    type: WalletActionResultType.Krc20Action;
-    ticker: string;
-    commitTransactionId: string;
-    revealTransactionId: string;
-    operationData: KRC20OperationDataInterface;
-    psktData?: ActionWithPsktGenerationData;
-    isCancel?: boolean;
-    amount?: bigint;
-    psktTransaction?:string;
-}
-
-export interface BuyKrc20PsktActionResult extends WalletActionResult {
-    type: WalletActionResultType.BuyKrc20Pskt;
+export interface SignPsktTransactionActionResult extends WalletActionResult {
+    type: WalletActionResultType.SignPsktTransaction;
     transactionId?: string;
     psktTransactionJson: string;
 }
@@ -56,4 +33,14 @@ export interface SignedMessageActionResult extends WalletActionResult {
     originalMessage: string;
     signedMessage: string;
     publicKey: string;
+}
+
+export interface CommitRevealActionResult extends WalletActionResult {
+    type: WalletActionResultType.CommitReveal;
+    commitTransactionId: string;
+    revealTransactionId: string;
+    protocol: KaspaScriptProtocolType;
+    protocolAction: string;
+    revealPsktJson?: string;
+    
 }

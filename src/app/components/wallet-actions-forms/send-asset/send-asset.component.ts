@@ -6,7 +6,7 @@ import { TransferableAsset } from '../../../types/transferable-asset';
 import { WalletAction, WalletActionType } from '../../../types/wallet-action';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { WalletActionService } from '../../../services/wallet-action.service';
-import { ERROR_CODES } from '../../../config/consts';
+import { ERROR_CODES } from 'kaspacom-wallet-messages';
 
 @Component({
   selector: 'send-asset',

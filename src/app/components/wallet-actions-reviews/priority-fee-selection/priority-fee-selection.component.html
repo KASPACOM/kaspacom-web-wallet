@@ -50,9 +50,9 @@
         }}
       </div>
 
-      <div *ngIf="getKrc20ActionPrice() > 0; n">
-        Krc20 Action Fee:
-        {{ getKrc20ActionPrice() | sompiToNumber }}
+      <div *ngIf="getAdditionalCommitActionPrice() > 0; n">
+        Protocol Action Fee:
+        {{ getAdditionalCommitActionPrice() | sompiToNumber }}
       </div>
 
       <div *ngIf="totalTransactionsMass && totalTransactionsMass.length > 1">

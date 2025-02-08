@@ -20,7 +20,7 @@ import { WalletActionService } from '../../services/wallet-action.service';
 import { MintComponent } from '../../components/wallet-actions-forms/mint/mint.component';
 import { KaspaApiService } from '../../services/kaspa-api/kaspa-api.service';
 import { FullTransactionResponse } from '../../services/kaspa-api/dtos/full-transaction-response.dto';
-import { UnfinishedKrc20Action } from '../../types/kaspa-network/unfinished-krc20-action.interface';
+import { UnfinishedCommitRevealAction } from '../../types/kaspa-network/unfinished-commit-reveal-action.interface';
 import { ListKrc20Component } from '../../components/wallet-actions-forms/list-krc20-component/list-krc20-component.component';
 import { BuyKrc20Component } from '../../components/wallet-actions-forms/buy-krc20-component/buy-krc20.component';
 import { DeployComponent } from '../../components/wallet-actions-forms/deploy/deploy.component';
@@ -63,7 +63,8 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
   protected tokens: undefined | { ticker: string; balance: number }[] =
     undefined;
 
-  protected unfinishedAction: undefined | UnfinishedKrc20Action = undefined;
+  protected unfinishedAction: undefined | UnfinishedCommitRevealAction = undefined;
+  protected canCompleteUnfinishedAction: boolean = false;
 
   protected kaspaTransactionsHistory: undefined | FullTransactionResponse =
     undefined;
@@ -231,10 +232,15 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async checkForUnfinishedActions() {
     try {
-      this.unfinishedAction =
-        await this.kaspaNetworkActionsService.getWalletUnfinishedActions(
-          this.wallet!
-        );
+      const unfinishedAction = await this.kaspaNetworkActionsService.getWalletUnfinishedActions(
+        this.wallet!
+      );
+
+      if (unfinishedAction) {
+        this.canCompleteUnfinishedAction = await this.checkIfCanFinishUnfinishedAction(unfinishedAction);
+      }
+      this.unfinishedAction = unfinishedAction;
+
     } catch (error) {
       console.error(error);
     }
@@ -244,14 +250,28 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 60 * 1000);
   }
 
-  async finishUnfinishedAction() {
+  async checkIfCanFinishUnfinishedAction(unfinishedAction: UnfinishedCommitRevealAction): Promise<boolean> {
+    const result = await this.walletActionService.validateAction(
+      this.walletActionService.createUnfinishedCommitRevealAction(
+        unfinishedAction.operationData,
+        true,
+      ),
+      this.walletService.getCurrentWallet()!,
+      true,
+    )
+
+    return result.isValidated;
+  }
+
+  async finishUnfinishedAction(shouldFinish?: boolean) {
     if (!this.unfinishedAction) {
       return;
     }
 
     await this.walletActionService.validateAndDoActionAfterApproval(
-      this.walletActionService.createUnfinishedKrc20Action(
-        this.unfinishedAction!.operationData!
+      this.walletActionService.createUnfinishedCommitRevealAction(
+        this.unfinishedAction!.operationData,
+        shouldFinish
       )
     );
 

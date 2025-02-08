@@ -1,21 +1,18 @@
 import { Component } from '@angular/core';
-import { JsonPipe, NgFor, NgIf } from '@angular/common';
+import { JsonPipe, NgClass, NgFor, NgIf } from '@angular/common';
 import {
-  BuyKrc20PsktAction,
-  Krc20Action,
-  SignMessage,
-  TransferKasAction,
   WalletAction,
   WalletActionType,
 } from '../../../types/wallet-action';
 import { WalletService } from '../../../services/wallet.service';
 import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
-import { WalletActionResult } from '../../../types/wallet-action-result';
 import { CompletedActionReview } from '../completed-action-review/completed-action-review.component';
 import { KRC20OperationType } from '../../../types/kaspa-network/krc20-operations-data.interface';
-import { PsktTransaction } from '../../../types/kaspa-network/pskt-transaction.interface';
 import { PriorityFeeSelectionComponent } from '../priority-fee-selection/priority-fee-selection.component';
 import { AppWallet } from '../../../classes/AppWallet';
+import { WalletActionResult } from 'kaspacom-wallet-messages';
+import { ReviewActionDataService } from '../../../services/review-action-data.service';
+import { ActionDisplay } from '../../../types/action-display.type';
 
 const TIMEOUT = 2 * 60 * 1000;
 
@@ -24,7 +21,7 @@ const TIMEOUT = 2 * 60 * 1000;
   standalone: true,
   templateUrl: './review-action.component.html',
   styleUrls: ['./review-action.component.scss'],
-  imports: [NgIf, NgFor, SompiToNumberPipe, CompletedActionReview, JsonPipe, PriorityFeeSelectionComponent],
+  imports: [NgIf, NgFor, NgClass, SompiToNumberPipe, CompletedActionReview, JsonPipe, PriorityFeeSelectionComponent],
 })
 export class ReviewActionComponent {
   public WalletActionType = WalletActionType;
@@ -46,7 +43,7 @@ export class ReviewActionComponent {
   protected result: WalletActionResult | undefined = undefined;
   protected currentPriorityFee: bigint | undefined = undefined;
 
-  constructor(private walletService: WalletService) {}
+  constructor(private walletService: WalletService, private readonly reviewActionDataService: ReviewActionDataService) {}
 
   // PUBLIC ACTIONS
   public requestUserConfirmation(action: WalletAction): Promise<{
@@ -121,26 +118,6 @@ export class ReviewActionComponent {
     this.currentPriorityFee = priorityFee;
   }
 
-  protected get transferKasActionData(): TransferKasAction {
-    return this.action?.data as TransferKasAction;
-  }
-
-  protected get krc20ActionData(): Krc20Action {
-    return this.action?.data as Krc20Action;
-  }
-
-  protected get buyKrc20PsktActionData(): BuyKrc20PsktAction {
-    return this.action?.data as BuyKrc20PsktAction;
-  }
-
-  protected get signMessageActionData(): SignMessage {
-    return this.action?.data as SignMessage;
-  }
-
-  protected get buyKrc20PsktTransactoin(): PsktTransaction {
-    return JSON.parse(this.buyKrc20PsktActionData?.psktTransactionJson);
-  }
-
   protected get walletAddress(): string {
     return this.walletService.getCurrentWallet()?.getAddress() || '';
   }
@@ -156,4 +133,11 @@ export class ReviewActionComponent {
   protected get isActionHasPriorityFee() {
     return this.action && this.action?.type !== WalletActionType.SIGN_MESSAGE;
   }
+
+  protected get currentActionDisplay(): ActionDisplay | undefined {
+    return this.reviewActionDataService.getActionDisplay(this.action, this.wallet);
+  }
+
+
+
 }

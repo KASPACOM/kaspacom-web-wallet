@@ -3,12 +3,13 @@ import { Router, RouterOutlet } from '@angular/router';
 import { PasswordManagerService } from './services/password-manager.service';
 import { AppHeaderComponent } from './components/app-header/app-header.component';
 import { KaspaNetworkActionsService } from './services/kaspa-netwrok-services/kaspa-network-actions.service';
-import { isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, NgIf } from '@angular/common';
+import { IFrameCommunicationService } from './services/iframe-communication.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, AppHeaderComponent],
+  imports: [RouterOutlet, AppHeaderComponent, NgIf],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
   providers: [KaspaNetworkActionsService]
@@ -20,10 +21,19 @@ export class AppComponent implements OnInit, AfterViewInit {
   constructor(
     private readonly router: Router,
     private readonly passwordManagerService: PasswordManagerService,
+    private readonly iframeCommunicationService: IFrameCommunicationService,
     private renderer: Renderer2) {
   }
 
   async ngOnInit() {
+    if (!this.isAllowedDomain()) {
+      return;
+    }
+
+    if (this.iframeCommunicationService.isIframe()) {
+      this.iframeCommunicationService.initIframeMessaging();
+    }
+
     if (this.passwordManagerService.isUserHasSavedPassword()) {
       this.router.navigate(['/login']);
     } else {
@@ -35,6 +45,10 @@ export class AppComponent implements OnInit, AfterViewInit {
       let loader = this.renderer.selectRootElement('#application-loader-startup');
       if (loader.style.display != "none") loader.style.display = "none"; //hide loader
       loader.remove();
+  }
+
+  isAllowedDomain(): boolean {
+    return this.iframeCommunicationService.isApplicationDomainAllowed();
   }
 
 }

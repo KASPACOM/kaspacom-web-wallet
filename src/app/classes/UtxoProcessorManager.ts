@@ -171,10 +171,6 @@ export class UtxoProcessorManager {
     this.rpc.subscribeUtxosChanged([this.publicAddress]);
     await this.rpc.addEventListener(this.utxoChangedEventListenerWithBind!);
 
-    (window as any).test = () => {
-      this.rpc.disconnect();
-    };
-
     await this.registerProcessor();
   }
 
@@ -267,18 +263,23 @@ export class UtxoProcessorManager {
   }
 
   private utxoChangedEventListener(event: UtxoChangedEvent) {
-    const addedEntry = event.data?.added?.find(
-      (entry: any) =>
-        entry.address.payload === this.publicAddress.toString().split(':')[1]
+
+    const addedTransactions = event.data?.added?.map(
+      (entry: any) => entry.outpoint.transactionId
+    );
+    const removedTransactions = event.data?.removed?.map(
+      (entry: any) => entry.outpoint.transactionId
     );
 
-    if (addedEntry) {
-      const addedEventTrxId = addedEntry.outpoint.transactionId;
+    const distinctTransactions = Array.from(
+      new Set([...(addedTransactions || []), ...(removedTransactions || [])])
+    );
 
-      if (this.transactionPromises[addedEventTrxId]) {
-        this.resolveTransaction(addedEventTrxId);
+    distinctTransactions.forEach((transactionId) => {
+      if (this.transactionPromises[transactionId]) {
+        this.resolveTransaction(transactionId);
       }
-    }
+    });
   }
 
   resolveTransaction(transactionId: string) {

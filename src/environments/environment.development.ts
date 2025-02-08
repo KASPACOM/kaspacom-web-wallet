@@ -7,4 +7,5 @@ export const environment: Environment = {
   kasplexApiBaseurl: 'https://tn10api.kasplex.org/v1',
   kaspaApiBaseurl: 'https://api-tn10.kaspa.org',
   kaspaNetwork: KASPA_NETWORKS.TESTNET10,
+  allowedDomains: ['localhost', 'dev.kaspa.com', 'local.kaspa.com'],
 };

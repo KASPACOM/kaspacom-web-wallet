@@ -4,6 +4,7 @@ import { UtilsHelper } from '../../../services/utils.service';
 import { FormsModule } from '@angular/forms';
 import { WalletActionService } from '../../../services/wallet-action.service';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
+import { Krc20WalletActionService } from '../../../services/protocols/krc20/krc20-wallet-actions.service';
 
 @Component({
   selector: 'deploy',
@@ -21,11 +22,12 @@ export class DeployComponent {
   constructor(
     private utilsService: UtilsHelper,
     private walletActionService: WalletActionService,
+    private krc20WalletActionService: Krc20WalletActionService,
     private kaspaNetworkActionsService: KaspaNetworkActionsService
   ) {}
 
   async deployToken() {
-    const action = this.walletActionService.createDeployWalletAction(
+    const action = this.krc20WalletActionService.createDeployWalletAction(
       this.selectedToken,
       this.kaspaNetworkActionsService.kaspaToSompiFromNumber(
         this.maxSupply || 0

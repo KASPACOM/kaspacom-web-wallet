@@ -3,6 +3,7 @@ import { NgFor, NgIf } from '@angular/common';
 import { UtilsHelper } from '../../../services/utils.service';
 import { FormsModule } from '@angular/forms';
 import { WalletActionService } from '../../../services/wallet-action.service';
+import { Krc20WalletActionService } from '../../../services/protocols/krc20/krc20-wallet-actions.service';
 
 @Component({
   selector: 'mint',
@@ -16,12 +17,13 @@ export class MintComponent {
 
   constructor(
     private utilsService: UtilsHelper,
-    private walletActionService: WalletActionService
+    private walletActionService: WalletActionService,
+    private krc20ActionWalletService: Krc20WalletActionService,
   ) {}
 
   async mintToken() {
     if (!this.isTokenNameEmpty()) {
-      const action = this.walletActionService.createMintWalletAction(this.selectedToken);
+      const action = this.krc20ActionWalletService.createMintWalletAction(this.selectedToken);
       const result = await this.walletActionService.validateAndDoActionAfterApproval(action);
 
       if (!result.success) {

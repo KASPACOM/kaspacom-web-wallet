@@ -4,4 +4,5 @@ export interface Environment {
   kasplexApiBaseurl: string;
   kaspaApiBaseurl: string;
   kaspaNetwork: string;
+  allowedDomains: string[];
 }

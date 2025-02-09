@@ -3,11 +3,11 @@ import { ProtocolActionsValidatorInterface } from "../interfaces/protocol-action
 import { AppWallet } from "../../../classes/AppWallet";
 import { CommitRevealAction } from "../../../types/wallet-action";
 import { KRC20OperationDataInterface, KRC20OperationType } from "../../../types/kaspa-network/krc20-operations-data.interface";
-import { ERROR_CODES } from "../../../../../../kaspacom-wallet-messages";
 import { UtilsHelper } from "../../utils.service";
 import { firstValueFrom } from "rxjs";
 import { KasplexKrc20Service } from "../../kasplex-api/kasplex-api.service";
 import { TokenState } from "../../kasplex-api/dtos/token-list-info.dto";
+import { ERROR_CODES } from "../../../../../kaspacom-wallet-messages/src";
 
 
 @Injectable({

@@ -16,7 +16,6 @@ import {
   KaspaNetworkActionsService,
   MINIMAL_AMOUNT_TO_SEND,
 } from './kaspa-netwrok-services/kaspa-network-actions.service';
-import { ReviewActionComponent } from '../components/wallet-actions-reviews/review-action/review-action.component';
 import { WalletActionResultWithError } from '../types/wallet-action-result';
 import { RpcConnectionStatus } from '../types/kaspa-network/rpc-connection-status.enum';
 import { AppWallet } from '../classes/AppWallet';
@@ -24,6 +23,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { PsktTransaction } from '../types/kaspa-network/pskt-transaction.interface';
 import { Krc20WalletActionService } from './protocols/krc20/krc20-wallet-actions.service';
 import { BaseProtocolClassesService } from './protocols/base-protocol-classes.service';
+import { Router } from '@angular/router';
 
 const INSTANT_ACTIONS: { [key: string]: boolean } = {
   [WalletActionType.SIGN_MESSAGE]: true,
@@ -33,14 +33,19 @@ const INSTANT_ACTIONS: { [key: string]: boolean } = {
   providedIn: 'root',
 })
 export class WalletActionService {
-  private viewingComponent: ReviewActionComponent | undefined = undefined;
-
   private actionsListByWallet = signal<{
     [walletId: number]: WalletActionListItem[];
   }>({});
   private isActionsRunningByWallet = signal<{
     [walletId: number]: boolean;
   }>({});
+  private actionToApprove = signal<{
+    action: WalletAction;
+    resolve: (data: { isApproved: boolean, priorityFee?: bigint }) => void;
+  } | undefined>(undefined);
+
+  private currentProgressSignal = signal<number | undefined>(undefined);
+  private actionResultSignal = signal<WalletActionResult | undefined>(undefined);
 
   constructor(
     private walletService: WalletService,
@@ -48,6 +53,7 @@ export class WalletActionService {
     private kaspaNetworkActionsService: KaspaNetworkActionsService,
     private krc20WalletActionService: Krc20WalletActionService,
     private baseProtocolClassesService: BaseProtocolClassesService,
+    private readonly router: Router,
   ) {
 
     this.actionsListByWallet.set({});
@@ -91,8 +97,21 @@ export class WalletActionService {
     });
   }
 
-  registerViewingComponent(component: ReviewActionComponent): void {
-    this.viewingComponent = component;
+  createTransferKasWalletAction(
+    targetWalletAddress: string,
+    amount: bigint,
+    wallet: AppWallet
+  ): WalletAction {
+    return {
+      type: WalletActionType.TRANSFER_KAS,
+      data: {
+        amount,
+        to: targetWalletAddress,
+        sendAll:
+          !!(wallet.getWalletUtxoStateBalanceSignal()()?.mature &&
+            wallet.getWalletUtxoStateBalanceSignal()()?.mature == amount),
+      },
+    };
   }
 
   createTransferWalletActionFromAsset(
@@ -102,16 +121,7 @@ export class WalletActionService {
     wallet: AppWallet
   ): WalletAction {
     if (asset.type === AssetType.KAS) {
-      return {
-        type: WalletActionType.TRANSFER_KAS,
-        data: {
-          amount,
-          to: targetWalletAddress,
-          sendAll:
-            !!(wallet.getWalletUtxoStateBalanceSignal()()?.mature &&
-              wallet.getWalletUtxoStateBalanceSignal()()?.mature == amount),
-        },
-      };
+      return this.createTransferKasWalletAction(targetWalletAddress, amount, wallet);
     }
 
     if (asset.type === AssetType.KRC20) {
@@ -150,7 +160,7 @@ export class WalletActionService {
     };
   }
 
-  createCommitRevealAction(data: CommitRevealAction, priorityFee: bigint): WalletAction {
+  createCommitRevealAction(data: CommitRevealAction, priorityFee?: bigint): WalletAction {
     return {
       type: WalletActionType.COMMIT_REVEAL,
       data,
@@ -181,11 +191,12 @@ export class WalletActionService {
   }
 
   async validateAndDoActionAfterApproval(
-    action: WalletAction
+    action: WalletAction,
+    isFromIframe: boolean = false,
   ): Promise<WalletActionResultWithError> {
     const validationResult = await this.validateAction(
       action,
-      this.walletService.getCurrentWallet()!
+      this.walletService.getCurrentWallet()!,
     );
     if (!validationResult.isValidated) {
       return {
@@ -194,7 +205,7 @@ export class WalletActionService {
       };
     }
 
-    const result = await this.showApprovalDialogToUser(action);
+    const result = await this.showApprovalDialogToUser(action, isFromIframe);
 
     if (!result.isApproved) {
       return {
@@ -207,14 +218,14 @@ export class WalletActionService {
 
     const actionSteps = this.getActionSteps(action);
     let currentStep = 0;
-
-    await this.showTransactionLoaderToUser(0);
+    const currentWalletAddress = this.walletService.getCurrentWallet()!.getAddress();
 
     const actionResult = await this.doWalletAction(action, async (data) => {
       currentStep++;
 
       this.showTransactionLoaderToUser(
-        Math.round((currentStep / actionSteps) * 100)
+        Math.round((currentStep / actionSteps) * 100),
+        currentWalletAddress,
       );
 
     });
@@ -224,38 +235,68 @@ export class WalletActionService {
       return actionResult;
     }
 
-    await this.showTransactionResultToUser(actionResult.result!);
+    await this.showTransactionResultToUser(actionResult.result!, currentWalletAddress);
 
     return actionResult;
   }
 
-  private async showApprovalDialogToUser(action: WalletAction): Promise<{
+  private async showApprovalDialogToUser(action: WalletAction, isFromIframe: boolean = false): Promise<{
     isApproved: boolean;
     priorityFee?: bigint;
   }> {
-    if (!this.viewingComponent) {
-      return {
-        isApproved: false,
-      };
+
+    if (this.actionToApprove()) {
+      this.actionToApprove()!.resolve({ isApproved: false });
+      this.actionToApprove.set(undefined);
     }
 
-    return await this.viewingComponent.requestUserConfirmation(action);
+    const promise = new Promise<{ isApproved: boolean, priorityFee?: bigint }>((res) => {
+      this.actionResultSignal.set(undefined);
+      this.actionToApprove.set({
+        action,
+        resolve: res
+      })
+      this.currentProgressSignal.set(undefined);
+    });
+
+    if (isFromIframe) {
+      this.router.navigate(['/review-action']);
+    }
+
+    return await promise.then(data => {
+      this.actionToApprove.set(undefined);
+
+      return data;
+    });
   }
 
-  private async showTransactionLoaderToUser(progress?: number | undefined) {
-    if (!this.viewingComponent) {
+  getActionToApproveSignal(): Signal<{ action: WalletAction, resolve: (data: { isApproved: boolean, priorityFee?: bigint }) => void } | undefined> {
+    return this.actionToApprove.asReadonly();
+  }
+
+  getCurrentProgressSignal(): Signal<number | undefined> {
+    return this.currentProgressSignal.asReadonly();
+  }
+
+  getActionResultSignal(): Signal<WalletActionResult | undefined> {
+    return this.actionResultSignal.asReadonly();
+  }
+
+  private async showTransactionLoaderToUser(progress?: number | undefined, walletAddress?: string) {
+    if (walletAddress != this.walletService.getCurrentWallet()?.getAddress()) {
       return;
     }
 
-    this.viewingComponent.showActionLoader(progress);
+    this.currentProgressSignal.set(progress);
   }
 
-  private async showTransactionResultToUser(result: WalletActionResult) {
-    if (!this.viewingComponent) {
+  private async showTransactionResultToUser(result: WalletActionResult, walletAddress: string) {
+    if (walletAddress != this.walletService.getCurrentWallet()?.getAddress()) {
       return;
     }
-    this.viewingComponent.showActionLoader(100);
-    this.viewingComponent.setActionResult(result);
+
+    this.currentProgressSignal.set(100);
+    this.actionResultSignal.set(result);
   }
 
   private doWalletAction(
@@ -349,6 +390,8 @@ export class WalletActionService {
         });
 
         try {
+          await this.showTransactionLoaderToUser(0);
+
           await this.kaspaNetworkActionsService.connectAndDo(async () => {
             await wallet.waitForUtxoProcessorToBeReady();
 
@@ -550,7 +593,7 @@ export class WalletActionService {
     wallet: AppWallet
   ): Promise<{ isValidated: boolean; errorCode?: number }> {
 
-    if (!action.actionScript || !action.actionScript.scriptDataStringify || !action.actionScript.scriptProtocol) {
+    if (!action.actionScript || !action.actionScript.stringifyAction || !action.actionScript.type) {
       return {
         isValidated: false,
         errorCode: ERROR_CODES.WALLET_ACTION.INVALID_COMMIT_REVEAL_DATA,
@@ -559,7 +602,7 @@ export class WalletActionService {
 
     try {
 
-      const validator = this.baseProtocolClassesService.getClassesFor(action.actionScript.scriptProtocol)?.validator;
+      const validator = this.baseProtocolClassesService.getClassesFor(action.actionScript.type)?.validator;
 
       if (validator) {
         return await validator.validateCommitRevealAction(action, wallet);

@@ -15,12 +15,12 @@ export class Krc20ReviewActionDataService implements ProtocolReviewActionDataInt
 
     getActionDisplay(action: CommitRevealAction | undefined, wallet: AppWallet): ActionDisplay | undefined {
 
-        if (!action?.actionScript.scriptDataStringify) {
+        if (!action?.actionScript.stringifyAction) {
             return undefined;
         }
 
         try {
-            const operationData: KRC20OperationDataInterface = JSON.parse(action.actionScript.scriptDataStringify);
+            const operationData: KRC20OperationDataInterface = JSON.parse(action.actionScript.stringifyAction);
 
             switch (operationData.op) {
                 case KRC20OperationType.TRANSFER:

@@ -1,6 +1,4 @@
-import { KaspaScriptProtocolType } from './kaspa-network/kaspa-script-protocol-type.enum';
-import { KRC20OperationDataInterface } from './kaspa-network/krc20-operations-data.interface';
-import { ScriptData } from './kaspa-network/script-data.interface';
+import { ProtocolScript, ProtocolScriptDataAndAddress } from 'kaspacom-wallet-messages';
 import { WalletActionResultWithError } from './wallet-action-result';
 
 
@@ -66,10 +64,7 @@ export interface SignMessage {
 }
 
 export interface CommitRevealAction {
-  actionScript: {
-    scriptProtocol: KaspaScriptProtocolType;
-    scriptDataStringify: string;
-  };
+  actionScript: ProtocolScript;
   options?: {
     revealPriorityFee?: bigint;
     additionalOutputs?: { address: string; amount: bigint }[];
@@ -79,7 +74,7 @@ export interface CommitRevealAction {
         address: string;
         amount: bigint;
       }[];
-      script: ScriptData,
+      script: ProtocolScriptDataAndAddress,
     }
   };
 }

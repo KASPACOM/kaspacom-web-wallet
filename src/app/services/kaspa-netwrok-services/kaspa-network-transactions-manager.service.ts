@@ -33,24 +33,17 @@ import {
 import { RpcService } from './rpc.service';
 import { KaspaNetworkConnectionManagerService } from './kaspa-network-connection-manager.service';
 import { UtilsHelper } from '../utils.service';
-import {
-  KRC20OperationDataInterface,
-} from '../../types/kaspa-network/krc20-operations-data.interface';
 import { TotalBalanceWithUtxosInterface } from '../../types/kaspa-network/total-balance-with-utxos.interface';
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
-import { ERROR_CODES } from 'kaspacom-wallet-messages';
+import { ERROR_CODES, ProtocolScriptDataAndAddress } from 'kaspacom-wallet-messages';
 import {
   MAX_TRANSACTION_FEE,
   MINIMAL_AMOUNT_TO_SEND,
 } from './kaspa-network-actions.service';
 import { AppWallet } from '../../classes/AppWallet';
-import {
-  Krc20OperationDataService,
-} from '../protocols/krc20/krc20-operation-data.service';
-import { ScriptData } from '../../types/kaspa-network/script-data.interface';
-import { KaspaScriptProtocolType } from '../../types/kaspa-network/kaspa-script-protocol-type.enum';
 import { CommitRevealActionTransactions } from '../../types/kaspa-network/commit-reveal-action-transactions.interface';
+import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
 
 const MIN_TRANSACTION_FEE = 1817n;
 export const SUBMIT_REVEAL_MIN_UTXO_AMOUNT = 300000000n
@@ -100,10 +93,10 @@ export class KaspaNetworkTransactionsManagerService {
   }
 
   createGenericScriptFromString(
-    scriptType: KaspaScriptProtocolType,
+    scriptType: ProtocolType | string,
     dataString: string,
     walletAddress: string,
-  ): ScriptData {
+  ): ProtocolScriptDataAndAddress {
     const address = new Address(walletAddress);
 
     const buf = this.toUint8Array(dataString);
@@ -122,43 +115,7 @@ export class KaspaNetworkTransactionsManagerService {
 
     return {
       scriptAddress: scriptAddress!.toString(),
-      base64data: script.toString(),
-    };
-  }
-
-  createP2SHAddressScriptForKrc20Action(
-    data: KRC20OperationDataInterface,
-    publicKey: PublicKey
-  ): {
-    script: ScriptBuilder;
-    p2shaAddress: Address;
-  } {
-    const fixedData = {
-      ...data,
-      tick: data.tick.toLowerCase(),
-    };
-    const script = new ScriptBuilder()
-      .addData(publicKey.toXOnlyPublicKey().toString())
-      .addOp(Opcodes.OpCheckSig)
-      .addOp(Opcodes.OpFalse)
-      .addOp(Opcodes.OpIf)
-      .addData(this.toUint8Array('kasplex'))
-      .addI64(0n)
-      .addData(this.toUint8Array(JSON.stringify(fixedData)))
-      .addOp(Opcodes.OpEndIf);
-
-    const scriptAddress = addressFromScriptPublicKey(
-      script.createPayToScriptHashScript(),
-      this.rpcService.getNetwork()
-    );
-
-    if (!scriptAddress) {
-      throw new Error('Failed to create P2SH address');
-    }
-
-    return {
-      script,
-      p2shaAddress: scriptAddress!,
+      scriptData: script.toString(),
     };
   }
 
@@ -368,7 +325,7 @@ export class KaspaNetworkTransactionsManagerService {
 
   private async doProtocolCommitTransactionWithUtxoProcessor(
     wallet: AppWallet,
-    operationScript: ScriptData,
+    operationScript: ProtocolScriptDataAndAddress,
     maxPriorityFee: bigint = 0n,
     baseTransactionAmount = SUBMIT_REVEAL_MIN_UTXO_AMOUNT,
     transactionOptions: DoTransactionOptions = {}
@@ -391,7 +348,7 @@ export class KaspaNetworkTransactionsManagerService {
 
   private async doProtocolRevealTransactionWithUtxoProcessor(
     wallet: AppWallet,
-    operationScript: ScriptData,
+    operationScript: ProtocolScriptDataAndAddress,
     maxPriorityFee: bigint = 0n,
     commitUtxoTransactionId?: string,
     additionalOutputs: { address: string; amount: bigint }[] = [],
@@ -440,7 +397,7 @@ export class KaspaNetworkTransactionsManagerService {
         transaction.fillInput(
           ourOutput,
           ScriptBuilder.fromScript(
-            operationScript.base64data
+            operationScript.scriptData
           ).encodePayToScriptHashSignatureScript(signature)
         );
       }
@@ -496,7 +453,7 @@ export class KaspaNetworkTransactionsManagerService {
 
   public async doCommitRevealActionTransactionsAndNotifyWithUtxoProcessor(
     wallet: AppWallet,
-    opertaionProtocol: KaspaScriptProtocolType,
+    opertaionProtocol: ProtocolType | string,
     operationData: string,
     operationCost: bigint,
     maxPriorityFee: bigint,
@@ -654,7 +611,7 @@ export class KaspaNetworkTransactionsManagerService {
 
   async createPsktTransactionForRevealOperation(
     wallet: AppWallet,
-    script: ScriptData,
+    script: ProtocolScriptDataAndAddress,
     unxoEntryTransactionId: string,
     outputs?: {
       address: string;
@@ -720,7 +677,7 @@ export class KaspaNetworkTransactionsManagerService {
     );
 
     transaction.inputs[0].signatureScript =
-      ScriptBuilder.fromScript(script.base64data).encodePayToScriptHashSignatureScript(
+      ScriptBuilder.fromScript(script.scriptData).encodePayToScriptHashSignatureScript(
         signature
       );
 

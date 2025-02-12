@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, computed } from '@angular/core';
 import { JsonPipe, NgClass, NgFor, NgIf } from '@angular/common';
 import {
   WalletAction,
@@ -13,6 +13,7 @@ import { AppWallet } from '../../../classes/AppWallet';
 import { WalletActionResult } from 'kaspacom-wallet-messages';
 import { ReviewActionDataService } from '../../../services/review-action-data.service';
 import { ActionDisplay } from '../../../types/action-display.type';
+import { WalletActionService } from '../../../services/wallet-action.service';
 
 const TIMEOUT = 2 * 60 * 1000;
 
@@ -28,25 +29,23 @@ export class ReviewActionComponent {
   public KRC20OperationType = KRC20OperationType;
   public Number = Number;
 
+  currentActionSignal = computed(() => this.walletActionService.getActionToApproveSignal()());
+  currentProgressSignal = computed(() => this.walletActionService.getCurrentProgressSignal()());
+  actionResultSignal = computed(() => { console.log(1); return this.walletActionService.getActionResultSignal()() });
+
+
   private resolve:
     | ((result: { isApproved: boolean; priorityFee?: bigint }) => void)
     | undefined = undefined;
 
-  protected action: WalletAction | undefined = undefined;
   private timeout: NodeJS.Timeout | undefined = undefined;
 
-  // LOADER
-  protected showLoader: boolean = false;
-  protected progress: number | undefined = undefined;
-
   // Result
-  protected result: WalletActionResult | undefined = undefined;
   protected currentPriorityFee: bigint | undefined = undefined;
 
-  constructor(private walletService: WalletService, private readonly reviewActionDataService: ReviewActionDataService) {}
+  constructor(private walletService: WalletService, private walletActionService: WalletActionService, private readonly reviewActionDataService: ReviewActionDataService) { }
 
-  // PUBLIC ACTIONS
-  public requestUserConfirmation(action: WalletAction): Promise<{
+  requestUserConfirmation(action: WalletAction): Promise<{
     isApproved: boolean;
   }> {
     if (this.resolve) {
@@ -56,31 +55,17 @@ export class ReviewActionComponent {
     return this.initAction(action);
   }
 
-  public showActionLoader(progress?: number | undefined) {
-    this.showLoader = true;
-    this.progress = progress;
-  }
 
-  public hideActionLoader() {
-    this.showLoader = false;
-    this.progress = undefined;
-  }
-
-  public setActionResult(result: WalletActionResult) {
-    this.result = result;
-  }
 
   // COMPONENT MANAGEMENT
   private clearData() {
     clearTimeout(this.timeout!);
     this.resolve = undefined;
-    this.action = undefined;
-    this.result = undefined;
     this.timeout = undefined;
   }
 
   private resolveActionAndClear(isApproved: boolean, priorityFee?: bigint) {
-    this.resolve!({ isApproved, priorityFee });
+    this.currentActionSignal()?.resolve!({ isApproved, priorityFee });
     this.clearData();
   }
 
@@ -88,7 +73,6 @@ export class ReviewActionComponent {
     isApproved: boolean;
     priorityFee?: bigint;
   }> {
-    this.action = action;
     this.timeout = setTimeout(() => {
       this.resolveActionAndClear(false);
     }, TIMEOUT);
@@ -131,13 +115,14 @@ export class ReviewActionComponent {
   }
 
   protected get isActionHasPriorityFee() {
-    return this.action && this.action?.type !== WalletActionType.SIGN_MESSAGE;
+    return this.currentActionSignal && this.currentActionSignal()?.action.type !== WalletActionType.SIGN_MESSAGE;
   }
 
   protected get currentActionDisplay(): ActionDisplay | undefined {
-    return this.reviewActionDataService.getActionDisplay(this.action, this.wallet);
+    if (!this.currentActionSignal) {
+      return undefined;
+    }
+
+    return this.reviewActionDataService.getActionDisplay(this.currentActionSignal()?.action, this.wallet);
   }
-
-
-
 }

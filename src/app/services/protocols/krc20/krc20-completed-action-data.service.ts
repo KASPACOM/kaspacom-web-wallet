@@ -3,9 +3,9 @@ import { ActionDisplay } from "../../../types/action-display.type";
 import { KRC20OperationDataInterface, KRC20OperationType } from "../../../types/kaspa-network/krc20-operations-data.interface";
 import { KaspaNetworkActionsService, REVEAL_PSKT_AMOUNT } from "../../kaspa-netwrok-services/kaspa-network-actions.service";
 import { ProtocolCompletedActionDataInterface } from "../interfaces/protocol-completed-action-data.interface";
-import { CommitRevealActionResult } from "../../../types/wallet-action-result";
 import { CompletedActionDisplay } from "../../../types/completed-action-display.type";
 import { Transaction } from "../../../../../public/kaspa/kaspa";
+import { CommitRevealActionResult } from "kaspacom-wallet-messages";
 
 @Injectable({
     providedIn: 'root',

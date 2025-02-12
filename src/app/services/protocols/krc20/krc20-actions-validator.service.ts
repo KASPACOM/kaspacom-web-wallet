@@ -18,7 +18,7 @@ export class Krc20ActionsValidatorService implements ProtocolActionsValidatorInt
 
     async validateCommitRevealAction(action: CommitRevealAction, wallet: AppWallet): Promise<{ isValidated: boolean; errorCode?: number; }> {
         try {
-            const data = JSON.parse(action.actionScript.scriptDataStringify) as KRC20OperationDataInterface;
+            const data = JSON.parse(action.actionScript.stringifyAction) as KRC20OperationDataInterface;
 
             switch (data.op) {
                 case KRC20OperationType.TRANSFER:

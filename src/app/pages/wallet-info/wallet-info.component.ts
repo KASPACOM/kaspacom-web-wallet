@@ -55,7 +55,7 @@ type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
     Krc20OperationHistoryComponent,
   ],
 })
-export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
+export class WalletInfoComponent implements OnInit, OnDestroy {
   @ViewChild('reviewActionComponent')
   reviewActionComponent!: ReviewActionComponent;
 
@@ -107,12 +107,6 @@ export class WalletInfoComponent implements OnInit, AfterViewInit, OnDestroy {
       clearTimeout(this.refreshDataTimeout);
       clearTimeout(this.setUnfinishedActionsTimeout);
     }
-  }
-
-  ngAfterViewInit(): void {
-    this.walletActionService.registerViewingComponent(
-      this.reviewActionComponent
-    );
   }
 
   async loadKrc20Tokens() {

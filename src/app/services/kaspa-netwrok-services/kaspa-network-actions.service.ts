@@ -12,7 +12,10 @@ import {
 import { Injectable, Signal } from '@angular/core';
 import { DEFAULT_DERIVED_PATH, LOCAL_STORAGE_KEYS } from '../../config/consts';
 import {
+  CommitRevealActionResult,
   ERROR_CODES,
+  KasTransferActionResult,
+  ProtocolScriptDataAndAddress,
   WalletActionResult,
   WalletActionResultType,
 } from 'kaspacom-wallet-messages';
@@ -29,9 +32,7 @@ import {
 import { AppWallet } from '../../classes/AppWallet';
 import {
   SignPsktTransactionActionResult,
-  CommitRevealActionResult,
   CompoundUtxosActionResult,
-  KasTransferActionResult,
   SignedMessageActionResult,
 } from '../../types/wallet-action-result';
 import {
@@ -39,9 +40,8 @@ import {
 } from '../protocols/krc20/krc20-operation-data.service';
 import { UnfinishedCommitRevealAction } from '../../types/kaspa-network/unfinished-commit-reveal-action.interface';
 import { PsktTransaction } from '../../types/kaspa-network/pskt-transaction.interface';
-import { ScriptData } from '../../types/kaspa-network/script-data.interface';
-import { KaspaScriptProtocolType } from '../../types/kaspa-network/kaspa-script-protocol-type.enum';
 import { UtilsHelper } from '../utils.service';
+import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
 
 const MINIMAL_TRANSACTION_MASS = 10000n;
 export const MINIMAL_AMOUNT_TO_SEND = 20000000n;
@@ -224,8 +224,8 @@ export class KaspaNetworkActionsService {
       const result =
         await this.transactionsManager.doCommitRevealActionTransactionsAndNotifyWithUtxoProcessor(
           wallet,
-          action.data.actionScript.scriptProtocol,
-          action.data.actionScript.scriptDataStringify,
+          action.data.actionScript.type,
+          action.data.actionScript.stringifyAction,
           action.data.options?.revealPriorityFee || 0n,
           action.priorityFee || 0n,
           { commitTransactionId: action.data.options?.commitTransactionId },
@@ -374,8 +374,8 @@ export class KaspaNetworkActionsService {
       const result =
         await this.transactionsManager.doCommitRevealActionTransactionsAndNotifyWithUtxoProcessor(
           wallet,
-          actionData.actionScript.scriptProtocol,
-          actionData.actionScript.scriptDataStringify,
+          actionData.actionScript.type,
+          actionData.actionScript.stringifyAction,
           revealPriorityFee,
           action.priorityFee || 0n,
           { commitTransactionId: actionData.options?.commitTransactionId },
@@ -428,8 +428,8 @@ export class KaspaNetworkActionsService {
         commitTransactionId: actionData.options?.commitTransactionId || result.result?.commit!,
         revealTransactionId: result.result?.reveal!,
         performedByWallet: wallet.getAddress(),
-        protocol: actionData.actionScript.scriptProtocol,
-        protocolAction: actionData.actionScript.scriptDataStringify,
+        protocol: actionData.actionScript.type,
+        protocolAction: actionData.actionScript.stringifyAction,
         revealPsktJson: psktTransaction,
       };
 
@@ -600,8 +600,8 @@ export class KaspaNetworkActionsService {
     action: CommitRevealAction
   ): Promise<UtxoEntryReference> {
     const script = this.transactionsManager.createGenericScriptFromString(
-      action.actionScript.scriptProtocol,
-      action.actionScript.scriptDataStringify,
+      action.actionScript.type,
+      action.actionScript.stringifyAction,
       wallet.getAddress()
     );
 
@@ -621,13 +621,13 @@ export class KaspaNetworkActionsService {
 
 
   createGenericScriptFromString(
-    scriptProtocol: KaspaScriptProtocolType,
-    scriptDataStringify: string,
+    type: ProtocolType | string,
+    stringifyAction: string,
     walletAddress: string
-  ): ScriptData {
+  ): ProtocolScriptDataAndAddress {
     return this.transactionsManager.createGenericScriptFromString(
-      scriptProtocol,
-      scriptDataStringify,
+      type,
+      stringifyAction,
       walletAddress
     );
   }

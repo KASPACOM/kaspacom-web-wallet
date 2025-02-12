@@ -90,7 +90,7 @@ export class ReviewActionDataService {
 
     private getCommitRevealActionDisplay(actionData: CommitRevealAction, wallet: AppWallet): ActionDisplay {
         if (actionData) {
-            const reviewerClass = this.baseProtocolClassesService.getClassesFor(actionData.actionScript.scriptProtocol!);
+            const reviewerClass = this.baseProtocolClassesService.getClassesFor(actionData.actionScript.type!);
 
             if (reviewerClass?.actionsDataReviewer) {
                 const result = reviewerClass.actionsDataReviewer.getActionDisplay(actionData, wallet);
@@ -110,11 +110,11 @@ export class ReviewActionDataService {
                 },
                 {
                     fieldName: "Protocol",
-                    fieldValue: actionData.actionScript?.scriptProtocol || '-'
+                    fieldValue: actionData.actionScript?.type || '-'
                 },
                 {
                     fieldName: "Action",
-                    fieldValue: actionData.actionScript?.scriptDataStringify || '-',
+                    fieldValue: actionData.actionScript?.stringifyAction || '-',
                     isCodeBlock: true,
                 }
             ]

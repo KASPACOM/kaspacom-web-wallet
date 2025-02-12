@@ -1,9 +1,10 @@
 import { Injectable } from "@angular/core";
 import { KaspaNetworkActionsService } from "./kaspa-netwrok-services/kaspa-network-actions.service";
-import { SignedMessageActionResult, SignMessageActionInterface, WalletActionResult, WalletActionResultType } from "kaspacom-wallet-messages";
+import { CommitRevealActionResult, KasTransferActionResult, SignedMessageActionResult, WalletActionResult, WalletActionResultType } from "kaspacom-wallet-messages";
 import { BaseProtocolClassesService } from "./protocols/base-protocol-classes.service";
 import { CompletedActionDisplay } from "../types/completed-action-display.type";
-import { CommitRevealActionResult, CompoundUtxosActionResult, KasTransferActionResult, SignPsktTransactionActionResult } from "../types/wallet-action-result";
+import { CompoundUtxosActionResult, SignPsktTransactionActionResult } from "../types/wallet-action-result";
+import { ProtocolType } from "kaspacom-wallet-messages/dist/types/protocol-type.enum";
 
 
 @Injectable({
@@ -99,7 +100,7 @@ export class CompletedActionOverviewService {
     private getCommitRevealActionDisplay(actionData: CommitRevealActionResult): CompletedActionDisplay {
         let commitRevealData: CompletedActionDisplay | undefined = undefined;
         if (actionData) {
-            const reviewerClass = this.baseProtocolClassesService.getClassesFor(actionData.protocol);
+            const reviewerClass = this.baseProtocolClassesService.getClassesFor(actionData.protocol as ProtocolType);
 
             if (reviewerClass?.completedActionsDataReviewer) {
                 commitRevealData = reviewerClass.completedActionsDataReviewer.getActionDisplay(actionData);

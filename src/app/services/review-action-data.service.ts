@@ -129,8 +129,13 @@ export class ReviewActionDataService {
 
         if (actionData.options?.additionalOutputs?.length) {
             result.rows.push({
-                fieldName: "Additional Payments",
+                fieldName: "Additional Payments Amount",
+                fieldValue: actionData.options?.additionalOutputs?.reduce((sum, out) => sum + this.kaspaNetworkActionsService.sompiToNumber(out.amount), 0).toString() + ' KAS',
+            });
+            result.rows.push({
+                fieldName: "Additional Payments Details",
                 fieldValue: actionData.options?.additionalOutputs?.map(out => `${out.address}: ${this.kaspaNetworkActionsService.sompiToNumber(out.amount)} KAS`).join('\n') || '-',
+                isCodeBlock: true,
 
             });
         }

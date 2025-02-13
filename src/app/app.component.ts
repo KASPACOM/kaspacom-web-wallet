@@ -37,18 +37,26 @@ export class AppComponent implements OnInit, AfterViewInit {
     if (this.passwordManagerService.isUserHasSavedPassword()) {
       this.router.navigate(['/login']);
     } else {
-      this.router.navigate(['/set-password']);    
+      this.router.navigate(['/set-password']);
     }
   }
 
   ngAfterViewInit(): void {
-      let loader = this.renderer.selectRootElement('#application-loader-startup');
-      if (loader.style.display != "none") loader.style.display = "none"; //hide loader
-      loader.remove();
+    let loader = this.renderer.selectRootElement('#application-loader-startup');
+    if (loader.style.display != "none") loader.style.display = "none"; //hide loader
+    loader.remove();
   }
 
   isAllowedDomain(): boolean {
     return this.iframeCommunicationService.isApplicationDomainAllowed();
+  }
+
+  incompatibleBrowserReason(): string | undefined {
+    if (!(window.crypto && window.crypto?.subtle)) {
+      return 'Crypto not supported';
+    }
+    
+    return undefined;
   }
 
 }

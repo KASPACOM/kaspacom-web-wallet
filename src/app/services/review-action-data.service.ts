@@ -5,7 +5,7 @@ import { KaspaNetworkActionsService } from "./kaspa-netwrok-services/kaspa-netwo
 import { SignMessageActionInterface } from "kaspacom-wallet-messages";
 import { ActionDisplay } from "../types/action-display.type";
 import { BaseProtocolClassesService } from "./protocols/base-protocol-classes.service";
-import { Transaction } from "../../../public/kaspa/kaspa";
+import { kaspaToSompi, Transaction } from "../../../public/kaspa/kaspa";
 
 
 @Injectable({
@@ -90,7 +90,7 @@ export class ReviewActionDataService {
 
     private getCommitRevealActionDisplay(actionData: CommitRevealAction, wallet: AppWallet): ActionDisplay {
         if (actionData) {
-            const reviewerClass = this.baseProtocolClassesService.getClassesFor(actionData.actionScript.scriptProtocol!);
+            const reviewerClass = this.baseProtocolClassesService.getClassesFor(actionData.actionScript.type!);
 
             if (reviewerClass?.actionsDataReviewer) {
                 const result = reviewerClass.actionsDataReviewer.getActionDisplay(actionData, wallet);
@@ -101,7 +101,7 @@ export class ReviewActionDataService {
             }
         }
 
-        return {
+        const result = {
             title: "Do Protocol Action",
             rows: [
                 {
@@ -110,22 +110,39 @@ export class ReviewActionDataService {
                 },
                 {
                     fieldName: "Protocol",
-                    fieldValue: actionData.actionScript?.scriptProtocol || '-'
+                    fieldValue: actionData.actionScript?.type || '-'
                 },
                 {
                     fieldName: "Action",
-                    fieldValue: actionData.actionScript?.scriptDataStringify || '-',
+                    fieldValue: actionData.actionScript?.stringifyAction || '-',
                     isCodeBlock: true,
                 }
             ]
         }
+
+        if (actionData.options?.commitTransactionId) {
+            result.rows.push({
+                fieldName: "Commit Transaction ID",
+                fieldValue: actionData.options?.commitTransactionId
+            })
+        }
+
+        if (actionData.options?.additionalOutputs?.length) {
+            result.rows.push({
+                fieldName: "Additional Payments",
+                fieldValue: actionData.options?.additionalOutputs?.map(out => `${out.address}: ${this.kaspaNetworkActionsService.sompiToNumber(out.amount)} KAS`).join('\n') || '-',
+
+            });
+        }
+
+        return result;
     }
 
     private getSignPsktTransactionActionDisplay(actionData: SignPsktTransactionAction, wallet: AppWallet): ActionDisplay {
         const transactionData = Transaction.deserializeFromSafeJSON(actionData.psktTransactionJson);
 
         const inputsSum = transactionData.inputs.reduce((sum, input) => sum + input.utxo!.amount, 0n);
-        
+
         if (inputsSum > 0n && transactionData.outputs[0]) {
             transactionData.outputs[0].value = transactionData.outputs[0].value - inputsSum;
         }

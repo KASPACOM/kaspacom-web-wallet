@@ -1,11 +1,11 @@
 import { Injectable } from "@angular/core";
 import { WalletAction, WalletActionType } from "../../../types/wallet-action";
-import { KaspaScriptProtocolType } from "../../../types/kaspa-network/kaspa-script-protocol-type.enum";
 import { KRC20_TRANSACTIONS_PRICE, Krc20OperationDataService } from "./krc20-operation-data.service";
 import { KaspaNetworkActionsService, REVEAL_PSKT_AMOUNT } from "../../kaspa-netwrok-services/kaspa-network-actions.service";
 import { UtilsHelper } from "../../utils.service";
+import { ProtocolType } from "kaspacom-wallet-messages/dist/types/protocol-type.enum";
 
-const CURRENT_PROTOCOL = KaspaScriptProtocolType.KASPLEX;
+const CURRENT_PROTOCOL = ProtocolType.KASPLEX;
 
 
 @Injectable({
@@ -22,8 +22,8 @@ export class Krc20WalletActionService {
             type: WalletActionType.COMMIT_REVEAL,
             data: {
                 actionScript: {
-                    scriptProtocol: CURRENT_PROTOCOL,
-                    scriptDataStringify: this.utils.stringifyProtocolAction(this.krc20OperationDataService.getTransferData(ticker, amount, to)),
+                    type: CURRENT_PROTOCOL,
+                    stringifyAction: this.utils.stringifyProtocolAction(this.krc20OperationDataService.getTransferData(ticker, amount, to)),
                 },
                 options: {
                     revealPriorityFee: KRC20_TRANSACTIONS_PRICE.TRANSFER,
@@ -37,8 +37,8 @@ export class Krc20WalletActionService {
             type: WalletActionType.COMMIT_REVEAL,
             data: {
                 actionScript: {
-                    scriptProtocol: CURRENT_PROTOCOL,
-                    scriptDataStringify: this.utils.stringifyProtocolAction(this.krc20OperationDataService.getMintData(ticker)),
+                    type: CURRENT_PROTOCOL,
+                    stringifyAction: this.utils.stringifyProtocolAction(this.krc20OperationDataService.getMintData(ticker)),
                 },
                 options: {
                     revealPriorityFee: KRC20_TRANSACTIONS_PRICE.MINT,
@@ -57,8 +57,8 @@ export class Krc20WalletActionService {
             type: WalletActionType.COMMIT_REVEAL,
             data: {
                 actionScript: {
-                    scriptProtocol: CURRENT_PROTOCOL,
-                    scriptDataStringify: this.utils.stringifyProtocolAction(this.krc20OperationDataService.getDeployData(ticker, maxSupply, limitPerMint, preAllocation)),
+                    type: CURRENT_PROTOCOL,
+                    stringifyAction: this.utils.stringifyProtocolAction(this.krc20OperationDataService.getDeployData(ticker, maxSupply, limitPerMint, preAllocation)),
                 },
                 options: {
                     revealPriorityFee: KRC20_TRANSACTIONS_PRICE.DEPLOY,
@@ -87,8 +87,8 @@ export class Krc20WalletActionService {
             type: WalletActionType.COMMIT_REVEAL,
             data: {
                 actionScript: {
-                    scriptProtocol: CURRENT_PROTOCOL,
-                    scriptDataStringify: this.utils.stringifyProtocolAction(this.krc20OperationDataService.getListData(ticker, amount)),
+                    type: CURRENT_PROTOCOL,
+                    stringifyAction: this.utils.stringifyProtocolAction(this.krc20OperationDataService.getListData(ticker, amount)),
                 },
                 options: {
                     additionalOutputs: [{
@@ -114,8 +114,8 @@ export class Krc20WalletActionService {
             type: WalletActionType.COMMIT_REVEAL,
             data: {
                 actionScript: {
-                    scriptProtocol: CURRENT_PROTOCOL,
-                    scriptDataStringify: this.utils.stringifyProtocolAction(this.krc20OperationDataService.getSendData(ticker)),
+                    type: CURRENT_PROTOCOL,
+                    stringifyAction: this.utils.stringifyProtocolAction(this.krc20OperationDataService.getSendData(ticker)),
                 },
                 options: {
                     commitTransactionId: transactionId

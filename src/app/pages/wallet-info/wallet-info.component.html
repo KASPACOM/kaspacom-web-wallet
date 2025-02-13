@@ -106,7 +106,7 @@
             Deploy
           </button>
           <!-- This is for development -->
-          <button
+          <!-- <button
             class="tab-button"
             [class.active]="activeTab === 'list'"
             (click)="switchTab('list')"
@@ -119,7 +119,7 @@
             (click)="switchTab('buy')"
           >
             Buy
-          </button>
+          </button> -->
         </div>
 
         <!-- Tab Content -->
@@ -134,12 +134,12 @@
             <deploy></deploy>
           </div>
           <!-- This is for development -->
-          <div *ngIf="activeTab === 'list'" class="list-container">
+          <!-- <div *ngIf="activeTab === 'list'" class="list-container">
             <list-krc20-token></list-krc20-token>
           </div>
           <div *ngIf="activeTab === 'buy'" class="list-container">
             <buy-krc20-token></buy-krc20-token>
-          </div>
+          </div> -->
         </div>
       </div>
     </div>

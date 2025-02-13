@@ -10,7 +10,6 @@ import { CompletedActionReview } from '../completed-action-review/completed-acti
 import { KRC20OperationType } from '../../../types/kaspa-network/krc20-operations-data.interface';
 import { PriorityFeeSelectionComponent } from '../priority-fee-selection/priority-fee-selection.component';
 import { AppWallet } from '../../../classes/AppWallet';
-import { WalletActionResult } from 'kaspacom-wallet-messages';
 import { ReviewActionDataService } from '../../../services/review-action-data.service';
 import { ActionDisplay } from '../../../types/action-display.type';
 import { WalletActionService } from '../../../services/wallet-action.service';
@@ -31,7 +30,7 @@ export class ReviewActionComponent {
 
   currentActionSignal = computed(() => this.walletActionService.getActionToApproveSignal()());
   currentProgressSignal = computed(() => this.walletActionService.getCurrentProgressSignal()());
-  actionResultSignal = computed(() => { console.log(1); return this.walletActionService.getActionResultSignal()() });
+  actionResultSignal = computed(() =>this.walletActionService.getActionResultSignal()() );
 
 
   private resolve:

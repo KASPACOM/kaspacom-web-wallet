@@ -1,5 +1,6 @@
-import { ProtocolScript, ProtocolScriptDataAndAddress } from 'kaspacom-wallet-messages';
+import { ProtocolScript, ProtocolScriptDataAndAddress, PsktActionsEnum } from 'kaspacom-wallet-messages';
 import { WalletActionResultWithError } from './wallet-action-result';
+import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
 
 
 export enum WalletActionType {
@@ -57,6 +58,8 @@ export interface ActionWithPsktGenerationData {
 export interface SignPsktTransactionAction {
   psktTransactionJson: string;
   submitTransaction?: boolean;
+  protocol?: ProtocolType | string;
+  type?: PsktActionsEnum | string;
 }
 
 export interface SignMessage {

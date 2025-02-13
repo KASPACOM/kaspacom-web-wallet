@@ -10,7 +10,7 @@ import {
 } from '../types/wallet-action';
 import { AssetType, TransferableAsset } from '../types/transferable-asset';
 import { WalletService } from './wallet.service';
-import { ERROR_CODES, WalletActionResult } from 'kaspacom-wallet-messages';
+import { ERROR_CODES, PsktActionsEnum, WalletActionResult } from 'kaspacom-wallet-messages';
 import { UtilsHelper } from './utils.service';
 import {
   KaspaNetworkActionsService,
@@ -24,6 +24,7 @@ import { PsktTransaction } from '../types/kaspa-network/pskt-transaction.interfa
 import { Krc20WalletActionService } from './protocols/krc20/krc20-wallet-actions.service';
 import { BaseProtocolClassesService } from './protocols/base-protocol-classes.service';
 import { Router } from '@angular/router';
+import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
 
 const INSTANT_ACTIONS: { [key: string]: boolean } = {
   [WalletActionType.SIGN_MESSAGE]: true,
@@ -170,13 +171,17 @@ export class WalletActionService {
 
   createSignPsktAction(
     psktDataJson: string,
-    submitTransaction: boolean = false
+    submitTransaction: boolean = false,
+    protocol?: ProtocolType | string,
+    type?: PsktActionsEnum | string,
   ): WalletAction {
     return {
       type: WalletActionType.SIGN_PSKT_TRANSACTION,
       data: {
         psktTransactionJson: psktDataJson,
         submitTransaction,
+        protocol, 
+        type,
       },
     };
   }

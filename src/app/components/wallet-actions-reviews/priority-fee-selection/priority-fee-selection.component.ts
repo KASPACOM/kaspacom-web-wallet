@@ -64,6 +64,7 @@ export class PriorityFeeSelectionComponent implements OnChanges {
   protected customFee: number = 0;
   protected selectedOption: AvailableOption = 'normal';
   protected additionalPriorityFee: bigint | undefined = undefined;
+  protected showPriorityFeeSelection: boolean = false;
 
   constructor(
     protected kaspaNetworkActionsService: KaspaNetworkActionsService,
@@ -94,6 +95,8 @@ export class PriorityFeeSelectionComponent implements OnChanges {
     );
 
     this.transactionMass = BigInt(maxTransactionMass);
+
+    this.showPriorityFeeSelection = this.currentFeeRates?.lowBuckets[0].feerate != this.currentFeeRates?.priorityBucket.feerate
 
     this.currentOptions = {
       low: {

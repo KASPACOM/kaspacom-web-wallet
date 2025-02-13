@@ -16,6 +16,8 @@ import {
   ERROR_CODES,
   KasTransferActionResult,
   ProtocolScriptDataAndAddress,
+  SignedMessageActionResult,
+  SignPsktTransactionActionResult,
   WalletActionResult,
   WalletActionResultType,
 } from 'kaspacom-wallet-messages';
@@ -31,9 +33,7 @@ import {
 } from '../../types/wallet-action';
 import { AppWallet } from '../../classes/AppWallet';
 import {
-  SignPsktTransactionActionResult,
   CompoundUtxosActionResult,
-  SignedMessageActionResult,
 } from '../../types/wallet-action-result';
 import {
   Krc20OperationDataService,

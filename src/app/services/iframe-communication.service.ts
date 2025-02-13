@@ -10,6 +10,7 @@ import { Subscription } from 'rxjs';
 import { CommitRevealAction, WalletAction } from '../types/wallet-action';
 import { WalletActionResultWithError } from '../types/wallet-action-result';
 import { ERROR_CODES, WalletActionRequestPayloadInterface, WalletActionTypeEnum, WalletMessageInterface, WalletMessageTypeEnum } from 'kaspacom-wallet-messages';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root',
@@ -23,7 +24,8 @@ export class IFrameCommunicationService {
     private walletActionsService: WalletActionService,
     private walletService: WalletService,
     private readonly kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private readonly injector: EnvironmentInjector
+    private readonly injector: EnvironmentInjector,
+    private router: Router,
   ) {
     toObservable(this.walletService.getCurrentWalletSignal()).subscribe(
       this.onWalletSelected.bind(this)
@@ -70,14 +72,15 @@ export class IFrameCommunicationService {
         throw new Error('Application domain not allowed');
       }
 
-      console.log('WALLET GOT EVENT', event);
-
       const message = event.data as WalletMessageInterface;
 
       if (message?.type) {
         switch (message.type) {
           case WalletMessageTypeEnum.WalletActionRequest:
             await this.handleWalletActionRequest(message.payload, message.uuid);
+            break;
+          case WalletMessageTypeEnum.OpenWalletInfo:
+            this.router.navigate(['/wallet-info']);
             break;
         }
       }
@@ -156,14 +159,25 @@ export class IFrameCommunicationService {
         errorCode: ERROR_CODES.WALLET_ACTION.WALLET_NOT_SELECTED,
       }
     } else {
-      let action: WalletAction | undefined =
-        this.getMessageWalletAction(actionData);
+      if (actionData.action == WalletActionTypeEnum.GetProtocolScriptData) {
+        result = {
+          success: true,
+          result: await this.kaspaNetworkActionsService.createGenericScriptFromString(
+            actionData.data.type,
+            actionData.data.stringifyAction,
+            this.walletService.getCurrentWallet()!.getAddress(),
+          ) as any,
+        }
+      } else {
+        let action: WalletAction | undefined =
+          this.getMessageWalletAction(actionData);
 
-      if (action) {
-        result = await this.walletActionsService.validateAndDoActionAfterApproval(
-          action,
-          true
-        );
+        if (action) {
+          result = await this.walletActionsService.validateAndDoActionAfterApproval(
+            action,
+            true
+          );
+        }
       }
     }
 
@@ -223,7 +237,8 @@ export class IFrameCommunicationService {
                     output.amount
                   ),
                 })
-            )} : undefined,
+              )
+            } : undefined,
 
 
           }
@@ -240,6 +255,14 @@ export class IFrameCommunicationService {
             actionData.data.amount
           ),
           this.walletService.getCurrentWallet()!,
+        );
+
+      case WalletActionTypeEnum.SignPsktTransaction:
+        return this.walletActionsService.createSignPsktAction(
+          actionData.data.psktTransactionJson,
+          actionData.data.submitTransaction,
+          actionData.data.protocol,
+          actionData.data.protocolAction,
         );
     }
 

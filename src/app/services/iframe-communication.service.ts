@@ -44,10 +44,6 @@ export class IFrameCommunicationService {
   }
 
   isApplicationDomainAllowed(): boolean {
-    if (!this.isIframe()) {
-      return true;
-    }
-
     const topUrl = this.getTopUrl();
 
     return this.isAllowedDomain(topUrl);

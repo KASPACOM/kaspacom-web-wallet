@@ -82,6 +82,9 @@ export class IFrameCommunicationService {
           case WalletMessageTypeEnum.OpenWalletInfo:
             this.router.navigate(['/wallet-info']);
             break;
+          case WalletMessageTypeEnum.RejectWalletActionRequest: 
+            this.walletActionsService.resolveCurrentWaitingForApproveAction(false);
+            break;
         }
       }
     });
@@ -123,7 +126,7 @@ export class IFrameCommunicationService {
   private async sendUpdateWalletInfoEvent(wallet: AppWallet | undefined) {
     const message: WalletMessageInterface = {
       type: WalletMessageTypeEnum.WalletInfo,
-      payload: null,
+      payload: undefined,
     };
 
     if (wallet) {

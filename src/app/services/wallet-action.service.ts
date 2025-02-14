@@ -180,7 +180,7 @@ export class WalletActionService {
       data: {
         psktTransactionJson: psktDataJson,
         submitTransaction,
-        protocol, 
+        protocol,
         type,
       },
     };
@@ -707,4 +707,14 @@ export class WalletActionService {
 
     return Array.from(new Set(busyWallets));
   }
+
+
+  resolveCurrentWaitingForApproveAction(isApproved: boolean, priorityFee?: bigint) {
+    if (this.getActionToApproveSignal()?.() && this.getActionToApproveSignal()?.()?.resolve) {
+      this.getActionToApproveSignal()()!.resolve({
+        isApproved, priorityFee,
+      });
+    }
+  }
+
 }

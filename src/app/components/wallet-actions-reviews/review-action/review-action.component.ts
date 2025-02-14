@@ -64,7 +64,7 @@ export class ReviewActionComponent {
   }
 
   private resolveActionAndClear(isApproved: boolean, priorityFee?: bigint) {
-    this.currentActionSignal()?.resolve!({ isApproved, priorityFee });
+    this.walletActionService.resolveCurrentWaitingForApproveAction(isApproved, priorityFee);
     this.clearData();
   }
 

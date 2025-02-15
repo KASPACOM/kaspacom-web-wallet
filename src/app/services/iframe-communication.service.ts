@@ -78,7 +78,7 @@ export class IFrameCommunicationService {
           case WalletMessageTypeEnum.OpenWalletInfo:
             this.router.navigate(['/wallet-info']);
             break;
-          case WalletMessageTypeEnum.RejectWalletActionRequest: 
+          case WalletMessageTypeEnum.RejectWalletActionRequest:
             this.walletActionsService.resolveCurrentWaitingForApproveAction(false);
             break;
         }
@@ -174,7 +174,14 @@ export class IFrameCommunicationService {
         if (action) {
           result = await this.walletActionsService.validateAndDoActionAfterApproval(
             action,
-            true
+            true,
+            async () => {
+              this.sendMessageToApp({
+                type: WalletMessageTypeEnum.WalletActionApproved,
+                uuid,
+                payload: actionData,
+              })
+            }
           );
         }
       }

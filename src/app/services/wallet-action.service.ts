@@ -198,6 +198,7 @@ export class WalletActionService {
   async validateAndDoActionAfterApproval(
     action: WalletAction,
     isFromIframe: boolean = false,
+    onActionApproval: undefined | (() => Promise<void>) = undefined
   ): Promise<WalletActionResultWithError> {
     const validationResult = await this.validateAction(
       action,
@@ -218,6 +219,8 @@ export class WalletActionService {
         errorCode: ERROR_CODES.WALLET_ACTION.USER_REJECTED,
       };
     }
+
+    await onActionApproval?.();
 
     action.priorityFee = result.priorityFee || action.priorityFee;
 

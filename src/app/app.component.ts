@@ -5,6 +5,7 @@ import { AppHeaderComponent } from './components/app-header/app-header.component
 import { KaspaNetworkActionsService } from './services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { isPlatformBrowser, NgIf } from '@angular/common';
 import { IFrameCommunicationService } from './services/iframe-communication.service';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -48,14 +49,15 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   isAllowedDomain(): boolean {
-    return this.iframeCommunicationService.isAllowedDomain(window.location.href);
+    const hostname = new URL(window.location.hostname).hostname;
+    return environment.allowedDomains.includes(hostname);
   }
 
   incompatibleBrowserReason(): string | undefined {
     if (!(window.crypto && window.crypto?.subtle)) {
       return 'Crypto not supported';
     }
-    
+
     return undefined;
   }
 

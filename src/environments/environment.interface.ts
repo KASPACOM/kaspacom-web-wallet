@@ -5,4 +5,6 @@ export interface Environment {
   kaspaApiBaseurl: string;
   kaspaNetwork: string;
   allowedDomains: string[];
+  allowedIframeDomains: string[],
+,
 }

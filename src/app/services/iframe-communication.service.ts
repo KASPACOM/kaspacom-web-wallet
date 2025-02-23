@@ -34,9 +34,9 @@ export class IFrameCommunicationService {
     }
   }
 
-  isAllowedDomain(domain: string): boolean {
+  isIframeAllowedDomain(domain: string): boolean {
     const hostname = new URL(domain).hostname;
-    return environment.allowedDomains.includes(hostname);
+    return environment.allowedIframeDomains.includes(hostname);
   }
 
   isIframe(): boolean {
@@ -45,10 +45,10 @@ export class IFrameCommunicationService {
     );
   }
 
-  isApplicationDomainAllowed(): boolean {
+  isIframeApplicationDomainAllowed(): boolean {
     const topUrl = this.getTopUrl();
 
-    return this.isAllowedDomain(topUrl);
+    return this.isIframeAllowedDomain(topUrl);
   }
 
   private getTopUrl() {
@@ -56,7 +56,7 @@ export class IFrameCommunicationService {
   }
 
   private async sendMessageToApp(message: WalletMessageInterface) {
-    if (!this.isApplicationDomainAllowed()) {
+    if (!this.isIframeApplicationDomainAllowed()) {
       throw new Error('Application domain not allowed');
     }
 
@@ -66,7 +66,7 @@ export class IFrameCommunicationService {
   initIframeMessaging() {
     this.initWalletEvents();
     window.addEventListener('message', async (event) => {
-      if (!this.isAllowedDomain(event.origin)) {
+      if (!this.isIframeAllowedDomain(event.origin)) {
         throw new Error('Application domain not allowed');
       }
 

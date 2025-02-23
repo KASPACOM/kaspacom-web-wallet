@@ -49,8 +49,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   isAllowedDomain(): boolean {
-    const hostname = new URL(window.location.hostname).hostname;
-    return environment.allowedDomains.includes(hostname);
+    return environment.allowedDomains.includes(window.location.hostname);
   }
 
   incompatibleBrowserReason(): string | undefined {

@@ -48,7 +48,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   isAllowedDomain(): boolean {
-    return this.iframeCommunicationService.isApplicationDomainAllowed();
+    return this.iframeCommunicationService.isAllowedDomain(window.location.href);
   }
 
   incompatibleBrowserReason(): string | undefined {

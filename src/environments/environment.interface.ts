@@ -6,5 +6,4 @@ export interface Environment {
   kaspaNetwork: string;
   allowedDomains: string[];
   allowedIframeDomains: string[],
-,
 }

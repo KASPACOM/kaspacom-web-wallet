@@ -35,10 +35,10 @@ const INSTANT_ACTIONS: { [key: string]: boolean } = {
 })
 export class WalletActionService {
   private actionsListByWallet = signal<{
-    [walletId: number]: WalletActionListItem[];
+    [walletIdWithAccount: string]: WalletActionListItem[];
   }>({});
   private isActionsRunningByWallet = signal<{
-    [walletId: number]: boolean;
+    [walletIdWithAccount: string]: boolean;
   }>({});
   private actionToApprove = signal<{
     action: WalletAction;
@@ -63,17 +63,17 @@ export class WalletActionService {
     toObservable(
       this.kaspaNetworkActionsService.getConnectionStatusSignal()
     ).subscribe((status) => {
-      const walletsThatHaveWork = this.getWalletIdsThatHaveWork();
+      const walletsThatHaveWork = this.getWalletIdsWithAccountsThatHaveWork();
       if (status == RpcConnectionStatus.CONNECTED) {
-        for (const walletId of walletsThatHaveWork) {
+        for (const walletIdAndAccount of walletsThatHaveWork) {
           this.walletService
-            .getWalletById(walletId)
+            .getWalletByIdAndAccount(walletIdAndAccount)
             ?.startListiningToWalletActions();
         }
         if (
           this.walletService.getCurrentWallet() &&
           !walletsThatHaveWork.includes(
-            this.walletService.getCurrentWallet()!.getId()
+            this.walletService.getCurrentWallet()!.getIdWithAccount()
           )
         ) {
           this.walletService
@@ -81,15 +81,15 @@ export class WalletActionService {
             ?.startListiningToWalletActions();
         }
       } else {
-        for (const walletId of walletsThatHaveWork) {
+        for (const walletIdAndAccount of walletsThatHaveWork) {
           this.walletService
-            .getWalletById(walletId)
+            .getWalletByIdAndAccount(walletIdAndAccount)
             ?.stopListiningToWalletActions();
         }
         if (
           this.walletService.getCurrentWallet() &&
           !walletsThatHaveWork.includes(
-            this.walletService.getCurrentWallet()!.getId()
+            this.walletService.getCurrentWallet()!.getIdWithAccount()
           )
         ) {
           this.walletService.getCurrentWallet()?.stopListiningToWalletActions();
@@ -319,7 +319,7 @@ export class WalletActionService {
       );
     }
 
-    const walletId = this.walletService.getCurrentWallet()!.getId();
+    const walletIdWithAccount = this.walletService.getCurrentWallet()!.getIdWithAccount();
     let resolve: (walletActionResult: WalletActionResultWithError) => void;
     let reject: (error: any) => void;
 
@@ -329,7 +329,7 @@ export class WalletActionService {
         reject = rej;
       });
 
-    const actionsListByWallet = this.actionsListByWallet()![walletId] || [];
+    const actionsListByWallet = this.actionsListByWallet()![walletIdWithAccount] || [];
 
     actionsListByWallet.push({
       action,
@@ -357,26 +357,26 @@ export class WalletActionService {
 
     this.actionsListByWallet.set({
       ...this.actionsListByWallet(),
-      [walletId]: actionsListByWallet,
+      [walletIdWithAccount]: actionsListByWallet,
     });
 
-    this.startProcessingActionsOnActionListIfNotRunning(walletId);
+    this.startProcessingActionsOnActionListIfNotRunning(walletIdWithAccount);
 
     return promise;
   }
 
   private async startProcessingActionsOnActionListIfNotRunning(
-    walletId: number
+    walletIdWithAccount: string
   ) {
-    if (this.isActionsRunningByWallet()[walletId]) {
+    if (this.isActionsRunningByWallet()[walletIdWithAccount]) {
       return;
     }
 
-    const wallet = this.walletService.getWalletById(walletId);
+    const wallet = this.walletService.getWalletByIdAndAccount(walletIdWithAccount);
 
     this.isActionsRunningByWallet.set({
       ...this.isActionsRunningByWallet(),
-      [walletId]: true,
+      [walletIdWithAccount]: true,
     });
     wallet?.setIsCurrentlyActive(true);
 
@@ -386,15 +386,15 @@ export class WalletActionService {
       }
 
       while (
-        this.actionsListByWallet()[walletId] &&
-        this.actionsListByWallet()[walletId].length > 0
+        this.actionsListByWallet()[walletIdWithAccount] &&
+        this.actionsListByWallet()[walletIdWithAccount].length > 0
       ) {
-        const actionsList = this.actionsListByWallet()[walletId];
+        const actionsList = this.actionsListByWallet()[walletIdWithAccount];
         const action = actionsList!.shift()!;
 
         this.actionsListByWallet.set({
           ...this.actionsListByWallet(),
-          [walletId]: actionsList,
+          [walletIdWithAccount]: actionsList,
         });
 
         try {
@@ -434,11 +434,11 @@ export class WalletActionService {
     } finally {
       this.isActionsRunningByWallet.set({
         ...this.isActionsRunningByWallet(),
-        [walletId]: false,
+        [walletIdWithAccount]: false,
       });
       wallet?.setIsCurrentlyActive(false);
 
-      if (this.walletService.getCurrentWallet()?.getId() != walletId) {
+      if (this.walletService.getCurrentWallet()?.getIdWithAccount() != walletIdWithAccount) {
         wallet?.stopListiningToWalletActions();
       }
     }
@@ -688,23 +688,23 @@ export class WalletActionService {
   }
 
   getActiveWalletActionProcessors(): Signal<{
-    [walletId: number]: boolean;
+    [walletIdAndAccount: string]: boolean;
   }> {
     return this.isActionsRunningByWallet.asReadonly();
   }
 
-  getWalletIdsThatHaveWork(): number[] {
+  getWalletIdsWithAccountsThatHaveWork(): string[] {
     const busyWallets = [];
 
-    for (let walletId in this.isActionsRunningByWallet()) {
-      if (this.isActionsRunningByWallet()[+walletId]) {
-        busyWallets.push(+walletId);
+    for (let walletIdWithAccount in this.isActionsRunningByWallet()) {
+      if (this.isActionsRunningByWallet()[walletIdWithAccount]) {
+        busyWallets.push(walletIdWithAccount);
       }
     }
 
-    for (let walletId in this.actionsListByWallet()) {
-      if (this.actionsListByWallet()[+walletId].length > 0) {
-        busyWallets.push(+walletId);
+    for (let walletIdWithAccount in this.actionsListByWallet()) {
+      if (this.actionsListByWallet()[walletIdWithAccount].length > 0) {
+        busyWallets.push(walletIdWithAccount);
       }
     }
 

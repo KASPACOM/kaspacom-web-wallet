@@ -87,6 +87,7 @@ export class PriorityFeeSelectionComponent implements OnChanges {
         }),
       this.kaspaNetworkActionsService.getEstimateFeeRates().then((result) => {
         this.currentFeeRates = result;
+        console.log('fee rates', result);
       }),
     ]);
 
@@ -100,22 +101,22 @@ export class PriorityFeeSelectionComponent implements OnChanges {
 
     this.currentOptions = {
       low: {
-        priorityFee: BigInt(
-          this.currentFeeRates!.lowBuckets[0].feerate * maxTransactionMass
+        priorityFee: BigInt(Math.round(
+          this.currentFeeRates!.lowBuckets[0].feerate * maxTransactionMass)
         ),
 
         estimatedSeconds: this.currentFeeRates!.lowBuckets[0].estimatedSeconds,
       },
       normal: {
-        priorityFee: BigInt(
-          this.currentFeeRates!.normalBuckets[0].feerate * maxTransactionMass
+        priorityFee: BigInt(Math.round(
+          this.currentFeeRates!.normalBuckets[0].feerate * maxTransactionMass)
         ),
         estimatedSeconds:
           this.currentFeeRates!.normalBuckets[0].estimatedSeconds,
       },
       priority: {
-        priorityFee: BigInt(
-          this.currentFeeRates!.priorityBucket.feerate * maxTransactionMass
+        priorityFee: BigInt(Math.round(
+          this.currentFeeRates!.priorityBucket.feerate * maxTransactionMass)
         ),
         estimatedSeconds: this.currentFeeRates!.priorityBucket.estimatedSeconds,
       },

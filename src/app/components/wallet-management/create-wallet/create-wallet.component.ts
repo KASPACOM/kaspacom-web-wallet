@@ -53,9 +53,10 @@ export class CreateWalletComponent implements OnInit {
         'Saved Wallet ' + walletCount,
         this.mnemonic.trim(),
         DEFAULT_DERIVED_PATH,
+        '#' + this.walletService.getWalletAccountNumberFromDerivedPath(DEFAULT_DERIVED_PATH),
         this.utils.isNullOrEmptyString(this.password)
           ? undefined
-          : this.password
+          : this.password,
       );
 
       if (walletAdditionResult && walletAdditionResult.sucess) {

@@ -109,8 +109,8 @@ export class WalletActionService {
         amount,
         to: targetWalletAddress,
         sendAll:
-          !!(wallet.getWalletUtxoStateBalanceSignal()()?.mature &&
-            wallet.getWalletUtxoStateBalanceSignal()()?.mature == amount),
+          !!(wallet.getCurrentWalletStateBalanceSignalValue()?.mature &&
+            wallet.getCurrentWalletStateBalanceSignalValue()?.mature == amount),
       },
     };
   }
@@ -389,6 +389,8 @@ export class WalletActionService {
         this.actionsListByWallet()[walletIdWithAccount] &&
         this.actionsListByWallet()[walletIdWithAccount].length > 0
       ) {
+        await wallet.waitForWalletToBeReadyForTransactions();
+
         const actionsList = this.actionsListByWallet()[walletIdWithAccount];
         const action = actionsList!.shift()!;
 
@@ -401,7 +403,7 @@ export class WalletActionService {
           await this.showTransactionLoaderToUser(0);
 
           await this.kaspaNetworkActionsService.connectAndDo(async () => {
-            await wallet.waitForUtxoProcessorToBeReady();
+            // await wallet.waitForUtxoProcessorToBeReady();
 
             const validationResult = await this.validateAction(
               action.action,
@@ -522,7 +524,7 @@ export class WalletActionService {
       !isRevealOnly
     ) {
       const currentBalance =
-        wallet?.getWalletUtxoStateBalanceSignal()()?.mature || 0n;
+        wallet?.getCurrentWalletStateBalanceSignalValue()?.mature || 0n;
 
       const requiredKaspaAmount =
         await this.kaspaNetworkActionsService.getMinimalRequiredAmountForAction(
@@ -543,7 +545,6 @@ export class WalletActionService {
   private async validateCompoundUtxosAction(
     wallet: AppWallet
   ): Promise<{ isValidated: boolean; errorCode?: number }> {
-    await wallet.getUtxoProcessorManager()?.waitForPendingUtxoToFinish();
 
     if ((wallet.getBalanceSignal()()?.utxoEntries.length || 0) < 2) {
       return {
@@ -583,7 +584,7 @@ export class WalletActionService {
     }
 
     const currentBalance =
-      wallet.getWalletUtxoStateBalanceSignal()()?.mature || 0n;
+      wallet.getCurrentWalletStateBalanceSignalValue()?.mature || 0n;
     if (currentBalance < action.amount) {
       return {
         isValidated: false,

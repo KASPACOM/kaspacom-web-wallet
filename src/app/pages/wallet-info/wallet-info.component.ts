@@ -1,6 +1,7 @@
 import {
   AfterViewInit,
   Component,
+  computed,
   OnDestroy,
   OnInit,
   ViewChild,
@@ -28,6 +29,7 @@ import { UtxosListComponent } from '../../components/history-info-components/utx
 import { TransactionHistoryComponent } from '../../components/history-info-components/transaction-history/transaction-history.component';
 import { Krc20OperationHistoryComponent } from '../../components/history-info-components/krc20-operation-history/krc20-operation-history.component';
 import { OperationDetails } from '../../services/kasplex-api/dtos/operation-details-response';
+import { MempoolTransactionsComponent } from '../../components/history-info-components/mempool-transactions/mempool-transactions.component';
 
 type ActionTabs = 'send' | 'mint' | 'deploy' | 'list' | 'buy';
 type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
@@ -53,6 +55,7 @@ type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
     UtxosListComponent,
     TransactionHistoryComponent,
     Krc20OperationHistoryComponent,
+    MempoolTransactionsComponent,
   ],
 })
 export class WalletInfoComponent implements OnInit, OnDestroy {
@@ -89,6 +92,9 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
     private walletActionService: WalletActionService,
     private kaspaApiService: KaspaApiService
   ) {}
+
+  walletUtxoStateBalanceSignal = computed(() => this.wallet?.getCurrentWalletStateBalanceSignalValue());
+
 
   ngOnInit(): void {
     this.wallet = this.walletService.getCurrentWallet();

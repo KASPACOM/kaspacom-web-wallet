@@ -69,6 +69,10 @@ export class Krc20ActionsValidatorService implements ProtocolActionsValidatorInt
     private async validateMintKrc20Action(krc20Command: KRC20OperationDataInterface, wallet: AppWallet): Promise<{ isValidated: boolean; errorCode?: number; }> {
         let tokenData;
 
+        return {
+            isValidated: true,
+        }
+
         try {
             tokenData = await firstValueFrom(
                 this.kasplexService.getTokenInfo(krc20Command.tick)

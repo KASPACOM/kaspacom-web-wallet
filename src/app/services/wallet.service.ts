@@ -1,5 +1,6 @@
 import {
   effect,
+  EnvironmentInjector,
   Injectable,
   Signal,
   signal,
@@ -28,7 +29,8 @@ export class WalletService {
     private readonly passwordManagerService: PasswordManagerService,
     private readonly kaspaNetworkActionsService: KaspaNetworkActionsService,
     private readonly kasplexService: KasplexKrc20Service,
-    private readonly utilsService: UtilsHelper
+    private readonly utilsService: UtilsHelper,
+     private readonly injector: EnvironmentInjector,
   ) { }
 
   async addWallet(
@@ -167,7 +169,7 @@ export class WalletService {
 
     this.allWalletsSignal.update((oldValue) => [
       ...(oldValue || []),
-      new AppWallet(walletData, true, walletAccountData, this.kaspaNetworkActionsService),
+      new AppWallet(walletData, true, walletAccountData, this.kaspaNetworkActionsService, this.injector),
     ]);
 
     return {
@@ -287,7 +289,7 @@ export class WalletService {
 
     this.allWalletsSignal.update((oldValue) => [
       ...(oldValue || []),
-      new AppWallet(walletData, true, walletData.accounts?.[0], this.kaspaNetworkActionsService),
+      new AppWallet(walletData, true, walletData.accounts?.[0], this.kaspaNetworkActionsService, this.injector),
     ]);
 
     return result;
@@ -305,10 +307,10 @@ export class WalletService {
     for (const wallet of walletsData.wallets) {
       if (wallet.accounts && wallet.accounts.length) {
         for (const walletAccount of wallet.accounts) {
-          allWallets.push(new AppWallet(wallet, loadBalance, walletAccount, this.kaspaNetworkActionsService));
+          allWallets.push(new AppWallet(wallet, loadBalance, walletAccount, this.kaspaNetworkActionsService, this.injector));
         }
       } else {
-        allWallets.push(new AppWallet(wallet, loadBalance, undefined, this.kaspaNetworkActionsService));
+        allWallets.push(new AppWallet(wallet, loadBalance, undefined, this.kaspaNetworkActionsService, this.injector));
       }
     }
 
@@ -320,7 +322,7 @@ export class WalletService {
   getAllWallets(loadBalance: boolean = false): Signal<AppWallet[] | undefined> {
     if (loadBalance) {
       this.allWalletsSignal()?.forEach((wallet) => {
-        wallet.refreshBalance();
+        wallet.refreshUtxosBalance();
       });
     }
 
@@ -350,7 +352,7 @@ export class WalletService {
     const wallet = this.getAllWalletsByIdAndAccount()?.[id];
 
     if (wallet && loadBalance) {
-      wallet.refreshBalance();
+      wallet.refreshUtxosBalance();
     }
 
     return wallet;
@@ -363,7 +365,7 @@ export class WalletService {
     const wallet = this.getAllWalletsByIdAndAccount()?.[idWithAccount];
 
     if (wallet && loadBalance) {
-      wallet.refreshBalance();
+      wallet.refreshUtxosBalance();
     }
 
     return wallet;
@@ -434,16 +436,24 @@ export class WalletService {
       return [];
     }
 
+    let additionalAssets: TransferableAsset[] = [];
+
+    try {
+      const krc20Assets = await this.getKrc20AvailableAssetsForCurrentWallet();
+      additionalAssets = [...additionalAssets, ...krc20Assets];
+    } catch (error) {
+      console.error(error);
+    }
+
     return [
       {
         ticker: 'TKAS',
         type: AssetType.KAS,
         availableAmount:
-          this.getCurrentWallet()?.getWalletUtxoStateBalanceSignal()()
-            ?.mature || 0n,
+          this.getCurrentWallet()?.getCurrentWalletStateBalanceSignalValue()?.mature || 0n,
         name: 'TKAS',
       },
-      ...(await this.getKrc20AvailableAssetsForCurrentWallet())
+      ...additionalAssets,
     ];
   }
 

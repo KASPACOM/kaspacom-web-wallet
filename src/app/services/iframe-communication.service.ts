@@ -1,4 +1,4 @@
-import { EnvironmentInjector, inject, Injectable } from '@angular/core';
+import { EnvironmentInjector, inject, Injectable, Signal } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { WalletActionService } from './wallet-action.service';
 import { WalletService } from './wallet.service';
@@ -18,7 +18,7 @@ import { Router } from '@angular/router';
 export class IFrameCommunicationService {
   private walletBalanceObservableSubscription: undefined | Subscription =
     undefined;
-  private currentWalletId: number | undefined = undefined;
+  private currentWalletIdWithAccount: string | undefined = undefined;
 
   constructor(
     private walletActionsService: WalletActionService,
@@ -27,11 +27,11 @@ export class IFrameCommunicationService {
     private readonly injector: EnvironmentInjector,
     private router: Router,
   ) {
-    if (this.isIframe()) {
+    // if (this.isIframe()) {
       toObservable(this.walletService.getCurrentWalletSignal()).subscribe(
         this.onWalletSelected.bind(this)
       );
-    }
+    // }
   }
 
   isIframeAllowedDomain(domain: string): boolean {
@@ -66,6 +66,7 @@ export class IFrameCommunicationService {
   initIframeMessaging() {
     this.initWalletEvents();
     window.addEventListener('message', async (event) => {
+
       if (!this.isIframeAllowedDomain(event.origin)) {
         throw new Error('Application domain not allowed');
       }
@@ -91,33 +92,25 @@ export class IFrameCommunicationService {
   private initWalletEvents() { }
 
   private async onWalletSelected(wallet: AppWallet | undefined) {
-    this.currentWalletId = wallet?.getId();
-    if (!wallet && this.walletBalanceObservableSubscription) {
-      this.walletBalanceObservableSubscription.unsubscribe();
+    if (wallet?.getIdWithAccount() != this.currentWalletIdWithAccount) {
+      this.walletBalanceObservableSubscription?.unsubscribe();
       this.walletBalanceObservableSubscription = undefined;
     }
 
-    if (wallet) {
-      wallet.waitForUtxoProcessorToBeReady().then(() => {
-        // if not changed wallet while we waited
-        if (wallet.getId() == this.currentWalletId) {
-          if (this.walletBalanceObservableSubscription) {
-            this.walletBalanceObservableSubscription.unsubscribe();
-            this.walletBalanceObservableSubscription = undefined;
-          }
+    this.currentWalletIdWithAccount = wallet?.getIdWithAccount();
 
-          this.walletBalanceObservableSubscription = toObservable(
-            wallet.getWalletUtxoStateBalanceSignal(),
-            { injector: this.injector }
-          ).subscribe(this.onWalletBalanceUpdated.bind(this));
-        }
-      });
+
+    if (wallet && !this.walletBalanceObservableSubscription) {
+        this.walletBalanceObservableSubscription = toObservable(
+          wallet.getWalletUtxoStateBalanceSignal(),
+          { injector: this.injector }
+        ).subscribe(this.onWalletBalanceUpdated.bind(this));
     }
 
     await this.sendUpdateWalletInfoEvent(wallet);
   }
 
-  private async onWalletBalanceUpdated(balance: BalanceData | undefined) {
+  private async onWalletBalanceUpdated(balance: undefined | BalanceData) {
     await this.sendUpdateWalletInfoEvent(this.walletService.getCurrentWallet());
   }
 
@@ -142,6 +135,7 @@ export class IFrameCommunicationService {
             },
       };
     }
+
     this.sendMessageToApp(message);
   }
 

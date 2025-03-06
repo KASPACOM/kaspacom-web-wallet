@@ -42,6 +42,7 @@ import { UnfinishedCommitRevealAction } from '../../types/kaspa-network/unfinish
 import { PsktTransaction } from '../../types/kaspa-network/pskt-transaction.interface';
 import { UtilsHelper } from '../utils.service';
 import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
+import { MempoolTransactionManager } from '../../classes/MempoolTransactionManager';
 
 const MINIMAL_TRANSACTION_MASS = 10000n;
 export const MINIMAL_AMOUNT_TO_SEND = 20000000n;
@@ -141,11 +142,17 @@ export class KaspaNetworkActionsService {
 
   async initUtxoProcessorManager(
     address: string,
-    onBalanceUpdate: () => Promise<any>
   ): Promise<UtxoProcessorManager> {
     return await this.transactionsManager.initUtxoProcessorManager(
       address,
-      onBalanceUpdate
+    );
+  }
+
+  async initMempoolTransactionManager(
+    address: string,
+  ): Promise<MempoolTransactionManager> {
+    return await this.transactionsManager.initMempoolTransactionManager(
+      address,
     );
   }
 
@@ -181,7 +188,6 @@ export class KaspaNetworkActionsService {
     }
 
     if (action.type == WalletActionType.COMPOUND_UTXOS) {
-      await wallet.getUtxoProcessorManager()?.waitForPendingUtxoToFinish();
 
       const payments: IPaymentOutput[] = [
         {
@@ -288,8 +294,6 @@ export class KaspaNetworkActionsService {
     }
 
     if (action.type == WalletActionType.COMPOUND_UTXOS) {
-      await wallet.getUtxoProcessorManager()?.waitForPendingUtxoToFinish();
-
       if ((wallet.getBalanceSignal()()?.utxoEntries.length || 0) < 2) {
         return {
           success: false,

@@ -26,24 +26,24 @@
         <p>{{ wallet.getDisplayName() }}</p>
         <h3>Wallet Address:</h3>
         <p>{{ wallet.getAddress() }}</p>
-        <h3>Balance:</h3>
+        <h3>Balance:</h3> 
         <div
           *ngIf="
-            wallet.getWalletUtxoStateBalanceSignal()() !== undefined;
+            walletUtxoStateBalanceSignal() !== undefined;
             else loadingData
           "
         >
           <p>
             Current:
             {{
-              wallet.getWalletUtxoStateBalanceSignal()()!.mature | sompiToNumber
+              walletUtxoStateBalanceSignal()!.mature | sompiToNumber
             }}
             KAS
           </p>
           <p>
             Pending:
             {{
-              wallet.getWalletUtxoStateBalanceSignal()()!.pending
+              walletUtxoStateBalanceSignal()!.pending
                 | sompiToNumber
             }}
             KAS
@@ -51,7 +51,7 @@
           <p>
             Outgoing:
             {{
-              wallet.getWalletUtxoStateBalanceSignal()()!.outgoing
+              walletUtxoStateBalanceSignal()!.outgoing
                 | sompiToNumber
             }}
             KAS
@@ -60,6 +60,11 @@
         <ng-template #loadingData>
           <p>Loading...</p>
         </ng-template>
+      </div>
+
+      <div class="mempoll-transactions">
+        <h3>Penging Transactions:</h3>
+        <mempool-transactions></mempool-transactions>
       </div>
 
       <!-- KRC20 Tokens -->

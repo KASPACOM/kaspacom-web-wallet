@@ -27,11 +27,11 @@ export class IFrameCommunicationService {
     private readonly injector: EnvironmentInjector,
     private router: Router,
   ) {
-    // if (this.isIframe()) {
+    if (this.isIframe()) {
       toObservable(this.walletService.getCurrentWalletSignal()).subscribe(
         this.onWalletSelected.bind(this)
       );
-    // }
+    }
   }
 
   isIframeAllowedDomain(domain: string): boolean {

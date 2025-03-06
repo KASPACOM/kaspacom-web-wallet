@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { CommitRevealAction, CompoundUtxosAction, SignPsktTransactionAction, TransferKasAction, WalletAction, WalletActionType } from "../types/wallet-action";
+import { CommitRevealAction, CompoundUtxosAction, SignPsktTransactionAction, SubmitTransactionAction, TransferKasAction, WalletAction, WalletActionType } from "../types/wallet-action";
 import { AppWallet } from "../classes/AppWallet";
 import { KaspaNetworkActionsService } from "./kaspa-netwrok-services/kaspa-network-actions.service";
 import { SignMessageActionInterface } from "kaspacom-wallet-messages";
@@ -33,6 +33,8 @@ export class ReviewActionDataService {
                 return this.getSignPsktTransactionActionDisplay(action.data, wallet);
             case WalletActionType.SIGN_MESSAGE:
                 return this.getSignMessageActionDisplay(action.data, wallet);
+            case WalletActionType.SUBMIT_TRANSACTION:
+                return this.getSubmitTransactionActionDisplay(action.data, wallet);
             default:
                 return undefined
         }
@@ -158,6 +160,32 @@ export class ReviewActionDataService {
                 {
                     fieldName: "Wallet",
                     fieldValue: wallet.getAddress(),
+                },
+                {
+                    fieldName: "Payments",
+                    fieldValue: transactionData.outputs.map(output => `${this.kaspaNetworkActionsService.sompiToNumber(output.value)} KAS to ${this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(output.scriptPublicKey)}`).join('\n')
+                }
+            ]
+        }
+    }
+
+    
+    private getSubmitTransactionActionDisplay(actionData: SubmitTransactionAction, wallet: AppWallet): ActionDisplay {
+        const transactionData = Transaction.deserializeFromSafeJSON(actionData.transactionJson);
+
+        const totalOutputs = transactionData.outputs
+
+        return {
+            title: 'Submit Transaction',
+            rows: [
+                {
+                    fieldName: "Wallet",
+                    fieldValue: wallet.getAddress(),
+                },
+                {
+                    fieldName: "Inputs",
+                    fieldValue: transactionData.inputs.map(input => `${this.kaspaNetworkActionsService.sompiToNumber(input.utxo!.amount)} KAS to ${this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(input.signatureScript)}`).join('\n')
+
                 },
                 {
                     fieldName: "Payments",

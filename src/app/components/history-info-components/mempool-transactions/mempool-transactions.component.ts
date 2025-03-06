@@ -3,6 +3,8 @@ import { CommonModule, NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
 import { WalletService } from '../../../services/wallet.service';
+import { WalletActionService } from '../../../services/wallet-action.service';
+import { PendingTransaction, Transaction } from '../../../../../public/kaspa/kaspa';
 
 
 @Component({
@@ -13,7 +15,8 @@ import { WalletService } from '../../../services/wallet.service';
   imports: [NgIf, NgFor, FormsModule, SompiToNumberPipe, CommonModule],
 })
 export class MempoolTransactionsComponent {
-  constructor(private walletService: WalletService, // Inject wallet service
+  constructor(private walletService: WalletService,
+    private walletActionService: WalletActionService
   ) { }
   mempoolTransactions = computed(() => this.walletService.getCurrentWallet()!.getMempoolTransactionsSignalValue());
 
@@ -25,5 +28,4 @@ export class MempoolTransactionsComponent {
 
     return this.mempoolTransactions()!.receiving.length > 0 || this.mempoolTransactions()!.sending.length > 0;
   }
-
 }

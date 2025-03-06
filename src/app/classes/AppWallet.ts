@@ -80,11 +80,6 @@ export class AppWallet {
     if (shoudLoadBalance) {
       this.refreshUtxosBalance();
     }
-
-    //  toObservable(
-    //   wallet.getWalletUtxoStateBalanceSignal()?.()!,
-    //   { injector: this.injector }
-    // ).subscribe(this.onWalletBalanceUpdated.bind(this));
   }
 
   getId(): number {
@@ -256,9 +251,7 @@ export class AppWallet {
   }
 
   async waitForWalletToBeReadyForTransactions(): Promise<void> {
-    console.log('waiting to be ready', this.getMempoolTransactionsSignalValue(), this.getCurrentWalletStateBalanceSignalValue());
     await this.mempoolTransactionsManagerPendingPromise;
     await this.utxoProcessorManagerPendingUtxoPromise;
-    console.log('wallet is ready');
   }
 }

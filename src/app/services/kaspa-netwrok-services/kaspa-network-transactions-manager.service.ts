@@ -13,6 +13,7 @@ import {
   IGetUtxosByAddressesResponse,
   IPaymentOutput,
   IScriptPublicKey,
+  ITransaction,
   ITransactionInput,
   ITransactionOutput,
   IUtxoEntry,
@@ -61,6 +62,7 @@ type DoTransactionOptions = {
   revealScriptAddress?: string;
   skipWalletPendingCheck?: boolean;
   shouldWaitForTransactionToFinish?: boolean;
+  rbf?: boolean;
 };
 
 @Injectable({
@@ -275,12 +277,20 @@ export class KaspaNetworkTransactionsManagerService {
           transaction.sign([privateKey]);
         }
 
-        await this.utils.retryOnError(async () => {
-          await this.connectAndDo(async () => {
+        await this.connectAndDo(async () => {
+          if (additionalOptions.rbf) {
+            console.log('rbfffff');
+            await this.rpcService.getRpc()!.submitTransactionReplacement(
+              {
+                transaction: Transaction.deserializeFromSafeJSON(transaction.serializeToSafeJSON()),
+              }
+            )
+          } else {
             await transaction.submit(this.rpcService.getRpc()!);
-            transactionsLeftToSend.shift();
-          });
-        })
+          }
+
+          transactionsLeftToSend.shift();
+        });
 
         if (!additionalOptions.skipWalletPendingCheck) {
           await utxoProcessonManager?.waitForOutgoingUtxo();
@@ -325,7 +335,6 @@ export class KaspaNetworkTransactionsManagerService {
     additionalOutputs: { address: string; amount: bigint }[] = [],
     transactionOptions: DoTransactionOptions = {}
   ) {
-    console.log('asdasda', wallet.getMempoolTransactionsSignal()()?.sending);
 
     if (!transactionOptions.estimateOnly) {
       await wallet.waitForWalletToBeReadyForTransactions();
@@ -408,7 +417,8 @@ export class KaspaNetworkTransactionsManagerService {
     priorityFee: bigint,
     sendAll = false, // Sends all the remains to the first payment
     notifyCreatedTransactions?: (transactionId: string) => Promise<any>,
-    estimateOnly: boolean = false
+    estimateOnly: boolean = false,
+    rbf?: boolean,
   ): Promise<{
     success: boolean;
     errorCode?: number;
@@ -423,6 +433,7 @@ export class KaspaNetworkTransactionsManagerService {
         notifyCreatedTransactions,
         sendAll,
         estimateOnly,
+        rbf,
       }
     );
   }

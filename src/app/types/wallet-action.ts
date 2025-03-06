@@ -9,6 +9,7 @@ export enum WalletActionType {
   SIGN_PSKT_TRANSACTION = 'buy-krc20-pskt',
   SIGN_MESSAGE = 'sign-message',
   COMMIT_REVEAL = 'commit-reveal',
+  SUBMIT_TRANSACTION = 'submit-transaction',
 }
 
 // Mapping action types to their specific data shapes
@@ -18,6 +19,7 @@ type WalletActionDataMap = {
   [WalletActionType.SIGN_PSKT_TRANSACTION]: SignPsktTransactionAction;
   [WalletActionType.SIGN_MESSAGE]: SignMessage;
   [WalletActionType.COMMIT_REVEAL]: CommitRevealAction;
+  [WalletActionType.SUBMIT_TRANSACTION]: SubmitTransactionAction;
 };
 
 // Generic WalletAction type
@@ -26,6 +28,7 @@ export type WalletAction = {
     type: K;
     data: WalletActionDataMap[K];
     priorityFee?: bigint;
+    rbf?: boolean;
   };
 }[keyof WalletActionDataMap];
 
@@ -80,4 +83,8 @@ export interface CommitRevealAction {
       script: ProtocolScriptDataAndAddress,
     }
   };
+}
+
+export interface SubmitTransactionAction {
+  transactionJson: string;
 }

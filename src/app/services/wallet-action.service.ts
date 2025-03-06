@@ -101,10 +101,12 @@ export class WalletActionService {
   createTransferKasWalletAction(
     targetWalletAddress: string,
     amount: bigint,
-    wallet: AppWallet
+    wallet: AppWallet,
+    rbf: boolean = false,
   ): WalletAction {
     return {
       type: WalletActionType.TRANSFER_KAS,
+      rbf,
       data: {
         amount,
         to: targetWalletAddress,
@@ -119,10 +121,11 @@ export class WalletActionService {
     asset: TransferableAsset,
     targetWalletAddress: string,
     amount: bigint,
-    wallet: AppWallet
+    wallet: AppWallet,
+    rbf: boolean = false,
   ): WalletAction {
     if (asset.type === AssetType.KAS) {
-      return this.createTransferKasWalletAction(targetWalletAddress, amount, wallet);
+      return this.createTransferKasWalletAction(targetWalletAddress, amount, wallet, rbf);
     }
 
     if (asset.type === AssetType.KRC20) {
@@ -193,6 +196,15 @@ export class WalletActionService {
         message,
       },
     };
+  }
+
+  createSubmitTransactionAction(transactionJson: string): WalletAction {
+    return {
+      type: WalletActionType.SUBMIT_TRANSACTION,
+      data: {
+        transactionJson,
+      },
+    }
   }
 
   async validateAndDoActionAfterApproval(
@@ -389,22 +401,28 @@ export class WalletActionService {
         this.actionsListByWallet()[walletIdWithAccount] &&
         this.actionsListByWallet()[walletIdWithAccount].length > 0
       ) {
-        await wallet.waitForWalletToBeReadyForTransactions();
+
 
         const actionsList = this.actionsListByWallet()[walletIdWithAccount];
+
+
+        if (actionsList[0] && !actionsList[0].action.rbf) {
+          await wallet.waitForWalletToBeReadyForTransactions();
+        }
+
         const action = actionsList!.shift()!;
+        
 
         this.actionsListByWallet.set({
           ...this.actionsListByWallet(),
           [walletIdWithAccount]: actionsList,
         });
+        
 
         try {
           await this.showTransactionLoaderToUser(0);
 
           await this.kaspaNetworkActionsService.connectAndDo(async () => {
-            // await wallet.waitForUtxoProcessorToBeReady();
-
             const validationResult = await this.validateAction(
               action.action,
               wallet
@@ -493,10 +511,13 @@ export class WalletActionService {
         );
         break;
 
-      case WalletActionType.COMMIT_REVEAL: {
+      case WalletActionType.COMMIT_REVEAL:
         validationResult = await this.validateCommitRevealAction(action.data as CommitRevealAction, wallet);
         break;
-      }
+
+      case WalletActionType.SUBMIT_TRANSACTION:
+        validationResult = { isValidated: true }
+        break;
 
       case WalletActionType.SIGN_MESSAGE:
         if (

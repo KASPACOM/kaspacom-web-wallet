@@ -2,40 +2,34 @@
   <h2>Send Asset</h2>
 
   <!-- Asset Selection -->
-   <div *ngIf="assets && assets.length > 0; else noAssetsToChoose">
-    <label for="assetInput" >Choose Asset:</label>
+  <div *ngIf="assets && assets.length > 0; else noAssetsToChoose">
+    <label for="assetInput">Choose Asset:</label>
     <select id="assetInput" [(ngModel)]="selectedAsset">
       <option *ngFor="let asset of assets" [value]="getAssetId(asset)">
         {{ asset.name }}
       </option>
     </select>
-  
-   </div>
-   <ng-template #noAssetsToChoose>
+
+  </div>
+  <ng-template #noAssetsToChoose>
     <p>Loading...</p>
   </ng-template>
 
   <!-- Amount Input -->
   <label for="amount">Amount:</label>
-  <input
-    id="amount"
-    type="number"
-    [(ngModel)]="amount"
-    min="0"
-    placeholder="Enter amount"
-  />
+  <input id="amount" type="number" [(ngModel)]="amount" min="0" placeholder="Enter amount" />
 
   <!-- Address Input -->
   <label for="address">Recipient Address:</label>
-  <input
-    id="address"
-    type="text"
-    [(ngModel)]="recipientAddress"
-    placeholder="Enter recipient's address"
-  />
+  <input id="address" type="text" [(ngModel)]="recipientAddress" placeholder="Enter recipient's address" />
+
+  <!-- Replace By Fee Checkbox -->
+  <div *ngIf="currentSelectedAsset()?.type == AssetType.KAS">
+    <input id="rbf" type="checkbox" [(ngModel)]="rbf" />
+    <label for="rbf">Replace By Fee </label>
+  </div>
+
 
   <!-- Send Button -->
   <button (click)="sendAsset()" [disabled]="!isFormValid()">Send</button>
 </div>
-
-  

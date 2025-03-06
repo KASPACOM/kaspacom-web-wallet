@@ -76,8 +76,6 @@ export class UtxoProcessorManager {
   private async balanceEventHandler(event: BalanceEvent) {
       this.walletBalanceStateSignal.set(event.data.balance);
 
-      console.log('update balance', event.data.balance);
-
       if (this.waitForOutgoingUtxoPromise && event.data.balance?.outgoing && event.data.balance?.outgoing > 0) {
         this.resolveAndClearWaitForOutgoingUtxoPromise!();
       }
@@ -185,7 +183,6 @@ export class UtxoProcessorManager {
       this.resolveAndClearWaitForOutgoingUtxoPromise();
     }, WAIT_TIMEOUT);
 
-    console.log('waitForOutgoingUtxo signal balance', this.walletBalanceStateSignal());
     if (this.walletBalanceStateSignal() && this.walletBalanceStateSignal()!.outgoing > 0n) {
       this.resolveAndClearWaitForOutgoingUtxoPromise();
       return;

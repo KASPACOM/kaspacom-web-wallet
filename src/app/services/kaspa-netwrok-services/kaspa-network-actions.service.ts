@@ -3,6 +3,7 @@ import {
   IFeeEstimate,
   IPaymentOutput,
   IScriptPublicKey,
+  ITransaction,
   Mnemonic,
   PrivateKey,
   ScriptPublicKey,
@@ -56,7 +57,6 @@ const ESTIMATED_REVEAL_ACTION = 1715n;
 export class KaspaNetworkActionsService {
   constructor(
     private readonly transactionsManager: KaspaNetworkTransactionsManagerService,
-    private readonly krc20OperationDataService: Krc20OperationDataService,
     private readonly utils: UtilsHelper
   ) { }
 
@@ -275,7 +275,9 @@ export class KaspaNetworkActionsService {
           payments,
           action.priorityFee || 0n,
           actionData.sendAll,
-          notifyUpdate
+          notifyUpdate,
+          false, 
+          action.rbf,
         );
 
       const actionResult: KasTransferActionResult = {
@@ -492,6 +494,11 @@ export class KaspaNetworkActionsService {
         additionalOutputsSum +
         additionalPriorityFee;
     }
+
+    if (action.type == WalletActionType.SUBMIT_TRANSACTION) {
+        return 0n;
+    }
+
 
     throw new Error('Invalid action type');
   }

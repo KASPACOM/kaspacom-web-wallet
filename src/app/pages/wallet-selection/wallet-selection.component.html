@@ -8,30 +8,54 @@
         <h3>Your Wallets</h3>
         <button (click)="addWallet()" class="add-wallet-button">Add Wallet</button>  
       </div>
-      <div *ngIf="wallets && wallets.length > 0; else nowalletsByAddress">
-        <div *ngFor="let wallet of wallets" class="wallet-item">
+      <div *ngIf="walletGroups && walletGroups.length > 0; else nowalletsByAddress">
+        <div *ngFor="let walletGroup of walletGroups" class="wallet-item">
           <p><strong>Wallet Name:</strong> 
 
           <input 
             type="text" 
-            [value]="wallet.getName()" 
-            (input)="onNameInput($event, wallet)"
+            [value]="walletGroup[0].getName()" 
+            (input)="onNameInput($event, walletGroup[0])"
           />
-          <button (click)="updateWalletName(wallet!)" class="update-wallet-button">Save Name</button>
+          <button (click)="updateWalletName(walletGroup[0]!)" class="update-wallet-button">Save Name</button>
         </p>
-              <p><strong>Wallet Address:</strong> {{ wallet.getAddress() }}</p>
-            <p><strong>Balance:</strong>
-              <ng-container *ngIf="wallet.getTotalBalanceAsSignal() !== undefined; else loading">
-                {{ wallet.getTotalBalanceAsSignal() }} KAS
+            <ng-container *ngIf="walletGroup.length === 1; else vforwallet">
+              <p><strong>Wallet Name:</strong> {{ walletGroup[0].getName() }}</p>
+              <p><strong>Wallet Address:</strong> {{ walletGroup[0].getAddress() }}</p>
+              <p><strong>Balance:</strong>
+                <ng-container *ngIf="walletGroup[0].getTotalBalanceAsSignal() !== undefined; else loading">
+                  {{ walletGroup[0].getTotalBalanceAsSignal() }} KAS
+                </ng-container>
+                <ng-template #loading>
+                  Loading...
+                </ng-template>
+              </p>
+              <div class="wallet-actions">
+                <button (click)="selectWallet(walletGroup[0])" class="select-wallet-button">Select Wallet</button>
+                <button (click)="deleteWallet(walletGroup[0])" class="delete-wallet-button">Delete Wallet</button>
+                <button *ngIf="walletGroup[0].supportAccounts()" (click)="addAccount(walletGroup)"  class="add-account-button">Add Account</button>
+              </div>
+            </ng-container>
+            <ng-template #vforwallet>
+            <p><strong>Wallet Accounts:</strong></p>
+              <ng-container *ngFor="let wallet of walletGroup">
+                <p><strong>Account Name:</strong> {{ wallet.getAccountName() }}</p>
+                <p><strong>Wallet Address:</strong> {{ wallet.getAddress() }}</p>
+                <p><strong>Balance:</strong>
+                  <ng-container *ngIf="wallet.getTotalBalanceAsSignal() !== undefined; else loading">
+                    {{ wallet.getTotalBalanceAsSignal() }} KAS
+                  </ng-container>
+                  <ng-template #loading>
+                    Loading...
+                  </ng-template>
+                </p>
+                <div class="wallet-actions">
+                  <button (click)="selectWallet(wallet)">Select Wallet</button>
+                  <button class="delete-wallet-button" (click)="removeAccount(wallet)">Delete Account</button>
+                </div>
               </ng-container>
-              <ng-template #loading>
-                Loading...
-              </ng-template>
-            </p>
-            <div class="wallet-actions">
-              <button (click)="selectWallet(wallet)">Select Wallet</button>
-              <button (click)="deleteWallet(wallet)" class="delete-wallet-button">Delete Wallet</button>
-            </div>
+              <button *ngIf="walletGroup[0].supportAccounts()" (click)="addAccount(walletGroup)" class="add-account-button">Add Account</button>
+            </ng-template>
         </div>
       </div>
       <ng-template #nowalletsByAddress>

@@ -1,18 +1,31 @@
-import { KaspaNetworkTransactionsManagerService } from './kaspa-network-transactions-manager.service';
+import { KaspaNetworkTransactionsManagerService, SUBMIT_REVEAL_MIN_UTXO_AMOUNT } from './kaspa-network-transactions-manager.service';
 import {
   IFeeEstimate,
   IPaymentOutput,
+  IScriptPublicKey,
   Mnemonic,
   PrivateKey,
+  ScriptPublicKey,
+  UtxoEntryReference,
   XPrv,
 } from '../../../../public/kaspa/kaspa';
 import { Injectable, Signal } from '@angular/core';
-import { DEFAULT_DERIVED_PATH, ERROR_CODES } from '../../config/consts';
+import { DEFAULT_DERIVED_PATH, LOCAL_STORAGE_KEYS } from '../../config/consts';
+import {
+  CommitRevealActionResult,
+  ERROR_CODES,
+  KasTransferActionResult,
+  ProtocolScriptDataAndAddress,
+  SignedMessageActionResult,
+  SignPsktTransactionActionResult,
+  WalletActionResult,
+  WalletActionResultType,
+} from 'kaspacom-wallet-messages';
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
 import {
-  BuyKrc20PsktAction,
-  Krc20Action,
+  SignPsktTransactionAction,
+  CommitRevealAction,
   SignMessage,
   TransferKasAction,
   WalletAction,
@@ -20,39 +33,31 @@ import {
 } from '../../types/wallet-action';
 import { AppWallet } from '../../classes/AppWallet';
 import {
-  BuyKrc20PsktActionResult,
   CompoundUtxosActionResult,
-  KasTransferActionResult,
-  Krc20ActionResult,
-  SignedMessageActionResult,
-  WalletActionResult,
-  WalletActionResultType,
 } from '../../types/wallet-action-result';
 import {
-  KASPA_AMOUNT_FOR_KRC20_ACTION,
   Krc20OperationDataService,
-} from './krc20-operation-data.service';
-import { UnfinishedKrc20Action } from '../../types/kaspa-network/unfinished-krc20-action.interface';
-import {
-  KRC20OperationDataInterface,
-  KRC20OperationType,
-} from '../../types/kaspa-network/krc20-operations-data.interface';
+} from '../protocols/krc20/krc20-operation-data.service';
+import { UnfinishedCommitRevealAction } from '../../types/kaspa-network/unfinished-commit-reveal-action.interface';
 import { PsktTransaction } from '../../types/kaspa-network/pskt-transaction.interface';
+import { UtilsHelper } from '../utils.service';
+import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
 
 const MINIMAL_TRANSACTION_MASS = 10000n;
 export const MINIMAL_AMOUNT_TO_SEND = 20000000n;
 export const MAX_TRANSACTION_FEE = 20000n;
+export const REVEAL_PSKT_AMOUNT = 105000000n;
 
 const ESTIMATED_REVEAL_ACTION = 1715n;
-const ESTIMATED_LIST_REVEAL_ACTION = 3274n;
 @Injectable({
   providedIn: 'root',
 })
 export class KaspaNetworkActionsService {
   constructor(
     private readonly transactionsManager: KaspaNetworkTransactionsManagerService,
-    private readonly krc20OperationDataService: Krc20OperationDataService
-  ) {}
+    private readonly krc20OperationDataService: Krc20OperationDataService,
+    private readonly utils: UtilsHelper
+  ) { }
 
   async connectAndDo<T>(
     fn: () => Promise<T>,
@@ -164,7 +169,7 @@ export class KaspaNetworkActionsService {
           payments,
           action.priorityFee || 0n,
           actionData.sendAll,
-          async () => {},
+          async () => { },
           true
         );
 
@@ -191,48 +196,20 @@ export class KaspaNetworkActionsService {
           payments,
           action.priorityFee || 0n,
           true,
-          async () => {},
+          async () => { },
           true
         );
 
       return result.result!.transactions.map((t) => t.mass);
     }
 
-    if (action.type === WalletActionType.KRC20_ACTION) {
-      const actionData = action.data as Krc20Action;
-
+    if (action.type == WalletActionType.SIGN_PSKT_TRANSACTION) {
       const result =
-        await this.transactionsManager.doKrc20ActionTransactionWithUtxoProcessor(
+        await this.transactionsManager.signPsktTransaction(
           wallet,
-          actionData.operationData,
+          (action.data as SignPsktTransactionAction).psktTransactionJson,
           action.priorityFee || 0n,
-          this.krc20OperationDataService.getPriceForOperation(
-            actionData.operationData.op
-          ),
-          async () => {},
-          actionData.revealOnly,
-          actionData.transactionId,
-          actionData.psktData,
-          true,
-        );
-
-      if (!result.success) {
-        throw new Error('Failed to estimate transaction mass');
-      }
-
-      return [
-        ...(result.result!.commit?.transactions.map((t) => t.mass) || []),
-        actionData.operationData.op == KRC20OperationType.LIST ? ESTIMATED_LIST_REVEAL_ACTION : ESTIMATED_REVEAL_ACTION,
-      ];
-    }
-
-    if (action.type == WalletActionType.BUY_KRC20_PSKT) {
-      const result =
-        await this.transactionsManager.completePsktTransactionForSendOperation(
-          wallet,
-          (action.data as BuyKrc20PsktAction).psktTransactionJson,
-          action.priorityFee || 0n,
-          true
+          false,
         );
 
       if (!result.transactionFee) {
@@ -240,6 +217,28 @@ export class KaspaNetworkActionsService {
       }
 
       return [result.transactionFee];
+    }
+
+    if (action.type == WalletActionType.COMMIT_REVEAL) {
+
+      const result =
+        await this.transactionsManager.doCommitRevealActionTransactionsAndNotifyWithUtxoProcessor(
+          wallet,
+          action.data.actionScript.type,
+          action.data.actionScript.stringifyAction,
+          action.data.options?.revealPriorityFee || 0n,
+          action.priorityFee || 0n,
+          { commitTransactionId: action.data.options?.commitTransactionId },
+          async () => { },
+          { estimateOnly: true },
+          action.data.options?.additionalOutputs,
+        );
+
+      return [
+        ...(result.result!.commitMass || []),
+        ...(result.result!.revealMass || []),
+        ...(action.data.options?.commitTransactionId ? [] : [BigInt((action.data.options?.additionalOutputs?.length || 0) + 1) * ESTIMATED_REVEAL_ACTION]),
+      ];
     }
 
     throw new Error('No such action type');
@@ -326,62 +325,17 @@ export class KaspaNetworkActionsService {
       };
     }
 
-    if (action.type === WalletActionType.KRC20_ACTION) {
-      const actionData = action.data as Krc20Action;
-
+    if (action.type == WalletActionType.SIGN_PSKT_TRANSACTION) {
       const result =
-        await this.transactionsManager.doKrc20ActionTransactionWithUtxoProcessor(
+        await this.transactionsManager.signPsktTransaction(
           wallet,
-          actionData.operationData,
+          action.data.psktTransactionJson,
           action.priorityFee || 0n,
-          this.krc20OperationDataService.getPriceForOperation(
-            actionData.operationData.op
-          ),
-          notifyUpdate,
-          actionData.revealOnly,
-          actionData.transactionId,
-          actionData.psktData
+          action.data.submitTransaction
         );
 
-      if (!result.success) {
-        console.error('Failed do KRC20 action', result);
-        return {
-          success: false,
-          errorCode: result.errorCode,
-        };
-      }
-
-      const actionResult: Krc20ActionResult = {
-        type: WalletActionResultType.Krc20Action,
-        commitTransactionId: result.result!.commit?.summary.finalTransactionId!,
-        revealTransactionId: result.result!.reveal!.summary.finalTransactionId!,
-        performedByWallet: wallet.getAddress(),
-        ticker: actionData.operationData.tick,
-        operationData: actionData.operationData,
-        psktData: actionData.psktData,
-        isCancel: actionData.isCancel,
-        amount: actionData.amount,
-        psktTransaction: result.result?.pskt
-          ? result.result?.pskt.serializeToSafeJSON()
-          : undefined,
-      };
-
-      return {
-        success: true,
-        result: actionResult,
-      };
-    }
-
-    if (action.type == WalletActionType.BUY_KRC20_PSKT) {
-      const result =
-        await this.transactionsManager.completePsktTransactionForSendOperation(
-          wallet,
-          (action.data as BuyKrc20PsktAction).psktTransactionJson,
-          action.priorityFee || 0n
-        );
-
-      const resultData: BuyKrc20PsktActionResult = {
-        type: WalletActionResultType.BuyKrc20Pskt,
+      const resultData: SignPsktTransactionActionResult = {
+        type: WalletActionResultType.SignPsktTransaction,
         psktTransactionJson: result.psktTransaction,
         transactionId: result.transactionId,
         performedByWallet: wallet.getAddress(),
@@ -394,11 +348,14 @@ export class KaspaNetworkActionsService {
     }
 
     if (action.type == WalletActionType.SIGN_MESSAGE) {
-      const result = await this.transactionsManager.signMessage(wallet.getPrivateKey(), (action.data as SignMessage).message)
+      const result = await this.transactionsManager.signMessage(
+        wallet.getPrivateKey(),
+        (action.data as SignMessage).message
+      );
 
       const resultData: SignedMessageActionResult = {
         type: WalletActionResultType.MessageSigning,
-        performedByWallet: wallet.getAddress(), 
+        performedByWallet: wallet.getAddress(),
         originalMessage: (action.data as SignMessage).message,
         signedMessage: result.signedMessage,
         publicKey: result.publickey,
@@ -407,6 +364,78 @@ export class KaspaNetworkActionsService {
       return {
         success: true,
         result: resultData,
+      };
+    }
+
+    if (action.type === WalletActionType.COMMIT_REVEAL) {
+      const actionData: CommitRevealAction = action.data as CommitRevealAction;
+      const revealPriorityFee = actionData.options?.revealPriorityFee || 0n;
+
+      const result =
+        await this.transactionsManager.doCommitRevealActionTransactionsAndNotifyWithUtxoProcessor(
+          wallet,
+          actionData.actionScript.type,
+          actionData.actionScript.stringifyAction,
+          revealPriorityFee,
+          action.priorityFee || 0n,
+          { commitTransactionId: actionData.options?.commitTransactionId },
+          async (transactions) => {
+            if (!transactions.revealTransactionId) {
+              const newActionsData = { ...actionData };
+              newActionsData.options = { ...newActionsData.options || {} };
+              newActionsData.options.commitTransactionId = transactions.commitTransactionId;
+
+              await this.addUnfinishedCommitRevealActionOnLocalStorage({
+                createdAtTimestamp: Date.now(),
+                operationData: newActionsData,
+                walletAddress: wallet.getAddress(),
+              });
+            }
+            notifyUpdate(transactions.revealTransactionId || transactions.commitTransactionId!);
+          },
+          {},
+          actionData.options?.additionalOutputs,
+        );
+
+      if (!result.success) {
+        console.error('Failed do KRC20 action', result);
+        return {
+          success: false,
+          errorCode: result.errorCode,
+        };
+      }
+
+      await this.removeUnfinishedActionOnLocalStorage({
+        operationData: actionData,
+        walletAddress: wallet.getAddress(),
+        createdAtTimestamp: Date.now(),
+      }, actionData.options?.commitTransactionId || result.result?.commit!);
+
+      let psktTransaction: string | undefined;
+
+      if (actionData.options?.revealPskt) {
+        psktTransaction = (await this.transactionsManager.createPsktTransactionForRevealOperation(
+          wallet,
+          actionData.options!.revealPskt!.script,
+          result.result?.reveal!,
+          actionData.options!.revealPskt!.outputs,
+        )).serializeToSafeJSON();
+      }
+
+
+      const actionResult: CommitRevealActionResult = {
+        type: WalletActionResultType.CommitReveal,
+        commitTransactionId: actionData.options?.commitTransactionId || result.result?.commit!,
+        revealTransactionId: result.result?.reveal!,
+        performedByWallet: wallet.getAddress(),
+        protocol: actionData.actionScript.type,
+        protocolAction: actionData.actionScript.stringifyAction,
+        revealPsktJson: psktTransaction,
+      };
+
+      return {
+        success: true,
+        result: actionResult,
       };
     }
 
@@ -427,23 +456,12 @@ export class KaspaNetworkActionsService {
       );
     }
 
-    if (action.type === WalletActionType.KRC20_ACTION) {
-      return (
-        (action.priorityFee || 0n) * 2n +
-        MINIMAL_TRANSACTION_MASS * 2n +
-        KASPA_AMOUNT_FOR_KRC20_ACTION +
-        this.krc20OperationDataService.getPriceForOperation(
-          (action.data as Krc20Action).operationData.op
-        )
-      );
-    }
-
     if (action.type === WalletActionType.COMPOUND_UTXOS) {
       return (action.priorityFee || 0n) + MINIMAL_AMOUNT_TO_SEND;
     }
 
-    if (action.type === WalletActionType.BUY_KRC20_PSKT) {
-      const data = action.data as BuyKrc20PsktAction;
+    if (action.type === WalletActionType.SIGN_PSKT_TRANSACTION) {
+      const data = action.data as SignPsktTransactionAction;
       const pskt: PsktTransaction = JSON.parse(data.psktTransactionJson);
 
       const totalOutputs = pskt.outputs.reduce(
@@ -454,28 +472,27 @@ export class KaspaNetworkActionsService {
       return (action.priorityFee || 0n) + totalOutputs + MINIMAL_AMOUNT_TO_SEND;
     }
 
+    if (action.type == WalletActionType.COMMIT_REVEAL) {
+      const actionData = action.data;
+
+      const additionalOutputsSum = actionData.options?.additionalOutputs?.reduce(
+        (acc, curr) => acc + curr.amount,
+        0n
+      ) || 0n;
+
+      const additionalPriorityFee = actionData.options?.revealPriorityFee || 0n;
+
+      return (action.priorityFee || 0n) * 2n +
+        MINIMAL_TRANSACTION_MASS * 2n +
+        SUBMIT_REVEAL_MIN_UTXO_AMOUNT +
+        additionalOutputsSum +
+        additionalPriorityFee;
+    }
+
     throw new Error('Invalid action type');
   }
 
-  async getWalletUnfinishedActions(
-    wallet: AppWallet
-  ): Promise<UnfinishedKrc20Action | undefined> {
-    return await this.transactionsManager.checkUnfinishedTransactionsForUserAndGetOne(
-      wallet
-    );
-  }
-
-  async doesUnfinishedActionHasKasInScriptWallet(
-    wallet: AppWallet,
-    action: KRC20OperationDataInterface
-  ) {
-    return this.transactionsManager.doesUnfinishedActionHasKasInScriptWallet(
-      wallet,
-      action
-    );
-  }
-
-  getWalletAddressFromScriptPublicKey(scriptPublicKey: string): string {
+  getWalletAddressFromScriptPublicKey(scriptPublicKey: string | IScriptPublicKey | ScriptPublicKey): string {
     return this.transactionsManager.getWalletAddressFromScriptPublicKey(
       scriptPublicKey
     );
@@ -483,5 +500,135 @@ export class KaspaNetworkActionsService {
 
   async getEstimateFeeRates(): Promise<IFeeEstimate> {
     return await this.transactionsManager.getEstimateFeeRates();
+  }
+
+
+  async updateUnfinishedCommitRevealActionOnLocalStorage(
+    updateFunction: (
+      data: UnfinishedCommitRevealAction[]
+    ) => Promise<UnfinishedCommitRevealAction[]>
+  ): Promise<void> {
+    const actions = this.getUnfinishedCommitRevealActions();
+    localStorage.setItem(
+      LOCAL_STORAGE_KEYS.UNFINISHED_COMMIT_REVEAL_ACTIONS,
+      this.utils.stringifyWithBigInt(await updateFunction(actions))
+    );
+  }
+
+  async addUnfinishedCommitRevealActionOnLocalStorage(
+    action: UnfinishedCommitRevealAction
+  ): Promise<void> {
+    await this.updateUnfinishedCommitRevealActionOnLocalStorage(async (data) => {
+      data.push(action);
+
+      return data;
+    });
+  }
+
+  async removeUnfinishedActionOnLocalStorage(
+    action: UnfinishedCommitRevealAction,
+    commitTransactionId: string,
+  ): Promise<void> {
+    await this.updateUnfinishedCommitRevealActionOnLocalStorage(async (data) => {
+      const index = data.findIndex(
+        (item) =>
+          this.utils.stringifyWithBigInt(item.operationData.actionScript) ===
+          this.utils.stringifyWithBigInt(action.operationData.actionScript) &&
+          action.walletAddress == item.walletAddress &&
+          commitTransactionId == item.commitTransactionId
+      );
+      if (index !== -1) {
+        data.splice(index, 1);
+      }
+
+      return data;
+    });
+  }
+
+  async getWalletUnfinishedActions(
+    wallet: AppWallet,
+    timeAgo: number = 2 * 60 * 1000
+  ): Promise<UnfinishedCommitRevealAction | undefined> {
+    let actions = this.getUnfinishedCommitRevealActions();
+    let walletUnfinishedActions = actions.filter(
+      (item) =>
+        item.walletAddress === wallet.getAddress() &&
+        item.createdAtTimestamp < Date.now() - timeAgo
+    );
+    let currentUnfinishedAction: UnfinishedCommitRevealAction | undefined = undefined;
+
+    while (walletUnfinishedActions.length > 0 && !currentUnfinishedAction) {
+      currentUnfinishedAction = walletUnfinishedActions[0];
+
+      const utxoEntry = await this.doesUnfinishedActionHasKasInScriptWallet(
+        wallet,
+        currentUnfinishedAction.operationData
+      );
+
+      if (utxoEntry) {
+        currentUnfinishedAction.commitTransactionId = utxoEntry.outpoint.transactionId;
+        break;
+      } else {
+        await this.removeUnfinishedActionOnLocalStorage(
+          currentUnfinishedAction,
+          currentUnfinishedAction.commitTransactionId!,
+        );
+        currentUnfinishedAction = undefined;
+      }
+
+      actions = this.getUnfinishedCommitRevealActions();
+      walletUnfinishedActions = actions.filter(
+        (item) => item.walletAddress === wallet.getAddress()
+      );
+    }
+
+    return currentUnfinishedAction;
+  }
+
+  getUnfinishedCommitRevealActions(): UnfinishedCommitRevealAction[] {
+    const totalActionsJson = localStorage.getItem(
+      LOCAL_STORAGE_KEYS.UNFINISHED_COMMIT_REVEAL_ACTIONS
+    );
+    const totalActions = this.utils.parseWithBigInt(
+      totalActionsJson || '[]'
+    ) as UnfinishedCommitRevealAction[];
+    return totalActions;
+  }
+
+  async doesUnfinishedActionHasKasInScriptWallet(
+    wallet: AppWallet,
+    action: CommitRevealAction
+  ): Promise<UtxoEntryReference> {
+    const script = this.transactionsManager.createGenericScriptFromString(
+      action.actionScript.type,
+      action.actionScript.stringifyAction,
+      wallet.getAddress()
+    );
+
+
+    let utxos = (await this.transactionsManager.getWalletTotalBalanceAndUtxos(
+      script.scriptAddress.toString()
+    )).utxoEntries;
+
+    if (action.options?.commitTransactionId) {
+      utxos = utxos.filter(
+        (utxo) => utxo.outpoint.transactionId == action.options!.commitTransactionId
+      )
+    }
+
+    return utxos[0];
+  }
+
+
+  createGenericScriptFromString(
+    type: ProtocolType | string,
+    stringifyAction: string,
+    walletAddress: string
+  ): ProtocolScriptDataAndAddress {
+    return this.transactionsManager.createGenericScriptFromString(
+      type,
+      stringifyAction,
+      walletAddress
+    );
   }
 }

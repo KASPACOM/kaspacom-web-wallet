@@ -8,6 +8,7 @@ import { KasplexKrc20Service } from '../../../services/kasplex-api/kasplex-api.s
 import { ListingInfoEntry } from '../../../services/kasplex-api/dtos/listing-info-response.dto';
 import { firstValueFrom } from 'rxjs';
 import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
+import { Krc20WalletActionService } from '../../../services/protocols/krc20/krc20-wallet-actions.service';
 
 @Component({
   selector: 'buy-krc20-token',
@@ -26,8 +27,8 @@ export class BuyKrc20Component {
 
   constructor(
     private walletService: WalletService,
-    private kaspaNetworkActionsService: KaspaNetworkActionsService,
     private walletActionService: WalletActionService,
+    private krc20WalletActionService: Krc20WalletActionService,
     private kasplexService: KasplexKrc20Service
   ) {
     effect(() => {
@@ -47,14 +48,14 @@ export class BuyKrc20Component {
   }
 
   async buy() {
-    const action = this.walletActionService.createBuyKrc20Action((window as any).pskt as string);
+    const action = this.walletActionService.createSignPsktAction((window as any).pskt as string, true);
 
     console.log(await this.walletActionService.validateAndDoActionAfterApproval(action));
   }
 
   async cancel(data: ListingInfoEntry) {
     await this.walletActionService.validateAndDoActionAfterApproval(
-      this.walletActionService.createCancelListingKrc20Action(
+      this.krc20WalletActionService.createCancelListingKrc20Action(
         data.tick,
         data.uTxid,
         BigInt(data.amount)

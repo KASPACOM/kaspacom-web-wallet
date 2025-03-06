@@ -6,3 +6,14 @@
     overflow-x: hidden;
     display: block;
   }
+
+  .not-supported-url {
+    font-size: 2rem;
+    font-weight: bold;
+    color: red;
+    text-align: center;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }

@@ -1,37 +1,19 @@
 <div class="action-review-container">
-  <div class="action-review-card" *ngIf="actionResult">
+  <div class="action-review-card" *ngIf="currentActionDisplay">
     <div class="action-review-header">
       <h2>
-        <span *ngIf="kasTransferActionResult">Kas Transfer Details</span>
-        <span *ngIf="krc20ActionResult">KRC20 Transaction Details</span>
-        <span *ngIf="messageSigningResult">Message Signing Details</span>
+        {{ currentActionDisplay.title }}
       </h2>
     </div>
     <div class="action-review-content">
+      <div class="detail"
+      *ngFor="let row of currentActionDisplay.rows">
+      <div class="label">{{ row.fieldName }}:</div>
+      <div class="value">{{ row.fieldValue }}</div>
+    </div>
 
-      <div *ngIf="kasTransferActionResult">
-        <p><strong>From:</strong> {{ actionResult.performedByWallet }}</p>
-        <p><strong>To:</strong> {{ kasTransferActionResult.to }}</p>
-        <p><strong>Amount:</strong> {{ kasTransferActionResult.amount }}</p>
-        <p><strong>Transaction ID:</strong> {{ kasTransferActionResult.transactionId }}</p>
-      </div>
 
-      <div *ngIf="compoundUtxosActionResult">
-        <h3>Compound UTXOs</h3>
-        <p><strong>Wallet:</strong> {{ actionResult.performedByWallet }}</p>
-        <p><strong>Transaction ID:</strong> {{ compoundUtxosActionResult.transactionId }}</p>
-      </div>
-
-      <div *ngIf="krc20ActionResult">
-        <ng-container *ngIf="krc20ActionResult.operationData.op === KRC20OperationType.TRANSFER">
-          <h3>Transfer KRC20 Token Transaction</h3>
-          <p><strong>Ticker:</strong> {{ krc20ActionResult.operationData.tick }}</p>
-          <p><strong>From:</strong> {{ actionResult.performedByWallet }}</p>
-          <p><strong>To:</strong> {{ krc20ActionResult.operationData.to }}</p>
-          <p><strong>Amount:</strong> {{ krc20ActionResult.operationData.amt! | sompiToNumber }} {{ krc20ActionResult.operationData.tick }}</p>
-          <p><strong>Commit Transaction ID:</strong> {{ krc20ActionResult.commitTransactionId }}</p>
-          <p><strong>Reveal Transaction ID:</strong> {{ krc20ActionResult.revealTransactionId }}</p>
-        </ng-container>
+      <!-- <div *ngIf="krc20ActionResult">
         <ng-container *ngIf="krc20ActionResult.operationData.op === KRC20OperationType.LIST">
           <h3>List KRC20 Token Transaction</h3>
           <p><strong>Ticker:</strong> {{ krc20ActionResult.operationData.tick }}</p>
@@ -49,36 +31,18 @@
           <p><strong>Transaction ID:</strong> {{ krc20ActionResult.revealTransactionId }}</p>
         </ng-container>
         <ng-container *ngIf="krc20ActionResult.operationData.op === KRC20OperationType.MINT">
-          <h3>Mint KRC20 Token Transaction</h3>
-          <p><strong>Ticker:</strong> {{ krc20ActionResult.operationData.tick }}</p>
-          <p><strong>Wallet:</strong> {{ actionResult.performedByWallet }}</p>
-          <p><strong>Commit Transaction ID:</strong> {{ krc20ActionResult.commitTransactionId }}</p>
-          <p><strong>Reveal Transaction ID:</strong> {{ krc20ActionResult.revealTransactionId }}</p>
         </ng-container>
         <ng-container *ngIf="krc20ActionResult.operationData.op === KRC20OperationType.DEPLOY">
-          <h3>Deploy KRC20 Token Transaction</h3>
-          <p><strong>Ticker:</strong> {{ krc20ActionResult.operationData.tick }}</p>
-          <p><strong>Wallet:</strong> {{ actionResult.performedByWallet }}</p>
-          <p><strong>Max Supply:</strong> {{ krc20ActionResult.operationData.max! | sompiToNumber }}</p>
-          <p><strong>Tokens Per Mint:</strong> {{ krc20ActionResult.operationData.lim! | sompiToNumber }}</p>
-          <p><strong>Pre Allocation:</strong> {{ krc20ActionResult.operationData.pre! | sompiToNumber }} ({{ (Number(krc20ActionResult.operationData.pre!) / Number(krc20ActionResult.operationData.max!) * 100).toFixed(2) }}%)</p>
-          <p><strong>Commit Transaction ID:</strong> {{ krc20ActionResult.commitTransactionId }}</p>
-          <p><strong>Reveal Transaction ID:</strong> {{ krc20ActionResult.revealTransactionId }}</p>
         </ng-container>
-      </div>
+      </div> -->
 
-      <div *ngIf="messageSigningResult">
-        <p><strong>Wallet:</strong> {{ actionResult.performedByWallet }}</p>
-        <p><strong>Message:</strong> {{ messageSigningResult.originalMessage }}</p>
-        <p><strong>Encrypted Signed Message:</strong> {{ messageSigningResult.signedMessage }}</p>
-      </div>
 
-      <div *ngIf="buyKrc20PsktActionResult">
+      <!-- <div *ngIf="signPsktTransactionActionResult">
         <h3>Buy KRC20 Token Transaction</h3>
         <p><strong>Wallet:</strong> {{ actionResult.performedByWallet }}</p>
-        <p><strong>Transaction ID:</strong> {{ buyKrc20PsktActionResult.transactionId }}</p>
-        <p><strong>Total Amount:</strong> {{ buyKrc20PsktActionResultAmount }}</p>
-      </div>
+        <p><strong>Transaction ID:</strong> {{ signPsktTransactionActionResult.transactionId }}</p>
+        <p><strong>Total Amount:</strong> {{ signPsktTransactionActionResultAmount }}</p>
+      </div> -->
     </div>
   </div>
 </div>

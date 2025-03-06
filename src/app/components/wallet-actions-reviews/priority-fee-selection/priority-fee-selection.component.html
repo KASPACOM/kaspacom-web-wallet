@@ -1,69 +1,58 @@
 <div>
-  <div class="priority-fee-selection">
+  <div class="priority-fee-selection" *ngIf="currentOptions && showPriorityFeeSelection; else noShow">
     <h3>Select Priority Fee</h3>
-    <ng-container *ngIf="currentOptions; else loading">
-      <div class="fee-options">
-        <div
-          *ngFor="let option of currentOptions | keyvalue"
-          class="fee-option"
-          [class.selected]="selectedOption === option.key"
-          (click)="selectOption(option.key)"
-        >
-          <div class="title">{{ option.key | titlecase }}</div>
-          <div class="fee">{{ option.value.priorityFee }} KAS</div>
-          <div class="seconds">
-            {{ option.value.estimatedSeconds.toFixed(4) }} seconds
-          </div>
+    <div class="fee-options">
+      <div *ngFor="let option of currentOptions | keyvalue" class="fee-option"
+        [class.selected]="selectedOption === option.key" (click)="selectOption(option.key)">
+        <div class="title">{{ option.key | titlecase }}</div>
+        <div class="fee">{{ option.value.priorityFee }} KAS</div>
+        <div class="seconds">
+          {{ option.value.estimatedSeconds.toFixed(4) }} seconds
         </div>
       </div>
-      <div
-        class="custom-fee"
-        (click)="selectOption('custom')"
-        [class.selected]="selectedOption === 'custom'"
-      >
-        <label for="customFee">Custom Fee:</label>
-        <input
-          type="number"
-          id="customFee"
-          [(ngModel)]="customFee"
-          placeholder="Enter custom fee"
-          (change)="selectOption('custom')"
-        />
-      </div>
+    </div>
+    <div class="custom-fee" (click)="selectOption('custom')" [class.selected]="selectedOption === 'custom'">
+      <label for="customFee">Custom Fee:</label>
+      <input type="number" id="customFee" [(ngModel)]="customFee" placeholder="Enter custom fee"
+        (change)="selectOption('custom')" />
+    </div>
 
-      <div>Minimum transaction fee: {{ transactionMass! | sompiToNumber }}</div>
+    <div>Minimum transaction fee: {{ transactionMass! | sompiToNumber }}</div>
+    <div>
+      Additional Priority fee:
+      {{
+      additionalPriorityFee === undefined
+      ? "Not selected"
+      : (additionalPriorityFee | sompiToNumber)
+      }}
+    </div>
+
+    <div *ngIf="totalTransactionsMass && totalTransactionsMass.length == 1">
+      Total Fee that will be payed:
+      {{
+      additionalPriorityFee === undefined
+      ? "Not selected"
+      : (additionalPriorityFee + transactionMass! | sompiToNumber)
+      }}
+    </div>
+
+    <div *ngIf="getAdditionalCommitActionPrice() > 0; n">
+      Protocol Action Fee:
+      {{ getAdditionalCommitActionPrice() | sompiToNumber }}
+    </div>
+
+    <div *ngIf="totalTransactionsMass && totalTransactionsMass.length > 1">
+      <div>Number Of Transactions: {{ totalTransactionsMass!.length }}</div>
       <div>
-        Additional Priority fee:
-        {{
-          additionalPriorityFee === undefined
-            ? "Not selected"
-            : (additionalPriorityFee | sompiToNumber)
-        }}
+        Estimated Total Fees: ≈{{ getEstimatedTotalFees() | sompiToNumber }}
       </div>
-
-      <div *ngIf="totalTransactionsMass && totalTransactionsMass.length == 1">
-        Total Fee that will be payed:
-        {{
-          additionalPriorityFee === undefined
-            ? "Not selected"
-            : (additionalPriorityFee + transactionMass! | sompiToNumber)
-        }}
-      </div>
-
-      <div *ngIf="getKrc20ActionPrice() > 0; n">
-        Krc20 Action Fee:
-        {{ getKrc20ActionPrice() | sompiToNumber }}
-      </div>
-
-      <div *ngIf="totalTransactionsMass && totalTransactionsMass.length > 1">
-        <div>Number Of Transactions: {{ totalTransactionsMass!.length }}</div>
-        <div>
-          Estimated Total Fees: ≈{{ getEstimatedTotalFees() | sompiToNumber }}
-        </div>
-      </div>
-    </ng-container>
-    <ng-template #loading>
-      <p>Loading...</p>
-    </ng-template>
+    </div>
   </div>
+  <ng-template #noShow>
+    <p *ngIf="!currentOptions">Loading Priority Fees...</p>
+    <button *ngIf="currentOptions && !showPriorityFeeSelection" class="confirm-selection"
+      (click)="showPriorityFeeSelection = true"> Estimated Total Fees: ≈{{ getEstimatedTotalFees() | sompiToNumber }}
+    </button>
+
+  </ng-template>
 </div>

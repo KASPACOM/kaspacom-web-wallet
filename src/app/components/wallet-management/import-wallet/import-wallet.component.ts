@@ -76,7 +76,7 @@ export class ImportWalletComponent implements OnInit {
       const walletCount = await this.walletService.getWalletsCount();
 
       if (this.selectedType === 'privateKey') {
-        walletAdditionResult = await this.walletService.addWalletFromPrivateKey(
+        walletAdditionResult = await this.walletService.addWallet(
           'Saved Wallet ' + walletCount,
           formValue.privateKey.trim()
         );
@@ -85,7 +85,8 @@ export class ImportWalletComponent implements OnInit {
           'Saved Wallet ' + walletCount,
           formValue.mnemonic.trim(),
           formValue.derivedPath.trim(),
-          this.utils.isNullOrEmptyString(formValue.passphrase) ? undefined : formValue.passphrase 
+          '#' + this.walletService.getWalletAccountNumberFromDerivedPath(formValue.derivedPath),
+          this.utils.isNullOrEmptyString(formValue.passphrase) ? undefined : formValue.passphrase,
         );
       }
 

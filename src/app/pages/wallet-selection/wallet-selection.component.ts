@@ -5,6 +5,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgFor, NgIf } from '@angular/common';
 import { AppWallet } from '../../classes/AppWallet';
 import { ExportWalletsQrComponent } from '../../components/wallet-management/export-wallets-qr/export-wallets-qr.component';
+import _ from 'lodash';
 
 @Component({
   selector: 'wallet-selection',
@@ -15,13 +16,13 @@ import { ExportWalletsQrComponent } from '../../components/wallet-management/exp
 })
 export class WalletSelectionComponent implements OnInit {
   public Object = Object;
-  wallets: AppWallet[] | undefined = undefined;
+  walletGroups: AppWallet[][] | undefined = undefined;
   user: any = {}; // User information
 
   constructor(
     private walletService: WalletService, // Inject wallet service
     private router: Router // private kaspaTransactionsManagerService: KaspaNetworkTransactionsManagerService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadWallets();
@@ -30,11 +31,13 @@ export class WalletSelectionComponent implements OnInit {
   async loadWallets() {
     const result = await this.walletService.getAllWallets(true)();
 
-    this.wallets = result;
+    const groupedWallets = _.groupBy(result, (wallet) => wallet.getId());
+
+    this.walletGroups = this.Object.values(groupedWallets);
   }
 
   async selectWallet(wallet: AppWallet) {
-    await this.walletService.selectCurrentWallet(wallet.getId());
+    await this.walletService.selectCurrentWallet(wallet.getIdWithAccount());
     // Navigate to wallet details or send funds page for a specific wallet
     this.router.navigate([`/wallet-info`]);
   }
@@ -44,7 +47,7 @@ export class WalletSelectionComponent implements OnInit {
       `Are you sure you want to delete wallet ${wallet.getName()} (${wallet.getAddress()})?`
     );
     if (confirmDelete) {
-      this.walletService.deleteWallet(wallet.getId()).then(() => {
+      this.walletService.deleteWallet(wallet.getIdWithAccount()).then(() => {
         // Reload the list of wallets
         this.loadWallets();
       });
@@ -65,5 +68,20 @@ export class WalletSelectionComponent implements OnInit {
   onNameInput(event: Event, wallet: AppWallet): void {
     const inputElement = event.target as HTMLInputElement;
     wallet.setName(inputElement.value);
+  }
+
+  async addAccount(walletGroup: AppWallet[]) {
+    const accounts = walletGroup.map((wallet) => this.walletService.getWalletAccountNumberFromDerivedPath(wallet.getDerivedPath()!));
+    const maxAccount = Math.max(...accounts);
+
+    const newAccountNumber = maxAccount + 1;
+
+    await this.walletService.addWalletAccount(walletGroup[0].getId(), this.walletService.replaceWalletAccountNumberFromDerivedPath(walletGroup[0].getDerivedPath()!, newAccountNumber), '#' + newAccountNumber.toString());
+    await this.loadWallets();
+  }
+
+  async removeAccount(wallet: AppWallet) {
+    await this.walletService.removeWalletAccount(wallet.getIdWithAccount());
+    await this.loadWallets();
   }
 }

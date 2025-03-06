@@ -26,17 +26,16 @@ export class AppHeaderComponent {
   }
 
   getActiveWalletActionProcessors(): string[] {
-    const walletIds = Object.keys(
+    const walletIdsWithAccount = Object.keys(
       this.walletActionService.getActiveWalletActionProcessors()()
     )
-      .map((walletId) => parseInt(walletId))
       .filter(
-        (walletId) =>
-          this.walletActionService.getActiveWalletActionProcessors()()[walletId]
+        (walletIdWithAccount) =>
+          this.walletActionService.getActiveWalletActionProcessors()()[walletIdWithAccount]
       );
 
-    return walletIds.map(
-      (walletId) => this.walletService.getWalletById(walletId)?.getName() || 'Unknow Wallet'
+    return walletIdsWithAccount.map(
+      (walletIdWithAccount) => this.walletService.getWalletByIdAndAccount(walletIdWithAccount)?.getDisplayName() || 'Unknow Wallet'
     );
   }
 

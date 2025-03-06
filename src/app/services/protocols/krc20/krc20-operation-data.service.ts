@@ -2,15 +2,14 @@ import { Injectable } from '@angular/core';
 import {
   KRC20OperationDataInterface,
   KRC20OperationType,
-} from '../../types/kaspa-network/krc20-operations-data.interface';
+} from '../../../types/kaspa-network/krc20-operations-data.interface';
 
 export const KRC20_TRANSACTIONS_PRICE = {
   DEPLOY: 100000000000n,
   MINT: 100000000n,
-  TRANSFER: 1816n,
+  TRANSFER: 0n,
 };
 
-export const KASPA_AMOUNT_FOR_KRC20_ACTION = 300000000n;
 export const KASPA_AMOUNT_FOR_LIST_KRC20_ACTION = 200000000n;
 
 @Injectable({
@@ -25,7 +24,7 @@ export class Krc20OperationDataService {
     return {
       p: 'krc-20',
       op: KRC20OperationType.TRANSFER,
-      tick: ticker,
+      tick: ticker.toLowerCase(),
       to: to,
       amt: String(amount),
     };
@@ -36,7 +35,7 @@ export class Krc20OperationDataService {
     return {
       p: 'krc-20',
       op: KRC20OperationType.MINT,
-      tick: ticker,
+      tick: ticker.toLowerCase(),
     };
   }
 
@@ -44,7 +43,7 @@ export class Krc20OperationDataService {
     return {
       p: 'krc-20',
       op: KRC20OperationType.LIST,
-      tick: ticker,
+      tick: ticker.toLowerCase(),
       amt: String(amount),
     };
   }
@@ -53,7 +52,7 @@ export class Krc20OperationDataService {
     return {
       p: 'krc-20',
       op: KRC20OperationType.SEND,
-      tick: ticker,
+      tick: ticker.toLowerCase(),
     };
   }
 
@@ -66,7 +65,7 @@ export class Krc20OperationDataService {
     return {
       p: 'krc-20',
       op: KRC20OperationType.DEPLOY,
-      tick: ticker,
+      tick: ticker.toLowerCase(),
       max: String(max),
       lim: String(lim),
       pre: String(pre),

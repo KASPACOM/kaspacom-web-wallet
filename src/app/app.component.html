@@ -1,4 +1,10 @@
 <div class="application-container">
-    <app-header></app-header>
-    <router-outlet></router-outlet>
+    <ng-container *ngIf="isAllowedDomain() && !incompatibleBrowserReason(); else notSupported">
+        <app-header></app-header>
+        <router-outlet></router-outlet>
+    </ng-container>
+    <ng-template #notSupported>
+        <p class="not-supported-url" *ngIf="!isAllowedDomain()">This URL Is not allowed to use this application, If you see this message please report to us at Kaspa.com</p>
+        <p class="not-supported-url" *ngIf="incompatibleBrowserReason()">You browser is not compatible with this application, please use a compatible browser. (Reason: {{incompatibleBrowserReason()}})</p>
+    </ng-template>
 </div>

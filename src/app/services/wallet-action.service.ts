@@ -1,7 +1,7 @@
-import { effect, Injectable, Signal, signal } from '@angular/core';
+import { Injectable, Signal, signal } from '@angular/core';
 import {
-  BuyKrc20PsktAction,
-  Krc20Action,
+  SignPsktTransactionAction,
+  CommitRevealAction,
   SignMessage,
   TransferKasAction,
   WalletAction,
@@ -10,30 +10,21 @@ import {
 } from '../types/wallet-action';
 import { AssetType, TransferableAsset } from '../types/transferable-asset';
 import { WalletService } from './wallet.service';
-import { ERROR_CODES } from '../config/consts';
+import { ERROR_CODES, PsktActionsEnum, WalletActionResult } from 'kaspacom-wallet-messages';
 import { UtilsHelper } from './utils.service';
 import {
   KaspaNetworkActionsService,
   MINIMAL_AMOUNT_TO_SEND,
 } from './kaspa-netwrok-services/kaspa-network-actions.service';
-import { ReviewActionComponent } from '../components/wallet-actions-reviews/review-action/review-action.component';
-import {
-  WalletActionResult,
-  WalletActionResultWithError,
-} from '../types/wallet-action-result';
-import { Krc20OperationDataService } from './kaspa-netwrok-services/krc20-operation-data.service';
-import {
-  KRC20OperationDataInterface,
-  KRC20OperationType,
-} from '../types/kaspa-network/krc20-operations-data.interface';
-import { KasplexKrc20Service } from './kasplex-api/kasplex-api.service';
-import { firstValueFrom } from 'rxjs';
-import { TokenState } from './kasplex-api/dtos/token-list-info.dto';
+import { WalletActionResultWithError } from '../types/wallet-action-result';
 import { RpcConnectionStatus } from '../types/kaspa-network/rpc-connection-status.enum';
 import { AppWallet } from '../classes/AppWallet';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { PsktTransaction } from '../types/kaspa-network/pskt-transaction.interface';
-import { OperationDetailsResponse } from './kasplex-api/dtos/operation-details-response';
+import { Krc20WalletActionService } from './protocols/krc20/krc20-wallet-actions.service';
+import { BaseProtocolClassesService } from './protocols/base-protocol-classes.service';
+import { Router } from '@angular/router';
+import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
 
 const INSTANT_ACTIONS: { [key: string]: boolean } = {
   [WalletActionType.SIGN_MESSAGE]: true,
@@ -43,39 +34,46 @@ const INSTANT_ACTIONS: { [key: string]: boolean } = {
   providedIn: 'root',
 })
 export class WalletActionService {
-  private viewingComponent: ReviewActionComponent | undefined = undefined;
-
   private actionsListByWallet = signal<{
-    [walletId: number]: WalletActionListItem[];
+    [walletIdWithAccount: string]: WalletActionListItem[];
   }>({});
   private isActionsRunningByWallet = signal<{
-    [walletId: number]: boolean;
+    [walletIdWithAccount: string]: boolean;
   }>({});
+  private actionToApprove = signal<{
+    action: WalletAction;
+    resolve: (data: { isApproved: boolean, priorityFee?: bigint }) => void;
+  } | undefined>(undefined);
+
+  private currentProgressSignal = signal<number | undefined>(undefined);
+  private actionResultSignal = signal<WalletActionResult | undefined>(undefined);
 
   constructor(
     private walletService: WalletService,
     private utils: UtilsHelper,
     private kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private krc20OperationDataService: Krc20OperationDataService,
-    private kasplexService: KasplexKrc20Service
+    private krc20WalletActionService: Krc20WalletActionService,
+    private baseProtocolClassesService: BaseProtocolClassesService,
+    private readonly router: Router,
   ) {
+
     this.actionsListByWallet.set({});
     this.isActionsRunningByWallet.set({});
 
     toObservable(
       this.kaspaNetworkActionsService.getConnectionStatusSignal()
     ).subscribe((status) => {
-      const walletsThatHaveWork = this.getWalletIdsThatHaveWork();
+      const walletsThatHaveWork = this.getWalletIdsWithAccountsThatHaveWork();
       if (status == RpcConnectionStatus.CONNECTED) {
-        for (const walletId of walletsThatHaveWork) {
+        for (const walletIdAndAccount of walletsThatHaveWork) {
           this.walletService
-            .getWalletById(walletId)
+            .getWalletByIdAndAccount(walletIdAndAccount)
             ?.startListiningToWalletActions();
         }
         if (
           this.walletService.getCurrentWallet() &&
           !walletsThatHaveWork.includes(
-            this.walletService.getCurrentWallet()!.getId()
+            this.walletService.getCurrentWallet()!.getIdWithAccount()
           )
         ) {
           this.walletService
@@ -83,15 +81,15 @@ export class WalletActionService {
             ?.startListiningToWalletActions();
         }
       } else {
-        for (const walletId of walletsThatHaveWork) {
+        for (const walletIdAndAccount of walletsThatHaveWork) {
           this.walletService
-            .getWalletById(walletId)
+            .getWalletByIdAndAccount(walletIdAndAccount)
             ?.stopListiningToWalletActions();
         }
         if (
           this.walletService.getCurrentWallet() &&
           !walletsThatHaveWork.includes(
-            this.walletService.getCurrentWallet()!.getId()
+            this.walletService.getCurrentWallet()!.getIdWithAccount()
           )
         ) {
           this.walletService.getCurrentWallet()?.stopListiningToWalletActions();
@@ -100,8 +98,21 @@ export class WalletActionService {
     });
   }
 
-  registerViewingComponent(component: ReviewActionComponent): void {
-    this.viewingComponent = component;
+  createTransferKasWalletAction(
+    targetWalletAddress: string,
+    amount: bigint,
+    wallet: AppWallet
+  ): WalletAction {
+    return {
+      type: WalletActionType.TRANSFER_KAS,
+      data: {
+        amount,
+        to: targetWalletAddress,
+        sendAll:
+          !!(wallet.getWalletUtxoStateBalanceSignal()()?.mature &&
+            wallet.getWalletUtxoStateBalanceSignal()()?.mature == amount),
+      },
+    };
   }
 
   createTransferWalletActionFromAsset(
@@ -111,60 +122,14 @@ export class WalletActionService {
     wallet: AppWallet
   ): WalletAction {
     if (asset.type === AssetType.KAS) {
-      return {
-        type: WalletActionType.TRANSFER_KAS,
-        data: {
-          amount,
-          to: targetWalletAddress,
-          sendAll:
-            wallet.getWalletUtxoStateBalanceSignal()()?.mature &&
-            wallet.getWalletUtxoStateBalanceSignal()()?.mature == amount,
-        },
-      };
+      return this.createTransferKasWalletAction(targetWalletAddress, amount, wallet);
     }
 
     if (asset.type === AssetType.KRC20) {
-      return {
-        type: WalletActionType.KRC20_ACTION,
-        data: {
-          operationData: this.krc20OperationDataService.getTransferData(
-            asset.ticker,
-            amount,
-            targetWalletAddress
-          ),
-        },
-      };
+      return this.krc20WalletActionService.createTransferWalletAction(asset.ticker, targetWalletAddress, amount);
     }
 
     throw new Error('Unsupported asset type');
-  }
-
-  createMintWalletAction(ticker: string): WalletAction {
-    return {
-      type: WalletActionType.KRC20_ACTION,
-      data: {
-        operationData: this.krc20OperationDataService.getMintData(ticker),
-      },
-    };
-  }
-
-  createDeployWalletAction(
-    ticker: string,
-    maxSupply: bigint,
-    limitPerMint: bigint,
-    preAllocation: bigint
-  ): WalletAction {
-    return {
-      type: WalletActionType.KRC20_ACTION,
-      data: {
-        operationData: this.krc20OperationDataService.getDeployData(
-          ticker,
-          maxSupply,
-          limitPerMint,
-          preAllocation
-        ),
-      },
-    };
   }
 
   createCompoundUtxosAction(): WalletAction {
@@ -174,68 +139,49 @@ export class WalletActionService {
     };
   }
 
-  createUnfinishedKrc20Action(
-    operationData: KRC20OperationDataInterface
+  createUnfinishedCommitRevealAction(
+    commitRevealActionData: CommitRevealAction,
+    shouldFinish: boolean = false,
   ): WalletAction {
-    return {
-      type: WalletActionType.KRC20_ACTION,
-      data: {
-        operationData,
-        revealOnly: true,
-      },
-    };
-  }
 
-  createListKrc20Action(
-    ticker: string,
-    amount: bigint,
-    totalPrice: bigint,
-    commission?: {
-      address: string;
-      amount: bigint;
+    if (!shouldFinish) {
+      commitRevealActionData = {
+        ...commitRevealActionData,
+        options: {
+          ...(commitRevealActionData.options || 0),
+          additionalOutputs: undefined,
+          revealPriorityFee: undefined,
+        }
+      }
     }
-  ): WalletAction {
+
     return {
-      type: WalletActionType.KRC20_ACTION,
-      data: {
-        operationData: this.krc20OperationDataService.getListData(
-          ticker,
-          amount
-        ),
-        psktData: {
-          totalPrice,
-          commission,
-        },
-      },
+      type: WalletActionType.COMMIT_REVEAL,
+      data: commitRevealActionData,
     };
   }
 
-  createBuyKrc20Action(
+  createCommitRevealAction(data: CommitRevealAction, priorityFee?: bigint): WalletAction {
+    return {
+      type: WalletActionType.COMMIT_REVEAL,
+      data,
+      priorityFee
+    }
+  }
+
+  createSignPsktAction(
     psktDataJson: string,
-    signOnly: boolean = false
+    submitTransaction: boolean = false,
+    protocol?: ProtocolType | string,
+    type?: PsktActionsEnum | string,
   ): WalletAction {
     return {
-      type: WalletActionType.BUY_KRC20_PSKT,
+      type: WalletActionType.SIGN_PSKT_TRANSACTION,
       data: {
         psktTransactionJson: psktDataJson,
-        signOnly,
-      },
-    };
-  }
-
-  createCancelListingKrc20Action(
-    ticker: string,
-    transactionId: string,
-    amount: bigint
-  ): WalletAction {
-    return {
-      type: WalletActionType.KRC20_ACTION,
-      data: {
-        operationData: this.krc20OperationDataService.getSendData(ticker),
-        revealOnly: true,
-        isCancel: true,
-        transactionId,
-        amount,
+        submitTransaction,
+        protocol,
+        type,
       },
     };
   }
@@ -250,11 +196,13 @@ export class WalletActionService {
   }
 
   async validateAndDoActionAfterApproval(
-    action: WalletAction
-  ): Promise<{ success: boolean; errorCode?: number; result?: any }> {
+    action: WalletAction,
+    isFromIframe: boolean = false,
+    onActionApproval: undefined | (() => Promise<void>) = undefined
+  ): Promise<WalletActionResultWithError> {
     const validationResult = await this.validateAction(
       action,
-      this.walletService.getCurrentWallet()!
+      this.walletService.getCurrentWallet()!,
     );
     if (!validationResult.isValidated) {
       return {
@@ -263,7 +211,7 @@ export class WalletActionService {
       };
     }
 
-    const result = await this.showApprovalDialogToUser(action);
+    const result = await this.showApprovalDialogToUser(action, isFromIframe);
 
     if (!result.isApproved) {
       return {
@@ -272,19 +220,22 @@ export class WalletActionService {
       };
     }
 
+    await onActionApproval?.();
+
     action.priorityFee = result.priorityFee || action.priorityFee;
 
     const actionSteps = this.getActionSteps(action);
     let currentStep = 0;
-
-    await this.showTransactionLoaderToUser(0);
+    const currentWalletAddress = this.walletService.getCurrentWallet()!.getAddress();
 
     const actionResult = await this.doWalletAction(action, async (data) => {
+      currentStep++;
+
       this.showTransactionLoaderToUser(
-        Math.round((currentStep / actionSteps) * 100)
+        Math.round((currentStep / actionSteps) * 100),
+        currentWalletAddress,
       );
 
-      currentStep++;
     });
 
     if (!actionResult.success) {
@@ -292,38 +243,68 @@ export class WalletActionService {
       return actionResult;
     }
 
-    await this.showTransactionResultToUser(actionResult.result!);
+    await this.showTransactionResultToUser(actionResult.result!, currentWalletAddress);
 
     return actionResult;
   }
 
-  private async showApprovalDialogToUser(action: WalletAction): Promise<{
+  private async showApprovalDialogToUser(action: WalletAction, isFromIframe: boolean = false): Promise<{
     isApproved: boolean;
     priorityFee?: bigint;
   }> {
-    if (!this.viewingComponent) {
-      return {
-        isApproved: false,
-      };
+
+    if (this.actionToApprove()) {
+      this.actionToApprove()!.resolve({ isApproved: false });
+      this.actionToApprove.set(undefined);
     }
 
-    return await this.viewingComponent.requestUserConfirmation(action);
+    const promise = new Promise<{ isApproved: boolean, priorityFee?: bigint }>((res) => {
+      this.actionResultSignal.set(undefined);
+      this.actionToApprove.set({
+        action,
+        resolve: res
+      })
+      this.currentProgressSignal.set(undefined);
+    });
+
+    if (isFromIframe) {
+      this.router.navigate(['/review-action']);
+    }
+
+    return await promise.then(data => {
+      this.actionToApprove.set(undefined);
+
+      return data;
+    });
   }
 
-  private async showTransactionLoaderToUser(progress?: number | undefined) {
-    if (!this.viewingComponent) {
+  getActionToApproveSignal(): Signal<{ action: WalletAction, resolve: (data: { isApproved: boolean, priorityFee?: bigint }) => void } | undefined> {
+    return this.actionToApprove.asReadonly();
+  }
+
+  getCurrentProgressSignal(): Signal<number | undefined> {
+    return this.currentProgressSignal.asReadonly();
+  }
+
+  getActionResultSignal(): Signal<WalletActionResult | undefined> {
+    return this.actionResultSignal.asReadonly();
+  }
+
+  private async showTransactionLoaderToUser(progress?: number | undefined, walletAddress?: string) {
+    if (walletAddress != this.walletService.getCurrentWallet()?.getAddress()) {
       return;
     }
 
-    this.viewingComponent.showActionLoader(progress);
+    this.currentProgressSignal.set(progress);
   }
 
-  private async showTransactionResultToUser(result: WalletActionResult) {
-    if (!this.viewingComponent) {
+  private async showTransactionResultToUser(result: WalletActionResult, walletAddress: string) {
+    if (walletAddress != this.walletService.getCurrentWallet()?.getAddress()) {
       return;
     }
-    this.viewingComponent.showActionLoader(100);
-    this.viewingComponent.setActionResult(result);
+
+    this.currentProgressSignal.set(100);
+    this.actionResultSignal.set(result);
   }
 
   private doWalletAction(
@@ -338,7 +319,7 @@ export class WalletActionService {
       );
     }
 
-    const walletId = this.walletService.getCurrentWallet()!.getId();
+    const walletIdWithAccount = this.walletService.getCurrentWallet()!.getIdWithAccount();
     let resolve: (walletActionResult: WalletActionResultWithError) => void;
     let reject: (error: any) => void;
 
@@ -348,7 +329,7 @@ export class WalletActionService {
         reject = rej;
       });
 
-    const actionsListByWallet = this.actionsListByWallet()![walletId] || [];
+    const actionsListByWallet = this.actionsListByWallet()![walletIdWithAccount] || [];
 
     actionsListByWallet.push({
       action,
@@ -376,26 +357,26 @@ export class WalletActionService {
 
     this.actionsListByWallet.set({
       ...this.actionsListByWallet(),
-      [walletId]: actionsListByWallet,
+      [walletIdWithAccount]: actionsListByWallet,
     });
 
-    this.startProcessingActionsOnActionListIfNotRunning(walletId);
+    this.startProcessingActionsOnActionListIfNotRunning(walletIdWithAccount);
 
     return promise;
   }
 
   private async startProcessingActionsOnActionListIfNotRunning(
-    walletId: number
+    walletIdWithAccount: string
   ) {
-    if (this.isActionsRunningByWallet()[walletId]) {
+    if (this.isActionsRunningByWallet()[walletIdWithAccount]) {
       return;
     }
 
-    const wallet = this.walletService.getWalletById(walletId);
+    const wallet = this.walletService.getWalletByIdAndAccount(walletIdWithAccount);
 
     this.isActionsRunningByWallet.set({
       ...this.isActionsRunningByWallet(),
-      [walletId]: true,
+      [walletIdWithAccount]: true,
     });
     wallet?.setIsCurrentlyActive(true);
 
@@ -405,18 +386,20 @@ export class WalletActionService {
       }
 
       while (
-        this.actionsListByWallet()[walletId] &&
-        this.actionsListByWallet()[walletId].length > 0
+        this.actionsListByWallet()[walletIdWithAccount] &&
+        this.actionsListByWallet()[walletIdWithAccount].length > 0
       ) {
-        const actionsList = this.actionsListByWallet()[walletId];
+        const actionsList = this.actionsListByWallet()[walletIdWithAccount];
         const action = actionsList!.shift()!;
 
         this.actionsListByWallet.set({
           ...this.actionsListByWallet(),
-          [walletId]: actionsList,
+          [walletIdWithAccount]: actionsList,
         });
 
         try {
+          await this.showTransactionLoaderToUser(0);
+
           await this.kaspaNetworkActionsService.connectAndDo(async () => {
             await wallet.waitForUtxoProcessorToBeReady();
 
@@ -442,6 +425,7 @@ export class WalletActionService {
             }
           });
         } catch (error) {
+          console.error(error);
           action.reject(error);
         }
       }
@@ -450,19 +434,20 @@ export class WalletActionService {
     } finally {
       this.isActionsRunningByWallet.set({
         ...this.isActionsRunningByWallet(),
-        [walletId]: false,
+        [walletIdWithAccount]: false,
       });
       wallet?.setIsCurrentlyActive(false);
 
-      if (this.walletService.getCurrentWallet()?.getId() != walletId) {
+      if (this.walletService.getCurrentWallet()?.getIdWithAccount() != walletIdWithAccount) {
         wallet?.stopListiningToWalletActions();
       }
     }
   }
 
-  private async validateAction(
+  async validateAction(
     action: WalletAction,
-    wallet: AppWallet
+    wallet: AppWallet,
+    checkAlsoProtocolData: boolean = false
   ): Promise<{ isValidated: boolean; errorCode?: number }> {
     if (!wallet) {
       return {
@@ -476,6 +461,18 @@ export class WalletActionService {
       errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
     };
 
+    const isRevealOnly = action.type == WalletActionType.COMMIT_REVEAL && (action.data as CommitRevealAction).options?.commitTransactionId;
+
+    if (isRevealOnly) {
+      const actionData = action.data as CommitRevealAction;
+      // Retreive kas only, no need for validation
+      if (!(actionData.options?.additionalOutputs || actionData.options?.revealPriorityFee || checkAlsoProtocolData)) {
+        return {
+          isValidated: true,
+        }
+      }
+    }
+
     switch (action.type) {
       case WalletActionType.TRANSFER_KAS:
         validationResult = await this.validateTransferKasAction(
@@ -483,22 +480,21 @@ export class WalletActionService {
           wallet
         );
         break;
-      case WalletActionType.KRC20_ACTION:
-        validationResult = await this.validateKrc20Action(
-          action.data as Krc20Action,
-          wallet
-        );
-        break;
       case WalletActionType.COMPOUND_UTXOS:
         validationResult = await this.validateCompoundUtxosAction(wallet);
         break;
 
-      case WalletActionType.BUY_KRC20_PSKT:
-        validationResult = await this.validateBuyKrc20PsktAction(
-          action.data as BuyKrc20PsktAction,
+      case WalletActionType.SIGN_PSKT_TRANSACTION:
+        validationResult = await this.validateSignPsktTransactionAction(
+          action.data as SignPsktTransactionAction,
           wallet
         );
         break;
+
+      case WalletActionType.COMMIT_REVEAL: {
+        validationResult = await this.validateCommitRevealAction(action.data as CommitRevealAction, wallet);
+        break;
+      }
 
       case WalletActionType.SIGN_MESSAGE:
         if (
@@ -522,7 +518,8 @@ export class WalletActionService {
         action.type == WalletActionType.TRANSFER_KAS &&
         (action.data as TransferKasAction).sendAll
       ) &&
-      action.type != WalletActionType.SIGN_MESSAGE
+      action.type != WalletActionType.SIGN_MESSAGE &&
+      !isRevealOnly
     ) {
       const currentBalance =
         wallet?.getWalletUtxoStateBalanceSignal()()?.mature || 0n;
@@ -599,8 +596,41 @@ export class WalletActionService {
     };
   }
 
-  private async validateBuyKrc20PsktAction(
-    action: BuyKrc20PsktAction,
+  private async validateCommitRevealAction(
+    action: CommitRevealAction,
+    wallet: AppWallet
+  ): Promise<{ isValidated: boolean; errorCode?: number }> {
+
+    if (!action.actionScript || !action.actionScript.stringifyAction || !action.actionScript.type) {
+      return {
+        isValidated: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_COMMIT_REVEAL_DATA,
+      }
+    }
+
+    try {
+
+      const validator = this.baseProtocolClassesService.getClassesFor(action.actionScript.type)?.validator;
+
+      if (validator) {
+        return await validator.validateCommitRevealAction(action, wallet);
+      }
+
+    } catch (err) {
+      console.error(err)
+      return {
+        isValidated: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_COMMIT_REVEAL_DATA,
+      };
+    }
+
+    return {
+      isValidated: true,
+    };
+  }
+
+  private async validateSignPsktTransactionAction(
+    action: SignPsktTransactionAction,
     wallet: AppWallet
   ): Promise<{ isValidated: boolean; errorCode?: number }> {
     if (this.utils.isNullOrEmptyString(action.psktTransactionJson)) {
@@ -621,73 +651,21 @@ export class WalletActionService {
       };
     }
 
-    const sendTransactionId = transaction.inputs?.[0]?.transactionId;
-    const sellerWalletAddressScript = transaction.outputs?.[0]?.scriptPublicKey;
 
-    if (!(sendTransactionId && sellerWalletAddressScript)) {
-      return {
-        isValidated: false,
-        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
-      };
-    }
 
-    let sellerWalletAddress: string;
+    for (const input of transaction.inputs) {
+      const transactionInputWalletUtxos = await this.kaspaNetworkActionsService.getWalletBalanceAndUtxos(input.utxo.address);
 
-    try {
-      sellerWalletAddress =
-        this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(
-          sellerWalletAddressScript
-        );
-    } catch (error) {
-      return {
-        isValidated: false,
-        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
-      };
-    }
-
-    let operationDetails: OperationDetailsResponse;
-
-    try {
-      operationDetails = await firstValueFrom(
-        this.kasplexService.getOperationDetails(sendTransactionId)
+      const transactionInputUtxo = transactionInputWalletUtxos.utxoEntries.find((utxo) =>
+        utxo.outpoint.transactionId == input.transactionId
       );
-    } catch (error) {
-      console.error(error);
 
-      return {
-        isValidated: false,
-        errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
-      };
-    }
-
-    if (!operationDetails?.result?.[0]) {
-      return {
-        isValidated: false,
-        errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
-      };
-    }
-
-    try {
-      const isTransactionStillExists =
-        await this.kasplexService.isListingStillExists(
-          operationDetails.result[0].tick,
-          sellerWalletAddress,
-          sendTransactionId
-        );
-
-      if (!isTransactionStillExists) {
+      if (!transactionInputUtxo) {
         return {
           isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.SEND_TRANSACTION_ALREADY_SPENT,
-        };
+          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
+        }
       }
-    } catch (error) {
-      console.error(error);
-
-      return {
-        isValidated: false,
-        errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
-      };
     }
 
     return {
@@ -695,279 +673,8 @@ export class WalletActionService {
     };
   }
 
-  private async validateKrc20Action(
-    action: Krc20Action,
-    wallet: AppWallet
-  ): Promise<{ isValidated: boolean; errorCode?: number }> {
-    if (
-      action.revealOnly &&
-      action.operationData.op != KRC20OperationType.SEND
-    ) {
-      const hasAction =
-        await this.kaspaNetworkActionsService.doesUnfinishedActionHasKasInScriptWallet(
-          wallet,
-          action.operationData
-        );
-
-      if (!hasAction) {
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.REVEAL_WITH_NO_COMMIT_ACTION,
-        };
-      }
-    }
-
-    if (action.operationData.op == KRC20OperationType.TRANSFER) {
-      if (this.utils.isNullOrEmptyString(action.operationData.to!)) {
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ADDRESS,
-        };
-      }
-
-      if (!this.utils.isValidWalletAddress(action.operationData.to!)) {
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ADDRESS,
-        };
-      }
-
-      let currentBalance;
-
-      try {
-        const response = await firstValueFrom(
-          this.kasplexService.getTokenWalletBalanceInfo(
-            wallet.getAddress(),
-            action.operationData.tick
-          )
-        );
-
-        if (!response?.result?.[0]) {
-          return {
-            isValidated: false,
-            errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
-          };
-        }
-
-        currentBalance = response.result[0];
-      } catch (error) {
-        console.error(error);
-
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
-        };
-      }
-
-      if (!currentBalance) {
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
-        };
-      }
-
-      if (
-        BigInt(currentBalance.balance) < BigInt(action.operationData.amt || '0')
-      ) {
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
-        };
-      }
-
-      return { isValidated: true };
-    }
-
-    if (action.operationData.op == KRC20OperationType.MINT) {
-      let tokenData;
-
-      try {
-        tokenData = await firstValueFrom(
-          this.kasplexService.getTokenInfo(action.operationData.tick)
-        );
-      } catch (error) {
-        console.error(error);
-
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
-        };
-      }
-
-      if (!tokenData.result?.[0]) {
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.TICKER_NOT_FOUND,
-        };
-      }
-
-      if (tokenData.result[0].state != TokenState.DEPLOYED) {
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.TOKEN_NOT_IN_MINTABLE_STATE,
-        };
-      }
-
-      return {
-        isValidated: true,
-      };
-    }
-
-    if (action.operationData.op == KRC20OperationType.LIST) {
-      if (this.utils.isNullOrEmptyString(action.operationData.amt!)) {
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_AMOUNT,
-        };
-      }
-
-      if (BigInt(action.operationData.amt!) <= 0n) {
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_AMOUNT,
-        };
-      }
-
-      if (!(action.psktData?.totalPrice && action.psktData.totalPrice > 0n)) {
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_AMOUNT,
-        };
-      }
-
-      let currentBalance;
-
-      try {
-        const response = await firstValueFrom(
-          this.kasplexService.getTokenWalletBalanceInfo(
-            wallet.getAddress(),
-            action.operationData.tick
-          )
-        );
-
-        if (!response?.result?.[0]) {
-          return {
-            isValidated: false,
-            errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
-          };
-        }
-
-        currentBalance = response.result[0];
-      } catch (error) {
-        console.error(error);
-
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
-        };
-      }
-
-      if (!currentBalance) {
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
-        };
-      }
-
-      if (
-        BigInt(currentBalance.balance) < BigInt(action.operationData.amt || '0')
-      ) {
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
-        };
-      }
-
-      return { isValidated: true };
-    }
-
-    if (action.operationData.op == KRC20OperationType.DEPLOY) {
-      if (
-        this.utils.isNullOrEmptyString(action.operationData.tick) ||
-        this.utils.isNullOrEmptyString(action.operationData.max) ||
-        this.utils.isNullOrEmptyString(action.operationData.lim) ||
-        this.utils.isNullOrEmptyString(action.operationData.pre) ||
-        !this.utils.isNumberString(action.operationData.max!) ||
-        !this.utils.isNumberString(action.operationData.lim!) ||
-        !this.utils.isNumberString(action.operationData.pre!)
-      ) {
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_DEPLOY_DATA,
-        };
-      }
-
-      if (
-        BigInt(action.operationData.max!) <= 0n ||
-        BigInt(action.operationData.lim!) <= 0n ||
-        BigInt(action.operationData.max!) < BigInt(action.operationData.lim!) ||
-        BigInt(action.operationData.max!) < BigInt(action.operationData.pre!) ||
-        (BigInt(action.operationData.pre!) &&
-          (BigInt(action.operationData.pre!) < 0n ||
-            BigInt(action.operationData.pre!) >
-              BigInt(action.operationData.max!)))
-      ) {
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_DEPLOY_DATA,
-        };
-      }
-
-      if (
-        !(
-          action.operationData.tick.length >= 4 &&
-          action.operationData.tick.length <= 6
-        )
-      ) {
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_TICKER,
-        };
-      }
-
-      let tickerInfoResult;
-
-      try {
-        tickerInfoResult = await firstValueFrom(
-          this.kasplexService.getTokenInfo(action.operationData.tick)
-        );
-      } catch (error) {
-        console.error(error);
-
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
-        };
-      }
-
-      if (!tickerInfoResult.result?.[0]) {
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
-        };
-      }
-
-      const tickerData = tickerInfoResult.result?.[0];
-
-      if (tickerData.state != TokenState.UNUSED) {
-        return {
-          isValidated: false,
-          errorCode:
-            ERROR_CODES.WALLET_ACTION.TOKEN_NAME_IS_NOT_AVAILABLE_TO_DEPLOY,
-        };
-      }
-
-      return { isValidated: true };
-    }
-
-    return {
-      isValidated: false,
-      errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
-    };
-  }
-
   private getActionSteps(action: WalletAction): number {
-    if (action.type == WalletActionType.KRC20_ACTION) {
+    if (action.type == WalletActionType.COMMIT_REVEAL && !action.data?.options?.commitTransactionId) {
       return 3;
     }
 
@@ -981,26 +688,36 @@ export class WalletActionService {
   }
 
   getActiveWalletActionProcessors(): Signal<{
-    [walletId: number]: boolean;
+    [walletIdAndAccount: string]: boolean;
   }> {
     return this.isActionsRunningByWallet.asReadonly();
   }
 
-  getWalletIdsThatHaveWork(): number[] {
+  getWalletIdsWithAccountsThatHaveWork(): string[] {
     const busyWallets = [];
 
-    for (let walletId in this.isActionsRunningByWallet()) {
-      if (this.isActionsRunningByWallet()[+walletId]) {
-        busyWallets.push(+walletId);
+    for (let walletIdWithAccount in this.isActionsRunningByWallet()) {
+      if (this.isActionsRunningByWallet()[walletIdWithAccount]) {
+        busyWallets.push(walletIdWithAccount);
       }
     }
 
-    for (let walletId in this.actionsListByWallet()) {
-      if (this.actionsListByWallet()[+walletId].length > 0) {
-        busyWallets.push(+walletId);
+    for (let walletIdWithAccount in this.actionsListByWallet()) {
+      if (this.actionsListByWallet()[walletIdWithAccount].length > 0) {
+        busyWallets.push(walletIdWithAccount);
       }
     }
 
     return Array.from(new Set(busyWallets));
   }
+
+
+  resolveCurrentWaitingForApproveAction(isApproved: boolean, priorityFee?: bigint) {
+    if (this.getActionToApproveSignal()?.() && this.getActionToApproveSignal()?.()?.resolve) {
+      this.getActionToApproveSignal()()!.resolve({
+        isApproved, priorityFee,
+      });
+    }
+  }
+
 }

@@ -8,5 +8,5 @@ export const environment: Environment = {
   kaspaApiBaseurl: 'https://api.kaspa.org',
   kaspaNetwork: KASPA_NETWORKS.MAINNET,
   allowedDomains: ['wallet.kaspa.com'],
-  allowedIframeDomains: ['kaspa.com'],
+  allowedIframeDomains: ['kaspa.com', 'www.kaspa.com'],
 };

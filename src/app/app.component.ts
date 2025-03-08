@@ -4,7 +4,7 @@ import { PasswordManagerService } from './services/password-manager.service';
 import { AppHeaderComponent } from './components/app-header/app-header.component';
 import { KaspaNetworkActionsService } from './services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { isPlatformBrowser, NgIf } from '@angular/common';
-import { IFrameCommunicationService } from './services/iframe-communication.service';
+import { PostMessageCommunicationService } from './services/post-message-communication.service';
 import { environment } from '../environments/environment';
 
 @Component({
@@ -22,7 +22,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   constructor(
     private readonly router: Router,
     private readonly passwordManagerService: PasswordManagerService,
-    private readonly iframeCommunicationService: IFrameCommunicationService,
+    private readonly postMessageCommunicationService: PostMessageCommunicationService,
     private renderer: Renderer2) {
   }
 
@@ -31,9 +31,8 @@ export class AppComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    if (this.iframeCommunicationService.isIframe()) {
-      this.iframeCommunicationService.initIframeMessaging();
-    }
+    this.postMessageCommunicationService.initPostMessagesIfNeeded();
+
 
     if (this.passwordManagerService.isUserHasSavedPassword()) {
       this.router.navigate(['/login']);

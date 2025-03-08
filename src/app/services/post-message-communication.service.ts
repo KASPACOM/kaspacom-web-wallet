@@ -1,5 +1,4 @@
 import { EnvironmentInjector, inject, Injectable } from '@angular/core';
-import { environment } from '../../environments/environment';
 import { WalletActionService } from './wallet-action.service';
 import { WalletService } from './wallet.service';
 import { toObservable } from '@angular/core/rxjs-interop';
@@ -9,16 +8,17 @@ import { BalanceData } from '../types/kaspa-network/balance-event.interface';
 import { Subscription } from 'rxjs';
 import { CommitRevealAction, WalletAction } from '../types/wallet-action';
 import { WalletActionResultWithError } from '../types/wallet-action-result';
-import { ERROR_CODES, WalletActionRequestPayloadInterface, WalletActionTypeEnum, WalletMessageInterface, WalletMessageTypeEnum } from 'kaspacom-wallet-messages';
+import { ConnectAppActionResult, ERROR_CODES, WalletActionRequestPayloadInterface, WalletActionResultType, WalletActionTypeEnum, WalletMessageInterface, WalletMessageTypeEnum } from 'kaspacom-wallet-messages';
 import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root',
 })
-export class IFrameCommunicationService {
+export class PostMessageCommunicationService {
   private walletBalanceObservableSubscription: undefined | Subscription =
     undefined;
   private currentWalletId: number | undefined = undefined;
+  private connectedApps: { [appUrl: string]: MessageEventSource | null } = {};
 
   constructor(
     private walletActionsService: WalletActionService,
@@ -27,16 +27,11 @@ export class IFrameCommunicationService {
     private readonly injector: EnvironmentInjector,
     private router: Router,
   ) {
-    if (this.isIframe()) {
+    if (this.getOpenerWindow()) {
       toObservable(this.walletService.getCurrentWalletSignal()).subscribe(
         this.onWalletSelected.bind(this)
       );
     }
-  }
-
-  isIframeAllowedDomain(domain: string): boolean {
-    const hostname = new URL(domain).hostname;
-    return environment.allowedIframeDomains.includes(hostname);
   }
 
   isIframe(): boolean {
@@ -45,37 +40,60 @@ export class IFrameCommunicationService {
     );
   }
 
-  isIframeApplicationDomainAllowed(): boolean {
-    const topUrl = this.getTopUrl();
 
-    return this.isIframeAllowedDomain(topUrl);
+  getOpenerWindow() {
+    return window.opener || window.parent;
+  }
+
+  shouldBeActivated() {
+    return !!this.getOpenerWindow();
   }
 
   private getTopUrl() {
     return document.location.ancestorOrigins[0] || document.referrer;
   }
 
-  private async sendMessageToApp(message: WalletMessageInterface) {
-    if (!this.isIframeApplicationDomainAllowed()) {
-      throw new Error('Application domain not allowed');
+  private async sendMessageToApp(message: WalletMessageInterface, origin?: string) {
+    console.log('Sending message', origin, message);
+    if (origin) {
+      this.connectedApps[origin]?.postMessage(message, {
+        targetOrigin: origin,
+      });
+    } else {
+      for (let connectedApp in this.connectedApps) {
+        this.connectedApps[connectedApp]?.postMessage(message, {
+          targetOrigin: connectedApp,
+        });
+      }
     }
-
-    window.parent.postMessage(message, this.getTopUrl());
   }
 
-  initIframeMessaging() {
-    this.initWalletEvents();
+  initPostMessagesIfNeeded() {
+    if (!this.shouldBeActivated()) {
+      return;
+    }
+
     window.addEventListener('message', async (event) => {
-      if (!this.isIframeAllowedDomain(event.origin)) {
+      console.log('messageReceived', event.origin, event);
+      const message = event.data as WalletMessageInterface;
+
+      const isConnectionRequest = message?.type == WalletMessageTypeEnum.WalletActionRequest && message?.payload?.action == WalletActionTypeEnum.ConnectApp;
+
+
+      if (isConnectionRequest) {
+        await this.handleWalletActionRequest(message.payload, event, message.uuid);
+      }
+
+      if (!this.isApplicationAllowed(event.origin)) {
+        console.error('Message from disallowed domain', event);
         throw new Error('Application domain not allowed');
       }
 
-      const message = event.data as WalletMessageInterface;
 
       if (message?.type) {
         switch (message.type) {
           case WalletMessageTypeEnum.WalletActionRequest:
-            await this.handleWalletActionRequest(message.payload, message.uuid);
+            await this.handleWalletActionRequest(message.payload, event, message.uuid);
             break;
           case WalletMessageTypeEnum.OpenWalletInfo:
             this.router.navigate(['/wallet-info']);
@@ -86,9 +104,9 @@ export class IFrameCommunicationService {
         }
       }
     });
-  }
 
-  private initWalletEvents() { }
+    this.getOpenerWindow().postMessage("ready", "*");
+  }
 
   private async onWalletSelected(wallet: AppWallet | undefined) {
     this.currentWalletId = wallet?.getId();
@@ -121,7 +139,7 @@ export class IFrameCommunicationService {
     await this.sendUpdateWalletInfoEvent(this.walletService.getCurrentWallet());
   }
 
-  private async sendUpdateWalletInfoEvent(wallet: AppWallet | undefined) {
+  private async sendUpdateWalletInfoEvent(wallet: AppWallet | undefined, origin?: string) {
     const message: WalletMessageInterface = {
       type: WalletMessageTypeEnum.WalletInfo,
       payload: undefined,
@@ -142,53 +160,73 @@ export class IFrameCommunicationService {
             },
       };
     }
-    this.sendMessageToApp(message);
+    this.sendMessageToApp(message, origin);
+  }
+
+  private async emitInitialDataForConnectedApp(origin: string) {
+    if (this.walletService.getCurrentWallet()) {
+      await this.sendUpdateWalletInfoEvent(this.walletService.getCurrentWallet(), origin);
+    }
   }
 
   private async handleWalletActionRequest(
     actionData: WalletActionRequestPayloadInterface,
-    uuid?: string
+    event: MessageEvent<any>,
+    uuid?: string,
   ) {
     let result: WalletActionResultWithError = {
       success: false,
       errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
     };
 
-    if (!this.walletService.getCurrentWallet()) {
+    if (actionData?.action == WalletActionTypeEnum.ConnectApp) {
+      this.connectedApps[event.origin] = event.source;
+      this.emitInitialDataForConnectedApp(event.origin);
+
+      console.log('adding connected app');
+
       result = {
-        success: false,
-        errorCode: ERROR_CODES.WALLET_ACTION.WALLET_NOT_SELECTED,
-      }
+        success: true,
+        result: {
+          isApproved: true,
+        } as ConnectAppActionResult
+      };
     } else {
-      if (actionData.action == WalletActionTypeEnum.GetProtocolScriptData) {
+      if (!this.walletService.getCurrentWallet()) {
         result = {
-          success: true,
-          result: await this.kaspaNetworkActionsService.createGenericScriptFromString(
-            actionData.data.type,
-            actionData.data.stringifyAction,
-            this.walletService.getCurrentWallet()!.getAddress(),
-          ) as any,
+          success: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.WALLET_NOT_SELECTED,
         }
       } else {
-        let action: WalletAction | undefined =
-          this.getMessageWalletAction(actionData);
+        if (actionData.action == WalletActionTypeEnum.GetProtocolScriptData) {
+          result = {
+            success: true,
+            result: await this.kaspaNetworkActionsService.createGenericScriptFromString(
+              actionData.data.type,
+              actionData.data.stringifyAction,
+              this.walletService.getCurrentWallet()!.getAddress(),
+            ) as any,
+          }
+        } else {
+          let action: WalletAction | undefined =
+            this.getMessageWalletAction(actionData);
 
-        if (action) {
-          result = await this.walletActionsService.validateAndDoActionAfterApproval(
-            action,
-            true,
-            async () => {
-              this.sendMessageToApp({
-                type: WalletMessageTypeEnum.WalletActionApproved,
-                uuid,
-                payload: actionData,
-              })
-            }
-          );
+          if (action) {
+            result = await this.walletActionsService.validateAndDoActionAfterApproval(
+              action,
+              true,
+              async () => {
+                this.sendMessageToApp({
+                  type: WalletMessageTypeEnum.WalletActionApproved,
+                  uuid,
+                  payload: actionData,
+                }, event.origin);
+              }
+            );
+          }
         }
       }
     }
-
 
     await this.sendMessageToApp({
       type: WalletMessageTypeEnum.WalletActionResponse,
@@ -204,7 +242,8 @@ export class IFrameCommunicationService {
           success: false,
           errorCode: result.errorCode || ERROR_CODES.GENERAL.UNKNOWN_ERROR,
         } as any,
-    });
+    }, event.origin);
+
   }
 
   private getMessageWalletAction(
@@ -275,5 +314,9 @@ export class IFrameCommunicationService {
     }
 
     return undefined;
+  }
+
+  isApplicationAllowed(appUrl: string): boolean {
+    return Object.keys(this.connectedApps).includes(appUrl);
   }
 }

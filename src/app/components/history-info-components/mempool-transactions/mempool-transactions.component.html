@@ -1,0 +1,17 @@
+<div class="mempool-transactions-component">
+  <div *ngIf="mempoolTransactions()">
+    <div
+      *ngIf="mempoolTransactions()!.receiving.length > 0 || mempoolTransactions()!.sending.length > 0; else noMempoolTransactions">
+      <div *ngIf="mempoolTransactions()!.receiving.length > 0">
+        <div>Receiving Count: {{ mempoolTransactions()!.receiving.length }}</div>
+      </div>
+      <div *ngIf="mempoolTransactions()!.sending.length > 0">
+        <div>Sending Count: {{ mempoolTransactions()!.sending.length }}</div>
+      </div>
+    </div>
+    <ng-template #noMempoolTransactions>
+      <div>No Mempool Transactions</div>
+    </ng-template>
+  </div>
+  <p *ngIf="!mempoolTransactions()">Loading...</p>
+</div>

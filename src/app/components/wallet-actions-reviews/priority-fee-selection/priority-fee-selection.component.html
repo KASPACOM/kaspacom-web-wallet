@@ -5,7 +5,7 @@
       <div *ngFor="let option of currentOptions | keyvalue" class="fee-option"
         [class.selected]="selectedOption === option.key" (click)="selectOption(option.key)">
         <div class="title">{{ option.key | titlecase }}</div>
-        <div class="fee">{{ option.value.priorityFee }} KAS</div>
+        <div class="fee">{{ option.value.priorityFee | sompiToNumber }} KAS</div>
         <div class="seconds">
           {{ option.value.estimatedSeconds.toFixed(4) }} seconds
         </div>

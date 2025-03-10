@@ -1,4 +1,5 @@
 import {
+  EnvironmentInjector,
   Signal,
   signal,
   WritableSignal,
@@ -10,6 +11,10 @@ import { TotalBalanceWithUtxosInterface } from '../types/kaspa-network/total-bal
 import { UtxoProcessorManager } from './UtxoProcessorManager';
 import { RpcConnectionStatus } from '../types/kaspa-network/rpc-connection-status.enum';
 import { BalanceData } from '../types/kaspa-network/balance-event.interface';
+import { MempoolTransactionManager } from './MempoolTransactionManager';
+import { IMempoolResultEntry } from '../types/kaspa-network/mempool-result.interface';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { Subscription } from 'rxjs';
 
 export class AppWallet {
   private id: number;
@@ -21,19 +26,27 @@ export class AppWallet {
     undefined | TotalBalanceWithUtxosInterface
   > = signal(undefined);
   private utxoProcessorManager: UtxoProcessorManager | undefined = undefined;
+  private mempoolTransactionsManager: MempoolTransactionManager | undefined = undefined;
   private isSettingUtxoProcessorManager = false;
-  private walletStateBalance: Signal<undefined | BalanceData> | undefined = undefined;
+  private walletStateBalance: WritableSignal<undefined | BalanceData> = signal(undefined);
+  private mempoolTransactionsSignal: WritableSignal<IMempoolResultEntry | undefined> = signal(undefined);
   private isCurrentlyActiveSingal = signal(false);
+  private currentMempoolManagerTransactionSignalSubscription: undefined | Subscription = undefined;
+  private currentUtxoProcessorManagerTransactionSignalSubscription: undefined | Subscription = undefined;
 
-  private waitForWalletProcessorToBeReadyPromise: Promise<void> | undefined = undefined;
-  private waitForWalletProcessorToBeReadyResolve: (() => void) | undefined = undefined;
-  private isWaitForWalletProccessorResolved: boolean = false;
+
+  // Promises
+  private utxoProcessorManagerPendingUtxoPromise: Promise<unknown> | undefined = undefined;
+  private utxoProcessorManagerPendingUtxoResolve: undefined | ((v?: any) => void) = undefined;
+  private mempoolTransactionsManagerPendingPromise: Promise<unknown> | undefined = undefined;
+  private mempoolTransactionsManagerPendingResolve: undefined | ((v?: any) => void) = undefined;
 
   constructor(
     savedWalletData: SavedWalletData,
     shoudLoadBalance: boolean,
     account: SavedWalletAccount | undefined,
-    private kaspaNetworkActionsService: KaspaNetworkActionsService
+    private kaspaNetworkActionsService: KaspaNetworkActionsService,
+    private readonly injector: EnvironmentInjector,
   ) {
     this.id = savedWalletData.id;
     this.name = savedWalletData.name;
@@ -56,12 +69,16 @@ export class AppWallet {
       this.privateKey = new PrivateKey(memonicPk);
     }
 
-    this.waitForWalletProcessorToBeReadyPromise = new Promise((res) => {
-      this.waitForWalletProcessorToBeReadyResolve = res;
-    })
+    this.utxoProcessorManagerPendingUtxoPromise = new Promise((resolve) => {
+      this.utxoProcessorManagerPendingUtxoResolve = resolve;
+    });
+
+    this.mempoolTransactionsManagerPendingPromise = new Promise((resolve) => {
+      this.mempoolTransactionsManagerPendingResolve = resolve;
+    });
 
     if (shoudLoadBalance) {
-      this.refreshBalance();
+      this.refreshUtxosBalance();
     }
   }
 
@@ -119,33 +136,70 @@ export class AppWallet {
       return;
     }
 
+    if (!this.mempoolTransactionsManager) {
+      this.mempoolTransactionsManager = await this.kaspaNetworkActionsService.initMempoolTransactionManager(this.getAddress());
+      this.currentMempoolManagerTransactionSignalSubscription = toObservable(this.mempoolTransactionsManager.getWalletMempoolTransactionsSignal(), { injector: this.injector }).subscribe((mempoolTransactionData) => {
+        this.mempoolTransactionsSignal.set(mempoolTransactionData);
+
+        if (mempoolTransactionData) {
+          if (mempoolTransactionData.sending.length > 0 && !this.mempoolTransactionsManagerPendingPromise) {
+            this.mempoolTransactionsManagerPendingPromise = new Promise((resolve) => {
+              this.mempoolTransactionsManagerPendingResolve = resolve;
+            })
+          }
+          
+          if (mempoolTransactionData.sending.length == 0 && this.mempoolTransactionsManagerPendingPromise) {
+            this.mempoolTransactionsManagerPendingResolve?.();
+            this.mempoolTransactionsManagerPendingPromise = undefined;
+            this.mempoolTransactionsManagerPendingResolve = undefined;
+          }
+        }
+      },
+      );
+    }
+
     if (!this.isSettingUtxoProcessorManager) {
       this.isSettingUtxoProcessorManager = true;
       this.utxoProcessorManager =
         await this.kaspaNetworkActionsService.initUtxoProcessorManager(
           this.getAddress(),
-          async () => await this.refreshBalance(),
         );
 
-      this.walletStateBalance = this.utxoProcessorManager.getUtxoBalanceStateSignal();
-      this.waitForWalletProcessorToBeReadyResolve!();
-      this.isWaitForWalletProccessorResolved = true;
+      this.currentUtxoProcessorManagerTransactionSignalSubscription = toObservable(this.utxoProcessorManager.getUtxoBalanceStateSignal(), { injector: this.injector }).subscribe((balanceData) => {
+        this.walletStateBalance.set(balanceData);
+        this.refreshUtxosBalance();
+        if (this.getCurrentWalletStateBalanceSignalValue() && (this.getCurrentWalletStateBalanceSignalValue()!.outgoing > 0n || this.getCurrentWalletStateBalanceSignalValue()!.pending > 0n)) {
+          this.mempoolTransactionsManager?.refreshMempoolTransactions();
+        }
+
+        if (balanceData) {
+          if ((balanceData.outgoing) > 0n && !this.utxoProcessorManagerPendingUtxoPromise) {
+            this.utxoProcessorManagerPendingUtxoPromise = new Promise((resolve) => {
+              this.utxoProcessorManagerPendingUtxoResolve = resolve;
+            })
+          } 
+          
+          if ((balanceData.outgoing) == 0n && this.utxoProcessorManagerPendingUtxoPromise) {
+            this.utxoProcessorManagerPendingUtxoResolve?.();
+            this.utxoProcessorManagerPendingUtxoPromise = undefined;
+            this.utxoProcessorManagerPendingUtxoResolve = undefined;
+
+          }
+        }
+      })
     }
   }
 
   async stopListiningToWalletActions() {
     await this.utxoProcessorManager?.dispose();
+    await this.mempoolTransactionsManager?.dispose();
+    this.currentMempoolManagerTransactionSignalSubscription?.unsubscribe();
+    this.currentUtxoProcessorManagerTransactionSignalSubscription?.unsubscribe();
     this.utxoProcessorManager = undefined;
+    this.mempoolTransactionsManager = undefined;
     this.isSettingUtxoProcessorManager = false;
-    this.walletStateBalance = undefined;
-
-    if (this.isWaitForWalletProccessorResolved) {
-      this.isWaitForWalletProccessorResolved = false;
-      this.waitForWalletProcessorToBeReadyPromise = new Promise((res) => {
-        this.waitForWalletProcessorToBeReadyResolve = res;
-      })
-    }
-
+    this.walletStateBalance.set(undefined);
+    this.mempoolTransactionsSignal.set(undefined);
   }
 
   isCurrentlyActive(): boolean {
@@ -165,7 +219,7 @@ export class AppWallet {
     return this.balanceSignal.asReadonly();
   }
 
-  refreshBalance() {
+  refreshUtxosBalance() {
     this.kaspaNetworkActionsService
       .getWalletBalanceAndUtxos(this.getAddress())
       .then((value) => this.balanceSignal.set(value))
@@ -176,14 +230,28 @@ export class AppWallet {
 
   // This is keeps updating
   getWalletUtxoStateBalanceSignal(): Signal<undefined | BalanceData> {
-    return this.walletStateBalance || signal(undefined);
+    return this.walletStateBalance.asReadonly();
   }
 
-  waitForUtxoProcessorToBeReady(): Promise<void> {
-    return this.waitForWalletProcessorToBeReadyPromise!;
+  // This is keeps updating, the other one is just to show on the select wallet page
+  getCurrentWalletStateBalanceSignalValue(): BalanceData | undefined {
+    return this.getWalletUtxoStateBalanceSignal()();
+  }
+
+  getMempoolTransactionsSignal(): Signal<IMempoolResultEntry | undefined> {
+    return this.mempoolTransactionsSignal.asReadonly();
+  }
+
+  getMempoolTransactionsSignalValue(): IMempoolResultEntry | undefined {
+    return this.getMempoolTransactionsSignal()();
   }
 
   supportAccounts(): boolean {
     return !!this.version;
+  }
+
+  async waitForWalletToBeReadyForTransactions(): Promise<void> {
+    await this.mempoolTransactionsManagerPendingPromise;
+    await this.utxoProcessorManagerPendingUtxoPromise;
   }
 }

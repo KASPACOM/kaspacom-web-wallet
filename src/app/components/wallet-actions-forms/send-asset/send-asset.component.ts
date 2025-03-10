@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { WalletService } from '../../../services/wallet.service';
 import { NgFor, NgIf } from '@angular/common';
-import { TransferableAsset } from '../../../types/transferable-asset';
+import { AssetType, TransferableAsset } from '../../../types/transferable-asset';
 import { WalletAction, WalletActionType } from '../../../types/wallet-action';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { WalletActionService } from '../../../services/wallet-action.service';
@@ -16,10 +16,12 @@ import { ERROR_CODES } from 'kaspacom-wallet-messages';
   imports: [FormsModule, ReactiveFormsModule, NgIf, NgFor],
 })
 export class SendAssetComponent implements OnInit {
+  public AssetType = AssetType;
   assets: undefined | TransferableAsset[] = undefined; // Replace with your dynamic asset list
   selectedAsset: undefined | string = undefined;
   amount: number | null = null;
   recipientAddress: string = '';
+  rbf: boolean = false;
 
   constructor(
     private walletService: WalletService,
@@ -47,16 +49,15 @@ export class SendAssetComponent implements OnInit {
     }
 
     if (this.isFormValid()) {
-      const selectedAsset = this.assets?.find(
-        (asset) => this.selectedAsset == this.getAssetId(asset)
-      );
+      const selectedAsset = this.currentSelectedAsset();
 
       const action: WalletAction =
         this.walletActionService.createTransferWalletActionFromAsset(
           selectedAsset!,
           this.recipientAddress,
           this.kaspaNetworkActionsService.kaspaToSompiFromNumber(this.amount!),
-          this.walletService.getCurrentWallet()!
+          this.walletService.getCurrentWallet()!,
+          this.rbf
         );
 
       const result =
@@ -79,5 +80,11 @@ export class SendAssetComponent implements OnInit {
 
   getAssetId(asset: TransferableAsset): string {
     return `${asset.type}-${asset.ticker}`;
+  }
+
+  currentSelectedAsset(): undefined | TransferableAsset {
+    return this.assets?.find(
+      (asset) => this.selectedAsset == this.getAssetId(asset)
+    );
   }
 }

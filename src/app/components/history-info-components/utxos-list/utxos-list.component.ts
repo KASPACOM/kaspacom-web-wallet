@@ -19,7 +19,6 @@ export class UtxosListComponent {
   protected selectedToken = '';
 
   constructor(
-    private utilsService: UtilsHelper,
     private walletActionService: WalletActionService
   ) {}
 

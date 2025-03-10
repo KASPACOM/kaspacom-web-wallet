@@ -495,11 +495,6 @@ export class KaspaNetworkActionsService {
         additionalPriorityFee;
     }
 
-    if (action.type == WalletActionType.SUBMIT_TRANSACTION) {
-        return 0n;
-    }
-
-
     throw new Error('Invalid action type');
   }
 

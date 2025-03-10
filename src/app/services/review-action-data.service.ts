@@ -33,8 +33,6 @@ export class ReviewActionDataService {
                 return this.getSignPsktTransactionActionDisplay(action.data, wallet);
             case WalletActionType.SIGN_MESSAGE:
                 return this.getSignMessageActionDisplay(action.data, wallet);
-            case WalletActionType.SUBMIT_TRANSACTION:
-                return this.getSubmitTransactionActionDisplay(action.data, wallet);
             default:
                 return undefined
         }
@@ -170,28 +168,28 @@ export class ReviewActionDataService {
     }
 
     
-    private getSubmitTransactionActionDisplay(actionData: SubmitTransactionAction, wallet: AppWallet): ActionDisplay {
-        const transactionData = Transaction.deserializeFromSafeJSON(actionData.transactionJson);
+    // private getSubmitTransactionActionDisplay(actionData: SubmitTransactionAction, wallet: AppWallet): ActionDisplay {
+    //     const transactionData = Transaction.deserializeFromSafeJSON(actionData.transactionJson);
 
-        const totalOutputs = transactionData.outputs
+    //     const totalOutputs = transactionData.outputs
 
-        return {
-            title: 'Submit Transaction',
-            rows: [
-                {
-                    fieldName: "Wallet",
-                    fieldValue: wallet.getAddress(),
-                },
-                {
-                    fieldName: "Inputs",
-                    fieldValue: transactionData.inputs.map(input => `${this.kaspaNetworkActionsService.sompiToNumber(input.utxo!.amount)} KAS to ${this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(input.signatureScript)}`).join('\n')
+    //     return {
+    //         title: 'Submit Transaction',
+    //         rows: [
+    //             {
+    //                 fieldName: "Wallet",
+    //                 fieldValue: wallet.getAddress(),
+    //             },
+    //             {
+    //                 fieldName: "Inputs",
+    //                 fieldValue: transactionData.inputs.map(input => `${this.kaspaNetworkActionsService.sompiToNumber(input.utxo!.amount)} KAS to ${this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(input.signatureScript)}`).join('\n')
 
-                },
-                {
-                    fieldName: "Payments",
-                    fieldValue: transactionData.outputs.map(output => `${this.kaspaNetworkActionsService.sompiToNumber(output.value)} KAS to ${this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(output.scriptPublicKey)}`).join('\n')
-                }
-            ]
-        }
-    }
+    //             },
+    //             {
+    //                 fieldName: "Payments",
+    //                 fieldValue: transactionData.outputs.map(output => `${this.kaspaNetworkActionsService.sompiToNumber(output.value)} KAS to ${this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(output.scriptPublicKey)}`).join('\n')
+    //             }
+    //         ]
+    //     }
+    // }
 }

@@ -60,8 +60,6 @@ export class SendAssetComponent implements OnInit {
           this.rbf
         );
 
-        console.log('acc', action);
-
       const result =
         await this.walletActionService.validateAndDoActionAfterApproval(action);
 

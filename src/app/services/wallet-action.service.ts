@@ -198,15 +198,6 @@ export class WalletActionService {
     };
   }
 
-  createSubmitTransactionAction(transactionJson: string): WalletAction {
-    return {
-      type: WalletActionType.SUBMIT_TRANSACTION,
-      data: {
-        transactionJson,
-      },
-    }
-  }
-
   async validateAndDoActionAfterApproval(
     action: WalletAction,
     isFromIframe: boolean = false,
@@ -513,10 +504,6 @@ export class WalletActionService {
 
       case WalletActionType.COMMIT_REVEAL:
         validationResult = await this.validateCommitRevealAction(action.data as CommitRevealAction, wallet);
-        break;
-
-      case WalletActionType.SUBMIT_TRANSACTION:
-        validationResult = { isValidated: true }
         break;
 
       case WalletActionType.SIGN_MESSAGE:

@@ -19,7 +19,6 @@ type WalletActionDataMap = {
   [WalletActionType.SIGN_PSKT_TRANSACTION]: SignPsktTransactionAction;
   [WalletActionType.SIGN_MESSAGE]: SignMessage;
   [WalletActionType.COMMIT_REVEAL]: CommitRevealAction;
-  [WalletActionType.SUBMIT_TRANSACTION]: SubmitTransactionAction;
 };
 
 // Generic WalletAction type

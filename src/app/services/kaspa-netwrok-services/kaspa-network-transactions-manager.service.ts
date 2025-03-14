@@ -279,7 +279,6 @@ export class KaspaNetworkTransactionsManagerService {
 
         await this.connectAndDo(async () => {
           if (additionalOptions.rbf) {
-            console.log('rbfffff');
             await this.rpcService.getRpc()!.submitTransactionReplacement(
               {
                 transaction: Transaction.deserializeFromSafeJSON(transaction.serializeToSafeJSON()),
@@ -395,7 +394,7 @@ export class KaspaNetworkTransactionsManagerService {
       specialSignTransactionFunc,
       priorityEntries,
       revealScriptAddress: operationScript.scriptAddress,
-      skipWalletPendingCheck: true,
+      
       ...(transactionOptions || {}),
     };
 

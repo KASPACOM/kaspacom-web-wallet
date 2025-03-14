@@ -401,6 +401,7 @@ export class KaspaNetworkActionsService {
           },
           {},
           actionData.options?.additionalOutputs,
+          { skipWalletPendingCheck: !actionData.options?.revealPskt }
         );
 
       if (!result.success) {

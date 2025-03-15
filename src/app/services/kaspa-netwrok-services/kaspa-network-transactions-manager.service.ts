@@ -606,30 +606,33 @@ export class KaspaNetworkTransactionsManagerService {
     }[],
   ): Promise<Transaction> {
 
-    const revealUTXOs = await this.connectAndDo<IGetUtxosByAddressesResponse>(
-      async () => {
-        return await this.rpcService.getRpc()!.getUtxosByAddresses({
-          addresses: [script.scriptAddress],
-        });
-      }
-    );
+    let entry: UtxoEntryReference | undefined = undefined;
 
-    let entry: UtxoEntryReference | undefined = revealUTXOs.entries[0];
-
-    if (unxoEntryTransactionId) {
-      entry = revealUTXOs.entries.find(
-        (entry) => entry.outpoint.transactionId === unxoEntryTransactionId
+    await this.utils.retryOnError(async () => {
+      const revealUTXOs = await this.connectAndDo<IGetUtxosByAddressesResponse>(
+        async () => {
+          return await this.rpcService.getRpc()!.getUtxosByAddresses({
+            addresses: [script.scriptAddress],
+          });
+        }
       );
-    }
-
-    if (!entry) {
-      throw new Error('Utxo entry not found, please check your inputs');
-    }
+  
+      if (unxoEntryTransactionId) {
+        entry = revealUTXOs.entries.find(
+          (entry) => entry.outpoint.transactionId === unxoEntryTransactionId
+        );
+      }
+  
+      if (!entry) {
+        throw new Error('Utxo entry not found, please check your inputs');
+      }
+  
+    }, 60, 1000, true);
 
     const inputs: ITransactionInput[] = [
       {
-        previousOutpoint: entry.outpoint,
-        utxo: entry,
+        previousOutpoint: entry!.outpoint,
+        utxo: entry!,
         sequence: 0n,
         sigOpCount: 1,
       },
@@ -642,7 +645,7 @@ export class KaspaNetworkTransactionsManagerService {
       })) || [];
 
     if (transactionOutputs[0]) {
-      transactionOutputs[0].value += entry.amount;
+      transactionOutputs[0].value += entry!.amount;
     }
 
 

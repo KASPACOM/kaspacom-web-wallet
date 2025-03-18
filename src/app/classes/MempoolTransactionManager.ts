@@ -8,6 +8,8 @@ export class MempoolTransactionManager {
     private walletMempoolTransactionsSignal = signal<IMempoolResultEntry | undefined>(undefined);
     private utxoChangedEventListenerWithBind: ((event: any) => void) | undefined =
         undefined;
+    private transactionConfirmedPromise: Promise<void> | undefined;
+    private transactionConfirmedResolve: (() => void) | undefined;
 
     constructor(
         private readonly rpc: RpcClient,
@@ -29,6 +31,9 @@ export class MempoolTransactionManager {
             'utxos-changed',
             this.utxoChangedEventListenerWithBind
         );
+
+        this.transactionConfirmedPromise = undefined;
+        this.transactionConfirmedResolve = undefined;
     }
 
     async refreshMempoolTransactions() {
@@ -41,6 +46,10 @@ export class MempoolTransactionManager {
         const currentWalletEntries = mempoolTransactions.entries[0];
 
         this.walletMempoolTransactionsSignal.set(currentWalletEntries);
+
+        if (this.transactionConfirmedPromise && currentWalletEntries.sending.length == 0) {
+            this.transactionConfirmedResolve!();
+        }
     }
 
     private utxoChangedEventListener(event: UtxoChangedEvent) {
@@ -49,5 +58,19 @@ export class MempoolTransactionManager {
 
     getWalletMempoolTransactionsSignal(): Signal<IMempoolResultEntry | undefined> {
         return this.walletMempoolTransactionsSignal.asReadonly();
+    }
+
+    waitForSendingTransactionsToBeConfirmed(): Promise<void> {
+        if (!this.transactionConfirmedPromise) {
+            this.transactionConfirmedPromise = new Promise((resolve) => {
+                this.transactionConfirmedResolve = resolve;
+            });
+        }
+
+        if (this.walletMempoolTransactionsSignal() && this.walletMempoolTransactionsSignal()!.sending.length == 0) {
+            this.transactionConfirmedResolve!();
+        }
+
+        return this.transactionConfirmedPromise;
     }
 }

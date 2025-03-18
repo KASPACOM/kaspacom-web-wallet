@@ -11,7 +11,6 @@ import {
 import { IMempoolResult } from '../types/kaspa-network/mempool-result.interface';
 
 const WAIT_TIMEOUT = 20 * 1000;
-const WAIT_TIMEOUT_FOR_UTXO_BALANCE = 20 * 1000;
 
 export class UtxoProcessorManager {
   private processor: UtxoProcessor | undefined = undefined;

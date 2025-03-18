@@ -276,7 +276,7 @@ export class KaspaNetworkActionsService {
           action.priorityFee || 0n,
           actionData.sendAll,
           notifyUpdate,
-          false, 
+          false,
           action.rbf,
         );
 
@@ -401,11 +401,11 @@ export class KaspaNetworkActionsService {
           },
           {},
           actionData.options?.additionalOutputs,
-          { skipWalletPendingCheck: !actionData.options?.revealPskt }
+          { waitForTransactionToBeConfirmed: !!actionData.options?.revealPskt }
         );
 
       if (!result.success) {
-        console.error('Failed do KRC20 action', result);
+        console.error('Failed do Commit Reveal action', result);
         return {
           success: false,
           errorCode: result.errorCode,

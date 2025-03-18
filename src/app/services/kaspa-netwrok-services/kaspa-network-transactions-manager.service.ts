@@ -8,12 +8,10 @@ import {
   FeeSource,
   ICreateTransactions,
   IFeeEstimate,
-  IFees,
   IGeneratorSettingsObject,
   IGetUtxosByAddressesResponse,
   IPaymentOutput,
   IScriptPublicKey,
-  ITransaction,
   ITransactionInput,
   ITransactionOutput,
   IUtxoEntry,
@@ -44,6 +42,7 @@ import { AppWallet } from '../../classes/AppWallet';
 import { CommitRevealActionTransactions } from '../../types/kaspa-network/commit-reveal-action-transactions.interface';
 import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
 import { MempoolTransactionManager } from '../../classes/MempoolTransactionManager';
+import { error } from 'node:console';
 
 const MIN_TRANSACTION_FEE = 1817n;
 export const SUBMIT_REVEAL_MIN_UTXO_AMOUNT = 300000000n
@@ -60,8 +59,7 @@ type DoTransactionOptions = {
   estimateOnly?: boolean;
   changeWalletAddress?: string;
   revealScriptAddress?: string;
-  skipWalletPendingCheck?: boolean;
-  shouldWaitForTransactionToFinish?: boolean;
+  waitForTransactionToBeConfirmed?: boolean;
   rbf?: boolean;
 };
 
@@ -291,8 +289,21 @@ export class KaspaNetworkTransactionsManagerService {
           transactionsLeftToSend.shift();
         });
 
-        if (!additionalOptions.skipWalletPendingCheck) {
-          await utxoProcessonManager?.waitForOutgoingUtxo();
+        if (additionalOptions.waitForTransactionToBeConfirmed) {
+          const mempoolTransactionManager = new MempoolTransactionManager(
+            this.rpcService.getRpc()!,
+            additionalOptions.revealScriptAddress || this.convertPrivateKeyToAddress(privateKey.toString()),
+          );
+
+          try {
+            await mempoolTransactionManager.init();
+
+            await mempoolTransactionManager.waitForSendingTransactionsToBeConfirmed();
+          } catch (err) {
+            console.error('Failed to wait for transaction', err);
+          } finally {
+            await mempoolTransactionManager.dispose();
+          }
         }
       }
 
@@ -394,7 +405,7 @@ export class KaspaNetworkTransactionsManagerService {
       specialSignTransactionFunc,
       priorityEntries,
       revealScriptAddress: operationScript.scriptAddress,
-      
+
       ...(transactionOptions || {}),
     };
 
@@ -608,26 +619,23 @@ export class KaspaNetworkTransactionsManagerService {
 
     let entry: UtxoEntryReference | undefined = undefined;
 
-    await this.utils.retryOnError(async () => {
-      const revealUTXOs = await this.connectAndDo<IGetUtxosByAddressesResponse>(
-        async () => {
-          return await this.rpcService.getRpc()!.getUtxosByAddresses({
-            addresses: [script.scriptAddress],
-          });
-        }
+    const revealUTXOs = await this.connectAndDo<IGetUtxosByAddressesResponse>(
+      async () => {
+        return await this.rpcService.getRpc()!.getUtxosByAddresses({
+          addresses: [script.scriptAddress],
+        });
+      }
+    );
+
+    if (unxoEntryTransactionId) {
+      entry = revealUTXOs.entries.find(
+        (entry) => entry.outpoint.transactionId === unxoEntryTransactionId
       );
-  
-      if (unxoEntryTransactionId) {
-        entry = revealUTXOs.entries.find(
-          (entry) => entry.outpoint.transactionId === unxoEntryTransactionId
-        );
-      }
-  
-      if (!entry) {
-        throw new Error('Utxo entry not found, please check your inputs');
-      }
-  
-    }, 60, 1000, true);
+    }
+
+    if (!entry) {
+      throw new Error('Utxo entry not found, please check your inputs');
+    }
 
     const inputs: ITransactionInput[] = [
       {

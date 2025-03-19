@@ -679,8 +679,6 @@ export class KaspaNetworkTransactionsManagerService {
         signature
       );
 
-    console.log(transaction.serializeToSafeJSON());
-
     return transaction;
   }
 

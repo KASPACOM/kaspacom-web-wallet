@@ -1,8 +1,8 @@
 <div class="container">
-  <button class="action-button" (click)="handleButtonClick()" *ngIf="!showQrCode()">Sync With Mobile</button>
+  <button class="action-button" (click)="handleButtonClick()" *ngIf="!passwordFilled">Sync With Other Device</button>
 
   <!-- Password Prompt -->
-  <div *ngIf="showPasswordPrompt()">
+  <div *ngIf="showPasswordPrompt">
     <div class="password-prompt">
       <label for="password">Enter Your Password:</label>
       <input id="password" type="password" #passwordInput />
@@ -13,19 +13,33 @@
   </div>
 
   <!-- QR Code and Warning -->
-  <div *ngIf="showQrCode()" class="qr-display">
-    <button class="action-button" (click)="hideQr()">Hide QR Code</button>
+  <div *ngIf="passwordFilled && encryptedUserData" class="qr-display">
 
-    <p>
-      Scan this QR code with your mobile wallet to sync your wallet.
-    </p>
-
-    <div *ngIf="encryptedUserData">
-      <qrcode [qrdata]="encryptedUserData()!"></qrcode>
+    <div *ngIf="encryptedUserData!.length >= maxDataLength" class="error-message">
+      There are too many wallets to show qr code. Please download key file.
     </div>
 
-    <p class="warning">
-      Warning: Do not share this QR code with anyone.
-    </p>
+    <div *ngIf="encryptedUserData!.length < maxDataLength" class="qr-code">
+
+      <button class="action-button" (click)="hideKeyInfo()">Hide Key Info</button>
+
+      <p>
+        Scan this QR code with your mobile wallet to sync your wallet.
+      </p>
+
+
+      <qrcode [qrdata]="encryptedUserData!"></qrcode>
+
+      <p class="warning">
+        Warning: Do not share this QR code with anyone.
+      </p>
+    </div>
+
+      <button class="action-button" (click)="downloadKeyFile()">Download Key File</button>
+
+      <p class="warning">
+        Warning: Do not share this key file with anyone.
+      </p>
+
   </div>
 </div>

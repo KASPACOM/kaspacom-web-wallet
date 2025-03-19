@@ -1,0 +1,198 @@
+// Variables
+$danger-color: #dc3545;
+$danger-hover: #c82333;
+$gray-color: #6c757d;
+$gray-hover: #5a6268;
+$warning-bg: #fff3cd;
+$warning-border: #ffeeba;
+$warning-text: #856404;
+$input-border: #ced4da;
+$input-focus-shadow: rgba(220, 53, 69, 0.25);
+$error-bg: #f8d7da;
+$error-border: #f5c6cb;
+$text-color: #495057;
+$placeholder-color: #adb5bd;
+
+// Mixins
+@mixin button-base {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+@mixin input-base {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+  }
+
+  &::placeholder {
+    color: #adb5bd;
+  }
+}
+
+// Main container
+.clear-data-container {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+
+  // Header
+  h2 {
+    color: #dc3545;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-size: 1.75rem;
+    font-weight: 600;
+  }
+
+  // Warning section
+  .warning-message {
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    color: #856404;
+    padding: 1.5rem;
+    border-radius: 4px;
+    margin-bottom: 2rem;
+
+    p {
+      margin: 0.5rem 0;
+      font-size: 1.1rem;
+      line-height: 1.5;
+      font-weight: 500;
+
+      &:first-child {
+        font-weight: 600;
+      }
+    }
+
+    ul {
+      margin: 1rem 0;
+      padding-left: 1.5rem;
+      
+      li {
+        margin: 0.5rem 0;
+        font-size: 1rem;
+        position: relative;
+        padding-left: 1.5rem;
+
+        &::before {
+          content: "•";
+          color: #856404;
+          position: absolute;
+          left: 0;
+        }
+      }
+    }
+  }
+
+  // Form section
+  .form-group {
+    margin-bottom: 1.5rem;
+
+    label {
+      display: block;
+      margin-bottom: 0.75rem;
+      color: #495057;
+      font-weight: 500;
+      font-size: 1rem;
+    }
+
+    input {
+      @include input-base;
+    }
+  }
+
+  // Buttons section
+  .button-group {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+
+    button {
+      @include button-base;
+    }
+
+    .cancel-button {
+      background-color: #6c757d;
+      color: white;
+
+      &:hover:not(:disabled) {
+        background-color: #5a6268;
+      }
+    }
+
+    .delete-button {
+      background-color: #dc3545;
+      color: white;
+
+      &:hover:not(:disabled) {
+        background-color: #c82333;
+      }
+    }
+  }
+
+  // Error message
+  .error-message {
+    color: #dc3545;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    text-align: center;
+    padding: 0.75rem;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .clear-data-container {
+    margin: 1rem;
+    padding: 1.5rem;
+
+    h2 {
+      font-size: 1.5rem;
+    }
+
+    .warning-message {
+      padding: 1rem;
+
+      p {
+        font-size: 1rem;
+      }
+    }
+  }
+
+  .button-group {
+    flex-direction: column;
+
+    button {
+      width: 100%;
+      min-width: unset;
+    }
+  }
+} 

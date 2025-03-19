@@ -1,0 +1,37 @@
+<div class="clear-data-container">
+  <h2>Clear All Data</h2>
+  <div class="warning-message">
+    <p>⚠️ WARNING: This action cannot be undone!</p>
+    <p>This will permanently delete:</p>
+    <ul>
+      <li>All wallet data</li>
+      <li>All stored passwords</li>
+      <li>All settings and preferences</li>
+    </ul>
+  </div>
+
+  <form [formGroup]="clearDataForm" (ngSubmit)="onSubmit()">
+    <div class="form-group">
+      <label for="confirmation">Type "DELETE ALL DATA" to confirm:</label>
+      <input
+        type="text"
+        id="confirmation"
+        formControlName="confirmation"
+        placeholder="DELETE ALL DATA"
+        required
+      />
+      <div *ngIf="clearDataForm.get('confirmation')?.invalid && clearDataForm.get('confirmation')?.touched" class="error-message">
+        Please type "DELETE ALL DATA" exactly to confirm
+      </div>
+    </div>
+
+    <div class="button-group">
+      <button type="button" (click)="cancel()" class="cancel-button">Cancel</button>
+      <button type="submit" [disabled]="clearDataForm.invalid" class="delete-button">Clear All Data</button>
+    </div>
+  </form>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+</div> 

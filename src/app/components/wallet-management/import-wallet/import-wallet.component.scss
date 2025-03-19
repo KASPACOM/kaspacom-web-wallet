@@ -1,37 +1,223 @@
 .wallet-import-container {
-    margin: 0 auto;
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+  .header {
+    text-align: center;
+    
+    h2 {
+      color: #2c3e50;
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: #7f8c8d;
+      font-size: 1rem;
+    }
   }
-  
+
   .selection-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+
+    button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 1rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      background: white;
+      color: #2c3e50;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      i {
+        font-size: 1.2rem;
+      }
+
+      &:hover {
+        border-color: #3498db;
+        color: #3498db;
+      }
+
+      &.active {
+        background: #3498db;
+        border-color: #3498db;
+        color: white;
+      }
+    }
+  }
+
+  form {
     display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
+    flex-direction: column;
+    gap: 1.5rem;
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+
+      label {
+        color: #2c3e50;
+        font-weight: 500;
+        font-size: 0.9rem;
+      }
+
+      .input-wrapper {
+        position: relative;
+
+        input, select {
+          width: 100%;
+          padding: 0.8rem 2.5rem 0.8rem 1rem;
+          border: 2px solid #e0e0e0;
+          border-radius: 8px;
+          font-size: 1rem;
+          transition: all 0.3s ease;
+
+          &:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+          }
+
+          &::placeholder {
+            color: #95a5a6;
+          }
+        }
+
+        .input-icon {
+          position: absolute;
+          right: 1rem;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #95a5a6;
+          font-size: 1.1rem;
+        }
+      }
+    }
+
+    button[type="submit"] {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 1rem;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: #2980b9;
+      }
+
+      &:active {
+        transform: translateY(1px);
+      }
+
+      &:disabled {
+        background: #bdc3c7;
+        cursor: not-allowed;
+      }
+
+      i {
+        font-size: 1.2rem;
+      }
+    }
   }
-  
-  .selection-buttons button {
-    padding: 10px;
-    background-color: #4caf50;
-    border: none;
-    color: white;
-    cursor: pointer;
-  }
-  
-  button:disabled {
-    background-color: #c7c7c7;
-  }
-  
-  input, select {
-    width: 100%;
-    padding: 8px;
-    margin: 10px 0;
-  }
-  
+
   .error-message {
-    color: red;
-    font-size: 12px;
-    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #dc2626;
+    font-size: 0.9rem;
+
+    i {
+      font-size: 1.1rem;
+    }
   }
+}
+
+@media (max-width: 768px) {
+  .wallet-import-container {
+    padding: 1.5rem;
+    gap: 1.5rem;
+
+    .header {
+      h2 {
+        font-size: 1.5rem;
+      }
+    }
+
+    .selection-buttons {
+      grid-template-columns: 1fr;
+    }
+
+    form {
+      gap: 1rem;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .wallet-import-container {
+    padding: 1rem;
+    gap: 1rem;
+
+    .header {
+      h2 {
+        font-size: 1.3rem;
+      }
+
+      .subtitle {
+        font-size: 0.9rem;
+      }
+    }
+
+    form {
+      .form-group {
+        label {
+          font-size: 0.85rem;
+        }
+
+        .input-wrapper {
+          input, select {
+            padding: 0.7rem 2.2rem 0.7rem 0.8rem;
+            font-size: 0.95rem;
+          }
+
+          .input-icon {
+            font-size: 1rem;
+            right: 0.8rem;
+          }
+        }
+      }
+    }
+  }
+}
   

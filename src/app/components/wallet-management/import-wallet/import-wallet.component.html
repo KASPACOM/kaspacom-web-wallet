@@ -1,14 +1,25 @@
 <div class="wallet-import-container">
-    <h2>Import Wallet</h2>
-    <div class="selection-buttons">
-      <button type="button" (click)="selectPrivateKey()">Private Key</button>
-      <button type="button" (click)="selectMnemonic()">Mnemonic</button>
-    </div>
-  
-    <form [formGroup]="walletImportForm" (ngSubmit)="onSubmit()">
-      <!-- Private Key input -->
-      <div *ngIf="selectedType === 'privateKey'">
-        <label for="privateKey">Private Key</label>
+  <div class="header">
+    <h2>Import Existing Wallet</h2>
+    <p class="subtitle">Choose how you want to import your wallet</p>
+  </div>
+
+  <div class="selection-buttons">
+    <button type="button" [class.active]="selectedType === 'privateKey'" (click)="selectPrivateKey()">
+      <i class="fas fa-key"></i>
+      Private Key
+    </button>
+    <button type="button" [class.active]="selectedType === 'mnemonic'" (click)="selectMnemonic()">
+      <i class="fas fa-list"></i>
+      Mnemonic Phrase
+    </button>
+  </div>
+
+  <form [formGroup]="walletImportForm" (ngSubmit)="onSubmit()">
+    <!-- Private Key input -->
+    <div *ngIf="selectedType === 'privateKey'" class="form-group">
+      <label for="privateKey">Private Key</label>
+      <div class="input-wrapper">
         <input
           type="text"
           id="privateKey"
@@ -16,49 +27,71 @@
           placeholder="Enter your private key"
           required
         />
-        <div *ngIf="privateKey?.invalid && privateKey?.touched" class="error-message">
-          Private key is required.
-        </div>
+        <i class="fas fa-key input-icon"></i>
       </div>
-  
-      <!-- Mnemonic input -->
-      <div *ngIf="selectedType === 'mnemonic'">
-        <label for="mnemonicLength">Mnemonic Phrase</label>
-        <select [(ngModel)]="mnemonicLength" [ngModelOptions]="{standalone: true}" >
+      <div *ngIf="privateKey?.invalid && privateKey?.touched" class="error-message">
+        <i class="fas fa-exclamation-circle"></i>
+        Private key is required.
+      </div>
+    </div>
+
+    <!-- Mnemonic input -->
+    <div *ngIf="selectedType === 'mnemonic'" class="form-group">
+      <label for="mnemonicLength">Mnemonic Phrase Length</label>
+      <div class="input-wrapper">
+        <select [(ngModel)]="mnemonicLength" [ngModelOptions]="{standalone: true}">
           <option value="12">12 Words</option>
           <option value="24">24 Words</option>
         </select>
-
-          <input
-            type="text"
-            formControlName="mnemonic"
-            placeholder="Enter mnemonic"
-            required
-          />
-  
-          <label for="derivedPath">Derived Path</label>
-          <input
-            type="text"
-            formControlName="derivedPath"
-            placeholder="Enter derived path"
-            [value]="walletImportForm.get('derivedPath')?.value"
-          />
-
-          <label for="passphrase">Passphrase</label>
-          <input
-            type="text"
-            formControlName="passphrase"
-            placeholder="Enter passphrase(optional)"
-            [value]="walletImportForm.get('passphrase')?.value"
-          />
-
+        <i class="fas fa-list-ol input-icon"></i>
       </div>
-  
-      <button type="submit">Import Wallet</button>
-    </form>
-  
-    <div *ngIf="importError" class="error-message">
-      {{ importError }}
+
+      <label for="mnemonic">Mnemonic Phrase</label>
+      <div class="input-wrapper">
+        <input
+          type="text"
+          id="mnemonic"
+          formControlName="mnemonic"
+          placeholder="Enter your mnemonic phrase"
+          required
+        />
+        <i class="fas fa-list input-icon"></i>
+      </div>
+
+      <label for="derivedPath">Derived Path</label>
+      <div class="input-wrapper">
+        <input
+          type="text"
+          id="derivedPath"
+          formControlName="derivedPath"
+          placeholder="Enter derived path"
+          [value]="walletImportForm.get('derivedPath')?.value"
+        />
+        <i class="fas fa-code-branch input-icon"></i>
+      </div>
+
+      <label for="passphrase">Passphrase (Optional)</label>
+      <div class="input-wrapper">
+        <input
+          type="text"
+          id="passphrase"
+          formControlName="passphrase"
+          placeholder="Enter passphrase"
+          [value]="walletImportForm.get('passphrase')?.value"
+        />
+        <i class="fas fa-lock input-icon"></i>
+      </div>
     </div>
+
+    <button type="submit" [disabled]="walletImportForm.invalid">
+      <i class="fas fa-file-import"></i>
+      Import Wallet
+    </button>
+  </form>
+
+  <div *ngIf="importError" class="error-message">
+    <i class="fas fa-exclamation-circle"></i>
+    {{ importError }}
   </div>
+</div>
   

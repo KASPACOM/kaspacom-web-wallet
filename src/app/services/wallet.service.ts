@@ -1,10 +1,8 @@
 import {
-  effect,
   EnvironmentInjector,
   Injectable,
   Signal,
   signal,
-  WritableSignal,
 } from '@angular/core';
 import { PasswordManagerService } from './password-manager.service';
 import { SavedWalletAccount, SavedWalletData } from '../types/saved-wallet-data';

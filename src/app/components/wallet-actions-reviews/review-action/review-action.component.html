@@ -1,15 +1,15 @@
 <div class="transaction-review-container">
-  <ng-container *ngIf="currentActionSignal() && currentActionDisplay; else noAction">
+  <ng-container *ngIf="currentActionSignal() && currentActionDisplay(); else noAction">
     <div class="transaction-header">
       <h2 *ngIf="isActionHasPriorityFee">Transaction Review</h2>
       <h2 *ngIf="!isActionHasPriorityFee">Action Review</h2>
       <p>Please review the details below before proceeding.</p>
     </div>
 
-    <h3>{{ currentActionDisplay.title }}</h3>
-    <h4 *ngIf="currentActionDisplay.subtitle">{{ currentActionDisplay.subtitle }}</h4>
+    <h3>{{ currentActionDisplay()!.title }}</h3>
+    <h4 *ngIf="currentActionDisplay()!.subtitle">{{ currentActionDisplay()!.subtitle }}</h4>
     <div [ngClass]="{'detail': !row.isCodeBlock, 'detail-signing-message': row.isCodeBlock}"
-      *ngFor="let row of currentActionDisplay.rows">
+      *ngFor="let row of currentActionDisplay()!.rows">
       <div class="label">{{ row.fieldName }}:</div>
       <div class="value">{{ row.fieldValue }}</div>
     </div>

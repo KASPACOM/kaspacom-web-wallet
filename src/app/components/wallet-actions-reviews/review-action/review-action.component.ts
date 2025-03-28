@@ -28,6 +28,7 @@ export class ReviewActionComponent {
   public KRC20OperationType = KRC20OperationType;
   public Number = Number;
 
+  currentActionDisplay = computed(() => this.currentActionSignal ? this.reviewActionDataService.getActionDisplay(this.currentActionSignal()?.action, this.wallet) : undefined);
   currentActionSignal = computed(() => this.walletActionService.getActionToApproveSignal()());
   currentProgressSignal = computed(() => this.walletActionService.getCurrentProgressSignal()());
   actionResultSignal = computed(() =>this.walletActionService.getActionResultSignal()() );
@@ -97,7 +98,6 @@ export class ReviewActionComponent {
   }
 
   setCurrentPriorityFee(priorityFee: bigint | undefined) {
-    console.log('priority fee selected', priorityFee);
     this.currentPriorityFee = priorityFee;
   }
 
@@ -115,13 +115,5 @@ export class ReviewActionComponent {
 
   protected get isActionHasPriorityFee() {
     return this.currentActionSignal && this.currentActionSignal()?.action.type !== WalletActionType.SIGN_MESSAGE;
-  }
-
-  protected get currentActionDisplay(): ActionDisplay | undefined {
-    if (!this.currentActionSignal) {
-      return undefined;
-    }
-
-    return this.reviewActionDataService.getActionDisplay(this.currentActionSignal()?.action, this.wallet);
   }
 }

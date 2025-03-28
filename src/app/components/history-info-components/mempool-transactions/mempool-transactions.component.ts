@@ -16,7 +16,6 @@ import { PendingTransaction, Transaction } from '../../../../../public/kaspa/kas
 })
 export class MempoolTransactionsComponent {
   constructor(private walletService: WalletService,
-    private walletActionService: WalletActionService
   ) { }
   mempoolTransactions = computed(() => this.walletService.getCurrentWallet()!.getMempoolTransactionsSignalValue());
 

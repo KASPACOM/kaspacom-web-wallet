@@ -15,6 +15,7 @@ import { MempoolTransactionManager } from './MempoolTransactionManager';
 import { IMempoolResultEntry } from '../types/kaspa-network/mempool-result.interface';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
+import { EtherService } from '../services/ether.service';
 
 export class AppWallet {
   private id: number;
@@ -47,6 +48,7 @@ export class AppWallet {
     account: SavedWalletAccount | undefined,
     private kaspaNetworkActionsService: KaspaNetworkActionsService,
     private readonly injector: EnvironmentInjector,
+    private readonly etherService: EtherService,
   ) {
     this.id = savedWalletData.id;
     this.name = savedWalletData.name;
@@ -253,5 +255,13 @@ export class AppWallet {
   async waitForWalletToBeReadyForTransactions(): Promise<void> {
     await this.mempoolTransactionsManagerPendingPromise;
     await this.utxoProcessorManagerPendingUtxoPromise;
+  }
+
+  getEtherWallet() {
+    return this.etherService.getEtherWallet(this.getPrivateKey().toString());
+  }
+
+  async getEtherBalance(): Promise<bigint> {
+    return await this.etherService.getWalletBalance(await this.getEtherWallet().getAddress());
   }
 }

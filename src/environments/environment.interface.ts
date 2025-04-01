@@ -6,4 +6,6 @@ export interface Environment {
   kaspaNetwork: string;
   allowedDomains: string[];
   allowedIframeDomains: string[],
+  etherRpcUrl: string,
+  etherChainId: number,
 }

@@ -9,4 +9,6 @@ export const environment: Environment = {
   kaspaNetwork: KASPA_NETWORKS.TESTNET10,
   allowedDomains: ['localhost', 'dev-wallet.kaspa.com', 'local.kaspa.com'],
   allowedIframeDomains: ['localhost', 'dev.kaspa.com', 'local.kaspa.com'],
+  etherRpcUrl: 'https://rpc.kasplextest.xyz',
+  etherChainId: 1221,
 };

@@ -9,4 +9,6 @@ export const environment: Environment = {
   kaspaNetwork: KASPA_NETWORKS.MAINNET,
   allowedDomains: ['wallet.kaspa.com'],
   allowedIframeDomains: ['kaspa.com', 'www.kaspa.com'],
+  etherRpcUrl: 'https://rpc.kasplex.xyz',
+  etherChainId: 1221,
 };

@@ -26,6 +26,8 @@
         <p>{{ wallet.getDisplayName() }}</p>
         <h3>Wallet Address:</h3>
         <p>{{ wallet.getAddress() }}</p>
+        <h3>Ether Address:</h3>
+        <p>{{ etherAddress || 'loading...' }}</p>
         <h3>Balance:</h3> 
         <div
           *ngIf="

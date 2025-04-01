@@ -25,6 +25,7 @@
     "@zxing/ngx-scanner": "^19.0.0",
     "angularx-qrcode": "^18.0.2",
     "crypto-js": "^4.2.0",
+    "ethers": "^6.13.5",
     "express": "^4.18.2",
     "kaspacom-wallet-messages": "github:KASPIANO/kaspacom-wallet-messages",
     "lodash": "^4.17.21",

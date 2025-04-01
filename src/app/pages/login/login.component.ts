@@ -11,6 +11,7 @@ import { NgIf } from '@angular/common';
 import { Router } from '@angular/router';
 import { WalletService } from '../../services/wallet.service';
 import { IFrameCommunicationService } from '../../services/iframe-communication.service';
+import { EtherService } from '../../services/ether.service';
 
 @Component({
   selector: 'app-login',
@@ -37,8 +38,8 @@ export class LoginComponent implements OnInit {
     });
 
     // for faster development
-    // this.loginForm.get('password')?.setValue('password');
-    // this.onSubmit();
+    this.loginForm.get('password')?.setValue('123-asd');
+    this.onSubmit();
   }
 
   get password() {
@@ -58,6 +59,7 @@ export class LoginComponent implements OnInit {
         this.loginError = false;
 
         await this.walletService.loadWallets();
+
 
         if (this.walletService.getWalletsCount() === 0) {
           this.router.navigate(['/add-wallet']);

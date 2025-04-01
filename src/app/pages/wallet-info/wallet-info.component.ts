@@ -1,5 +1,4 @@
 import {
-  AfterViewInit,
   Component,
   computed,
   OnDestroy,
@@ -84,13 +83,15 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
   private refreshDataTimeout: NodeJS.Timeout | undefined;
   private setUnfinishedActionsTimeout: NodeJS.Timeout | undefined;
 
+  protected etherAddress: string | undefined = undefined;
+
   constructor(
     private walletService: WalletService, // Inject wallet service
     private router: Router,
     private kasplexService: KasplexKrc20Service,
     private kaspaNetworkActionsService: KaspaNetworkActionsService,
     private walletActionService: WalletActionService,
-    private kaspaApiService: KaspaApiService
+    private kaspaApiService: KaspaApiService,
   ) {}
 
   walletUtxoStateBalanceSignal = computed(() => this.wallet?.getCurrentWalletStateBalanceSignalValue());
@@ -106,6 +107,7 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
 
     this.loadData();
     this.checkForUnfinishedActions();
+    this.setEtherAddress();
   }
 
   ngOnDestroy(): void {
@@ -276,5 +278,15 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
     );
 
     this.checkForUnfinishedActions();
+  }
+
+  async setEtherAddress() {
+    if (!this.wallet) {
+      return;
+    }
+
+    this.etherAddress = await this.wallet.getEtherWallet().getAddress();
+    console.log('ETH BALANCE', await this.wallet.getEtherBalance(), Number(await this.wallet.getEtherBalance()) / 1e18);
+    
   }
 }

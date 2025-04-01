@@ -45,6 +45,8 @@ export class MempoolTransactionManager {
 
         const currentWalletEntries = mempoolTransactions.entries[0];
 
+        console.log('MEMMM', currentWalletEntries);
+
         this.walletMempoolTransactionsSignal.set(currentWalletEntries);
 
         if (this.transactionConfirmedPromise && currentWalletEntries.sending.length == 0) {

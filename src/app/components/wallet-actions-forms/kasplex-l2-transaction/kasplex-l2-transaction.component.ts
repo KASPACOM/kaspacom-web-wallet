@@ -5,6 +5,7 @@ import { WeiToNumberPipe } from '../../../pipes/wei-to-number.pipe';
 import { WalletActionService } from '../../../services/wallet-action.service';
 import { WalletService } from '../../../services/wallet.service';
 import { TransactionRequest, parseEther } from 'ethers';
+import { KASPLEX_L2_NETWORK_DATA_PREFIX } from '../../../services/kasplex-l2.service';
 
 @Component({
   selector: 'kasplex-l2-transaction',
@@ -43,9 +44,7 @@ export class KasplexL2TransactionComponent implements OnInit {
       if (formData.data) cleanData.data = formData.data;
       if (formData.nonce) cleanData.nonce = formData.nonce;
 
-      console.log('Form submitted:', cleanData);
-
-      const action = this.walletActionService.createSignL2EtherTransactionAction(cleanData, 'kasplex', false);
+      const action = this.walletActionService.createSignL2EtherTransactionAction(cleanData, KASPLEX_L2_NETWORK_DATA_PREFIX, false);
 
       const result = await this.walletActionService.validateAndDoActionAfterApproval(action);
       console.log('Submit l2 ether transaction result', result);

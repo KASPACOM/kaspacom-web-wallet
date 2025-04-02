@@ -1,7 +1,9 @@
 import { Injectable } from "@angular/core";
-import { ethers, TransactionRequest } from "ethers";
+import { ethers } from "ethers";
 import { environment } from "../../environments/environment";
 
+
+export const KASPLEX_L2_NETWORK_DATA_PREFIX = 'kasplex';
 @Injectable({
   providedIn: 'root',
 })

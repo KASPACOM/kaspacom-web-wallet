@@ -383,7 +383,8 @@ export class KaspaNetworkActionsService {
       const resultData: SignL2EtherTransactionActionResult = {
         type: WalletActionResultType.SignL2EtherTransaction,
         transactionId: result.result!.transaction?.summary.finalTransactionId,
-        signedTransaction: result.result!.signedMessage,
+        signedTransactionString: result.result!.signedTransactionString,
+        signedTransactionHash: result.result!.signedTransactionHash,
         performedByWallet: wallet.getAddress(),
       };
 

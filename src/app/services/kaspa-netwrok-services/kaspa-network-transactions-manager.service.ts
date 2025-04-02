@@ -42,7 +42,7 @@ import { AppWallet } from '../../classes/AppWallet';
 import { CommitRevealActionTransactions } from '../../types/kaspa-network/commit-reveal-action-transactions.interface';
 import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
 import { MempoolTransactionManager } from '../../classes/MempoolTransactionManager';
-import { TransactionRequest } from 'ethers';
+import { keccak256, TransactionRequest } from 'ethers';
 import { EtherService } from '../ether.service';
 
 const MIN_TRANSACTION_FEE = 1817n;
@@ -442,21 +442,24 @@ export class KaspaNetworkTransactionsManagerService {
     errorCode?: number;
     result?: {
       transaction?: ICreateTransactions;
-      signedMessage: string;
+      signedTransactionString: string;
+      signedTransactionHash: string;
     };
   }> {
     const l2Transaction = await this.etherService.createTransactionAndPopulate(transactionOptions, wallet.getKasplexL2ServiceWallet());
+    
 
-    const signedMessage = await this.etherService.signTransaction(l2Transaction, wallet.getKasplexL2ServiceWallet());
+    const signedTransactionString = await this.etherService.signTransaction(l2Transaction, wallet.getKasplexL2ServiceWallet());
+    const signedTransactionHash = keccak256(signedTransactionString);
 
     if (!submitTransaction) {
       return {
         success: true,
-        result: { signedMessage },
+        result: { signedTransactionString, signedTransactionHash },
       }
     }
 
-    const payload = this.etherService.encodeTransactionToKasplexL2Format(signedMessage, protocolPrefix);
+    const payload = this.etherService.encodeTransactionToKasplexL2Format(signedTransactionString, protocolPrefix);
 
     const result = await this.doTransactionWithUtxoProcessor(
       wallet.getUtxoProcessorManager()!,
@@ -476,7 +479,8 @@ export class KaspaNetworkTransactionsManagerService {
       errorCode: result.errorCode,
       result: {
         transaction: result.result,
-        signedMessage,
+        signedTransactionString,
+        signedTransactionHash,
       }
     }
   }

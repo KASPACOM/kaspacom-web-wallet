@@ -176,7 +176,11 @@ export class CompletedActionOverviewService {
                 },
                 {
                     fieldName: "Signed Transaction Data",
-                    fieldValue: actionData.signedTransaction
+                    fieldValue: actionData.signedTransactionString
+                },
+                {
+                    fieldName: "L2 Transaction Id",
+                    fieldValue: actionData.signedTransactionHash
                 }
             ]
         };

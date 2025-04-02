@@ -7,6 +7,7 @@ import {
   WalletAction,
   WalletActionListItem,
   WalletActionType,
+  SignL2EtherTransactionAction,
 } from '../types/wallet-action';
 import { AssetType, TransferableAsset } from '../types/transferable-asset';
 import { WalletService } from './wallet.service';
@@ -25,6 +26,7 @@ import { Krc20WalletActionService } from './protocols/krc20/krc20-wallet-actions
 import { BaseProtocolClassesService } from './protocols/base-protocol-classes.service';
 import { Router } from '@angular/router';
 import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
+import { TransactionRequest } from 'ethers';
 
 const INSTANT_ACTIONS: { [key: string]: boolean } = {
   [WalletActionType.SIGN_MESSAGE]: true,
@@ -185,6 +187,21 @@ export class WalletActionService {
         submitTransaction,
         protocol,
         type,
+      },
+    };
+  }
+
+  createSignL2EtherTransactionAction(
+    transactionOptions: TransactionRequest,
+    payloadPrefix: string,
+    submitTransaction?: boolean,
+  ): WalletAction {
+    return {
+      type: WalletActionType.SIGN_L2_ETHER_TRANSACTION,
+      data: {
+        submitTransaction,
+        transactionOptions,
+        payloadPrefix,
       },
     };
   }
@@ -402,13 +419,13 @@ export class WalletActionService {
         }
 
         const action = actionsList!.shift()!;
-        
+
 
         this.actionsListByWallet.set({
           ...this.actionsListByWallet(),
           [walletIdWithAccount]: actionsList,
         });
-        
+
 
         try {
           await this.showTransactionLoaderToUser(0);
@@ -498,6 +515,12 @@ export class WalletActionService {
       case WalletActionType.SIGN_PSKT_TRANSACTION:
         validationResult = await this.validateSignPsktTransactionAction(
           action.data as SignPsktTransactionAction,
+          wallet
+        );
+        break;
+      case WalletActionType.SIGN_L2_ETHER_TRANSACTION:
+        validationResult = await this.validateSignL2EtherTransactionAction(
+          action.data as SignL2EtherTransactionAction,
           wallet
         );
         break;
@@ -675,6 +698,25 @@ export class WalletActionService {
           errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
         }
       }
+    }
+
+    return {
+      isValidated: true,
+    };
+  }
+
+  private async validateSignL2EtherTransactionAction(
+    action: SignL2EtherTransactionAction,
+    wallet: AppWallet
+  ): Promise<{ isValidated: boolean; errorCode?: number }> {
+    const currentBalance =
+      wallet.getCurrentWalletStateBalanceSignalValue()?.mature || 0n;
+
+    if (currentBalance <= MINIMAL_AMOUNT_TO_SEND) {
+      return {
+        isValidated: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_AMOUNT,
+      };
     }
 
     return {

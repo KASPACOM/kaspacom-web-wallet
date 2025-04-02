@@ -42,7 +42,8 @@ import { AppWallet } from '../../classes/AppWallet';
 import { CommitRevealActionTransactions } from '../../types/kaspa-network/commit-reveal-action-transactions.interface';
 import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
 import { MempoolTransactionManager } from '../../classes/MempoolTransactionManager';
-import { error } from 'node:console';
+import { TransactionRequest } from 'ethers';
+import { EtherService } from '../ether.service';
 
 const MIN_TRANSACTION_FEE = 1817n;
 export const SUBMIT_REVEAL_MIN_UTXO_AMOUNT = 300000000n
@@ -61,6 +62,7 @@ type DoTransactionOptions = {
   revealScriptAddress?: string;
   waitForTransactionToBeConfirmed?: boolean;
   rbf?: boolean;
+  payload?: any;
 };
 
 @Injectable({
@@ -71,6 +73,7 @@ export class KaspaNetworkTransactionsManagerService {
     private readonly rpcService: RpcService,
     private readonly connectionManager: KaspaNetworkConnectionManagerService,
     private readonly utils: UtilsHelper,
+    private readonly etherService: EtherService,
   ) {
   }
 
@@ -223,6 +226,7 @@ export class KaspaNetworkTransactionsManagerService {
           source: sendAll ? FeeSource.ReceiverPays : FeeSource.SenderPays,
         },
         networkId: this.rpcService.getNetwork(),
+        payload: additionalOptions.payload,
       };
 
       if (
@@ -234,6 +238,8 @@ export class KaspaNetworkTransactionsManagerService {
           errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
         };
       }
+
+      console.log(baseTransactionData);
 
       const currentTransactions = await this.utils.retryOnError(async () => {
         return await createTransactions(baseTransactionData);
@@ -421,6 +427,60 @@ export class KaspaNetworkTransactionsManagerService {
 
   }
 
+  async doEtherSigningTransaction(
+    wallet: AppWallet,
+    priorityFee: bigint,
+    transactionOptions: TransactionRequest,
+    protocolPrefix?: string,
+    submitTransaction: boolean = false,
+    estimateOnly: boolean = false,
+    notifyCreatedTransactions?: (transactionId: string) => Promise<any>,
+    payments?: IPaymentOutput[],
+    rbf?: boolean,
+  ): Promise<{
+    success: boolean;
+    errorCode?: number;
+    result?: {
+      transaction?: ICreateTransactions;
+      signedMessage: string;
+    };
+  }> {
+    const l2Transaction = await this.etherService.createTransactionAndPopulate(transactionOptions, wallet.getKasplexL2ServiceWallet());
+
+    const signedMessage = await this.etherService.signTransaction(l2Transaction, wallet.getKasplexL2ServiceWallet());
+
+    if (!submitTransaction) {
+      return {
+        success: true,
+        result: { signedMessage },
+      }
+    }
+
+    const payload = this.etherService.encodeTransactionToKasplexL2Format(signedMessage, protocolPrefix);
+
+    const result = await this.doTransactionWithUtxoProcessor(
+      wallet.getUtxoProcessorManager()!,
+      wallet.getPrivateKey(),
+      priorityFee,
+      payments || [],
+      {
+        notifyCreatedTransactions,
+        estimateOnly,
+        rbf,
+        payload,
+      }
+    );
+
+    return {
+      success: result.success,
+      errorCode: result.errorCode,
+      result: {
+        transaction: result.result,
+        signedMessage,
+      }
+    }
+  }
+
   async doKaspaTransferTransactionWithUtxoProcessor(
     wallet: AppWallet,
     payments: IPaymentOutput[],
@@ -429,6 +489,7 @@ export class KaspaNetworkTransactionsManagerService {
     notifyCreatedTransactions?: (transactionId: string) => Promise<any>,
     estimateOnly: boolean = false,
     rbf?: boolean,
+    payload?: Uint8Array,
   ): Promise<{
     success: boolean;
     errorCode?: number;
@@ -444,6 +505,7 @@ export class KaspaNetworkTransactionsManagerService {
         sendAll,
         estimateOnly,
         rbf,
+        payload: payload,
       }
     );
   }

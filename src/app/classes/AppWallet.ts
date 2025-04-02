@@ -15,6 +15,7 @@ import { MempoolTransactionManager } from './MempoolTransactionManager';
 import { IMempoolResultEntry } from '../types/kaspa-network/mempool-result.interface';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
+import { KasplexL2Service } from '../services/kasplex-l2.service';
 
 export class AppWallet {
   private id: number;
@@ -31,6 +32,7 @@ export class AppWallet {
   private walletStateBalance: WritableSignal<undefined | BalanceData> = signal(undefined);
   private mempoolTransactionsSignal: WritableSignal<IMempoolResultEntry | undefined> = signal(undefined);
   private isCurrentlyActiveSingal = signal(false);
+  private kasplexL2ServiceWalletAddress: WritableSignal<string | undefined> = signal(undefined);
   private currentMempoolManagerTransactionSignalSubscription: undefined | Subscription = undefined;
   private currentUtxoProcessorManagerTransactionSignalSubscription: undefined | Subscription = undefined;
 
@@ -47,6 +49,7 @@ export class AppWallet {
     account: SavedWalletAccount | undefined,
     private kaspaNetworkActionsService: KaspaNetworkActionsService,
     private readonly injector: EnvironmentInjector,
+    private readonly kasplexL2Service: KasplexL2Service,
   ) {
     this.id = savedWalletData.id;
     this.name = savedWalletData.name;
@@ -80,6 +83,13 @@ export class AppWallet {
     if (shoudLoadBalance) {
       this.refreshUtxosBalance();
     }
+
+    this.initializeKasplexL2ServiceWalletAddress();
+  }
+
+  private async initializeKasplexL2ServiceWalletAddress() {
+    const address = await this.getKasplexL2ServiceWallet().getAddress();
+    this.kasplexL2ServiceWalletAddress.set(address);
   }
 
   getId(): number {
@@ -253,5 +263,17 @@ export class AppWallet {
   async waitForWalletToBeReadyForTransactions(): Promise<void> {
     await this.mempoolTransactionsManagerPendingPromise;
     await this.utxoProcessorManagerPendingUtxoPromise;
+  }
+
+  getKasplexL2ServiceWallet() {
+    return this.kasplexL2Service.getChainWallet(this.getPrivateKey().toString());
+  }
+
+  getKasplexL2ServiceWalletAddressSignal(): Signal<string | undefined> {
+    return this.kasplexL2ServiceWalletAddress.asReadonly();
+  }
+
+  async getKasplexL2ServiceBalance(): Promise<bigint> {
+    return await this.kasplexL2Service.getWalletBalance(await this.getKasplexL2ServiceWallet().getAddress());
   }
 }

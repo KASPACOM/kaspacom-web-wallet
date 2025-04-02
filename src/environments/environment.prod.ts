@@ -9,4 +9,9 @@ export const environment: Environment = {
   kaspaNetwork: KASPA_NETWORKS.MAINNET,
   allowedDomains: ['wallet.kaspa.com'],
   allowedIframeDomains: ['kaspa.com', 'www.kaspa.com'],
+  kasplexL2Config: {
+    rpcUrl: 'https://rpc.kasplex.xyz',
+    chainId: 1221,
+    name: 'Kasplex L2',
+  },
 };

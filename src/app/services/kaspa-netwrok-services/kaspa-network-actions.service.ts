@@ -44,6 +44,7 @@ import { PsktTransaction } from '../../types/kaspa-network/pskt-transaction.inte
 import { UtilsHelper } from '../utils.service';
 import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
 import { MempoolTransactionManager } from '../../classes/MempoolTransactionManager';
+import { SignL2EtherTransactionActionResult } from 'kaspacom-wallet-messages/dist/types/actions/results/payloads/sign-l2-transaction-action-result.interface';
 
 const MINIMAL_TRANSACTION_MASS = 10000n;
 export const MINIMAL_AMOUNT_TO_SEND = 20000000n;
@@ -225,6 +226,19 @@ export class KaspaNetworkActionsService {
       return [result.transactionFee];
     }
 
+    if (action.type == WalletActionType.SIGN_L2_ETHER_TRANSACTION) {
+      const result = await this.transactionsManager.doEtherSigningTransaction(
+        wallet,
+        action.priorityFee || 0n,
+        action.data.transactionOptions,
+        action.data.payloadPrefix,
+        true,
+        true,
+        async () => { },
+      );
+      return result.result!.transaction!.transactions.map((t) => t.mass);
+    }
+
     if (action.type == WalletActionType.COMMIT_REVEAL) {
 
       const result =
@@ -344,6 +358,32 @@ export class KaspaNetworkActionsService {
         type: WalletActionResultType.SignPsktTransaction,
         psktTransactionJson: result.psktTransaction,
         transactionId: result.transactionId,
+        performedByWallet: wallet.getAddress(),
+      };
+
+      return {
+        success: true,
+        result: resultData,
+      };
+    }
+
+    if (action.type == WalletActionType.SIGN_L2_ETHER_TRANSACTION) {
+      const result = await this.transactionsManager.doEtherSigningTransaction(
+        wallet,
+        action.priorityFee || 0n,
+        action.data.transactionOptions,
+        action.data.payloadPrefix,
+        true,
+        false,
+        notifyUpdate,
+        [],
+        action.rbf,
+      );
+
+      const resultData: SignL2EtherTransactionActionResult = {
+        type: WalletActionResultType.SignL2EtherTransaction,
+        transactionId: result.result!.transaction?.summary.finalTransactionId,
+        signedTransaction: result.result!.signedMessage,
         performedByWallet: wallet.getAddress(),
       };
 
@@ -477,6 +517,10 @@ export class KaspaNetworkActionsService {
       );
 
       return (action.priorityFee || 0n) + totalOutputs + MINIMAL_AMOUNT_TO_SEND;
+    }
+
+    if (action.type == WalletActionType.SIGN_L2_ETHER_TRANSACTION) {
+      return MINIMAL_AMOUNT_TO_SEND;
     }
 
     if (action.type == WalletActionType.COMMIT_REVEAL) {

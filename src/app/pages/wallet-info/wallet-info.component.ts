@@ -1,5 +1,4 @@
 import {
-  AfterViewInit,
   Component,
   computed,
   OnDestroy,
@@ -30,8 +29,10 @@ import { TransactionHistoryComponent } from '../../components/history-info-compo
 import { Krc20OperationHistoryComponent } from '../../components/history-info-components/krc20-operation-history/krc20-operation-history.component';
 import { OperationDetails } from '../../services/kasplex-api/dtos/operation-details-response';
 import { MempoolTransactionsComponent } from '../../components/history-info-components/mempool-transactions/mempool-transactions.component';
+import { KasplexL2TransactionComponent } from '../../components/wallet-actions-forms/kasplex-l2-transaction/kasplex-l2-transaction.component';
+import { WeiToNumberPipe } from '../../pipes/wei-to-number.pipe';
 
-type ActionTabs = 'send' | 'mint' | 'deploy' | 'list' | 'buy';
+type ActionTabs = 'send' | 'mint' | 'deploy' | 'list' | 'buy' | 'kasplex-l2';
 type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
 
 @Component({
@@ -45,6 +46,7 @@ type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
     NgIf,
     NgFor,
     SompiToNumberPipe,
+    WeiToNumberPipe,
     SendAssetComponent,
     MintComponent,
     ReviewActionComponent,
@@ -56,6 +58,7 @@ type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
     TransactionHistoryComponent,
     Krc20OperationHistoryComponent,
     MempoolTransactionsComponent,
+    KasplexL2TransactionComponent,
   ],
 })
 export class WalletInfoComponent implements OnInit, OnDestroy {
@@ -84,13 +87,15 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
   private refreshDataTimeout: NodeJS.Timeout | undefined;
   private setUnfinishedActionsTimeout: NodeJS.Timeout | undefined;
 
+  protected kasplexL2Address: string | undefined = undefined;
+  protected kasplexL2Balance: bigint | undefined = undefined;
   constructor(
     private walletService: WalletService, // Inject wallet service
     private router: Router,
     private kasplexService: KasplexKrc20Service,
     private kaspaNetworkActionsService: KaspaNetworkActionsService,
     private walletActionService: WalletActionService,
-    private kaspaApiService: KaspaApiService
+    private kaspaApiService: KaspaApiService,
   ) {}
 
   walletUtxoStateBalanceSignal = computed(() => this.wallet?.getCurrentWalletStateBalanceSignalValue());
@@ -106,6 +111,7 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
 
     this.loadData();
     this.checkForUnfinishedActions();
+    this.setKasplexL2ServiceAddress();
   }
 
   ngOnDestroy(): void {
@@ -153,6 +159,12 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
     );
   }
 
+  async loadKasplexL2Balance() {
+    if (this.kasplexL2Address) {
+      this.kasplexL2Balance = await this.wallet?.getKasplexL2ServiceBalance();
+    }
+  }
+
   async loadKrc20Operations() {
     this.krc20OperationHistory = await firstValueFrom(
       this.kasplexService
@@ -160,10 +172,6 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
           this.wallet!.getAddress(),
         )
         .pipe(
-          // tap((response) => {
-          //   this.paginationPrevTokenKey = response.prev;
-          //   this.paginationNextTokenKey = response.next;
-          // }),
           map((response) => {
             return response.result;
           }),
@@ -220,6 +228,7 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
         this.loadKrc20Tokens(),
         this.loadUserTransactions(),
         this.loadKrc20Operations(),
+        this.loadKasplexL2Balance(),
       ]);
     } catch (error) {
       console.error(error);
@@ -276,5 +285,14 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
     );
 
     this.checkForUnfinishedActions();
+  }
+
+  async setKasplexL2ServiceAddress() {
+    if (!this.wallet) {
+      return;
+    }
+
+    this.kasplexL2Address = await this.wallet.getKasplexL2ServiceWallet().getAddress();
+    this.loadKasplexL2Balance();
   }
 }

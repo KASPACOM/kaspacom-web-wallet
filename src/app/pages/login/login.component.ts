@@ -11,6 +11,7 @@ import { NgIf } from '@angular/common';
 import { Router } from '@angular/router';
 import { WalletService } from '../../services/wallet.service';
 import { IFrameCommunicationService } from '../../services/iframe-communication.service';
+import { KasplexL2Service } from '../../services/kasplex-l2.service';
 
 @Component({
   selector: 'app-login',
@@ -58,6 +59,7 @@ export class LoginComponent implements OnInit {
         this.loginError = false;
 
         await this.walletService.loadWallets();
+
 
         if (this.walletService.getWalletsCount() === 0) {
           this.router.navigate(['/add-wallet']);

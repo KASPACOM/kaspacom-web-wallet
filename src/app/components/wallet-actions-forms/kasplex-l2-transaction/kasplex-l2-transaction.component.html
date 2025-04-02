@@ -1,0 +1,76 @@
+<div class="kasplex-l2-transaction-container">
+  <form [formGroup]="ethForm" (ngSubmit)="onSubmit()">
+    <div class="form-group">
+      <label for="to">To Address:</label>
+      <input 
+        type="text" 
+        id="to" 
+        formControlName="to" 
+        placeholder="0x..."
+        class="form-control"
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="value">Amount (KETH):</label>
+      <input 
+        type="number" 
+        id="value" 
+        formControlName="value" 
+        step="0.000000000000000001"
+        class="form-control"
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="gasLimit">Gas Limit:</label>
+      <input 
+        type="number" 
+        id="gasLimit" 
+        formControlName="gasLimit" 
+        class="form-control"
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="gasPrice">Gas Price (Gwei):</label>
+      <input 
+        type="number" 
+        id="gasPrice" 
+        formControlName="gasPrice" 
+        step="0.1"
+        class="form-control"
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="data">Data:</label>
+      <textarea 
+        id="data" 
+        formControlName="data" 
+        placeholder="0x..."
+        class="form-control"
+      ></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="nonce">Nonce:</label>
+      <input 
+        type="number" 
+        id="nonce" 
+        formControlName="nonce" 
+        class="form-control"
+      >
+    </div>
+
+    <div class="form-actions">
+      <button 
+        type="submit" 
+        [disabled]="!ethForm.valid"
+        class="submit-button"
+      >
+        Send Transaction
+      </button>
+    </div>
+  </form>
+</div> 

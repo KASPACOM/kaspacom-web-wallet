@@ -15,6 +15,7 @@ import { KasplexKrc20Service } from './kasplex-api/kasplex-api.service';
 import { firstValueFrom } from 'rxjs';
 import { UtilsHelper } from './utils.service';
 import { RpcConnectionStatus } from '../types/kaspa-network/rpc-connection-status.enum';
+import { KasplexL2Service } from './kasplex-l2.service';
 
 @Injectable({
   providedIn: 'root',
@@ -28,7 +29,8 @@ export class WalletService {
     private readonly kaspaNetworkActionsService: KaspaNetworkActionsService,
     private readonly kasplexService: KasplexKrc20Service,
     private readonly utilsService: UtilsHelper,
-     private readonly injector: EnvironmentInjector,
+    private readonly injector: EnvironmentInjector,
+    private readonly etherService: KasplexL2Service,
   ) { }
 
   async addWallet(
@@ -167,7 +169,7 @@ export class WalletService {
 
     this.allWalletsSignal.update((oldValue) => [
       ...(oldValue || []),
-      new AppWallet(walletData, true, walletAccountData, this.kaspaNetworkActionsService, this.injector),
+      this.createAppWalletFromSavedWalletData(walletData, true, walletAccountData),
     ]);
 
     return {
@@ -287,7 +289,7 @@ export class WalletService {
 
     this.allWalletsSignal.update((oldValue) => [
       ...(oldValue || []),
-      new AppWallet(walletData, true, walletData.accounts?.[0], this.kaspaNetworkActionsService, this.injector),
+      this.createAppWalletFromSavedWalletData(walletData, true, walletData.accounts?.[0]),
     ]);
 
     return result;
@@ -305,10 +307,10 @@ export class WalletService {
     for (const wallet of walletsData.wallets) {
       if (wallet.accounts && wallet.accounts.length) {
         for (const walletAccount of wallet.accounts) {
-          allWallets.push(new AppWallet(wallet, loadBalance, walletAccount, this.kaspaNetworkActionsService, this.injector));
+          allWallets.push(this.createAppWalletFromSavedWalletData(wallet, loadBalance, walletAccount));
         }
       } else {
-        allWallets.push(new AppWallet(wallet, loadBalance, undefined, this.kaspaNetworkActionsService, this.injector));
+        allWallets.push(this.createAppWalletFromSavedWalletData(wallet, loadBalance, undefined));
       }
     }
 
@@ -507,5 +509,13 @@ export class WalletService {
 
 
     return pathComponents.join('/');
+  }
+
+
+  private createAppWalletFromSavedWalletData(savedWalletData: SavedWalletData,
+    shoudLoadBalance: boolean,
+    account: SavedWalletAccount | undefined,
+  ): AppWallet {
+    return new AppWallet(savedWalletData, shoudLoadBalance, account, this.kaspaNetworkActionsService, this.injector, this.etherService);
   }
 }

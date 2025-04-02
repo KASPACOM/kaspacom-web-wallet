@@ -5,6 +5,7 @@ import { BaseProtocolClassesService } from "./protocols/base-protocol-classes.se
 import { CompletedActionDisplay } from "../types/completed-action-display.type";
 import { CompoundUtxosActionResult } from "../types/wallet-action-result";
 import { ProtocolType } from "kaspacom-wallet-messages/dist/types/protocol-type.enum";
+import { SignL2EtherTransactionActionResult } from "kaspacom-wallet-messages/dist/types/actions/results/payloads/sign-l2-transaction-action-result.interface";
 
 
 @Injectable({
@@ -30,6 +31,8 @@ export class CompletedActionOverviewService {
                 return this.getCommitRevealActionDisplay(action as CommitRevealActionResult);
             case WalletActionResultType.SignPsktTransaction:
                 return this.getSignPsktTransactionActionDisplay(action as SignPsktTransactionActionResult);
+            case WalletActionResultType.SignL2EtherTransaction:
+                return this.getSignL2EtherTransactionActionDisplay(action as SignL2EtherTransactionActionResult);
             case WalletActionResultType.MessageSigning:
                 return this.getSignMessageActionDisplay(action as SignedMessageActionResult);
             default:
@@ -163,7 +166,30 @@ export class CompletedActionOverviewService {
         return result;
     }
 
+    private getSignL2EtherTransactionActionDisplay(actionData: SignL2EtherTransactionActionResult): CompletedActionDisplay {
+        const result = {
+            title: `Sign${actionData.transactionId ? ' & Submit' : ''} L2 Ether Transaction`,
+            rows: [
+                {
+                    fieldName: "Wallet",
+                    fieldValue: actionData.performedByWallet
+                },
+                {
+                    fieldName: "Signed Transaction Data",
+                    fieldValue: actionData.signedTransaction
+                }
+            ]
+        };
 
+        if (actionData.transactionId) {
+            result.rows.push({
+                fieldName: "Transaction ID",
+                fieldValue: actionData.transactionId
+            });
+        }
+
+        return result;
+    }
 }
 
 

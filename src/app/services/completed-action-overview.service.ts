@@ -179,7 +179,7 @@ export class CompletedActionOverviewService {
                     fieldValue: actionData.signedTransactionString
                 },
                 {
-                    fieldName: "L2 Transaction Id",
+                    fieldName: "L2 Transaction Hash",
                     fieldValue: actionData.signedTransactionHash
                 }
             ]

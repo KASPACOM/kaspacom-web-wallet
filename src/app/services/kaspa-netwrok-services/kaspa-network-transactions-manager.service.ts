@@ -42,7 +42,8 @@ import { AppWallet } from '../../classes/AppWallet';
 import { CommitRevealActionTransactions } from '../../types/kaspa-network/commit-reveal-action-transactions.interface';
 import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
 import { MempoolTransactionManager } from '../../classes/MempoolTransactionManager';
-import { ethers, TransactionRequest } from 'ethers';
+import { TransactionRequest } from 'ethers';
+import { EtherService } from '../ether.service';
 
 const MIN_TRANSACTION_FEE = 1817n;
 export const SUBMIT_REVEAL_MIN_UTXO_AMOUNT = 300000000n
@@ -72,6 +73,7 @@ export class KaspaNetworkTransactionsManagerService {
     private readonly rpcService: RpcService,
     private readonly connectionManager: KaspaNetworkConnectionManagerService,
     private readonly utils: UtilsHelper,
+    private readonly etherService: EtherService,
   ) {
   }
 
@@ -279,10 +281,6 @@ export class KaspaNetworkTransactionsManagerService {
           transaction.sign([privateKey]);
         }
 
-
-        console.log('signing', transaction.serializeToSafeJSON());
-
-
         await this.connectAndDo(async () => {
           if (additionalOptions.rbf) {
             await this.rpcService.getRpc()!.submitTransactionReplacement(
@@ -429,6 +427,60 @@ export class KaspaNetworkTransactionsManagerService {
 
   }
 
+  async doEtherSigningTransaction(
+    wallet: AppWallet,
+    priorityFee: bigint,
+    transactionOptions: TransactionRequest,
+    protocolPrefix?: string,
+    submitTransaction: boolean = false,
+    estimateOnly: boolean = false,
+    notifyCreatedTransactions?: (transactionId: string) => Promise<any>,
+    payments?: IPaymentOutput[],
+    rbf?: boolean,
+  ): Promise<{
+    success: boolean;
+    errorCode?: number;
+    result?: {
+      transaction?: ICreateTransactions;
+      signedMessage: string;
+    };
+  }> {
+    const l2Transaction = await this.etherService.createTransactionAndPopulate(transactionOptions, wallet.getKasplexL2ServiceWallet());
+
+    const signedMessage = await this.etherService.signTransaction(l2Transaction, wallet.getKasplexL2ServiceWallet());
+
+    if (!submitTransaction) {
+      return {
+        success: true,
+        result: { signedMessage },
+      }
+    }
+
+    const payload = this.etherService.encodeTransactionToKasplexL2Format(signedMessage, protocolPrefix);
+
+    const result = await this.doTransactionWithUtxoProcessor(
+      wallet.getUtxoProcessorManager()!,
+      wallet.getPrivateKey(),
+      priorityFee,
+      payments || [],
+      {
+        notifyCreatedTransactions,
+        estimateOnly,
+        rbf,
+        payload,
+      }
+    );
+
+    return {
+      success: result.success,
+      errorCode: result.errorCode,
+      result: {
+        transaction: result.result,
+        signedMessage,
+      }
+    }
+  }
+
   async doKaspaTransferTransactionWithUtxoProcessor(
     wallet: AppWallet,
     payments: IPaymentOutput[],
@@ -437,46 +489,12 @@ export class KaspaNetworkTransactionsManagerService {
     notifyCreatedTransactions?: (transactionId: string) => Promise<any>,
     estimateOnly: boolean = false,
     rbf?: boolean,
+    payload?: Uint8Array,
   ): Promise<{
     success: boolean;
     errorCode?: number;
     result?: ICreateTransactions;
   }> {
-
-    // Basic transaction data
-    const txData: TransactionRequest = {
-      to: "0x88C0e6519Dc3C42cbf071681900a63Bfc7DDfF22",
-      value: ethers.parseEther("0.01"), // Amount in wei (0.1 ETH, or the zkEVM’s native currency)
-      gasLimit: 21000,                  // Basic tx cost, or more if data is included
-      // gasPrice, nonce, etc., can be left for ethers to estimate if you prefer
-    };
-
-    const populatedTx = await wallet.getEtherWallet().populateTransaction(txData);
-
-    console.log(populatedTx);
-
-
-
-    // Sign the transaction (offline or via the wallet)
-    const signedTx = await wallet.getEtherWallet().signTransaction(populatedTx);
-
-
-    console.log('signedTx', signedTx);
-    console.log('ethers.getBytes(signedTx)', ethers.getBytes(signedTx));
-
-    let tx = { payload: new TextEncoder().encode("kasplex") };
-
-    if (false) { // version 0 JSON
-        tx.payload = new Uint8Array([...tx.payload, 0x00]);
-    } else { // version 1 Binary
-        tx.payload = new Uint8Array([...tx.payload, 0x01]);
-    }
-    
-    // Append vmData (assuming vmData is a Uint8Array)
-    tx.payload = new Uint8Array([...tx.payload, ...ethers.getBytes(signedTx)]);
-    
-
-
     return await this.doTransactionWithUtxoProcessor(
       wallet.getUtxoProcessorManager()!,
       wallet.getPrivateKey(),
@@ -487,7 +505,7 @@ export class KaspaNetworkTransactionsManagerService {
         sendAll,
         estimateOnly,
         rbf,
-        payload: tx.payload,
+        payload: payload,
       }
     );
   }

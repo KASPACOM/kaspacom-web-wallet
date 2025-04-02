@@ -6,6 +6,9 @@ export interface Environment {
   kaspaNetwork: string;
   allowedDomains: string[];
   allowedIframeDomains: string[],
-  etherRpcUrl: string,
-  etherChainId: number,
+  kasplexL2Config: {
+    rpcUrl: string,
+    chainId: number,
+    name: string,
+  },
 }

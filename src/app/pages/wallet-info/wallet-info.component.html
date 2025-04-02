@@ -26,8 +26,6 @@
         <p>{{ wallet.getDisplayName() }}</p>
         <h3>Wallet Address:</h3>
         <p>{{ wallet.getAddress() }}</p>
-        <h3>Ether Address:</h3>
-        <p>{{ etherAddress || 'loading...' }}</p>
         <h3>Balance:</h3> 
         <div
           *ngIf="
@@ -62,6 +60,20 @@
         <ng-template #loadingData>
           <p>Loading...</p>
         </ng-template>
+
+
+        <h3>Kasplex L2:</h3>
+        <div class="kasplex-l2-info">
+          <p>
+            <strong>Address:</strong>
+            {{ kasplexL2Address || 'loading...' }}
+          </p>
+          <p>
+            <strong>Balance:</strong>
+            {{ kasplexL2Balance !== undefined ? (kasplexL2Balance | weiToNumber) + ' KETH' : 'loading...' }}
+          </p>
+        </div>
+        
       </div>
 
       <div class="mempoll-transactions">
@@ -112,6 +124,13 @@
           >
             Deploy
           </button>
+          <button
+            class="tab-button"
+            [class.active]="activeTab === 'kasplex-l2'"
+            (click)="switchTab('kasplex-l2')"
+          >
+            Kasplex L2
+          </button>
           <!-- This is for development -->
           <!-- <button
             class="tab-button"
@@ -139,6 +158,9 @@
           </div>
           <div *ngIf="activeTab === 'deploy'" class="deploy-container">
             <deploy></deploy>
+          </div>
+          <div *ngIf="activeTab === 'kasplex-l2'" class="kasplex-l2-container">
+            <kasplex-l2-transaction></kasplex-l2-transaction>
           </div>
           <!-- This is for development -->
           <!-- <div *ngIf="activeTab === 'list'" class="list-container">

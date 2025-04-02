@@ -11,7 +11,6 @@ import { KRC20OperationType } from '../../../types/kaspa-network/krc20-operation
 import { PriorityFeeSelectionComponent } from '../priority-fee-selection/priority-fee-selection.component';
 import { AppWallet } from '../../../classes/AppWallet';
 import { ReviewActionDataService } from '../../../services/review-action-data.service';
-import { ActionDisplay } from '../../../types/action-display.type';
 import { WalletActionService } from '../../../services/wallet-action.service';
 
 const TIMEOUT = 2 * 60 * 1000;

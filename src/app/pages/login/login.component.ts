@@ -11,7 +11,7 @@ import { NgIf } from '@angular/common';
 import { Router } from '@angular/router';
 import { WalletService } from '../../services/wallet.service';
 import { IFrameCommunicationService } from '../../services/iframe-communication.service';
-import { EtherService } from '../../services/ether.service';
+import { KasplexL2Service } from '../../services/kasplex-l2.service';
 
 @Component({
   selector: 'app-login',

@@ -15,7 +15,7 @@ import { KasplexKrc20Service } from './kasplex-api/kasplex-api.service';
 import { firstValueFrom } from 'rxjs';
 import { UtilsHelper } from './utils.service';
 import { RpcConnectionStatus } from '../types/kaspa-network/rpc-connection-status.enum';
-import { EtherService } from './ether.service';
+import { KasplexL2Service } from './kasplex-l2.service';
 
 @Injectable({
   providedIn: 'root',
@@ -30,7 +30,7 @@ export class WalletService {
     private readonly kasplexService: KasplexKrc20Service,
     private readonly utilsService: UtilsHelper,
     private readonly injector: EnvironmentInjector,
-    private readonly etherService: EtherService,
+    private readonly etherService: KasplexL2Service,
   ) { }
 
   async addWallet(

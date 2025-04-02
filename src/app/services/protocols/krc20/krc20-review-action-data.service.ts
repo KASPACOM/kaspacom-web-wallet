@@ -4,7 +4,7 @@ import { CommitRevealAction } from "../../../types/wallet-action";
 import { ActionDisplay } from "../../../types/action-display.type";
 import { KRC20OperationDataInterface, KRC20OperationType } from "../../../types/kaspa-network/krc20-operations-data.interface";
 import { KaspaNetworkActionsService } from "../../kaspa-netwrok-services/kaspa-network-actions.service";
-import { ProtocolReviewActionDataInterface } from "../interfaces/protocol-review-action-data.interface copy";
+import { ProtocolReviewActionDataInterface } from "../interfaces/protocol-review-action-data.interface";
 
 @Injectable({
     providedIn: 'root',

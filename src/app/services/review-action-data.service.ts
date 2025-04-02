@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { CommitRevealAction, CompoundUtxosAction, SignPsktTransactionAction, SubmitTransactionAction, TransferKasAction, WalletAction, WalletActionType } from "../types/wallet-action";
+import { CommitRevealAction, CompoundUtxosAction, SignL2EtherTransactionAction, SignPsktTransactionAction, SubmitTransactionAction, TransferKasAction, WalletAction, WalletActionType } from "../types/wallet-action";
 import { AppWallet } from "../classes/AppWallet";
 import { KaspaNetworkActionsService } from "./kaspa-netwrok-services/kaspa-network-actions.service";
 import { SignMessageActionInterface } from "kaspacom-wallet-messages";
@@ -31,6 +31,8 @@ export class ReviewActionDataService {
                 return this.getCommitRevealActionDisplay(action.data, wallet);
             case WalletActionType.SIGN_PSKT_TRANSACTION:
                 return this.getSignPsktTransactionActionDisplay(action.data, wallet);
+            case WalletActionType.SIGN_L2_ETHER_TRANSACTION:
+                return this.getSignL2EtherTransactionActionDisplay(action.data, wallet);
             case WalletActionType.SIGN_MESSAGE:
                 return this.getSignMessageActionDisplay(action.data, wallet);
             default:
@@ -167,7 +169,27 @@ export class ReviewActionDataService {
         }
     }
 
-    
+    private getSignL2EtherTransactionActionDisplay(actionData: SignL2EtherTransactionAction, wallet: AppWallet): ActionDisplay {
+        return {
+            title: "Sign L2 Ether Transaction",
+            rows: [
+                {
+                    fieldName: "Wallet",
+                    fieldValue: wallet.getAddress(),
+                },
+                {
+                    fieldName: "Kasplex L2 Wallet Address",
+                    fieldValue: wallet.getKasplexL2ServiceWalletAddressSignal()() || '-',
+                },
+                {
+                    fieldName: "Transaction",
+                    fieldValue: JSON.stringify(actionData.transactionOptions, null, 2),
+                    isCodeBlock: true,
+                }
+            ]
+        }
+    }
+
     // private getSubmitTransactionActionDisplay(actionData: SubmitTransactionAction, wallet: AppWallet): ActionDisplay {
     //     const transactionData = Transaction.deserializeFromSafeJSON(actionData.transactionJson);
 

@@ -193,7 +193,7 @@ export class WalletActionService {
 
   createSignL2EtherTransactionAction(
     transactionOptions: TransactionRequest,
-    payloadPrefix: string,
+    payloadPrefix?: string,
     submitTransaction?: boolean,
   ): WalletAction {
     return {

@@ -1,6 +1,7 @@
 import { Component, computed } from '@angular/core';
 import { JsonPipe, NgClass, NgFor, NgIf } from '@angular/common';
 import {
+  SignL2EtherTransactionAction,
   WalletAction,
   WalletActionType,
 } from '../../../types/wallet-action';
@@ -113,6 +114,19 @@ export class ReviewActionComponent {
   }
 
   protected get isActionHasPriorityFee() {
-    return this.currentActionSignal && this.currentActionSignal()?.action.type !== WalletActionType.SIGN_MESSAGE;
+    if (!(this.currentActionSignal && this.currentActionSignal())) {
+      return false;
+    }
+
+    if (this.currentActionSignal()!.action.type === WalletActionType.SIGN_MESSAGE) {
+      return false;
+    }
+
+    if (this.currentActionSignal()!.action.type === WalletActionType.SIGN_L2_ETHER_TRANSACTION && !(this.currentActionSignal()!.action.data as SignL2EtherTransactionAction).submitTransaction) {
+      return false;
+    }
+
+
+    return true;
   }
 }

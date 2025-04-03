@@ -232,7 +232,7 @@ export class KaspaNetworkActionsService {
         action.priorityFee || 0n,
         action.data.transactionOptions,
         action.data.payloadPrefix,
-        true,
+        action.data.submitTransaction,
         true,
         async () => { },
       );
@@ -373,7 +373,7 @@ export class KaspaNetworkActionsService {
         action.priorityFee || 0n,
         action.data.transactionOptions,
         action.data.payloadPrefix,
-        true,
+        action.data.submitTransaction,
         false,
         notifyUpdate,
         [],

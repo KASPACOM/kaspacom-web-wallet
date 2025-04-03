@@ -1,4 +1,4 @@
-import { EnvironmentInjector, inject, Injectable, Signal } from '@angular/core';
+import { EnvironmentInjector, Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { WalletActionService } from './wallet-action.service';
 import { WalletService } from './wallet.service';
@@ -125,6 +125,7 @@ export class IFrameCommunicationService {
         ?.balance;
       message.payload = {
         walletAddress: wallet.getAddress(),
+        kasplexL2Address: wallet.getKasplexL2ServiceWalletAddressSignal()(),
         balance:
           balance?.mature === undefined
             ? null
@@ -265,6 +266,13 @@ export class IFrameCommunicationService {
           actionData.data.submitTransaction,
           actionData.data.protocol,
           actionData.data.protocolAction,
+        );
+      
+      case WalletActionTypeEnum.SignL2EtherTransaction:
+        return this.walletActionsService.createSignL2EtherTransactionAction(
+          actionData.data.transactionOptions,
+          actionData.data.payloadPrefix,
+          actionData.data.submitTransaction,
         );
     }
 

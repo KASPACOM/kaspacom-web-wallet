@@ -171,7 +171,7 @@ export class ReviewActionDataService {
 
     private getSignL2EtherTransactionActionDisplay(actionData: SignL2EtherTransactionAction, wallet: AppWallet): ActionDisplay {
         return {
-            title: "Sign L2 Ether Transaction",
+            title: `Sign${actionData.submitTransaction ? ' & Submit' : ''} L2 Ether Transaction`,
             rows: [
                 {
                     fieldName: "Wallet",

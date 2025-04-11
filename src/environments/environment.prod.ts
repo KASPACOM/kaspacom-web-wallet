@@ -11,7 +11,7 @@ export const environment: Environment = {
   allowedIframeDomains: ['kaspa.com', 'www.kaspa.com'],
   kasplexL2Config: {
     rpcUrl: 'https://rpc.kasplex.xyz',
-    chainId: 1221,
+    chainId: 12211,
     name: 'Kasplex L2',
   },
 };

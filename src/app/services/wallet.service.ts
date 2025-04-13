@@ -78,10 +78,6 @@ export class WalletService {
 
     const currentWalletsData = await this.passwordManagerService.getUserData();
 
-    console.log(currentWalletsData, currentWalletsData.wallets.find(
-      (wallet) => wallet.privateKey === privateKey || (mnemonic && wallet.mnemonic === mnemonic)
-    ), mnemonic);
-
     if (
       currentWalletsData.wallets.find(
         (wallet) => (wallet.privateKey && wallet.privateKey === privateKey) || (mnemonic && wallet.mnemonic === mnemonic && wallet.password == passphrase)

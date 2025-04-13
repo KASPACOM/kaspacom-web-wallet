@@ -6,6 +6,7 @@ export const environment: Environment = {
   backendApiBaseurl: 'https://dev-api.kaspiano.com',
   kasplexApiBaseurl: 'https://tn10api.kasplex.org/v1',
   kaspaApiBaseurl: 'https://api-tn10.kaspa.org',
+  knsApiBaseurl: 'https://api.knsdomains.org/tn10/api/v1',
   kaspaNetwork: KASPA_NETWORKS.TESTNET10,
   allowedDomains: ['localhost', 'dev-wallet.kaspa.com', 'local.kaspa.com'],
   allowedIframeDomains: ['localhost', 'dev.kaspa.com', 'local.kaspa.com'],

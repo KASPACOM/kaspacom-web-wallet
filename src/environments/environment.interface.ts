@@ -2,6 +2,7 @@ export interface Environment {
   isProduction: boolean;
   backendApiBaseurl: string;
   kasplexApiBaseurl: string;
+  knsApiBaseurl: string;
   kaspaApiBaseurl: string;
   kaspaNetwork: string;
   allowedDomains: string[];

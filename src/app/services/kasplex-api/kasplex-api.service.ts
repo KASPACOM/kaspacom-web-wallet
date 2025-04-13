@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { catchError, firstValueFrom, map, Observable, of } from 'rxjs';
-import { GetTokenWalletInfoDto, GetTokenWalletInfoResponse } from './dtos/get-token-wallet-info-response.dto';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom, Observable } from 'rxjs';
+import { GetTokenWalletInfoResponse } from './dtos/get-token-wallet-info-response.dto';
 import {
   GetTokenInfoResponse,
   GetTokenListResponse,

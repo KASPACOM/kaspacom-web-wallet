@@ -11,6 +11,8 @@ import { catchError, firstValueFrom, of } from 'rxjs';
 })
 export class KnsAssetService extends BaseAssetService<KnsWalletAsset> {
   private assets: KnsWalletAsset[] = [];
+  private currentPage: number = 1;
+  private readonly pageSize: number = 20;
 
   constructor(private knsApiService: KnsApiService) {
     super();
@@ -37,17 +39,22 @@ export class KnsAssetService extends BaseAssetService<KnsWalletAsset> {
   }
 
   override async loadNextPage(wallet: AppWallet): Promise<void> {
-    // No pagination needed
-    return;
+    if (!wallet) return;
+    
+    this.currentPage++;
+    await this.fetchAssets(wallet);
   }
 
   override async loadPreviousPage(wallet: AppWallet): Promise<void> {
-    // No pagination needed
-    return;
+    if (!wallet || this.currentPage <= 1) return;
+    
+    this.currentPage--;
+    await this.fetchAssets(wallet);
   }
 
   override reset(): void {
     this.assets = [];
+    this.currentPage = 1;
     this.data.set({
       data: [[]],
       totalItems: 0,
@@ -60,8 +67,8 @@ export class KnsAssetService extends BaseAssetService<KnsWalletAsset> {
       const response = await firstValueFrom(
         this.knsApiService.getKnsWalletAssets({
           owner: wallet.getAddress(),
-          page: 1,
-          pageSize: 20 // Large page size to get all assets at once
+          page: this.currentPage,
+          pageSize: this.pageSize
         }).pipe(
           catchError((err) => {
             console.error('Error fetching KNS assets:', err);
@@ -83,15 +90,20 @@ export class KnsAssetService extends BaseAssetService<KnsWalletAsset> {
 
       const newAssets = response?.data?.assets || [];
       const totalItems = response?.data?.pagination?.totalItems || 0;
+      const totalPages = response?.data?.pagination?.totalPages || 0;
 
-      // Update the data
-      this.assets = newAssets;
+      // Update the assets array
+      if (this.currentPage === 1) {
+        this.assets = newAssets;
+      } else {
+        this.assets = [...this.assets, ...newAssets];
+      }
 
-      // Update signal with all assets in a single page
+      // Update signal with paginated data
       this.data.set({
         data: [this.assets],
         totalItems,
-        hasNextPage: false
+        hasNextPage: this.currentPage < totalPages
       });
     } catch (err) {
       console.error('Error fetching KNS assets:', err);

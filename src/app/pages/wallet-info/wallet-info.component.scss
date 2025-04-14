@@ -1,238 +1,279 @@
-.wallet-info {
-  border: 1px solid #e0e0e0;
+// Variables
+$primary-color: #2563eb;
+$secondary-color: #1e40af;
+$success-color: #10b981;
+$warning-color: #f59e0b;
+$danger-color: #ef4444;
+$text-color: #1f2937;
+$text-light: #6b7280;
+$border-color: #e5e7eb;
+$background-light: #f9fafb;
+$card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+// Mixins
+@mixin card {
+  background: white;
   border-radius: 12px;
-  padding: 20px;
-  background-color: #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  margin: 20px;
-}
-
-.wallet-info h2 {
-  font-size: 1.5rem;
-  color: #333;
-  margin-top: 0;
-  text-align: center;
-}
-
-.wallet-info h3 {
-  font-size: 1rem;
-  font-weight: 500;
-  margin-bottom: 5px;
-  color: #666;
-}
-
-.wallet-info p {
-  font-size: 1rem;
-  color: #444;
-  margin: 5px 0;
-}
-
-.wallet-balance,
-.krc20-tokens {
-  margin-bottom: 20px;
-
-  p {
-    word-break: break-all;
+  box-shadow: $card-shadow;
+  padding: 24px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
 }
 
-.wallet-info-section, .transactions-info-section {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
+@mixin button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  
+  &:hover {
+    transform: translateY(-1px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
 }
 
-.wallet-info-section, .transactions-info-section > div {
-  padding: 20px;
-  flex: 1;
+// Main container
+.wallet-info-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+  background-color: $background-light;
+  min-height: 100vh;
 }
 
-.krc20-token-list {
-  list-style-type: none;
-  padding-left: 0;
-  margin-top: 10px;
+// Wallet info section
+.wallet-info-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
 }
 
-.krc20-token-list li {
-  font-size: 1rem;
-  color: #444;
+// Header
+.wallet-info-header {
+  @include card;
   display: flex;
   justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.secondary-component {
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  flex: 1;
-}
+  margin-bottom: 24px;
 
-.secondary-component > div {
-  margin-bottom: 20px;
-}
-
-.send-assets-container {
-  background-color: #f8f8f8;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-.send-assets-container h3 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-bottom: 10px;
-  text-align: center;
-}
-
-ng-template {
-  color: #888;
-}
-
-.change-wallet-button {
-  background-color: #4caf50;
-  color: white;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.change-wallet-button:hover {
-  background-color: #45a049;
-}
-
-
-@media (max-width: 768px) {
-  .wallet-info-section, .transactions-info-section {
-    flex-direction: column;
-    align-items: center;
+  h2 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: $text-color;
+    margin: 0;
   }
-
-  .wallet-info,
-  .secondary-component {
-    width: 100%;
-    max-width: 100%;
-    margin: 10px 0;
-  }
-}
-
-.tabs {
-  display: flex;
-
-  .tab-button {
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    border: 1px solid #ccc;
-    border-bottom: none;
-    background-color: #f1f1f1;
-    border-radius: 5px 5px 0 0;
-    transition: background 0.3s;
-
-    &.active {
-      background-color: #fff;
-      font-weight: bold;
-      border-bottom: 2px solid #007bff;
-    }
-
-    &:hover {
-      background-color: #eaeaea;
-    }
-  }
-}
-
-
-.transactions-info-section {
-  margin-bottom: 100px;
-
-  .tabs-container {
-    word-break: break-word;
-  }
-}
-
-
-.wallet-info-header {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
 
   .change-wallet-button {
-    margin-left: 10px;
-  }
-}
-  
-.unfinished-action {
-  background-color: #ffe082;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 15px;
-  display: flex;
-  justify-content: space-between;
-  
-  .unfinished-action-message {
-    margin-bottom: 10px;
-  }
-  
-  .finish-action-button {
-    background-color: #4caf50;
+    @include button;
+    background-color: $primary-color;
     color: white;
-    padding: 8px 16px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.3s;
     
     &:hover {
-      background-color: #45a049;
+      background-color: $secondary-color;
+    }
+  }
+}
+
+// Unfinished action
+.unfinished-action {
+  @include card;
+  background-color: #fff7ed;
+  border: 1px solid #fed7aa;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+
+  .unfinished-action-message {
+    color: $text-color;
+    font-weight: 500;
+    margin: 0;
+  }
+
+  .finish-action-button {
+    @include button;
+    background-color: $warning-color;
+    color: white;
+    
+    &:hover {
+      background-color: darken($warning-color, 10%);
     }
     
     &:disabled {
-      background-color: #c7c7c7;
+      background-color: $text-light;
       cursor: not-allowed;
     }
   }
 }
 
-.wallet-assets {
-  margin-top: 20px;
-  padding: 15px;
-  border: 1px solid #ddd;
+// Wallet balance
+.wallet-balance {
+  @include card;
+  margin-bottom: 24px;
+
+  h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: $text-color;
+    margin-bottom: 8px;
+  }
+
+  p {
+    color: $text-light;
+    margin-bottom: 16px;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .balance-amount {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: $text-color;
+  }
+}
+
+// Kasplex L2 info
+.kasplex-l2-info {
+  background-color: $background-light;
+  padding: 16px;
   border-radius: 8px;
-  background-color: #f9f9f9;
+  margin-top: 16px;
+
+  p {
+    margin: 8px 0;
+  }
 }
 
-.wallet-assets h3 {
-  margin-bottom: 15px;
-  font-size: 1.2em;
-  color: #333;
+// Tabs
+.tabs-container {
+  @include card;
+  margin-bottom: 24px;
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid $border-color;
+    padding-bottom: 8px;
+
+    .tab-button {
+      @include button;
+      background: transparent;
+      color: $text-light;
+      border: none;
+      padding: 12px 24px;
+      position: relative;
+
+      &.active {
+        color: $primary-color;
+        font-weight: 600;
+
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: -9px;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background-color: $primary-color;
+        }
+      }
+
+      &:hover {
+        color: $primary-color;
+        background-color: rgba($primary-color, 0.05);
+      }
+    }
+  }
+
+  .tab-content {
+    padding: 16px 0;
+  }
 }
 
-.refresh-button-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 15px;
+// Wallet assets
+.wallet-assets {
+  @include card;
+
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: $text-color;
+    margin-bottom: 16px;
+  }
+
+  .refresh-button-container {
+    margin-top: 16px;
+    text-align: center;
+
+    .refresh-button {
+      @include button;
+      background-color: $primary-color;
+      color: white;
+      
+      &:hover {
+        background-color: $secondary-color;
+      }
+    }
+  }
 }
 
-.refresh-button {
-  background-color: #4caf50;
-  color: white;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s;
+// Transactions info section
+.transactions-info-section {
+  @include card;
+  margin-bottom: 24px;
 }
 
-.refresh-button:hover {
-  background-color: #45a049;
+// Responsive adjustments
+@media (max-width: 768px) {
+  .wallet-info-container {
+    padding: 16px;
+  }
+
+  .wallet-info-section {
+    grid-template-columns: 1fr;
+  }
+
+  .tabs {
+    flex-wrap: wrap;
+    
+    .tab-button {
+      flex: 1;
+      min-width: 120px;
+    }
+  }
 }
 
-.tab-content {
-  min-height: 200px;
-  padding: 15px;
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-top: none;
-  border-radius: 0 0 5px 5px;
+// Loading states
+.loadingData {
+  color: $text-light;
+  font-style: italic;
+}
+
+// Mempool transactions
+.mempoll-transactions {
+  @include card;
+  margin-bottom: 24px;
+
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: $text-color;
+    margin-bottom: 16px;
+  }
 }

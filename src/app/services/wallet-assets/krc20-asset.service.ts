@@ -14,9 +14,7 @@ export interface Krc20Token {
   providedIn: 'root'
 })
 export class Krc20AssetService extends BaseAssetService<Krc20Token> {
-  private paginationPrevKeys: (string | null)[] = [null];
-  private paginationNextKeys: (string | null)[] = [null];
-  private currentPage = 0;
+  private nextKey: string | null = null;
   private allTokens: Krc20Token[] = [];
 
   constructor(
@@ -37,7 +35,7 @@ export class Krc20AssetService extends BaseAssetService<Krc20Token> {
     this.error.set(null);
 
     try {
-      await this.fetchTokens(wallet, null, 'next', false);
+      await this.fetchTokens(wallet, null);
       this.updateDataSignal();
     } catch (error) {
       console.error('Error loading KRC20 tokens:', error);
@@ -48,21 +46,13 @@ export class Krc20AssetService extends BaseAssetService<Krc20Token> {
   }
 
   override async loadNextPage(wallet: AppWallet): Promise<void> {
-    if (!wallet || !this.paginationNextKeys[this.currentPage]) return;
+    if (!wallet || !this.nextKey) return;
 
     this.isLoading.set(true);
     this.error.set(null);
 
     try {
-      // If we're not on the last page of our cached data
-      if (this.currentPage < this.data().data.length - 1) {
-        this.currentPage++;
-        this.updateDataSignal();
-        return;
-      }
-
-      await this.fetchTokens(wallet, this.paginationNextKeys[this.currentPage], 'next', true);
-      this.currentPage++;
+      await this.fetchTokens(wallet, this.nextKey);
       this.updateDataSignal();
     } catch (error) {
       console.error('Error loading next page of KRC20 tokens:', error);
@@ -73,26 +63,12 @@ export class Krc20AssetService extends BaseAssetService<Krc20Token> {
   }
 
   override async loadPreviousPage(wallet: AppWallet): Promise<void> {
-    if (!wallet || this.currentPage === 0) return;
-
-    this.isLoading.set(true);
-    this.error.set(null);
-
-    try {
-      this.currentPage--;
-      this.updateDataSignal();
-    } catch (error) {
-      console.error('Error loading previous page of KRC20 tokens:', error);
-      this.error.set('Failed to load previous page of KRC20 tokens');
-    } finally {
-      this.isLoading.set(false);
-    }
+    // Previous page functionality removed
+    return;
   }
 
   override reset(): void {
-    this.paginationPrevKeys = [null];
-    this.paginationNextKeys = [null];
-    this.currentPage = 0;
+    this.nextKey = null;
     this.allTokens = [];
     this.data.set({
       data: [],
@@ -103,28 +79,18 @@ export class Krc20AssetService extends BaseAssetService<Krc20Token> {
 
   private async fetchTokens(
     wallet: AppWallet,
-    paginationKey: string | null,
-    direction: 'next' | 'prev',
-    append: boolean
+    paginationKey: string | null
   ): Promise<void> {
-    const tokens = await firstValueFrom(
+    const response = await firstValueFrom(
       this.kasplexService
         .getWalletTokenList(
           wallet.getAddress(),
           paginationKey,
-          direction
+          'next'
         )
         .pipe(
           tap((response) => {
-            
-
-            if (append) {
-              this.paginationPrevKeys.push(response.prev);
-              this.paginationNextKeys.push(response.next);
-            } else {
-              this.paginationPrevKeys = [response.prev];
-              this.paginationNextKeys = [response.next];
-            }
+            this.nextKey = response.next;
           }),
           map((response) => {
             return response.result.map((token) => ({
@@ -145,11 +111,11 @@ export class Krc20AssetService extends BaseAssetService<Krc20Token> {
         )
     );
 
-    if (append) {
+    if (paginationKey) {
       // Add as a new page
-      this.allTokens = [...this.allTokens, ...tokens];
+      this.allTokens = [...this.allTokens, ...response];
     } else {
-      this.allTokens = tokens;
+      this.allTokens = response;
     }
 
     // Update the data signal with the new page
@@ -170,8 +136,7 @@ export class Krc20AssetService extends BaseAssetService<Krc20Token> {
   private updateDataSignal(): void {
     this.data.update(current => ({
       ...current,
-      hasNextPage: this.paginationNextKeys[this.currentPage] !== null,
-      hasPrevPage: this.currentPage > 0
+      hasNextPage: this.nextKey !== null
     }));
   }
 } 

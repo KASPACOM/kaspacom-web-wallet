@@ -2,18 +2,16 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
-import { 
-  CollectionListResponse,
-  TokenDetailsResponse,
-  TokenOwnersResponse,
-  WalletAddressTokensResponse,
-  WalletAddressCollectionTokensResponse,
-  OperationDetailsResponse,
-  StatusResponse,
-  CollectionDataResponse,
-  TokenHistoryResponse,
-  TokenHistoryDirection
-} from '../../interfaces/krc721-api.interface';
+import { StatusResponse } from './model/status-response.interface';
+import { CollectionListResponse } from './model/collection-list-response.interface';
+import { CollectionDataResponse } from './model/collection-data-response.interface';
+import { TokenDetailsResponse } from './model/token-details-response.intereface';
+import { TokenOwnersResponse } from './model/token-owners-response.interface';
+import { WalletAddressTokensResponse } from './model/wallet-address-tokens-response.interface';
+import { WalletAddressCollectionTokensResponse } from './model/wallet-address-collection-tokens-response.interface';
+import { OperationDetailsResponse } from './model/operation-details-response.interface';
+import { TokenHistoryDirection } from './model/token-history-direction.enum';
+import { TokenHistoryResponse } from './model/token-history-response.interface';
 
 @Injectable({
   providedIn: 'root'

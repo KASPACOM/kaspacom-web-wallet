@@ -94,4 +94,16 @@ export class Krc20AssetsComponent implements OnInit, OnChanges, OnDestroy {
       this.currentPage = page;
     }
   }
+
+  getCurrentPageTokens(): Krc20Token[] {
+    return this.getPaginatedTokens();
+  }
+
+  get hasPrevPage(): boolean {
+    return this.currentPage > 1;
+  }
+
+  get hasNextPage(): boolean {
+    return this.currentPage < this.totalPages;
+  }
 } 

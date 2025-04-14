@@ -31,6 +31,7 @@ import { OperationDetails } from '../../services/kasplex-api/dtos/operation-deta
 import { MempoolTransactionsComponent } from '../../components/history-info-components/mempool-transactions/mempool-transactions.component';
 import { KasplexL2TransactionComponent } from '../../components/wallet-actions-forms/kasplex-l2-transaction/kasplex-l2-transaction.component';
 import { WeiToNumberPipe } from '../../pipes/wei-to-number.pipe';
+import { Krc20TokenListComponent } from '../../components/krc20-token-list/krc20-token-list.component';
 
 type ActionTabs = 'send' | 'mint' | 'deploy' | 'list' | 'buy' | 'kasplex-l2';
 type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
@@ -59,6 +60,7 @@ type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
     Krc20OperationHistoryComponent,
     MempoolTransactionsComponent,
     KasplexL2TransactionComponent,
+    Krc20TokenListComponent,
   ],
 })
 export class WalletInfoComponent implements OnInit, OnDestroy {

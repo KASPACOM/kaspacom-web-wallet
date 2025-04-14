@@ -84,16 +84,7 @@
       <!-- KRC20 Tokens -->
       <div class="krc20-tokens">
         <h3>KRC20 Tokens:</h3>
-        <ng-container *ngIf="tokens; else loadingTokens">
-          <ul class="krc20-token-list">
-            <li *ngFor="let token of tokens">
-              <strong>{{ token.ticker }}</strong> {{ token.balance }}
-            </li>
-          </ul>
-        </ng-container>
-        <ng-template #loadingTokens>
-          <p>Loading tokens...</p>
-        </ng-template>
+        <app-krc20-token-list [tokens]="tokens"></app-krc20-token-list>
       </div>
     </div>
     <div class="secondary-component">

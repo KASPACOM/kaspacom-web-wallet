@@ -15,4 +15,6 @@ export const environment: Environment = {
     chainId: 12211,
     name: 'Kasplex Testnet',
   },
+  krc721Api: 'https://testnet-10.krc721.stream/api/v1/krc721/testnet-10/',
+  krc721CacheStreamUrl: 'https://cache.krc721.stream/krc721/testnet-10',
 };

@@ -1,0 +1,28 @@
+<ng-container *ngIf="!isLoading && !error && tokens.length > 0; else noContent">
+  <div class="asset-list-container">
+    <ul class="asset-list">
+      <li *ngFor="let token of getCurrentPageTokens()" class="asset-item">
+        <span class="asset-ticker">{{ token.ticker }}</span>
+        <span class="asset-balance">{{ token.balance }}</span>
+      </li>
+    </ul>
+    <div class="pagination-controls">
+      <button [disabled]="!hasPrevPage" (click)="prevPage()" class="pagination-btn">Previous</button>
+      <button [disabled]="!hasNextPage" (click)="nextPage()" class="pagination-btn">Next</button>
+    </div>
+  </div>
+</ng-container>
+
+<ng-template #noContent>
+  <div class="no-content-container">
+    <div *ngIf="isLoading" class="loading-message">
+      <p>Loading KRC20 tokens...</p>
+    </div>
+    <div *ngIf="error" class="error-message">
+      <p>{{ error }}</p>
+    </div>
+    <div *ngIf="!isLoading && !error && tokens.length === 0" class="empty-message">
+      <p>No KRC20 tokens found for this wallet.</p>
+    </div>
+  </div>
+</ng-template> 

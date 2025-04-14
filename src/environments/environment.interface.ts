@@ -12,4 +12,6 @@ export interface Environment {
     chainId: number,
     name: string,
   },
+  krc721Api: string,
+  krc721CacheStreamUrl: string,
 }

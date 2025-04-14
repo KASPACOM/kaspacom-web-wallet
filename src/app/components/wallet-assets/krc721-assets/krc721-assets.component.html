@@ -1,0 +1,41 @@
+<div class="krc721-assets-container">
+  <div *ngIf="isLoading" class="loading-message">
+    <p>Loading KRC721 assets...</p>
+  </div>
+  
+  <div *ngIf="error" class="error-message">
+    <p>{{ error }}</p>
+    <button (click)="loadNfts()" class="retry-button">Retry</button>
+  </div>
+  
+  <div *ngIf="!isLoading && !error">
+    <div *ngIf="nfts.length === 0" class="empty-message">
+      <p>No KRC721 assets found for this wallet.</p>
+    </div>
+    
+    <div *ngIf="nfts.length > 0" class="nft-grid">
+      <div *ngFor="let nft of nfts" class="nft-card">
+        <div class="nft-image-container">
+          <img [src]="nft.imageUrl || 'assets/placeholder-nft.png'" alt="{{ nft.name }}" class="nft-image">
+        </div>
+        <div class="nft-details">
+          <h3 class="nft-name">{{ nft.name }}</h3>
+          <p *ngIf="nft.description" class="nft-description">{{ nft.description }}</p>
+          <div class="nft-metadata">
+            <span class="nft-contract">Contract: {{ nft.contractAddress | slice:0:6 }}...{{ nft.contractAddress | slice:-4 }}</span>
+            <span class="nft-token-id">Token ID: {{ nft.tokenId }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Load More Button -->
+    <div *ngIf="hasMore" class="load-more-container">
+      <button (click)="loadMore()" class="load-more-button">Load More NFTs</button>
+    </div>
+  </div>
+  
+  <div class="api-notice">
+    <p>Note: KRC721 API integration is not yet available. This is a demonstration UI.</p>
+  </div>
+</div> 

@@ -18,24 +18,23 @@ export class KnsApiService {
       throw new Error('pageSize cannot be greater than 100');
     }
 
-    return this.httpClient.get<KnsWalletAssetsResponse>(`/assets`, { params: walletAssetParams as any as HttpParams });
+    return this.httpClient.get<KnsWalletAssetsResponse>(`${this.baseurl}/assets`, { params: walletAssetParams as any as HttpParams });
   }
 
   getKnsAssetDetails(assetId: string): Observable<KnsAssetDetailResponse> {
-    return this.httpClient.get<KnsAssetDetailResponse>(`asset/${assetId}/detail`);
+    return this.httpClient.get<KnsAssetDetailResponse>(`${this.baseurl}/asset/${assetId}/detail`);
   }
 
   getDomainOwner(domain: string): Observable<KnsDomainOwnerResponse> {
-    return this.httpClient.get<KnsDomainOwnerResponse>(`/${domain}/owner`);
+    return this.httpClient.get<KnsDomainOwnerResponse>(`${this.baseurl}/${domain}/owner`);
   }
-
 
   checkDomainAvailability(
     domains: string[],
     userWalletAddress: string
   ): Observable<KnsDomainCheckResponse> {
     return this.httpClient.post<KnsDomainCheckResponse>(
-      `domains/check`,
+      `${this.baseurl}/domains/check`,
       {
         address: userWalletAddress,
         domainNames: domains,

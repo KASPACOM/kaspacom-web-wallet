@@ -31,7 +31,9 @@ import { OperationDetails } from '../../services/kasplex-api/dtos/operation-deta
 import { MempoolTransactionsComponent } from '../../components/history-info-components/mempool-transactions/mempool-transactions.component';
 import { KasplexL2TransactionComponent } from '../../components/wallet-actions-forms/kasplex-l2-transaction/kasplex-l2-transaction.component';
 import { WeiToNumberPipe } from '../../pipes/wei-to-number.pipe';
-import { Krc20TokenListComponent } from '../../components/krc20-token-list/krc20-token-list.component';
+import { Krc20AssetsComponent } from '../../components/wallet-assets/krc20-assets/krc20-assets.component';
+import { KnsAssetsComponent } from '../../components/wallet-assets/kns-assets/kns-assets.component';
+import { Krc721AssetsComponent } from '../../components/wallet-assets/krc721-assets/krc721-assets.component';
 
 type ActionTabs = 'send' | 'mint' | 'deploy' | 'list' | 'buy' | 'kasplex-l2';
 type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
@@ -60,7 +62,9 @@ type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
     Krc20OperationHistoryComponent,
     MempoolTransactionsComponent,
     KasplexL2TransactionComponent,
-    Krc20TokenListComponent,
+    Krc20AssetsComponent,
+    KnsAssetsComponent,
+    Krc721AssetsComponent,
   ],
 })
 export class WalletInfoComponent implements OnInit, OnDestroy {
@@ -68,8 +72,6 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
   reviewActionComponent!: ReviewActionComponent;
 
   protected wallet: AppWallet | undefined = undefined;
-  protected tokens: undefined | { ticker: string; balance: number }[] =
-    undefined;
 
   protected unfinishedAction: undefined | UnfinishedCommitRevealAction = undefined;
   protected canCompleteUnfinishedAction: boolean = false;
@@ -79,12 +81,10 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
 
   protected krc20OperationHistory: undefined | OperationDetails[] = undefined;
 
-  private paginationPrevTokenKey?: string | null;
-  private paginationNextTokenKey?: string | null;
-  private paginationDirection?: 'next' | 'prev' | null;
-
-  protected activeTab: ActionTabs = 'send'; // Default to Send Asset tab
+  protected activeTab: ActionTabs = 'send';
   protected infoActiveTab: InfoTabs = 'utxos';
+  protected activeAssetsTab = 'krc20';
+  protected refreshAssetsTrigger = 0;
 
   private refreshDataTimeout: NodeJS.Timeout | undefined;
   private setUnfinishedActionsTimeout: NodeJS.Timeout | undefined;
@@ -103,7 +103,7 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
   walletUtxoStateBalanceSignal = computed(() => this.wallet?.getCurrentWalletStateBalanceSignalValue());
 
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     this.wallet = this.walletService.getCurrentWallet();
 
     if (!this.wallet) {
@@ -121,44 +121,6 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
       clearTimeout(this.refreshDataTimeout);
       clearTimeout(this.setUnfinishedActionsTimeout);
     }
-  }
-
-  async loadKrc20Tokens() {
-    const paginationKey =
-      this.paginationDirection === 'next'
-        ? this.paginationNextTokenKey
-        : this.paginationPrevTokenKey;
-
-    this.tokens = await firstValueFrom(
-      this.kasplexService
-        .getWalletTokenList(
-          this.wallet!.getAddress(),
-          paginationKey,
-          this.paginationDirection
-        )
-        .pipe(
-          tap((response) => {
-            this.paginationPrevTokenKey = response.prev;
-            this.paginationNextTokenKey = response.next;
-          }),
-          map((response) => {
-            return response.result.map((token) => ({
-              ticker: token.tick,
-              balance: this.kaspaNetworkActionsService.sompiToNumber(
-                BigInt(+token.balance)
-              ),
-            }));
-          }),
-          catchError((err) => {
-            console.error(
-              `Error fetching token list for address ${this.wallet!.getAddress()}:`,
-              err
-            );
-
-            return of(undefined);
-          })
-        )
-    );
   }
 
   async loadKasplexL2Balance() {
@@ -189,7 +151,7 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
     );
   }
 
-  async loadUserTransactions() {
+  async loadKaspaTransactionsHistory() {
     this.kaspaTransactionsHistory = await firstValueFrom(
       this.kaspaApiService.getFullTransactions(this.wallet!.getAddress()).pipe(
         catchError((err) => {
@@ -224,11 +186,18 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
     this.infoActiveTab = tab;
   }
 
+  switchAssetsTab(tab: string) {
+    this.activeAssetsTab = tab;
+  }
+
+  refreshAssets() {
+    this.refreshAssetsTrigger++;
+  }
+
   async loadData() {
     try {
       await Promise.all([
-        this.loadKrc20Tokens(),
-        this.loadUserTransactions(),
+        this.loadKaspaTransactionsHistory(),
         this.loadKrc20Operations(),
         this.loadKasplexL2Balance(),
       ]);
@@ -238,7 +207,7 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
 
     this.refreshDataTimeout = setTimeout(() => {
       this.loadData();
-    }, 20 * 1000);
+    }, 10000);
   }
 
   async checkForUnfinishedActions() {

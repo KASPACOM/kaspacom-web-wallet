@@ -81,10 +81,50 @@
         <mempool-transactions></mempool-transactions>
       </div>
 
-      <!-- KRC20 Tokens -->
-      <div class="krc20-tokens">
-        <h3>KRC20 Tokens:</h3>
-        <app-krc20-token-list [tokens]="tokens"></app-krc20-token-list>
+      <!-- Wallet Assets -->
+      <div class="wallet-assets">
+        <h3>Wallet Assets</h3>
+        <div class="tabs-container">
+          <div class="tabs">
+            <button
+              class="tab-button"
+              [class.active]="activeAssetsTab === 'krc20'"
+              (click)="switchAssetsTab('krc20')"
+            >
+              KRC20 Tokens
+            </button>
+            <button
+              class="tab-button"
+              [class.active]="activeAssetsTab === 'kns'"
+              (click)="switchAssetsTab('kns')"
+            >
+              KNS Assets
+            </button>
+            <button
+              class="tab-button"
+              [class.active]="activeAssetsTab === 'krc721'"
+              (click)="switchAssetsTab('krc721')"
+            >
+              KRC721 Assets
+            </button>
+          </div>
+
+          <!-- Tab Content -->
+          <div class="tab-content">
+            <div *ngIf="activeAssetsTab === 'krc20'" class="krc20-tab-content">
+              <app-krc20-assets [wallet]="wallet" [refreshTrigger]="refreshAssetsTrigger"></app-krc20-assets>
+            </div>
+            <div *ngIf="activeAssetsTab === 'kns'" class="kns-tab-content">
+              <app-kns-assets [wallet]="wallet" [refreshTrigger]="refreshAssetsTrigger"></app-kns-assets>
+            </div>
+            <div *ngIf="activeAssetsTab === 'krc721'" class="krc721-tab-content">
+              <app-krc721-assets [wallet]="wallet" [refreshTrigger]="refreshAssetsTrigger"></app-krc721-assets>
+            </div>
+          </div>
+        </div>
+        <div class="refresh-button-container">
+          <button (click)="refreshAssets()" class="refresh-button">Refresh Assets</button>
+        </div>
       </div>
     </div>
     <div class="secondary-component">

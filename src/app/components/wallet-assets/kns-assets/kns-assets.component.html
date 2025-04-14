@@ -1,0 +1,65 @@
+<div class="kns-assets-container">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p>Loading KNS assets...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="error-container">
+    <p class="error-message">{{ error }}</p>
+    <button (click)="loadAssets()" class="retry-button">Retry</button>
+  </div>
+
+  <!-- No Assets State -->
+  <div *ngIf="!isLoading && !error && assets.length === 0" class="no-assets-container">
+    <p>No KNS assets found</p>
+  </div>
+
+  <!-- Assets Grid -->
+  <div *ngIf="!isLoading && !error && assets.length > 0" class="assets-list">
+    <div class="assets-grid">
+      <div *ngFor="let asset of getPaginatedAssets()" class="asset-box" [class.expanded]="isAssetExpanded(asset.assetId)">
+        <!-- Main Asset Info -->
+        <div class="asset-main" (click)="toggleAssetInfo(asset.assetId)">
+          <h2 class="asset-name">{{ asset.asset }}</h2>
+          <div class="asset-icons">
+            <span *ngIf="asset.isVerifiedDomain" class="icon verified-icon" title="Verified Domain - This domain has been verified by the KNS system">
+              ✓
+            </span>
+            <span *ngIf="asset.listed" class="icon listed-icon" title="Listed - This domain is currently listed for sale">
+              📊
+            </span>
+          </div>
+        </div>
+
+        <!-- Expanded Info -->
+        <div class="asset-details" *ngIf="isAssetExpanded(asset.assetId)">
+          <div class="detail-row">
+            <span class="detail-label">ID:</span>
+            <span class="detail-value">{{ asset.assetId }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Created:</span>
+            <span class="detail-value">{{ asset.creationBlockTime | date:'short' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Owner:</span>
+            <span class="detail-value">{{ asset.owner }}</span>
+          </div>
+          <div class="detail-row" *ngIf="asset.listed">
+            <span class="detail-label">Listed:</span>
+            <span class="detail-value">{{ asset.listed.blockTime | date:'short' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <button (click)="prevPage()" [disabled]="currentPage === 1">Previous</button>
+      <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+      <button (click)="nextPage()" [disabled]="currentPage === totalPages">Next</button>
+    </div>
+  </div>
+</div> 

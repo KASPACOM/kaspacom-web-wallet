@@ -15,7 +15,7 @@ import { MempoolTransactionManager } from './MempoolTransactionManager';
 import { IMempoolResultEntry } from '../types/kaspa-network/mempool-result.interface';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
-import { KasplexL2Service } from '../services/kasplex-l2.service';
+import { KasplexL2Service } from '../services/l2/kasplex-l2.service';
 
 export class AppWallet {
   private id: number;

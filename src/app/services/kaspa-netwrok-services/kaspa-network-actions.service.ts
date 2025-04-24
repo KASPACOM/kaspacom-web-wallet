@@ -233,6 +233,7 @@ export class KaspaNetworkActionsService {
         action.data.transactionOptions,
         action.data.payloadPrefix,
         action.data.submitTransaction,
+        action.data.sendToL1,
         true,
         async () => { },
       );
@@ -374,6 +375,7 @@ export class KaspaNetworkActionsService {
         action.data.transactionOptions,
         action.data.payloadPrefix,
         action.data.submitTransaction,
+        action.data.sendToL1,
         false,
         notifyUpdate,
         [],
@@ -521,7 +523,7 @@ export class KaspaNetworkActionsService {
     }
 
     if (action.type == WalletActionType.SIGN_L2_ETHER_TRANSACTION) {
-      return MINIMAL_AMOUNT_TO_SEND;
+      return (action.data.sendToL1 && action.data.submitTransaction) ? MINIMAL_AMOUNT_TO_SEND : 0n;
     }
 
     if (action.type == WalletActionType.COMMIT_REVEAL) {

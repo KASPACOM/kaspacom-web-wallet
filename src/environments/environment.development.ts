@@ -9,9 +9,25 @@ export const environment: Environment = {
   kaspaNetwork: KASPA_NETWORKS.TESTNET10,
   allowedDomains: ['localhost', 'dev-wallet.kaspa.com', 'local.kaspa.com'],
   allowedIframeDomains: ['localhost', 'dev.kaspa.com', 'local.kaspa.com'],
-  kasplexL2Config: {
-    rpcUrl: 'https://rpc.kasplextest.xyz',
-    chainId: 12211,
-    name: 'Kasplex Testnet',
-  },
+  l2Configs: {
+    kasplex: {
+      l1PayloadPrefix: 'kasplex',
+      chainId: 12211,
+      name: "Kasplex Test",
+      network: "kasplextest",
+      nativeCurrency: {
+        name: "Kasplex",
+        symbol: "KAS",
+        decimals: 18,
+      },
+      rpcUrls: {
+        default: {
+          http: ["https://rpc.kasplextest.xyz"],
+        },
+        public: {
+          http: ["https://rpc.kasplextest.xyz"],
+        },
+      },
+    },
+  }
 };

@@ -195,6 +195,7 @@ export class WalletActionService {
     transactionOptions: TransactionRequest,
     payloadPrefix?: string,
     submitTransaction?: boolean,
+    sendToL1?: boolean,
   ): WalletAction {
     return {
       type: WalletActionType.SIGN_L2_ETHER_TRANSACTION,
@@ -202,6 +203,7 @@ export class WalletActionService {
         submitTransaction,
         transactionOptions,
         payloadPrefix,
+        sendToL1,
       },
     };
   }

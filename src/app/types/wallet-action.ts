@@ -71,6 +71,7 @@ export interface SignL2EtherTransactionAction {
   transactionOptions: TransactionRequest;
   submitTransaction?: boolean;
   payloadPrefix?: string;
+  sendToL1?: boolean;
 }
 
 export interface SignMessage {

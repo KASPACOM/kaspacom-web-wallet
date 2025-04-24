@@ -15,7 +15,7 @@ import { KasplexKrc20Service } from './kasplex-api/kasplex-api.service';
 import { firstValueFrom } from 'rxjs';
 import { UtilsHelper } from './utils.service';
 import { RpcConnectionStatus } from '../types/kaspa-network/rpc-connection-status.enum';
-import { KasplexL2Service } from './kasplex-l2.service';
+import { KasplexL2Service } from './l2/kasplex-l2.service';
 
 @Injectable({
   providedIn: 'root',

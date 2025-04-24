@@ -433,6 +433,7 @@ export class KaspaNetworkTransactionsManagerService {
     transactionOptions: TransactionRequest,
     protocolPrefix?: string,
     submitTransaction: boolean = false,
+    sendToL1: boolean = false,
     estimateOnly: boolean = false,
     notifyCreatedTransactions?: (transactionId: string) => Promise<any>,
     payments?: IPaymentOutput[],
@@ -456,6 +457,14 @@ export class KaspaNetworkTransactionsManagerService {
       return {
         success: true,
         result: { signedTransactionString, signedTransactionHash },
+      }
+    }
+
+    if (!sendToL1) {
+      const transactionHash = await this.etherService.sendTransactionToL2(protocolPrefix!, signedTransactionString);
+      return {
+        success: true,
+        result: { signedTransactionString, signedTransactionHash: transactionHash },
       }
     }
 

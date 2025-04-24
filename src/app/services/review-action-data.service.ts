@@ -171,7 +171,7 @@ export class ReviewActionDataService {
 
     private getSignL2EtherTransactionActionDisplay(actionData: SignL2EtherTransactionAction, wallet: AppWallet): ActionDisplay {
         return {
-            title: `Sign${actionData.submitTransaction ? ' & Submit' : ''} L2 Ether Transaction`,
+            title: `${actionData.submitTransaction ? 'Submit' : 'Sign'} L2 Ether Transaction`,
             rows: [
                 {
                     fieldName: "Wallet",
@@ -180,6 +180,10 @@ export class ReviewActionDataService {
                 {
                     fieldName: "Kasplex L2 Wallet Address",
                     fieldValue: wallet.getKasplexL2ServiceWalletAddressSignal()() || '-',
+                },
+                {
+                    fieldName: "Send Kaspa Transaction",
+                    fieldValue: actionData.sendToL1 ? 'Yes' : 'No',
                 },
                 {
                     fieldName: "Transaction",

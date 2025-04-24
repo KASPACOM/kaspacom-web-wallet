@@ -273,6 +273,7 @@ export class IFrameCommunicationService {
           actionData.data.transactionOptions,
           actionData.data.payloadPrefix,
           actionData.data.submitTransaction,
+          actionData.data.sendToL1
         );
     }
 

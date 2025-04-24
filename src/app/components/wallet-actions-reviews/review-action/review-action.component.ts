@@ -122,10 +122,15 @@ export class ReviewActionComponent {
       return false;
     }
 
-    if (this.currentActionSignal()!.action.type === WalletActionType.SIGN_L2_ETHER_TRANSACTION && !(this.currentActionSignal()!.action.data as SignL2EtherTransactionAction).submitTransaction) {
-      return false;
-    }
+    if (this.currentActionSignal()!.action.type === WalletActionType.SIGN_L2_ETHER_TRANSACTION) {
+      if (!(this.currentActionSignal()!.action.data as SignL2EtherTransactionAction).submitTransaction) {
+        return false;
+      }
 
+      if (!(this.currentActionSignal()!.action.data as SignL2EtherTransactionAction).sendToL1) {
+        return false;
+      }
+    }
 
     return true;
   }

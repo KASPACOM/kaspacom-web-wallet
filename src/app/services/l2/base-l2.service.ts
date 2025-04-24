@@ -1,15 +1,9 @@
-import { Injectable } from "@angular/core";
 import { ethers } from "ethers";
-import { environment } from "../../../environments/environment";
 import { L2ConfigInterface } from "../../../environments/environment.interface";
 
-
-@Injectable({
-  providedIn: 'root',
-})
 export class BaseL2Service {
   protected l2Provider: ethers.JsonRpcProvider;
-  constructor(l2Config: L2ConfigInterface) {
+  constructor(protected l2Config: L2ConfigInterface) {
     this.l2Provider = new ethers.JsonRpcProvider(l2Config.rpcUrls.default.http[0], {
       name: l2Config.name,
       chainId: l2Config.chainId,

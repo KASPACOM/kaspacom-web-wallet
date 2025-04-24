@@ -44,7 +44,7 @@ export class KasplexL2TransactionComponent implements OnInit {
       if (formData.data) cleanData.data = formData.data;
       if (formData.nonce) cleanData.nonce = formData.nonce;
 
-      const action = this.walletActionService.createSignL2EtherTransactionAction(cleanData, environment.l2Configs.kasplex.l1PayloadPrefix, true);
+      const action = this.walletActionService.createSignL2EtherTransactionAction(cleanData, environment.l2Configs.kasplex.l1PayloadPrefix, true, true);
 
       const result = await this.walletActionService.validateAndDoActionAfterApproval(action);
       console.log('Submit l2 ether transaction result', result);

@@ -44,6 +44,7 @@ import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.
 import { MempoolTransactionManager } from '../../classes/MempoolTransactionManager';
 import { keccak256, TransactionRequest } from 'ethers';
 import { EtherService } from '../ether.service';
+import { EthereumWalletService } from '../ethereum-wallet.service';
 
 const MIN_TRANSACTION_FEE = 1817n;
 export const SUBMIT_REVEAL_MIN_UTXO_AMOUNT = 300000000n
@@ -447,10 +448,19 @@ export class KaspaNetworkTransactionsManagerService {
       signedTransactionHash: string;
     };
   }> {
-    const l2Transaction = await this.etherService.createTransactionAndPopulate(transactionOptions, wallet.getKasplexL2ServiceWallet());
+    const l2Wallet = await wallet.getL2Wallet();
+
+    if (!l2Wallet) {
+      return {
+        success: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.WALLET_NOT_SELECTED,
+      }
+    }
+
+    const l2Transaction = await this.etherService.createTransactionAndPopulate(transactionOptions, l2Wallet);
     
 
-    const signedTransactionString = await this.etherService.signTransaction(l2Transaction, wallet.getKasplexL2ServiceWallet());
+    const signedTransactionString = await this.etherService.signTransaction(l2Transaction, l2Wallet);
     const signedTransactionHash = keccak256(signedTransactionString);
 
     if (!submitTransaction) {
@@ -461,7 +471,7 @@ export class KaspaNetworkTransactionsManagerService {
     }
 
     if (!sendToL1) {
-      const transactionHash = await this.etherService.sendTransactionToL2(protocolPrefix!, signedTransactionString);
+      const transactionHash = await this.etherService.sendTransactionToL2(wallet.getL2Provider()!, signedTransactionString);
       return {
         success: true,
         result: { signedTransactionString, signedTransactionHash: transactionHash },

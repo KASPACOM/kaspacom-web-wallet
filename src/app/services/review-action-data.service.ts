@@ -178,8 +178,8 @@ export class ReviewActionDataService {
                     fieldValue: wallet.getAddress(),
                 },
                 {
-                    fieldName: "Kasplex L2 Wallet Address",
-                    fieldValue: wallet.getKasplexL2ServiceWalletAddressSignal()() || '-',
+                    fieldName: "L2 Wallet Address",
+                    fieldValue: wallet.getL2WalletStateSignal()()?.address || '-',
                 },
                 {
                     fieldName: "Send Kaspa Transaction",

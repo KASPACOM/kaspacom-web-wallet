@@ -31,6 +31,9 @@ import { OperationDetails } from '../../services/kasplex-api/dtos/operation-deta
 import { MempoolTransactionsComponent } from '../../components/history-info-components/mempool-transactions/mempool-transactions.component';
 import { KasplexL2TransactionComponent } from '../../components/wallet-actions-forms/kasplex-l2-transaction/kasplex-l2-transaction.component';
 import { WeiToNumberPipe } from '../../pipes/wei-to-number.pipe';
+import { EthereumWalletService } from '../../services/ethereum-wallet.service';
+import { EIP1193ProviderChain } from 'kaspacom-wallet-messages';
+import { AddL2ChainComponent } from '../../components/wallet-actions-forms/add-l2-chain/add-l2-chain.component';
 
 type ActionTabs = 'send' | 'mint' | 'deploy' | 'list' | 'buy' | 'kasplex-l2';
 type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
@@ -59,6 +62,7 @@ type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
     Krc20OperationHistoryComponent,
     MempoolTransactionsComponent,
     KasplexL2TransactionComponent,
+    AddL2ChainComponent,
   ],
 })
 export class WalletInfoComponent implements OnInit, OnDestroy {
@@ -89,6 +93,12 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
 
   protected kasplexL2Address: string | undefined = undefined;
   protected kasplexL2Balance: bigint | undefined = undefined;
+
+  protected selectedChain: string | undefined;
+  protected availableChains: EIP1193ProviderChain[] = [];
+
+  protected isAddChainFormVisible = false;
+
   constructor(
     private walletService: WalletService, // Inject wallet service
     private router: Router,
@@ -96,10 +106,19 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
     private kaspaNetworkActionsService: KaspaNetworkActionsService,
     private walletActionService: WalletActionService,
     private kaspaApiService: KaspaApiService,
+    private ethereumWalletService: EthereumWalletService,
   ) {}
 
   walletUtxoStateBalanceSignal = computed(() => this.wallet?.getCurrentWalletStateBalanceSignalValue());
+  currentL2Chain = computed(() => this.ethereumWalletService.getCurrentChainSignal()());
 
+  l2WalletInfo = computed(() => this.wallet?.getL2WalletStateSignal()());
+  l2WalletInfoFormatted = computed(() => {
+    return this.l2WalletInfo() ? {
+      address: this.l2WalletInfo()?.address,
+      balance: this.l2WalletInfo()?.balanceFormatted + ' ' + this.wallet?.getL2Provider()?.getConfig().nativeCurrency.symbol,
+    } : undefined;
+  });
 
   ngOnInit(): void {
     this.wallet = this.walletService.getCurrentWallet();
@@ -109,15 +128,30 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
       return;
     }
 
+    this.initializeL2Networks();
     this.loadData();
     this.checkForUnfinishedActions();
-    this.setKasplexL2ServiceAddress();
   }
 
   ngOnDestroy(): void {
     if (this.refreshDataTimeout) {
       clearTimeout(this.refreshDataTimeout);
       clearTimeout(this.setUnfinishedActionsTimeout);
+    }
+  }
+
+  private initializeL2Networks() {
+    const chainsByChainId = this.ethereumWalletService.getAllChainsByChainId();
+    this.availableChains = Object.values(chainsByChainId);
+    
+    // Set initial selected chain
+    const currentChain = this.currentL2Chain();
+    this.selectedChain = currentChain;
+  }
+
+  protected onChainChange() {
+    if (this.selectedChain) {
+      this.ethereumWalletService.setCurrentChain(this.selectedChain);
     }
   }
 
@@ -157,12 +191,6 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
           })
         )
     );
-  }
-
-  async loadKasplexL2Balance() {
-    if (this.kasplexL2Address) {
-      this.kasplexL2Balance = await this.wallet?.getKasplexL2ServiceBalance();
-    }
   }
 
   async loadKrc20Operations() {
@@ -228,7 +256,6 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
         this.loadKrc20Tokens(),
         this.loadUserTransactions(),
         this.loadKrc20Operations(),
-        this.loadKasplexL2Balance(),
       ]);
     } catch (error) {
       console.error(error);
@@ -287,12 +314,19 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
     this.checkForUnfinishedActions();
   }
 
-  async setKasplexL2ServiceAddress() {
-    if (!this.wallet) {
-      return;
-    }
+  protected showAddChainForm() {
+    this.isAddChainFormVisible = true;
+  }
 
-    this.kasplexL2Address = await this.wallet.getKasplexL2ServiceWallet().getAddress();
-    this.loadKasplexL2Balance();
+  protected hideAddChainForm() {
+    this.isAddChainFormVisible = false;
+  }
+
+  protected onChainAdded(chain: EIP1193ProviderChain) {
+    this.ethereumWalletService.addChain(chain);
+    this.initializeL2Networks();
+    this.selectedChain = chain.chainId;
+    this.onChainChange();
+    this.hideAddChainForm();
   }
 }

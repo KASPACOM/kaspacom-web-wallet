@@ -11,6 +11,7 @@ import { CommitRevealAction, WalletAction } from '../types/wallet-action';
 import { WalletActionResultWithError } from '../types/wallet-action-result';
 import { ERROR_CODES, WalletActionRequestPayloadInterface, WalletActionTypeEnum, WalletMessageInterface, WalletMessageTypeEnum } from 'kaspacom-wallet-messages';
 import { Router } from '@angular/router';
+import { EthereumWalletService } from './ethereum-wallet.service';
 
 @Injectable({
   providedIn: 'root',
@@ -26,6 +27,7 @@ export class IFrameCommunicationService {
     private readonly kaspaNetworkActionsService: KaspaNetworkActionsService,
     private readonly injector: EnvironmentInjector,
     private router: Router,
+    private ethereumWalletService: EthereumWalletService,
   ) {
     if (this.isIframe()) {
       toObservable(this.walletService.getCurrentWalletSignal()).subscribe(
@@ -125,7 +127,7 @@ export class IFrameCommunicationService {
         ?.balance;
       message.payload = {
         walletAddress: wallet.getAddress(),
-        kasplexL2Address: wallet.getKasplexL2ServiceWalletAddressSignal()(),
+        kasplexL2Address: wallet.getL2WalletStateSignal()()?.address,
         balance:
           balance?.mature === undefined
             ? null
@@ -164,6 +166,8 @@ export class IFrameCommunicationService {
             this.walletService.getCurrentWallet()!.getAddress(),
           ) as any,
         }
+      } else if (actionData.action == WalletActionTypeEnum.EIP1193ProviderRequest) {
+        this.ethereumWalletService.handleRequest(actionData.data);
       } else {
         let action: WalletAction | undefined =
           this.getMessageWalletAction(actionData);

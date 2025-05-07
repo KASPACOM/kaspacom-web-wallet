@@ -62,18 +62,36 @@
         </ng-template>
 
 
-        <h3>Kasplex L2:</h3>
-        <div class="kasplex-l2-info">
+        <h3>L2:</h3>
+        
+        <div class="network-selector">
+          <select [(ngModel)]="selectedChain" (change)="onChainChange()" class="network-select">
+            <option [value]="undefined">Select network</option>
+            <option *ngFor="let chain of availableChains" [value]="chain.chainId">
+              {{ chain.chainName }}
+            </option>
+          </select>
+          <button class="add-chain-button" (click)="showAddChainForm()">Add Chain</button>
+        </div>
+
+        <div class="kasplex-l2-info" *ngIf="l2WalletInfoFormatted(); else loadingL2" >
           <p>
             <strong>Address:</strong>
-            {{ kasplexL2Address || 'loading...' }}
+            {{ l2WalletInfoFormatted()?.address }}
           </p>
           <p>
             <strong>Balance:</strong>
-            {{ kasplexL2Balance !== undefined ? (kasplexL2Balance | weiToNumber) + ' KETH' : 'loading...' }}
+            {{ l2WalletInfoFormatted()?.balance }}  
           </p>
-        </div>
-        
+        </div> 
+        <ng-template #loadingL2>
+          <div *ngIf="currentL2Chain(); else loadingL2Chain">
+            <p>Loading...</p>
+          </div>
+          <ng-template #loadingL2Chain>
+            <p>Please select a network</p>
+          </ng-template>
+        </ng-template>
       </div>
 
       <div class="mempoll-transactions">
@@ -226,3 +244,13 @@
 <ng-template #loadingMessage>
   <p>Loading...</p>
 </ng-template>
+
+<!-- Add Chain Form Modal -->
+<div class="modal" *ngIf="isAddChainFormVisible">
+  <div class="modal-content">
+    <add-l2-chain
+      (chainAdded)="onChainAdded($event)"
+      (cancelled)="hideAddChainForm()"
+    ></add-l2-chain>
+  </div>
+</div>

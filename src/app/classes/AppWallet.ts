@@ -15,7 +15,16 @@ import { MempoolTransactionManager } from './MempoolTransactionManager';
 import { IMempoolResultEntry } from '../types/kaspa-network/mempool-result.interface';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
-import { KasplexL2Service } from '../services/l2/kasplex-l2.service';
+import { EthereumWalletService } from '../services/ethereum-wallet.service';
+import { ethers } from 'ethers';
+import { BaseEthereumProvider } from '../services/base-ethereum-provider';
+
+export interface L2WalletState {
+  chainId: number | undefined;
+  address: string | undefined;
+  balance: bigint;
+  balanceFormatted: number;
+}
 
 export class AppWallet {
   private id: number;
@@ -32,7 +41,7 @@ export class AppWallet {
   private walletStateBalance: WritableSignal<undefined | BalanceData> = signal(undefined);
   private mempoolTransactionsSignal: WritableSignal<IMempoolResultEntry | undefined> = signal(undefined);
   private isCurrentlyActiveSingal = signal(false);
-  private kasplexL2ServiceWalletAddress: WritableSignal<string | undefined> = signal(undefined);
+  private l2WalletStateSignal: WritableSignal<L2WalletState | undefined> = signal(undefined);
   private currentMempoolManagerTransactionSignalSubscription: undefined | Subscription = undefined;
   private currentUtxoProcessorManagerTransactionSignalSubscription: undefined | Subscription = undefined;
 
@@ -43,18 +52,21 @@ export class AppWallet {
   private mempoolTransactionsManagerPendingPromise: Promise<unknown> | undefined = undefined;
   private mempoolTransactionsManagerPendingResolve: undefined | ((v?: any) => void) = undefined;
 
+  private readonly kaspaNetworkActionsService: KaspaNetworkActionsService;
+  private readonly ethereumWalletService: EthereumWalletService;
+
   constructor(
     savedWalletData: SavedWalletData,
     shoudLoadBalance: boolean,
     account: SavedWalletAccount | undefined,
-    private kaspaNetworkActionsService: KaspaNetworkActionsService,
     private readonly injector: EnvironmentInjector,
-    private readonly kasplexL2Service: KasplexL2Service,
   ) {
     this.id = savedWalletData.id;
     this.name = savedWalletData.name;
     this.accountData = account;
     this.version = savedWalletData.version;
+    this.ethereumWalletService = this.injector.get(EthereumWalletService);
+    this.kaspaNetworkActionsService = this.injector.get(KaspaNetworkActionsService);
 
     if (!savedWalletData.privateKey && !savedWalletData.mnemonic) {
       throw new Error('Wallet must have a private key or a mnemonic');
@@ -84,13 +96,15 @@ export class AppWallet {
       this.refreshUtxosBalance();
     }
 
-    this.initializeKasplexL2ServiceWalletAddress();
+    if (this.ethereumWalletService.getCurrentChainSignal()()) {
+      this.updateL2WalletState();
+    }
+
+    toObservable(this.ethereumWalletService.getCurrentChainSignal(), { injector: this.injector }).subscribe((chain) => {
+      this.updateL2WalletState();
+    });
   }
 
-  private async initializeKasplexL2ServiceWalletAddress() {
-    const address = await this.getKasplexL2ServiceWallet().getAddress();
-    this.kasplexL2ServiceWalletAddress.set(address);
-  }
 
   getId(): number {
     return this.id;
@@ -157,7 +171,7 @@ export class AppWallet {
               this.mempoolTransactionsManagerPendingResolve = resolve;
             })
           }
-          
+
           if (mempoolTransactionData.sending.length == 0 && this.mempoolTransactionsManagerPendingPromise) {
             this.mempoolTransactionsManagerPendingResolve?.();
             this.mempoolTransactionsManagerPendingPromise = undefined;
@@ -187,8 +201,8 @@ export class AppWallet {
             this.utxoProcessorManagerPendingUtxoPromise = new Promise((resolve) => {
               this.utxoProcessorManagerPendingUtxoResolve = resolve;
             })
-          } 
-          
+          }
+
           if ((balanceData.outgoing) == 0n && this.utxoProcessorManagerPendingUtxoPromise) {
             this.utxoProcessorManagerPendingUtxoResolve?.();
             this.utxoProcessorManagerPendingUtxoPromise = undefined;
@@ -265,15 +279,51 @@ export class AppWallet {
     await this.utxoProcessorManagerPendingUtxoPromise;
   }
 
-  getKasplexL2ServiceWallet() {
-    return this.kasplexL2Service.getChainWallet(this.getPrivateKey().toString());
+  async getL2WalletAddress(): Promise<string | undefined> {
+    const address = await this.ethereumWalletService.getCurrentWalletProvider()?.getChainWallet(this.getPrivateKey().toString()).getAddress();
+    return address;
   }
 
-  getKasplexL2ServiceWalletAddressSignal(): Signal<string | undefined> {
-    return this.kasplexL2ServiceWalletAddress.asReadonly();
+  private async updateL2WalletState() {
+   if (this.ethereumWalletService.getCurrentChainSignal()()) {
+    if (Number(this.ethereumWalletService.getCurrentChainSignal()()) != this.l2WalletStateSignal()?.chainId) {
+      this.l2WalletStateSignal.set(undefined);
+    }
+
+    const chainId = Number(this.ethereumWalletService.getCurrentChainSignal()());
+    const balance = await this.getL2Balance();
+    this.l2WalletStateSignal.set({
+      chainId,
+      address: await this.getL2WalletAddress(),
+      balance: balance,
+      balanceFormatted: Number(balance) / (10 ** (this.getL2Provider()?.getConfig().nativeCurrency.decimals || 18)),
+    });
+   } else {
+    this.l2WalletStateSignal.set(undefined);
+   }
   }
 
-  async getKasplexL2ServiceBalance(): Promise<bigint> {
-    return await this.kasplexL2Service.getWalletBalance(await this.getKasplexL2ServiceWallet().getAddress());
+  async getL2Wallet(): Promise<ethers.Wallet | undefined> {
+    return this.ethereumWalletService.getCurrentWalletProvider()?.getChainWallet(this.getPrivateKey().toString());
+  }
+
+  getL2Provider(): BaseEthereumProvider | undefined {
+    return this.ethereumWalletService.getCurrentWalletProvider();
+  }
+
+  getL2WalletStateSignal(): Signal<L2WalletState | undefined> {
+    return this.l2WalletStateSignal.asReadonly();
+  }
+
+  private async getL2Balance(): Promise<bigint> {
+    const l2Address = await this.getL2WalletAddress();
+
+    if (!l2Address) {
+      return 0n;
+    }
+
+    const balance = await this.ethereumWalletService.getCurrentWalletProvider()!.getWalletBalance(l2Address);
+
+    return balance;
   }
 }

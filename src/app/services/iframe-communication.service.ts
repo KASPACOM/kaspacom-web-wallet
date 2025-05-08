@@ -9,7 +9,7 @@ import { BalanceData } from '../types/kaspa-network/balance-event.interface';
 import { Subscription } from 'rxjs';
 import { CommitRevealAction, WalletAction } from '../types/wallet-action';
 import { WalletActionResultWithError } from '../types/wallet-action-result';
-import { ERROR_CODES, WalletActionRequestPayloadInterface, WalletActionTypeEnum, WalletMessageInterface, WalletMessageTypeEnum } from 'kaspacom-wallet-messages';
+import { EIP1193ProviderRequestActionResult, ERROR_CODES, WalletActionRequestPayloadInterface, WalletActionResultType, WalletActionTypeEnum, WalletMessageInterface, WalletMessageTypeEnum } from 'kaspacom-wallet-messages';
 import { Router } from '@angular/router';
 import { EthereumWalletService } from './ethereum-wallet.service';
 
@@ -145,7 +145,7 @@ export class IFrameCommunicationService {
   private async handleWalletActionRequest(
     actionData: WalletActionRequestPayloadInterface,
     uuid?: string
-  ) {
+  ) { 
     let result: WalletActionResultWithError = {
       success: false,
       errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
@@ -167,7 +167,14 @@ export class IFrameCommunicationService {
           ) as any,
         }
       } else if (actionData.action == WalletActionTypeEnum.EIP1193ProviderRequest) {
-        this.ethereumWalletService.handleRequest(actionData.data);
+        result = {
+          success: true,
+          result: {
+            type: WalletActionResultType.EIP1193ProviderRequest,
+            performedByWallet: this.walletService.getCurrentWallet()!.getAddress(),
+            result: await this.ethereumWalletService.handleRequest(actionData.data),
+          } as EIP1193ProviderRequestActionResult<any>,
+        }
       } else {
         let action: WalletAction | undefined =
           this.getMessageWalletAction(actionData);

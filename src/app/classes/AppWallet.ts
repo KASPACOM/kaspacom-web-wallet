@@ -280,8 +280,7 @@ export class AppWallet {
   }
 
   async getL2WalletAddress(): Promise<string | undefined> {
-    const address = await this.ethereumWalletService.getCurrentWalletProvider()?.getChainWallet(this.getPrivateKey().toString()).getAddress();
-    return address;
+    return await this.ethereumWalletService.getCurrentWalletProvider()?.getChainWallet(this.getPrivateKey().toString()).getAddress();
   }
 
   private async updateL2WalletState() {
@@ -292,6 +291,7 @@ export class AppWallet {
 
     const chainId = Number(this.ethereumWalletService.getCurrentChainSignal()());
     const balance = await this.getL2Balance();
+
     this.l2WalletStateSignal.set({
       chainId,
       address: await this.getL2WalletAddress(),

@@ -1,4 +1,4 @@
-.kasplex-l2-transaction-container {
+.l2-transaction-container {
   padding: 20px;
 }
 
@@ -23,6 +23,22 @@ label {
 textarea.form-control {
   min-height: 100px;
   resize: vertical;
+}
+
+.checkbox-group {
+  margin-top: 20px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  
+  input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+  }
 }
 
 .form-actions {

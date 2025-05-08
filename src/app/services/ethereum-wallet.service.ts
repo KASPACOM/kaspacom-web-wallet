@@ -11,7 +11,7 @@ import { BaseEthereumProvider } from "./base-ethereum-provider";
     providedIn: 'root',
 })
 export class EthereumWalletService {
-    private currentChain = signal<string | undefined>(undefined);
+    private currentChain = signal<string | undefined>(localStorage.getItem(LOCAL_STORAGE_KEYS.CURRENT_ETHEREUM_CHAIN) || undefined);
     private currentProvider: BaseEthereumProvider | undefined = undefined;
     protected allChainsByChainId: { [chainId: string]: EIP1193ProviderChain } = {};
 
@@ -19,16 +19,21 @@ export class EthereumWalletService {
         private walletService: WalletService,
     ) {
         this.setAllChainsByChainId();
+        this.setCurrentWalletProviderAndStopOldOne();
     }
 
     public getCurrentChainSignal() {
         return this.currentChain.asReadonly();
     }
 
-    public setCurrentChain(chain: string) {
-        console.log('setCurrentChain', chain);
-        this.currentChain.set(chain);
+    public setCurrentChain(chain: string | undefined) {
+        if (chain) {
+            localStorage.setItem(LOCAL_STORAGE_KEYS.CURRENT_ETHEREUM_CHAIN, chain);
+        } else {
+            localStorage.removeItem(LOCAL_STORAGE_KEYS.CURRENT_ETHEREUM_CHAIN);
+        }
 
+        this.currentChain.set(chain);
         this.setCurrentWalletProviderAndStopOldOne();
     }
 
@@ -48,12 +53,12 @@ export class EthereumWalletService {
 
         const currentChain = this.getCurrentChainSignal()();
         if (!currentChain) {
-            throw new Error('No chain selected');
+            return;
         }
 
         const chainConfig = this.getAllChainsByChainId()[currentChain];
         if (!chainConfig) {
-            throw new Error('Chain not found');
+            return;
         }
         
         this.currentProvider = new BaseEthereumProvider(chainConfig);
@@ -86,6 +91,12 @@ export class EthereumWalletService {
 
     async handleRequest<T extends EIP1193RequestType>(request: EIP1193RequestPayload<T>): Promise<EIP1193ProviderResponse<T>> {
         try {
+            if (!this.currentChain()) {
+                return this.createResponse<T>(undefined, {
+                    code: ERROR_CODES.EIP1193.CHAIN_DISCONNECTED,
+                    message: 'No chain selected'
+                });
+            }
             switch (request.method) {
                 case EIP1193RequestType.REQUEST_ACCOUNTS:
                     // Return the current wallet address
@@ -98,15 +109,25 @@ export class EthereumWalletService {
                         });
                     }
 
-                    return this.createResponse<T>(await Promise.all(wallets.map(async (wallet: AppWallet) => await wallet.getL2WalletAddress())));
-                case 'eth_getBalance':
+                    const allAccounts = await Promise.all(wallets.map(async (wallet: AppWallet) => await wallet.getL2WalletAddress()));
 
-                    const walletAddress = request.params[0] as string;
+                    // put current wallet address first
+                    const currentWalletAddress = await this.walletService.getCurrentWallet()!.getL2WalletAddress();
+                    const currentWalletIndex = allAccounts.findIndex(account => account === currentWalletAddress);
+                    if (currentWalletIndex !== -1) {
+                        allAccounts.splice(currentWalletIndex, 1);
+                        allAccounts.unshift(currentWalletAddress);
+                    }
 
-                    if (!walletAddress || !this.currentChain()) {
+                    return this.createResponse<T>(allAccounts);
+                case EIP1193RequestType.GET_BALANCE:
+
+                    const walletAddress = request.params?.[0] as string;
+
+                    if (!walletAddress) {
                         return this.createResponse<T>(undefined, {
-                            code: ERROR_CODES.EIP1193.UNAUTHORIZED,
-                            message: 'No wallet connected'
+                            code: ERROR_CODES.EIP1193.INVALID_PARAMETERS,
+                            message: 'Invalid wallet address'
                         });
                     }
 

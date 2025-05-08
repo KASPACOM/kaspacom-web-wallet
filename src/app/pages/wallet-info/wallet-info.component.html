@@ -95,7 +95,7 @@
       </div>
 
       <div class="mempoll-transactions">
-        <h3>Penging Transactions:</h3>
+        <h3>Pending Transactions:</h3>
         <mempool-transactions></mempool-transactions>
       </div>
 
@@ -147,7 +147,7 @@
             [class.active]="activeTab === 'kasplex-l2'"
             (click)="switchTab('kasplex-l2')"
           >
-            Kasplex L2
+            L2 Transaction
           </button>
           <!-- This is for development -->
           <!-- <button
@@ -178,7 +178,7 @@
             <deploy></deploy>
           </div>
           <div *ngIf="activeTab === 'kasplex-l2'" class="kasplex-l2-container">
-            <kasplex-l2-transaction></kasplex-l2-transaction>
+            <l2-transaction></l2-transaction>
           </div>
           <!-- This is for development -->
           <!-- <div *ngIf="activeTab === 'list'" class="list-container">

@@ -8,13 +8,13 @@ import { TransactionRequest, parseEther } from 'ethers';
 import { environment } from '../../../../environments/environment';
 
 @Component({
-  selector: 'kasplex-l2-transaction',
+  selector: 'l2-transaction',
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule, WeiToNumberPipe],
-  templateUrl: './kasplex-l2-transaction.component.html',
-  styleUrls: ['./kasplex-l2-transaction.component.scss']
+  templateUrl: './l2-transaction.component.html',
+  styleUrls: ['./l2-transaction.component.scss']
 })
-export class KasplexL2TransactionComponent implements OnInit {
+export class L2TransactionComponent implements OnInit {
   ethForm: FormGroup;
 
   constructor(private fb: FormBuilder, private walletActionService: WalletActionService, private walletService: WalletService) {
@@ -24,7 +24,8 @@ export class KasplexL2TransactionComponent implements OnInit {
       gasLimit: ['21000', [Validators.min(21000)]],
       gasPrice: ['', [Validators.min(0)]],
       data: [''],
-      nonce: ['']
+      nonce: [''],
+      sendToL1: [false]
     });
   }
 
@@ -44,7 +45,12 @@ export class KasplexL2TransactionComponent implements OnInit {
       if (formData.data) cleanData.data = formData.data;
       if (formData.nonce) cleanData.nonce = formData.nonce;
 
-      const action = this.walletActionService.createSignL2EtherTransactionAction(cleanData, environment.l2Configs.kasplex.l1PayloadPrefix, true, true);
+      const action = this.walletActionService.createSignL2EtherTransactionAction(
+        cleanData, 
+        environment.l2Configs.kasplex.l1PayloadPrefix,
+        true,
+        formData.sendToL1, 
+      );
 
       const result = await this.walletActionService.validateAndDoActionAfterApproval(action);
       console.log('Submit l2 ether transaction result', result);

@@ -29,11 +29,11 @@ import { TransactionHistoryComponent } from '../../components/history-info-compo
 import { Krc20OperationHistoryComponent } from '../../components/history-info-components/krc20-operation-history/krc20-operation-history.component';
 import { OperationDetails } from '../../services/kasplex-api/dtos/operation-details-response';
 import { MempoolTransactionsComponent } from '../../components/history-info-components/mempool-transactions/mempool-transactions.component';
-import { KasplexL2TransactionComponent } from '../../components/wallet-actions-forms/kasplex-l2-transaction/kasplex-l2-transaction.component';
 import { WeiToNumberPipe } from '../../pipes/wei-to-number.pipe';
 import { EthereumWalletService } from '../../services/ethereum-wallet.service';
 import { EIP1193ProviderChain } from 'kaspacom-wallet-messages';
 import { AddL2ChainComponent } from '../../components/wallet-actions-forms/add-l2-chain/add-l2-chain.component';
+import { L2TransactionComponent } from '../../components/wallet-actions-forms/l2-transaction/l2-transaction.component';
 
 type ActionTabs = 'send' | 'mint' | 'deploy' | 'list' | 'buy' | 'kasplex-l2';
 type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
@@ -61,8 +61,8 @@ type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
     TransactionHistoryComponent,
     Krc20OperationHistoryComponent,
     MempoolTransactionsComponent,
-    KasplexL2TransactionComponent,
     AddL2ChainComponent,
+    L2TransactionComponent,
   ],
 })
 export class WalletInfoComponent implements OnInit, OnDestroy {
@@ -150,9 +150,7 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
   }
 
   protected onChainChange() {
-    if (this.selectedChain) {
-      this.ethereumWalletService.setCurrentChain(this.selectedChain);
-    }
+    this.ethereumWalletService.setCurrentChain(this.selectedChain == 'undefined' ? undefined : this.selectedChain);
   }
 
   async loadKrc20Tokens() {

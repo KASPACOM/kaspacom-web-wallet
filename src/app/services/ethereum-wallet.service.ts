@@ -1,7 +1,7 @@
 import { Injectable, signal } from "@angular/core";
 import { environment } from "../../environments/environment";
 import { LOCAL_STORAGE_KEYS } from "../config/consts";
-import { EIP1193ProviderChain, EIP1193ProviderResponse, EIP1193RequestPayload, EIP1193RequestType } from "kaspacom-wallet-messages";
+import { EIP1193KaspaComWalletProviderEvent, EIP1193ProviderChain, EIP1193ProviderEventEnum, EIP1193ProviderResponse, EIP1193RequestPayload, EIP1193RequestType } from "kaspacom-wallet-messages";
 import { WalletService } from "./wallet.service";
 import { ERROR_CODES } from 'kaspacom-wallet-messages';
 import { AppWallet } from '../classes/AppWallet';
@@ -40,8 +40,8 @@ export class EthereumWalletService {
     public convertChainIdToHex(chainId: number): string {
         return `0x${chainId.toString(16)}`;
     }
-    
-    public getCurrentWalletProvider(): BaseEthereumProvider | undefined{
+
+    public getCurrentWalletProvider(): BaseEthereumProvider | undefined {
         return this.currentProvider;
     }
 
@@ -60,7 +60,7 @@ export class EthereumWalletService {
         if (!chainConfig) {
             return;
         }
-        
+
         this.currentProvider = new BaseEthereumProvider(chainConfig);
     }
 
@@ -89,35 +89,35 @@ export class EthereumWalletService {
         this.setAllChainsByChainId();
     }
 
+    private async getAllAccountsAndOrderThem(): Promise<string[]> {
+        const wallets: AppWallet[] | undefined = this.walletService.getAllWallets()();
+
+        if (!wallets || wallets.length === 0) {
+            return [];
+        }
+
+        const allAccounts = await Promise.all(wallets.map(async (wallet: AppWallet) => (await wallet.getL2WalletAddress())!));
+
+        // put current wallet address first
+        const currentWalletAddress = await this.walletService.getCurrentWallet()!.getL2WalletAddress();
+        const currentWalletIndex = allAccounts.findIndex(account => account === currentWalletAddress);
+        if (currentWalletAddress && currentWalletIndex !== -1) {
+            allAccounts.splice(currentWalletIndex, 1);
+            allAccounts.unshift(currentWalletAddress);
+        }
+
+        return allAccounts;
+    }
+
     async handleRequest<T extends EIP1193RequestType>(request: EIP1193RequestPayload<T>): Promise<EIP1193ProviderResponse<T>> {
         try {
             if (!this.currentChain()) {
-                return this.createResponse<T>(undefined, {
-                    code: ERROR_CODES.EIP1193.CHAIN_DISCONNECTED,
-                    message: 'No chain selected'
-                });
+                this.setCurrentChain(Object.values(this.allChainsByChainId)[0].chainId);
             }
             switch (request.method) {
                 case EIP1193RequestType.REQUEST_ACCOUNTS:
                     // Return the current wallet address
-                    const wallets: AppWallet[] | undefined = this.walletService.getAllWallets()();
-
-                    if (!wallets || wallets.length === 0) {
-                        return this.createResponse<T>(undefined, {
-                            code: ERROR_CODES.EIP1193.INTERNAL_ERROR,
-                            message: 'No wallets found'
-                        });
-                    }
-
-                    const allAccounts = await Promise.all(wallets.map(async (wallet: AppWallet) => await wallet.getL2WalletAddress()));
-
-                    // put current wallet address first
-                    const currentWalletAddress = await this.walletService.getCurrentWallet()!.getL2WalletAddress();
-                    const currentWalletIndex = allAccounts.findIndex(account => account === currentWalletAddress);
-                    if (currentWalletIndex !== -1) {
-                        allAccounts.splice(currentWalletIndex, 1);
-                        allAccounts.unshift(currentWalletAddress);
-                    }
+                    const allAccounts = await this.getAllAccountsAndOrderThem();
 
                     return this.createResponse<T>(allAccounts);
                 case EIP1193RequestType.GET_BALANCE:
@@ -141,6 +141,8 @@ export class EthereumWalletService {
 
                     // convert bigint to hex
                     return this.createResponse<T>(`0x${balance.toString(16)}`);
+                case EIP1193RequestType.GET_CHAIN_ID:
+                    return this.createResponse<T>(this.currentChain()!);
 
                 // case 'eth_sign':
                 //     // not supported
@@ -176,5 +178,43 @@ export class EthereumWalletService {
             result: result,
             error: error,
         };
+    }
+
+    async getEventData(event: EIP1193ProviderEventEnum, data?: unknown): Promise<EIP1193KaspaComWalletProviderEvent> {
+        switch (event) {
+            case EIP1193ProviderEventEnum.CONNECT:
+                return {
+                    type: EIP1193ProviderEventEnum.CONNECT,
+                    data: {
+                        chainId: parseInt(this.currentChain()?.slice(2) || '0', 16)
+                    }
+                };
+            case EIP1193ProviderEventEnum.DISCONNECT:
+                return {
+                    type: EIP1193ProviderEventEnum.DISCONNECT,
+                    data: new Error('Provider disconnected')
+                };
+            case EIP1193ProviderEventEnum.CHAIN_CHANGED:
+                return {
+                    type: EIP1193ProviderEventEnum.CHAIN_CHANGED,
+                    data: this.currentChain() || '0x0'
+                };
+            case EIP1193ProviderEventEnum.ACCOUNTS_CHANGED: {
+                return {
+                    type: EIP1193ProviderEventEnum.ACCOUNTS_CHANGED,
+                    data: await this.getAllAccountsAndOrderThem()
+                };
+            }
+            case EIP1193ProviderEventEnum.MESSAGE:
+                return {
+                    type: EIP1193ProviderEventEnum.MESSAGE,
+                    data: {
+                        type: EIP1193ProviderEventEnum.MESSAGE,
+                        data: data,
+                    }
+                };
+            default:
+                throw new Error(`Unsupported event type: ${event}`);
+        }
     }
 }

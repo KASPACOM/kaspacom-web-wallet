@@ -9,7 +9,7 @@ import { BalanceData } from '../types/kaspa-network/balance-event.interface';
 import { Subscription } from 'rxjs';
 import { CommitRevealAction, WalletAction } from '../types/wallet-action';
 import { WalletActionResultWithError } from '../types/wallet-action-result';
-import { EIP1193ProviderRequestActionResult, ERROR_CODES, WalletActionRequestPayloadInterface, WalletActionResultType, WalletActionTypeEnum, WalletMessageInterface, WalletMessageTypeEnum } from 'kaspacom-wallet-messages';
+import { EIP1193ProviderEventEnum, EIP1193ProviderRequestActionResult, ERROR_CODES, WalletActionRequestPayloadInterface, WalletActionResultType, WalletActionTypeEnum, WalletMessageInterface, WalletMessageTypeEnum } from 'kaspacom-wallet-messages';
 import { Router } from '@angular/router';
 import { EthereumWalletService } from './ethereum-wallet.service';
 
@@ -32,6 +32,11 @@ export class IFrameCommunicationService {
     if (this.isIframe()) {
       toObservable(this.walletService.getCurrentWalletSignal()).subscribe(
         this.onWalletSelected.bind(this)
+      );
+      toObservable(this.ethereumWalletService.getCurrentChainSignal()).subscribe(
+        () => {
+          this.sendEtheriumWalletEvent(EIP1193ProviderEventEnum.CHAIN_CHANGED);
+        }
       );
     }
   }
@@ -109,7 +114,8 @@ export class IFrameCommunicationService {
         ).subscribe(this.onWalletBalanceUpdated.bind(this));
     }
 
-    await this.sendUpdateWalletInfoEvent(wallet);
+    this.sendUpdateWalletInfoEvent(wallet);
+    this.sendEtheriumWalletEvent(EIP1193ProviderEventEnum.ACCOUNTS_CHANGED);
   }
 
   private async onWalletBalanceUpdated(balance: undefined | BalanceData) {
@@ -289,5 +295,14 @@ export class IFrameCommunicationService {
     }
 
     return undefined;
+  }
+
+  async sendEtheriumWalletEvent(event: EIP1193ProviderEventEnum) {
+    const eventData = await this.ethereumWalletService.getEventData(event);
+    
+    await this.sendMessageToApp({
+      type: WalletMessageTypeEnum.EIP1193Event,
+      payload: eventData,
+    });
   }
 }

@@ -34,6 +34,7 @@ import { EthereumWalletService } from '../../services/ethereum-wallet.service';
 import { EIP1193ProviderChain } from 'kaspacom-wallet-messages';
 import { AddL2ChainComponent } from '../../components/wallet-actions-forms/add-l2-chain/add-l2-chain.component';
 import { L2TransactionComponent } from '../../components/wallet-actions-forms/l2-transaction/l2-transaction.component';
+import { toObservable } from '@angular/core/rxjs-interop';
 
 type ActionTabs = 'send' | 'mint' | 'deploy' | 'list' | 'buy' | 'kasplex-l2';
 type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
@@ -107,7 +108,11 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
     private walletActionService: WalletActionService,
     private kaspaApiService: KaspaApiService,
     private ethereumWalletService: EthereumWalletService,
-  ) {}
+  ) {
+    toObservable(this.ethereumWalletService.getCurrentChainSignal()).subscribe((chain) => {
+      this.selectedChain = chain;
+    });
+  }
 
   walletUtxoStateBalanceSignal = computed(() => this.wallet?.getCurrentWalletStateBalanceSignalValue());
   currentL2Chain = computed(() => this.ethereumWalletService.getCurrentChainSignal()());

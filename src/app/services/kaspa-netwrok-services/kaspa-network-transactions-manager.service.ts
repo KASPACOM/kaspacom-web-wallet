@@ -33,7 +33,7 @@ import { UtilsHelper } from '../utils.service';
 import { TotalBalanceWithUtxosInterface } from '../../types/kaspa-network/total-balance-with-utxos.interface';
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
-import { ERROR_CODES, ProtocolScriptDataAndAddress } from 'kaspacom-wallet-messages';
+import { ERROR_CODES, KasTransactionParams, ProtocolScriptDataAndAddress } from 'kaspacom-wallet-messages';
 import {
   MAX_TRANSACTION_FEE,
   MINIMAL_AMOUNT_TO_SEND,
@@ -43,8 +43,7 @@ import { CommitRevealActionTransactions } from '../../types/kaspa-network/commit
 import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
 import { MempoolTransactionManager } from '../../classes/MempoolTransactionManager';
 import { keccak256, TransactionRequest } from 'ethers';
-import { EtherService } from '../ether.service';
-import { EthereumWalletService } from '../ethereum-wallet.service';
+import { EtherService } from '../etherium-services/ether.service';
 
 const MIN_TRANSACTION_FEE = 1817n;
 export const SUBMIT_REVEAL_MIN_UTXO_AMOUNT = 300000000n
@@ -432,12 +431,11 @@ export class KaspaNetworkTransactionsManagerService {
     wallet: AppWallet,
     priorityFee: bigint,
     transactionOptions: TransactionRequest,
-    protocolPrefix?: string,
+    kaspaTransactionParams: KasTransactionParams,
     submitTransaction: boolean = false,
     sendToL1: boolean = false,
     estimateOnly: boolean = false,
     notifyCreatedTransactions?: (transactionId: string) => Promise<any>,
-    payments?: IPaymentOutput[],
     rbf?: boolean,
   ): Promise<{
     success: boolean;
@@ -478,13 +476,18 @@ export class KaspaNetworkTransactionsManagerService {
       }
     }
 
-    const payload = this.etherService.encodeTransactionToKasplexL2Format(signedTransactionString, protocolPrefix);
+    const payload = this.etherService.encodeTransactionPayload(signedTransactionString);
+
+    const payments = kaspaTransactionParams?.outputs?.map(output => ({
+      address: output.address,
+      amount: output.amount,
+    })) || [];
 
     const result = await this.doTransactionWithUtxoProcessor(
       wallet.getUtxoProcessorManager()!,
       wallet.getPrivateKey(),
       priorityFee,
-      payments || [],
+      payments,
       {
         notifyCreatedTransactions,
         estimateOnly,

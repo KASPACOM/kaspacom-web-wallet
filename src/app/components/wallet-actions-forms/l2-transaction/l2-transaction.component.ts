@@ -6,6 +6,7 @@ import { WalletActionService } from '../../../services/wallet-action.service';
 import { WalletService } from '../../../services/wallet.service';
 import { TransactionRequest, parseEther } from 'ethers';
 import { environment } from '../../../../environments/environment';
+import { EthereumWalletChainManager } from '../../../services/etherium-services/etherium-wallet-chain.manager';
 
 @Component({
   selector: 'l2-transaction',
@@ -17,7 +18,7 @@ import { environment } from '../../../../environments/environment';
 export class L2TransactionComponent implements OnInit {
   ethForm: FormGroup;
 
-  constructor(private fb: FormBuilder, private walletActionService: WalletActionService, private walletService: WalletService) {
+  constructor(private fb: FormBuilder, private walletActionService: WalletActionService, private walletService: WalletService, private ethereumWalletChainManager: EthereumWalletChainManager) {
     this.ethForm = this.fb.group({
       to: ['', [Validators.pattern(/^0x[a-fA-F0-9]{40}$/)]],
       value: ['', [Validators.min(0)]],
@@ -45,15 +46,16 @@ export class L2TransactionComponent implements OnInit {
       if (formData.data) cleanData.data = formData.data;
       if (formData.nonce) cleanData.nonce = formData.nonce;
 
-      const action = this.walletActionService.createSignL2EtherTransactionAction(
-        cleanData, 
-        environment.l2Configs.kasplex.l1PayloadPrefix,
-        true,
-        formData.sendToL1, 
-      );
+      const l2Config = this.ethereumWalletChainManager.getAllChainsByChainId()[formData.chainId];
 
-      const result = await this.walletActionService.validateAndDoActionAfterApproval(action);
-      console.log('Submit l2 ether transaction result', result);
+      // const action = this.walletActionService.createSignL2EtherTransactionAction(
+      //   cleanData,
+      //   true,
+      //   formData.sendToL1, 
+      // );
+
+      // const result = await this.walletActionService.validateAndDoActionAfterApproval(action);
+      // console.log('Submit l2 ether transaction result', result);
     }
   }
 } 

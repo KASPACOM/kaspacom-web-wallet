@@ -70,7 +70,7 @@ export class ListKrc20Component implements OnInit {
       if (result.success) {
         this.amount = null;
       } else {
-        if (result.errorCode != ERROR_CODES.WALLET_ACTION.USER_REJECTED) {
+        if (result.errorCode != ERROR_CODES.EIP1193.USER_REJECTED) {
           alert(result.errorCode);
           return;
         }

@@ -1,7 +1,6 @@
 import { Component, computed } from '@angular/core';
 import { JsonPipe, NgClass, NgFor, NgIf } from '@angular/common';
 import {
-  SignL2EtherTransactionAction,
   WalletAction,
   WalletActionType,
 } from '../../../types/wallet-action';
@@ -13,6 +12,7 @@ import { PriorityFeeSelectionComponent } from '../priority-fee-selection/priorit
 import { AppWallet } from '../../../classes/AppWallet';
 import { ReviewActionDataService } from '../../../services/review-action-data.service';
 import { WalletActionService } from '../../../services/wallet-action.service';
+import { EIP1193RequestPayload, EIP1193RequestType } from 'kaspacom-wallet-messages';
 
 const TIMEOUT = 2 * 60 * 1000;
 
@@ -122,12 +122,10 @@ export class ReviewActionComponent {
       return false;
     }
 
-    if (this.currentActionSignal()!.action.type === WalletActionType.SIGN_L2_ETHER_TRANSACTION) {
-      if (!(this.currentActionSignal()!.action.data as SignL2EtherTransactionAction).submitTransaction) {
-        return false;
-      }
+    if (this.currentActionSignal()!.action.type === WalletActionType.EIP1193_PROVIDER_REQUEST) {
+      const actionData = this.currentActionSignal()!.action.data as EIP1193RequestPayload<EIP1193RequestType>;
 
-      if (!(this.currentActionSignal()!.action.data as SignL2EtherTransactionAction).sendToL1) {
+      if (actionData.method != EIP1193RequestType.KAS_SEND_TRANSACTION) {
         return false;
       }
     }

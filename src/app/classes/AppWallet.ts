@@ -15,9 +15,9 @@ import { MempoolTransactionManager } from './MempoolTransactionManager';
 import { IMempoolResultEntry } from '../types/kaspa-network/mempool-result.interface';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
-import { EthereumWalletService } from '../services/ethereum-wallet.service';
 import { ethers } from 'ethers';
-import { BaseEthereumProvider } from '../services/base-ethereum-provider';
+import { BaseEthereumProvider } from '../services/etherium-services/base-ethereum-provider';
+import { EthereumWalletChainManager } from '../services/etherium-services/etherium-wallet-chain.manager';
 
 export interface L2WalletState {
   chainId: number | undefined;
@@ -53,7 +53,7 @@ export class AppWallet {
   private mempoolTransactionsManagerPendingResolve: undefined | ((v?: any) => void) = undefined;
 
   private readonly kaspaNetworkActionsService: KaspaNetworkActionsService;
-  private readonly ethereumWalletService: EthereumWalletService;
+  private readonly ethereumWalletChainManager: EthereumWalletChainManager;
 
   constructor(
     savedWalletData: SavedWalletData,
@@ -65,7 +65,7 @@ export class AppWallet {
     this.name = savedWalletData.name;
     this.accountData = account;
     this.version = savedWalletData.version;
-    this.ethereumWalletService = this.injector.get(EthereumWalletService);
+    this.ethereumWalletChainManager = this.injector.get(EthereumWalletChainManager);
     this.kaspaNetworkActionsService = this.injector.get(KaspaNetworkActionsService);
 
     if (!savedWalletData.privateKey && !savedWalletData.mnemonic) {
@@ -96,11 +96,11 @@ export class AppWallet {
       this.refreshUtxosBalance();
     }
 
-    if (this.ethereumWalletService.getCurrentChainSignal()()) {
+    if (this.ethereumWalletChainManager.getCurrentChainSignal()()) {
       this.updateL2WalletState();
     }
 
-    toObservable(this.ethereumWalletService.getCurrentChainSignal(), { injector: this.injector }).subscribe((chain) => {
+    toObservable(this.ethereumWalletChainManager.getCurrentChainSignal(), { injector: this.injector }).subscribe((chain) => {
       this.updateL2WalletState();
     });
   }
@@ -280,23 +280,23 @@ export class AppWallet {
   }
 
   async getL2WalletAddress(): Promise<string | undefined> {
-    return await this.ethereumWalletService.getCurrentWalletProvider()?.getChainWallet(this.getPrivateKey().toString()).getAddress();
+    return await this.ethereumWalletChainManager.getCurrentWalletProvider()?.getChainWallet(this.getPrivateKey().toString()).getAddress();
   }
 
   private async updateL2WalletState() {
-   if (this.ethereumWalletService.getCurrentChainSignal()()) {
-    if (Number(this.ethereumWalletService.getCurrentChainSignal()()) != this.l2WalletStateSignal()?.chainId) {
+   if (this.ethereumWalletChainManager.getCurrentChainSignal()()) {
+    if (Number(this.ethereumWalletChainManager.getCurrentChainSignal()()) != this.l2WalletStateSignal()?.chainId) {
       this.l2WalletStateSignal.set(undefined);
     }
 
-    const chainId = Number(this.ethereumWalletService.getCurrentChainSignal()());
+    const chainId = Number(this.ethereumWalletChainManager.getCurrentChainSignal()());
     const balance = await this.getL2Balance();
 
     this.l2WalletStateSignal.set({
       chainId,
       address: await this.getL2WalletAddress(),
       balance: balance,
-      balanceFormatted: Number(balance) / (10 ** (this.getL2Provider()?.getConfig().nativeCurrency.decimals || 18)),
+      balanceFormatted: this.getL2Provider()?.fromBlockchainNumberToReadableNumber(balance) || 0,
     });
    } else {
     this.l2WalletStateSignal.set(undefined);
@@ -304,11 +304,11 @@ export class AppWallet {
   }
 
   async getL2Wallet(): Promise<ethers.Wallet | undefined> {
-    return this.ethereumWalletService.getCurrentWalletProvider()?.getChainWallet(this.getPrivateKey().toString());
+    return this.ethereumWalletChainManager.getCurrentWalletProvider()?.getChainWallet(this.getPrivateKey().toString());
   }
 
   getL2Provider(): BaseEthereumProvider | undefined {
-    return this.ethereumWalletService.getCurrentWalletProvider();
+    return this.ethereumWalletChainManager.getCurrentWalletProvider();
   }
 
   getL2WalletStateSignal(): Signal<L2WalletState | undefined> {
@@ -322,7 +322,7 @@ export class AppWallet {
       return 0n;
     }
 
-    const balance = await this.ethereumWalletService.getCurrentWalletProvider()!.getWalletBalance(l2Address);
+    const balance = await this.ethereumWalletChainManager.getCurrentWalletProvider()!.getWalletBalance(l2Address);
 
     return balance;
   }

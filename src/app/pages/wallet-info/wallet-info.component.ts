@@ -30,11 +30,11 @@ import { Krc20OperationHistoryComponent } from '../../components/history-info-co
 import { OperationDetails } from '../../services/kasplex-api/dtos/operation-details-response';
 import { MempoolTransactionsComponent } from '../../components/history-info-components/mempool-transactions/mempool-transactions.component';
 import { WeiToNumberPipe } from '../../pipes/wei-to-number.pipe';
-import { EthereumWalletService } from '../../services/ethereum-wallet.service';
 import { EIP1193ProviderChain } from 'kaspacom-wallet-messages';
 import { AddL2ChainComponent } from '../../components/wallet-actions-forms/add-l2-chain/add-l2-chain.component';
 import { L2TransactionComponent } from '../../components/wallet-actions-forms/l2-transaction/l2-transaction.component';
 import { toObservable } from '@angular/core/rxjs-interop';
+import { EthereumWalletChainManager } from '../../services/etherium-services/etherium-wallet-chain.manager';
 
 type ActionTabs = 'send' | 'mint' | 'deploy' | 'list' | 'buy' | 'kasplex-l2';
 type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
@@ -107,15 +107,15 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
     private kaspaNetworkActionsService: KaspaNetworkActionsService,
     private walletActionService: WalletActionService,
     private kaspaApiService: KaspaApiService,
-    private ethereumWalletService: EthereumWalletService,
+    private ethereumWalletChainManager: EthereumWalletChainManager,
   ) {
-    toObservable(this.ethereumWalletService.getCurrentChainSignal()).subscribe((chain) => {
+    toObservable(this.ethereumWalletChainManager.getCurrentChainSignal()).subscribe((chain) => {
       this.selectedChain = chain;
     });
   }
 
   walletUtxoStateBalanceSignal = computed(() => this.wallet?.getCurrentWalletStateBalanceSignalValue());
-  currentL2Chain = computed(() => this.ethereumWalletService.getCurrentChainSignal()());
+  currentL2Chain = computed(() => this.ethereumWalletChainManager.getCurrentChainSignal()());
 
   l2WalletInfo = computed(() => this.wallet?.getL2WalletStateSignal()());
   l2WalletInfoFormatted = computed(() => {
@@ -146,7 +146,7 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
   }
 
   private initializeL2Networks() {
-    const chainsByChainId = this.ethereumWalletService.getAllChainsByChainId();
+    const chainsByChainId = this.ethereumWalletChainManager.getAllChainsByChainId();
     this.availableChains = Object.values(chainsByChainId);
     
     // Set initial selected chain
@@ -155,7 +155,7 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
   }
 
   protected onChainChange() {
-    this.ethereumWalletService.setCurrentChain(this.selectedChain == 'undefined' ? undefined : this.selectedChain);
+    this.ethereumWalletChainManager.setCurrentChain(this.selectedChain == 'undefined' ? undefined : this.selectedChain);
   }
 
   async loadKrc20Tokens() {
@@ -326,7 +326,7 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
   }
 
   protected onChainAdded(chain: EIP1193ProviderChain) {
-    this.ethereumWalletService.addChain(chain);
+    this.ethereumWalletChainManager.addChain(chain);
     this.initializeL2Networks();
     this.selectedChain = chain.chainId;
     this.onChainChange();

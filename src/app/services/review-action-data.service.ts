@@ -212,7 +212,7 @@ export class ReviewActionDataService {
                 },
                 {
                     fieldName: "Data",
-                    fieldValue: tx.data || "0x",
+                    fieldValue: tx.data || '',
                     isCodeBlock: true
                 }
             ]

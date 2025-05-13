@@ -9,8 +9,10 @@ import { BalanceData } from '../types/kaspa-network/balance-event.interface';
 import { Subscription } from 'rxjs';
 import { CommitRevealAction, WalletAction } from '../types/wallet-action';
 import { WalletActionResultWithError } from '../types/wallet-action-result';
-import { ERROR_CODES, WalletActionRequestPayloadInterface, WalletActionTypeEnum, WalletMessageInterface, WalletMessageTypeEnum } from 'kaspacom-wallet-messages';
+import { EIP1193ProviderEventEnum, EIP1193ProviderRequestActionResult, ERROR_CODES, WalletActionRequestPayloadInterface, WalletActionResultType, WalletActionTypeEnum, WalletMessageInterface, WalletMessageTypeEnum } from 'kaspacom-wallet-messages';
 import { Router } from '@angular/router';
+import { EthereumWalletActionsService } from './etherium-services/etherium-wallet-actions.service';
+import { EthereumWalletChainManager } from './etherium-services/etherium-wallet-chain.manager';
 
 @Injectable({
   providedIn: 'root',
@@ -26,10 +28,17 @@ export class IFrameCommunicationService {
     private readonly kaspaNetworkActionsService: KaspaNetworkActionsService,
     private readonly injector: EnvironmentInjector,
     private router: Router,
+    private ethereumWalletActionsService: EthereumWalletActionsService,
+    private ethereumWalletChainManager: EthereumWalletChainManager,
   ) {
     if (this.isIframe()) {
       toObservable(this.walletService.getCurrentWalletSignal()).subscribe(
         this.onWalletSelected.bind(this)
+      );
+      toObservable(this.ethereumWalletChainManager.getCurrentChainSignal()).subscribe(
+        () => {
+          this.sendEtheriumWalletEvent(EIP1193ProviderEventEnum.CHAIN_CHANGED);
+        }
       );
     }
   }
@@ -107,7 +116,8 @@ export class IFrameCommunicationService {
         ).subscribe(this.onWalletBalanceUpdated.bind(this));
     }
 
-    await this.sendUpdateWalletInfoEvent(wallet);
+    this.sendUpdateWalletInfoEvent(wallet);
+    this.sendEtheriumWalletEvent(EIP1193ProviderEventEnum.ACCOUNTS_CHANGED);
   }
 
   private async onWalletBalanceUpdated(balance: undefined | BalanceData) {
@@ -125,7 +135,7 @@ export class IFrameCommunicationService {
         ?.balance;
       message.payload = {
         walletAddress: wallet.getAddress(),
-        kasplexL2Address: wallet.getKasplexL2ServiceWalletAddressSignal()(),
+        kasplexL2Address: wallet.getL2WalletStateSignal()()?.address,
         balance:
           balance?.mature === undefined
             ? null
@@ -143,7 +153,7 @@ export class IFrameCommunicationService {
   private async handleWalletActionRequest(
     actionData: WalletActionRequestPayloadInterface,
     uuid?: string
-  ) {
+  ) { 
     let result: WalletActionResultWithError = {
       success: false,
       errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
@@ -164,6 +174,15 @@ export class IFrameCommunicationService {
             this.walletService.getCurrentWallet()!.getAddress(),
           ) as any,
         }
+      } else if (actionData.action == WalletActionTypeEnum.EIP1193ProviderRequest) {
+        result = {
+          success: true,
+          result: {
+            type: WalletActionResultType.EIP1193ProviderRequest,
+            performedByWallet: this.walletService.getCurrentWallet()!.getAddress(),
+            result: await this.ethereumWalletActionsService.handleRequest(actionData.data, async () => { await this.notifyActionAccepted(actionData, uuid); }),
+          } as EIP1193ProviderRequestActionResult<any>,
+        }
       } else {
         let action: WalletAction | undefined =
           this.getMessageWalletAction(actionData);
@@ -172,13 +191,7 @@ export class IFrameCommunicationService {
           result = await this.walletActionsService.validateAndDoActionAfterApproval(
             action,
             true,
-            async () => {
-              this.sendMessageToApp({
-                type: WalletMessageTypeEnum.WalletActionApproved,
-                uuid,
-                payload: actionData,
-              })
-            }
+            async () => { await this.notifyActionAccepted(actionData, uuid); },
           );
         }
       }
@@ -200,6 +213,14 @@ export class IFrameCommunicationService {
           errorCode: result.errorCode || ERROR_CODES.GENERAL.UNKNOWN_ERROR,
         } as any,
     });
+  }
+
+  private async notifyActionAccepted(actionData: WalletActionRequestPayloadInterface, uuid: string | undefined) {
+    await this.sendMessageToApp({
+      type: WalletMessageTypeEnum.WalletActionApproved,
+      uuid,
+      payload: actionData,
+    })
   }
 
   private getMessageWalletAction(
@@ -268,15 +289,17 @@ export class IFrameCommunicationService {
           actionData.data.protocolAction,
         );
       
-      case WalletActionTypeEnum.SignL2EtherTransaction:
-        return this.walletActionsService.createSignL2EtherTransactionAction(
-          actionData.data.transactionOptions,
-          actionData.data.payloadPrefix,
-          actionData.data.submitTransaction,
-          actionData.data.sendToL1
-        );
     }
 
     return undefined;
+  }
+
+  async sendEtheriumWalletEvent(event: EIP1193ProviderEventEnum) {
+    const eventData = await this.ethereumWalletActionsService.getEventData(event);
+    
+    await this.sendMessageToApp({
+      type: WalletMessageTypeEnum.EIP1193Event,
+      payload: eventData,
+    });
   }
 }

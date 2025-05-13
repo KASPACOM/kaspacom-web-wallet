@@ -2,6 +2,8 @@ export const LOCAL_STORAGE_KEYS = {
     USER_DATA: 'userData',
     CURRENT_SELECTED_WALLET: 'currentSelectedWallet',
     UNFINISHED_COMMIT_REVEAL_ACTIONS: 'UnfinishedCommitRevealActions',
+    ETHEREUM_CHAINS: 'ethereumChains',
+    CURRENT_ETHEREUM_CHAIN: 'currentEthereumChain',
 }
 
 export const KASPA_NETWORKS = {

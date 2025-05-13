@@ -1,4 +1,4 @@
-<div class="kasplex-l2-transaction-container">
+<div class="l2-transaction-container">
   <form [formGroup]="ethForm" (ngSubmit)="onSubmit()">
     <div class="form-group">
       <label for="to">To Address:</label>
@@ -61,6 +61,16 @@
         formControlName="nonce" 
         class="form-control"
       >
+    </div>
+
+    <div class="form-group checkbox-group">
+      <label class="checkbox-label">
+        <input 
+          type="checkbox" 
+          formControlName="sendToL1"
+        >
+        Send to L1
+      </label>
     </div>
 
     <div class="form-actions">

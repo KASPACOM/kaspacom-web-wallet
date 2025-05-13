@@ -16,6 +16,7 @@ export interface L2ConfigInterface {
       http: string[];
     };
   };
+  blockExplorerUrls?: string[];
 }
 
 export interface Environment {

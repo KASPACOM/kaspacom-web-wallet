@@ -145,6 +145,7 @@ export class EthereumWalletActionsService {
             allAccounts.unshift(currentWalletAddress);
         }
 
+        return [];
         return allAccounts;
     }
 }

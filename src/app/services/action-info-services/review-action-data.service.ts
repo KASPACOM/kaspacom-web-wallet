@@ -133,7 +133,7 @@ export class ReviewActionDataService {
         if (actionData.options?.additionalOutputs?.length) {
             result.rows.push({
                 fieldName: "Additional Payments Amount",
-                fieldValue: actionData.options?.additionalOutputs?.reduce((sum: number, out: any) => sum + this.kaspaNetworkActionsService.sompiToNumber(out.amount), 0).toString() + ' KAS',
+                fieldValue: actionData.options?.additionalOutputs?.reduce((sum, out) => sum + this.kaspaNetworkActionsService.sompiToNumber(out.amount), 0).toString() + ' KAS',
             });
             result.rows.push({
                 fieldName: "Additional Payments Details",

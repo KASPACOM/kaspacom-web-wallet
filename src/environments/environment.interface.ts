@@ -27,6 +27,7 @@ export interface Environment {
   kaspaNetwork: string;
   allowedDomains: string[];
   allowedIframeDomains: string[],
+  isL2Enabled: boolean;
   l2Configs: {
     kasplex: L2ConfigInterface,
   }

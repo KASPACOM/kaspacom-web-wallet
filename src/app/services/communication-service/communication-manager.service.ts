@@ -13,6 +13,7 @@ import { Router } from '@angular/router';
 import { EthereumWalletActionsService } from '../etherium-services/etherium-wallet-actions.service';
 import { EthereumWalletChainManager } from '../etherium-services/etherium-wallet-chain.manager';
 import { BaseCommunicationApp } from './communication-app/base-communication-app';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
     providedIn: 'root',
@@ -38,11 +39,14 @@ export class CommunicationManagerService {
         this.eventsSubscriptions.push(toObservable(this.walletService.getCurrentWalletSignal()).subscribe(
             this.onWalletSelected.bind(this)
         ));
-        this.eventsSubscriptions.push(toObservable(this.ethereumWalletChainManager.getCurrentChainSignal()).subscribe(
-            () => {
-                this.sendEtheriumWalletEvent(EIP1193ProviderEventEnum.CHAIN_CHANGED);
-            }
-        ));
+
+        if (environment.isL2Enabled) {
+            this.eventsSubscriptions.push(toObservable(this.ethereumWalletChainManager.getCurrentChainSignal()).subscribe(
+                () => {
+                    this.sendEtheriumWalletEvent(EIP1193ProviderEventEnum.CHAIN_CHANGED);
+                }
+            ));
+        }
     }
 
     protected stopEventsSenders() {

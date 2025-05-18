@@ -26,33 +26,31 @@
         <p>{{ wallet.getDisplayName() }}</p>
         <h3>Wallet Address:</h3>
         <p>{{ wallet.getAddress() }}</p>
-        <h3>Balance:</h3> 
-        <div
-          *ngIf="
+        <h3>Balance:</h3>
+        <div *ngIf="
             walletUtxoStateBalanceSignal() !== undefined;
             else loadingData
-          "
-        >
+          ">
           <p>
             Current:
             {{
-              walletUtxoStateBalanceSignal()!.mature | sompiToNumber
+            walletUtxoStateBalanceSignal()!.mature | sompiToNumber
             }}
             KAS
           </p>
           <p>
             Pending:
             {{
-              walletUtxoStateBalanceSignal()!.pending
-                | sompiToNumber
+            walletUtxoStateBalanceSignal()!.pending
+            | sompiToNumber
             }}
             KAS
           </p>
           <p>
             Outgoing:
             {{
-              walletUtxoStateBalanceSignal()!.outgoing
-                | sompiToNumber
+            walletUtxoStateBalanceSignal()!.outgoing
+            | sompiToNumber
             }}
             KAS
           </p>
@@ -62,36 +60,40 @@
         </ng-template>
 
 
-        <h3>L2:</h3>
-        
-        <div class="network-selector">
-          <select [(ngModel)]="selectedChain" (change)="onChainChange()" class="network-select">
-            <option [value]="undefined">Select network</option>
-            <option *ngFor="let chain of availableChains" [value]="chain.chainId">
-              {{ chain.chainName }}
-            </option>
-          </select>
-          <button class="add-chain-button" (click)="showAddChainForm()">Add Chain</button>
+
+        <div *ngIf="isL2Enabled">
+          <h3>L2:</h3>
+
+          <div class="network-selector">
+            <select [(ngModel)]="selectedChain" (change)="onChainChange()" class="network-select">
+              <option [value]="undefined">Select network</option>
+              <option *ngFor="let chain of availableChains" [value]="chain.chainId">
+                {{ chain.chainName }}
+              </option>
+            </select>
+            <button class="add-chain-button" (click)="showAddChainForm()">Add Chain</button>
+          </div>
+
+          <div *ngIf="l2WalletInfoFormatted(); else loadingL2">
+            <p>
+              <strong>Address:</strong>
+              {{ l2WalletInfoFormatted()?.address }}
+            </p>
+            <p>
+              <strong>Balance:</strong>
+              {{ l2WalletInfoFormatted()?.balance }}
+            </p>
+          </div>
+          <ng-template #loadingL2>
+            <div *ngIf="currentL2Chain(); else loadingL2Chain">
+              <p>Loading...</p>
+            </div>
+            <ng-template #loadingL2Chain>
+              <p>Please select a network</p>
+            </ng-template>
+          </ng-template>
         </div>
 
-        <div class="kasplex-l2-info" *ngIf="l2WalletInfoFormatted(); else loadingL2" >
-          <p>
-            <strong>Address:</strong>
-            {{ l2WalletInfoFormatted()?.address }}
-          </p>
-          <p>
-            <strong>Balance:</strong>
-            {{ l2WalletInfoFormatted()?.balance }}  
-          </p>
-        </div> 
-        <ng-template #loadingL2>
-          <div *ngIf="currentL2Chain(); else loadingL2Chain">
-            <p>Loading...</p>
-          </div>
-          <ng-template #loadingL2Chain>
-            <p>Please select a network</p>
-          </ng-template>
-        </ng-template>
       </div>
 
       <div class="mempoll-transactions">
@@ -121,32 +123,16 @@
       <!-- Tabs -->
       <div class="tabs-container">
         <div class="tabs">
-          <button
-            class="tab-button"
-            [class.active]="activeTab === 'send'"
-            (click)="switchTab('send')"
-          >
+          <button class="tab-button" [class.active]="activeTab === 'send'" (click)="switchTab('send')">
             Send Asset
           </button>
-          <button
-            class="tab-button"
-            [class.active]="activeTab === 'mint'"
-            (click)="switchTab('mint')"
-          >
+          <button class="tab-button" [class.active]="activeTab === 'mint'" (click)="switchTab('mint')">
             Mint
           </button>
-          <button
-            class="tab-button"
-            [class.active]="activeTab === 'deploy'"
-            (click)="switchTab('deploy')"
-          >
+          <button class="tab-button" [class.active]="activeTab === 'deploy'" (click)="switchTab('deploy')">
             Deploy
           </button>
-          <button
-            class="tab-button"
-            [class.active]="activeTab === 'kasplex-l2'"
-            (click)="switchTab('kasplex-l2')"
-          >
+          <button class="tab-button" [class.active]="activeTab === 'kasplex-l2'" (click)="switchTab('kasplex-l2')">
             L2 Transaction
           </button>
           <!-- This is for development -->
@@ -194,25 +180,15 @@
   <div class="transactions-info-section">
     <div class="tabs-container">
       <div class="tabs">
-        <button
-          class="tab-button"
-          [class.active]="infoActiveTab === 'utxos'"
-          (click)="switchInfoTab('utxos')"
-        >
+        <button class="tab-button" [class.active]="infoActiveTab === 'utxos'" (click)="switchInfoTab('utxos')">
           UTXOs
         </button>
-        <button
-          class="tab-button"
-          [class.active]="infoActiveTab === 'kaspa-transactions'"
-          (click)="switchInfoTab('kaspa-transactions')"
-        >
+        <button class="tab-button" [class.active]="infoActiveTab === 'kaspa-transactions'"
+          (click)="switchInfoTab('kaspa-transactions')">
           Kaspa Transactions History
         </button>
-        <button
-          class="tab-button"
-          [class.active]="infoActiveTab === 'krc20-actions'"
-          (click)="switchInfoTab('krc20-actions')"
-        >
+        <button class="tab-button" [class.active]="infoActiveTab === 'krc20-actions'"
+          (click)="switchInfoTab('krc20-actions')">
           Krc20 Actions History
         </button>
       </div>
@@ -224,17 +200,11 @@
         </div>
 
         <div *ngIf="infoActiveTab === 'kaspa-transactions'">
-          <transaction-history
-            [transactions]="kaspaTransactionsHistory"
-            [wallet]="wallet"
-          ></transaction-history>
+          <transaction-history [transactions]="kaspaTransactionsHistory" [wallet]="wallet"></transaction-history>
         </div>
 
         <div *ngIf="infoActiveTab === 'krc20-actions'">
-          <krc20-operations-history
-            [operations]="krc20OperationHistory"
-            [wallet]="wallet"
-          ></krc20-operations-history>
+          <krc20-operations-history [operations]="krc20OperationHistory" [wallet]="wallet"></krc20-operations-history>
         </div>
       </div>
     </div>
@@ -248,9 +218,6 @@
 <!-- Add Chain Form Modal -->
 <div class="modal" *ngIf="isAddChainFormVisible">
   <div class="modal-content">
-    <add-l2-chain
-      (chainAdded)="onChainAdded($event)"
-      (cancelled)="hideAddChainForm()"
-    ></add-l2-chain>
+    <add-l2-chain (chainAdded)="onChainAdded($event)" (cancelled)="hideAddChainForm()"></add-l2-chain>
   </div>
 </div>

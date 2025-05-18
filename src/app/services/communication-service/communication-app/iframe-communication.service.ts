@@ -1,5 +1,6 @@
 import { WalletMessageInterface } from 'kaspacom-wallet-messages';
 import { BaseCommunicationApp } from './base-communication-app';
+import { environment } from '../../../../environments/environment';
 
 export class IFrameCommunicationApp implements BaseCommunicationApp {
   protected currentUrl: string;
@@ -11,15 +12,20 @@ export class IFrameCommunicationApp implements BaseCommunicationApp {
     this.onMessageWithBind = () => undefined;
   }
 
-  sendMessage(message: WalletMessageInterface): Promise<void> {
-    window.parent.postMessage(message, IFrameCommunicationApp.getTopUrl());
-    return Promise.resolve();
+  async sendMessage(message: WalletMessageInterface): Promise<void> {
+    if (this.isIframeAllowedDomain(IFrameCommunicationApp.getTopUrl())) {
+      window.parent.postMessage(message, IFrameCommunicationApp.getTopUrl());
+    }
   }
 
   async setOnMessageEventHandler(handler: (message: WalletMessageInterface) => void): Promise<void> {
     this.onMessageWithBind = (event: MessageEvent) => {
       if (event.origin !== this.currentUrl) {
-        console.warn('Message from unknown origin', event.origin);
+        return;
+      }
+
+      if (!this.isIframeAllowedDomain(event.origin)) {
+        console.error('Message from not allowed origin', event.origin);
         return;
       }
 
@@ -47,4 +53,10 @@ export class IFrameCommunicationApp implements BaseCommunicationApp {
   private static getTopUrl(): string {
     return document.location.ancestorOrigins[0] || document.referrer;
   }
+
+  isIframeAllowedDomain(domain: string): boolean {
+    const hostname = new URL(domain).hostname;
+    return environment.allowedIframeDomains.includes(hostname);
+  }
+
 }

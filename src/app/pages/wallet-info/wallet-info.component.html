@@ -132,7 +132,7 @@
           <button class="tab-button" [class.active]="activeTab === 'deploy'" (click)="switchTab('deploy')">
             Deploy
           </button>
-          <button class="tab-button" [class.active]="activeTab === 'kasplex-l2'" (click)="switchTab('kasplex-l2')">
+          <button class="tab-button" [class.active]="activeTab === 'kasplex-l2'" (click)="switchTab('kasplex-l2')" *ngIf="isL2Enabled">
             L2 Transaction
           </button>
           <!-- This is for development -->

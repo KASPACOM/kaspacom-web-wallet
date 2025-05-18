@@ -80,6 +80,85 @@ $card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.
   .change-wallet-button {
     @include button;
     background-color: $primary-color;
+    margin-left: 10px;
+  }
+}
+
+.network-selector {
+  margin-bottom: 15px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  
+  .network-select {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 14px;
+    color: #333;
+    
+    &:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    }
+  }
+
+  .add-chain-button {
+    padding: 8px 16px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+
+    &:hover {
+      background-color: #218838;
+    }
+  }
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+  
+.unfinished-action {
+  background-color: #ffe082;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  
+  .unfinished-action-message {
+    margin-bottom: 10px;
+  }
+  
+  .finish-action-button {
+    background-color: #4caf50;
     color: white;
     
     &:hover {

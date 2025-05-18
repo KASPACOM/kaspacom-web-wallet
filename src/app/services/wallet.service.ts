@@ -15,7 +15,6 @@ import { KasplexKrc20Service } from './kasplex-api/kasplex-api.service';
 import { firstValueFrom } from 'rxjs';
 import { UtilsHelper } from './utils.service';
 import { RpcConnectionStatus } from '../types/kaspa-network/rpc-connection-status.enum';
-import { KasplexL2Service } from './kasplex-l2.service';
 
 @Injectable({
   providedIn: 'root',
@@ -30,7 +29,6 @@ export class WalletService {
     private readonly kasplexService: KasplexKrc20Service,
     private readonly utilsService: UtilsHelper,
     private readonly injector: EnvironmentInjector,
-    private readonly etherService: KasplexL2Service,
   ) { }
 
   async addWallet(
@@ -443,11 +441,11 @@ export class WalletService {
 
     return [
       {
-        ticker: 'TKAS',
+        ticker: 'KAS',
         type: AssetType.KAS,
         availableAmount:
           this.getCurrentWallet()?.getCurrentWalletStateBalanceSignalValue()?.mature || 0n,
-        name: 'TKAS',
+        name: 'KAS',
       },
       ...additionalAssets,
     ];
@@ -512,6 +510,6 @@ export class WalletService {
     shoudLoadBalance: boolean,
     account: SavedWalletAccount | undefined,
   ): AppWallet {
-    return new AppWallet(savedWalletData, shoudLoadBalance, account, this.kaspaNetworkActionsService, this.injector, this.etherService);
+    return new AppWallet(savedWalletData, shoudLoadBalance, account, this.injector);
   }
 }

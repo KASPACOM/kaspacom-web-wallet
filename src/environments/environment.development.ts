@@ -9,7 +9,7 @@ export const environment: Environment = {
   knsApiBaseurl: 'https://api.knsdomains.org/tn10/api/v1',
   kaspaNetwork: KASPA_NETWORKS.TESTNET10,
   allowedDomains: ['localhost', 'dev-wallet.kaspa.com', 'local.kaspa.com'],
-  allowedIframeDomains: ['localhost', 'dev.kaspa.com', 'local.kaspa.com'],
+  allowedIframeDomains: ['localhost', 'dev.kaspa.com', 'dev2.kaspa.com', 'local.kaspa.com'],
   kasplexL2Config: {
     rpcUrl: 'https://rpc.kasplextest.xyz',
     chainId: 12211,
@@ -17,4 +17,26 @@ export const environment: Environment = {
   },
   krc721Api: 'https://testnet-10.krc721.stream/api/v1/krc721/testnet-10',
   krc721CacheStreamUrl: 'https://cache.krc721.stream/krc721/testnet-10',
+  isL2Enabled: true,
+  l2Configs: {
+    kasplex: {
+      l1PayloadPrefix: 'kasplex',
+      chainId: 12211,
+      name: "Kasplex Test",
+      network: "kasplextest",
+      nativeCurrency: {
+        name: "Kasplex",
+        symbol: "KAS",
+        decimals: 18,
+      },
+      rpcUrls: {
+        default: {
+          http: ["https://rpc.kasplextest.xyz"],
+        },
+        public: {
+          http: ["https://rpc.kasplextest.xyz"],
+        },
+      },
+    },
+  }
 };

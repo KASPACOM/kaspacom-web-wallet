@@ -1,4 +1,4 @@
-import { ProtocolScript, ProtocolScriptDataAndAddress, PsktActionsEnum } from 'kaspacom-wallet-messages';
+import { EIP1193RequestPayload, EIP1193RequestType, ProtocolScript, ProtocolScriptDataAndAddress, PsktActionsEnum } from 'kaspacom-wallet-messages';
 import { WalletActionResultWithError } from './wallet-action-result';
 import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
 import { TransactionRequest } from 'ethers';
@@ -8,10 +8,10 @@ export enum WalletActionType {
   TRANSFER_KAS = 'transfer-kas',
   COMPOUND_UTXOS = 'compound-utxos',
   SIGN_PSKT_TRANSACTION = 'buy-krc20-pskt',
-  SIGN_L2_ETHER_TRANSACTION = 'sign-l2-ether-transaction',
   SIGN_MESSAGE = 'sign-message',
   COMMIT_REVEAL = 'commit-reveal',
   SUBMIT_TRANSACTION = 'submit-transaction',
+  EIP1193_PROVIDER_REQUEST = 'eip-1193-provider-request',
 }
 
 // Mapping action types to their specific data shapes
@@ -19,9 +19,9 @@ type WalletActionDataMap = {
   [WalletActionType.TRANSFER_KAS]: TransferKasAction;
   [WalletActionType.COMPOUND_UTXOS]: CompoundUtxosAction;
   [WalletActionType.SIGN_PSKT_TRANSACTION]: SignPsktTransactionAction;
-  [WalletActionType.SIGN_L2_ETHER_TRANSACTION]: SignL2EtherTransactionAction;
   [WalletActionType.SIGN_MESSAGE]: SignMessage;
   [WalletActionType.COMMIT_REVEAL]: CommitRevealAction;
+  [WalletActionType.EIP1193_PROVIDER_REQUEST]: EIP1193RequestPayload<EIP1193RequestType>;
 };
 
 // Generic WalletAction type
@@ -65,12 +65,6 @@ export interface SignPsktTransactionAction {
   submitTransaction?: boolean;
   protocol?: ProtocolType | string;
   type?: PsktActionsEnum | string;
-}
-
-export interface SignL2EtherTransactionAction {
-  transactionOptions: TransactionRequest;
-  submitTransaction?: boolean;
-  payloadPrefix?: string;
 }
 
 export interface SignMessage {

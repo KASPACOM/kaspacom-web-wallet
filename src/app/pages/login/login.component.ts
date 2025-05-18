@@ -10,8 +10,7 @@ import { PasswordManagerService } from '../../services/password-manager.service'
 import { NgIf } from '@angular/common';
 import { Router } from '@angular/router';
 import { WalletService } from '../../services/wallet.service';
-import { IFrameCommunicationService } from '../../services/iframe-communication.service';
-import { KasplexL2Service } from '../../services/kasplex-l2.service';
+import { IFrameCommunicationApp } from '../../services/communication-service/communication-app/iframe-communication.service';
 
 @Component({
   selector: 'app-login',
@@ -29,7 +28,6 @@ export class LoginComponent implements OnInit {
     private passwordManagerService: PasswordManagerService,
     private router: Router,
     private walletService: WalletService,
-    private iframeCommunicationService: IFrameCommunicationService,
   ) {}
 
   ngOnInit() {
@@ -64,7 +62,7 @@ export class LoginComponent implements OnInit {
         if (this.walletService.getWalletsCount() === 0) {
           this.router.navigate(['/add-wallet']);
         } else {
-          if (this.iframeCommunicationService.isIframe()) {
+          if (IFrameCommunicationApp.isIframe()) {
             this.router.navigate(['/wallet-selection']);  
           } else {
             await this.walletService.selectCurrentWalletFromLocalStorage();

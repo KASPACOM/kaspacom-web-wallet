@@ -3,7 +3,6 @@ import {
   IFeeEstimate,
   IPaymentOutput,
   IScriptPublicKey,
-  ITransaction,
   Mnemonic,
   PrivateKey,
   ScriptPublicKey,
@@ -14,7 +13,11 @@ import { Injectable, Signal } from '@angular/core';
 import { DEFAULT_DERIVED_PATH, LOCAL_STORAGE_KEYS } from '../../config/consts';
 import {
   CommitRevealActionResult,
+  EIP1193ProviderRequestActionResult,
+  EIP1193RequestPayload,
+  EIP1193RequestType,
   ERROR_CODES,
+  KasTransactionParams,
   KasTransferActionResult,
   ProtocolScriptDataAndAddress,
   SignedMessageActionResult,
@@ -36,15 +39,13 @@ import { AppWallet } from '../../classes/AppWallet';
 import {
   CompoundUtxosActionResult,
 } from '../../types/wallet-action-result';
-import {
-  Krc20OperationDataService,
-} from '../protocols/krc20/krc20-operation-data.service';
 import { UnfinishedCommitRevealAction } from '../../types/kaspa-network/unfinished-commit-reveal-action.interface';
 import { PsktTransaction } from '../../types/kaspa-network/pskt-transaction.interface';
 import { UtilsHelper } from '../utils.service';
 import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
 import { MempoolTransactionManager } from '../../classes/MempoolTransactionManager';
-import { SignL2EtherTransactionActionResult } from 'kaspacom-wallet-messages/dist/types/actions/results/payloads/sign-l2-transaction-action-result.interface';
+import { TransactionRequest } from 'ethers';
+import { createEIP1193Response } from '../etherium-services/create-eip-1193-response';
 
 const MINIMAL_TRANSACTION_MASS = 10000n;
 export const MINIMAL_AMOUNT_TO_SEND = 20000000n;
@@ -226,16 +227,19 @@ export class KaspaNetworkActionsService {
       return [result.transactionFee];
     }
 
-    if (action.type == WalletActionType.SIGN_L2_ETHER_TRANSACTION) {
+    if (action.type === WalletActionType.EIP1193_PROVIDER_REQUEST) {
       const result = await this.transactionsManager.doEtherSigningTransaction(
         wallet,
         action.priorityFee || 0n,
-        action.data.transactionOptions,
-        action.data.payloadPrefix,
-        action.data.submitTransaction,
+        action.data.params[0] as TransactionRequest,
+        action.data.params[1] as KasTransactionParams,
+        true,
+        true,
         true,
         async () => { },
+        action.rbf,
       );
+
       return result.result!.transaction!.transactions.map((t) => t.mass);
     }
 
@@ -367,25 +371,27 @@ export class KaspaNetworkActionsService {
       };
     }
 
-    if (action.type == WalletActionType.SIGN_L2_ETHER_TRANSACTION) {
+    if (action.type == WalletActionType.EIP1193_PROVIDER_REQUEST && action.data.method == EIP1193RequestType.KAS_SEND_TRANSACTION) {
       const result = await this.transactionsManager.doEtherSigningTransaction(
         wallet,
         action.priorityFee || 0n,
-        action.data.transactionOptions,
-        action.data.payloadPrefix,
-        action.data.submitTransaction,
+        action.data.params[0] as TransactionRequest,
+        action.data.params[1] as KasTransactionParams,
+        true,
+        true,
         false,
         notifyUpdate,
-        [],
         action.rbf,
       );
 
-      const resultData: SignL2EtherTransactionActionResult = {
-        type: WalletActionResultType.SignL2EtherTransaction,
-        transactionId: result.result!.transaction?.summary.finalTransactionId,
-        signedTransactionString: result.result!.signedTransactionString,
-        signedTransactionHash: result.result!.signedTransactionHash,
-        performedByWallet: wallet.getAddress(),
+      const resultData: EIP1193ProviderRequestActionResult<EIP1193RequestType.KAS_SEND_TRANSACTION> = {
+        type: WalletActionResultType.EIP1193ProviderRequest,
+        performedByWallet: wallet.getIdWithAccount(),
+        requestData: action.data as EIP1193RequestPayload<EIP1193RequestType.KAS_SEND_TRANSACTION>,
+        result: createEIP1193Response<EIP1193RequestType.KAS_SEND_TRANSACTION>({
+          kaspatransactionId: result.result!.transaction?.summary.finalTransactionId,
+          ethTransactionHash: result.result!.signedTransactionHash,      
+        })
       };
 
       return {
@@ -496,6 +502,11 @@ export class KaspaNetworkActionsService {
   async getMinimalRequiredAmountForAction(
     action: WalletAction
   ): Promise<bigint> {
+
+    if (action.type === WalletActionType.EIP1193_PROVIDER_REQUEST) {
+      return 0n;
+    }
+
     if (action.type === WalletActionType.TRANSFER_KAS) {
       return (
         (action.data as TransferKasAction).amount +
@@ -518,10 +529,6 @@ export class KaspaNetworkActionsService {
       );
 
       return (action.priorityFee || 0n) + totalOutputs + MINIMAL_AMOUNT_TO_SEND;
-    }
-
-    if (action.type == WalletActionType.SIGN_L2_ETHER_TRANSACTION) {
-      return MINIMAL_AMOUNT_TO_SEND;
     }
 
     if (action.type == WalletActionType.COMMIT_REVEAL) {

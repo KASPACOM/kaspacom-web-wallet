@@ -1,0 +1,47 @@
+<div class="add-chain-container">
+  <h3>Add Custom Chain</h3>
+  <form [formGroup]="chainForm" (ngSubmit)="onSubmit()">
+    <div class="form-group">
+      <label for="chainName">Chain Name</label>
+      <input id="chainName" type="text" formControlName="chainName" placeholder="e.g. My Custom Chain">
+    </div>
+
+    <div class="form-group">
+      <label for="chainId">Chain ID (decimal number)</label>
+      <input id="chainId" type="number" formControlName="chainId" placeholder="e.g. 1337" min="1">
+    </div>
+
+    <div class="form-group">
+      <label for="rpcUrls">RPC URLs (comma-separated)</label>
+      <input id="rpcUrls" type="text" formControlName="rpcUrls" placeholder="e.g. https://rpc1.example.com, https://rpc2.example.com">
+      <small class="form-text">Enter multiple URLs separated by commas</small>
+    </div>
+
+    <div class="form-group">
+      <label for="currencyName">Currency Name</label>
+      <input id="currencyName" type="text" formControlName="currencyName" placeholder="e.g. My Token">
+    </div>
+
+    <div class="form-group">
+      <label for="currencySymbol">Currency Symbol</label>
+      <input id="currencySymbol" type="text" formControlName="currencySymbol" placeholder="e.g. MTK">
+    </div>
+
+    <div class="form-group">
+      <label for="currencyDecimals">Currency Decimals</label>
+      <input id="currencyDecimals" type="number" formControlName="currencyDecimals" min="0" max="36" placeholder="e.g. 18">
+      <small class="form-text">Number of decimal places for the currency (default: 18)</small>
+    </div>
+
+    <div class="form-group">
+      <label for="blockExplorerUrls">Block Explorer URLs (comma-separated, optional)</label>
+      <input id="blockExplorerUrls" type="text" formControlName="blockExplorerUrls" placeholder="e.g. https://explorer1.example.com, https://explorer2.example.com">
+      <small class="form-text">Enter multiple URLs separated by commas</small>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="cancel-button" (click)="onCancel()">Cancel</button>
+      <button type="submit" class="submit-button" [disabled]="!chainForm.valid">Add Chain</button>
+    </div>
+  </form>
+</div> 

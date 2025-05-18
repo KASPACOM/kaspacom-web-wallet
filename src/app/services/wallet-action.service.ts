@@ -7,11 +7,10 @@ import {
   WalletAction,
   WalletActionListItem,
   WalletActionType,
-  SignL2EtherTransactionAction,
 } from '../types/wallet-action';
 import { AssetType, TransferableAsset } from '../types/transferable-asset';
 import { WalletService } from './wallet.service';
-import { ERROR_CODES, PsktActionsEnum, WalletActionResult } from 'kaspacom-wallet-messages';
+import { EIP1193RequestPayload, EIP1193RequestType, ERROR_CODES, ProtocolType, PsktActionsEnum, WalletActionResult } from 'kaspacom-wallet-messages';
 import { UtilsHelper } from './utils.service';
 import {
   KaspaNetworkActionsService,
@@ -25,11 +24,13 @@ import { PsktTransaction } from '../types/kaspa-network/pskt-transaction.interfa
 import { Krc20WalletActionService } from './protocols/krc20/krc20-wallet-actions.service';
 import { BaseProtocolClassesService } from './protocols/base-protocol-classes.service';
 import { Router } from '@angular/router';
-import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
 import { TransactionRequest } from 'ethers';
+import { EthereumHandleActionRequestService } from './etherium-services/etherium-handle-action-request.service';
+import { EthereumWalletChainManager } from './etherium-services/etherium-wallet-chain.manager';
 
 const INSTANT_ACTIONS: { [key: string]: boolean } = {
   [WalletActionType.SIGN_MESSAGE]: true,
+  [WalletActionType.EIP1193_PROVIDER_REQUEST]: true,
 };
 
 @Injectable({
@@ -57,6 +58,7 @@ export class WalletActionService {
     private krc20WalletActionService: Krc20WalletActionService,
     private baseProtocolClassesService: BaseProtocolClassesService,
     private readonly router: Router,
+    private readonly ethereumHandleActionRequestService: EthereumHandleActionRequestService,
   ) {
 
     this.actionsListByWallet.set({});
@@ -191,18 +193,10 @@ export class WalletActionService {
     };
   }
 
-  createSignL2EtherTransactionAction(
-    transactionOptions: TransactionRequest,
-    payloadPrefix?: string,
-    submitTransaction?: boolean,
-  ): WalletAction {
+  createEIP1193Action(request: EIP1193RequestPayload<EIP1193RequestType>): WalletAction {
     return {
-      type: WalletActionType.SIGN_L2_ETHER_TRANSACTION,
-      data: {
-        submitTransaction,
-        transactionOptions,
-        payloadPrefix,
-      },
+      type: WalletActionType.EIP1193_PROVIDER_REQUEST,
+      data: request,
     };
   }
 
@@ -218,7 +212,7 @@ export class WalletActionService {
   async validateAndDoActionAfterApproval(
     action: WalletAction,
     isFromIframe: boolean = false,
-    onActionApproval: undefined | (() => Promise<void>) = undefined
+    onActionApproval: undefined | (() => Promise<void>) = undefined,
   ): Promise<WalletActionResultWithError> {
     const validationResult = await this.validateAction(
       action,
@@ -236,7 +230,7 @@ export class WalletActionService {
     if (!result.isApproved) {
       return {
         success: false,
-        errorCode: ERROR_CODES.WALLET_ACTION.USER_REJECTED,
+        errorCode: ERROR_CODES.EIP1193.USER_REJECTED,
       };
     }
 
@@ -332,11 +326,18 @@ export class WalletActionService {
     notifyUpdate: (transactionId: string) => Promise<any>
   ): Promise<WalletActionResultWithError> {
     if (INSTANT_ACTIONS[action.type]) {
-      return this.kaspaNetworkActionsService.doWalletAction(
-        action,
-        this.walletService.getCurrentWallet()!,
-        notifyUpdate
-      );
+      if (action.type === WalletActionType.EIP1193_PROVIDER_REQUEST && !this.ethereumHandleActionRequestService.isKasAction(action.data.method)) {
+        return this.ethereumHandleActionRequestService.doEIP1193ProviderRequest(
+          action.data as EIP1193RequestPayload<EIP1193RequestType>,
+          this.walletService.getCurrentWallet()!,
+        );
+      } else {
+        return this.kaspaNetworkActionsService.doWalletAction(
+          action,
+          this.walletService.getCurrentWallet()!,
+          notifyUpdate
+        );
+      }
     }
 
     const walletIdWithAccount = this.walletService.getCurrentWallet()!.getIdWithAccount();
@@ -518,9 +519,9 @@ export class WalletActionService {
           wallet
         );
         break;
-      case WalletActionType.SIGN_L2_ETHER_TRANSACTION:
-        validationResult = await this.validateSignL2EtherTransactionAction(
-          action.data as SignL2EtherTransactionAction,
+      case WalletActionType.EIP1193_PROVIDER_REQUEST:
+        validationResult = await this.ethereumHandleActionRequestService.validateEIP1193ProviderRequestAction(
+          action.data as EIP1193RequestPayload<EIP1193RequestType>,
           wallet
         );
         break;
@@ -705,24 +706,6 @@ export class WalletActionService {
     };
   }
 
-  private async validateSignL2EtherTransactionAction(
-    action: SignL2EtherTransactionAction,
-    wallet: AppWallet
-  ): Promise<{ isValidated: boolean; errorCode?: number }> {
-    const currentBalance =
-      wallet.getCurrentWalletStateBalanceSignalValue()?.mature || 0n;
-
-    if (currentBalance <= MINIMAL_AMOUNT_TO_SEND) {
-      return {
-        isValidated: false,
-        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_AMOUNT,
-      };
-    }
-
-    return {
-      isValidated: true,
-    };
-  }
 
   private getActionSteps(action: WalletAction): number {
     if (action.type == WalletActionType.COMMIT_REVEAL && !action.data?.options?.commitTransactionId) {

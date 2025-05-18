@@ -10,10 +10,27 @@ export const environment: Environment = {
   kaspaNetwork: KASPA_NETWORKS.MAINNET,
   allowedDomains: ['wallet.kaspa.com'],
   allowedIframeDomains: ['kaspa.com', 'www.kaspa.com'],
-  kasplexL2Config: {
-    rpcUrl: 'https://rpc.kasplex.xyz',
-    chainId: 12211,
-    name: 'Kasplex L2',
+  isL2Enabled: false,
+  l2Configs: {
+    kasplex: {
+      l1PayloadPrefix: 'kasplex',
+      chainId: 12211,
+      name: "Kasplex",
+      network: "kasplex",
+      nativeCurrency: {
+        name: "Kasplex",
+        symbol: "KAS",
+        decimals: 18,
+      },
+      rpcUrls: {
+        default: {
+          http: ["https://rpc.kasplex.xyz"],
+        },
+        public: {
+          http: ["https://rpc.kasplex.xyz"],
+        },
+      },
+    },
   },
   krc721Api: 'https://mainnet.krc721.stream/api/v1/krc721/mainnet',
   krc721CacheStreamUrl: 'https://cache.krc721.stream/krc721/mainnet',

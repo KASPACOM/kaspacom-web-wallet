@@ -16,6 +16,9 @@ export class EthereumWalletChainManager {
 
     constructor(
     ) {
+        if (!environment.isL2Enabled) {
+            return;
+        }
         this.setAllChainsByChainId();
         this.setCurrentWalletProviderAndStopOldOne();
     }

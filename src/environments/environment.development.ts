@@ -9,6 +9,7 @@ export const environment: Environment = {
   kaspaNetwork: KASPA_NETWORKS.TESTNET10,
   allowedDomains: ['localhost', 'dev-wallet.kaspa.com', 'local.kaspa.com'],
   allowedIframeDomains: ['localhost', 'dev.kaspa.com', 'dev2.kaspa.com', 'local.kaspa.com'],
+  isL2Enabled: true,
   l2Configs: {
     kasplex: {
       l1PayloadPrefix: 'kasplex',

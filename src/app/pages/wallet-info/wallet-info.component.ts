@@ -35,6 +35,7 @@ import { AddL2ChainComponent } from '../../components/wallet-actions-forms/add-l
 import { L2TransactionComponent } from '../../components/wallet-actions-forms/l2-transaction/l2-transaction.component';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { EthereumWalletChainManager } from '../../services/etherium-services/etherium-wallet-chain.manager';
+import { environment } from '../../../environments/environment';
 
 type ActionTabs = 'send' | 'mint' | 'deploy' | 'list' | 'buy' | 'kasplex-l2';
 type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
@@ -116,6 +117,7 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
 
   walletUtxoStateBalanceSignal = computed(() => this.wallet?.getCurrentWalletStateBalanceSignalValue());
   currentL2Chain = computed(() => this.ethereumWalletChainManager.getCurrentChainSignal()());
+  isL2Enabled = environment.isL2Enabled;
 
   l2WalletInfo = computed(() => this.wallet?.getL2WalletStateSignal()());
   l2WalletInfoFormatted = computed(() => {

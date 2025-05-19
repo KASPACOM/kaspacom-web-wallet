@@ -239,8 +239,6 @@ export class KaspaNetworkTransactionsManagerService {
         };
       }
 
-      console.log(baseTransactionData);
-
       const currentTransactions = await this.utils.retryOnError(async () => {
         return await createTransactions(baseTransactionData);
       });

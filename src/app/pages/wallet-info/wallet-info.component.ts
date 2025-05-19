@@ -29,7 +29,6 @@ import { TransactionHistoryComponent } from '../../components/history-info-compo
 import { Krc20OperationHistoryComponent } from '../../components/history-info-components/krc20-operation-history/krc20-operation-history.component';
 import { OperationDetails } from '../../services/kasplex-api/dtos/operation-details-response';
 import { MempoolTransactionsComponent } from '../../components/history-info-components/mempool-transactions/mempool-transactions.component';
-import { WeiToNumberPipe } from '../../pipes/wei-to-number.pipe';
 import { EIP1193ProviderChain } from 'kaspacom-wallet-messages';
 import { AddL2ChainComponent } from '../../components/wallet-actions-forms/add-l2-chain/add-l2-chain.component';
 import { L2TransactionComponent } from '../../components/wallet-actions-forms/l2-transaction/l2-transaction.component';
@@ -51,7 +50,6 @@ type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
     NgIf,
     NgFor,
     SompiToNumberPipe,
-    WeiToNumberPipe,
     SendAssetComponent,
     MintComponent,
     ReviewActionComponent,

@@ -4,6 +4,8 @@ import { UtilsHelper } from '../../../services/utils.service';
 import { FormsModule } from '@angular/forms';
 import { WalletActionService } from '../../../services/wallet-action.service';
 import { Krc20WalletActionService } from '../../../services/protocols/krc20/krc20-wallet-actions.service';
+import { ERROR_CODES, ERROR_CODES_MESSAGES } from 'kaspacom-wallet-messages';
+import { MessagePopupService } from '../../../services/message-popup.service';
 
 @Component({
   selector: 'mint',
@@ -19,6 +21,7 @@ export class MintComponent {
     private utilsService: UtilsHelper,
     private walletActionService: WalletActionService,
     private krc20ActionWalletService: Krc20WalletActionService,
+    private messagePopupService: MessagePopupService,
   ) {}
 
   async mintToken() {
@@ -27,7 +30,7 @@ export class MintComponent {
       const result = await this.walletActionService.validateAndDoActionAfterApproval(action);
 
       if (!result.success) {
-        alert(result.errorCode);
+        this.messagePopupService.showError(result.errorCode ? ERROR_CODES_MESSAGES[result.errorCode] : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR]);
       }
     }
   }

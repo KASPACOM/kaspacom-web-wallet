@@ -1,0 +1,7 @@
+<div class="message-popup" [class.show]="show" [class.success]="type === 'success'" [class.error]="type === 'error'" [class.warning]="type === 'warning'" [class.info]="type === 'info'">
+  <div class="message-content">
+    <span class="icon">{{ icon }}</span>
+    <span class="message">{{ message }}</span>
+    <button class="close-button" (click)="onClose()">×</button>
+  </div>
+</div> 

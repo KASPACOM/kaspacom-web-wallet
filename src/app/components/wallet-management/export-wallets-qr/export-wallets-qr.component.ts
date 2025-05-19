@@ -1,8 +1,9 @@
 import { NgIf } from '@angular/common';
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { QRCodeModule } from 'angularx-qrcode';
 import { PasswordManagerService } from '../../../services/password-manager.service';
 import { LOCAL_STORAGE_KEYS } from '../../../config/consts';
+import { MessagePopupService } from '../../../services/message-popup.service';
 
 
 @Component({
@@ -18,7 +19,7 @@ export class ExportWalletsQrComponent {
   encryptedUserData: string | null = null;
   maxDataLength = 2331;
 
-  constructor(private passwordManagerService: PasswordManagerService) {}
+  constructor(private passwordManagerService: PasswordManagerService, private messagePopupService: MessagePopupService,) { }
 
   handleButtonClick() {
     this.showPasswordPrompt = true;
@@ -37,7 +38,7 @@ export class ExportWalletsQrComponent {
       }
 
     } else {
-      alert('Incorrect password. Please try again.');
+      this.messagePopupService.showError('Incorrect password. Please try again.');
     }
   }
 

@@ -253,7 +253,6 @@ export class WalletActionService {
     });
 
     if (!actionResult.success) {
-      alert(actionResult.errorCode);
       return actionResult;
     }
 

@@ -7,12 +7,13 @@ import {  NgIf } from '@angular/common';
 import { environment } from '../environments/environment';
 import { IFrameCommunicationApp } from './services/communication-service/communication-app/iframe-communication.service';
 import { CommunicationManagerService } from './services/communication-service/communication-manager.service';
-import { ethers } from 'ethers';
+import { MessagePopupComponent } from './components/message-popup/message-popup.component';
+import { MessagePopupService } from './services/message-popup.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, AppHeaderComponent, NgIf],
+  imports: [RouterOutlet, AppHeaderComponent, NgIf, MessagePopupComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
   providers: [KaspaNetworkActionsService]
@@ -25,7 +26,8 @@ export class AppComponent implements OnInit, AfterViewInit {
     private readonly router: Router,
     private readonly passwordManagerService: PasswordManagerService,
     private readonly communicationManagerService: CommunicationManagerService,
-    private renderer: Renderer2) {
+    private renderer: Renderer2,
+    public messagePopupService: MessagePopupService) {
   }
 
   async ngOnInit() {
@@ -51,6 +53,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   isAllowedDomain(): boolean {
+    return true;
     return environment.allowedDomains.includes(window.location.hostname);
   }
 

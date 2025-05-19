@@ -13,7 +13,11 @@ import { Injectable, Signal } from '@angular/core';
 import { DEFAULT_DERIVED_PATH, LOCAL_STORAGE_KEYS } from '../../config/consts';
 import {
   CommitRevealActionResult,
+  EIP1193ProviderRequestActionResult,
+  EIP1193RequestPayload,
+  EIP1193RequestType,
   ERROR_CODES,
+  KasTransactionParams,
   KasTransferActionResult,
   ProtocolScriptDataAndAddress,
   SignedMessageActionResult,
@@ -35,13 +39,13 @@ import { AppWallet } from '../../classes/AppWallet';
 import {
   CompoundUtxosActionResult,
 } from '../../types/wallet-action-result';
-import {
-  Krc20OperationDataService,
-} from '../protocols/krc20/krc20-operation-data.service';
 import { UnfinishedCommitRevealAction } from '../../types/kaspa-network/unfinished-commit-reveal-action.interface';
 import { PsktTransaction } from '../../types/kaspa-network/pskt-transaction.interface';
 import { UtilsHelper } from '../utils.service';
 import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
+import { MempoolTransactionManager } from '../../classes/MempoolTransactionManager';
+import { TransactionRequest } from 'ethers';
+import { createEIP1193Response } from '../etherium-services/create-eip-1193-response';
 
 const MINIMAL_TRANSACTION_MASS = 10000n;
 export const MINIMAL_AMOUNT_TO_SEND = 20000000n;
@@ -55,7 +59,6 @@ const ESTIMATED_REVEAL_ACTION = 1715n;
 export class KaspaNetworkActionsService {
   constructor(
     private readonly transactionsManager: KaspaNetworkTransactionsManagerService,
-    private readonly krc20OperationDataService: Krc20OperationDataService,
     private readonly utils: UtilsHelper
   ) { }
 
@@ -141,11 +144,17 @@ export class KaspaNetworkActionsService {
 
   async initUtxoProcessorManager(
     address: string,
-    onBalanceUpdate: () => Promise<any>
   ): Promise<UtxoProcessorManager> {
     return await this.transactionsManager.initUtxoProcessorManager(
       address,
-      onBalanceUpdate
+    );
+  }
+
+  async initMempoolTransactionManager(
+    address: string,
+  ): Promise<MempoolTransactionManager> {
+    return await this.transactionsManager.initMempoolTransactionManager(
+      address,
     );
   }
 
@@ -181,7 +190,6 @@ export class KaspaNetworkActionsService {
     }
 
     if (action.type == WalletActionType.COMPOUND_UTXOS) {
-      await wallet.getUtxoProcessorManager()?.waitForPendingUtxoToFinish();
 
       const payments: IPaymentOutput[] = [
         {
@@ -217,6 +225,22 @@ export class KaspaNetworkActionsService {
       }
 
       return [result.transactionFee];
+    }
+
+    if (action.type === WalletActionType.EIP1193_PROVIDER_REQUEST) {
+      const result = await this.transactionsManager.doEtherSigningTransaction(
+        wallet,
+        action.priorityFee || 0n,
+        action.data.params[0] as TransactionRequest,
+        action.data.params[1] as KasTransactionParams,
+        true,
+        true,
+        true,
+        async () => { },
+        action.rbf,
+      );
+
+      return result.result!.transaction!.transactions.map((t) => t.mass);
     }
 
     if (action.type == WalletActionType.COMMIT_REVEAL) {
@@ -269,7 +293,9 @@ export class KaspaNetworkActionsService {
           payments,
           action.priorityFee || 0n,
           actionData.sendAll,
-          notifyUpdate
+          notifyUpdate,
+          false,
+          action.rbf,
         );
 
       const actionResult: KasTransferActionResult = {
@@ -288,8 +314,6 @@ export class KaspaNetworkActionsService {
     }
 
     if (action.type == WalletActionType.COMPOUND_UTXOS) {
-      await wallet.getUtxoProcessorManager()?.waitForPendingUtxoToFinish();
-
       if ((wallet.getBalanceSignal()()?.utxoEntries.length || 0) < 2) {
         return {
           success: false,
@@ -347,6 +371,35 @@ export class KaspaNetworkActionsService {
       };
     }
 
+    if (action.type == WalletActionType.EIP1193_PROVIDER_REQUEST && action.data.method == EIP1193RequestType.KAS_SEND_TRANSACTION) {
+      const result = await this.transactionsManager.doEtherSigningTransaction(
+        wallet,
+        action.priorityFee || 0n,
+        action.data.params[0] as TransactionRequest,
+        action.data.params[1] as KasTransactionParams,
+        true,
+        true,
+        false,
+        notifyUpdate,
+        action.rbf,
+      );
+
+      const resultData: EIP1193ProviderRequestActionResult<EIP1193RequestType.KAS_SEND_TRANSACTION> = {
+        type: WalletActionResultType.EIP1193ProviderRequest,
+        performedByWallet: wallet.getIdWithAccount(),
+        requestData: action.data as EIP1193RequestPayload<EIP1193RequestType.KAS_SEND_TRANSACTION>,
+        result: createEIP1193Response<EIP1193RequestType.KAS_SEND_TRANSACTION>({
+          kaspatransactionId: result.result!.transaction?.summary.finalTransactionId,
+          ethTransactionHash: result.result!.signedTransactionHash,      
+        })
+      };
+
+      return {
+        success: true,
+        result: resultData,
+      };
+    }
+
     if (action.type == WalletActionType.SIGN_MESSAGE) {
       const result = await this.transactionsManager.signMessage(
         wallet.getPrivateKey(),
@@ -395,10 +448,11 @@ export class KaspaNetworkActionsService {
           },
           {},
           actionData.options?.additionalOutputs,
+          { waitForTransactionToBeConfirmed: !!actionData.options?.revealPskt }
         );
 
       if (!result.success) {
-        console.error('Failed do KRC20 action', result);
+        console.error('Failed do Commit Reveal action', result);
         return {
           success: false,
           errorCode: result.errorCode,
@@ -448,6 +502,11 @@ export class KaspaNetworkActionsService {
   async getMinimalRequiredAmountForAction(
     action: WalletAction
   ): Promise<bigint> {
+
+    if (action.type === WalletActionType.EIP1193_PROVIDER_REQUEST) {
+      return 0n;
+    }
+
     if (action.type === WalletActionType.TRANSFER_KAS) {
       return (
         (action.data as TransferKasAction).amount +

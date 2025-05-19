@@ -44,8 +44,9 @@
 }
 
 .error-message {
-  font-size: 13px;
-  color: #ff4d4f;
+  color: #dc3545;
+  margin-top: 1rem;
+  font-size: 0.875rem;
 }
 
 .login-container button {
@@ -76,4 +77,25 @@
 .login-container .error-message:last-child {
   margin-top: 10px;
   text-align: center;
+}
+
+.login-container .clear-data-section {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.login-container .clear-data-button {
+  background-color: transparent;
+  color: #dc3545;
+  border: 1px solid #dc3545;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    background-color: #dc3545;
+    color: white;
+  }
 }

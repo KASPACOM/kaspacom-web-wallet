@@ -1,9 +1,9 @@
 import { NgIf } from '@angular/common';
 import { Component, signal } from '@angular/core';
-import { QRCodeComponent, QRCodeModule } from 'angularx-qrcode';
+import { QRCodeModule } from 'angularx-qrcode';
 import { PasswordManagerService } from '../../../services/password-manager.service';
-import { UserWalletsData } from '../../../types/user-wallets-data';
 import { LOCAL_STORAGE_KEYS } from '../../../config/consts';
+
 
 @Component({
   selector: 'export-wallets-qr',
@@ -13,33 +13,49 @@ import { LOCAL_STORAGE_KEYS } from '../../../config/consts';
   imports: [NgIf, QRCodeModule],
 })
 export class ExportWalletsQrComponent {
-  showPasswordPrompt = signal(false); // Signal to display the password prompt
-  showQrCode = signal(false); // Signal to display the QR code
-  encryptedUserData = signal<string | null>(null);
+  showPasswordPrompt: boolean = false; // Signal to display the password prompt
+  passwordFilled: boolean = false; // Signal to display the QR code
+  encryptedUserData: string | null = null;
+  maxDataLength = 2331;
 
   constructor(private passwordManagerService: PasswordManagerService) {}
 
   handleButtonClick() {
-    this.showPasswordPrompt.set(true);
+    this.showPasswordPrompt = true;
   }
 
   async verifyPassword(inputPassword: string) {
     if (await this.passwordManagerService.checkPassword(inputPassword)) {
-      this.showQrCode.set(true);
-      this.showPasswordPrompt.set(false);
+      this.passwordFilled = true;
+      this.showPasswordPrompt = false;
 
       const encryptedUserData = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA);
 
+
       if (encryptedUserData) {
-        this.encryptedUserData.set(encryptedUserData);
+        this.encryptedUserData = encryptedUserData;
       }
+
     } else {
       alert('Incorrect password. Please try again.');
     }
   }
 
-  hideQr() {
-    this.showQrCode.set(false);
-    this.encryptedUserData.set(null);
+  hideKeyInfo() {
+    this.passwordFilled = false;
+    this.encryptedUserData = null;
+  }
+
+  downloadKeyFile() {
+    const link = document.createElement('a');
+    link.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(this.encryptedUserData!)}`);
+    link.setAttribute('download', 'kaspacom-wallets.key');
+
+    link.style.display = 'none';
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
   }
 }

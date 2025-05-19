@@ -10,9 +10,9 @@ import { CompletedActionReview } from '../completed-action-review/completed-acti
 import { KRC20OperationType } from '../../../types/kaspa-network/krc20-operations-data.interface';
 import { PriorityFeeSelectionComponent } from '../priority-fee-selection/priority-fee-selection.component';
 import { AppWallet } from '../../../classes/AppWallet';
-import { ReviewActionDataService } from '../../../services/review-action-data.service';
-import { ActionDisplay } from '../../../types/action-display.type';
+import { ReviewActionDataService } from '../../../services/action-info-services/review-action-data.service';
 import { WalletActionService } from '../../../services/wallet-action.service';
+import { EIP1193RequestPayload, EIP1193RequestType } from 'kaspacom-wallet-messages';
 
 const TIMEOUT = 2 * 60 * 1000;
 
@@ -28,6 +28,7 @@ export class ReviewActionComponent {
   public KRC20OperationType = KRC20OperationType;
   public Number = Number;
 
+  currentActionDisplay = computed(() => this.currentActionSignal ? this.reviewActionDataService.getActionDisplay(this.currentActionSignal()?.action, this.wallet) : undefined);
   currentActionSignal = computed(() => this.walletActionService.getActionToApproveSignal()());
   currentProgressSignal = computed(() => this.walletActionService.getCurrentProgressSignal()());
   actionResultSignal = computed(() =>this.walletActionService.getActionResultSignal()() );
@@ -97,7 +98,6 @@ export class ReviewActionComponent {
   }
 
   setCurrentPriorityFee(priorityFee: bigint | undefined) {
-    console.log('priority fee selected', priorityFee);
     this.currentPriorityFee = priorityFee;
   }
 
@@ -114,14 +114,22 @@ export class ReviewActionComponent {
   }
 
   protected get isActionHasPriorityFee() {
-    return this.currentActionSignal && this.currentActionSignal()?.action.type !== WalletActionType.SIGN_MESSAGE;
-  }
-
-  protected get currentActionDisplay(): ActionDisplay | undefined {
-    if (!this.currentActionSignal) {
-      return undefined;
+    if (!(this.currentActionSignal && this.currentActionSignal())) {
+      return false;
     }
 
-    return this.reviewActionDataService.getActionDisplay(this.currentActionSignal()?.action, this.wallet);
+    if (this.currentActionSignal()!.action.type === WalletActionType.SIGN_MESSAGE) {
+      return false;
+    }
+
+    if (this.currentActionSignal()!.action.type === WalletActionType.EIP1193_PROVIDER_REQUEST) {
+      const actionData = this.currentActionSignal()!.action.data as EIP1193RequestPayload<EIP1193RequestType>;
+
+      if (actionData.method != EIP1193RequestType.KAS_SEND_TRANSACTION) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }

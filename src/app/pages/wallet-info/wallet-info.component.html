@@ -27,32 +27,30 @@
         <h3>Wallet Address:</h3>
         <p>{{ wallet.getAddress() }}</p>
         <h3>Balance:</h3>
-        <div
-          *ngIf="
-            wallet.getWalletUtxoStateBalanceSignal()() !== undefined;
+        <div *ngIf="
+            walletUtxoStateBalanceSignal() !== undefined;
             else loadingData
-          "
-        >
+          ">
           <p>
             Current:
             {{
-              wallet.getWalletUtxoStateBalanceSignal()()!.mature | sompiToNumber
+            walletUtxoStateBalanceSignal()!.mature | sompiToNumber
             }}
             KAS
           </p>
           <p>
             Pending:
             {{
-              wallet.getWalletUtxoStateBalanceSignal()()!.pending
-                | sompiToNumber
+            walletUtxoStateBalanceSignal()!.pending
+            | sompiToNumber
             }}
             KAS
           </p>
           <p>
             Outgoing:
             {{
-              wallet.getWalletUtxoStateBalanceSignal()()!.outgoing
-                | sompiToNumber
+            walletUtxoStateBalanceSignal()!.outgoing
+            | sompiToNumber
             }}
             KAS
           </p>
@@ -60,6 +58,47 @@
         <ng-template #loadingData>
           <p>Loading...</p>
         </ng-template>
+
+
+
+        <div *ngIf="isL2Enabled">
+          <h3>L2:</h3>
+
+          <div class="network-selector">
+            <select [(ngModel)]="selectedChain" (change)="onChainChange()" class="network-select">
+              <option [value]="undefined">Select network</option>
+              <option *ngFor="let chain of availableChains" [value]="chain.chainId">
+                {{ chain.chainName }}
+              </option>
+            </select>
+            <button class="add-chain-button" (click)="showAddChainForm()">Add Chain</button>
+          </div>
+
+          <div *ngIf="l2WalletInfoFormatted(); else loadingL2">
+            <p>
+              <strong>Address:</strong>
+              {{ l2WalletInfoFormatted()?.address }}
+            </p>
+            <p>
+              <strong>Balance:</strong>
+              {{ l2WalletInfoFormatted()?.balance }}
+            </p>
+          </div>
+          <ng-template #loadingL2>
+            <div *ngIf="currentL2Chain(); else loadingL2Chain">
+              <p>Loading...</p>
+            </div>
+            <ng-template #loadingL2Chain>
+              <p>Please select a network</p>
+            </ng-template>
+          </ng-template>
+        </div>
+
+      </div>
+
+      <div class="mempoll-transactions">
+        <h3>Pending Transactions:</h3>
+        <mempool-transactions></mempool-transactions>
       </div>
 
       <!-- KRC20 Tokens -->
@@ -84,26 +123,17 @@
       <!-- Tabs -->
       <div class="tabs-container">
         <div class="tabs">
-          <button
-            class="tab-button"
-            [class.active]="activeTab === 'send'"
-            (click)="switchTab('send')"
-          >
+          <button class="tab-button" [class.active]="activeTab === 'send'" (click)="switchTab('send')">
             Send Asset
           </button>
-          <button
-            class="tab-button"
-            [class.active]="activeTab === 'mint'"
-            (click)="switchTab('mint')"
-          >
+          <button class="tab-button" [class.active]="activeTab === 'mint'" (click)="switchTab('mint')">
             Mint
           </button>
-          <button
-            class="tab-button"
-            [class.active]="activeTab === 'deploy'"
-            (click)="switchTab('deploy')"
-          >
+          <button class="tab-button" [class.active]="activeTab === 'deploy'" (click)="switchTab('deploy')">
             Deploy
+          </button>
+          <button class="tab-button" [class.active]="activeTab === 'kasplex-l2'" (click)="switchTab('kasplex-l2')" *ngIf="isL2Enabled">
+            L2 Transaction
           </button>
           <!-- This is for development -->
           <!-- <button
@@ -133,6 +163,9 @@
           <div *ngIf="activeTab === 'deploy'" class="deploy-container">
             <deploy></deploy>
           </div>
+          <div *ngIf="activeTab === 'kasplex-l2'" class="kasplex-l2-container">
+            <l2-transaction></l2-transaction>
+          </div>
           <!-- This is for development -->
           <!-- <div *ngIf="activeTab === 'list'" class="list-container">
             <list-krc20-token></list-krc20-token>
@@ -147,25 +180,15 @@
   <div class="transactions-info-section">
     <div class="tabs-container">
       <div class="tabs">
-        <button
-          class="tab-button"
-          [class.active]="infoActiveTab === 'utxos'"
-          (click)="switchInfoTab('utxos')"
-        >
+        <button class="tab-button" [class.active]="infoActiveTab === 'utxos'" (click)="switchInfoTab('utxos')">
           UTXOs
         </button>
-        <button
-          class="tab-button"
-          [class.active]="infoActiveTab === 'kaspa-transactions'"
-          (click)="switchInfoTab('kaspa-transactions')"
-        >
+        <button class="tab-button" [class.active]="infoActiveTab === 'kaspa-transactions'"
+          (click)="switchInfoTab('kaspa-transactions')">
           Kaspa Transactions History
         </button>
-        <button
-          class="tab-button"
-          [class.active]="infoActiveTab === 'krc20-actions'"
-          (click)="switchInfoTab('krc20-actions')"
-        >
+        <button class="tab-button" [class.active]="infoActiveTab === 'krc20-actions'"
+          (click)="switchInfoTab('krc20-actions')">
           Krc20 Actions History
         </button>
       </div>
@@ -177,17 +200,11 @@
         </div>
 
         <div *ngIf="infoActiveTab === 'kaspa-transactions'">
-          <transaction-history
-            [transactions]="kaspaTransactionsHistory"
-            [wallet]="wallet"
-          ></transaction-history>
+          <transaction-history [transactions]="kaspaTransactionsHistory" [wallet]="wallet"></transaction-history>
         </div>
 
         <div *ngIf="infoActiveTab === 'krc20-actions'">
-          <krc20-operations-history
-            [operations]="krc20OperationHistory"
-            [wallet]="wallet"
-          ></krc20-operations-history>
+          <krc20-operations-history [operations]="krc20OperationHistory" [wallet]="wallet"></krc20-operations-history>
         </div>
       </div>
     </div>
@@ -197,3 +214,10 @@
 <ng-template #loadingMessage>
   <p>Loading...</p>
 </ng-template>
+
+<!-- Add Chain Form Modal -->
+<div class="modal" *ngIf="isAddChainFormVisible">
+  <div class="modal-content">
+    <add-l2-chain (chainAdded)="onChainAdded($event)" (cancelled)="hideAddChainForm()"></add-l2-chain>
+  </div>
+</div>

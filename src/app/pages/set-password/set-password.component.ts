@@ -48,7 +48,7 @@ export class SetPasswordComponent implements OnInit {
     );
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void { }
 
   // Custom validator to check if password and confirmPassword match
   passwordMatchValidator(form: FormGroup) {
@@ -95,9 +95,31 @@ export class SetPasswordComponent implements OnInit {
     this.scanner!.scanComplete.subscribe((result) => {
       if (result) {
         this.isScanning.set(false);
-        this.passwordManagerService.importFromQr(result.getText());
-        this.router.navigate(['/login']);
+        this.importWalletsData(result.getText())
       }
     });
+  }
+
+
+  importWalletsData(data: string) {
+    this.passwordManagerService.importFromEncryptedData(data);
+    this.router.navigate(['/login']);
+  }
+
+  importFromFile() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.key';
+
+    input.addEventListener('change', (e: any) => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (ev: any) => {
+        this.importWalletsData(ev.target.result);
+      };
+      reader.readAsText(file);
+    });
+
+    input.click();
   }
 }

@@ -1,6 +1,7 @@
-import { ProtocolScript, ProtocolScriptDataAndAddress, PsktActionsEnum } from 'kaspacom-wallet-messages';
+import { EIP1193RequestPayload, EIP1193RequestType, ProtocolScript, ProtocolScriptDataAndAddress, PsktActionsEnum } from 'kaspacom-wallet-messages';
 import { WalletActionResultWithError } from './wallet-action-result';
 import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
+import { TransactionRequest } from 'ethers';
 
 
 export enum WalletActionType {
@@ -9,6 +10,8 @@ export enum WalletActionType {
   SIGN_PSKT_TRANSACTION = 'buy-krc20-pskt',
   SIGN_MESSAGE = 'sign-message',
   COMMIT_REVEAL = 'commit-reveal',
+  SUBMIT_TRANSACTION = 'submit-transaction',
+  EIP1193_PROVIDER_REQUEST = 'eip-1193-provider-request',
 }
 
 // Mapping action types to their specific data shapes
@@ -18,6 +21,7 @@ type WalletActionDataMap = {
   [WalletActionType.SIGN_PSKT_TRANSACTION]: SignPsktTransactionAction;
   [WalletActionType.SIGN_MESSAGE]: SignMessage;
   [WalletActionType.COMMIT_REVEAL]: CommitRevealAction;
+  [WalletActionType.EIP1193_PROVIDER_REQUEST]: EIP1193RequestPayload<EIP1193RequestType>;
 };
 
 // Generic WalletAction type
@@ -26,6 +30,7 @@ export type WalletAction = {
     type: K;
     data: WalletActionDataMap[K];
     priorityFee?: bigint;
+    rbf?: boolean;
   };
 }[keyof WalletActionDataMap];
 
@@ -80,4 +85,8 @@ export interface CommitRevealAction {
       script: ProtocolScriptDataAndAddress,
     }
   };
+}
+
+export interface SubmitTransactionAction {
+  transactionJson: string;
 }

@@ -50,7 +50,7 @@ export class TransactionHistoryComponent {
       if (!acc[address]) {
         acc[address] = BigInt(0);
       }
-      acc[address] += BigInt(input.previous_outpoint_amount);
+      acc[address] += BigInt(input.previous_outpoint_amount || 0);
       return acc;
     }, {} as Record<string, bigint>);
 

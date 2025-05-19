@@ -19,4 +19,9 @@
   <div *ngIf="loginError" class="error-message">
     Incorrect password. Please try again.
   </div>
+  <div class="clear-data-section">
+    <button type="button" (click)="navigateToClearData()" class="clear-data-button">
+      Clear All Data
+    </button>
+  </div>
 </div>

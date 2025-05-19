@@ -1,8 +1,20 @@
-<div>
-  <div class="action-buttons">
-    <button class="create-wallet" (click)="selectedAction = 'create'">Create Wallet</button>
-    <button class="import-wallet" (click)="selectedAction = 'import'">Import Wallet</button>
+<div class="add-wallet-container">
+  <div class="header">
+    <h1>Add New Wallet</h1>
+    <p class="subtitle">Choose how you want to add your wallet</p>
   </div>
+
+  <div class="action-buttons">
+    <button class="create-wallet" (click)="selectedAction = 'create'">
+      <i class="fas fa-plus"></i>
+      Create New Wallet
+    </button>
+    <button class="import-wallet" (click)="selectedAction = 'import'">
+      <i class="fas fa-file-import"></i>
+      Import Existing Wallet
+    </button>
+  </div>
+
   <div class="action-content">
     <import-wallet *ngIf="selectedAction === 'import'"></import-wallet>
     <create-wallet *ngIf="selectedAction === 'create'"></create-wallet>

@@ -8,11 +8,9 @@ import {
   BalanceData,
   BalanceEvent,
 } from '../types/kaspa-network/balance-event.interface';
-import { UtxoChangedEvent } from '../types/kaspa-network/utxo-changed-event.interface';
+import { IMempoolResult } from '../types/kaspa-network/mempool-result.interface';
 
 const WAIT_TIMEOUT = 20 * 1000;
-const REJECT_TRANSACTION_TIMEOUT = 20 * 1000;
-const WAIT_TIMEOUT_FOR_UTXO_BALANCE = 20 * 1000;
 
 export class UtxoProcessorManager {
   private processor: UtxoProcessor | undefined = undefined;
@@ -33,34 +31,21 @@ export class UtxoProcessorManager {
     | ((event: any) => Promise<void>)
     | undefined = undefined;
 
-  private utxoChangedEventListenerWithBind: ((event: any) => void) | undefined =
-    undefined;
-
-  private balancePromise: undefined | Promise<any> = undefined;
-  private balanceResolve: undefined | ((v?: any) => void) = undefined;
-  private balanceResolveTimeout: undefined | NodeJS.Timeout = undefined;
-  private isBalancedResolved = true;
-  private transactionPromises: {
-    [transactionId: string]: {
-      promise: Promise<any>;
-      resolve: (value?: any) => void;
-      reject: (reason?: any) => void;
-      timeout: NodeJS.Timeout;
-    };
-  } = {};
 
   private walletBalanceStateSignal = signal<BalanceData | undefined>(undefined);
+
+
+  private waitForOutgoingUtxoPromise: Promise<unknown> | undefined = undefined;
+  private waitForOutgoingUtxoResolve: undefined | ((v?: any) => void) = undefined;
+  private waitForOutgoingUtxoTimeout: undefined | NodeJS.Timeout = undefined;
 
   constructor(
     private readonly rpc: RpcClient,
     private readonly network: string,
     private readonly publicAddress: string,
-    private readonly onBalanceUpdate: () => Promise<any>
   ) {
     this.processorHandlerWithBind = this.processorEventListener.bind(this);
     this.balanceEventHandlerWithBind = this.balanceEventHandler.bind(this);
-    this.utxoChangedEventListenerWithBind =
-      this.utxoChangedEventListener.bind(this);
 
     this.processor = new UtxoProcessor({
       rpc: this.rpc,
@@ -74,76 +59,34 @@ export class UtxoProcessorManager {
     await this.registerEventHandlers();
   }
 
+  async getMempoolTransactionsByWalletAddress(walletAddress: string, includeOrphanPool: boolean = false, filterTransactionPool: boolean = false): Promise<IMempoolResult> {
+    return (await this.rpc!.getMempoolEntriesByAddresses({
+      addresses: [walletAddress],
+      includeOrphanPool,
+      filterTransactionPool,
+    })) as any as IMempoolResult;
+  }
+
+
   getContext(): UtxoContext | undefined {
     return this.context;
   }
 
-  private initBalancePromiseAndTimeout() {
-    this.isBalancedResolved = false;
-    this.balancePromise = new Promise((resolve) => {
-      this.balanceResolve = resolve;
-    });
-
-    if (this.balanceResolveTimeout) {
-      clearTimeout(this.balanceResolveTimeout);
-      this.balanceResolveTimeout = undefined;
-    }
-
-    const balanceResolveTimeoutFunction = async () => {
-      try {
-        await this.processorEventListenerPromise;
-      } catch (error) {
-        console.error(error);
-        this.balanceResolveTimeout = undefined;
-        return;
-      }
-
-      await this.context?.clear();
-      await this.context?.trackAddresses([this.publicAddress]);
-      this.balanceResolveTimeout = setTimeout(
-        balanceResolveTimeoutFunction,
-        WAIT_TIMEOUT_FOR_UTXO_BALANCE
-      );
-    };
-
-    this.balanceResolveTimeout = setTimeout(
-      balanceResolveTimeoutFunction,
-      WAIT_TIMEOUT_FOR_UTXO_BALANCE
-    );
-
-    if (this.context?.balance?.pending === 0n) {
-      this.balanceReceived();
-    }
-  }
-
-  private balanceReceived() {
-    if (this.balanceResolveTimeout) {
-      clearTimeout(this.balanceResolveTimeout);
-      this.balanceResolveTimeout = undefined;
-    }
-    this.isBalancedResolved = true;
-    this.balanceResolve!();
-  }
-
   private async balanceEventHandler(event: BalanceEvent) {
-    if (event.type == 'pending') {
       this.walletBalanceStateSignal.set(event.data.balance);
-      this.onBalanceUpdate();
 
-      if (!this.isBalancedResolved) {
-        this.initBalancePromiseAndTimeout();
+      if (this.waitForOutgoingUtxoPromise && event.data.balance?.outgoing && event.data.balance?.outgoing > 0) {
+        this.resolveAndClearWaitForOutgoingUtxoPromise!();
       }
-    } else if (event.type == 'balance') {
-      this.walletBalanceStateSignal.set(event.data.balance);
-      this.onBalanceUpdate();
+  }
 
-      if (!this.isBalancedResolved) {
-        const currentHasPending = event.data.balance.pending > 0;
-        if (!currentHasPending) {
-          this.balanceReceived();
-        }
-      }
-    }
+  private resolveAndClearWaitForOutgoingUtxoPromise() {
+    this.waitForOutgoingUtxoResolve!();
+
+    clearTimeout(this.waitForOutgoingUtxoTimeout);
+    this.waitForOutgoingUtxoPromise = undefined;
+    this.waitForOutgoingUtxoResolve = undefined;
+    this.waitForOutgoingUtxoTimeout = undefined;
   }
 
   private async processorEventListener() {
@@ -156,7 +99,6 @@ export class UtxoProcessorManager {
     try {
       await this.context!.clear();
       await this.context!.trackAddresses([this.publicAddress]);
-      this.initBalancePromiseAndTimeout();
       this.processorEventListenerResolve!();
     } catch (error) {
       this.processorEventListenerReject!(error);
@@ -168,18 +110,11 @@ export class UtxoProcessorManager {
       throw new Error('This object can be used only once');
     }
 
-    this.rpc.subscribeUtxosChanged([this.publicAddress]);
-    await this.rpc.addEventListener(this.utxoChangedEventListenerWithBind!);
 
     await this.registerProcessor();
   }
 
   async dispose(): Promise<void> {
-    if (this.balanceResolveTimeout) {
-      clearTimeout(this.balanceResolveTimeout);
-      this.balanceResolveTimeout = undefined;
-    }
-
     await this.stopAndUnregisterProcessor();
     this.context!.clear();
   }
@@ -232,78 +167,26 @@ export class UtxoProcessorManager {
       this.balanceEventHandlerWithBind
     );
     this.processor!.removeEventListener('pending');
-
-    this.rpc.unsubscribeUtxosChanged([this.publicAddress]);
-    this.rpc.removeEventListener(
-      'utxos-changed',
-      this.utxoChangedEventListenerWithBind
-    );
-  }
-
-  async getTransactionPromise(transactionId: string) {
-    let resolve: any = undefined;
-    let reject: any = undefined;
-    const promise = new Promise((res, rej) => {
-      resolve = res;
-      reject = rej;
-    });
-
-    const timeout = setTimeout(() => {
-      this.rejectTransaction(transactionId);
-    }, REJECT_TRANSACTION_TIMEOUT);
-
-    this.transactionPromises[transactionId] = {
-      resolve,
-      reject,
-      timeout,
-      promise,
-    };
-
-    return promise;
-  }
-
-  private utxoChangedEventListener(event: UtxoChangedEvent) {
-
-    const addedTransactions = event.data?.added?.map(
-      (entry: any) => entry.outpoint.transactionId
-    );
-    const removedTransactions = event.data?.removed?.map(
-      (entry: any) => entry.outpoint.transactionId
-    );
-
-    const distinctTransactions = Array.from(
-      new Set([...(addedTransactions || []), ...(removedTransactions || [])])
-    );
-
-    distinctTransactions.forEach((transactionId) => {
-      if (this.transactionPromises[transactionId]) {
-        this.resolveTransaction(transactionId);
-      }
-    });
-  }
-
-  resolveTransaction(transactionId: string) {
-    if (this.transactionPromises[transactionId]) {
-      this.transactionPromises[transactionId].resolve();
-      clearTimeout(this.transactionPromises[transactionId].timeout);
-      delete this.transactionPromises[transactionId];
-    }
-  }
-
-  rejectTransaction(transactionId: string) {
-    if (this.transactionPromises[transactionId]) {
-      this.transactionPromises[transactionId].reject('TIMEOUT ON TRANSACTION');
-      delete this.transactionPromises[transactionId];
-    }
-  }
-
-  async waitForPendingUtxoToFinish() {
-    if (this.balancePromise) {
-      await this.balancePromise;
-    }
   }
 
   getUtxoBalanceStateSignal() {
     return this.walletBalanceStateSignal.asReadonly();
+  }
+
+  async waitForOutgoingUtxo() {
+    this.waitForOutgoingUtxoPromise = new Promise((resolve) => {
+      this.waitForOutgoingUtxoResolve = resolve;
+    })
+
+    this.waitForOutgoingUtxoTimeout = setTimeout(() => {
+      this.resolveAndClearWaitForOutgoingUtxoPromise();
+    }, WAIT_TIMEOUT);
+
+    if (this.walletBalanceStateSignal() && this.walletBalanceStateSignal()!.outgoing > 0n) {
+      this.resolveAndClearWaitForOutgoingUtxoPromise();
+      return;
+    }
+
+    return await this.waitForOutgoingUtxoPromise;
   }
 }

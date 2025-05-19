@@ -35,7 +35,7 @@ export class PasswordManagerService {
     return !!(await this.getUserDataWithPassword(password));
   }
 
-  importFromQr(encryptedUserData: string): boolean {
+  importFromEncryptedData(encryptedUserData: string): boolean {
     const encryptedMessage = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA);
 
     if (encryptedMessage) {
@@ -135,5 +135,9 @@ export class PasswordManagerService {
     }
 
     return this.saveWalletsData(walletsData, this.password);
+  }
+
+  async clearAllData(): Promise<void> {
+    localStorage.clear();
   }
 }

@@ -1,9 +1,8 @@
 import {
-  effect,
+  EnvironmentInjector,
   Injectable,
   Signal,
   signal,
-  WritableSignal,
 } from '@angular/core';
 import { PasswordManagerService } from './password-manager.service';
 import { SavedWalletAccount, SavedWalletData } from '../types/saved-wallet-data';
@@ -28,7 +27,8 @@ export class WalletService {
     private readonly passwordManagerService: PasswordManagerService,
     private readonly kaspaNetworkActionsService: KaspaNetworkActionsService,
     private readonly kasplexService: KasplexKrc20Service,
-    private readonly utilsService: UtilsHelper
+    private readonly utilsService: UtilsHelper,
+    private readonly injector: EnvironmentInjector,
   ) { }
 
   async addWallet(
@@ -75,10 +75,6 @@ export class WalletService {
     }
 
     const currentWalletsData = await this.passwordManagerService.getUserData();
-
-    console.log(currentWalletsData, currentWalletsData.wallets.find(
-      (wallet) => wallet.privateKey === privateKey || (mnemonic && wallet.mnemonic === mnemonic)
-    ), mnemonic);
 
     if (
       currentWalletsData.wallets.find(
@@ -167,7 +163,7 @@ export class WalletService {
 
     this.allWalletsSignal.update((oldValue) => [
       ...(oldValue || []),
-      new AppWallet(walletData, true, walletAccountData, this.kaspaNetworkActionsService),
+      this.createAppWalletFromSavedWalletData(walletData, true, walletAccountData),
     ]);
 
     return {
@@ -287,7 +283,7 @@ export class WalletService {
 
     this.allWalletsSignal.update((oldValue) => [
       ...(oldValue || []),
-      new AppWallet(walletData, true, walletData.accounts?.[0], this.kaspaNetworkActionsService),
+      this.createAppWalletFromSavedWalletData(walletData, true, walletData.accounts?.[0]),
     ]);
 
     return result;
@@ -305,10 +301,10 @@ export class WalletService {
     for (const wallet of walletsData.wallets) {
       if (wallet.accounts && wallet.accounts.length) {
         for (const walletAccount of wallet.accounts) {
-          allWallets.push(new AppWallet(wallet, loadBalance, walletAccount, this.kaspaNetworkActionsService));
+          allWallets.push(this.createAppWalletFromSavedWalletData(wallet, loadBalance, walletAccount));
         }
       } else {
-        allWallets.push(new AppWallet(wallet, loadBalance, undefined, this.kaspaNetworkActionsService));
+        allWallets.push(this.createAppWalletFromSavedWalletData(wallet, loadBalance, undefined));
       }
     }
 
@@ -320,7 +316,7 @@ export class WalletService {
   getAllWallets(loadBalance: boolean = false): Signal<AppWallet[] | undefined> {
     if (loadBalance) {
       this.allWalletsSignal()?.forEach((wallet) => {
-        wallet.refreshBalance();
+        wallet.refreshUtxosBalance();
       });
     }
 
@@ -350,7 +346,7 @@ export class WalletService {
     const wallet = this.getAllWalletsByIdAndAccount()?.[id];
 
     if (wallet && loadBalance) {
-      wallet.refreshBalance();
+      wallet.refreshUtxosBalance();
     }
 
     return wallet;
@@ -363,7 +359,7 @@ export class WalletService {
     const wallet = this.getAllWalletsByIdAndAccount()?.[idWithAccount];
 
     if (wallet && loadBalance) {
-      wallet.refreshBalance();
+      wallet.refreshUtxosBalance();
     }
 
     return wallet;
@@ -434,16 +430,24 @@ export class WalletService {
       return [];
     }
 
+    let additionalAssets: TransferableAsset[] = [];
+
+    try {
+      const krc20Assets = await this.getKrc20AvailableAssetsForCurrentWallet();
+      additionalAssets = [...additionalAssets, ...krc20Assets];
+    } catch (error) {
+      console.error(error);
+    }
+
     return [
       {
         ticker: 'TKAS',
         type: AssetType.KAS,
         availableAmount:
-          this.getCurrentWallet()?.getWalletUtxoStateBalanceSignal()()
-            ?.mature || 0n,
+          this.getCurrentWallet()?.getCurrentWalletStateBalanceSignalValue()?.mature || 0n,
         name: 'TKAS',
       },
-      ...(await this.getKrc20AvailableAssetsForCurrentWallet())
+      ...additionalAssets,
     ];
   }
 
@@ -499,5 +503,13 @@ export class WalletService {
 
 
     return pathComponents.join('/');
+  }
+
+
+  private createAppWalletFromSavedWalletData(savedWalletData: SavedWalletData,
+    shoudLoadBalance: boolean,
+    account: SavedWalletAccount | undefined,
+  ): AppWallet {
+    return new AppWallet(savedWalletData, shoudLoadBalance, account, this.injector);
   }
 }

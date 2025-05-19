@@ -6,8 +6,9 @@ import { TransferableAsset } from '../../../types/transferable-asset';
 import { WalletAction, WalletActionType } from '../../../types/wallet-action';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { WalletActionService } from '../../../services/wallet-action.service';
-import { ERROR_CODES } from 'kaspacom-wallet-messages';
+import { ERROR_CODES, ERROR_CODES_MESSAGES } from 'kaspacom-wallet-messages';
 import { Krc20WalletActionService } from '../../../services/protocols/krc20/krc20-wallet-actions.service';
+import { MessagePopupService } from '../../../services/message-popup.service';
 
 @Component({
   selector: 'list-krc20-token',
@@ -27,6 +28,7 @@ export class ListKrc20Component implements OnInit {
     private kaspaNetworkActionsService: KaspaNetworkActionsService,
     private walletActionService: WalletActionService,
     private krc20WalletActionService: Krc20WalletActionService,
+    private messagePopupService: MessagePopupService,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -69,16 +71,17 @@ export class ListKrc20Component implements OnInit {
 
       if (result.success) {
         this.amount = null;
+        this.messagePopupService.showSuccess('Asset listed successfully!');
       } else {
         if (result.errorCode != ERROR_CODES.EIP1193.USER_REJECTED) {
-          alert(result.errorCode);
+          this.messagePopupService.showError(result.errorCode ? ERROR_CODES_MESSAGES[result.errorCode] : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR]);
           return;
         }
       }
 
       // Add your transaction logic here
     } else {
-      alert('Please fill in all fields correctly.');
+      this.messagePopupService.showError('Please fill in all fields correctly.');
     }
   }
 

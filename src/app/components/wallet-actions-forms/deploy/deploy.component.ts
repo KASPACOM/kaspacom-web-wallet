@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
-import { UtilsHelper } from '../../../services/utils.service';
 import { FormsModule } from '@angular/forms';
 import { WalletActionService } from '../../../services/wallet-action.service';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { Krc20WalletActionService } from '../../../services/protocols/krc20/krc20-wallet-actions.service';
+import { ERROR_CODES, ERROR_CODES_MESSAGES } from 'kaspacom-wallet-messages';
+import { MessagePopupService } from '../../../services/message-popup.service';
 
 @Component({
   selector: 'deploy',
@@ -20,10 +21,10 @@ export class DeployComponent {
   protected preAllocation = 0;
 
   constructor(
-    private utilsService: UtilsHelper,
     private walletActionService: WalletActionService,
     private krc20WalletActionService: Krc20WalletActionService,
-    private kaspaNetworkActionsService: KaspaNetworkActionsService
+    private kaspaNetworkActionsService: KaspaNetworkActionsService,
+    private messagePopupService: MessagePopupService,
   ) {}
 
   async deployToken() {
@@ -43,7 +44,7 @@ export class DeployComponent {
       await this.walletActionService.validateAndDoActionAfterApproval(action);
 
     if (!result.success) {
-      alert(result.errorCode);
+      this.messagePopupService.showError(result.errorCode ? ERROR_CODES_MESSAGES[result.errorCode] : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR]);
     }
   }
 }

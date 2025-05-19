@@ -6,7 +6,8 @@ import { AssetType, TransferableAsset } from '../../../types/transferable-asset'
 import { WalletAction, WalletActionType } from '../../../types/wallet-action';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { WalletActionService } from '../../../services/wallet-action.service';
-import { ERROR_CODES } from 'kaspacom-wallet-messages';
+import { ERROR_CODES, ERROR_CODES_MESSAGES } from 'kaspacom-wallet-messages';
+import { MessagePopupService } from '../../../services/message-popup.service';
 
 @Component({
   selector: 'send-asset',
@@ -26,7 +27,8 @@ export class SendAssetComponent implements OnInit {
   constructor(
     private walletService: WalletService,
     private kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private walletActionService: WalletActionService
+    private walletActionService: WalletActionService,
+    private messagePopupService: MessagePopupService,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -67,14 +69,14 @@ export class SendAssetComponent implements OnInit {
         this.amount = null;
       } else {
         if (result.errorCode != ERROR_CODES.EIP1193.USER_REJECTED) {
-          alert(result.errorCode);
+          this.messagePopupService.showError(result.errorCode ? ERROR_CODES_MESSAGES[result.errorCode] : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR]);
           return;
         }
       }
 
       // Add your transaction logic here
     } else {
-      alert('Please fill in all fields correctly.');
+      this.messagePopupService.showError('Please fill in all fields correctly.');
     }
   }
 

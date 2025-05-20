@@ -12,20 +12,18 @@ export class IFrameCommunicationApp implements BaseCommunicationApp {
     this.onMessageWithBind = () => undefined;
   }
 
+  
+  getName(): string | undefined {
+    return new URL(this.currentUrl).hostname;
+  }
+
   async sendMessage(message: WalletMessageInterface): Promise<void> {
-    if (this.isIframeAllowedDomain(IFrameCommunicationApp.getTopUrl())) {
-      window.parent.postMessage(message, IFrameCommunicationApp.getTopUrl());
-    }
+    window.parent.postMessage(message, IFrameCommunicationApp.getTopUrl());
   }
 
   async setOnMessageEventHandler(handler: (message: WalletMessageInterface) => void): Promise<void> {
     this.onMessageWithBind = (event: MessageEvent) => {
       if (event.origin !== this.currentUrl) {
-        return;
-      }
-
-      if (!this.isIframeAllowedDomain(event.origin)) {
-        console.error('Message from not allowed origin', event.origin);
         return;
       }
 
@@ -40,7 +38,7 @@ export class IFrameCommunicationApp implements BaseCommunicationApp {
     window.removeEventListener('message', this.onMessageWithBind);
   }
 
-  getUrl(): string {
+  getApplicationId(): string {
     return this.currentUrl;
   }
 
@@ -52,11 +50,6 @@ export class IFrameCommunicationApp implements BaseCommunicationApp {
 
   private static getTopUrl(): string {
     return document.location.ancestorOrigins[0] || document.referrer;
-  }
-
-  isIframeAllowedDomain(domain: string): boolean {
-    const hostname = new URL(domain).hostname;
-    return environment.allowedIframeDomains.includes(hostname);
   }
 
 }

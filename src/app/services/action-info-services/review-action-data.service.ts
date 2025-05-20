@@ -4,9 +4,11 @@ import { EIP1193RequestParams, EIP1193RequestType } from "kaspacom-wallet-messag
 import { KaspaNetworkActionsService } from "../kaspa-netwrok-services/kaspa-network-actions.service";
 import { BaseProtocolClassesService } from "../protocols/base-protocol-classes.service";
 import { AppWallet } from "../../classes/AppWallet";
-import { ActionDisplay } from "../../types/action-display.type";
+import { ActionDisplay, ActionDisplayRow, InputFieldType } from "../../types/action-display.type";
 import { SignMessageActionInterface } from "kaspacom-wallet-messages";
 import { Transaction } from "../../../../public/kaspa/kaspa";
+import { BaseCommunicationApp } from "../communication-service/communication-app/base-communication-app";
+import { environment } from "../../../environments/environment";
 
 
 @Injectable({
@@ -36,6 +38,8 @@ export class ReviewActionDataService {
                 return this.getSignMessageActionDisplay(action.data, wallet);
             case WalletActionType.EIP1193_PROVIDER_REQUEST:
                 return this.getEip1193ActionDisplay(action.data, wallet);
+            case WalletActionType.APPROVE_COMMUNICATION_APP:
+                return this.getApproveCommunicationAppDisplay(action.data, wallet);
             default:
                 return undefined
         }
@@ -230,7 +234,7 @@ export class ReviewActionDataService {
         }
 
         if (params[1] && params[1].outputs?.length) {
-            result.rows.push(                {
+            result.rows.push({
                 fieldName: "Kaspa Payments",
                 fieldValue: params[1]?.outputs?.map(output => `${this.kaspaNetworkActionsService.sompiToNumber(output.amount)} KAS to ${output.address}`).join('\n') || 'None',
                 isCodeBlock: true
@@ -312,6 +316,40 @@ export class ReviewActionDataService {
                     fieldName: "Typed Data",
                     fieldValue: params[1],
                     isCodeBlock: true
+                }
+            ]
+        }
+    }
+
+    private getApproveCommunicationAppDisplay(app: BaseCommunicationApp, wallet: AppWallet): ActionDisplay {
+        const l2AdressRow: ActionDisplayRow[] = [];
+
+        if (environment.isL2Enabled && wallet.getL2WalletStateSignal()()?.address) {
+            l2AdressRow.push({
+                fieldName: 'L2 Wallet Address', 
+                fieldValue: wallet.getL2WalletStateSignal()()!.address!,
+            })
+        }
+
+        return {
+            title: `${app.getName() || app.getApplicationId()} wants to connect to your wallet`,
+            rows: [
+                {
+                    fieldName: "Application",
+                    fieldValue: app.getApplicationId(),
+                },
+                {
+                    fieldName: "Wallet Address",
+                    fieldValue: wallet.getAddress(),
+                },
+                ...l2AdressRow,
+                {
+                    fieldName: "Don't ask again",
+                    fieldValue: "false",
+                    inputField: {
+                        fieldType: InputFieldType.CHECKBOX,
+                        fieldParam: 'alwaysApprove',
+                    },
                 }
             ]
         }

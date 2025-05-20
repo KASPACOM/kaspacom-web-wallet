@@ -1,24 +1,29 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { NgIf } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { WalletService } from '../../../services/wallet.service';
 import { UtilsHelper } from '../../../services/utils.service';
 import { DEFAULT_DERIVED_PATH } from '../../../config/consts';
+import { MnemonicWordsComponent } from '../../shared/mnemonic-words/mnemonic-words.component';
 
 @Component({
   selector: 'create-wallet',
   standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MnemonicWordsComponent
+  ],
   templateUrl: './create-wallet.component.html',
-  styleUrls: ['./create-wallet.component.scss'],
-  imports: [FormsModule, ReactiveFormsModule, NgIf],
+  styleUrls: ['./create-wallet.component.scss']
 })
 export class CreateWalletComponent implements OnInit {
-  selectedType: 'privateKey' | 'mnemonic' = 'privateKey'; // Default selection is Private Key
-  mnemonicLength: string = '12'; // Default to 12-word mnemonic
+  mnemonicLength: number = 12;
   mnemonic: string = '';
   password: string = '';
-  creationError: string | null = null;
+  creationError: string = '';
 
   constructor(
     private walletService: WalletService,
@@ -31,19 +36,20 @@ export class CreateWalletComponent implements OnInit {
   }
 
   refreshMnemonic() {
-    this.mnemonic = this.walletService.generateMnemonic(
-      parseInt(this.mnemonicLength)
-    );
+    this.mnemonic = this.walletService.generateMnemonic(this.mnemonicLength);
+    this.creationError = ''; // Clear any previous errors
   }
 
-  getWalletAddress() {
-    return this.walletService.getWalletAddressFromMnemonic(
+  getWalletAddress(): string {
+    const address = this.walletService.getWalletAddressFromMnemonic(
       this.mnemonic,
       this.password
     );
+    return address || ''; // Return empty string if address is null
   }
 
   async createWallet() {
+    this.creationError = ''; // Clear any previous errors
     let walletAdditionResult: { sucess: boolean; error?: string } | null = null;
 
     try {
@@ -54,20 +60,17 @@ export class CreateWalletComponent implements OnInit {
         this.mnemonic.trim(),
         DEFAULT_DERIVED_PATH,
         '#' + this.walletService.getWalletAccountNumberFromDerivedPath(DEFAULT_DERIVED_PATH),
-        this.utils.isNullOrEmptyString(this.password)
-          ? undefined
-          : this.password,
+        this.utils.isNullOrEmptyString(this.password) ? undefined : this.password
       );
 
-      if (walletAdditionResult && walletAdditionResult.sucess) {
+      if (walletAdditionResult?.sucess) {
         this.router.navigate(['/wallet-selection']);
       } else {
-        this.creationError =
-          walletAdditionResult?.error || 'Failed to import wallet.';
+        this.creationError = walletAdditionResult?.error || 'Failed to create wallet.';
       }
     } catch (error) {
-      console.error('Error importing wallet:', error);
-      this.creationError = 'Error importing wallet. Please try again.';
+      console.error('Error creating wallet:', error);
+      this.creationError = 'Error creating wallet. Please try again.';
     }
   }
 }

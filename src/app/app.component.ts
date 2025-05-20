@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, Inject, OnInit, Renderer2 } from '@angular/core';
+import { AfterViewInit, Component, OnInit, Renderer2 } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { PasswordManagerService } from './services/password-manager.service';
 import { AppHeaderComponent } from './components/app-header/app-header.component';
@@ -53,7 +53,6 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   isAllowedDomain(): boolean {
-    return true;
     return environment.allowedDomains.includes(window.location.hostname);
   }
 

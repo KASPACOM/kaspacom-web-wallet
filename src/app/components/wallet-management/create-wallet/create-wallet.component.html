@@ -19,16 +19,11 @@
 
     <div class="form-group">
       <label for="mnemonic">Generated Mnemonic Phrase</label>
-      <div class="input-wrapper">
-        <input
-          type="text"
-          id="mnemonic"
-          placeholder="Your mnemonic phrase will appear here"
-          [value]="mnemonic"
-          readonly
-        />
-        <i class="fas fa-list input-icon"></i>
-      </div>
+      <app-mnemonic-words
+        [mnemonic]="mnemonic"
+        [isReadOnly]="true"
+        [wordCount]="mnemonicLength">
+      </app-mnemonic-words>
       <p class="help-text">Keep this phrase safe! It's the only way to recover your wallet.</p>
     </div>
 

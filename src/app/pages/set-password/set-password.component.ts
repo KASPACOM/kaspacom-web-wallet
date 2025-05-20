@@ -80,6 +80,7 @@ export class SetPasswordComponent implements OnInit, OnDestroy {
 
       await this.passwordManagerService.setSavedPassword(password);
 
+      this.messagePopupService.showSuccess('Password has been set successfully');
       // Store password (e.g., encrypted)
       this.router.navigate(['/login']);
     } else {

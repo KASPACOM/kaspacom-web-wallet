@@ -344,7 +344,7 @@ export class ReviewActionDataService {
                 },
                 ...l2AdressRow,
                 {
-                    fieldName: "Don't ask again for this application and wallet",
+                    fieldName: "Don't ask again for this application & wallet",
                     fieldValue: "false",
                     inputField: {
                         fieldType: InputFieldType.CHECKBOX,

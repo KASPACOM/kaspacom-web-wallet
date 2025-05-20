@@ -26,7 +26,7 @@ export interface Environment {
   kaspaApiBaseurl: string;
   kaspaNetwork: string;
   allowedDomains: string[];
-  allowedIframeDomains: string[],
+  approvedApplications: string[],
   isL2Enabled: boolean;
   l2Configs: {
     kasplex: L2ConfigInterface,

@@ -1,7 +1,7 @@
 import { EIP1193RequestPayload, EIP1193RequestType, ProtocolScript, ProtocolScriptDataAndAddress, PsktActionsEnum } from 'kaspacom-wallet-messages';
 import { WalletActionResultWithError } from './wallet-action-result';
 import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
-import { TransactionRequest } from 'ethers';
+import { BaseCommunicationApp } from '../services/communication-service/communication-app/base-communication-app';
 
 
 export enum WalletActionType {
@@ -12,6 +12,7 @@ export enum WalletActionType {
   COMMIT_REVEAL = 'commit-reveal',
   SUBMIT_TRANSACTION = 'submit-transaction',
   EIP1193_PROVIDER_REQUEST = 'eip-1193-provider-request',
+  APPROVE_COMMUNICATION_APP = 'approve-communication-app',
 }
 
 // Mapping action types to their specific data shapes
@@ -22,6 +23,7 @@ type WalletActionDataMap = {
   [WalletActionType.SIGN_MESSAGE]: SignMessage;
   [WalletActionType.COMMIT_REVEAL]: CommitRevealAction;
   [WalletActionType.EIP1193_PROVIDER_REQUEST]: EIP1193RequestPayload<EIP1193RequestType>;
+  [WalletActionType.APPROVE_COMMUNICATION_APP]: BaseCommunicationApp;
 };
 
 // Generic WalletAction type

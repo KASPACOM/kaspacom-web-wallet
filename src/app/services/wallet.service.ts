@@ -369,12 +369,11 @@ export class WalletService {
     const walletIdWithAccount = localStorage.getItem(
       LOCAL_STORAGE_KEYS.CURRENT_SELECTED_WALLET
     );
-    await this.selectCurrentWallet(walletIdWithAccount!, true);
+    await this.selectCurrentWallet(walletIdWithAccount!);
   }
 
   selectCurrentWallet(
     walletIdWithAccount: string,
-    skipLocalStorage: boolean = false
   ): AppWallet | undefined {
     if (walletIdWithAccount == this.currentWalletSignal()?.getIdWithAccount()) {
       return this.currentWalletSignal();

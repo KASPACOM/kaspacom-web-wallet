@@ -24,9 +24,8 @@ import { PsktTransaction } from '../types/kaspa-network/pskt-transaction.interfa
 import { Krc20WalletActionService } from './protocols/krc20/krc20-wallet-actions.service';
 import { BaseProtocolClassesService } from './protocols/base-protocol-classes.service';
 import { Router } from '@angular/router';
-import { TransactionRequest } from 'ethers';
 import { EthereumHandleActionRequestService } from './etherium-services/etherium-handle-action-request.service';
-import { EthereumWalletChainManager } from './etherium-services/etherium-wallet-chain.manager';
+import { BaseCommunicationApp } from './communication-service/communication-app/base-communication-app';
 
 const INSTANT_ACTIONS: { [key: string]: boolean } = {
   [WalletActionType.SIGN_MESSAGE]: true,
@@ -46,6 +45,7 @@ export class WalletActionService {
   private actionToApprove = signal<{
     action: WalletAction;
     resolve: (data: { isApproved: boolean, priorityFee?: bigint }) => void;
+    additionalParams?: { [parmName: string]: any };
   } | undefined>(undefined);
 
   private currentProgressSignal = signal<number | undefined>(undefined);
@@ -261,9 +261,25 @@ export class WalletActionService {
     return actionResult;
   }
 
+  async showCommunicationAppApprovalDialogToUser(app: BaseCommunicationApp, isFromIframe: boolean = false): Promise<{
+    isApproved: boolean,
+    alwaysApprove: boolean,
+  }> {
+    const result = await this.showApprovalDialogToUser({
+      type: WalletActionType.APPROVE_COMMUNICATION_APP,
+      data: app,
+    }, isFromIframe);
+
+    return {
+      alwaysApprove: !!result.additionalParams?.['alwaysApprove'],
+      isApproved: result.isApproved,
+    }
+  }
+
   private async showApprovalDialogToUser(action: WalletAction, isFromIframe: boolean = false): Promise<{
     isApproved: boolean;
     priorityFee?: bigint;
+    additionalParams?: { [parmName: string]: any };
   }> {
 
     if (this.actionToApprove()) {
@@ -271,7 +287,7 @@ export class WalletActionService {
       this.actionToApprove.set(undefined);
     }
 
-    const promise = new Promise<{ isApproved: boolean, priorityFee?: bigint }>((res) => {
+    const promise = new Promise<{ isApproved: boolean, priorityFee?: bigint, additionalParams?: { [parmName: string]: any } }>((res) => {
       this.actionResultSignal.set(undefined);
       this.actionToApprove.set({
         action,
@@ -291,7 +307,11 @@ export class WalletActionService {
     });
   }
 
-  getActionToApproveSignal(): Signal<{ action: WalletAction, resolve: (data: { isApproved: boolean, priorityFee?: bigint }) => void } | undefined> {
+  getActionToApproveSignal(): Signal<{
+    action: WalletAction, resolve: (data: {
+      isApproved: boolean, priorityFee?: bigint, additionalParams?: { [parmName: string]: any };
+    }) => void
+  } | undefined> {
     return this.actionToApprove.asReadonly();
   }
 
@@ -745,10 +765,10 @@ export class WalletActionService {
   }
 
 
-  resolveCurrentWaitingForApproveAction(isApproved: boolean, priorityFee?: bigint) {
+  resolveCurrentWaitingForApproveAction(isApproved: boolean, priorityFee?: bigint, additionalParams?: { [parmName: string]: any }) {
     if (this.getActionToApproveSignal()?.() && this.getActionToApproveSignal()?.()?.resolve) {
       this.getActionToApproveSignal()()!.resolve({
-        isApproved, priorityFee,
+        isApproved, priorityFee, additionalParams
       });
     }
   }

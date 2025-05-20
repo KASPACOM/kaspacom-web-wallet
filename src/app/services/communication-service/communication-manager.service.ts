@@ -14,6 +14,7 @@ import { EthereumWalletActionsService } from '../etherium-services/etherium-wall
 import { EthereumWalletChainManager } from '../etherium-services/etherium-wallet-chain.manager';
 import { BaseCommunicationApp } from './communication-app/base-communication-app';
 import { environment } from '../../../environments/environment';
+import { AllowedApplicationsService } from './allowed-applications.service';
 
 @Injectable({
     providedIn: 'root',
@@ -30,9 +31,11 @@ export class CommunicationManagerService {
     protected router: Router = inject(Router);
     protected ethereumWalletActionsService: EthereumWalletActionsService = inject(EthereumWalletActionsService);
     protected ethereumWalletChainManager: EthereumWalletChainManager = inject(EthereumWalletChainManager);
+    protected allowedApplicationsService: AllowedApplicationsService = inject(AllowedApplicationsService);
 
 
     protected connectedApps: BaseCommunicationApp[] = [];
+    protected allowedApps: BaseCommunicationApp[] = [];
     protected eventsSubscriptions: Subscription[] = [];
 
     constructor() {
@@ -54,21 +57,68 @@ export class CommunicationManagerService {
     }
 
     protected async sendMessageToConnectedApps(message: WalletMessageInterface, specificApp?: BaseCommunicationApp) {
-        if (specificApp) {
+        if (specificApp && this.allowedApps.includes(specificApp)) {
             specificApp.sendMessage(message);
         } else {
-            this.connectedApps.forEach(app => app.sendMessage(message));
+            this.allowedApps.forEach(app => app.sendMessage(message));
         }
     }
 
     async addApp(app: BaseCommunicationApp) {
         this.connectedApps.push(app);
-        await this.initMessagaingForApp(app);
+        this.initMessagaingForApp(app);
+        await this.askForPermissionForWalletForApp(app);
     }
 
     removeApp(app: BaseCommunicationApp) {
-        app.disconnect();
-        this.connectedApps.splice(this.connectedApps.indexOf(app), 1);
+        this.sendDisconnectionMessageToApp(app)
+            .catch(error => console.error('Failed to send disconnect message to app ' + app.getApplicationId(), error))
+            .finally(
+            () => {
+                try {
+                    app.disconnect();
+                } catch (err) {
+                    console.error('Failed to disconnect app ' + app.getApplicationId())
+                }
+            }
+        );
+
+        const allowedAppIndex = this.allowedApps.indexOf(app);
+        const connectedAppIndex = this.connectedApps.indexOf(app);
+
+        if (allowedAppIndex !== -1) {
+            this.allowedApps.splice(allowedAppIndex, 1);
+        }
+        if (connectedAppIndex !== -1) {
+            this.connectedApps.splice(connectedAppIndex, 1);
+        }
+    }
+
+    async askForPermissionForWalletForApp(app: BaseCommunicationApp) {
+        const currentWallet = this.walletService.getCurrentWallet();
+        if (!currentWallet) {
+            return;
+        }
+
+        const currentWalletIdWithAccount = currentWallet.getIdWithAccount();
+        const appId = app.getApplicationId();
+
+        if (!this.allowedApplicationsService.isAllowedApplication(appId, currentWalletIdWithAccount)) {
+            const result = await this.walletActionsService.showCommunicationAppApprovalDialogToUser(app, true);
+
+            if (result.isApproved) {
+                if (result.alwaysApprove) {
+                    this.allowedApplicationsService.addAllowedApplication(appId, currentWalletIdWithAccount);
+                }
+            } else {
+                this.removeApp(app);
+                return;
+            }
+        }
+
+        this.allowedApps.push(app);
+        this.sendUpdateWalletInfoEvent(this.walletService.getCurrentWallet(), app);
+        this.sendEtheriumWalletEvent(EIP1193ProviderEventEnum.ACCOUNTS_CHANGED, app);
     }
 
     async initMessagaingForApp(app: BaseCommunicationApp) {
@@ -76,6 +126,12 @@ export class CommunicationManagerService {
     }
 
     protected async onMessageFromApp(message: WalletMessageInterface, app: BaseCommunicationApp) {
+        if (!this.allowedApps.includes(app)) {
+            console.warn('app ' + app.getApplicationId() + ' is ignored', this.allowedApps.map(a => a.getApplicationId()));
+            // application not allowed, ignore
+            return;
+        }
+
         if (message?.type) {
             switch (message.type) {
                 case WalletMessageTypeEnum.WalletActionRequest:
@@ -88,6 +144,17 @@ export class CommunicationManagerService {
                     this.walletActionsService.resolveCurrentWaitingForApproveAction(false);
                     break;
             }
+        }
+    }
+
+    protected async resetAllowedAppsAndAskForPermission() {
+        this.allowedApps = [];
+
+        // let angular next tick
+        await new Promise(res => setTimeout(res));
+
+        for (let app of this.connectedApps) {
+            await this.askForPermissionForWalletForApp(app);
         }
     }
 
@@ -107,15 +174,14 @@ export class CommunicationManagerService {
             ).subscribe(this.onWalletBalanceUpdated.bind(this));
         }
 
-        this.sendUpdateWalletInfoEvent(wallet);
-        this.sendEtheriumWalletEvent(EIP1193ProviderEventEnum.ACCOUNTS_CHANGED);
+        await this.resetAllowedAppsAndAskForPermission();
     }
 
     protected async onWalletBalanceUpdated(balance: undefined | BalanceData) {
         await this.sendUpdateWalletInfoEvent(this.walletService.getCurrentWallet());
     }
 
-    protected async sendUpdateWalletInfoEvent(wallet: AppWallet | undefined) {
+    protected async sendUpdateWalletInfoEvent(wallet: AppWallet | undefined, specificApp?: BaseCommunicationApp) {
         const message: WalletMessageInterface = {
             type: WalletMessageTypeEnum.WalletInfo,
             payload: undefined,
@@ -138,7 +204,23 @@ export class CommunicationManagerService {
             };
         }
 
-        this.sendMessageToConnectedApps(message);
+        this.sendMessageToConnectedApps(message, specificApp);
+    }
+
+    protected async sendDisconnectionMessageToApp(app: BaseCommunicationApp) {
+        await app.sendMessage({
+            type: WalletMessageTypeEnum.WalletInfo,
+            payload: undefined,
+        });
+        if (environment.isL2Enabled) {
+            await app.sendMessage({
+                type: WalletMessageTypeEnum.EIP1193Event,
+                payload: {
+                    type: EIP1193ProviderEventEnum.ACCOUNTS_CHANGED,
+                    data: [],
+                }
+            });
+        }
     }
 
     protected async handleWalletActionRequest(
@@ -286,12 +368,15 @@ export class CommunicationManagerService {
         return undefined;
     }
 
-    async sendEtheriumWalletEvent(event: EIP1193ProviderEventEnum) {
+    async sendEtheriumWalletEvent(event: EIP1193ProviderEventEnum, specificApp?: BaseCommunicationApp) {
+        if (!environment.isL2Enabled) {
+            return;
+        }
         const eventData = await this.ethereumWalletActionsService.getEventData(event);
 
         await this.sendMessageToConnectedApps({
             type: WalletMessageTypeEnum.EIP1193Event,
             payload: eventData,
-        });
+        }, specificApp);
     }
 }

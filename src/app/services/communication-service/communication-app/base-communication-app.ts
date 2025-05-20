@@ -4,5 +4,6 @@ export abstract class BaseCommunicationApp {
     abstract sendMessage(message: WalletMessageInterface): Promise<void>;
     abstract setOnMessageEventHandler(handler: (message: WalletMessageInterface) => void): Promise<void>;
     abstract disconnect(): void;
-    abstract getUrl(): string;
+    abstract getApplicationId(): string;
+    abstract getName(): string | undefined;
 }

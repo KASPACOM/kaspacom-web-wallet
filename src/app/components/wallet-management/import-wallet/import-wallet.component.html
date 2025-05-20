@@ -15,7 +15,7 @@
     </button>
   </div>
 
-  <form [formGroup]="walletImportForm" (ngSubmit)="onSubmit()">
+  <form [formGroup]="walletImportForm" (ngSubmit)="onSubmit()" autocomplete="off">
     <!-- Private Key input -->
     <div *ngIf="selectedType === 'privateKey'" class="form-group">
       <label for="privateKey">Private Key</label>
@@ -75,6 +75,7 @@
           id="passphrase"
           formControlName="passphrase"
           placeholder="Enter passphrase"
+          autocomplete="off"
           [value]="walletImportForm.get('passphrase')?.value"
         />
         <i class="fas fa-lock input-icon"></i>

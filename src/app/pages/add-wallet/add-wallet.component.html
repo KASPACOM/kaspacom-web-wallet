@@ -19,5 +19,12 @@
     <import-wallet *ngIf="selectedAction === 'import'"></import-wallet>
     <create-wallet *ngIf="selectedAction === 'create'"></create-wallet>
   </div>
+
+  <div class="bottom-actions" *ngIf="hasExistingWallets">
+    <button class="back-button" (click)="goBack()">
+      <i class="fas fa-arrow-left"></i>
+      Go Back To Wallet Selection
+    </button>
+  </div>
 </div>
 

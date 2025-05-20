@@ -1,0 +1,36 @@
+<div class="verify-mnemonic-container">
+  <h3>Verify Your Mnemonic Phrase</h3>
+  <p class="subtitle">Please enter the following words from your mnemonic phrase to verify you've saved it correctly</p>
+  
+  <div class="verification-words">
+    <div *ngFor="let word of wordsToVerify" class="word-input">
+      <label>Word #{{word.index + 1}}</label>
+      <input 
+        type="text" 
+        [(ngModel)]="word.input"
+        [placeholder]="'Enter word #' + (word.index + 1)"
+        (input)="checkVerification()"
+      />
+    </div>
+  </div>
+
+  <div class="button-group">
+    <button class="secondary-button" (click)="onBack.emit()">
+      <i class="fas fa-arrow-left"></i>
+      Back
+    </button>
+    <button 
+      class="primary-button" 
+      [disabled]="!isVerified"
+      (click)="onVerified.emit()"
+    >
+      <i class="fas fa-check"></i>
+      Verify & Continue
+    </button>
+  </div>
+
+  <div *ngIf="verificationError" class="error-message">
+    <i class="fas fa-exclamation-circle"></i>
+    {{ verificationError }}
+  </div>
+</div> 

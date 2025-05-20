@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import {
   FormBuilder,
   FormGroup,
@@ -8,67 +9,78 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { WalletService } from '../../../services/wallet.service';
-import { NgIf } from '@angular/common';
-import { DEFAULT_DERIVED_PATH } from '../../../config/consts';
 import { UtilsHelper } from '../../../services/utils.service';
+import { MnemonicWordsComponent } from '../../shared/mnemonic-words/mnemonic-words.component';
+import { DEFAULT_DERIVED_PATH } from '../../../config/consts';
 
 @Component({
   selector: 'import-wallet',
   standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MnemonicWordsComponent,
+  ],
   templateUrl: './import-wallet.component.html',
-  styleUrls: ['./import-wallet.component.scss'],
-  imports: [FormsModule, ReactiveFormsModule, NgIf],
+  styleUrls: ['./import-wallet.component.scss']
 })
 export class ImportWalletComponent implements OnInit {
-  walletImportForm: FormGroup = new FormGroup({});
-  selectedType: 'privateKey' | 'mnemonic' = 'privateKey'; // Default selection is Private Key
-  mnemonicLength: string = '12'; // Default to 12-word mnemonic
-  importError: string | null = null;
+  selectedType: 'privateKey' | 'mnemonic' = 'privateKey';
+  mnemonicLength: number = 12;
+  walletImportForm: FormGroup;
+  importError: string = '';
 
   constructor(
     private fb: FormBuilder,
     private walletService: WalletService,
     private router: Router,
     private utils: UtilsHelper,
-  ) {}
-
-  ngOnInit(): void {
+  ) {
     this.walletImportForm = this.fb.group({
-      privateKey: [''],
-      mnemonic: [''],
+      privateKey: ['', [Validators.required]],
+      mnemonic: ['', [Validators.required]],
       derivedPath: [DEFAULT_DERIVED_PATH],
-      passphrase: [''],
+      passphrase: ['']
     });
-
-    this.selectPrivateKey();
   }
 
-  // Getter methods for the form controls
-  get privateKey() {
-    return this.walletImportForm.get('privateKey');
-  }
-
-  get mnemonic() {
-    return this.walletImportForm.get('mnemonic');
-  }
-
-  get derivedPath() {
-    return this.walletImportForm.get('derivedPath');
-  }
-
-  get passphrase() {
-    return this.walletImportForm.get('passphrase');
+  ngOnInit() {
+    this.updateFormValidation();
   }
 
   selectPrivateKey() {
     this.selectedType = 'privateKey';
+    this.updateFormValidation();
   }
 
   selectMnemonic() {
     this.selectedType = 'mnemonic';
+    this.updateFormValidation();
+  }
+
+  updateFormValidation() {
+    if (this.selectedType === 'privateKey') {
+      this.walletImportForm.get('privateKey')?.setValidators([Validators.required]);
+      this.walletImportForm.get('mnemonic')?.clearValidators();
+    } else {
+      this.walletImportForm.get('privateKey')?.clearValidators();
+      this.walletImportForm.get('mnemonic')?.setValidators([Validators.required]);
+    }
+    this.walletImportForm.get('privateKey')?.updateValueAndValidity();
+    this.walletImportForm.get('mnemonic')?.updateValueAndValidity();
+  }
+
+  onMnemonicLengthChange() {
+    // Clear the mnemonic when length changes
+    this.walletImportForm.get('mnemonic')?.setValue('');
   }
 
   async onSubmit() {
+    if (this.walletImportForm.invalid) {
+      return;
+    }
+
     const formValue = this.walletImportForm.value;
     let walletAdditionResult: { sucess: boolean; error?: string } | null = null;
 
@@ -100,5 +112,9 @@ export class ImportWalletComponent implements OnInit {
       console.error('Error importing wallet:', error);
       this.importError = 'Error importing wallet. Please try again.';
     }
+  }
+
+  get privateKey() {
+    return this.walletImportForm.get('privateKey');
   }
 }

@@ -1,76 +1,91 @@
 <div class="create-wallet-container">
-  <div class="header">
-    <h2>Create New Wallet</h2>
-    <p class="subtitle">Generate a new wallet with a secure mnemonic phrase</p>
-  </div>
+  <ng-container *ngIf="!showVerification">
+    <div class="header">
+      <h2>Create New Wallet</h2>
+      <p class="subtitle">Generate a new wallet with a secure mnemonic phrase</p>
+    </div>
 
-  <form (ngSubmit)="createWallet()">
-    <div class="form-group">
-      <label for="mnemonicLength">Mnemonic Phrase Length</label>
-      <div class="input-wrapper">
-        <select [(ngModel)]="mnemonicLength" [ngModelOptions]="{standalone: true}" name="mnemonicLength" (ngModelChange)="refreshMnemonic()">
-          <option value="12">12 Words</option>
-          <option value="24">24 Words</option>
-        </select>
-        <i class="fas fa-list-ol input-icon"></i>
+    <form>
+      <div class="form-group">
+        <label for="mnemonicLength">Mnemonic Phrase Length</label>
+        <div class="input-wrapper">
+          <select [(ngModel)]="mnemonicLength" [ngModelOptions]="{standalone: true}" name="mnemonicLength" (ngModelChange)="refreshMnemonic()">
+            <option value="12">12 Words</option>
+            <option value="24">24 Words</option>
+          </select>
+          <i class="fas fa-list-ol input-icon"></i>
+        </div>
+        <p class="help-text">Select the length of your mnemonic phrase - longer phrases provide more security</p>
       </div>
-      <p class="help-text">Select the length of your mnemonic phrase - longer phrases provide more security</p>
-    </div>
 
-    <div class="form-group">
-      <label for="mnemonic">Generated Mnemonic Phrase</label>
-      <div class="input-wrapper">
-        <input
-          type="text"
-          id="mnemonic"
-          placeholder="Your mnemonic phrase will appear here"
-          [value]="mnemonic"
-          readonly
-        />
-        <i class="fas fa-list input-icon"></i>
+      <div class="form-group">
+        <label for="mnemonic">Generated Mnemonic Phrase</label>
+        <app-mnemonic-words
+          [mnemonic]="mnemonic"
+          [isReadOnly]="true"
+          [wordCount]="mnemonicLength">
+        </app-mnemonic-words>
+        <p class="help-text">Keep this phrase safe! It's the only way to recover your wallet.</p>
       </div>
-      <p class="help-text">Keep this phrase safe! It's the only way to recover your wallet.</p>
-    </div>
 
-    <div class="form-group">
-      <label for="password">Password (Optional)</label>
-      <div class="input-wrapper">
-        <input
-          type="password"
-          id="password"
-          placeholder="Enter a password to encrypt your wallet"
-          [(ngModel)]="password"
-          name="password"
-        />
-        <i class="fas fa-lock input-icon"></i>
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+          <input 
+            type="checkbox" 
+            [(ngModel)]="hasSavedMnemonic" 
+            name="hasSavedMnemonic"
+          />
+          I have saved my mnemonic phrase in a secure location
+        </label>
       </div>
-      <p class="help-text">Adding a password provides an extra layer of security.</p>
-    </div>
 
-    <div class="form-group">
-      <label for="walletAddress">Wallet Address</label>
-      <div class="input-wrapper">
-        <input
-          type="text"
-          id="walletAddress"
-          [value]="getWalletAddress()"
-          readonly
-        />
-        <i class="fas fa-wallet input-icon"></i>
+      <div class="form-group">
+        <label for="password">Password (Optional)</label>
+        <div class="input-wrapper">
+          <input
+            type="password"
+            id="password"
+            placeholder="Enter a password to encrypt your wallet"
+            [(ngModel)]="password"
+            name="password"
+          />
+          <i class="fas fa-lock input-icon"></i>
+        </div>
+        <p class="help-text">Adding a password provides an extra layer of security.</p>
       </div>
-    </div>
 
-    <div class="button-group">
-      <button type="button" class="secondary-button" (click)="refreshMnemonic()">
-        <i class="fas fa-sync-alt"></i>
-        Refresh Mnemonic
-      </button>
-      <button type="submit" class="primary-button">
-        <i class="fas fa-plus"></i>
-        Create Wallet
-      </button>
-    </div>
-  </form>
+      <div class="form-group">
+        <label for="walletAddress">Wallet Address</label>
+        <div class="input-wrapper">
+          <input
+            type="text"
+            id="walletAddress"
+            [value]="getWalletAddress()"
+            readonly
+          />
+          <i class="fas fa-wallet input-icon"></i>
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button type="button" class="secondary-button" (click)="refreshMnemonic()">
+          <i class="fas fa-sync-alt"></i>
+          Refresh Mnemonic
+        </button>
+        <button type="button" class="primary-button" (click)="proceedToVerification()">
+          <i class="fas fa-check"></i>
+          Continue
+        </button>
+      </div>
+    </form>
+  </ng-container>
+
+  <app-verify-mnemonic
+    *ngIf="showVerification"
+    [mnemonic]="mnemonic"
+    (onVerified)="onVerificationComplete()"
+    (onBack)="onVerificationBack()"
+  ></app-verify-mnemonic>
 
   <div *ngIf="creationError" class="error-message">
     <i class="fas fa-exclamation-circle"></i>

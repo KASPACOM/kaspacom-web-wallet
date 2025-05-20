@@ -1,0 +1,33 @@
+<div class="mnemonic-container">
+  <div class="mnemonic-header">
+    <button type="button" class="copy-button" (click)="copyToClipboard()" [disabled]="!mnemonic">
+      <i class="fas fa-copy"></i>
+      Copy to Clipboard
+    </button>
+  </div>
+
+  <div class="words-grid">
+    <div *ngFor="let word of mnemonicWords; let i = index; trackBy: trackByIndex" 
+         [class]="getWordClass(i)">
+      <span class="word-number">{{i + 1}}</span>
+      <input 
+        *ngIf="!isReadOnly"
+        #wordInput
+        type="text"
+        [value]="word"
+        (keydown)="onKeyDown(i, $event)"
+        (paste)="onPaste($event, i)"
+        class="word-input"
+        [placeholder]="'Word ' + (i + 1)"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <span *ngIf="isReadOnly" class="word-text">{{word}}</span>
+    </div>
+  </div>
+
+  <div class="copy-message" *ngIf="showCopiedMessage">
+    <i class="fas fa-check"></i>
+    Copied to clipboard!
+  </div>
+</div> 

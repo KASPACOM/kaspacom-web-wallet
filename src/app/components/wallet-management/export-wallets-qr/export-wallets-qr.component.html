@@ -27,8 +27,7 @@
         Scan this QR code with your mobile wallet to sync your wallet.
       </p>
 
-
-      <qrcode [qrdata]="encryptedUserData!"></qrcode>
+      <qrcode [qrdata]="encryptedUserData!" [width]="qrCodeSize"></qrcode>
 
       <p class="warning">
         Warning: Do not share this QR code with anyone.

@@ -83,11 +83,9 @@ export class PriorityFeeSelectionComponent implements OnChanges {
         .estimateWalletActionMass(action, this.wallet)
         .then((result) => {
           this.totalTransactionsMass = result;
-          console.log(this.totalTransactionsMass, 'total transactions mass');
         }),
       this.kaspaNetworkActionsService.getEstimateFeeRates().then((result) => {
         this.currentFeeRates = result;
-        console.log('fee rates', result);
       }),
     ]);
 
@@ -126,7 +124,6 @@ export class PriorityFeeSelectionComponent implements OnChanges {
   }
 
   feeSelected(amount: bigint | undefined) {
-    console.log('emit', amount);
     this.additionalPriorityFee =
       amount !== undefined
         ? amount - this.transactionMass! < 0n

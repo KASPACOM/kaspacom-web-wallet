@@ -18,6 +18,7 @@
         id="confirmation"
         formControlName="confirmation"
         placeholder="DELETE ALL DATA"
+        autocomplete="off"
         required
       />
       <div *ngIf="clearDataForm.get('confirmation')?.invalid && clearDataForm.get('confirmation')?.touched" class="error-message">

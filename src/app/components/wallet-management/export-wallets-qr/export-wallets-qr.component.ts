@@ -1,9 +1,9 @@
 import { NgIf } from '@angular/common';
-import { Component, signal } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { QRCodeModule } from 'angularx-qrcode';
 import { PasswordManagerService } from '../../../services/password-manager.service';
 import { LOCAL_STORAGE_KEYS } from '../../../config/consts';
-
+import { MessagePopupService } from '../../../services/message-popup.service';
 
 @Component({
   selector: 'export-wallets-qr',
@@ -17,8 +17,23 @@ export class ExportWalletsQrComponent {
   passwordFilled: boolean = false; // Signal to display the QR code
   encryptedUserData: string | null = null;
   maxDataLength = 2331;
+  qrCodeSize: number = 400; // Default size for desktop
 
-  constructor(private passwordManagerService: PasswordManagerService) {}
+  constructor(
+    private passwordManagerService: PasswordManagerService,
+    private messagePopupService: MessagePopupService,
+  ) {
+    this.updateQrCodeSize();
+  }
+
+  @HostListener('window:resize')
+  onResize() {
+    this.updateQrCodeSize();
+  }
+
+  private updateQrCodeSize() {
+    this.qrCodeSize = window.innerWidth <= 768 ? 256 : 400;
+  }
 
   handleButtonClick() {
     this.showPasswordPrompt = true;
@@ -37,7 +52,7 @@ export class ExportWalletsQrComponent {
       }
 
     } else {
-      alert('Incorrect password. Please try again.');
+      this.messagePopupService.showError('Incorrect password. Please try again.');
     }
   }
 

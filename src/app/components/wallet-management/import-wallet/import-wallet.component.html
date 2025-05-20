@@ -15,7 +15,7 @@
     </button>
   </div>
 
-  <form [formGroup]="walletImportForm" (ngSubmit)="onSubmit()">
+  <form [formGroup]="walletImportForm" (ngSubmit)="onSubmit()" autocomplete="off">
     <!-- Private Key input -->
     <div *ngIf="selectedType === 'privateKey'" class="form-group">
       <label for="privateKey">Private Key</label>
@@ -26,6 +26,8 @@
           formControlName="privateKey"
           placeholder="Enter your private key"
           required
+          autocomplete="off"
+          spellcheck="false"
         />
         <i class="fas fa-key input-icon"></i>
       </div>
@@ -39,7 +41,7 @@
     <div *ngIf="selectedType === 'mnemonic'" class="form-group">
       <label for="mnemonicLength">Mnemonic Phrase Length</label>
       <div class="input-wrapper">
-        <select [(ngModel)]="mnemonicLength" [ngModelOptions]="{standalone: true}">
+        <select [(ngModel)]="mnemonicLength" [ngModelOptions]="{standalone: true}" (ngModelChange)="onMnemonicLengthChange()">
           <option value="12">12 Words</option>
           <option value="24">24 Words</option>
         </select>
@@ -47,16 +49,12 @@
       </div>
 
       <label for="mnemonic">Mnemonic Phrase</label>
-      <div class="input-wrapper">
-        <input
-          type="text"
-          id="mnemonic"
-          formControlName="mnemonic"
-          placeholder="Enter your mnemonic phrase"
-          required
-        />
-        <i class="fas fa-list input-icon"></i>
-      </div>
+      <app-mnemonic-words
+        [mnemonic]="walletImportForm.get('mnemonic')?.value"
+        [isReadOnly]="false"
+        [wordCount]="mnemonicLength"
+        (mnemonicChange)="walletImportForm.get('mnemonic')?.setValue($event)">
+      </app-mnemonic-words>
 
       <label for="derivedPath">Derived Path</label>
       <div class="input-wrapper">
@@ -77,6 +75,7 @@
           id="passphrase"
           formControlName="passphrase"
           placeholder="Enter passphrase"
+          autocomplete="off"
           [value]="walletImportForm.get('passphrase')?.value"
         />
         <i class="fas fa-lock input-icon"></i>

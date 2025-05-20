@@ -53,6 +53,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   isAllowedDomain(): boolean {
+    return true;
     return environment.allowedDomains.includes(window.location.hostname);
   }
 

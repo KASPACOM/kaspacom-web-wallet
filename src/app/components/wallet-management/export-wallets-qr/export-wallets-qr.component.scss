@@ -131,14 +131,5 @@
 @media (max-width: 768px) {
   .container {
     padding: 1rem;
-    
-    .qr-display {
-      .qr-code {
-        qrcode {
-          max-width: 100%;
-          height: auto;
-        }
-      }
-    }
   }
 }

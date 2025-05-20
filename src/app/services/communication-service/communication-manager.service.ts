@@ -127,7 +127,7 @@ export class CommunicationManagerService {
 
     protected async onMessageFromApp(message: WalletMessageInterface, app: BaseCommunicationApp) {
         if (!this.allowedApps.includes(app)) {
-            console.log('app ' + app.getApplicationId() + ' is ingnored', this.allowedApps.map(a => a.getApplicationId()));
+            console.warn('app ' + app.getApplicationId() + ' is ignored', this.allowedApps.map(a => a.getApplicationId()));
             // application not allowed, ignore
             return;
         }

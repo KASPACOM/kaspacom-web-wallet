@@ -8,7 +8,7 @@ import { BalanceData } from '../../types/kaspa-network/balance-event.interface';
 import { Subscription } from 'rxjs';
 import { CommitRevealAction, WalletAction } from '../../types/wallet-action';
 import { WalletActionResultWithError } from '../../types/wallet-action-result';
-import { EIP1193ProviderEventEnum, EIP1193ProviderRequestActionResult, ERROR_CODES, WalletActionRequestPayloadInterface, WalletActionResultType, WalletActionTypeEnum, WalletMessageInterface, WalletMessageTypeEnum } from 'kaspacom-wallet-messages';
+import { EIP1193ProviderEventEnum, EIP1193ProviderRequestActionResult, ERROR_CODES, WalletActionRequestPayloadInterface, WalletActionResultType, WalletActionTypeEnum, WalletMessageInterface, WalletMessageTypeEnum } from '@kaspacom/wallet-messages';
 import { Router } from '@angular/router';
 import { EthereumWalletActionsService } from '../etherium-services/etherium-wallet-actions.service';
 import { EthereumWalletChainManager } from '../etherium-services/etherium-wallet-chain.manager';

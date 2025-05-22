@@ -1,7 +1,7 @@
 import { Injectable, signal } from "@angular/core";
 import { LOCAL_STORAGE_KEYS } from "../../config/consts";
 import { BaseEthereumProvider } from "./base-ethereum-provider";
-import { EIP1193ProviderChain } from "kaspacom-wallet-messages";
+import { EIP1193ProviderChain } from "@kaspacom/wallet-messages";
 import { environment } from "../../../environments/environment";
 import { L2ConfigInterface } from "../../../environments/environment.interface";
 

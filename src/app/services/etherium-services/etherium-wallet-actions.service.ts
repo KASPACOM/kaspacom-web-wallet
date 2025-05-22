@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { AppWallet } from "../../classes/AppWallet";
-import { EIP1193RequestPayload, EIP1193RequestType, ERROR_CODES, EIP1193ProviderResponse, EIP1193ProviderEventEnum, EIP1193KaspaComWalletProviderEvent, ERROR_CODES_MESSAGES } from "kaspacom-wallet-messages";
+import { EIP1193RequestPayload, EIP1193RequestType, ERROR_CODES, EIP1193ProviderResponse, EIP1193ProviderEventEnum, EIP1193KaspaComWalletProviderEvent, ERROR_CODES_MESSAGES } from "@kaspacom/wallet-messages";
 import { EthereumWalletChainManager } from "./etherium-wallet-chain.manager";
 import { WalletService } from "../wallet.service";
 import { WalletActionService } from "../wallet-action.service";

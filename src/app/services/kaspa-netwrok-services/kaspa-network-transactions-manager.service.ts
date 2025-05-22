@@ -33,14 +33,13 @@ import { UtilsHelper } from '../utils.service';
 import { TotalBalanceWithUtxosInterface } from '../../types/kaspa-network/total-balance-with-utxos.interface';
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
-import { ERROR_CODES, KasTransactionParams, ProtocolScriptDataAndAddress } from 'kaspacom-wallet-messages';
+import { ERROR_CODES, KasTransactionParams, ProtocolScriptDataAndAddress, ProtocolType } from '@kaspacom/wallet-messages';
 import {
   MAX_TRANSACTION_FEE,
   MINIMAL_AMOUNT_TO_SEND,
 } from './kaspa-network-actions.service';
 import { AppWallet } from '../../classes/AppWallet';
 import { CommitRevealActionTransactions } from '../../types/kaspa-network/commit-reveal-action-transactions.interface';
-import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
 import { MempoolTransactionManager } from '../../classes/MempoolTransactionManager';
 import { keccak256, TransactionRequest } from 'ethers';
 import { EtherService } from '../etherium-services/ether.service';

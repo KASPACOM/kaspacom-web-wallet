@@ -13,7 +13,7 @@ import { PriorityFeeSelectionComponent } from '../priority-fee-selection/priorit
 import { AppWallet } from '../../../classes/AppWallet';
 import { ReviewActionDataService } from '../../../services/action-info-services/review-action-data.service';
 import { WalletActionService } from '../../../services/wallet-action.service';
-import { EIP1193RequestPayload, EIP1193RequestType } from 'kaspacom-wallet-messages';
+import { EIP1193RequestPayload, EIP1193RequestType } from '@kaspacom/wallet-messages';
 import { InputFieldType } from '../../../types/action-display.type';
 
 const TIMEOUT = 2 * 60 * 1000;

@@ -20,11 +20,12 @@ import {
   KasTransactionParams,
   KasTransferActionResult,
   ProtocolScriptDataAndAddress,
+  ProtocolType,
   SignedMessageActionResult,
   SignPsktTransactionActionResult,
   WalletActionResult,
   WalletActionResultType,
-} from 'kaspacom-wallet-messages';
+} from '@kaspacom/wallet-messages';
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
 import {
@@ -42,7 +43,6 @@ import {
 import { UnfinishedCommitRevealAction } from '../../types/kaspa-network/unfinished-commit-reveal-action.interface';
 import { PsktTransaction } from '../../types/kaspa-network/pskt-transaction.interface';
 import { UtilsHelper } from '../utils.service';
-import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
 import { MempoolTransactionManager } from '../../classes/MempoolTransactionManager';
 import { TransactionRequest } from 'ethers';
 import { createEIP1193Response } from '../etherium-services/create-eip-1193-response';

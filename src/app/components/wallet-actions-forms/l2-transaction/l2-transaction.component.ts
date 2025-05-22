@@ -5,7 +5,7 @@ import { WalletActionService } from '../../../services/wallet-action.service';
 import { WalletService } from '../../../services/wallet.service';
 import { parseEther } from 'ethers';
 import { EthereumWalletChainManager } from '../../../services/etherium-services/etherium-wallet-chain.manager';
-import { EIP1193RequestType, EthTransactionParams } from 'kaspacom-wallet-messages';
+import { EIP1193RequestType, EthTransactionParams } from '@kaspacom/wallet-messages';
 
 @Component({
   selector: 'l2-transaction',

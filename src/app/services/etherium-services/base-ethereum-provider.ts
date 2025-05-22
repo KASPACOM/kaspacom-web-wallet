@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { EIP1193ProviderChain } from "kaspacom-wallet-messages";
+import { EIP1193ProviderChain } from "@kaspacom/wallet-messages";
 
 export class BaseEthereumProvider {
   protected etherProvider: ethers.JsonRpcProvider;

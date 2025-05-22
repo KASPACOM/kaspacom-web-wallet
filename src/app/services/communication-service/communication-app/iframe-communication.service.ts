@@ -1,4 +1,4 @@
-import { WalletMessageInterface } from 'kaspacom-wallet-messages';
+import { WalletMessageInterface } from '@kaspacom/wallet-messages';
 import { BaseCommunicationApp } from './base-communication-app';
 import { environment } from '../../../../environments/environment';
 

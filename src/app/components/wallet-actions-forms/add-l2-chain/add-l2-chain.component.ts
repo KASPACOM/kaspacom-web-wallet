@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { EIP1193ProviderChain } from 'kaspacom-wallet-messages';
+import { EIP1193ProviderChain } from '@kaspacom/wallet-messages';
 
 @Component({
   selector: 'add-l2-chain',

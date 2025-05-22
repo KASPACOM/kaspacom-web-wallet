@@ -1,11 +1,11 @@
 import { Injectable } from "@angular/core";
 import { CommitRevealAction, CompoundUtxosAction, SignPsktTransactionAction, TransferKasAction, WalletAction, WalletActionType } from "../../types/wallet-action";
-import { EIP1193RequestParams, EIP1193RequestType } from "kaspacom-wallet-messages/dist/types/eip1193/requests/request.types";
+import { EIP1193RequestParams, EIP1193RequestType } from "@kaspacom/wallet-messages/dist/types/eip1193/requests/request.types";
 import { KaspaNetworkActionsService } from "../kaspa-netwrok-services/kaspa-network-actions.service";
 import { BaseProtocolClassesService } from "../protocols/base-protocol-classes.service";
 import { AppWallet } from "../../classes/AppWallet";
 import { ActionDisplay, ActionDisplayRow, InputFieldType } from "../../types/action-display.type";
-import { SignMessageActionInterface } from "kaspacom-wallet-messages";
+import { SignMessageActionInterface } from "@kaspacom/wallet-messages";
 import { Transaction } from "../../../../public/kaspa/kaspa";
 import { BaseCommunicationApp } from "../communication-service/communication-app/base-communication-app";
 import { environment } from "../../../environments/environment";

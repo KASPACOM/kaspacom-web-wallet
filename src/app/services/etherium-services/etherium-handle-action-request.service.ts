@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { EIP1193ProviderRequestActionResult, EIP1193RequestParams, EIP1193RequestPayload, EIP1193RequestType, ERROR_CODES, WalletActionResultType } from "kaspacom-wallet-messages";
+import { EIP1193ProviderRequestActionResult, EIP1193RequestParams, EIP1193RequestPayload, EIP1193RequestType, ERROR_CODES, WalletActionResultType } from "@kaspacom/wallet-messages";
 import { AppWallet } from "../../classes/AppWallet";
 import { WalletActionResultWithError } from "../../types/wallet-action-result";
 import { EtherService } from "./ether.service";

@@ -5,7 +5,7 @@ import { KaspaNetworkActionsService, REVEAL_PSKT_AMOUNT } from "../../kaspa-netw
 import { ProtocolCompletedActionDataInterface } from "../interfaces/protocol-completed-action-data.interface";
 import { CompletedActionDisplay } from "../../../types/completed-action-display.type";
 import { Transaction } from "../../../../../public/kaspa/kaspa";
-import { CommitRevealActionResult } from "kaspacom-wallet-messages";
+import { CommitRevealActionResult } from "@kaspacom/wallet-messages";
 
 @Injectable({
     providedIn: 'root',

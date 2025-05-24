@@ -1,0 +1,54 @@
+:root {
+  --white: #FFFFFF;
+  --black: hsl(0, 0%, 0%);
+  --vampire-black: #07090a;
+  --gray-0: #141414;
+  --gray-10: #181818;
+  --gray-15: #282828;
+  --gray-20: #333333;
+  --gray-25: #404040;
+  --gray-40: #616161;
+  --gray-45: #757575;
+  --gray-60: #9E9E9E;
+  --gray-75: #BDBDBD;
+  --gray-85: #D9D9D9;
+  --gray-90: #EEEEEE;
+  --gray-95: #F8F8F8;
+
+  --blue-10: #7477FF;
+  --blue-20: #595CFF;
+  --blue-30: #383AA3;
+  --green-10: #96FFA5;
+  --green-20: #3FC753;
+  --green-30: #267D33;
+  --orange-10: #FFD27D;
+  --orange-20: #E6A223;
+  --orange-30: #986B17;
+  --red-10: #FF7474;
+  --red-20: #E04242;
+  --red-30: #923C3C;
+  --yellow-10: #FFFF8F;
+  --yellow-20: #FAFA49;
+  --yellow-30: #B1B135;
+  --purple-10: #D883FF;
+  --purple-20: #B43AED;
+  --purple-30: #6E1B94;
+  --kaspa-10: #A2FFF1;
+  --kaspa-20: #6FC7BA;
+  --kaspa-30: #32635C;
+
+  --primary: var(--kaspa-20);
+  --secondary: var(--purple-20);
+  --tertiary: var(--blue-20);
+  --universal-tertiary-color: rgba(255, 255, 255, 0.1);
+  --universal-tertiary-2: rgba(255, 255, 255, 0.2);
+
+  --background: var(--vampire-black);
+  --background-secondary: #0D1316;
+
+  --border-secondary: #1c2e2f;
+
+  --gradient-1: linear-gradient(90deg, #B43AED 0%, #FFD27D 44.23%, #A2FFF1 85.58%); // pruple-20, orange-10, kaspa-10
+  --gradient-2: linear-gradient(90deg, #7477FF 0%, #595CFF 30%, #B43AED 70%, #D883FF 100%); // blue-10, blue-20, purple-20, purple-10
+
+}

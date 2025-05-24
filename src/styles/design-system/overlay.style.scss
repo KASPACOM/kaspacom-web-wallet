@@ -1,0 +1,33 @@
+// Overlay styles for dropdowns and modals
+
+// Regular dropdown overlay panel
+.dropdown-overlay-panel {
+  // Base panel styling
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+// Animation classes for regular dropdown
+.dropdown-animated-panel {
+  will-change: opacity, transform;
+}
+
+// Fullscreen dropdown overlay panel (75% height)
+.dropdown-overlay-fullscreen {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
+}
+
+// Animation classes for fullscreen dropdown
+.dropdown-animated-fullscreen {
+  will-change: opacity, transform;
+}
+
+// Dark backdrop for fullscreen mode
+.cdk-overlay-dark-backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}

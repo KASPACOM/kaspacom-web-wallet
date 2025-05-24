@@ -1,0 +1,74 @@
+.icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  &.default-color {
+    color: var(--kaspa-20);
+  }
+
+  &.disabled {
+    color: var(--gray-60);
+    opacity: 0.5;
+  }
+
+  &:hover:not(.disabled) {
+    filter: brightness(1.2);
+    transform: scale(1.05);
+  }
+
+  &.xxs {
+    width: 12px;
+    height: 12px;
+    line-height: 12px;
+    div {
+      font-size: 12px;
+    }
+  }
+
+  &.xs {
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    div {
+      font-size: 16px;
+    }
+  }
+
+  &.sm {
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    div {
+      font-size: 20px;
+    }
+  }
+
+  &.md {
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    div {
+      font-size: 24px;
+    }
+  }
+
+  &.lg {
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+    div {
+      font-size: 32px;
+    }
+  }
+
+  &.xlg {
+    width: 68px;
+    height: 68px;
+    line-height: 68px;
+    div {
+      font-size: 68px;
+    }
+  }
+}

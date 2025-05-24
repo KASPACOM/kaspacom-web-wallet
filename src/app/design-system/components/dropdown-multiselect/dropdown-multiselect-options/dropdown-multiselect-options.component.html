@@ -1,0 +1,99 @@
+<div
+  class="dropdown-options"
+  [ngClass]="[variant, isFullscreenSelection ? 'fullscreen' : '']">
+
+  <!-- Fullscreen header -->
+  <div *ngIf="isFullscreenSelection" class="fullscreen-header">
+    <div class="header-title typo-title-3">Select Options</div>
+    <button class="header-close" (click)="closeFullscreen()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Options actions container - only show when searchable or has selections -->
+  <div *ngIf="isSearchable || selectedValues.length > 0"
+       [@headerAnimation]
+       class="options-actions">
+    <!-- Search container (always visible) -->
+    <div class="search-container">
+      <input
+        *ngIf="isSearchable"
+        type="text"
+        class="search-input"
+        [formControl]="searchControl"
+        placeholder="Search..."
+        [ngClass]="getTypographyClass()"
+        autocomplete="off">
+    </div>
+
+    <!-- Clear selections button with animation -->
+    <div class="clear-all-btn-enter-exit" [@enterLeave]="selectedValues.length > 0 ? 'visible' : 'hidden'">
+      <app-button
+        *ngIf="selectedValues.length > 0"
+        [text]="'Clear all'"
+        [role]="'neutral'"
+        [size]="ComponentSize.SM"
+        (buttonClick)="clearAll()"
+        class="clear-all-btn"
+      ></app-button>
+    </div>
+  </div>
+
+  <!-- Options list with fixed height -->
+  <div class="options-list-container">
+    <div class="options-list">
+      <ng-container *ngIf="filteredOptions.length > 0; else noResults">
+        <div
+          *ngFor="let option of filteredOptions"
+          class="option-item"
+          [class.selected]="isSelected(option)"
+          [class.disabled]="!isSelected(option) && isMaxSelectionsReached()"
+          [class.ellipsis]="optionsEllipsis"
+          [ngClass]="getTypographyClass()"
+          (click)="!isMaxSelectionsReached() || isSelected(option) ? selectOption(option) : null">
+
+          <!-- Custom template if provided -->
+          <ng-container *ngIf="customTemplate; else defaultTemplate">
+            <ng-container *ngTemplateOutlet="customTemplate; context: {
+              $implicit: option,
+              selected: isSelected(option)
+            }"></ng-container>
+          </ng-container>
+
+          <!-- Default template -->
+          <ng-template #defaultTemplate>
+            <app-checkbox
+              [isChecked]="isSelected(option)"
+              [size]="size"
+              [isDisabled]="!isSelected(option) && isMaxSelectionsReached()"
+            ></app-checkbox>
+            <span class="option-label">{{ option.label }}</span>
+          </ng-template>
+        </div>
+      </ng-container>
+
+      <!-- No results message -->
+      <ng-template #noResults>
+        <div class="no-results" [ngClass]="getTypographyClass()">No options found</div>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- Selection summary for fullscreen mode -->
+  <div *ngIf="isFullscreenSelection" class="selection-summary">
+    <div class="selection-info">
+      <span class="typo-text-2" *ngIf="selectedValues.length > 0">Selected: {{ selectedValues.length }}</span>
+      <span *ngIf="maxSelection < 9999999" class="typo-text-2">(Max: {{ maxSelection }})</span>
+    </div>
+    <app-button
+      [text]="'Apply'"
+      [variant]="variant === 'tertiary' ? 'primary' : variant"
+      [size]="size"
+      [isDisabled]="selectedValues.length < minSelection"
+      (buttonClick)="closeFullscreen()"
+    ></app-button>
+  </div>
+</div>

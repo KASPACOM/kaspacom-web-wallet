@@ -1,0 +1,239 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.dropdown-select {
+  position: relative;
+  display: inline-flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  &.full-width {
+    width: 100%;
+  }
+
+  // Variant styles
+  &.primary {
+    background-color: var(--kaspa-20);
+    color: var(--vampire-black);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+
+    &:hover:not(.disabled) {
+      background-color: var(--kaspa-10);
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+    }
+
+    .dropdown-icon {
+      color: var(--vampire-black);
+    }
+
+    .selection-count {
+      color: var(--vampire-black);
+    }
+  }
+
+  &.secondary {
+    background-color: var(--purple-20);
+    border: none;
+    color: var(--white);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+
+    &:hover:not(.disabled) {
+      background-color: var(--purple-10);
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+    }
+
+    .dropdown-icon {
+      color: var(--white);
+    }
+  }
+
+  &.tertiary {
+    background-color: var(--universal-tertiary-color);
+    border: 1px solid var(--universal-tertiary-color);
+    color: var(--white);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+    &:hover:not(.disabled) {
+      background-color: var(--universal-tertiary-2);
+      border-color: var(--universal-tertiary-2);
+      color: var(--white);
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .dropdown-icon {
+      color: var(--white);
+    }
+
+    &:hover:not(.disabled) .dropdown-icon {
+      color: var(--white);
+    }
+  }
+
+  font-weight: 600;
+
+  // Sizes
+  &.xs {
+    height: 28px;
+    padding: 0 8px;
+    font-size: 0.6875rem;
+  }
+
+  &.sm {
+    height: 32px;
+    padding: 0 10px;
+    font-size: 0.75rem;
+  }
+
+  &.md {
+    height: 42px;
+    padding: 0 12px;
+    font-size: 0.875rem;
+  }
+
+  &.lg {
+    height: 52px;
+    padding: 0 14px;
+    font-size: 1rem;
+  }
+
+  &.xlg {
+    height: 64px;
+    padding: 0 18px;
+    font-size: 1.5rem;
+  }
+}
+
+.dropdown-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.dropdown-value {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  gap: 8px;
+
+  .selection-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background-color: var(--universal-tertiary-color);
+    color: var(--white);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .selection-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.dropdown-icon {
+  margin-left: 8px;
+
+  .arrow {
+    display: block;
+    width: 10px;
+    height: 10px;
+    position: relative;
+    transition: transform 0.2s ease;
+
+    &:before,
+    &:after {
+      content: "";
+      position: absolute;
+      width: 8px;
+      height: 2px;
+      background-color: currentColor;
+      top: 50%;
+      transition: transform 0.2s ease;
+    }
+
+    &:before {
+      left: 0;
+      transform: translateY(-50%) rotate(45deg);
+    }
+
+    &:after {
+      right: 0;
+      transform: translateY(-50%) rotate(-45deg);
+    }
+
+    &.up {
+      &:before {
+        transform: translateY(-50%) rotate(-45deg);
+      }
+
+      &:after {
+        transform: translateY(-50%) rotate(45deg);
+      }
+    }
+  }
+}
+
+:host ::ng-deep {
+  .dropdown-animated-panel {
+    transform-origin: top center;
+    overflow: hidden;
+
+    &.cdk-overlay-pane {
+      will-change: opacity, transform;
+    }
+  }
+
+  .dropdown-animated-fullscreen {
+    transform-origin: bottom center;
+    overflow: hidden;
+
+    &.cdk-overlay-pane {
+      will-change: opacity, transform;
+    }
+  }
+
+  // Styles for the options-actions container
+  .options-actions {
+    display: flex;
+    align-items: center;
+    width: 100%;
+
+    .search-container {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .flex-spacer {
+      flex: 1;
+    }
+
+    .clear-all-btn {
+      margin-left: auto;
+    }
+  }
+}
+
+// External overlay styles are in global styles

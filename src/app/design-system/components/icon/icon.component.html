@@ -1,0 +1,15 @@
+<div
+  [class]="'icon-wrapper ' + classes"
+  [ngStyle]="{color: color ? color : ''}"
+  [ngClass]="{
+    disabled: disabled,
+    xs: size === ComponentSize.XS,
+    sm: size === ComponentSize.SM,
+    md: size === ComponentSize.MD,
+    lg: size === ComponentSize.LG,
+    xlg: size === ComponentSize.XLG,
+    'default-color': isDefaultColor
+  }"
+>
+  <div class="{{ iconClass }}" [ngClass]="{icon: color ? false : true}"></div>
+</div>

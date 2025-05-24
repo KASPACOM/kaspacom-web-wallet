@@ -1,0 +1,32 @@
+<div
+  class="dropdown-select"
+  [ngClass]="[
+    size(),
+    variant(),
+    isComponentDisabled() ? 'disabled' : '',
+    isFullWidth() ? 'full-width' : '',
+    isOpen ? 'open' : '',
+    getTypographyClass()
+  ]"
+  (click)="toggleDropdown()"
+  #dropdownTrigger>
+  <div class="dropdown-value">
+    <!-- When no selections or just one, show text -->
+    <ng-container *ngIf="selectedValues().length <= 1">
+      <span>{{ getDisplayValue() }}</span>
+    </ng-container>
+
+    <!-- When multiple selections, show count bubble and text -->
+    <ng-container *ngIf="selectedValues().length > 1">
+      <span class="selection-count">
+        {{ selectedValues().length }}
+      </span>
+      <span class="selection-text">{{ selectionCountText() }}</span>
+    </ng-container>
+  </div>
+  <div class="dropdown-icon">
+    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+</div>

@@ -1,19 +1,20 @@
 .application-container {
-    width: 100vw;
-    width: 100dvw;
-    height: 100vh;
-    overflow-y: auto;
-    overflow-x: hidden;
-    display: block;
-  }
+  width: 100vw;
+  width: 100dvw;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: block;
+  background: black url(/svgs/background.svg) 100% 100% no-repeat;
+}
 
-  .not-supported-url {
-    font-size: 2rem;
-    font-weight: bold;
-    color: red;
-    text-align: center;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
+.not-supported-url {
+  font-size: 2rem;
+  font-weight: bold;
+  color: red;
+  text-align: center;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

@@ -1,6 +1,6 @@
 <div class="application-container">
     <ng-container *ngIf="isAllowedDomain() && !incompatibleBrowserReason(); else notSupported">
-        <app-header></app-header>
+<!--        <app-header></app-header>-->
         <router-outlet></router-outlet>
         <app-message-popup
             [message]="messagePopupService.message().message"

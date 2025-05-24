@@ -39,11 +39,11 @@ export class AppComponent implements OnInit, AfterViewInit {
       this.communicationManagerService.addApp(new IFrameCommunicationApp());
     }
 
-    if (this.passwordManagerService.isUserHasSavedPassword()) {
-      this.router.navigate(['/login']);
-    } else {
-      this.router.navigate(['/set-password']);
-    }
+    // if (this.passwordManagerService.isUserHasSavedPassword()) {
+    //   this.router.navigate(['/login']);
+    // } else {
+    //   this.router.navigate(['/set-password']);
+    // }
   }
 
   ngAfterViewInit(): void {

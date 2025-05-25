@@ -19,11 +19,10 @@ type MappedTransaction = {
 };
 
 @Component({
-  selector: 'transaction-history',
-  standalone: true,
-  templateUrl: './transaction-history.component.html',
-  styleUrls: ['./transaction-history.component.scss'],
-  imports: [NgIf, NgFor, FormsModule, SompiToNumberPipe, CommonModule],
+    selector: 'transaction-history',
+    templateUrl: './transaction-history.component.html',
+    styleUrls: ['./transaction-history.component.scss'],
+    imports: [NgIf, NgFor, FormsModule, SompiToNumberPipe, CommonModule]
 })
 export class TransactionHistoryComponent {
   @Input() transactions: undefined | FullTransactionResponse;

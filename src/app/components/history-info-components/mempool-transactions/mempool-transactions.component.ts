@@ -8,11 +8,10 @@ import { PendingTransaction, Transaction } from '../../../../../public/kaspa/kas
 
 
 @Component({
-  selector: 'mempool-transactions',
-  standalone: true,
-  templateUrl: './mempool-transactions.component.html',
-  styleUrls: ['./mempool-transactions.component.scss'],
-  imports: [NgIf, NgFor, FormsModule, SompiToNumberPipe, CommonModule],
+    selector: 'mempool-transactions',
+    templateUrl: './mempool-transactions.component.html',
+    styleUrls: ['./mempool-transactions.component.scss'],
+    imports: [NgIf, NgFor, FormsModule, SompiToNumberPipe, CommonModule]
 })
 export class MempoolTransactionsComponent {
   constructor(private walletService: WalletService,

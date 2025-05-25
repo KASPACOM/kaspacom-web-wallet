@@ -6,23 +6,35 @@ import { AddWalletComponent } from '../pages/add-wallet/add-wallet.component';
 import { WalletInfoComponent } from '../pages/wallet-info/wallet-info.component';
 import { ReviewActionComponent } from '../components/wallet-actions-reviews/review-action/review-action.component';
 import { ClearDataComponent } from '../pages/clear-data/clear-data.component';
-import {OnboardingPageComponent} from "../v2/pages/onboarding-page/onboarding-page.component";
+import { OnboardingPageComponent } from '../v2/pages/onboarding-page/onboarding-page.component';
+import { V2TMP_ROUTES } from '../v2/v2.routes';
 
 export const routes: Routes = [
   {
-    path: 'wallet', children: [
+    path: 'wallet',
+    children: [
       {
         path: '',
         component: OnboardingPageComponent,
-      }
-    ]
+      },
+    ],
   },
-  {path: 'set-password', component: SetPasswordComponent},
-  {path: 'login', component: LoginComponent},
-  {path: 'add-wallet', component: AddWalletComponent},
-  {path: 'wallet-selection', component: WalletSelectionComponent},
-  {path: 'wallet-info', component: WalletInfoComponent},
-  {path: 'review-action', component: ReviewActionComponent},
-  {path: 'clear-data', component: ClearDataComponent },
-    { path: '**', redirectTo: ''},
+  { path: 'set-password', component: SetPasswordComponent },
+  { path: 'login', component: LoginComponent },
+  { path: 'add-wallet', component: AddWalletComponent },
+  { path: 'wallet-selection', component: WalletSelectionComponent },
+  { path: 'wallet-info', component: WalletInfoComponent },
+  { path: 'review-action', component: ReviewActionComponent },
+  { path: 'clear-data', component: ClearDataComponent },
+  {
+    // temporary, lazy load not needed
+    path: 'v2',
+    children: V2TMP_ROUTES,
+  },
+  {
+    path: '',
+    pathMatch: 'full',
+    redirectTo: 'wallet',
+  },
+  { path: '**', redirectTo: '' },
 ];

@@ -3,11 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'app-mnemonic-words',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './mnemonic-words.component.html',
-  styleUrls: ['./mnemonic-words.component.scss']
+    selector: 'app-mnemonic-words',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './mnemonic-words.component.html',
+    styleUrls: ['./mnemonic-words.component.scss']
 })
 export class MnemonicWordsComponent implements OnChanges {
   @Input() mnemonic: string = '';

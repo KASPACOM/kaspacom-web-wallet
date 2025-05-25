@@ -19,11 +19,10 @@ import { InputFieldType } from '../../../types/action-display.type';
 const TIMEOUT = 2 * 60 * 1000;
 
 @Component({
-  selector: 'review-action',
-  standalone: true,
-  templateUrl: './review-action.component.html',
-  styleUrls: ['./review-action.component.scss'],
-  imports: [NgIf, NgFor, NgClass, SompiToNumberPipe, CompletedActionReview, JsonPipe, PriorityFeeSelectionComponent, FormsModule],
+    selector: 'review-action',
+    templateUrl: './review-action.component.html',
+    styleUrls: ['./review-action.component.scss'],
+    imports: [NgIf, NgFor, NgClass, SompiToNumberPipe, CompletedActionReview, JsonPipe, PriorityFeeSelectionComponent, FormsModule]
 })
 export class ReviewActionComponent {
   public WalletActionType = WalletActionType;

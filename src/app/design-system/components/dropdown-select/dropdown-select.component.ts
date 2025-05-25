@@ -10,18 +10,17 @@ import {DropdownOption, DropdownVariant} from './dropdown-select.models';
 import {ComponentSize} from '../../enums/sizing.enum';
 
 @Component({
-  selector: 'app-dropdown-select',
-  standalone: true,
-  imports: [CommonModule, NgClass, OverlayModule, FormsModule, ReactiveFormsModule],
-  templateUrl: './dropdown-select.component.html',
-  styleUrls: ['./dropdown-select.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: DropdownSelectComponent,
-      multi: true
-    }
-  ]
+    selector: 'app-dropdown-select',
+    imports: [CommonModule, NgClass, OverlayModule, FormsModule, ReactiveFormsModule],
+    templateUrl: './dropdown-select.component.html',
+    styleUrls: ['./dropdown-select.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: DropdownSelectComponent,
+            multi: true
+        }
+    ]
 })
 export class DropdownSelectComponent implements ControlValueAccessor, OnDestroy {
   // Constants

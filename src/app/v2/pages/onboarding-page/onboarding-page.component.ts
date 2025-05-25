@@ -4,14 +4,13 @@ import {OnboardingStep} from "./onboarding-step.enum";
 import {ImportExistingFlowComponent} from "./flows/import-existing-flow/import-existing-flow.component";
 
 @Component({
-  selector: 'app-welcome-page',
-  standalone: true,
-  imports: [
-    ButtonComponent,
-    ImportExistingFlowComponent
-  ],
-  templateUrl: './onboarding-page.component.html',
-  styleUrl: './onboarding-page.component.scss'
+    selector: 'app-welcome-page',
+    imports: [
+        ButtonComponent,
+        ImportExistingFlowComponent
+    ],
+    templateUrl: './onboarding-page.component.html',
+    styleUrl: './onboarding-page.component.scss'
 })
 export class OnboardingPageComponent {
   onboardingStep = OnboardingStep.WELCOME;

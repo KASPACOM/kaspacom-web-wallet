@@ -3,11 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'app-verify-mnemonic',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './verify-mnemonic.component.html',
-  styleUrls: ['./verify-mnemonic.component.scss']
+    selector: 'app-verify-mnemonic',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './verify-mnemonic.component.html',
+    styleUrls: ['./verify-mnemonic.component.scss']
 })
 export class VerifyMnemonicComponent {
   @Input() mnemonic: string = '';

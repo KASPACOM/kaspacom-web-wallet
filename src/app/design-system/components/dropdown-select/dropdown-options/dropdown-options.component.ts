@@ -5,11 +5,10 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 
 @Component({
-  selector: 'app-dropdown-options',
-  standalone: true,
-  imports: [CommonModule, NgClass, ReactiveFormsModule],
-  templateUrl: './dropdown-options.component.html',
-  styleUrls: ['./dropdown-options.component.scss']
+    selector: 'app-dropdown-options',
+    imports: [CommonModule, NgClass, ReactiveFormsModule],
+    templateUrl: './dropdown-options.component.html',
+    styleUrls: ['./dropdown-options.component.scss']
 })
 export class DropdownOptionsComponent implements OnInit, OnDestroy {
   options: DropdownOption[] = [];

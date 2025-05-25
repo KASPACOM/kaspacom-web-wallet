@@ -11,11 +11,10 @@ import { KRC20OperationType } from '../../../types/kaspa-network/krc20-operation
 import { AppWallet } from '../../../classes/AppWallet';
 
 @Component({
-  selector: 'krc20-operations-history',
-  standalone: true,
-  templateUrl: './krc20-operation-history.component.html',
-  styleUrls: ['./krc20-operation-history.component.scss'],
-  imports: [NgIf, NgFor, FormsModule, SompiToNumberPipe, CommonModule],
+    selector: 'krc20-operations-history',
+    templateUrl: './krc20-operation-history.component.html',
+    styleUrls: ['./krc20-operation-history.component.scss'],
+    imports: [NgIf, NgFor, FormsModule, SompiToNumberPipe, CommonModule]
 })
 export class Krc20OperationHistoryComponent {
   public AcceptedStatus = AcceptedStatus;

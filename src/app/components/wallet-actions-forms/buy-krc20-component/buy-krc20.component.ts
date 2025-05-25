@@ -11,11 +11,10 @@ import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
 import { Krc20WalletActionService } from '../../../services/protocols/krc20/krc20-wallet-actions.service';
 
 @Component({
-  selector: 'buy-krc20-token',
-  standalone: true,
-  templateUrl: './buy-krc20.component.html',
-  styleUrls: ['./buy-krc20.component.scss'],
-  imports: [FormsModule, ReactiveFormsModule, NgIf, NgFor, SompiToNumberPipe],
+    selector: 'buy-krc20-token',
+    templateUrl: './buy-krc20.component.html',
+    styleUrls: ['./buy-krc20.component.scss'],
+    imports: [FormsModule, ReactiveFormsModule, NgIf, NgFor, SompiToNumberPipe]
 })
 export class BuyKrc20Component {
   protected listings: ListingInfoEntry[] | undefined = undefined;

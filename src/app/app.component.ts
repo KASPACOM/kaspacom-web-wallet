@@ -11,12 +11,11 @@ import { MessagePopupComponent } from './components/message-popup/message-popup.
 import { MessagePopupService } from './services/message-popup.service';
 
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [RouterOutlet, AppHeaderComponent, NgIf, MessagePopupComponent],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.scss',
-  providers: [KaspaNetworkActionsService]
+    selector: 'app-root',
+    imports: [RouterOutlet, AppHeaderComponent, NgIf, MessagePopupComponent],
+    templateUrl: './app.component.html',
+    styleUrl: './app.component.scss',
+    providers: [KaspaNetworkActionsService]
 })
 export class AppComponent implements OnInit, AfterViewInit {
   title = 'kaspiano-wallet';

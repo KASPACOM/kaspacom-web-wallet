@@ -6,10 +6,9 @@ import { SpinnerComponent } from '../spinner/spinner.component';
 export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'gradient_1' | 'gradient_2';
 
 @Component({
-  selector: 'app-button',
-  standalone: true,
-  imports: [NgClass, NgIf, SpinnerComponent],
-  template: `
+    selector: 'app-button',
+    imports: [NgClass, NgIf, SpinnerComponent],
+    template: `
     <button
       class="app-button"
       [ngClass]="[
@@ -28,11 +27,11 @@ export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'gradient_1' 
       <span [ngClass]="{'hidden': isLoading()}">{{ text() }}</span>
     </button>
   `,
-  styleUrls: ['./button.component.scss'],
-  host: {
-    '[style.display]': "isFullWidth() ? 'block' : 'inline-block'",
-    '[style.width]': "isFullWidth() ? '100%' : 'auto'"
-  }
+    styleUrls: ['./button.component.scss'],
+    host: {
+        '[style.display]': "isFullWidth() ? 'block' : 'inline-block'",
+        '[style.width]': "isFullWidth() ? '100%' : 'auto'"
+    }
 })
 export class ButtonComponent {
   text = input<string>('');

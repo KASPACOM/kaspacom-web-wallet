@@ -1,13 +1,19 @@
 import { ethers } from "ethers";
 import { EIP1193ProviderChain } from "@kaspacom/wallet-messages";
+import { environment } from "../../../environments/environment";
 
 export class BaseEthereumProvider {
   protected etherProvider: ethers.JsonRpcProvider;
   constructor(protected config: EIP1193ProviderChain) {
+    const additionalOptions: ethers.JsonRpcApiProviderOptions = {
+      batchMaxCount: environment.isProduction ? 100 : 1,
+    };
+
+
     this.etherProvider = new ethers.JsonRpcProvider(config.rpcUrls[0], {
       name: config.chainName,
       chainId: parseInt(config.chainId, 16),
-    });
+    }, additionalOptions);
   }
 
   getChainWallet(privateKey: string): ethers.Wallet {

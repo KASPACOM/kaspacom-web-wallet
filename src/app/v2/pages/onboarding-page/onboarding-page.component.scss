@@ -1,4 +1,4 @@
-@use '../../../../styles/responsive' as *;
+@use "../../../../styles/responsive" as *;
 
 .logo {
   width: 480px;
@@ -11,13 +11,13 @@
   }
 }
 
-
 .wallet-image {
   width: 100%;
   max-width: 380px;
 }
 
 .onboarding-container-card {
+  overflow: hidden;
   width: 480px;
 
   background: var(--background-secondary);

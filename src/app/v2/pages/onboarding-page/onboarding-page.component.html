@@ -1,19 +1,39 @@
 <div class="flex column full-width full-height align-items-center p-16 gap-24">
   <img class="logo" src="/logo.png" />
-  <div class="onboarding-container-card card flex column gap-36 align-items-center">
-    @switch (onboardingStep) {
+  <div
+    class="onboarding-container-card card flex column gap-36 align-items-center"
+  >
+    @switch (onboardingStep()) {
       @case (OnboardingStep.WELCOME) {
-        <img class="wallet-image" src="/svgs/wallet.svg" />
-        <span class="typo-title-2 text-align-center text-light" style="max-width: 380px;">To get started, create a new wallet or import an existing one.</span>
-        <div class="flex column gap-16 full-width">
-          <app-button [text]="'Create new wallet'" [isFullWidth]="true"></app-button>
-          <app-button [text]="'Use existing wallet'" [variant]="'tertiary'" (buttonClick)="startExistingWallet()"></app-button>
-        </div>
+        <ng-container @stepAnimation>
+          <img class="wallet-image" src="/svgs/wallet.svg" />
+          <span
+            class="typo-title-2 text-align-center text-light"
+            style="max-width: 380px"
+            >To get started, create a new wallet or import an existing
+            one.</span
+          >
+          <div class="flex column gap-16 full-width">
+            <kc-button
+              [text]="'Create new wallet'"
+              [isFullWidth]="true"
+              (buttonClick)="createNewWallet()"
+            ></kc-button>
+
+            <kc-button
+              [text]="'Use existing wallet'"
+              [variant]="'tertiary'"
+              (buttonClick)="startExistingWallet()"
+            ></kc-button>
+          </div>
+        </ng-container>
       }
       @case (OnboardingStep.IMPORT_EXISTING_WALLET) {
-        <app-import-existing-flow></app-import-existing-flow>
+        <app-import-existing-flow @stepAnimation></app-import-existing-flow>
+      }
+      @case (OnboardingStep.NEW_WALLET) {
+        <app-new-wallet-flow @stepAnimation></app-new-wallet-flow>
       }
     }
   </div>
 </div>
-

@@ -1,22 +1,31 @@
-import {Component} from '@angular/core';
-import {ButtonComponent} from "../../../design-system";
-import {OnboardingStep} from "./onboarding-step.enum";
-import {ImportExistingFlowComponent} from "./flows/import-existing-flow/import-existing-flow.component";
+import { Component, signal } from '@angular/core';
+import { KcButtonComponent } from 'kaspacom-ui';
+import { OnboardingStep } from './onboarding-step.enum';
+import { ImportExistingFlowComponent } from './flows/import-existing-flow/import-existing-flow.component';
+import { NewWalletFlowComponent } from './flows/new-wallet-flow/new-wallet-flow.component';
+import { slideAnimation } from './shared/animation/slide.animation';
 
 @Component({
-    selector: 'app-welcome-page',
-    imports: [
-        ButtonComponent,
-        ImportExistingFlowComponent
-    ],
-    templateUrl: './onboarding-page.component.html',
-    styleUrl: './onboarding-page.component.scss'
+  selector: 'app-welcome-page',
+  imports: [
+    KcButtonComponent,
+    ImportExistingFlowComponent,
+    NewWalletFlowComponent,
+  ],
+  animations: [slideAnimation],
+  templateUrl: './onboarding-page.component.html',
+  styleUrl: './onboarding-page.component.scss',
 })
 export class OnboardingPageComponent {
-  onboardingStep = OnboardingStep.WELCOME;
   readonly OnboardingStep = OnboardingStep;
 
+  onboardingStep = signal(OnboardingStep.WELCOME);
+
   startExistingWallet() {
-    this.onboardingStep = OnboardingStep.IMPORT_EXISTING_WALLET;
+    this.onboardingStep.set(OnboardingStep.IMPORT_EXISTING_WALLET);
+  }
+
+  createNewWallet() {
+    this.onboardingStep.set(OnboardingStep.NEW_WALLET);
   }
 }

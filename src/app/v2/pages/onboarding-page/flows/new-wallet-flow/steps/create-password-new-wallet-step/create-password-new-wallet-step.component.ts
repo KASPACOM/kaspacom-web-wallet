@@ -73,8 +73,25 @@ export class CreatePasswordNewWalletStepComponent {
     );
   }
 
+  isInvalid(controlName: string): boolean {
+    const control = this.passwordForm.get(controlName);
+    const passwordsMatchError =
+      this.passwordForm.errors?.['passwordsDoNotMatch'] &&
+      (control ? control.dirty || control.touched : false);
+    const formCheckResult = control
+      ? control.invalid && (control.dirty || control.touched)
+      : false;
+    return (
+      formCheckResult ||
+      (controlName === 'confirmPassword' && passwordsMatchError)
+    );
+  }
+
   onSubmit(): void {
-    console.log('usbmit foo');
-    this.next.emit();
+    if (this.passwordForm.valid) {
+      this.next.emit();
+    } else {
+      console.log('invalid form');
+    }
   }
 }

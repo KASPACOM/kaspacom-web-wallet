@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { NewWalletStep } from './new-wallet-step.enum';
 import {
   SlideDirection,
@@ -10,6 +10,7 @@ import { AddressNewWalletStepComponent } from './steps/address-new-wallet-step/a
 import { SuccessNewWalletStepComponent } from './steps/success-new-wallet-step/success-new-wallet-step.component';
 import { ErrorNewWalletStepComponent } from './steps/error-new-wallet-step/error-new-wallet-step.component';
 import { StepIndicatorComponent } from '../../shared/component/step-indicator/step-indicator.component';
+import { NewWalletFlowService } from './service/new-wallet-flow.service';
 
 @Component({
   selector: 'app-new-wallet-flow',
@@ -25,8 +26,10 @@ import { StepIndicatorComponent } from '../../shared/component/step-indicator/st
   templateUrl: './new-wallet-flow.component.html',
   styleUrl: './new-wallet-flow.component.scss',
 })
-export class NewWalletFlowComponent {
+export class NewWalletFlowComponent implements OnInit {
   readonly NewWalletStep = NewWalletStep;
+
+  private readonly newWalletFlowService = inject(NewWalletFlowService);
 
   readonly stepOrder = [
     NewWalletStep.CREATE_PASSWORD,
@@ -38,6 +41,10 @@ export class NewWalletFlowComponent {
   onboardingStep = signal(NewWalletStep.CREATE_PASSWORD);
 
   currentIndex = computed(() => this.stepOrder.indexOf(this.onboardingStep()));
+
+  ngOnInit(): void {
+    this.newWalletFlowService.initNewWallet();
+  }
 
   next() {
     const currentIndex = this.stepOrder.indexOf(this.onboardingStep());

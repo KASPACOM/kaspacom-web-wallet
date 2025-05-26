@@ -2,7 +2,7 @@
   @for (i of steps(); track i) {
     <div
       class="indicator__step"
-      [class.indicator__step--active]="i === currentStep()"
+      [class.indicator__step--marked]="i <= currentStep()"
     ></div>
   }
 </div>

@@ -1,52 +1,51 @@
-<div class="flex column gap-24">
-  <div class="flex column gap-16 align-items-center">
-    <span class="typo-title-4">Create new wallet</span>
-    <span class="typo-text-3 text-medium text-align-center"> </span>
-    <div class="step-container flex">
-      @switch (onboardingStep()) {
-        @case (NewWalletStep.CREATE_PASSWORD) {
-          <div class="step" [@stepAnimation]="slideDirection()">
-            <app-create-password-new-wallet-step
-              (next)="next()"
-              (previous)="previous()"
-            ></app-create-password-new-wallet-step>
-          </div>
-        }
-        @case (NewWalletStep.CREATE_SEED_PHRASE) {
-          <div class="step" [@stepAnimation]="slideDirection()">
-            <app-create-seed-phrase-new-wallet-step
-              (next)="next()"
-              (previous)="previous()"
-            ></app-create-seed-phrase-new-wallet-step>
-          </div>
-        }
-        @case (NewWalletStep.ADDRESS) {
-          <div class="step" [@stepAnimation]="slideDirection()">
-            <app-address-new-wallet-step
-              (next)="next()"
-              (previous)="previous()"
-            ></app-address-new-wallet-step>
-          </div>
-        }
-        @case (NewWalletStep.SUCCESS) {
-          <div @stepAnimation>
-            <app-success-new-wallet-step
-              @stepAnimation
-              (next)="next()"
-              (previous)="previous()"
-            ></app-success-new-wallet-step>
-          </div>
-        }
-        @case (NewWalletStep.ERROR) {
-          <div @stepAnimation>
-            <app-error-new-wallet-step
-              @stepAnimation
-              (next)="next()"
-              (previous)="previous()"
-            ></app-error-new-wallet-step>
-          </div>
-        }
-      }
-    </div>
-  </div>
+<div class="flex column gap-16 align-items-center">
+  <app-step-indicator
+    [currentStep]="currentIndex()"
+    [maxSteps]="stepOrder.length"
+  ></app-step-indicator>
+
+  @switch (onboardingStep()) {
+    @case (NewWalletStep.CREATE_PASSWORD) {
+      <div [@stepAnimation]="slideDirection()">
+        <app-create-password-new-wallet-step
+          (next)="next()"
+          (previous)="previous()"
+        ></app-create-password-new-wallet-step>
+      </div>
+    }
+    @case (NewWalletStep.CREATE_SEED_PHRASE) {
+      <div [@stepAnimation]="slideDirection()">
+        <app-create-seed-phrase-new-wallet-step
+          (next)="next()"
+          (previous)="previous()"
+        ></app-create-seed-phrase-new-wallet-step>
+      </div>
+    }
+    @case (NewWalletStep.ADDRESS) {
+      <div [@stepAnimation]="slideDirection()">
+        <app-address-new-wallet-step
+          (next)="next()"
+          (previous)="previous()"
+        ></app-address-new-wallet-step>
+      </div>
+    }
+    @case (NewWalletStep.SUCCESS) {
+      <div @stepAnimation>
+        <app-success-new-wallet-step
+          @stepAnimation
+          (next)="next()"
+          (previous)="previous()"
+        ></app-success-new-wallet-step>
+      </div>
+    }
+    @case (NewWalletStep.ERROR) {
+      <div @stepAnimation>
+        <app-error-new-wallet-step
+          @stepAnimation
+          (next)="next()"
+          (previous)="previous()"
+        ></app-error-new-wallet-step>
+      </div>
+    }
+  }
 </div>

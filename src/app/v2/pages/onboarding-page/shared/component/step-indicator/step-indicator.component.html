@@ -1,0 +1,8 @@
+<div class="indicator">
+  @for (i of steps(); track i) {
+    <div
+      class="indicator__step"
+      [class.indicator__step--active]="i === currentStep()"
+    ></div>
+  }
+</div>

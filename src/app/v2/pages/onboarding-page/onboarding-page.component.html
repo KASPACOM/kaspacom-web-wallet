@@ -5,34 +5,35 @@
   >
     @switch (onboardingStep()) {
       @case (OnboardingStep.WELCOME) {
-        <ng-container @stepAnimation>
-          <img class="wallet-image" src="/svgs/wallet.svg" />
-          <span
-            class="typo-title-2 text-align-center text-light"
-            style="max-width: 380px"
-            >To get started, create a new wallet or import an existing
-            one.</span
-          >
-          <div class="flex column gap-16 full-width">
-            <kc-button
-              [text]="'Create new wallet'"
-              [isFullWidth]="true"
-              (buttonClick)="createNewWallet()"
-            ></kc-button>
+        <img class="wallet-image" src="/svgs/wallet.svg" />
+        <span
+          class="typo-title-2 text-align-center text-light"
+          style="max-width: 380px"
+          >To get started, create a new wallet or import an existing one.</span
+        >
+        <div class="flex column gap-16 full-width">
+          <kc-button
+            [text]="'Create new wallet'"
+            [isFullWidth]="true"
+            (buttonClick)="createNewWallet()"
+          ></kc-button>
 
-            <kc-button
-              [text]="'Use existing wallet'"
-              [variant]="'tertiary'"
-              (buttonClick)="startExistingWallet()"
-            ></kc-button>
-          </div>
-        </ng-container>
+          <kc-button
+            [text]="'Use existing wallet'"
+            [variant]="'tertiary'"
+            (buttonClick)="startExistingWallet()"
+          ></kc-button>
+        </div>
       }
       @case (OnboardingStep.IMPORT_EXISTING_WALLET) {
-        <app-import-existing-flow @stepAnimation></app-import-existing-flow>
+        <app-import-existing-flow
+          [@stepAnimation]="SlideDirection.FORWARD"
+        ></app-import-existing-flow>
       }
       @case (OnboardingStep.NEW_WALLET) {
-        <app-new-wallet-flow @stepAnimation></app-new-wallet-flow>
+        <app-new-wallet-flow
+          [@stepAnimation]="SlideDirection.FORWARD"
+        ></app-new-wallet-flow>
       }
     }
   </div>

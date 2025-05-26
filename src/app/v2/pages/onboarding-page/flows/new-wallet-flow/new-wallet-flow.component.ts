@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { NewWalletStep } from './new-wallet-step.enum';
 import {
   SlideDirection,
@@ -9,6 +9,7 @@ import { CreateSeedPhraseNewWalletStepComponent } from './steps/create-seed-phra
 import { AddressNewWalletStepComponent } from './steps/address-new-wallet-step/address-new-wallet-step.component';
 import { SuccessNewWalletStepComponent } from './steps/success-new-wallet-step/success-new-wallet-step.component';
 import { ErrorNewWalletStepComponent } from './steps/error-new-wallet-step/error-new-wallet-step.component';
+import { StepIndicatorComponent } from '../../shared/component/step-indicator/step-indicator.component';
 
 @Component({
   selector: 'app-new-wallet-flow',
@@ -18,6 +19,7 @@ import { ErrorNewWalletStepComponent } from './steps/error-new-wallet-step/error
     AddressNewWalletStepComponent,
     SuccessNewWalletStepComponent,
     ErrorNewWalletStepComponent,
+    StepIndicatorComponent,
   ],
   animations: [slideAnimation],
   templateUrl: './new-wallet-flow.component.html',
@@ -34,6 +36,8 @@ export class NewWalletFlowComponent {
   slideDirection = signal<SlideDirection>(SlideDirection.FORWARD);
 
   onboardingStep = signal(NewWalletStep.CREATE_PASSWORD);
+
+  currentIndex = computed(() => this.stepOrder.indexOf(this.onboardingStep()));
 
   next() {
     const currentIndex = this.stepOrder.indexOf(this.onboardingStep());

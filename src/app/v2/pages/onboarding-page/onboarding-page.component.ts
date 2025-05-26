@@ -3,7 +3,10 @@ import { KcButtonComponent } from 'kaspacom-ui';
 import { OnboardingStep } from './onboarding-step.enum';
 import { ImportExistingFlowComponent } from './flows/import-existing-flow/import-existing-flow.component';
 import { NewWalletFlowComponent } from './flows/new-wallet-flow/new-wallet-flow.component';
-import { slideAnimation } from './shared/animation/slide.animation';
+import {
+  SlideDirection,
+  slideAnimation,
+} from './shared/animation/slide.animation';
 
 @Component({
   selector: 'app-welcome-page',
@@ -18,6 +21,7 @@ import { slideAnimation } from './shared/animation/slide.animation';
 })
 export class OnboardingPageComponent {
   readonly OnboardingStep = OnboardingStep;
+  readonly SlideDirection = SlideDirection;
 
   onboardingStep = signal(OnboardingStep.WELCOME);
 

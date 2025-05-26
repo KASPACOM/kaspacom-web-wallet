@@ -5,7 +5,7 @@
     <div class="step-container flex">
       @switch (onboardingStep()) {
         @case (NewWalletStep.CREATE_PASSWORD) {
-          <div class="step" @stepAnimation>
+          <div class="step" [@stepAnimation]="slideDirection()">
             <app-create-password-new-wallet-step
               (next)="next()"
               (previous)="previous()"
@@ -13,7 +13,7 @@
           </div>
         }
         @case (NewWalletStep.CREATE_SEED_PHRASE) {
-          <div class="step" @stepAnimation>
+          <div class="step" [@stepAnimation]="slideDirection()">
             <app-create-seed-phrase-new-wallet-step
               (next)="next()"
               (previous)="previous()"
@@ -21,7 +21,7 @@
           </div>
         }
         @case (NewWalletStep.ADDRESS) {
-          <div class="step" @stepAnimation>
+          <div class="step" [@stepAnimation]="slideDirection()">
             <app-address-new-wallet-step
               (next)="next()"
               (previous)="previous()"

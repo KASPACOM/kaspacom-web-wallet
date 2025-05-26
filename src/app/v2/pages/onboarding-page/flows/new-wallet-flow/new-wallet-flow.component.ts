@@ -1,6 +1,9 @@
 import { Component, signal } from '@angular/core';
 import { NewWalletStep } from './new-wallet-step.enum';
-import { slideAnimation } from '../../shared/animation/slide.animation';
+import {
+  SlideDirection,
+  slideAnimation,
+} from '../../shared/animation/slide.animation';
 import { CreatePasswordNewWalletStepComponent } from './steps/create-password-new-wallet-step/create-password-new-wallet-step.component';
 import { CreateSeedPhraseNewWalletStepComponent } from './steps/create-seed-phrase-new-wallet-step/create-seed-phrase-new-wallet-step.component';
 import { AddressNewWalletStepComponent } from './steps/address-new-wallet-step/address-new-wallet-step.component';
@@ -28,12 +31,14 @@ export class NewWalletFlowComponent {
     NewWalletStep.CREATE_SEED_PHRASE,
     NewWalletStep.ADDRESS,
   ];
+  slideDirection = signal<SlideDirection>(SlideDirection.FORWARD);
 
   onboardingStep = signal(NewWalletStep.CREATE_PASSWORD);
 
   next() {
     const currentIndex = this.stepOrder.indexOf(this.onboardingStep());
     if (currentIndex < this.stepOrder.length - 1) {
+      this.slideDirection.set(SlideDirection.FORWARD);
       this.onboardingStep.set(this.stepOrder[currentIndex + 1]);
     }
   }
@@ -41,6 +46,7 @@ export class NewWalletFlowComponent {
   previous() {
     const currentIndex = this.stepOrder.indexOf(this.onboardingStep());
     if (currentIndex > 0) {
+      this.slideDirection.set(SlideDirection.BACKWARD);
       this.onboardingStep.set(this.stepOrder[currentIndex - 1]);
     }
   }

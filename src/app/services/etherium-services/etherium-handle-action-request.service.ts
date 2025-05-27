@@ -63,7 +63,7 @@ export class EthereumHandleActionRequestService {
                 type: WalletActionResultType.EIP1193ProviderRequest,
                 performedByWallet: wallet.getIdWithAccount(),
                 requestData: action,
-                result: createEIP1193Response<EIP1193RequestType.SEND_TRANSACTION>(transactionHash)
+                eip1193Response: createEIP1193Response<EIP1193RequestType.SEND_TRANSACTION>(transactionHash)
             } as EIP1193ProviderRequestActionResult<EIP1193RequestType.SEND_TRANSACTION>
         }
 
@@ -78,7 +78,7 @@ export class EthereumHandleActionRequestService {
                 type: WalletActionResultType.EIP1193ProviderRequest,
                 performedByWallet: wallet.getIdWithAccount(),
                 requestData: action,
-                result: createEIP1193Response<EIP1193RequestType.WALLET_SWITCH_ETHEREUM_CHAIN>(null)
+                eip1193Response: createEIP1193Response<EIP1193RequestType.WALLET_SWITCH_ETHEREUM_CHAIN>(null)
             } as EIP1193ProviderRequestActionResult<EIP1193RequestType.WALLET_SWITCH_ETHEREUM_CHAIN>
         }
     }
@@ -101,7 +101,7 @@ export class EthereumHandleActionRequestService {
                 type: WalletActionResultType.EIP1193ProviderRequest,
                 performedByWallet: wallet.getIdWithAccount(),
                 requestData: action,
-                result: createEIP1193Response<EIP1193RequestType.WALLET_ADD_ETHEREUM_CHAIN>(null)
+                eip1193Response: createEIP1193Response<EIP1193RequestType.WALLET_ADD_ETHEREUM_CHAIN>(null)
             } as EIP1193ProviderRequestActionResult<EIP1193RequestType.WALLET_ADD_ETHEREUM_CHAIN>
         }
     }

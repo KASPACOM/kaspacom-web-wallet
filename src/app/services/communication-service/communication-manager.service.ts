@@ -8,7 +8,7 @@ import { BalanceData } from '../../types/kaspa-network/balance-event.interface';
 import { Subscription } from 'rxjs';
 import { CommitRevealAction, WalletAction } from '../../types/wallet-action';
 import { WalletActionResultWithError } from '../../types/wallet-action-result';
-import { EIP1193ProviderEventEnum, EIP1193ProviderRequestActionResult, ERROR_CODES, WalletActionRequestPayloadInterface, WalletActionResultType, WalletActionTypeEnum, WalletMessageInterface, WalletMessageTypeEnum } from '@kaspacom/wallet-messages';
+import { EIP1193ProviderEventEnum, EIP1193ProviderRequestActionResult, EIP1193RequestType, ERROR_CODES, WalletActionRequestPayloadInterface, WalletActionResultType, WalletActionTypeEnum, WalletMessageInterface, WalletMessageTypeEnum } from '@kaspacom/wallet-messages';
 import { Router } from '@angular/router';
 import { EthereumWalletActionsService } from '../etherium-services/etherium-wallet-actions.service';
 import { EthereumWalletChainManager } from '../etherium-services/etherium-wallet-chain.manager';
@@ -249,13 +249,16 @@ export class CommunicationManagerService {
                     ) as any,
                 }
             } else if (actionData.action == WalletActionTypeEnum.EIP1193ProviderRequest) {
+
+                const eipResult = await this.ethereumWalletActionsService.handleRequest(actionData.data, async () => { await this.notifyActionAccepted(actionData, uuid); });
+
                 result = {
                     success: true,
                     result: {
                         type: WalletActionResultType.EIP1193ProviderRequest,
                         performedByWallet: this.walletService.getCurrentWallet()!.getAddress(),
-                        result: await this.ethereumWalletActionsService.handleRequest(actionData.data, async () => { await this.notifyActionAccepted(actionData, uuid); }),
-                    } as EIP1193ProviderRequestActionResult<any>,
+                        eip1193Response: eipResult,
+                    } as EIP1193ProviderRequestActionResult<EIP1193RequestType>,
                 }
             } else {
                 let action: WalletAction | undefined =

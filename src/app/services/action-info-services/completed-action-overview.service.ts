@@ -166,7 +166,7 @@ export class CompletedActionOverviewService {
 
     private getEip1193ActionDisplay(actionData: EIP1193ProviderRequestActionResult<any>): CompletedActionDisplay | undefined {
         const method = actionData.requestData.method;
-        const result = actionData.result.result;
+        const result = actionData.eip1193Response.result;
 
         if (!result || !method) {
             return undefined;

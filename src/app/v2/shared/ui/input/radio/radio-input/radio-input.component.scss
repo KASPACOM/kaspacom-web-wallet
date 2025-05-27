@@ -24,9 +24,8 @@
 }
 
 .hidden-radio:checked + .custom-radio {
-  background-color: var(--primary); /* Blue-600 */
-  border-color: var(--primary); /* Blue-600 */
-  // border-color: #2563eb;
+  background-color: var(--primary);
+  border-color: var(--primary);
 }
 
 .custom-radio::after {

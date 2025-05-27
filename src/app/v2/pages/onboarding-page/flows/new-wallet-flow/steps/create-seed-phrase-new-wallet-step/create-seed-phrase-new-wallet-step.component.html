@@ -1,3 +1,4 @@
+<kc-snackbar></kc-snackbar>
 <div class="flex column align-items-center gap-32">
   <div class="flex column align-items-center gap-4">
     <span class="typo-title-3 p-4">Seed Phrase</span>
@@ -13,20 +14,45 @@
       <app-radio-input
         [value]="12"
         [selected]="wordCount()"
-        (selectedChange)="wordCount.set($event)"
+        (selectedChange)="onWordCountChange($event)"
       >
-        <span class="typo-text-3"> 12 words </span>
+        <span class="typo-text-3">12 words</span>
       </app-radio-input>
       <app-radio-input
         [value]="24"
         [selected]="wordCount()"
-        (selectedChange)="wordCount.set($event)"
+        (selectedChange)="onWordCountChange($event)"
       >
-        <span class="typo-text-3"> 12 words </span>
+        <span class="typo-text-3">24 words</span>
       </app-radio-input>
     </div>
-    <app-seed-phrase-word [word]="'dog'"></app-seed-phrase-word>
-    <app-seed-phrase-word [word]="'cat'"></app-seed-phrase-word>
+    <div class="seed-container">
+      @for (item of seedPhrase(); track $index) {
+        <app-seed-phrase-word
+          class="seed-container__word"
+          [idx]="$index + 1"
+          [word]="item"
+        ></app-seed-phrase-word>
+      }
+    </div>
+    <div class="flex full-width justify-content-between">
+      <kc-button
+        [variant]="'tertiary'"
+        [suffixIcon]="'icon-copy'"
+        [text]="'Copy'"
+        (buttonClick)="addToClipboard()"
+      >
+        <div rightSideSlot>foo</div>
+      </kc-button>
+      <kc-button
+        [variant]="'tertiary'"
+        [suffixIcon]="'icon-update'"
+        [text]="'Renew'"
+        (buttonClick)="renewSeedPhrase()"
+      >
+        <div rightSideSlot>foo</div>
+      </kc-button>
+    </div>
   </div>
   <div class="flex full-width gap-16">
     <div class="full-width">

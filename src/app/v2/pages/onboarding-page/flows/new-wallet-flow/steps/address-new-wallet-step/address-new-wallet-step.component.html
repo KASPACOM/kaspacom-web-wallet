@@ -8,6 +8,13 @@
   <kc-button
     [isFullWidth]="true"
     type="submit"
+    [text]="'Back'"
+    [isDisabled]="false"
+    (buttonClick)="previous.emit()"
+  ></kc-button>
+  <kc-button
+    [isFullWidth]="true"
+    type="submit"
     [text]="'Continue'"
     [isDisabled]="false"
     (buttonClick)="next.emit()"

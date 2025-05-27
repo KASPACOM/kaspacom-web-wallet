@@ -18,7 +18,10 @@
 
 .onboarding-container-card {
   overflow: hidden;
+  // overflow-x: hidden;
+  // overflow-y: unset;
   width: 480px;
+  flex: 0 0 auto;
 
   background: var(--background-secondary);
   border-radius: 16px;

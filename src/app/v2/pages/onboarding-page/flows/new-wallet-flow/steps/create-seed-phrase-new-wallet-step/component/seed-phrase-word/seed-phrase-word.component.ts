@@ -8,4 +8,6 @@ import { Component, input } from '@angular/core';
 })
 export class SeedPhraseWordComponent {
   word = input.required<string>();
+
+  idx = input.required<number>();
 }

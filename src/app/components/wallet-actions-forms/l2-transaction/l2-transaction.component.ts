@@ -50,6 +50,8 @@ export class L2TransactionComponent implements OnInit {
       );
 
       const result = await this.walletActionService.validateAndDoActionAfterApproval(action);
+
+      console.log('result', result);
     }
   }
 } 

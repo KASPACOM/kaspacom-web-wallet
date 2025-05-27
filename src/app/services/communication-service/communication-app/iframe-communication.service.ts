@@ -1,6 +1,5 @@
 import { WalletMessageInterface } from '@kaspacom/wallet-messages';
 import { BaseCommunicationApp } from './base-communication-app';
-import { environment } from '../../../../environments/environment';
 
 export class IFrameCommunicationApp implements BaseCommunicationApp {
   protected currentUrl: string;

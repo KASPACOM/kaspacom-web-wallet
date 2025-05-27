@@ -22,7 +22,7 @@
     "@angular/platform-server": "^18.0.0",
     "@angular/router": "^18.0.0",
     "@angular/ssr": "^18.0.1",
-    "@kaspacom/wallet-messages": "^1.0.22",
+    "@kaspacom/wallet-messages": "^1.0.23",
     "angularx-qrcode": "^18.0.2",
     "crypto-js": "^4.2.0",
     "ethers": "^6.13.5",

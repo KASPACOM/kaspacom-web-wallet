@@ -1,5 +1,51 @@
-<div>
-  <div>create seed</div>
-  <kc-button [text]="'back'" (buttonClick)="previous.emit()"></kc-button>
-  <kc-button [text]="'Continue'" (buttonClick)="next.emit()"></kc-button>
+<div class="flex column align-items-center gap-32">
+  <div class="flex column align-items-center gap-4">
+    <span class="typo-title-3 p-4">Seed Phrase</span>
+    <span class="typo-text-2 text-medium text-align-center"
+      >This seed phrase is the only way to recover your wallet.</span
+    >
+    <span class="typo-text-2 text-align-center"
+      >Do NOT share it with anyone.</span
+    >
+  </div>
+  <div class="flex column align-items-center gap-24 full-width">
+    <div class="flex gap-24 justify-content-start full-width">
+      <app-radio-input
+        [value]="12"
+        [selected]="wordCount()"
+        (selectedChange)="wordCount.set($event)"
+      >
+        <span class="typo-text-3"> 12 words </span>
+      </app-radio-input>
+      <app-radio-input
+        [value]="24"
+        [selected]="wordCount()"
+        (selectedChange)="wordCount.set($event)"
+      >
+        <span class="typo-text-3"> 12 words </span>
+      </app-radio-input>
+    </div>
+    <app-seed-phrase-word [word]="'dog'"></app-seed-phrase-word>
+    <app-seed-phrase-word [word]="'cat'"></app-seed-phrase-word>
+  </div>
+  <div class="flex full-width gap-16">
+    <div class="full-width">
+      <kc-button
+        [isFullWidth]="true"
+        [variant]="'tertiary'"
+        [text]="'Back'"
+        [isDisabled]="false"
+        (buttonClick)="previous.emit()"
+      ></kc-button>
+    </div>
+    <div class="full-width">
+      <kc-button
+        [isFullWidth]="true"
+        type="submit"
+        [text]="'Continue'"
+        [isDisabled]="false"
+        (buttonClick)="next.emit()"
+      ></kc-button>
+    </div>
+  </div>
 </div>

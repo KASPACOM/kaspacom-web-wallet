@@ -14,10 +14,19 @@ export class NewWalletFlowService {
     return this._newWallet;
   }
 
+  printState() {
+    console.log('New Wallet State:', this._newWallet());
+  }
+
   initNewWallet() {
     this._newWallet.set({
       password: '',
       confirmPassword: '',
     });
+  }
+
+  submitPasswordStep(password: string, confirmPassword: string) {
+    this._newWallet.set({ ...this._newWallet(), password, confirmPassword });
+    this.printState();
   }
 }

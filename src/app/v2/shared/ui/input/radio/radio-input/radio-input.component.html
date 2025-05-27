@@ -1,0 +1,13 @@
+<label class="radio-wrapper">
+  <input
+    type="radio"
+    class="hidden-radio"
+    [checked]="isChecked()"
+    (change)="onSelect()"
+    [attr.formControl]="control()"
+    [value]="value()"
+    [attr.name]="name()"
+  />
+  <span class="custom-radio"></span>
+  <ng-content></ng-content>
+</label>

@@ -1,5 +1,15 @@
-<div>
-  <div>address step</div>
-  <kc-button [text]="'back'" (buttonClick)="previous.emit()"></kc-button>
-  <kc-button [text]="'Continue'" (buttonClick)="next.emit()"></kc-button>
+<div class="flex column align-items-center gap-32">
+  <div class="flex column align-items-center gap-4">
+    <span class="typo-title-3 p-4">Address</span>
+    <span class="typo-text-2 text-medium text-align-center"
+      >Address text bla bla</span
+    >
+  </div>
+  <kc-button
+    [isFullWidth]="true"
+    type="submit"
+    [text]="'Continue'"
+    [isDisabled]="false"
+    (buttonClick)="next.emit()"
+  ></kc-button>
 </div>

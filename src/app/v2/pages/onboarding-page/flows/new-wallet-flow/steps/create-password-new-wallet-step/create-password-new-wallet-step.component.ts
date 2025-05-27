@@ -12,6 +12,7 @@ import {
   KcIconComponent,
   KcInputComponent,
 } from 'kaspacom-ui';
+import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 
 @Component({
   selector: 'app-create-password-new-wallet-step',
@@ -31,10 +32,18 @@ export class CreatePasswordNewWalletStepComponent {
 
   private readonly fb = inject(FormBuilder);
 
+  private readonly newWalletFlowService = inject(NewWalletFlowService);
+
   passwordForm = this.fb.group(
     {
-      password: ['', [Validators.required, Validators.minLength(8)]],
-      confirmPassword: ['', [Validators.required]],
+      password: [
+        this.newWalletFlowService.newWallet().password,
+        [Validators.required, Validators.minLength(8)],
+      ],
+      confirmPassword: [
+        this.newWalletFlowService.newWallet().confirmPassword,
+        [Validators.required],
+      ],
     },
     { validators: this.passwordMatchValidator },
   );
@@ -76,7 +85,7 @@ export class CreatePasswordNewWalletStepComponent {
   isInvalid(controlName: string): boolean {
     const control = this.passwordForm.get(controlName);
     const passwordsMatchError =
-      this.passwordForm.errors?.['passwordsDoNotMatch'] &&
+      this.passwordForm.hasError('passwordsDoNotMatch') &&
       (control ? control.dirty || control.touched : false);
     const formCheckResult = control
       ? control.invalid && (control.dirty || control.touched)
@@ -88,10 +97,15 @@ export class CreatePasswordNewWalletStepComponent {
   }
 
   onSubmit(): void {
-    if (this.passwordForm.valid) {
-      this.next.emit();
-    } else {
-      console.log('invalid form');
+    if (!this.passwordForm.valid) {
+      console.log('Form is invalid');
+      return;
     }
+    const formValue = this.passwordForm.value;
+    this.newWalletFlowService.submitPasswordStep(
+      formValue.password!,
+      formValue.confirmPassword!,
+    );
+    this.next.emit();
   }
 }

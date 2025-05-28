@@ -8,6 +8,7 @@ export class NewWalletFlowService {
   private _newWallet = signal<INewWallet>({
     password: '',
     confirmPassword: '',
+    seedPhrase: '',
   });
 
   get newWallet() {
@@ -22,11 +23,17 @@ export class NewWalletFlowService {
     this._newWallet.set({
       password: '',
       confirmPassword: '',
+      seedPhrase: '',
     });
   }
 
   submitPasswordStep(password: string, confirmPassword: string) {
     this._newWallet.set({ ...this._newWallet(), password, confirmPassword });
+    this.printState();
+  }
+
+  submitSeedPhraseStep(seedPhrase: string) {
+    this._newWallet.set({ ...this._newWallet(), seedPhrase });
     this.printState();
   }
 }

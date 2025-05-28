@@ -7,6 +7,8 @@ import {
 import { RadioInputComponent } from '../../../../../../shared/ui/input/radio/radio-input/radio-input.component';
 import { SeedPhraseWordComponent } from './component/seed-phrase-word/seed-phrase-word.component';
 import { WalletService } from '../../../../../../../services/wallet.service';
+import { CheckboxInputComponent } from '../../../../../../shared/ui/input/checkbox/checkbox-input/checkbox-input.component';
+import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 
 @Component({
   selector: 'app-create-seed-phrase-new-wallet-step',
@@ -15,6 +17,7 @@ import { WalletService } from '../../../../../../../services/wallet.service';
     KcSnackbarComponent,
     RadioInputComponent,
     SeedPhraseWordComponent,
+    CheckboxInputComponent,
   ],
   templateUrl: './create-seed-phrase-new-wallet-step.component.html',
   styleUrl: './create-seed-phrase-new-wallet-step.component.scss',
@@ -27,9 +30,13 @@ export class CreateSeedPhraseNewWalletStepComponent implements OnInit {
 
   private readonly notificationService = inject(NotificationService);
 
+  private readonly newWalletFlowService = inject(NewWalletFlowService);
+
   wordCount = signal<number>(12);
 
   seedPhrase = signal<string[]>([]);
+
+  seedPhraseSaved = signal<boolean>(false);
 
   ngOnInit(): void {
     this.seedPhrase.set(
@@ -65,5 +72,13 @@ export class CreateSeedPhraseNewWalletStepComponent implements OnInit {
     this.seedPhrase.set(
       this.walletService.generateMnemonic(this.wordCount()).split(' '),
     );
+  }
+
+  onContinue() {
+    if (!this.seedPhraseSaved()) {
+      return;
+    }
+    this.newWalletFlowService.submitSeedPhraseStep(this.seedPhrase().join(' '));
+    this.next.emit();
   }
 }

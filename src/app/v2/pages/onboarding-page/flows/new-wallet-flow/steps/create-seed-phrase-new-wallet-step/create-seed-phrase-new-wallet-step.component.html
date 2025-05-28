@@ -54,6 +54,14 @@
       </kc-button>
     </div>
   </div>
+  <div class="flex justify-content-start full-width">
+    <app-checkbox-input
+      [checked]="false"
+      (checkedChange)="seedPhraseSaved.set($event)"
+    >
+      <span class="typo-text-3">I saved my seed phrase</span>
+    </app-checkbox-input>
+  </div>
   <div class="flex full-width gap-16">
     <div class="full-width">
       <kc-button
@@ -69,8 +77,8 @@
         [isFullWidth]="true"
         type="submit"
         [text]="'Continue'"
-        [isDisabled]="false"
-        (buttonClick)="next.emit()"
+        [isDisabled]="!seedPhraseSaved()"
+        (buttonClick)="onContinue()"
       ></kc-button>
     </div>
   </div>

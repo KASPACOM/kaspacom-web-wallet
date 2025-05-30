@@ -8,6 +8,7 @@ import {
 } from 'kaspacom-ui';
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 import { WalletService } from '../../../../../../../services/wallet.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-address-new-wallet-step',
@@ -29,6 +30,8 @@ export class AddressNewWalletStepComponent {
   private readonly walletService = inject(WalletService);
 
   private readonly notificationService = inject(NotificationService);
+
+  private readonly router = inject(Router);
 
   walletAddress = computed(
     () => this.newWalletFlowService.newWallet().walletAddress,
@@ -59,5 +62,9 @@ export class AddressNewWalletStepComponent {
         );
       },
     );
+  }
+
+  onFinish() {
+    this.router.navigate(['/wallet-selection']);
   }
 }

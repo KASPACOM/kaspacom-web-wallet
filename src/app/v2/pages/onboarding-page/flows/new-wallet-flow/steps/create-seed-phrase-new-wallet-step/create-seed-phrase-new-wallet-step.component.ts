@@ -86,14 +86,21 @@ export class CreateSeedPhraseNewWalletStepComponent implements OnInit {
     this.newWalletFlowService.submitSeedPhraseSaved(this.seedPhraseSaved());
   }
 
-  onContinue() {
+  async onContinue() {
     if (!this.seedPhraseSaved()) {
       return;
     }
-    this.newWalletFlowService.submitSeedPhraseStep(
+    const result = await this.newWalletFlowService.submitSeedPhraseStep(
       this.seedPhrase().join(' '),
       this.wordCount(),
     );
-    this.next.emit();
+    if (result.success) {
+      this.next.emit();
+    } else {
+      this.notificationService.error(
+        'Error',
+        result.error ?? 'Failed to create wallet.',
+      );
+    }
   }
 }

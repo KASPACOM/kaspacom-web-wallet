@@ -21,18 +21,11 @@
       </div>
     </div>
   </div>
-  <!-- <kc-button
-    [isFullWidth]="true"
-    type="submit"
-    [text]="'Back'"
-    [isDisabled]="false"
-    (buttonClick)="previous.emit()"
-  ></kc-button> -->
   <kc-button
     [isFullWidth]="true"
     type="submit"
     [text]="'Finish'"
     [isDisabled]="false"
-    (buttonClick)="next.emit()"
+    (buttonClick)="onFinish()"
   ></kc-button>
 </div>

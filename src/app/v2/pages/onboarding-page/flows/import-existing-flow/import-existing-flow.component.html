@@ -1,8 +1,33 @@
-<div class="flex column gap-24">
-  <div class="flex column gap-16 align-items-center">
-    <span class="typo-title-4">Import a wallet</span>
-    <span class="typo-text-3 text-medium text-align-center">
-    Import an existing wallet with your email, recovery phrase, private key, or hardware wallet.
-  </span>
-  </div>
+<div class="flex column gap-16 align-items-center">
+  <app-step-indicator
+    [currentStep]="currentIndex()"
+    [maxSteps]="stepOrder.length"
+  ></app-step-indicator>
+
+  @switch (importStep()) {
+    @case (ImportExistingStep.IMPORT_SWTICH) {
+      <div [@stepAnimation]="slideDirection()">
+        <app-import-switch-import-existing-step
+          (next)="next()"
+          (previous)="previous()"
+        ></app-import-switch-import-existing-step>
+      </div>
+    }
+    @case (ImportExistingStep.CREATE_PIN) {
+      <div [@stepAnimation]="slideDirection()">
+        <app-create-pin-import-existing-step
+          (next)="next()"
+          (previous)="previous()"
+        ></app-create-pin-import-existing-step>
+      </div>
+    }
+    @case (ImportExistingStep.SUCCESS) {
+      <div [@stepAnimation]="slideDirection()">
+        <app-success-import-existing-step
+          (next)="next()"
+          (previous)="previous()"
+        ></app-success-import-existing-step>
+      </div>
+    }
+  }
 </div>

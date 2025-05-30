@@ -1,14 +1,20 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { INewWallet } from '../interface/new-wallet.interface';
+import { WalletService } from '../../../../../../services/wallet.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class NewWalletFlowService {
+  private readonly walletService = inject(WalletService);
+
   private _newWallet = signal<INewWallet>({
     password: '',
     confirmPassword: '',
+    seedPhraseWordCount: 12,
     seedPhrase: '',
+    seedPhraseSaved: false,
+    walletAddress: '',
   });
 
   get newWallet() {
@@ -23,7 +29,10 @@ export class NewWalletFlowService {
     this._newWallet.set({
       password: '',
       confirmPassword: '',
+      seedPhraseWordCount: 12,
       seedPhrase: '',
+      seedPhraseSaved: false,
+      walletAddress: '',
     });
   }
 
@@ -32,8 +41,25 @@ export class NewWalletFlowService {
     this.printState();
   }
 
-  submitSeedPhraseStep(seedPhrase: string) {
-    this._newWallet.set({ ...this._newWallet(), seedPhrase });
+  submitSeedPhraseStep(seedPhrase: string, seedPhraseWordCount: number) {
+    const walletAddress = this.walletService.getWalletAddressFromMnemonic(
+      seedPhrase,
+      this._newWallet().password,
+    );
+    if (!walletAddress) {
+      throw new Error('Failed to derive wallet address from seed phrase.');
+    }
+    this._newWallet.set({
+      ...this._newWallet(),
+      seedPhrase,
+      seedPhraseWordCount,
+      walletAddress,
+    });
+    this.printState();
+  }
+
+  submitSeedPhraseSaved(seedPhraseSaved: boolean) {
+    this._newWallet.set({ ...this._newWallet(), seedPhraseSaved });
     this.printState();
   }
 }

@@ -39,10 +39,16 @@ export class CreateSeedPhraseNewWalletStepComponent implements OnInit {
   seedPhraseSaved = signal<boolean>(false);
 
   ngOnInit(): void {
-    this.seedPhrase.set(
-      this.walletService.generateMnemonic(this.wordCount()).split(' '),
-    );
-    console.log(this.seedPhrase());
+    const walletState = this.newWalletFlowService.newWallet();
+    if (walletState.seedPhrase !== '') {
+      this.seedPhrase.set(walletState.seedPhrase.split(' '));
+      this.wordCount.set(walletState.seedPhraseWordCount);
+      this.seedPhraseSaved.set(walletState.seedPhraseSaved);
+    } else {
+      this.seedPhrase.set(
+        this.walletService.generateMnemonic(this.wordCount()).split(' '),
+      );
+    }
   }
 
   onWordCountChange(count: number): void {
@@ -72,13 +78,22 @@ export class CreateSeedPhraseNewWalletStepComponent implements OnInit {
     this.seedPhrase.set(
       this.walletService.generateMnemonic(this.wordCount()).split(' '),
     );
+    this.onSeedPhraseSavedChange(false);
+  }
+
+  onSeedPhraseSavedChange(event: boolean) {
+    this.seedPhraseSaved.set(event);
+    this.newWalletFlowService.submitSeedPhraseSaved(this.seedPhraseSaved());
   }
 
   onContinue() {
     if (!this.seedPhraseSaved()) {
       return;
     }
-    this.newWalletFlowService.submitSeedPhraseStep(this.seedPhrase().join(' '));
+    this.newWalletFlowService.submitSeedPhraseStep(
+      this.seedPhrase().join(' '),
+      this.wordCount(),
+    );
     this.next.emit();
   }
 }

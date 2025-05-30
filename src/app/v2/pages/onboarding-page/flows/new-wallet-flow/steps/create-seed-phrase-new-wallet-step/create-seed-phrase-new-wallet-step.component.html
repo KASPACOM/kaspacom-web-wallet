@@ -56,8 +56,8 @@
   </div>
   <div class="flex justify-content-start full-width">
     <app-checkbox-input
-      [checked]="false"
-      (checkedChange)="seedPhraseSaved.set($event)"
+      [checked]="seedPhraseSaved()"
+      (checkedChange)="onSeedPhraseSavedChange($event)"
     >
       <span class="typo-text-3">I saved my seed phrase</span>
     </app-checkbox-input>

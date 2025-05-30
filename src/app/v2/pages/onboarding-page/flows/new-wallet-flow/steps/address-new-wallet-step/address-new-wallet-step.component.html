@@ -1,21 +1,37 @@
+<kc-snackbar></kc-snackbar>
 <div class="flex column align-items-center gap-32">
   <div class="flex column align-items-center gap-4">
-    <span class="typo-title-3 p-4">Address</span>
+    <img
+      ngSrc="/svgs/success.svg"
+      alt="Success image"
+      width="334"
+      height="226"
+      priority
+    />
+    <span class="typo-title-3 p-4">Wallet Created</span>
     <span class="typo-text-2 text-medium text-align-center"
-      >Address text bla bla</span
+      >Your wallet address is:</span
     >
+    <div class="address-container">
+      <span class="typo-text-3 text-medium text-align-center">
+        {{ displayWalletAddress() }}
+      </span>
+      <div (click)="copyAddressToClipboard()" class="clickable">
+        <kc-icon iconClass="icon-copy"></kc-icon>
+      </div>
+    </div>
   </div>
-  <kc-button
+  <!-- <kc-button
     [isFullWidth]="true"
     type="submit"
     [text]="'Back'"
     [isDisabled]="false"
     (buttonClick)="previous.emit()"
-  ></kc-button>
+  ></kc-button> -->
   <kc-button
     [isFullWidth]="true"
     type="submit"
-    [text]="'Continue'"
+    [text]="'Finish'"
     [isDisabled]="false"
     (buttonClick)="next.emit()"
   ></kc-button>

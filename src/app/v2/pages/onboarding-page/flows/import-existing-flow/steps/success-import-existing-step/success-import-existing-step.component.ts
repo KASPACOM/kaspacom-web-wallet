@@ -1,8 +1,10 @@
+import { CommonModule } from '@angular/common';
 import { Component, output } from '@angular/core';
+import { KcButtonComponent } from 'kaspacom-ui';
 
 @Component({
   selector: 'app-success-import-existing-step',
-  imports: [],
+  imports: [CommonModule, KcButtonComponent],
   templateUrl: './success-import-existing-step.component.html',
   styleUrl: './success-import-existing-step.component.scss',
 })

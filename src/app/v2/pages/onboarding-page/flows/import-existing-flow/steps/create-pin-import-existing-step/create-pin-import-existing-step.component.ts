@@ -1,8 +1,10 @@
+import { CommonModule } from '@angular/common';
 import { Component, output } from '@angular/core';
+import { KcButtonComponent } from 'kaspacom-ui';
 
 @Component({
   selector: 'app-create-pin-import-existing-step',
-  imports: [],
+  imports: [CommonModule, KcButtonComponent],
   templateUrl: './create-pin-import-existing-step.component.html',
   styleUrl: './create-pin-import-existing-step.component.scss',
 })

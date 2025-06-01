@@ -38,7 +38,11 @@ export class CreatePasswordNewWalletStepComponent {
     {
       password: [
         this.newWalletFlowService.newWallet().password,
-        [Validators.required, Validators.minLength(8)],
+        [
+          Validators.required,
+          Validators.minLength(8),
+          Validators.pattern(/^(?=.*[0-9])(?=.*[a-zA-Z])([a-zA-Z0-9]+)$/),
+        ],
       ],
       confirmPassword: [
         this.newWalletFlowService.newWallet().confirmPassword,
@@ -94,6 +98,26 @@ export class CreatePasswordNewWalletStepComponent {
       formCheckResult ||
       (controlName === 'confirmPassword' && passwordsMatchError)
     );
+  }
+
+  getPasswordErrorMessage(): string | undefined {
+    if (this.passwordForm.hasError('required', 'password')) {
+      return 'Password is required';
+    }
+    if (this.passwordForm.hasError('minlength', 'password')) {
+      return 'Password is too short';
+    }
+    if (this.passwordForm.hasError('pattern', 'password')) {
+      return 'Password must contain letters and numbers';
+    }
+    return undefined;
+  }
+
+  getConfirmPasswordErrorMessage(): string | undefined {
+    if (this.passwordForm.hasError('passwordsDoNotMatch')) {
+      return 'Passwords do not match';
+    }
+    return undefined;
   }
 
   onSubmit(): void {

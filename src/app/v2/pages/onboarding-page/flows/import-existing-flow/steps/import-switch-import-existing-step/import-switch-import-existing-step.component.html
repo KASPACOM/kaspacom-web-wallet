@@ -1,2 +1,61 @@
-<p>import-switch-import-existing-step works!</p>
-<kc-button [text]="'Next'" (buttonClick)="next.emit()"></kc-button>
+<div class="flex column align-items-center gap-32 full-width">
+  <div class="flex column align-items-center gap-4">
+    <span class="typo-title-3 p-4">Import Wallet</span>
+    <span class="typo-text-2 text-medium text-align-center"
+      >Pick your import method</span
+    >
+  </div>
+  <div class="flex full-width">
+    <app-import-switch
+      class="full-width"
+      [selectedMethod]="importMethod()"
+      (methodChanged)="onImportMethodChange($event)"
+    ></app-import-switch>
+  </div>
+
+  @if (importMethod() === ImportSwitchMethod.SEED_PHRASE) {
+    <div class="flex column align-items-center gap-24 full-width">
+      <div class="flex gap-24 justify-content-start full-width">
+        <app-radio-input
+          [value]="12"
+          [selected]="wordCount()"
+          (selectedChange)="onWordCountChange($event)"
+        >
+          <span class="typo-text-3">12 words</span>
+        </app-radio-input>
+        <app-radio-input
+          [value]="24"
+          [selected]="wordCount()"
+          (selectedChange)="onWordCountChange($event)"
+        >
+          <span class="typo-text-3">24 words</span>
+        </app-radio-input>
+      </div>
+      <div class="seed-container">
+        @for (item of wordSpots(); track $index) {
+          <kc-input
+            [placeholder]="`${$index + 1}.`"
+            class="seed-container__word"
+            (valueChange)="onChangeSeedPhraseWord($event, $index)"
+          ></kc-input>
+        }
+      </div>
+    </div>
+  } @else if (importMethod() === ImportSwitchMethod.PRIVATE_KEY) {
+    <div class="flex column align-items-center gap-24 full-width">
+      <kc-input
+        [label]="'Enter your private key'"
+        [placeholder]="'Private key'"
+        [prepadInvalidReason]="true"
+        formControlName="privateKey"
+        (keydown.enter)="next.emit()"
+      ></kc-input>
+    </div>
+  }
+
+  <kc-button
+    [isFullWidth]="true"
+    [text]="'Continue'"
+    (buttonClick)="next.emit()"
+  ></kc-button>
+</div>

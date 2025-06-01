@@ -27,11 +27,13 @@
       }
       @case (OnboardingStep.IMPORT_EXISTING_WALLET) {
         <app-import-existing-flow
+          class="full-width"
           [@stepAnimation]="SlideDirection.FORWARD"
         ></app-import-existing-flow>
       }
       @case (OnboardingStep.NEW_WALLET) {
         <app-new-wallet-flow
+          class="full-width"
           [@stepAnimation]="SlideDirection.FORWARD"
         ></app-new-wallet-flow>
       }

@@ -1,4 +1,4 @@
-<div class="flex column gap-16 align-items-center">
+<div class="flex column gap-16 align-items-center full-width">
   <app-step-indicator
     [currentStep]="currentIndex()"
     [maxSteps]="stepOrder.length"
@@ -6,7 +6,7 @@
 
   @switch (importStep()) {
     @case (ImportExistingStep.IMPORT_SWTICH) {
-      <div [@stepAnimation]="slideDirection()">
+      <div class="full-width" [@stepAnimation]="slideDirection()">
         <app-import-switch-import-existing-step
           (next)="next()"
           (previous)="previous()"
@@ -14,7 +14,7 @@
       </div>
     }
     @case (ImportExistingStep.CREATE_PIN) {
-      <div [@stepAnimation]="slideDirection()">
+      <div class="full-width" [@stepAnimation]="slideDirection()">
         <app-create-pin-import-existing-step
           (next)="next()"
           (previous)="previous()"
@@ -22,7 +22,7 @@
       </div>
     }
     @case (ImportExistingStep.SUCCESS) {
-      <div [@stepAnimation]="slideDirection()">
+      <div class="full-width" [@stepAnimation]="slideDirection()">
         <app-success-import-existing-step
           (next)="next()"
           (previous)="previous()"

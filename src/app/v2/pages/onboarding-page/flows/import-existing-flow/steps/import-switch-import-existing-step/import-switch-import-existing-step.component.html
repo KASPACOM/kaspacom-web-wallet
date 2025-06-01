@@ -14,48 +14,76 @@
   </div>
 
   @if (importMethod() === ImportSwitchMethod.SEED_PHRASE) {
-    <div class="flex column align-items-center gap-24 full-width">
-      <div class="flex gap-24 justify-content-start full-width">
-        <app-radio-input
-          [value]="12"
-          [selected]="wordCount()"
-          (selectedChange)="onWordCountChange($event)"
-        >
-          <span class="typo-text-3">12 words</span>
-        </app-radio-input>
-        <app-radio-input
-          [value]="24"
-          [selected]="wordCount()"
-          (selectedChange)="onWordCountChange($event)"
-        >
-          <span class="typo-text-3">24 words</span>
-        </app-radio-input>
+    <form [formGroup]="seedPhraseForm" (ngSubmit)="submitSeedPhrase()">
+      <div class="flex column align-items-center gap-24 full-width">
+        <div class="flex gap-24 justify-content-start full-width">
+          <app-radio-input
+            [value]="12"
+            [selected]="wordCount()"
+            (selectedChange)="onWordCountChange($event)"
+          >
+            <span class="typo-text-3">12 words</span>
+          </app-radio-input>
+          <app-radio-input
+            [value]="24"
+            [selected]="wordCount()"
+            (selectedChange)="onWordCountChange($event)"
+          >
+            <span class="typo-text-3">24 words</span>
+          </app-radio-input>
+        </div>
+        <div formArrayName="words" class="seed-container">
+          @for (item of words.controls; track $index) {
+            <kc-input
+              [id]="$index"
+              [formControlName]="$index"
+              [placeholder]="`${$index + 1}.`"
+              [isValid]="!(item.invalid && (item.touched || item.dirty))"
+              class="seed-container__word"
+            ></kc-input>
+          }
+        </div>
       </div>
-      <div class="seed-container">
-        @for (item of wordSpots(); track $index) {
-          <kc-input
-            [placeholder]="`${$index + 1}.`"
-            class="seed-container__word"
-            (valueChange)="onChangeSeedPhraseWord($event, $index)"
-          ></kc-input>
-        }
-      </div>
-    </div>
+    </form>
   } @else if (importMethod() === ImportSwitchMethod.PRIVATE_KEY) {
     <div class="flex column align-items-center gap-24 full-width">
-      <kc-input
-        [label]="'Enter your private key'"
-        [placeholder]="'Private key'"
-        [prepadInvalidReason]="true"
-        formControlName="privateKey"
-        (keydown.enter)="next.emit()"
-      ></kc-input>
+      <form
+        class="full-width"
+        [formGroup]="privateKeyForm"
+        (ngSubmit)="submitPrivateKey()"
+      >
+        <kc-input
+          [isFullWidth]="true"
+          [label]="'Enter your private key'"
+          [type]="privateKeyFieldType()"
+          [placeholder]="'Private key'"
+          [prepadInvalidReason]="true"
+          formControlName="privateKey"
+          (keydown.enter)="next.emit()"
+          [isValid]="!isPrivateKeyInvalid('privateKey')"
+          [invalidReason]="
+            !isPrivateKeyInvalid('privateKey') ? 'Cannot be empty' : undefined
+          "
+        >
+          <div
+            (click)="togglePrivateKeyVisibility()"
+            class="clickable"
+            rightSideSlot
+          >
+            <kc-icon
+              [iconClass]="privateKeyFieldIcon()"
+              [size]="'xs'"
+            ></kc-icon>
+          </div>
+        </kc-input>
+      </form>
     </div>
   }
 
   <kc-button
     [isFullWidth]="true"
     [text]="'Continue'"
-    (buttonClick)="next.emit()"
+    [isDisabled]="!canSubmit()"
+    (buttonClick)="handleSubmit()"
   ></kc-button>
 </div>

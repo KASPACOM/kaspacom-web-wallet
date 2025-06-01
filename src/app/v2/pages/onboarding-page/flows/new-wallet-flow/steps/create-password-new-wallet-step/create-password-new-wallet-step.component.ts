@@ -30,9 +30,9 @@ export class CreatePasswordNewWalletStepComponent {
   next = output<void>();
   previous = output<void>();
 
-  private readonly fb = inject(FormBuilder);
-
   private readonly newWalletFlowService = inject(NewWalletFlowService);
+
+  private readonly fb = inject(FormBuilder);
 
   passwordForm = this.fb.group(
     {

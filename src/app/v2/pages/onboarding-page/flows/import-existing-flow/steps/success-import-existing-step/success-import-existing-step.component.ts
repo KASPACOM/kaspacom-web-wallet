@@ -1,5 +1,6 @@
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { Component, output } from '@angular/core';
+import { Component, inject, output } from '@angular/core';
+import { Router } from '@angular/router';
 import { KcButtonComponent } from 'kaspacom-ui';
 
 @Component({
@@ -11,4 +12,10 @@ import { KcButtonComponent } from 'kaspacom-ui';
 export class SuccessImportExistingStepComponent {
   next = output<void>();
   previous = output<void>();
+
+  private readonly router = inject(Router);
+
+  finish() {
+    this.router.navigate(['/wallet-selection']);
+  }
 }

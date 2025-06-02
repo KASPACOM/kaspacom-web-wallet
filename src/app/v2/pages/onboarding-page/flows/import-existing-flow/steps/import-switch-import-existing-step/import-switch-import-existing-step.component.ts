@@ -68,9 +68,9 @@ export class ImportSwitchImportExistingStepComponent {
 
   wordCount = signal<number>(12);
 
-  wordSpots = computed(() =>
-    Array.from({ length: this.wordCount() }, (_, i) => ''),
-  );
+  // wordSpots = computed(() =>
+  //   Array.from({ length: this.wordCount() }, (_, i) => ''),
+  // );
 
   privateKeyFieldType = signal<'text' | 'password'>('password');
 
@@ -79,8 +79,22 @@ export class ImportSwitchImportExistingStepComponent {
   );
 
   constructor() {
+    this.importMethod.set(
+      this.importExistingFlowService.model().importSwitchMethod,
+    );
+    this.wordCount.set(this.importExistingFlowService.model().wordCount);
+    this.privateKeyForm = this.fb.group({
+      privateKey: [
+        this.importExistingFlowService.model().privateKey,
+        [Validators.required],
+      ],
+    });
+    const initialWords = this.importExistingFlowService
+      .model()
+      .seedPhrase.split(/\s+/);
     for (let i = 0; i < this.wordCount(); i += 1) {
-      this.words.push(this.fb.control('', [Validators.required]));
+      const initialValue = i < initialWords.length ? initialWords[i] : '';
+      this.words.push(this.fb.control(initialValue, [Validators.required]));
     }
   }
 
@@ -144,7 +158,11 @@ export class ImportSwitchImportExistingStepComponent {
     for (let word of this.words.controls) {
       tmp = `${tmp} ${word.value}`.trim();
     }
-    this.importExistingFlowService.submitSeedPhraseStep(tmp);
+    this.importExistingFlowService.submitSeedPhraseStep(
+      tmp,
+      this.wordCount(),
+      this.importMethod(),
+    );
     this.next.emit();
   }
 
@@ -158,6 +176,7 @@ export class ImportSwitchImportExistingStepComponent {
   submitPrivateKey() {
     this.importExistingFlowService.submitPrivateKeyStep(
       this.privateKeyForm.value.privateKey!,
+      this.importMethod(),
     );
     this.next.emit();
   }

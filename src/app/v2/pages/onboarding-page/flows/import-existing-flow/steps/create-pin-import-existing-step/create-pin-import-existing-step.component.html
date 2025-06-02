@@ -1,3 +1,4 @@
+<kc-snackbar></kc-snackbar>
 <div class="flex column align-items-center gap-32">
   <div class="flex column align-items-center gap-4">
     <span class="typo-title-3 p-4">Create Password</span>
@@ -59,7 +60,8 @@
     <kc-button
       [isFullWidth]="true"
       [text]="'Next'"
-      (buttonClick)="next.emit()"
+      (buttonClick)="onSubmit()"
+      [isDisabled]="!passwordForm.valid"
     ></kc-button>
   </div>
 </div>

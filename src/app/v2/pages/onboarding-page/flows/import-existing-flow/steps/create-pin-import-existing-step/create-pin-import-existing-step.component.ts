@@ -11,6 +11,8 @@ import {
   KcButtonComponent,
   KcIconComponent,
   KcInputComponent,
+  KcSnackbarComponent,
+  NotificationService,
 } from 'kaspacom-ui';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
 
@@ -22,6 +24,7 @@ import { ImportExistingFlowService } from '../../service/import-existing-flow.se
     KcButtonComponent,
     KcInputComponent,
     KcIconComponent,
+    KcSnackbarComponent,
   ],
   templateUrl: './create-pin-import-existing-step.component.html',
   styleUrl: './create-pin-import-existing-step.component.scss',
@@ -35,6 +38,8 @@ export class CreatePinImportExistingStepComponent {
   private readonly importExistingFlowService = inject(
     ImportExistingFlowService,
   );
+
+  private readonly notificationService = inject(NotificationService);
 
   passwordForm = this.fb.group(
     {
@@ -122,5 +127,22 @@ export class CreatePinImportExistingStepComponent {
     return undefined;
   }
 
-  onSubmit() {}
+  async onSubmit() {
+    if (this.passwordForm.invalid) {
+      return;
+    }
+    const formValue = this.passwordForm.value;
+    const result = await this.importExistingFlowService.finalSubmit(
+      formValue.password!,
+    );
+
+    if (result.success) {
+      this.next.emit();
+    } else {
+      this.notificationService.error(
+        'Error',
+        result.error ?? 'Failed to import wallet.',
+      );
+    }
+  }
 }

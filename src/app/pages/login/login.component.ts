@@ -13,10 +13,10 @@ import { WalletService } from '../../services/wallet.service';
 import { IFrameCommunicationApp } from '../../services/communication-service/communication-app/iframe-communication.service';
 
 @Component({
-    selector: 'app-login',
-    templateUrl: './login.component.html',
-    styleUrls: ['./login.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, NgIf]
+  selector: 'app-login',
+  templateUrl: './login.component.html',
+  styleUrls: ['./login.component.scss'],
+  imports: [FormsModule, ReactiveFormsModule, NgIf],
 })
 export class LoginComponent implements OnInit {
   loginForm: FormGroup = new FormGroup({});
@@ -26,13 +26,15 @@ export class LoginComponent implements OnInit {
     private fb: FormBuilder,
     private passwordManagerService: PasswordManagerService,
     private router: Router,
-    private walletService: WalletService,
+    private walletService: WalletService
   ) {}
 
   ngOnInit() {
     this.loginForm = this.fb.group({
-      password: ['', [Validators.required]],
+      password: ['testtest2', [Validators.required]],
     });
+
+    this.onSubmit();
 
     // for faster development
     // this.loginForm.get('password')?.setValue('password');
@@ -57,18 +59,17 @@ export class LoginComponent implements OnInit {
 
         await this.walletService.loadWallets();
 
-
         if (this.walletService.getWalletsCount() === 0) {
           this.router.navigate(['/add-wallet']);
         } else {
           if (IFrameCommunicationApp.isIframe()) {
-            this.router.navigate(['/wallet-selection']);  
+            this.router.navigate(['/wallet-selection']);
           } else {
             await this.walletService.selectCurrentWalletFromLocalStorage();
-            this.router.navigate(['/wallet-info']);  
+            //this.router.navigate(['/wallet-info']);
+            this.router.navigate(['/home']);
           }
         }
-        
       } else {
         this.loginError = true;
       }

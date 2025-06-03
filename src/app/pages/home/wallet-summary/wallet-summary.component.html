@@ -1,0 +1,33 @@
+<div
+  class="wallet-summary-container flex column justify-content-center align-items-center full-width gap-8"
+>
+  @for ( token of tokens(); track token.address ) {
+  <div
+    class="wallet-summary-container__card flex full-width align-items-center justify-content-between p-16"
+  >
+    <div
+      class="wallet-summary-container__token-info flex align-items-center gap-16"
+    >
+      <kc-token-logo
+        class="wallet-summary-container__logo"
+        [ticker]="token.symbol || ''"
+        [size]="'lg'"
+      ></kc-token-logo>
+      <div class="flex column gap-4">
+        <div class="text-gray-90">{{ token.name | titlecase }}</div>
+        <div class="text-gray-60 typo-text-1">
+          {{ token.balance | number : "1.0-4" }}&nbsp;{{
+            token.symbol | uppercase
+          }}
+        </div>
+      </div>
+    </div>
+    <div class="wallet-summary-container__usd-info flex column align-items-end">
+      <div class="text-gray-90">
+        ${{ token.balance * token.usdPrice | number : "1.2-2" }}
+      </div>
+      <div class="text-gray-60 typo-text-1">$0.00</div>
+    </div>
+  </div>
+  }
+</div>

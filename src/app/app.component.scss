@@ -1,19 +1,34 @@
 .application-container {
-    width: 100vw;
-    width: 100dvw;
-    height: 100vh;
-    overflow-y: auto;
-    overflow-x: hidden;
-    display: block;
+  width: 100vw;
+  width: 100dvw;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  app-header,
+  app-footer {
+    position: sticky;
+  }
+  app-header {
+    top: 0px;
+  }
+  app-footer {
+    bottom: 0px;
   }
 
-  .not-supported-url {
-    font-size: 2rem;
-    font-weight: bold;
-    color: red;
-    text-align: center;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  &__content {
+    min-height: calc(100vh - 147px);
+    overflow-y: scroll;
   }
+}
+
+.not-supported-url {
+  font-size: 2rem;
+  font-weight: bold;
+  color: red;
+  text-align: center;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

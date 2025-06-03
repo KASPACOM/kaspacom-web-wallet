@@ -1,0 +1,54 @@
+.token-logo-wrapper {
+  border-radius: 100%;
+  background-color: var(--kaspa-30);
+  border: 1px solid var(--kaspa-30);
+
+  &.skeleton {
+    width: unset;
+    height: unset;
+    :not(&.is-loading)::after {
+      animation: none !important;
+      background: none !important;
+      mask-image: none !important;
+    }
+  }
+
+  :not(&.is-loading) {
+    background: linear-gradient(
+      200deg,
+      rgba(18, 22, 25, 1) 0%,
+      rgba(81, 200, 150, 1) 50%,
+      rgba(18, 22, 25, 1) 100%
+    );
+  }
+
+  &.xs > div {
+    width: 16px;
+    height: 16px;
+    background-size: 16px 16px;
+  }
+
+  &.sm > div {
+    width: 20px;
+    height: 20px;
+    background-size: 20px 20px;
+  }
+
+  &.md > div {
+    width: 24px;
+    height: 24px;
+    background-size: 24px 24px;
+  }
+
+  &.lg > div {
+    width: 32px;
+    height: 32px;
+    background-size: 32px 32px;
+  }
+
+  &.xlg > div {
+    width: 68px;
+    height: 68px;
+    background-size: 68px 68px;
+  }
+}

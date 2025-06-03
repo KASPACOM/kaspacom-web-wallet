@@ -1,0 +1,15 @@
+.footer-container {
+  height: 65px;
+  background-color: var(--background-secondary);
+
+  &__icon {
+    border-radius: 100%;
+    cursor: pointer;
+    &:hover {
+      background-color: var(--gray-10);
+    }
+    &--active {
+      background-color: var(--gray-25);
+    }
+  }
+}

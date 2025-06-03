@@ -1,0 +1,14 @@
+.crypto-actions-container {
+  &__card {
+    background-color: var(--gray-10);
+    border-radius: 12px;
+    flex: 1;
+    height: 80px;
+    border: 1px solid var(--gray-20);
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--gray-20);
+    }
+  }
+}

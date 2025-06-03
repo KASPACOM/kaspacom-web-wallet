@@ -1,33 +1,50 @@
-import { AfterViewInit, Component, OnInit, Renderer2 } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  Renderer2,
+} from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { PasswordManagerService } from './services/password-manager.service';
 import { AppHeaderComponent } from './components/app-header/app-header.component';
 import { KaspaNetworkActionsService } from './services/kaspa-netwrok-services/kaspa-network-actions.service';
-import {  NgIf } from '@angular/common';
+import { NgIf } from '@angular/common';
 import { environment } from '../environments/environment';
 import { IFrameCommunicationApp } from './services/communication-service/communication-app/iframe-communication.service';
 import { CommunicationManagerService } from './services/communication-service/communication-manager.service';
 import { MessagePopupComponent } from './components/message-popup/message-popup.component';
 import { MessagePopupService } from './services/message-popup.service';
+import { FooterComponent } from './components/footer/footer.component';
+import { WalletService } from './services/wallet.service';
 
 @Component({
-    selector: 'app-root',
-    imports: [RouterOutlet, AppHeaderComponent, NgIf, MessagePopupComponent],
-    templateUrl: './app.component.html',
-    styleUrl: './app.component.scss',
-    providers: [KaspaNetworkActionsService]
+  selector: 'app-root',
+  imports: [
+    RouterOutlet,
+    AppHeaderComponent,
+    NgIf,
+    MessagePopupComponent,
+    FooterComponent,
+  ],
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.scss',
+  providers: [KaspaNetworkActionsService],
 })
 export class AppComponent implements OnInit, AfterViewInit {
   title = 'kaspiano-wallet';
+  private readonly _walletService = inject(WalletService);
 
+  isWalletConnected = computed(() => !!this._walletService.getCurrentWallet());
 
   constructor(
     private readonly router: Router,
     private readonly passwordManagerService: PasswordManagerService,
     private readonly communicationManagerService: CommunicationManagerService,
     private renderer: Renderer2,
-    public messagePopupService: MessagePopupService) {
-  }
+    public messagePopupService: MessagePopupService
+  ) {}
 
   async ngOnInit() {
     if (!this.isAllowedDomain()) {
@@ -47,7 +64,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void {
     let loader = this.renderer.selectRootElement('#application-loader-startup');
-    if (loader.style.display != "none") loader.style.display = "none"; //hide loader
+    if (loader.style.display != 'none') loader.style.display = 'none'; //hide loader
     loader.remove();
   }
 
@@ -62,5 +79,4 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     return undefined;
   }
-
 }

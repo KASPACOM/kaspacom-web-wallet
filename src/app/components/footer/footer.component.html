@@ -1,0 +1,15 @@
+<footer
+  class="footer-container full-width flex justify-content-around align-items-center"
+>
+  @for ( action of actions; track action.title ){
+  <kc-icon
+    class="footer-container__icon p-8"
+    [class.footer-container__icon--active]="selectedRoute() === action.title"
+    [iconClass]="action.iconClass"
+    [size]="'md'"
+    (click)="action.action(action.title)"
+    (keypress.enter)="action.action(action.title)"
+    tabindex="0"
+  ></kc-icon>
+  }
+</footer>

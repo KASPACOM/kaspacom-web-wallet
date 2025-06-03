@@ -29,11 +29,14 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.scss"],
+            "styles": [
+              "src/styles.scss",
+              "node_modules/kaspacom-ui/assets/icons/style.css"
+            ],
             "scripts": [],
             "server": "src/main.server.ts",
             "prerender": false,
-            "ssr": false,
+            "ssr": false
           },
           "configurations": {
             "production": {

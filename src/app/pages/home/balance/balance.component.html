@@ -1,0 +1,9 @@
+<div class="balance-container flex column p-12 gap-8">
+  <div class="balance-container__value text-white typo-title-6">
+    ${{ usdBalance() | number : "1.2" }}
+  </div>
+  <div class="tendency flex gap-8 {{ profitTextClass() }}">
+    <span>{{ profitSign() }}${{ absUsdProfit() }}</span>
+    <span>{{ percentProfit() }}%</span>
+  </div>
+</div>

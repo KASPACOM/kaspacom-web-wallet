@@ -16,7 +16,12 @@ export class AuthGuard implements CanActivate {
     const userData = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA); // replace with your actual key
 
     if (!userData) {
-      return false;
+      if (route.routeConfig?.path === 'onboarding') {
+        return true;
+      } else {
+        this.router.navigate(['/onboarding']);
+        return false;
+      }
     }
     let isLogged = false;
     try {
@@ -26,15 +31,15 @@ export class AuthGuard implements CanActivate {
       isLogged = false;
     }
     if (!isLogged) {
-      this.router.navigate(['/login']);
+      this.router.navigate(['/app/login']);
       return false;
     }
     if (isLogged && route.routeConfig?.path === 'login') {
-      this.router.navigate(['/wallet']);
+      this.router.navigate(['/app/wallet']);
       return false;
     }
     if (isLogged && route.routeConfig?.path === 'onboarding') {
-      this.router.navigate(['/wallet']);
+      this.router.navigate(['/app/wallet']);
       return false;
     }
     return true;

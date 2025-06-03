@@ -26,11 +26,11 @@ export const routes: Routes = [
   { path: 'wallet-info', component: WalletInfoComponent },
   { path: 'review-action', component: ReviewActionComponent },
   { path: 'clear-data', component: ClearDataComponent },
-  {
-    // temporary, lazy load not needed
-    path: 'v2',
-    children: V2TMP_ROUTES,
-  },
+  // {
+  //   // temporary, lazy load not needed
+  //   path: 'v2',
+  //   children: V2TMP_ROUTES,
+  // },
   {
     path: '',
     pathMatch: 'full',

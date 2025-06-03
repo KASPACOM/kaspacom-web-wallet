@@ -4,11 +4,10 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { EIP1193ProviderChain } from '@kaspacom/wallet-messages';
 
 @Component({
-  selector: 'add-l2-chain',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
-  templateUrl: './add-l2-chain.component.html',
-  styleUrls: ['./add-l2-chain.component.scss']
+    selector: 'add-l2-chain',
+    imports: [CommonModule, FormsModule, ReactiveFormsModule],
+    templateUrl: './add-l2-chain.component.html',
+    styleUrls: ['./add-l2-chain.component.scss']
 })
 export class AddL2ChainComponent {
   @Output() chainAdded = new EventEmitter<EIP1193ProviderChain>();

@@ -40,30 +40,29 @@ type ActionTabs = 'send' | 'mint' | 'deploy' | 'list' | 'buy' | 'kasplex-l2';
 type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
 
 @Component({
-  selector: 'wallet-info',
-  standalone: true,
-  templateUrl: './wallet-info.component.html',
-  styleUrls: ['./wallet-info.component.scss'],
-  imports: [
-    FormsModule,
-    ReactiveFormsModule,
-    NgIf,
-    NgFor,
-    SompiToNumberPipe,
-    SendAssetComponent,
-    MintComponent,
-    ReviewActionComponent,
-    CommonModule,
-    ListKrc20Component,
-    BuyKrc20Component,
-    DeployComponent,
-    UtxosListComponent,
-    TransactionHistoryComponent,
-    Krc20OperationHistoryComponent,
-    MempoolTransactionsComponent,
-    AddL2ChainComponent,
-    L2TransactionComponent,
-  ],
+    selector: 'wallet-info',
+    templateUrl: './wallet-info.component.html',
+    styleUrls: ['./wallet-info.component.scss'],
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        NgIf,
+        NgFor,
+        SompiToNumberPipe,
+        SendAssetComponent,
+        MintComponent,
+        ReviewActionComponent,
+        CommonModule,
+        ListKrc20Component,
+        BuyKrc20Component,
+        DeployComponent,
+        UtxosListComponent,
+        TransactionHistoryComponent,
+        Krc20OperationHistoryComponent,
+        MempoolTransactionsComponent,
+        AddL2ChainComponent,
+        L2TransactionComponent,
+    ]
 })
 export class WalletInfoComponent implements OnInit, OnDestroy {
   @ViewChild('reviewActionComponent')

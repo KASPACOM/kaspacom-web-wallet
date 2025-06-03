@@ -8,11 +8,10 @@ import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { MessagePopupService } from '../../../services/message-popup.service';
 
 @Component({
-  selector: 'deploy',
-  standalone: true,
-  templateUrl: './deploy.component.html',
-  styleUrls: ['./deploy.component.scss'],
-  imports: [NgIf, NgFor, FormsModule],
+    selector: 'deploy',
+    templateUrl: './deploy.component.html',
+    styleUrls: ['./deploy.component.scss'],
+    imports: [NgIf, NgFor, FormsModule]
 })
 export class DeployComponent {
   protected selectedToken = '';

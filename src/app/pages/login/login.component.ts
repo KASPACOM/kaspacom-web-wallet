@@ -13,11 +13,10 @@ import { WalletService } from '../../services/wallet.service';
 import { IFrameCommunicationApp } from '../../services/communication-service/communication-app/iframe-communication.service';
 
 @Component({
-  selector: 'app-login',
-  standalone: true,
-  templateUrl: './login.component.html',
-  styleUrls: ['./login.component.scss'],
-  imports: [FormsModule, ReactiveFormsModule, NgIf],
+    selector: 'app-login',
+    templateUrl: './login.component.html',
+    styleUrls: ['./login.component.scss'],
+    imports: [FormsModule, ReactiveFormsModule, NgIf]
 })
 export class LoginComponent implements OnInit {
   loginForm: FormGroup = new FormGroup({});

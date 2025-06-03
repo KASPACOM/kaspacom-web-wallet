@@ -8,11 +8,10 @@ import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { MessagePopupService } from '../../../services/message-popup.service';
 
 @Component({
-  selector: 'mint',
-  standalone: true,
-  templateUrl: './mint.component.html',
-  styleUrls: ['./mint.component.scss'],
-  imports: [NgIf, NgFor, FormsModule],
+    selector: 'mint',
+    templateUrl: './mint.component.html',
+    styleUrls: ['./mint.component.scss'],
+    imports: [NgIf, NgFor, FormsModule]
 })
 export class MintComponent {
   protected selectedToken = '';

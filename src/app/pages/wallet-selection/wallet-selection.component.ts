@@ -8,11 +8,10 @@ import { ExportWalletsQrComponent } from '../../components/wallet-management/exp
 import _ from 'lodash';
 
 @Component({
-  selector: 'wallet-selection',
-  standalone: true,
-  templateUrl: './wallet-selection.component.html',
-  styleUrls: ['./wallet-selection.component.scss'],
-  imports: [FormsModule, ReactiveFormsModule, NgIf, NgFor, ExportWalletsQrComponent],
+    selector: 'wallet-selection',
+    templateUrl: './wallet-selection.component.html',
+    styleUrls: ['./wallet-selection.component.scss'],
+    imports: [FormsModule, ReactiveFormsModule, NgIf, NgFor, ExportWalletsQrComponent]
 })
 export class WalletSelectionComponent implements OnInit {
   public Object = Object;

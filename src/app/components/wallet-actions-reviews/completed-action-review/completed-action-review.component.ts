@@ -5,11 +5,10 @@ import { WalletActionResult } from '@kaspacom/wallet-messages';
 import { CompletedActionOverviewService } from '../../../services/action-info-services/completed-action-overview.service';
 
 @Component({
-  selector: 'completed-action-review',
-  standalone: true,
-  templateUrl: './completed-action-review.component.html',
-  styleUrls: ['./completed-action-review.component.scss'],
-  imports: [NgIf, NgFor, SompiToNumberPipe],
+    selector: 'completed-action-review',
+    templateUrl: './completed-action-review.component.html',
+    styleUrls: ['./completed-action-review.component.scss'],
+    imports: [NgIf, NgFor, SompiToNumberPipe]
 })
 export class CompletedActionReview {
   completedActionOverviewService = inject(CompletedActionOverviewService);

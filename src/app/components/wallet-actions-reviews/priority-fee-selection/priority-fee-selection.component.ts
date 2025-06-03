@@ -30,20 +30,19 @@ type BucketFeeRate = {
 type AvailableOption = 'low' | 'normal' | 'priority' | 'custom';
 
 @Component({
-  selector: 'priority-fee-selection',
-  standalone: true,
-  templateUrl: './priority-fee-selection.component.html',
-  styleUrls: ['./priority-fee-selection.component.scss'],
-  imports: [
-    NgIf,
-    NgFor,
-    SompiToNumberPipe,
-    CompletedActionReview,
-    JsonPipe,
-    FormsModule,
-    TitleCasePipe,
-    CommonModule,
-  ],
+    selector: 'priority-fee-selection',
+    templateUrl: './priority-fee-selection.component.html',
+    styleUrls: ['./priority-fee-selection.component.scss'],
+    imports: [
+        NgIf,
+        NgFor,
+        SompiToNumberPipe,
+        CompletedActionReview,
+        JsonPipe,
+        FormsModule,
+        TitleCasePipe,
+        CommonModule,
+    ]
 })
 export class PriorityFeeSelectionComponent implements OnChanges {
   @Input() action!: WalletAction;

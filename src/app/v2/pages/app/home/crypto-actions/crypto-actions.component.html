@@ -1,0 +1,16 @@
+<div class="crypto-actions-container flex gap-8 full-width">
+  @for( action of actions; track action.title){
+  <div
+    class="crypto-actions-container__card p-16 flex column align-items-center justify-content-center"
+  >
+    <kc-icon
+      [iconClass]="action.iconClass"
+      [size]="'lg'"
+      [color]="'var(--primary)'"
+    ></kc-icon>
+    <span class="crypto-actions-container__title text-gray-60 typo-text-1">{{
+      action.title | titlecase
+    }}</span>
+  </div>
+  }
+</div>

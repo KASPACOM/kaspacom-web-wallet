@@ -43,5 +43,17 @@ $nav-bg-color: #6fc7ba26;
     flex: 1;
     // overflow-y: auto;
     padding: 12px;
+    overflow-y: auto;
+  }
+
+  ::-webkit-scrollbar {
+    -webkit-appearance: none;
+    width: 7px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background-color: rgba(224, 222, 222, 0.5);
+    box-shadow: 0 0 1px rgba(255, 255, 255, 0.5);
   }
 }

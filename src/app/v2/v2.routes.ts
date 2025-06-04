@@ -18,6 +18,7 @@ export const V2TMP_ROUTES: Routes = [
   },
   {
     path: 'app',
+    canActivate: [AuthGuard],
     children: loggedRoutes,
   },
   {

@@ -1,1 +1,34 @@
-<p>login works!</p>
+<div class="flex column full-width full-height align-items-center p-16 gap-24">
+  <img class="logo" src="/logo.png" />
+  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+    <div class="login-card card flex column gap-36 align-items-center">
+      <img class="login-image" src="/svgs/login.svg" />
+      <div class="flex column gap-16 align-items-center full-width">
+        <kc-input
+          formControlName="password"
+          [placeholder]="'Password'"
+          [isFullWidth]="true"
+          [label]="'Enter your password'"
+          [type]="passwordType()"
+          [isValid]="!isInvalid('password')"
+          [invalidReason]="getPasswordError()"
+          [prepadInvalidReason]="true"
+          [prepadInvalidReason]="true"
+          (keydown.enter)="onSubmit()"
+        >
+          <div (click)="togglePwVisibility()" class="clickable" rightSideSlot>
+            <kc-icon iconClass="{{ passwordIcon() }}" [size]="'xs'"></kc-icon>
+          </div>
+        </kc-input>
+        <div class="mt-16 full-width">
+          <kc-button
+            [isDisabled]="!loginForm.valid"
+            (buttonClick)="onSubmit()"
+            [isFullWidth]="true"
+            [text]="'Login'"
+          ></kc-button>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>

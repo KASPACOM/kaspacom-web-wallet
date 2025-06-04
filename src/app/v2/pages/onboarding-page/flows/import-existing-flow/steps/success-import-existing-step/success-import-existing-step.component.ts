@@ -16,6 +16,6 @@ export class SuccessImportExistingStepComponent {
   private readonly router = inject(Router);
 
   finish() {
-    this.router.navigate(['/wallet-selection']);
+    this.router.navigate(['/app/home']);
   }
 }

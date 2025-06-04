@@ -1,5 +1,10 @@
 import { Injectable } from '@angular/core';
-import { ActivatedRouteSnapshot, CanActivate, Router } from '@angular/router';
+import {
+  ActivatedRouteSnapshot,
+  CanActivate,
+  Router,
+  RouterStateSnapshot,
+} from '@angular/router';
 import { LOCAL_STORAGE_KEYS } from '../../config/consts';
 import { PasswordManagerService } from '../../services/password-manager.service';
 
@@ -11,12 +16,17 @@ export class AuthGuard implements CanActivate {
     private router: Router,
     private passwordManagerService: PasswordManagerService,
   ) {}
-
-  async canActivate(route: ActivatedRouteSnapshot): Promise<boolean> {
+  // todo this is temp, clean this up when im sure about the flow
+  async canActivate(
+    route: ActivatedRouteSnapshot,
+    state: RouterStateSnapshot,
+  ): Promise<boolean> {
     const userData = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA); // replace with your actual key
 
+    const fullPath = state.url;
+
     if (!userData) {
-      if (route.routeConfig?.path === 'onboarding') {
+      if (fullPath === '/onboarding') {
         return true;
       } else {
         this.router.navigate(['/onboarding']);
@@ -30,16 +40,16 @@ export class AuthGuard implements CanActivate {
     } catch (error) {
       isLogged = false;
     }
-    if (!isLogged) {
+    if (!isLogged && fullPath !== '/app/login') {
       this.router.navigate(['/app/login']);
       return false;
     }
-    if (isLogged && route.routeConfig?.path === 'login') {
-      this.router.navigate(['/app/wallet']);
+    if (isLogged && fullPath === '/app/login') {
+      this.router.navigate(['/app/home']);
       return false;
     }
-    if (isLogged && route.routeConfig?.path === 'onboarding') {
-      this.router.navigate(['/app/wallet']);
+    if (isLogged && fullPath === 'onboarding') {
+      this.router.navigate(['/app/home']);
       return false;
     }
     return true;

@@ -65,6 +65,6 @@ export class AddressNewWalletStepComponent {
   }
 
   onFinish() {
-    this.router.navigate(['/wallet-selection']);
+    this.router.navigate(['/app/home']);
   }
 }

@@ -10,11 +10,6 @@ export const loggedRoutes: Routes = [
     component: AppWrapperComponent,
     children: [
       {
-        path: 'login',
-        component: LoginComponent,
-        data: { animation: 'Login' },
-      },
-      {
         path: 'home',
         component: HomeComponent,
         data: { animation: 'Home' },
@@ -25,5 +20,10 @@ export const loggedRoutes: Routes = [
         data: { animation: 'Swap' },
       },
     ],
+  },
+  {
+    path: 'login',
+    component: LoginComponent,
+    data: { animation: 'Login' },
   },
 ];

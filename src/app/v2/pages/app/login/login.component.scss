@@ -1,0 +1,40 @@
+@use "../../../../../styles/responsive.scss" as *;
+
+.logo {
+  width: 480px;
+  height: auto;
+
+  padding-top: 48px;
+  padding-bottom: 48px;
+  @include mobile {
+    width: 80%;
+  }
+}
+
+.login-image {
+  width: 100%;
+  max-width: 250px;
+}
+
+.login-card {
+  overflow: hidden;
+  // overflow-x: hidden;
+  // overflow-y: unset;
+  width: 480px;
+  flex: 0 0 auto;
+
+  background: var(--background-secondary);
+  //background-color: var(--vampire-black);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.47);
+
+  @include mobile {
+    width: 100%;
+    background: none;
+    backdrop-filter: blur(4px);
+  }
+  @include tablet {
+    width: 75%;
+  }
+}

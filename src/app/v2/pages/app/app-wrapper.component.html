@@ -3,7 +3,10 @@
     <div class="wrapper__header">
       <app-wrapper-header></app-wrapper-header>
     </div>
-    <div [@navAnimation]="getRouteAnimationData()" class="wrapper__content">
+    <div
+      [@navAnimation]="getRouteAnimationData()"
+      class="wrapper__content full-width"
+    >
       <router-outlet #outlet="outlet"></router-outlet>
     </div>
 

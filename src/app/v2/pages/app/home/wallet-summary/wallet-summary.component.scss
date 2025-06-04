@@ -1,0 +1,11 @@
+.wallet-summary-container {
+  &__card {
+    background-color: var(--gray-10);
+    border: 1px solid var(--gray-20);
+    border-radius: 12px;
+    cursor: pointer;
+    &:hover {
+      background-color: var(--gray-20);
+    }
+  }
+}

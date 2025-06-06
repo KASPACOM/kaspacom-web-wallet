@@ -1,1 +1,12 @@
-<p>wrapper-header works!</p>
+@if (router.url === "/app/home") {
+  <div class="header-container-home full-height">
+    <a [routerLink]="'/app/home/search'">
+      <kc-icon
+        class="header-container__search-icon"
+        [iconClass]="'icon-search'"
+      ></kc-icon>
+    </a>
+  </div>
+} @else if (router.url === "/app/home/search") {
+  <app-search-bar></app-search-bar>
+}

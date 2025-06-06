@@ -1,0 +1,34 @@
+.search-token-card-container {
+  &__card {
+    background-color: var(--gray-10);
+    border: 1px solid var(--gray-20);
+    border-radius: 12px;
+    cursor: pointer;
+    &:hover {
+      background-color: var(--gray-20);
+    }
+  }
+  &__token-info {
+    .neutral {
+      color: var(--white);
+    }
+    .up {
+      color: var(--green-20);
+    }
+    .down {
+      color: var(--red-20);
+    }
+  }
+
+  &__swap {
+    kc-icon {
+      cursor: pointer;
+      background-color: var(--gray-20);
+      border-radius: 100%;
+      border: 1px solid var(--kaspa-30);
+      &:hover {
+        background-color: var(--gray-40);
+      }
+    }
+  }
+}

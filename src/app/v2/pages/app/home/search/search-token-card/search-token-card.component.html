@@ -1,0 +1,34 @@
+@if (token(); as token) {
+  <div
+    class="search-token-card-container__card flex full-width align-items-center justify-content-between p-16"
+  >
+    <div
+      class="search-token-card-container__token-info flex align-items-center gap-16"
+    >
+      <kc-token-logo
+        class="search-token-card-container__logo"
+        [ticker]="token.symbol || ''"
+        [size]="'lg'"
+      ></kc-token-logo>
+      <div class="flex column gap-4">
+        <div class="text-gray-90">{{ token.name | titlecase }}</div>
+        <div class="text-gray-60 typo-text-1 flex gap-4">
+          <div>{{ token.symbol }}</div>
+          <div class="extrabold">&#183;</div>
+          <div>{{ token.usdPrice | number: "1.2" }}</div>
+          <div class="extrabold">&#183;</div>
+          <div class="{{ profitTendencyClass() }}">
+            {{ profitTendency() | number: "1.2" }}%
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="search-token-card-container__swap flex column align-items-end">
+      <kc-icon
+        class="p-8"
+        [iconClass]="'icon-transfer-tokens'"
+        (click)="doSomething()"
+      ></kc-icon>
+    </div>
+  </div>
+}

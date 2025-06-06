@@ -1,0 +1,12 @@
+<div class="flex full-width align-items-center full-height">
+  <kc-input
+    [isFullWidth]="true"
+    [ngModel]="currentQuery()"
+    [prefixIcon]="'icon-search'"
+    [prefixIconColor]="'var(--gray-60)'"
+    [suffixIcon]="'icon-close'"
+    [suffixIconColor]="'var(--white)'"
+    (valueChange)="onValueChange($event)"
+    [placeholder]="'Search'"
+  ></kc-input>
+</div>

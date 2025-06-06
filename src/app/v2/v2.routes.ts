@@ -9,7 +9,7 @@ import { RecoveryImportComponent } from './pages/onboarding-page/flows/import-ex
 export const V2TMP_ROUTES: Routes = [
   {
     path: 'onboarding',
-    //canActivate: [AuthGuard],
+    canActivate: [AuthGuard],
     component: OnboardingPageComponent,
   },
   {
@@ -18,12 +18,12 @@ export const V2TMP_ROUTES: Routes = [
   },
   {
     path: 'ui-kit',
-    //canActivate: [AuthGuard],
+    canActivate: [AuthGuard],
     component: DesignSystemShowcaseComponent,
   },
   {
     path: 'app',
-    //canActivate: [AuthGuard],
+    canActivate: [AuthGuard],
     children: loggedRoutes,
   },
   {

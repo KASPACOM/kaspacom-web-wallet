@@ -8,6 +8,7 @@ import { CollectablesComponent } from './collectables/collectables.component';
 import { TransactionsComponent } from './transactions/transactions.component';
 import { SettingsComponent } from './settings/settings.component';
 import { ActivityComponent } from './activity/activity.component';
+import { HomeRoutes } from './home/routes/home.routes';
 
 export const loggedRoutes: Routes = [
   {
@@ -16,12 +17,8 @@ export const loggedRoutes: Routes = [
     children: [
       {
         path: 'home',
-        component: HomeComponent,
+        children: HomeRoutes,
         data: { animation: 'Home' },
-      },
-      {
-        path: 'home/search',
-        component: SearchComponent,
       },
       {
         path: 'swap',

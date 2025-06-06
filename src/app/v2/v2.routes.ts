@@ -8,17 +8,17 @@ import { loggedRoutes } from './pages/app/logged.routes';
 export const V2TMP_ROUTES: Routes = [
   {
     path: 'onboarding',
-    canActivate: [AuthGuard],
+    //canActivate: [AuthGuard],
     component: OnboardingPageComponent,
   },
   {
     path: 'ui-kit',
-    canActivate: [AuthGuard],
+    //canActivate: [AuthGuard],
     component: DesignSystemShowcaseComponent,
   },
   {
     path: 'app',
-    canActivate: [AuthGuard],
+    //canActivate: [AuthGuard],
     children: loggedRoutes,
   },
   {

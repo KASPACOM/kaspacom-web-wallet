@@ -12,12 +12,14 @@
       ></kc-token-logo>
       <div class="flex column gap-4">
         <div class="text-gray-90">{{ token.name | titlecase }}</div>
-        <div class="text-gray-60 typo-text-1">
-          <span>{{ token.symbol }}</span
-          >&nbsp;&#183;&nbsp;<span>{{ token.usdPrice | number: "1.2" }}</span
-          >&nbsp;&#183;&nbsp;<span class="{{ profitTendencyClass() }}"
-            >{{ profitTendency() | number: "1.2" }}%</span
-          >
+        <div class="text-gray-60 typo-text-1 flex gap-4">
+          <div>{{ token.symbol }}</div>
+          <div class="extrabold">&#183;</div>
+          <div>{{ token.usdPrice | number: "1.2" }}</div>
+          <div class="extrabold">&#183;</div>
+          <div class="{{ profitTendencyClass() }}">
+            {{ profitTendency() | number: "1.2" }}%
+          </div>
         </div>
       </div>
     </div>

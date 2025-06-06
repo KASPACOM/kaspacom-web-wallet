@@ -1,0 +1,40 @@
+<div class="flex column full-width full-height align-items-center p-16 gap-24">
+  <img class="logo" src="/logo.png" />
+  <div
+    class="onboarding-container-card card flex column gap-36 align-items-center"
+  >
+    <div class="flex column gap-16 align-items-center full-width">
+      <app-step-indicator
+        [currentStep]="currentIndex()"
+        [maxSteps]="stepOrder.length"
+      ></app-step-indicator>
+
+      @switch (importStep()) {
+        @case (ImportExistingStep.IMPORT_SWTICH) {
+          <div class="full-width" [@stepAnimation]="slideDirection()">
+            <app-import-switch-import-existing-step
+              (next)="next()"
+              (previous)="previous()"
+            ></app-import-switch-import-existing-step>
+          </div>
+        }
+        @case (ImportExistingStep.CREATE_PIN) {
+          <div class="full-width" [@stepAnimation]="slideDirection()">
+            <app-create-pin-import-existing-step
+              (next)="next()"
+              (previous)="previous()"
+            ></app-create-pin-import-existing-step>
+          </div>
+        }
+        @case (ImportExistingStep.SUCCESS) {
+          <div class="full-width" [@stepAnimation]="slideDirection()">
+            <app-success-import-existing-step
+              (next)="next()"
+              (previous)="previous()"
+            ></app-success-import-existing-step>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>

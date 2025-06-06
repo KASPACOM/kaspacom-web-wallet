@@ -1,4 +1,4 @@
-@use "../../../../../styles/responsive.scss" as *;
+@use "../../../../../../../styles/responsive" as *;
 
 .logo {
   width: 480px;
@@ -11,12 +11,12 @@
   }
 }
 
-.login-image {
+.wallet-image {
   width: 100%;
-  max-width: 250px;
+  max-width: 380px;
 }
 
-.login-card {
+.onboarding-container-card {
   overflow: hidden;
   // overflow-x: hidden;
   // overflow-y: unset;
@@ -24,7 +24,6 @@
   flex: 0 0 auto;
 
   background: var(--background-secondary);
-  //background-color: var(--vampire-black);
   border-radius: 16px;
   padding: 24px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.47);
@@ -36,20 +35,5 @@
   }
   @include tablet {
     width: 75%;
-  }
-}
-
-.forgot-password {
-  color: var(--gray-70);
-  font-size: 14px;
-  text-decoration: none;
-  //margin-top: 16px;
-  display: inline-block;
-  text-align: center;
-  transition: color 0.3s;
-  cursor: pointer;
-
-  &:hover {
-    color: var(--primary);
   }
 }

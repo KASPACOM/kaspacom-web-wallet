@@ -4,22 +4,29 @@
     <div class="login-card card flex column gap-36 align-items-center">
       <img class="login-image" src="/svgs/login.svg" />
       <div class="flex column gap-16 align-items-center full-width">
-        <kc-input
-          formControlName="password"
-          [placeholder]="'Password'"
-          [isFullWidth]="true"
-          [label]="'Enter your password'"
-          [type]="passwordType()"
-          [isValid]="!isInvalid('password')"
-          [invalidReason]="getPasswordError()"
-          [prepadInvalidReason]="true"
-          [prepadInvalidReason]="true"
-          (keydown.enter)="onSubmit()"
-        >
-          <div (click)="togglePwVisibility()" class="clickable" rightSideSlot>
-            <kc-icon iconClass="{{ passwordIcon() }}" [size]="'xs'"></kc-icon>
+        <div class="flex column align-items-center full-width">
+          <kc-input
+            formControlName="password"
+            [placeholder]="'Password'"
+            [isFullWidth]="true"
+            [label]="'Enter your password'"
+            [type]="passwordType()"
+            [isValid]="!isInvalid('password')"
+            [invalidReason]="getPasswordError()"
+            [prepadInvalidReason]="true"
+            [prepadInvalidReason]="true"
+            (keydown.enter)="onSubmit()"
+          >
+            <div (click)="togglePwVisibility()" class="clickable" rightSideSlot>
+              <kc-icon iconClass="{{ passwordIcon() }}" [size]="'xs'"></kc-icon>
+            </div>
+          </kc-input>
+
+          <div [routerLink]="['/recovery']" class="forgot-password">
+            Forgot password?
           </div>
-        </kc-input>
+        </div>
+
         <div class="mt-16 full-width">
           <kc-button
             [isDisabled]="!loginForm.valid"

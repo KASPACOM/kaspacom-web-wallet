@@ -20,6 +20,7 @@ $nav-bg-color: #6fc7ba26;
   width: 480px;
   @include mobile {
     width: 100%;
+    border-radius: 0;
     //background: none;
     // backdrop-filter: blur(4px);
   }

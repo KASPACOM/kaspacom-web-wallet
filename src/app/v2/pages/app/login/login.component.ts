@@ -9,7 +9,7 @@ import {
 import { PasswordManagerService } from '../../../../services/password-manager.service';
 import { WalletService } from '../../../../services/wallet.service';
 import { IFrameCommunicationApp } from '../../../../services/communication-service/communication-app/iframe-communication.service';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -19,6 +19,7 @@ import { Router } from '@angular/router';
     KcInputComponent,
     KcButtonComponent,
     KcIconComponent,
+    RouterLink,
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',

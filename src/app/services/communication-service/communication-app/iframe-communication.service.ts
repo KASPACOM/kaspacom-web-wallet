@@ -27,6 +27,7 @@ export class IFrameCommunicationApp implements BaseCommunicationApp {
       }
 
       const message = event.data as WalletMessageInterface;
+
       handler(message);
     };
 

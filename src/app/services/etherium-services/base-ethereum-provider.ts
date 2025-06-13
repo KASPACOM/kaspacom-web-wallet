@@ -26,6 +26,22 @@ export class BaseEthereumProvider {
 
   async submitTransaction(transaction: string): Promise<string> {
     return await this.etherProvider.send('eth_sendRawTransaction', [transaction]);
+
+    // // Retry checking for the transaction up to 5 times (once per second)
+    // let retries = 5;
+    // while (retries > 0) {
+    //   const tx = await this.etherProvider.send('eth_getTransactionByHash', [txHash]);
+    //   if (tx) {
+    //     console.log(tx.blockNumber === null ? 'Transaction is pending...' : `Mined in block ${tx.blockNumber}`);
+    //     return txHash;
+    //   }
+
+    //   // Wait 1 second before retrying
+    //   await new Promise((res) => setTimeout(res, 1000));
+    //   retries--;
+    // }
+
+    // throw new Error('Transaction not found after 5 attempts');
   }
 
   getConfig(): EIP1193ProviderChain {

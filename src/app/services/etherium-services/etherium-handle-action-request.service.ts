@@ -57,9 +57,6 @@ export class EthereumHandleActionRequestService {
         const signedTransactionString = await this.etherService.signTransaction(l2Transaction, l2Wallet);
         const transactionHash = await this.etherService.sendTransactionToL2(wallet.getL2Provider()!, signedTransactionString);
 
-
-
-        console.log('transactionHash', transactionHash);
         return {
             success: true,
             result: {

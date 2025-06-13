@@ -61,7 +61,7 @@ export class EthereumWalletActionsService {
                     }
 
                     const balance = await this.ethereumWalletChainManager.getCurrentWalletProvider()!.getWalletBalance(walletAddress);
-                    if (!balance) {
+                    if (!balance && balance !== 0n) {
                         return createEIP1193Response<T>(undefined, {
                             code: ERROR_CODES.EIP1193.INTERNAL_ERROR,
                             message: 'Failed to get balance'

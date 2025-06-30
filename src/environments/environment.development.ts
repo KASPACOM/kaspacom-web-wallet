@@ -12,7 +12,7 @@ export const environment: Environment = {
   l2Configs: {
     kasplex: {
       l1PayloadPrefix: 'kasplex',
-      chainId: 12211,
+      chainId: 167012,
       name: "Kasplex Test",
       network: "kasplextest",
       nativeCurrency: {

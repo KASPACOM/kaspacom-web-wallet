@@ -3,77 +3,105 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px;
-  font-family: Arial, sans-serif;
+  padding: 1rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  min-height: 100%;
+  width: 100%;
 }
 
 /* Card style for the action details */
 .action-review-card {
   width: 100%;
-  background: linear-gradient(135deg, #ffffff, #e0f7fa);
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  padding: 20px;
-}
+  max-width: 800px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  }
+}
 
 /* Header section styling */
 .action-review-header {
   text-align: center;
-  margin-bottom: 20px;
-}
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f0f0f0;
 
-.action-review-header h2 {
-  font-size: 1.8rem;
-  font-weight: bold;
-  color: #00796b;
-  margin: 0;
-  word-break: break-word;
+  h2 {
+    font-size: clamp(1.25rem, 4vw, 1.8rem);
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0;
+    line-height: 1.3;
+  }
 }
 
 /* Content section styling */
 .action-review-content {
   font-size: 1rem;
   color: #333;
-  line-height: 1.5;
+  line-height: 1.6;
 }
-
-/* Paragraphs inside the content */
-.action-review-content p {
-  margin: 10px 0;
-}
-
-/* Highlighted text (labels) */
-.action-review-content strong {
-  color: #004d40;
-}
-
-/* Smooth transitions for interactive elements */
-.action-review-content p:hover {
-  color: #00796b;
-  transition: color 0.2s ease;
-}
-
 
 .detail {
   display: flex;
-  justify-content: space-between;
-  padding: 12px 0;
-  border-bottom: 1px solid #e0e0e0;
-  
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid #f0f0f0;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
   .label {
-    font-weight: bold;
-    color: #555;
-    min-width: 80px; /* Ensure labels have consistent width */
-    flex-shrink: 0; /* Prevent label from shrinking */
+    font-weight: 600;
+    color: #666;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   .value {
-    color: #000;
-    font-family: monospace;
-    word-wrap: break-word; /* Ensure long addresses wrap correctly */
-    word-break: break-all;
-    overflow-wrap: break-word; /* For breaking long words like wallet addresses */
-    white-space: normal; /* Prevent text from being truncated */
+    color: #1a1a1a;
+    font-family: 'SF Mono', 'Roboto Mono', monospace;
+    font-size: 0.95rem;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.5;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+  }
+}
+
+/* Responsive breakpoints */
+@media (min-width: 640px) {
+  .action-review-container {
+    padding: 1.5rem;
+  }
+
+  .action-review-card {
+    padding: 2rem;
+  }
+
+  .detail {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1rem;
+
+    .label {
+      min-width: 120px;
+      flex-shrink: 0;
+    }
+
+    .value {
+      flex: 1;
+    }
   }
 }

@@ -5,7 +5,7 @@ import { ProtocolActionsValidatorInterface } from "./interfaces/protocol-actions
 import { Krc20ActionsValidatorService } from "./krc20/krc20-actions-validator.service";
 import { ProtocolReviewActionDataInterface } from "./interfaces/protocol-review-action-data.interface";
 import { Krc20CompletedActionDataService } from "./krc20/krc20-completed-action-data.service";
-import { ProtocolType } from "kaspacom-wallet-messages/dist/types/protocol-type.enum";
+import { ProtocolType } from "@kaspacom/wallet-messages/dist/types/protocol-type.enum";
 
 export type ProtocolClasess = {
     actionsDataReviewer?: ProtocolReviewActionDataInterface,

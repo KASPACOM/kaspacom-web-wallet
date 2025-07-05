@@ -25,7 +25,7 @@ import {
   SignPsktTransactionActionResult,
   WalletActionResult,
   WalletActionResultType,
-} from 'kaspacom-wallet-messages';
+} from '@kaspacom/wallet-messages';
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
 import {

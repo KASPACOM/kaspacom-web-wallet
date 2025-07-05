@@ -3,7 +3,7 @@ import { WalletAction, WalletActionType } from "../../../types/wallet-action";
 import { KRC721_TRANSACTIONS_PRICE, Krc721OperationDataService } from "./krc721-operation-data.service";
 import { KaspaNetworkActionsService } from "../../kaspa-netwrok-services/kaspa-network-actions.service";
 import { UtilsHelper } from "../../utils.service";
-import { ProtocolType } from "kaspacom-wallet-messages/dist/types/protocol-type.enum";
+import { ProtocolType } from "@kaspacom/wallet-messages/dist/types/protocol-type.enum";
 
 const CURRENT_PROTOCOL = ProtocolType.KASPLEX;
 
@@ -35,14 +35,14 @@ export class Krc721WalletActionService {
                     type: CURRENT_PROTOCOL,
                     stringifyAction: this.utils.stringifyProtocolAction(
                         this.krc721OperationDataService.getDeployData(
-                            ticker, 
-                            maxSupply, 
-                            limit, 
-                            preAllocation, 
-                            toAddress, 
-                            decimals, 
-                            schema, 
-                            baseUri, 
+                            ticker,
+                            maxSupply,
+                            limit,
+                            preAllocation,
+                            toAddress,
+                            decimals,
+                            schema,
+                            baseUri,
                             startTime
                         )
                     ),

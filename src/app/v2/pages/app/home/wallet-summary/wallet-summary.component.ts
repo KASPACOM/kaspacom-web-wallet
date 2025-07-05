@@ -2,9 +2,9 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { DecimalPipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { TokenLogoComponent } from '../../common/token-logo/token-logo.component';
 import { IToken } from '../../common/interfaces/token.interface';
-import { WalletService } from '../../../../services/wallet.service';
-import { KasplexKrc20Service } from '../../../../services/kasplex-api/kasplex-api.service';
 import { firstValueFrom } from 'rxjs';
+import {KasplexKrc20Service} from "../../../../../services/kasplex-api/kasplex-api.service";
+import {WalletService} from "../../../../../services/wallet.service";
 
 @Component({
   selector: 'app-wallet-summary',
@@ -18,7 +18,7 @@ import { firstValueFrom } from 'rxjs';
 export class WalletSummaryComponent implements OnInit {
   private walletService = inject(WalletService);
   private kasplexService = inject(KasplexKrc20Service);
-  
+
   tokens = signal<IToken[]>([]);
   loading = signal<boolean>(false);
 
@@ -30,7 +30,7 @@ export class WalletSummaryComponent implements OnInit {
     try {
       this.loading.set(true);
       const currentWallet = this.walletService.getCurrentWallet();
-      
+
       if (!currentWallet) {
         console.warn('No current wallet selected');
         return;

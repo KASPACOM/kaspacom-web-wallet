@@ -3,7 +3,7 @@ import { WalletAction, WalletActionType } from "../../../types/wallet-action";
 import { KNS_TRANSACTIONS_PRICE, KnsOperationDataService } from "./kns-operation-data.service";
 import { KaspaNetworkActionsService } from "../../kaspa-netwrok-services/kaspa-network-actions.service";
 import { UtilsHelper } from "../../utils.service";
-import { ProtocolType } from "kaspacom-wallet-messages/dist/types/protocol-type.enum";
+import { ProtocolType } from "@kaspacom/wallet-messages/dist/types/protocol-type.enum";
 
 const CURRENT_PROTOCOL = ProtocolType.KASPLEX;
 

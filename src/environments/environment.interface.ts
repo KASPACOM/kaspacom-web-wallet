@@ -24,6 +24,8 @@ export interface Environment {
   backendApiBaseurl: string;
   kasplexApiBaseurl: string;
   kaspaApiBaseurl: string;
+  krc721ApiBaseurl: string;
+  knsApiBaseurl: string;
   kaspaNetwork: string;
   allowedDomains: string[];
   isL2Enabled: boolean;

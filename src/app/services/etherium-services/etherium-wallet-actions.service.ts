@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { AppWallet } from "../../classes/AppWallet";
-import { EIP1193RequestPayload, EIP1193RequestType, ERROR_CODES, EIP1193ProviderResponse, EIP1193ProviderEventEnum, EIP1193KaspaComWalletProviderEvent, ERROR_CODES_MESSAGES } from "kaspacom-wallet-messages";
+import { EIP1193RequestPayload, EIP1193RequestType, ERROR_CODES, EIP1193ProviderResponse, EIP1193ProviderEventEnum, EIP1193KaspaComWalletProviderEvent, ERROR_CODES_MESSAGES, EIP1193ProviderRequestActionResult } from "@kaspacom/wallet-messages";
 import { EthereumWalletChainManager } from "./etherium-wallet-chain.manager";
 import { WalletService } from "../wallet.service";
 import { WalletActionService } from "../wallet-action.service";
@@ -27,16 +27,13 @@ export class EthereumWalletActionsService {
             }
 
             if (this.ethereumHandleActionRequestService.isActionSupported(request.method) || this.ethereumHandleActionRequestService.isKasAction(request.method)) {
-                const result = await this.walletActionsService.validateAndDoActionAfterApproval(
+                const walletResponse = await this.walletActionsService.validateAndDoActionAfterApproval(
                     this.walletActionsService.createEIP1193Action(request),
                     true,
                     async () => { await onActionApproval?.() },
                 )
 
-                return createEIP1193Response<T>(result.result, result.success ? undefined : {
-                    code: result.errorCode || ERROR_CODES.EIP1193.INTERNAL_ERROR,
-                    message: ERROR_CODES_MESSAGES[result.errorCode!] || 'Error while doing action'
-                });
+                return (walletResponse.result as EIP1193ProviderRequestActionResult<T>).eip1193Response;
             }
 
             switch (request.method) {
@@ -64,7 +61,7 @@ export class EthereumWalletActionsService {
                     }
 
                     const balance = await this.ethereumWalletChainManager.getCurrentWalletProvider()!.getWalletBalance(walletAddress);
-                    if (!balance) {
+                    if (!balance && balance !== 0n) {
                         return createEIP1193Response<T>(undefined, {
                             code: ERROR_CODES.EIP1193.INTERNAL_ERROR,
                             message: 'Failed to get balance'

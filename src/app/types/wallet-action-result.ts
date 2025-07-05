@@ -1,4 +1,4 @@
-import { WalletActionResult, WalletActionResultType } from "kaspacom-wallet-messages";
+import { WalletActionResult, WalletActionResultType } from "@kaspacom/wallet-messages";
 
 export interface WalletActionResultWithError {
     success: boolean;

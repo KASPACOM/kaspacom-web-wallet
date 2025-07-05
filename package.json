@@ -23,6 +23,7 @@
     "@angular/platform-server": "^19.2.13",
     "@angular/router": "^19.2.13",
     "@angular/ssr": "^19.2.13",
+    "@rollup/rollup-win32-x64-msvc": "^4.44.1",
     "angularx-qrcode": "^19.0.0",
     "crypto-js": "^4.2.0",
     "ethers": "^6.13.5",
@@ -52,8 +53,8 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "npm": "^10.9.1",
-    "typescript": "~5.8.3",
-    "prettier": "^3.5.3"
+    "prettier": "^3.5.3",
+    "typescript": "~5.8.3"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "*"

@@ -10,7 +10,7 @@ import {
 } from '../types/wallet-action';
 import { AssetType, TransferableAsset } from '../types/transferable-asset';
 import { WalletService } from './wallet.service';
-import { EIP1193RequestPayload, EIP1193RequestType, ERROR_CODES, ProtocolType, PsktActionsEnum, WalletActionResult } from 'kaspacom-wallet-messages';
+import { EIP1193RequestPayload, EIP1193RequestType, ERROR_CODES, ProtocolType, PsktActionsEnum, WalletActionResult } from '@kaspacom/wallet-messages';
 import { UtilsHelper } from './utils.service';
 import {
   KaspaNetworkActionsService,

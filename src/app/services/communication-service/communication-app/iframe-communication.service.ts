@@ -1,6 +1,5 @@
-import { WalletMessageInterface } from 'kaspacom-wallet-messages';
+import { WalletMessageInterface } from '@kaspacom/wallet-messages';
 import { BaseCommunicationApp } from './base-communication-app';
-import { environment } from '../../../../environments/environment';
 
 export class IFrameCommunicationApp implements BaseCommunicationApp {
   protected currentUrl: string;
@@ -28,6 +27,7 @@ export class IFrameCommunicationApp implements BaseCommunicationApp {
       }
 
       const message = event.data as WalletMessageInterface;
+
       handler(message);
     };
 

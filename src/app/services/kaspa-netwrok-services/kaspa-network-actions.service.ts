@@ -25,7 +25,7 @@ import {
   SignPsktTransactionActionResult,
   WalletActionResult,
   WalletActionResultType,
-} from '@kaspacom/wallet-messages';
+} from 'kaspacom-wallet-messages';
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
 import {
@@ -390,7 +390,7 @@ export class KaspaNetworkActionsService {
         requestData: action.data as EIP1193RequestPayload<EIP1193RequestType.KAS_SEND_TRANSACTION>,
         eip1193Response: createEIP1193Response<EIP1193RequestType.KAS_SEND_TRANSACTION>({
           kaspatransactionId: result.result!.transaction?.summary.finalTransactionId,
-          ethTransactionHash: result.result!.signedTransactionHash,      
+          ethTransactionHash: result.result!.signedTransactionHash,
         })
       };
 

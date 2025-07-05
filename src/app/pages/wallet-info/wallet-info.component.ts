@@ -53,8 +53,6 @@ type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
         MintComponent,
         ReviewActionComponent,
         CommonModule,
-        ListKrc20Component,
-        BuyKrc20Component,
         DeployComponent,
         UtxosListComponent,
         TransactionHistoryComponent,
@@ -147,7 +145,7 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
   private initializeL2Networks() {
     const chainsByChainId = this.ethereumWalletChainManager.getAllChainsByChainId();
     this.availableChains = Object.values(chainsByChainId);
-    
+
     // Set initial selected chain
     const currentChain = this.currentL2Chain();
     this.selectedChain = currentChain;

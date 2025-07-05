@@ -1,7 +1,10 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { DecimalPipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { TokenLogoComponent } from '../../common/token-logo/token-logo.component';
 import { IToken } from '../../common/interfaces/token.interface';
+import { WalletService } from '../../../../services/wallet.service';
+import { KasplexKrc20Service } from '../../../../services/kasplex-api/kasplex-api.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-wallet-summary',
@@ -12,77 +15,46 @@ import { IToken } from '../../common/interfaces/token.interface';
     '[class.full-width]': 'true',
   },
 })
-export class WalletSummaryComponent {
-  tokens = signal<IToken[]>([
-    {
-      name: 'ghoad',
-      symbol: 'GHOAD',
-      address: '0x0',
-      balance: 2000,
-      usdPrice: 0.02,
-    },
-    {
-      name: 'pluto',
-      symbol: 'PLUTO',
-      address: '0x0',
-      balance: 1000,
-      usdPrice: 0.0000022,
-    },
-    {
-      name: 'KACHI',
-      symbol: 'KACHI',
-      address: '0x0',
-      balance: 10,
-      usdPrice: 0.12,
-    },
-    {
-      name: 'ZEAL',
-      symbol: 'ZEAL',
-      address: '0x0',
-      balance: 124.45432,
-      usdPrice: 0.03,
-    },
-    {
-      name: 'CRUMBS',
-      symbol: 'CRUMBS',
-      address: '0x0',
-      balance: 300434,
-      usdPrice: 0.01,
-    },
-    {
-      name: 'ghoad',
-      symbol: 'GHOAD',
-      address: '0x0',
-      balance: 2000,
-      usdPrice: 0.02,
-    },
-    {
-      name: 'pluto',
-      symbol: 'PLUTO',
-      address: '0x0',
-      balance: 1000,
-      usdPrice: 0.0000022,
-    },
-    {
-      name: 'KACHI',
-      symbol: 'KACHI',
-      address: '0x0',
-      balance: 10,
-      usdPrice: 0.12,
-    },
-    {
-      name: 'ZEAL',
-      symbol: 'ZEAL',
-      address: '0x0',
-      balance: 124.45432,
-      usdPrice: 0.03,
-    },
-    {
-      name: 'CRUMBS',
-      symbol: 'CRUMBS',
-      address: '0x0',
-      balance: 300434,
-      usdPrice: 0.01,
-    },
-  ]);
+export class WalletSummaryComponent implements OnInit {
+  private walletService = inject(WalletService);
+  private kasplexService = inject(KasplexKrc20Service);
+  
+  tokens = signal<IToken[]>([]);
+  loading = signal<boolean>(false);
+
+  async ngOnInit() {
+    await this.loadKrc20Tokens();
+  }
+
+  private async loadKrc20Tokens() {
+    try {
+      this.loading.set(true);
+      const currentWallet = this.walletService.getCurrentWallet();
+      
+      if (!currentWallet) {
+        console.warn('No current wallet selected');
+        return;
+      }
+
+      const response = await firstValueFrom(
+        this.kasplexService.getWalletTokenList(currentWallet.getAddress())
+      );
+
+      if (response.message === 'successful' && response.result) {
+        const krc20Tokens: IToken[] = response.result.map(token => ({
+          name: token.tick,
+          symbol: token.tick.toUpperCase(),
+          address: token.tick,
+          balance: parseFloat(token.balance),
+          usdPrice: 0.0
+        }));
+
+        this.tokens.set(krc20Tokens);
+      }
+    } catch (error) {
+      console.error('Failed to load KRC20 tokens:', error);
+    } finally {
+      this.loading.set(false);
+    }
+  }
 }

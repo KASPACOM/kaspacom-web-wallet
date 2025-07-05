@@ -1,4 +1,4 @@
-import { EIP1193RequestPayload, EIP1193RequestType, ProtocolScript, ProtocolScriptDataAndAddress, ProtocolType, PsktActionsEnum } from '@kaspacom/wallet-messages';
+import { EIP1193RequestPayload, EIP1193RequestType, ProtocolScript, ProtocolScriptDataAndAddress, ProtocolType, PsktActionsEnum } from 'kaspacom-wallet-messages';
 import { WalletActionResultWithError } from './wallet-action-result';
 import { BaseCommunicationApp } from '../services/communication-service/communication-app/base-communication-app';
 

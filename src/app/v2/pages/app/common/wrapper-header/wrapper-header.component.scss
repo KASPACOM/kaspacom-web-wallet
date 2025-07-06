@@ -57,9 +57,22 @@
 
     &:hover {
       ::ng-deep {
-        .icon-wrapper {
+        .icon {
           color: var(--white);
         }
+      }
+    }
+  }
+}
+
+.settings-icon {
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover {
+    ::ng-deep {
+      .icon {
+        color: var(--white);
       }
     }
   }

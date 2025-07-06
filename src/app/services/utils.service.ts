@@ -78,4 +78,11 @@ export class UtilsHelper {
     return JSON.stringify(action, null, 0);
   }
 
+  shortenAddress(address: string, frontChars: number = 15, backChars: number = 4): string {
+    if (!address || address.length <= frontChars + backChars) {
+      return address;
+    }
+    return `${address.slice(0, frontChars)}...${address.slice(-backChars)}`;
+  }
+
 }

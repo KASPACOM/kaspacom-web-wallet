@@ -1,11 +1,28 @@
 @if (router.url === "/app/home") {
   <div class="header-container-home full-height">
-    <a [routerLink]="'/app/home/search'">
+    <div class="profile-container">
       <kc-icon
-        class="header-container__search-icon"
-        [iconClass]="'icon-search'"
+        class="profile-container__chain-icon"
+        [iconClass]="'icon-chain'"
       ></kc-icon>
-    </a>
+      <div class="profile-container__info">
+        <div class="profile-container__account-name">{{ getCurrentAccountName() }}</div>
+        <div class="profile-container__address">
+          <span>{{ getShortenedAddress() }}</span>
+          <kc-icon
+            class="profile-container__copy-icon"
+            [iconClass]="'icon-copy'"
+            (click)="onCopyAddress()"
+          ></kc-icon>
+        </div>
+      </div>
+    </div>
+    <kc-button
+      [variant]="'tertiary'"
+      [size]="'md'"
+      [prefixIcon]="'icon-settings'"
+      (buttonClick)="onSettingsClick()"
+    ></kc-button>
   </div>
 } @else if (router.url === "/app/home/search") {
   <app-search-bar></app-search-bar>

@@ -14,3 +14,53 @@
     }
   }
 }
+
+.header-container-home {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.profile-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  &__chain-icon {
+    flex-shrink: 0;
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__account-name {
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 1.2;
+  }
+
+  &__address {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    opacity: 0.8;
+  }
+
+  &__copy-icon {
+    cursor: pointer;
+    flex-shrink: 0;
+
+    &:hover {
+      ::ng-deep {
+        .icon-wrapper {
+          color: var(--white);
+        }
+      }
+    }
+  }
+}

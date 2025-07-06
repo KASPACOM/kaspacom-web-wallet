@@ -26,7 +26,18 @@ export class WrapperHeaderComponent {
 
   walletAddress = computed(() => {
     const wallet = this.currentWallet();
-    return wallet?.getAddress() || '';
+    if (!wallet) {
+      console.log('No wallet found in currentWallet signal');
+      return '';
+    }
+    try {
+      const address = wallet.getAddress();
+      console.log('Wallet address:', address);
+      return address;
+    } catch (error) {
+      console.error('Error getting wallet address:', error);
+      return '';
+    }
   });
 
   shortenedAddress = computed(() => {

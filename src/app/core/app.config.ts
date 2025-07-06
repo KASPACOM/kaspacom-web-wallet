@@ -10,11 +10,13 @@ import { provideClientHydration } from '@angular/platform-browser';
 import { provideHttpClient } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { V2TMP_ROUTES } from '../v2/v2.routes';
+import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(V2TMP_ROUTES, withDebugTracing()),
+    // provideRouter(routes, withDebugTracing()),
     provideClientHydration(),
     provideHttpClient(),
     provideAnimationsAsync(),

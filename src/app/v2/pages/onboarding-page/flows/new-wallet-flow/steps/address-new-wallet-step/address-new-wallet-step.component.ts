@@ -64,7 +64,9 @@ export class AddressNewWalletStepComponent {
     );
   }
 
-  onFinish() {
+  async onFinish() {
+    // await this.walletService.loadWallets();
+    await this.walletService.selectCurrentWalletFromLocalStorageNullsafe();
     this.router.navigate(['/app/home']);
   }
 }

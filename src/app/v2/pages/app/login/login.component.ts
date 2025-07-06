@@ -86,6 +86,7 @@ export class LoginComponent {
           this.router.navigate(['./wallet-selection']);
           return;
         } else {
+          await this.walletService.selectCurrentWalletFromLocalStorageNullsafe();
           this.router.navigate(['./app/home']);
           return;
         }

@@ -1,11 +1,9 @@
-import {
-  EnvironmentInjector,
-  Injectable,
-  Signal,
-  signal,
-} from '@angular/core';
+import { EnvironmentInjector, Injectable, Signal, signal } from '@angular/core';
 import { PasswordManagerService } from './password-manager.service';
-import { SavedWalletAccount, SavedWalletData } from '../types/saved-wallet-data';
+import {
+  SavedWalletAccount,
+  SavedWalletData,
+} from '../types/saved-wallet-data';
 import { KaspaNetworkActionsService } from './kaspa-netwrok-services/kaspa-network-actions.service';
 import * as _ from 'lodash';
 import { AppWallet } from '../classes/AppWallet';
@@ -29,14 +27,14 @@ export class WalletService {
     private readonly kasplexService: KasplexKrc20Service,
     private readonly utilsService: UtilsHelper,
     private readonly injector: EnvironmentInjector,
-  ) { }
+  ) {}
 
   async addWallet(
     name: string,
     privateKey?: string,
     mnemonic?: string,
     passphrase?: string,
-    accountData?: SavedWalletAccount
+    accountData?: SavedWalletAccount,
   ): Promise<{ sucess: boolean; error?: string }> {
     if (!privateKey && !(mnemonic && accountData)) {
       return {
@@ -47,25 +45,25 @@ export class WalletService {
 
     let mnemonicPk = undefined;
 
-
     if (!privateKey) {
       mnemonicPk =
         await this.kaspaNetworkActionsService.getPrivateKeyFromMnemonic(
           mnemonic!,
           accountData!.derivedPath,
-          passphrase
+          passphrase,
         );
 
       if (!mnemonicPk) {
         return {
           sucess: false,
           error: 'Invalid mnemonic',
-        }
+        };
       }
     }
 
-    const isValid =
-      this.kaspaNetworkActionsService.validatePrivateKey(privateKey || mnemonicPk!);
+    const isValid = this.kaspaNetworkActionsService.validatePrivateKey(
+      privateKey || mnemonicPk!,
+    );
 
     if (!isValid) {
       return {
@@ -78,7 +76,11 @@ export class WalletService {
 
     if (
       currentWalletsData.wallets.find(
-        (wallet) => (wallet.privateKey && wallet.privateKey === privateKey) || (mnemonic && wallet.mnemonic === mnemonic && wallet.password == passphrase)
+        (wallet) =>
+          (wallet.privateKey && wallet.privateKey === privateKey) ||
+          (mnemonic &&
+            wallet.mnemonic === mnemonic &&
+            wallet.password == passphrase),
       )
     ) {
       return {
@@ -87,7 +89,8 @@ export class WalletService {
       };
     }
 
-    const id = Math.max(...currentWalletsData.wallets.map(wallet => wallet.id), 0) + 1;
+    const id =
+      Math.max(...currentWalletsData.wallets.map((wallet) => wallet.id), 0) + 1;
     const result = await this.saveWalletData({
       id,
       name,
@@ -110,27 +113,24 @@ export class WalletService {
     mnemonic: string,
     derivedPath: string,
     accountName: string,
-    passphrase?: string
+    passphrase?: string,
   ): Promise<{ sucess: boolean; error?: string }> {
-
-    return await this.addWallet(
-      name,
-      undefined,
-      mnemonic,
-      passphrase,
-      {
-        name: accountName,
-        derivedPath: derivedPath
-      }
-    );
+    return await this.addWallet(name, undefined, mnemonic, passphrase, {
+      name: accountName,
+      derivedPath: derivedPath,
+    });
   }
 
-  async addWalletAccount(walletId: number, derivedPath: string, name: string): Promise<{ success: boolean; error?: string }> {
+  async addWalletAccount(
+    walletId: number,
+    derivedPath: string,
+    name: string,
+  ): Promise<{ success: boolean; error?: string }> {
     const walletsData = await this.passwordManagerService.getUserData();
 
     const walletAccountData: SavedWalletAccount = {
       name,
-      derivedPath
+      derivedPath,
     };
 
     const walletData = walletsData.wallets.find((w) => w.id === walletId);
@@ -139,8 +139,8 @@ export class WalletService {
       if (!walletData.version) {
         return {
           success: false,
-          error: 'Old wallet, can\'t add accounts',
-        }
+          error: "Old wallet, can't add accounts",
+        };
       }
       walletData.accounts!.push(walletAccountData);
     } else {
@@ -150,9 +150,10 @@ export class WalletService {
       };
     }
 
-    const success = await this.passwordManagerService.saveWalletsDataWithStoredPassword(
-      walletsData
-    );
+    const success =
+      await this.passwordManagerService.saveWalletsDataWithStoredPassword(
+        walletsData,
+      );
 
     if (!success) {
       return {
@@ -163,15 +164,21 @@ export class WalletService {
 
     this.allWalletsSignal.update((oldValue) => [
       ...(oldValue || []),
-      this.createAppWalletFromSavedWalletData(walletData, true, walletAccountData),
+      this.createAppWalletFromSavedWalletData(
+        walletData,
+        true,
+        walletAccountData,
+      ),
     ]);
 
     return {
-      success: true
-    }
+      success: true,
+    };
   }
 
-  async removeWalletAccount(walletIdAndAccount: string): Promise<{ success: boolean; error?: string }> {
+  async removeWalletAccount(
+    walletIdAndAccount: string,
+  ): Promise<{ success: boolean; error?: string }> {
     const appWallet = this.getWalletByIdAndAccount(walletIdAndAccount);
 
     if (!appWallet) {
@@ -188,21 +195,23 @@ export class WalletService {
       };
     }
 
-
     const walletsData = await this.passwordManagerService.getUserData();
 
-    const walletData = walletsData.wallets.find((w) => w.id === appWallet.getId());
+    const walletData = walletsData.wallets.find(
+      (w) => w.id === appWallet.getId(),
+    );
 
     if (walletData) {
       if (!walletData.version || !walletData.accounts?.length) {
         return {
           success: false,
-          error: 'Old wallet, can\'t delete accounts',
-        }
+          error: "Old wallet, can't delete accounts",
+        };
       }
 
-
-      walletData.accounts = walletData.accounts!.filter((wa) => wa.derivedPath !== appWallet.getDerivedPath());
+      walletData.accounts = walletData.accounts!.filter(
+        (wa) => wa.derivedPath !== appWallet.getDerivedPath(),
+      );
     } else {
       return {
         success: false,
@@ -210,9 +219,10 @@ export class WalletService {
       };
     }
 
-    const success = await this.passwordManagerService.saveWalletsDataWithStoredPassword(
-      walletsData
-    );
+    const success =
+      await this.passwordManagerService.saveWalletsDataWithStoredPassword(
+        walletsData,
+      );
 
     if (!success) {
       return {
@@ -222,13 +232,20 @@ export class WalletService {
     }
 
     this.allWalletsSignal.update((oldValue) => {
-      return oldValue?.filter((wallet) => !(wallet.getId() == appWallet.getId() && wallet.getDerivedPath() == appWallet.getDerivedPath())) || [];
+      return (
+        oldValue?.filter(
+          (wallet) =>
+            !(
+              wallet.getId() == appWallet.getId() &&
+              wallet.getDerivedPath() == appWallet.getDerivedPath()
+            ),
+        ) || []
+      );
     });
     return {
-      success: true
-    }
+      success: true,
+    };
   }
-
 
   async deleteWallet(walletIdAndAccount: string): Promise<boolean> {
     const appWallet = this.getWalletByIdAndAccount(walletIdAndAccount);
@@ -243,16 +260,18 @@ export class WalletService {
 
     const walletsData = await this.passwordManagerService.getUserData();
     const wallets = walletsData.wallets.filter(
-      (wallet) => wallet.id !== appWallet.getId()
+      (wallet) => wallet.id !== appWallet.getId(),
     );
     walletsData.wallets = wallets;
     const result =
       await this.passwordManagerService.saveWalletsDataWithStoredPassword(
-        walletsData
+        walletsData,
       );
 
     this.allWalletsSignal.update((oldValue) => {
-      return oldValue?.filter((wallet) => wallet.getId() !== appWallet.getId()) || [];
+      return (
+        oldValue?.filter((wallet) => wallet.getId() !== appWallet.getId()) || []
+      );
     });
 
     return result;
@@ -264,11 +283,11 @@ export class WalletService {
 
   getWalletAddressFromMnemonic(
     mnemonic: string,
-    password?: string
+    password?: string,
   ): string | null {
     return this.kaspaNetworkActionsService.getWalletAddressFromMnemonic(
       mnemonic,
-      password
+      password,
     );
   }
 
@@ -278,12 +297,16 @@ export class WalletService {
 
     const result =
       await this.passwordManagerService.saveWalletsDataWithStoredPassword(
-        walletsData
+        walletsData,
       );
 
     this.allWalletsSignal.update((oldValue) => [
       ...(oldValue || []),
-      this.createAppWalletFromSavedWalletData(walletData, true, walletData.accounts?.[0]),
+      this.createAppWalletFromSavedWalletData(
+        walletData,
+        true,
+        walletData.accounts?.[0],
+      ),
     ]);
 
     return result;
@@ -301,16 +324,26 @@ export class WalletService {
     for (const wallet of walletsData.wallets) {
       if (wallet.accounts && wallet.accounts.length) {
         for (const walletAccount of wallet.accounts) {
-          allWallets.push(this.createAppWalletFromSavedWalletData(wallet, loadBalance, walletAccount));
+          allWallets.push(
+            this.createAppWalletFromSavedWalletData(
+              wallet,
+              loadBalance,
+              walletAccount,
+            ),
+          );
         }
       } else {
-        allWallets.push(this.createAppWalletFromSavedWalletData(wallet, loadBalance, undefined));
+        allWallets.push(
+          this.createAppWalletFromSavedWalletData(
+            wallet,
+            loadBalance,
+            undefined,
+          ),
+        );
       }
     }
 
-    this.allWalletsSignal.set(
-      allWallets
-    );
+    this.allWalletsSignal.set(allWallets);
   }
 
   getAllWallets(loadBalance: boolean = false): Signal<AppWallet[] | undefined> {
@@ -325,23 +358,29 @@ export class WalletService {
 
   getAllWalletsByIdAndAccount(): { [id: string]: AppWallet } | undefined {
     const wallets = this.getAllWallets()();
-    return wallets?.reduce((obj, wallet) => {
-      obj[wallet.getIdWithAccount()] = wallet;
-      return obj;
-    }, {} as { [key: string]: AppWallet });
+    return wallets?.reduce(
+      (obj, wallet) => {
+        obj[wallet.getIdWithAccount()] = wallet;
+        return obj;
+      },
+      {} as { [key: string]: AppWallet },
+    );
   }
 
   getAllWalletsById(): { [id: number]: AppWallet } | undefined {
     const wallets = this.getAllWallets()();
-    return wallets?.reduce((obj, wallet) => {
-      obj[wallet.getId()] = wallet;
-      return obj;
-    }, {} as { [key: number]: AppWallet });
+    return wallets?.reduce(
+      (obj, wallet) => {
+        obj[wallet.getId()] = wallet;
+        return obj;
+      },
+      {} as { [key: number]: AppWallet },
+    );
   }
 
   getWalletById(
     id: number,
-    loadBalance: boolean = false
+    loadBalance: boolean = false,
   ): AppWallet | undefined {
     const wallet = this.getAllWalletsByIdAndAccount()?.[id];
 
@@ -354,7 +393,7 @@ export class WalletService {
 
   getWalletByIdAndAccount(
     idWithAccount: string,
-    loadBalance: boolean = false
+    loadBalance: boolean = false,
   ): AppWallet | undefined {
     const wallet = this.getAllWalletsByIdAndAccount()?.[idWithAccount];
 
@@ -365,16 +404,31 @@ export class WalletService {
     return wallet;
   }
 
+  async selectCurrentWalletFromLocalStorageNullsafe(): Promise<void> {
+    let walletIdWithAccount = localStorage.getItem(
+      LOCAL_STORAGE_KEYS.CURRENT_SELECTED_WALLET,
+    );
+    if (!walletIdWithAccount) {
+      const allWallets = this.getAllWallets();
+      if (!allWallets) {
+        return;
+      }
+      const len = allWallets()?.length || 0;
+      if (len > 0) {
+        walletIdWithAccount = allWallets()![0].getIdWithAccount();
+      }
+    }
+    this.selectCurrentWallet(walletIdWithAccount!);
+  }
+
   async selectCurrentWalletFromLocalStorage(): Promise<void> {
     const walletIdWithAccount = localStorage.getItem(
-      LOCAL_STORAGE_KEYS.CURRENT_SELECTED_WALLET
+      LOCAL_STORAGE_KEYS.CURRENT_SELECTED_WALLET,
     );
     await this.selectCurrentWallet(walletIdWithAccount!);
   }
 
-  selectCurrentWallet(
-    walletIdWithAccount: string,
-  ): AppWallet | undefined {
+  selectCurrentWallet(walletIdWithAccount: string): AppWallet | undefined {
     if (walletIdWithAccount == this.currentWalletSignal()?.getIdWithAccount()) {
       return this.currentWalletSignal();
     }
@@ -383,7 +437,9 @@ export class WalletService {
       this.deselectCurrentWallet();
     }
 
-    this.currentWalletSignal.set(this.getWalletByIdAndAccount(walletIdWithAccount, true));
+    this.currentWalletSignal.set(
+      this.getWalletByIdAndAccount(walletIdWithAccount, true),
+    );
 
     if (!this.currentWalletSignal()) {
       return undefined;
@@ -391,7 +447,7 @@ export class WalletService {
 
     localStorage.setItem(
       LOCAL_STORAGE_KEYS.CURRENT_SELECTED_WALLET,
-      walletIdWithAccount
+      walletIdWithAccount,
     );
 
     if (
@@ -443,18 +499,21 @@ export class WalletService {
         ticker: 'TKAS',
         type: AssetType.KAS,
         availableAmount:
-          this.getCurrentWallet()?.getCurrentWalletStateBalanceSignalValue()?.mature || 0n,
+          this.getCurrentWallet()?.getCurrentWalletStateBalanceSignalValue()
+            ?.mature || 0n,
         name: 'TKAS',
       },
       ...additionalAssets,
     ];
   }
 
-  async getKrc20AvailableAssetsForCurrentWallet(): Promise<TransferableAsset[]> {
+  async getKrc20AvailableAssetsForCurrentWallet(): Promise<
+    TransferableAsset[]
+  > {
     const krc20tokens = await firstValueFrom(
       this.kasplexService.getWalletTokenList(
-        this.getCurrentWallet()!.getAddress()
-      )
+        this.getCurrentWallet()!.getAddress(),
+      ),
     );
 
     return krc20tokens.result.map((token) => ({
@@ -480,7 +539,7 @@ export class WalletService {
     }
 
     return await this.passwordManagerService.saveWalletsDataWithStoredPassword(
-      walletsData
+      walletsData,
     );
   }
 
@@ -495,20 +554,27 @@ export class WalletService {
     return accountNumber;
   }
 
-  replaceWalletAccountNumberFromDerivedPath(derivedPath: string, newAccountNumber: number): string {
+  replaceWalletAccountNumberFromDerivedPath(
+    derivedPath: string,
+    newAccountNumber: number,
+  ): string {
     const pathComponents = derivedPath.split('/');
     pathComponents.pop();
     pathComponents.push(newAccountNumber.toString());
 
-
     return pathComponents.join('/');
   }
 
-
-  private createAppWalletFromSavedWalletData(savedWalletData: SavedWalletData,
+  private createAppWalletFromSavedWalletData(
+    savedWalletData: SavedWalletData,
     shoudLoadBalance: boolean,
     account: SavedWalletAccount | undefined,
   ): AppWallet {
-    return new AppWallet(savedWalletData, shoudLoadBalance, account, this.injector);
+    return new AppWallet(
+      savedWalletData,
+      shoudLoadBalance,
+      account,
+      this.injector,
+    );
   }
 }

@@ -3,6 +3,7 @@ $header-bg-color: #6fc7ba26;
 $nav-bg-color: #6fc7ba26;
 .screen {
   width: 100%;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -15,11 +16,12 @@ $nav-bg-color: #6fc7ba26;
   align-items: center;
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 80vh;
   overflow: hidden;
   width: 480px;
   @include mobile {
     width: 100%;
+    height: 100vh;
     border-radius: 0;
     //background: none;
     // backdrop-filter: blur(4px);

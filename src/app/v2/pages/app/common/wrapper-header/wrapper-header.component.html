@@ -6,23 +6,24 @@
         [iconClass]="'icon-chain'"
       ></kc-icon>
       <div class="profile-container__info">
-        <div class="profile-container__account-name">{{ getCurrentAccountName() }}</div>
+        <div class="profile-container__account-name">{{ accountName() }}</div>
         <div class="profile-container__address">
-          <span>{{ getShortenedAddress() }}</span>
+          <span>{{ shortenedAddress() }}</span>
           <kc-icon
             class="profile-container__copy-icon"
             [iconClass]="'icon-copy'"
+            [size]="'xs'"
             (click)="onCopyAddress()"
           ></kc-icon>
         </div>
       </div>
     </div>
-    <kc-button
-      [variant]="'tertiary'"
+    <kc-icon
+      class="settings-icon"
+      [iconClass]="'icon-settings'"
       [size]="'md'"
-      [prefixIcon]="'icon-settings'"
-      (buttonClick)="onSettingsClick()"
-    ></kc-button>
+      (click)="onSettingsClick()"
+    ></kc-icon>
   </div>
 } @else if (router.url === "/app/home/search") {
   <app-search-bar></app-search-bar>

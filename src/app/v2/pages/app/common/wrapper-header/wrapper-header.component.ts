@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { KcIconComponent, KcButtonComponent } from 'kaspacom-ui';
 import { SearchBarComponent } from '../../home/search/search-bar/search-bar.component';
@@ -16,20 +16,23 @@ export class WrapperHeaderComponent {
   walletService = inject(WalletService);
   utilsHelper = inject(UtilsHelper);
 
-  getCurrentAccountName(): string {
-    const currentWallet = this.walletService.getCurrentWallet();
-    return currentWallet?.getDisplayName() || 'Account 1';
-  }
+  // Use signals for reactive updates
+  currentWallet = this.walletService.getCurrentWalletSignal();
+  
+  accountName = computed(() => {
+    const wallet = this.currentWallet();
+    return wallet?.getDisplayName() || 'Account 1';
+  });
 
-  getCurrentWalletAddress(): string {
-    const currentWallet = this.walletService.getCurrentWallet();
-    return currentWallet?.getAddress() || '';
-  }
+  walletAddress = computed(() => {
+    const wallet = this.currentWallet();
+    return wallet?.getAddress() || '';
+  });
 
-  getShortenedAddress(): string {
-    const address = this.getCurrentWalletAddress();
-    return this.utilsHelper.shortenAddress(address);
-  }
+  shortenedAddress = computed(() => {
+    const address = this.walletAddress();
+    return address ? this.utilsHelper.shortenAddress(address) : '';
+  });
 
   onSettingsClick(): void {
     // Navigate to settings page or implement settings logic
@@ -37,7 +40,7 @@ export class WrapperHeaderComponent {
   }
 
   onCopyAddress(): void {
-    const address = this.getCurrentWalletAddress();
+    const address = this.walletAddress();
     if (address) {
       navigator.clipboard.writeText(address);
       // You might want to show a toast notification here

@@ -1,0 +1,88 @@
+<div class="asset-page-container full-width full-height column p-16" [class.loading]="loading() || historyLoading()">
+  <!-- Header with back button -->
+  <div class="asset-header flex align-items-center justify-content-between mb-24">
+    <!-- Left side: back button and title -->
+    <div class="header-left flex align-items-center gap-16">
+      <kc-icon 
+        [iconClass]="'icon-arrow-left'"
+        [size]="'md'"
+        (click)="goBack()"
+        class="cursor-pointer">
+      </kc-icon>
+      <h1 class="asset-title text-gray-90">{{ assetDetail()?.name || 'Loading...' }}</h1>
+    </div>
+    
+    <!-- Right side: balance number -->
+    <div class="header-right flex align-items-center">
+      @if (loading()) {
+        <app-skeleton [height]="'28px'" [width]="'120px'"></app-skeleton>
+      } @else if (assetDetail()) {
+        <span class="typo-title-4 text-gray-90">{{ formatBalance() }}</span>
+      }
+    </div>
+  </div>
+
+
+  <!-- Action Buttons -->
+  <div class="action-buttons flex gap-12 mb-24">
+    <kc-button 
+      [variant]="'primary'"
+      [size]="'md'"
+      [text]="'Send'"
+      class="flex-1"
+      (click)="onSendAction()">
+    </kc-button>
+    <!-- Can add more action buttons here -->
+  </div>
+
+  <!-- Transaction History -->
+  <div class="transaction-history flex-1" [class.loading]="historyLoading()">
+    <h3 class="history-title mb-16 text-gray-90">Transaction History</h3>
+    
+    <div class="transaction-list" [class.loading]="historyLoading()">
+      @if (historyLoading()) {
+        @for (item of [1,2,3,4,5]; track item) {
+          <div class="transaction-item-card">
+            <div class="transaction-content flex justify-content-between align-items-center">
+              <div class="transaction-info">
+                <app-skeleton [height]="'20px'" [width]="'100px'" class="mb-4"></app-skeleton>
+                <app-skeleton [height]="'16px'" [width]="'150px'"></app-skeleton>
+              </div>
+              <div class="transaction-amount text-right">
+                <app-skeleton [height]="'20px'" [width]="'80px'" class="mb-4 ml-auto"></app-skeleton>
+                <app-skeleton [height]="'16px'" [width]="'60px'" class="ml-auto"></app-skeleton>
+              </div>
+            </div>
+          </div>
+        }
+      } @else if (transactions().length === 0) {
+        <div class="no-transactions text-center p-24 text-gray-60">
+          No transactions found
+        </div>
+      } @else {
+        @for (transaction of transactions(); track transaction.id) {
+          <div class="transaction-item-card fade-in" [attr.data-transaction-type]="transaction.type">
+            <div class="transaction-content flex justify-content-between align-items-center">
+              <div class="transaction-info">
+                <div class="transaction-type font-weight-medium text-gray-90">
+                  {{ transaction.type | titlecase }}
+                </div>
+                <div class="transaction-details text-small text-gray-60">
+                  {{ formatTransactionDetails(transaction) }}
+                </div>
+              </div>
+              <div class="transaction-amount text-right">
+                <div class="amount font-weight-medium" [class.transaction-positive]="isTransactionPositive(transaction)" [class.transaction-negative]="!isTransactionPositive(transaction)">
+                  {{ formatTransactionAmount(transaction) }}
+                </div>
+                <div class="timestamp text-small text-gray-60">
+                  {{ formatTimestamp(transaction.timestamp) }}
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div> 

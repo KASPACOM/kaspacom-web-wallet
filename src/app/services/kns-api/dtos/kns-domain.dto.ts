@@ -1,14 +1,14 @@
 export interface KnsDomainAsset {
+  id: string;
   assetId: string;
+  mimeType: string;
   asset: string;
-  collection: string;
-  status: 'active' | 'listed' | 'expired';
-  txid?: string;
-  blockTime?: number;
-  resolvedAddress?: string;
-  text?: {
-    [key: string]: string;
-  };
+  owner: string;
+  creationBlockTime: string;
+  isDomain: boolean;
+  isVerifiedDomain: boolean;
+  status: string;
+  transactionId: string;
 }
 
 export interface KnsDomainPagination {

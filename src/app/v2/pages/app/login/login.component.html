@@ -1,6 +1,6 @@
-<div class="flex column full-width full-height align-items-center p-16 gap-24">
+<div class="flex column full-width full-height align-items-center p-16 gap-24 full-width">
   <img class="logo" src="/logo.png" />
-  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="flex row justify-content-center full-width">
     <div class="login-card card flex column gap-36 align-items-center">
       <img class="login-image" src="/svgs/login.svg" />
       <div class="flex column gap-16 align-items-center full-width">

@@ -35,11 +35,51 @@ export class NavIcons {
     </svg>
   `;
   static readonly activity = `
-  <svg width="40" height="40" viewBox="0 0 40 40" fill="currentColor"
-    xmlns="http://www.w3.org/2000/svg">
-    <path fill-rule="evenodd" clip-rule="evenodd"
-        d="M10 14C10 12.8954 10.8954 12 12 12H16C17.1046 12 18 12.8954 18 14V18C18 19.1046 17.1046 20 16 20H12C10.8954 20 10 19.1046 10 18V14ZM16 14H12V18H16V14ZM20 14C20 13.4477 20.4477 13 21 13H29C29.5523 13 30 13.4477 30 14C30 14.5523 29.5523 15 29 15H21C20.4477 15 20 14.5523 20 14ZM20 20C20 19.4477 20.4477 19 21 19H29C29.5523 19 30 19.4477 30 20C30 20.5523 29.5523 21 29 21H21C20.4477 21 20 20.5523 20 20ZM17.7071 22.2929C18.0976 22.6834 18.0976 23.3166 17.7071 23.7071L13.7071 27.7071C13.3166 28.0976 12.6834 28.0976 12.2929 27.7071L10.2929 25.7071C9.90237 25.3166 9.90237 24.6834 10.2929 24.2929C10.6834 23.9024 11.3166 23.9024 11.7071 24.2929L13 25.5858L16.2929 22.2929C16.6834 21.9024 17.3166 21.9024 17.7071 22.2929ZM20 26C20 25.4477 20.4477 25 21 25H29C29.5523 25 30 25.4477 30 26C30 26.5523 29.5523 27 29 27H21C20.4477 27 20 26.5523 20 26Z"
-        fill="currentColor" />
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Activity markers (circles) -->
+  <circle cx="8" cy="12" r="2" fill="currentColor"/>
+  <circle cx="8" cy="18" r="2" fill="currentColor"/>
+  <circle cx="8" cy="24" r="2" fill="currentColor"/>
+  <circle cx="8" cy="30" r="2" fill="currentColor"/>
+  
+  <!-- Activity lines extending from timeline -->
+  <line x1="10" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <line x1="10" y1="18" x2="17" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <line x1="10" y1="24" x2="19" y2="24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <line x1="10" y1="30" x2="16" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Clock -->
+  <circle cx="28" cy="21" r="6" stroke="currentColor" stroke-width="2" fill="none"/>
+  <!-- Clock hands -->
+  <line x1="28" y1="21" x2="28" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <line x1="28" y1="21" x2="31" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <!-- Clock center dot -->
+  <circle cx="28" cy="21" r="0.8" fill="currentColor"/>
 </svg>
+  `;
+
+  static readonly chevronUp = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M18 15L12 9L6 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  `;
+
+  static readonly chevronDown = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  `;
+
+  static readonly add = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  `;
+
+  static readonly trash = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
   `;
 }

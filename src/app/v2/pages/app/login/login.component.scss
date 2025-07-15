@@ -7,7 +7,7 @@
   padding-top: 48px;
   padding-bottom: 48px;
   @include mobile {
-    width: 80%;
+    width: 65%;
   }
 }
 
@@ -22,8 +22,11 @@
   // overflow-y: unset;
   width: 480px;
   flex: 0 0 auto;
+  background: rgba(black, 0.2);
+  backdrop-filter: 6px;
 
-  background: var(--background-secondary);
+  border: solid 1px var(--gray-0);
+
   //background-color: var(--vampire-black);
   border-radius: 16px;
   padding: 24px;
@@ -32,7 +35,7 @@
   @include mobile {
     width: 100%;
     background: none;
-    backdrop-filter: blur(4px);
+   // backdrop-filter: blur(4px);
   }
   @include tablet {
     width: 75%;

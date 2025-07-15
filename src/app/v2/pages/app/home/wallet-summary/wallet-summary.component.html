@@ -1,14 +1,17 @@
 <div
-  class="wallet-summary-container flex column justify-content-center align-items-center full-width gap-8"
+  class="wallet-summary-container flex column justify-content-center align-items-center full-width gap-12"
 >
   @if (loading()) {
-    <div class="text-gray-60 p-16">Loading KRC20 tokens...</div>
+    @for (item of [1,2,3]; track item) {
+      <app-skeleton class="full-width" [height]="'75px'" [width]="'auto'" [fullRound]="false"></app-skeleton>
+    }
   } @else if (tokens().length === 0) {
     <div class="text-gray-60 p-16">No KRC20 tokens found</div>
   } @else {
     @for ( token of tokens(); track token.address ) {
     <div
-      class="wallet-summary-container__card flex full-width align-items-center justify-content-between p-16"
+      class="wallet-summary-container__card flex full-width align-items-center justify-content-between p-16 fade-in cursor-pointer"
+      (click)="onTokenClick(token)"
     >
       <div
         class="wallet-summary-container__token-info flex align-items-center gap-16"

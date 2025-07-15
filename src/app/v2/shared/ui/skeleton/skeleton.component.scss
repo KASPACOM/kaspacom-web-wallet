@@ -1,0 +1,25 @@
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--gray-0) 25%,
+    var(--gray-15) 50%,
+    var(--gray-0) 75%
+  );
+  background-size: 200% 100%;
+  border-radius: 8px;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  transition: all 0.3s ease;
+
+  &--full-round {
+    border-radius: 50px;
+  }
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+} 

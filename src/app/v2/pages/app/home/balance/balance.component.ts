@@ -1,27 +1,47 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, computed } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
+import { KcIconComponent } from 'kaspacom-ui';
+import { WalletService } from '../../../../../services/wallet.service';
+import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
+import { CommaFormatterPipe } from '../../../../../pipes/comma-formatter.pipe';
+import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 
 @Component({
   selector: 'app-balance',
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, CommaFormatterPipe, KcIconComponent, SkeletonComponent],
   templateUrl: './balance.component.html',
   styleUrl: './balance.component.scss',
 })
 export class BalanceComponent {
+  private walletService = inject(WalletService);
+  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+
   usdBalance = computed(() => 13.45);
-  usdProfit = computed(() => 0.0287);
-  absUsdProfit = computed(() => Math.abs(this.usdProfit()));
-  profitSign = computed(() => {
-    if (!this.usdProfit()) {
-      return '';
+  
+  // Check if wallet data is loading
+  isLoading = computed(() => {
+    const wallet = this.walletService.getCurrentWallet();
+    if (!wallet) {
+      return true;
     }
-    return this.usdProfit() > 0 ? '+' : '-';
+    
+    const balanceData = wallet.getCurrentWalletStateBalanceSignalValue();
+    return !balanceData;
   });
-  profitTextClass = computed(() => {
-    if (!this.usdProfit()) {
-      return 'text-white';
+  
+  // Get the actual KAS balance from the wallet
+  kasBalance = computed(() => {
+    const wallet = this.walletService.getCurrentWallet();
+    if (!wallet) {
+      return 0;
     }
-    return this.usdProfit() > 0 ? 'text-green-20' : 'text-red-20';
+    
+    const balanceData = wallet.getCurrentWalletStateBalanceSignalValue();
+    if (!balanceData?.mature) {
+      return 0;
+    }
+    
+    return this.kaspaNetworkActionsService.sompiToNumber(balanceData.mature);
   });
-  percentProfit = computed(() => 0.21);
+
 }

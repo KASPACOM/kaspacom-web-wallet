@@ -1,0 +1,84 @@
+// KRC20-specific styles that extend the base asset page
+// Most styles are inherited from base-asset-page.component.scss
+
+.krc20-specific {
+  // Add any KRC20-specific styling here if needed
+}
+
+// Hide scrollbar during loading states
+.asset-page-container {
+  &.loading {
+    overflow: hidden;
+  }
+}
+
+.transaction-history {
+  &.loading {
+    overflow: hidden;
+  }
+}
+
+// Transaction list styling to match homepage KRC20 cards
+.transaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px; // Gap between transaction items
+  
+  &.loading {
+    overflow: hidden;
+  }
+}
+
+.transaction-item-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+// Transaction amount colors
+.transaction-positive {
+  color: var(--green-20); // Green for positive/incoming amounts
+}
+
+.transaction-negative {
+  color: var(--red-20); // Red for negative/outgoing amounts
+}
+
+// Override or extend base styles if necessary
+.transaction-item {
+  // KRC20 transactions might have specific styling
+  &[data-transaction-type="transfer"] {
+    // Specific styling for transfer transactions
+  }
+  
+  &[data-transaction-type="mint"] {
+    // Specific styling for mint transactions
+  }
+  
+  &[data-transaction-type="deploy"] {
+    // Specific styling for deploy transactions
+  }
+}
+
+// Add fade-in animation
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+} 

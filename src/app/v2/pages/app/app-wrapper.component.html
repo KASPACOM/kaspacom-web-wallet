@@ -13,5 +13,11 @@
     <div class="wrapper__nav">
       <app-wrapper-nav></app-wrapper-nav>
     </div>
+    
+    <!-- Account Settings Overlay -->
+    <app-account-settings-overlay
+      [isOpen]="accountSettingsService.isOpen()"
+      (close)="accountSettingsService.close()"
+    ></app-account-settings-overlay>
   </div>
 </div>

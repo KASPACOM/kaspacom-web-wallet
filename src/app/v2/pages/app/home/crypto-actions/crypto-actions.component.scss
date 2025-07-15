@@ -1,14 +1,21 @@
 .crypto-actions-container {
   &__card {
-    background-color: var(--gray-10);
+    background: rgba(255, 255, 255, 0.03);
     border-radius: 12px;
     flex: 1;
     height: 80px;
-    border: 1px solid var(--gray-20);
     cursor: pointer;
+    transition: all 0.3s ease;
+    gap: 8px;
 
     &:hover {
-      background-color: var(--gray-20);
+      background: rgba(255, 255, 255, 0.08);
     }
+  }
+  
+  &__title {
+    font-weight: 600;
+    font-size: calc(var(--typo-text-1-size, 12px) + 2px);
+    transition: all 0.3s ease;
   }
 }

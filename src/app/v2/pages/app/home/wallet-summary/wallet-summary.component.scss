@@ -1,11 +1,28 @@
 .wallet-summary-container {
   &__card {
-    background-color: var(--gray-10);
-    border: 1px solid var(--gray-20);
+    background: rgba(255, 255, 255, 0.03);
+    border: none;
     border-radius: 12px;
     cursor: pointer;
+    transition: all 0.3s ease;
+    
     &:hover {
-      background-color: var(--gray-20);
+      background: rgba(255, 255, 255, 0.08);
     }
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

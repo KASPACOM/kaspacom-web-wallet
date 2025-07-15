@@ -25,7 +25,7 @@
 .profile-container {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 
   &__chain-icon {
     flex-shrink: 0;
@@ -54,6 +54,20 @@
   &__copy-icon {
     cursor: pointer;
     flex-shrink: 0;
+
+    &:hover {
+      ::ng-deep {
+        .icon {
+          color: var(--white);
+        }
+      }
+    }
+  }
+
+  &__chevron-icon {
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-left: 8px;
 
     &:hover {
       ::ng-deep {

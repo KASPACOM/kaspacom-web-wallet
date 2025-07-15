@@ -1,9 +1,12 @@
-@if (router.url === "/app/home") {
+@if (router.url === "/app/home/search") {
+  <app-search-bar></app-search-bar>
+} @else {
   <div class="header-container-home full-height">
     <div class="profile-container">
       <kc-icon
         class="profile-container__chain-icon"
-        [iconClass]="'icon-chain'"
+        [iconClass]="'icon-user-12px'"
+        [size]="'md'"
       ></kc-icon>
       <div class="profile-container__info">
         <div class="profile-container__account-name">{{ accountName() }}</div>
@@ -17,6 +20,12 @@
           ></kc-icon>
         </div>
       </div>
+      <kc-icon
+        class="profile-container__chevron-icon"
+        [iconClass]="chevronIconClass()"
+        [size]="'md'"
+        (click)="toggleAccountSettings()"
+      ></kc-icon>
     </div>
     <kc-icon
       class="settings-icon"
@@ -25,6 +34,4 @@
       (click)="onSettingsClick()"
     ></kc-icon>
   </div>
-} @else if (router.url === "/app/home/search") {
-  <app-search-bar></app-search-bar>
 }

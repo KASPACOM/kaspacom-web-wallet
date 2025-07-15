@@ -241,13 +241,24 @@ export class Krc721ApiService {
   async getWalletNftsByCollection(address: string, tick: string): Promise<Krc721Nft[]> {
     try {
       const response = await this.getAddressCollectionHoldings(address, tick).toPromise();
-      if (response?.message === 'success' && response.result) {
-        return response.result;
-      }
-      return [];
+      return response?.result || [];
     } catch (error) {
-      console.error('Error fetching wallet NFTs by collection:', error);
+      console.error(`Error getting NFTs for collection ${tick}:`, error);
       return [];
     }
+  }
+
+  // Load NFT metadata from cache
+  getNftMetadata(tick: string, tokenId: string): Observable<any> {
+    const metadataUrl = `https://cache.krc721.stream/krc721/testnet-10/metadata/${tick}/${tokenId}`;
+    
+    return this.httpClient
+      .get<any>(metadataUrl)
+      .pipe(
+        catchError((error) => {
+          console.error(`Error fetching metadata for ${tick}/${tokenId}:`, error);
+          return of(null);
+        })
+      );
   }
 }

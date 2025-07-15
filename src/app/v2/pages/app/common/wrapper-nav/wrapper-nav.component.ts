@@ -40,27 +40,8 @@ export class WrapperNavComponent implements AfterViewInit, OnDestroy {
       link: '/app/home',
     },
     {
-      svgContent: this.domSanitizer.bypassSecurityTrustHtml(
-        NavIcons.collectables,
-      ),
-      alt: 'Collectables',
-      link: '/app/collectables',
-    },
-    {
-      svgContent: this.domSanitizer.bypassSecurityTrustHtml(
-        NavIcons.transactions,
-      ),
-      alt: 'Transactions',
-      link: '/app/transactions',
-    },
-    {
-      svgContent: this.domSanitizer.bypassSecurityTrustHtml(NavIcons.settings),
-      alt: 'Settings',
-      link: '/app/settings',
-    },
-    {
       svgContent: this.domSanitizer.bypassSecurityTrustHtml(NavIcons.activity),
-      alt: 'Activity',
+      alt: 'History',
       link: '/app/activity',
     },
   ]);
@@ -74,7 +55,8 @@ export class WrapperNavComponent implements AfterViewInit, OnDestroy {
     const idx = this.activeRouteIdx();
     if (idx < 0) return 0;
     const navHostWidth = this.navHostWidth();
-    const gap = (navHostWidth - 5 * 40) / (5 * 2);
+    const itemCount = this.routes().length;
+    const gap = (navHostWidth - itemCount * 40) / (itemCount * 2);
     const indicatorOverWidth = (70 - 40) / 2;
     const dist = gap + idx * (40 + 2 * gap) - indicatorOverWidth;
     return `${dist}px`;

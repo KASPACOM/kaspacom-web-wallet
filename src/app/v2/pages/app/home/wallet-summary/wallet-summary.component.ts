@@ -1,14 +1,16 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { DecimalPipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
+import { Router } from '@angular/router';
 import { TokenLogoComponent } from '../../common/token-logo/token-logo.component';
 import { IToken } from '../../common/interfaces/token.interface';
 import { firstValueFrom } from 'rxjs';
 import {KasplexKrc20Service} from "../../../../../services/kasplex-api/kasplex-api.service";
 import {WalletService} from "../../../../../services/wallet.service";
+import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 
 @Component({
   selector: 'app-wallet-summary',
-  imports: [TokenLogoComponent, DecimalPipe, UpperCasePipe, TitleCasePipe],
+  imports: [TokenLogoComponent, DecimalPipe, UpperCasePipe, TitleCasePipe, SkeletonComponent],
   templateUrl: './wallet-summary.component.html',
   styleUrl: './wallet-summary.component.scss',
   host: {
@@ -18,9 +20,10 @@ import {WalletService} from "../../../../../services/wallet.service";
 export class WalletSummaryComponent implements OnInit {
   private walletService = inject(WalletService);
   private kasplexService = inject(KasplexKrc20Service);
+  private router = inject(Router);
 
   tokens = signal<IToken[]>([]);
-  loading = signal<boolean>(false);
+  loading = signal<boolean>(true);
 
   async ngOnInit() {
     await this.loadKrc20Tokens();
@@ -56,5 +59,10 @@ export class WalletSummaryComponent implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  onTokenClick(token: IToken): void {
+    // Navigate to the KRC20 asset detail page
+    this.router.navigate(['/app/home/asset/krc20', token.address]);
   }
 }

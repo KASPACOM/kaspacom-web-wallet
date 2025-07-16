@@ -1,0 +1,74 @@
+<div class="send-krc20-content">
+  <!-- Token Info Header -->
+  <div class="token-info-header flex align-items-center gap-16 p-16">
+    <kc-token-logo [ticker]="token?.symbol || ''" [size]="'lg'"></kc-token-logo>
+    <div class="flex column gap-4">
+      <div class="text-gray-90 typo-text-2">{{ token?.name | titlecase }}</div>
+      <div class="text-gray-60 typo-text-1">
+        Available: {{ availableBalance | number : "1.0-4" }}&nbsp;{{ token?.symbol | uppercase }}
+      </div>
+    </div>
+  </div>
+
+  <div class="send-krc20-form">
+    <!-- Wallet Address Input -->
+    <div class="form-field">
+      <kc-input
+        [label]="'Wallet Address'"
+        [placeholder]="'Enter recipient wallet address'"
+        [type]="'text'"
+        [isFullWidth]="true"
+        (valueChange)="onWalletAddressChange($event)">
+      </kc-input>
+    </div>
+
+    <!-- Amount Input -->
+    <div class="form-field">
+      <div class="amount-input-container">
+        <kc-input
+          [label]="'Amount of ' + (token?.symbol | uppercase)"
+          [placeholder]="'0.00'"
+          [type]="'number'"
+          [min]="0"
+          [max]="availableBalance"
+          [isFullWidth]="true"
+          (valueChange)="onAmountChange($event)">
+        </kc-input>
+        <div class="max-button-container">
+          <button
+            type="button"
+            class="max-button typo-text-1 cursor-pointer"
+            (click)="onMaxAmountClick()">
+            MAX
+          </button>
+        </div>
+      </div>
+      @if (tokenAmount > availableBalance) {
+        <div class="error-message text-red typo-text-1">
+          Insufficient balance. Maximum: {{ availableBalance | number : "1.0-4" }} {{ token?.symbol | uppercase }}
+        </div>
+      }
+    </div>
+
+    <!-- Replace By Fee Checkbox -->
+    <div class="form-field">
+      <kc-checkbox
+        [label]="'Replace By Fee (RBF)'"
+        [isChecked]="replaceByFee"
+        (checkedChange)="onRbfChange($event)"
+        size="md">
+      </kc-checkbox>
+    </div>
+
+    <!-- Send Button -->
+    <div class="form-field">
+      <kc-button
+        [text]="'Send ' + (token?.symbol ? (token?.symbol | uppercase) : 'Token')"
+        [variant]="'primary'"
+        [isFullWidth]="true"
+        [isDisabled]="!isFormValid"
+        (buttonClick)="onSendClick()">
+      </kc-button>
+    </div>
+  </div>
+</div>

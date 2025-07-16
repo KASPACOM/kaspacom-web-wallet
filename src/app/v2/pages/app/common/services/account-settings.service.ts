@@ -1,24 +1,33 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { FlowPagesService } from './flow-pages.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AccountSettingsService {
-  private isOpenSignal = signal(false);
+  private flowPagesService = inject(FlowPagesService);
   
   get isOpen() {
-    return this.isOpenSignal.asReadonly();
+    return this.flowPagesService.isPageOpen('wallet-management');
   }
   
   open() {
-    this.isOpenSignal.set(true);
+    this.flowPagesService.openFlow({
+      id: 'wallet-management',
+      title: 'Manage wallets',
+      canNavigateBack: false // Wallet management is controlled by chevron in header
+    });
   }
   
   close() {
-    this.isOpenSignal.set(false);
+    this.flowPagesService.closePage();
   }
   
   toggle() {
-    this.isOpenSignal.update(value => !value);
+    if (this.isOpen) {
+      this.close();
+    } else {
+      this.open();
+    }
   }
 } 

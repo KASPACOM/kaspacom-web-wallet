@@ -66,3 +66,14 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
     box-shadow: 0 0 1px rgba(255, 255, 255, 0.5);
   }
 }
+
+// Placeholder page styling
+.placeholder-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  padding: 40px 20px;
+}

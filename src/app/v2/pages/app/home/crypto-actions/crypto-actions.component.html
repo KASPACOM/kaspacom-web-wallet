@@ -2,6 +2,7 @@
   @for( action of actions; track action.title){
   <div
     class="crypto-actions-container__card p-16 flex column align-items-center justify-content-center"
+    (click)="action.action()"
   >
     <kc-icon
       [iconClass]="action.iconClass"

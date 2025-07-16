@@ -1,0 +1,40 @@
+<div class="send-krc20-list-content">
+  <div class="krc20-tokens-container flex column align-items-center full-width gap-12">
+    @if (loading()) {
+      <!-- Skeleton loading states -->
+      @for (item of [1,2,3,4,5]; track item) {
+        <app-skeleton class="full-width" [height]="'75px'" [width]="'auto'" [fullRound]="false"></app-skeleton>
+      }
+    } @else if (tokens().length === 0) {
+      <!-- Empty state -->
+      <div class="empty-state flex column align-items-center justify-content-center gap-16 p-32">
+        <div class="text-gray-60 typo-text-2 text-center">No KRC20 tokens found</div>
+        <div class="text-gray-50 typo-text-1 text-center">You need to have KRC20 tokens in your wallet to send them.</div>
+      </div>
+    } @else {
+      <!-- Token list -->
+      @for (token of tokens(); track token.address) {
+        <div class="krc20-token-card flex full-width align-items-center justify-content-between p-16 fade-in cursor-pointer"
+             (click)="onTokenClick(token)">
+          <!-- Token info section -->
+          <div class="krc20-token-card__info flex align-items-center gap-16">
+            <kc-token-logo [ticker]="token.symbol || ''" [size]="'lg'"></kc-token-logo>
+            <div class="flex column gap-4">
+              <div class="text-gray-90 typo-text-2">{{ token.name | titlecase }}</div>
+              <div class="text-gray-60 typo-text-1">
+                {{ token.balance | number : "1.0-4" }}&nbsp;{{ token.symbol | uppercase }}
+              </div>
+            </div>
+          </div>
+          <!-- USD value section -->
+          <div class="krc20-token-card__usd-info flex column align-items-end">
+            <div class="text-gray-90 typo-text-2">
+              ${{ token.balance * token.usdPrice | number : "1.2-2" }}
+            </div>
+            <div class="text-gray-60 typo-text-1">Available</div>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>

@@ -1,0 +1,73 @@
+<div class="send-kns-content">
+  <!-- KNS Domain Info Header -->
+  <div class="kns-info-header flex align-items-center gap-16 p-16 mb-24">
+    @if (loading()) {
+      <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false"></app-skeleton>
+      <div class="flex column gap-4">
+        <app-skeleton [height]="'20px'" [width]="'120px'" [fullRound]="false"></app-skeleton>
+        <app-skeleton [height]="'16px'" [width]="'80px'" [fullRound]="false"></app-skeleton>
+      </div>
+    } @else {
+      <div class="kns-placeholder flex align-items-center justify-content-center">
+        <span class="text-gray-60 typo-text-1">{{ getDomainType() }}</span>
+      </div>
+      <div class="flex column gap-4 flex-1">
+        <div class="text-gray-90 typo-text-2">{{ getDisplayName() }}</div>
+        <div class="text-gray-60 typo-text-1">
+          {{ getDomainTypeLabel() }}
+        </div>
+        <div class="text-gray-50 typo-text-1">
+          Status: {{ getStatus() }}
+        </div>
+        @if (domain()?.creationBlockTime) {
+          <div class="text-gray-50 typo-text-1">
+            Created: {{ formatDate(domain()!.creationBlockTime) }}
+          </div>
+        }
+      </div>
+      @if (isVerified()) {
+        <div class="kns-status-info flex column align-items-end gap-8">
+          <div class="text-gray-90 typo-text-1">
+            <span class="verified-badge">
+              ✓ Verified
+            </span>
+          </div>
+        </div>
+      }
+    }
+  </div>
+
+  <div class="send-kns-form">
+    <!-- Wallet Address Input -->
+    <div class="form-field">
+      <kc-input
+        [label]="'Wallet Address'"
+        [placeholder]="'Enter recipient wallet address'"
+        [type]="'text'"
+        [isFullWidth]="true"
+        (valueChange)="onWalletAddressChange($event)">
+      </kc-input>
+    </div>
+
+    <!-- Replace By Fee Checkbox -->
+    <div class="form-field">
+      <kc-checkbox
+        [label]="'Replace By Fee (RBF)'"
+        [isChecked]="replaceByFee"
+        (checkedChange)="onRbfChange($event)"
+        size="md">
+      </kc-checkbox>
+    </div>
+
+    <!-- Send Button -->
+    <div class="form-field">
+      <kc-button
+        [text]="'Send Domain'"
+        [variant]="'primary'"
+        [isFullWidth]="true"
+        [isDisabled]="!isFormValid"
+        (buttonClick)="onSendClick()">
+      </kc-button>
+    </div>
+  </div>
+</div>

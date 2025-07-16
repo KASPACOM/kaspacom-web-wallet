@@ -1,0 +1,46 @@
+<div class="send-kaspa-content">
+  <div class="send-kaspa-form">
+    <!-- Wallet Address Input -->
+    <div class="form-field">
+      <kc-input
+        [label]="'Wallet Address'"
+        [placeholder]="'Enter recipient wallet address'"
+        [type]="'text'"
+        [isFullWidth]="true"
+        (valueChange)="onWalletAddressChange($event)">
+      </kc-input>
+    </div>
+
+    <!-- Amount Input -->
+    <div class="form-field">
+      <kc-input
+        [label]="'Amount of Kaspa'"
+        [placeholder]="'0.00'"
+        [type]="'number'"
+        [min]="0"
+        [isFullWidth]="true"
+        (valueChange)="onAmountChange($event)">
+      </kc-input>
+    </div>
+
+    <!-- Replace By Fee Checkbox -->
+    <div class="form-field">
+      <kc-checkbox
+        [label]="'Replace By Fee (RBF)'"
+        [isChecked]="replaceByFee"
+        (checkedChange)="onRbfChange($event)"
+        size="md">
+      </kc-checkbox>
+    </div>
+
+    <!-- Send Button -->
+    <div class="form-field">
+      <kc-button
+        [text]="'Send'"
+        [variant]="'primary'"
+        [isFullWidth]="true"
+        (buttonClick)="onSendClick()">
+      </kc-button>
+    </div>
+  </div>
+</div>

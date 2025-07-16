@@ -1,0 +1,40 @@
+<div class="wallets-container">
+  <div class="wallets-list">
+    @for (wallet of wallets(); track wallet.id) {
+      <div 
+        class="wallet-item"
+        [class.selected]="wallet.isSelected"
+        (click)="selectWallet(wallet)"
+      >
+        <div class="wallet-item__info">
+          <div class="wallet-item__name">{{ wallet.name }}</div>
+          <div class="wallet-item__address">{{ shortenAddress(wallet.address) }}</div>
+          <div class="wallet-item__balance">{{ wallet.balance }} KAS</div>
+        </div>
+        <kc-icon
+          class="wallet-item__delete"
+          [iconClass]="'icon-delete'"
+          [size]="'sm'"
+          (click)="deleteWallet(wallet); $event.stopPropagation()"
+        ></kc-icon>
+      </div>
+    }
+  </div>
+</div>
+
+<div class="action-buttons">
+  <kc-button
+    [text]="'Add wallet'"
+    [variant]="'primary'"
+    [size]="'md'"
+    [isFullWidth]="true"
+    (buttonClick)="addWallet()"
+  ></kc-button>
+  <kc-button
+    [text]="'Create wallet'"
+    [variant]="'tertiary'"
+    [size]="'md'"
+    [isFullWidth]="true"
+    (buttonClick)="createWallet()"
+  ></kc-button>
+</div>

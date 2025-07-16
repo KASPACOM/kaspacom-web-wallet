@@ -48,7 +48,7 @@ export class WrapperHeaderComponent {
   });
 
   chevronIconClass = computed(() => {
-    return this.accountSettingsService.isOpen() ? 'icon-chevron-up' : 'icon-chevron-down';
+    return this.accountSettingsService.isOpen ? 'icon-chevron-up' : 'icon-chevron-down';
   });
 
   onSettingsClick(): void {

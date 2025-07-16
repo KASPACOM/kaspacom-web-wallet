@@ -1,0 +1,24 @@
+.send-kaspa-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.send-kaspa-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 16px 0;
+}
+
+.form-field {
+  width: 100%;
+  
+  &:last-child {
+    margin-top: 8px;
+  }
+}

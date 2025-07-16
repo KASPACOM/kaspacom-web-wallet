@@ -1,7 +1,8 @@
-import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
-import { trigger, state, style, transition, animate } from '@angular/animations';
+import { FlowPageBaseComponent } from '../flow-page/base/flow-page-base.component';
+import { IFlowPageConfig } from '../flow-page/interfaces/flow-page.interface';
 
 interface WalletAccount {
   id: string;
@@ -12,48 +13,21 @@ interface WalletAccount {
 }
 
 @Component({
-  selector: 'app-account-settings-overlay',
+  selector: 'app-wallet-management-page',
   standalone: true,
   imports: [CommonModule, KcButtonComponent, KcIconComponent],
-  templateUrl: './account-settings-overlay.component.html',
-  styleUrl: './account-settings-overlay.component.scss',
-  animations: [
-    trigger('slideDown', [
-      state('closed', style({
-        transform: 'translateY(-100%)',
-        opacity: 0,
-        visibility: 'hidden'
-      })),
-      state('open', style({
-        transform: 'translateY(0)',
-        opacity: 1,
-        visibility: 'visible'
-      })),
-      transition('closed => open', [
-        style({ 
-          visibility: 'visible',
-          transform: 'translateY(-100%)',
-          opacity: 0
-        }),
-        animate('300ms ease-out', style({
-          transform: 'translateY(0)',
-          opacity: 1
-        }))
-      ]),
-      transition('open => closed', [
-        animate('200ms ease-in', style({
-          transform: 'translateY(-100%)',
-          opacity: 0
-        })),
-        style({ visibility: 'hidden' })
-      ])
-    ])
-  ]
+  templateUrl: './wallet-management-page.component.html',
+  styleUrl: './wallet-management-page.component.scss'
 })
-export class AccountSettingsOverlayComponent {
-  @Input() isOpen = false;
-  @Output() close = new EventEmitter<void>();
+export class WalletManagementPageComponent extends FlowPageBaseComponent {
   
+  get config(): IFlowPageConfig {
+    return {
+      id: 'wallet-management',
+      title: 'Manage wallets',
+      canNavigateBack: false // Explicitly disable back navigation
+    };
+  }
   // Mock wallet data
   wallets = signal<WalletAccount[]>([
     {
@@ -86,10 +60,6 @@ export class AccountSettingsOverlayComponent {
     }
   ]);
   
-  onClose(): void {
-    this.close.emit();
-  }
-  
   selectWallet(wallet: WalletAccount): void {
     this.wallets.update(wallets => 
       wallets.map(w => ({
@@ -105,17 +75,25 @@ export class AccountSettingsOverlayComponent {
   }
   
   addWallet(): void {
-    // Logic for adding wallet
-    console.log('Add wallet clicked');
+    // Navigate to add wallet page
+    this.navigateToNextPage({
+      id: 'add-wallet',
+      title: 'Add Wallet',
+      canNavigateBack: true
+    });
   }
   
   createWallet(): void {
-    // Logic for creating wallet
-    console.log('Create wallet clicked');
+    // Navigate to create wallet page
+    this.navigateToNextPage({
+      id: 'create-wallet',
+      title: 'Create Wallet',
+      canNavigateBack: true
+    });
   }
   
   shortenAddress(address: string): string {
     if (!address) return '';
     return `${address.slice(0, 10)}...${address.slice(-8)}`;
   }
-} 
+}

@@ -1,52 +1,3 @@
-.account-settings-overlay {
-  position: absolute;
-  top: 76px; // Start after header (20px padding + content + 20px padding)
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 300ms ease;
-  
-  &.open {
-    pointer-events: all;
-    opacity: 1;
-  }
-}
-
-.account-settings-content {
-  background: rgba(7, 9, 10, 0.95); // Semi-transparent vampire black
-  backdrop-filter: blur(8px);
-  border-radius: 0 0 12px 12px;
-  padding: 16px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  min-height: 0; // Allow content to shrink properly
-  flex: 1; // Take available space
-  overflow: hidden;
-  transform: translateZ(0); // Force hardware acceleration
-  will-change: transform, opacity; // Optimize for animation
-  
-  // Add media query for mobile
-  @media (max-width: 480px) {
-    max-width: 100%;
-    border-radius: 0;
-  }
-}
-
-.account-settings-title {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 24px;
-  color: var(--white);
-}
-
 .wallets-container {
   flex: 1;
   overflow-y: auto;
@@ -153,4 +104,4 @@
   bottom: 0;
   background: rgba(7, 9, 10, 0.95); // Match content background
   backdrop-filter: blur(8px);
-} 
+}

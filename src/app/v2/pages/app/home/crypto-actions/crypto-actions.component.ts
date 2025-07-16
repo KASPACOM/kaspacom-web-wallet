@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { KcIconComponent } from 'kaspacom-ui';
 import { TitleCasePipe } from '@angular/common';
 import { ICryptoAction } from '../../common/interfaces/crypto-actions.interface';
+import { FlowPagesService } from '../../common/services/flow-pages.service';
 @Component({
   selector: 'app-crypto-actions',
   imports: [KcIconComponent, TitleCasePipe],
@@ -12,24 +13,44 @@ import { ICryptoAction } from '../../common/interfaces/crypto-actions.interface'
   },
 })
 export class CryptoActionsComponent {
+  private flowPagesService = inject(FlowPagesService);
+
   actions: ICryptoAction[] = [
     {
-      title: 'receive',
-      iconClass: 'icon-chain',
+      title: 'send',
+      iconClass: 'icon-arrow-up',
       iconColor: '',
-      action: () => {},
+      action: () => this.openSendPage(),
     },
     {
-      title: 'send',
-      iconClass: 'icon-chain',
+      title: 'receive',
+      iconClass: 'icon-arrow-down',
       iconColor: '',
-      action: () => {},
+      action: () => this.openReceivePage(),
     },
     {
       title: 'swap',
       iconClass: 'icon-chain',
       iconColor: '',
-      action: () => {},
+      action: () => this.openSwapPage(),
     },
   ];
+
+  private openReceivePage(): void {
+    // TODO: Implement receive page
+    console.log('Open receive page');
+  }
+
+  private openSendPage(): void {
+    this.flowPagesService.openFlow({
+      id: 'send',
+      title: 'Send',
+      canNavigateBack: true
+    });
+  }
+
+  private openSwapPage(): void {
+    // TODO: Implement swap page
+    console.log('Open swap page');
+  }
 }

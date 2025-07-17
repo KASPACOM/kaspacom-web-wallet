@@ -1,3 +1,19 @@
+// Modal overlay for centering and backdrop
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
 .transaction-review-container {
   background: #ffffff;
   border: 1px solid #e0e0e0;
@@ -9,6 +25,10 @@
   color: #333;
   word-wrap: break-word; /* Allow long text to break and wrap */
   word-break: break-all;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .transaction-header {
@@ -145,20 +165,38 @@
 }
 
 .progress-container {
-  height: 20px;
-  margin-top: 10px;
-  background-color: #e0e0e0;
-  border-radius: 10px;
-  overflow: hidden;
-  position: relative;
-  width: 100%;
+  text-align: center;
+  
+  h3 {
+    margin-bottom: 10px;
+    color: #3f51b5;
+  }
+  
+  p {
+    margin-bottom: 20px;
+    color: #666;
+  }
+  
+  .progress-bar {
+    height: 20px;
+    background-color: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+    
+    .progress-fill {
+      height: 100%;
+      background-color: #4caf50;
+      width: 50%; // Generic progress indicator
+      animation: progress-pulse 1.5s ease-in-out infinite;
+    }
+  }
 }
 
-.progress-bar {
-  height: 100%;
-  background-color: #4caf50;
-  transition: width 0.3s ease;
-  text-align: center;
+@keyframes progress-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
 }
 
 .progress-label {

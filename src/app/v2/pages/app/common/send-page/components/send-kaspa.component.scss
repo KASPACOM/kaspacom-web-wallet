@@ -2,23 +2,28 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-height: 0;
-}
-
-.send-kaspa-form {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  overflow-y: auto;
-  min-height: 0;
   padding: 16px 0;
 }
 
+.send-kaspa-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  flex: 1;
+}
+
 .form-field {
-  width: 100%;
+  display: flex;
+  flex-direction: column;
   
-  &:last-child {
-    margin-top: 8px;
+  // Add spacing between fields
+  &:not(:last-child) {
+    margin-bottom: 8px;
   }
+}
+
+// Ensure the button appears at bottom when form is in a flex container
+.form-field:last-child {
+  margin-top: auto;
+  padding-top: 16px;
 }

@@ -16,6 +16,7 @@ import { SendKnsListComponent } from './common/send-page/components/send-kns-lis
 import { SendKnsComponent } from './common/send-page/components/send-kns.component';
 import { AccountSettingsService } from './common/services/account-settings.service';
 import { FlowPagesService } from './common/services/flow-pages.service';
+import { ReviewActionComponent } from '../../../components/wallet-actions-reviews/review-action/review-action.component';
 
 @Component({
   selector: 'app-app-wrapper',
@@ -33,7 +34,8 @@ import { FlowPagesService } from './common/services/flow-pages.service';
     SendNftListComponent,
     SendNftComponent,
     SendKnsListComponent,
-    SendKnsComponent
+    SendKnsComponent,
+    ReviewActionComponent
   ],
   templateUrl: './app-wrapper.component.html',
   styleUrl: './app-wrapper.component.scss',

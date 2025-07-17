@@ -226,8 +226,9 @@ export class WalletActionService {
     }
 
     const result = await this.showApprovalDialogToUser(action, isFromIframe);
-
+debugger
     if (!result.isApproved) {
+      debugger
       return {
         success: false,
         errorCode: ERROR_CODES.EIP1193.USER_REJECTED,
@@ -235,13 +236,13 @@ export class WalletActionService {
     }
 
     await onActionApproval?.();
-
+    debugger
     action.priorityFee = result.priorityFee || action.priorityFee;
 
     const actionSteps = this.getActionSteps(action);
     let currentStep = 0;
     const currentWalletAddress = this.walletService.getCurrentWallet()!.getAddress();
-
+    debugger
     const actionResult = await this.doWalletAction(action, async (data) => {
       currentStep++;
 
@@ -251,13 +252,13 @@ export class WalletActionService {
       );
 
     });
-
+    debugger
     if (!actionResult.success) {
       return actionResult;
     }
-
+    debugger
     await this.showTransactionResultToUser(actionResult.result!, currentWalletAddress);
-
+    debugger
     return actionResult;
   }
 
@@ -407,11 +408,11 @@ export class WalletActionService {
 
   private async startProcessingActionsOnActionListIfNotRunning(
     walletIdWithAccount: string
-  ) {
+  ) {debugger
     if (this.isActionsRunningByWallet()[walletIdWithAccount]) {
       return;
     }
-
+    debugger
     const wallet = this.walletService.getWalletByIdAndAccount(walletIdWithAccount);
 
     this.isActionsRunningByWallet.set({
@@ -419,74 +420,74 @@ export class WalletActionService {
       [walletIdWithAccount]: true,
     });
     wallet?.setIsCurrentlyActive(true);
-
+    debugger
     try {
       if (!wallet) {
         throw new Error('Wallet not found');
       }
-
+      debugger
       while (
         this.actionsListByWallet()[walletIdWithAccount] &&
         this.actionsListByWallet()[walletIdWithAccount].length > 0
       ) {
-
+        debugger
 
         const actionsList = this.actionsListByWallet()[walletIdWithAccount];
 
 
-        if (actionsList[0] && !actionsList[0].action.rbf) {
+        if (actionsList[0] && !actionsList[0].action.rbf) {      debugger
           await wallet.waitForWalletToBeReadyForTransactions();
         }
 
         const action = actionsList!.shift()!;
 
-
+        debugger
         this.actionsListByWallet.set({
           ...this.actionsListByWallet(),
           [walletIdWithAccount]: actionsList,
         });
 
-
+        debugger
         try {
           await this.showTransactionLoaderToUser(0);
-
+          debugger
           await this.kaspaNetworkActionsService.connectAndDo(async () => {
             const validationResult = await this.validateAction(
               action.action,
               wallet
             );
-
+            debugger
             if (!validationResult.isValidated) {
               action.resolve({
                 success: false,
                 errorCode: validationResult.errorCode,
               });
-            } else {
+            } else {debugger
               const result =
                 await this.kaspaNetworkActionsService.doWalletAction(
                   action.action,
                   wallet,
                   action.notifyUpdate
                 );
-
+              debugger
               action.resolve(result);
             }
           });
-        } catch (error) {
+        } catch (error) {debugger
           console.error(error);
           action.reject(error);
         }
       }
-    } catch (error) {
+    } catch (error) {debugger
       console.error(error);
-    } finally {
+    } finally {debugger
       this.isActionsRunningByWallet.set({
         ...this.isActionsRunningByWallet(),
         [walletIdWithAccount]: false,
       });
       wallet?.setIsCurrentlyActive(false);
-
-      if (this.walletService.getCurrentWallet()?.getIdWithAccount() != walletIdWithAccount) {
+      debugger
+      if (this.walletService.getCurrentWallet()?.getIdWithAccount() != walletIdWithAccount) {debugger
         wallet?.stopListiningToWalletActions();
       }
     }

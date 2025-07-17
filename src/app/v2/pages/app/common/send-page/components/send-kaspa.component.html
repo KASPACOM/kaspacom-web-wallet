@@ -7,6 +7,9 @@
         [placeholder]="'Enter recipient wallet address'"
         [type]="'text'"
         [isFullWidth]="true"
+        [isValid]="isAddressValid"
+        [invalidReason]="addressErrorMessage"
+        [isDisabled]="isLoading"
         (valueChange)="onWalletAddressChange($event)">
       </kc-input>
     </div>
@@ -19,6 +22,9 @@
         [type]="'number'"
         [min]="0"
         [isFullWidth]="true"
+        [isValid]="isAmountValid"
+        [invalidReason]="amountErrorMessage"
+        [isDisabled]="isLoading"
         (valueChange)="onAmountChange($event)">
       </kc-input>
     </div>
@@ -28,6 +34,7 @@
       <kc-checkbox
         [label]="'Replace By Fee (RBF)'"
         [isChecked]="replaceByFee"
+        [isDisabled]="isLoading"
         (checkedChange)="onRbfChange($event)"
         size="md">
       </kc-checkbox>
@@ -36,9 +43,11 @@
     <!-- Send Button -->
     <div class="form-field">
       <kc-button
-        [text]="'Send'"
+        [text]="isLoading ? 'Sending...' : 'Send'"
         [variant]="'primary'"
         [isFullWidth]="true"
+        [isLoading]="isLoading"
+        [isDisabled]="!isAddressValid || !isAmountValid || isLoading || !walletAddress || !kaspaAmount"
         (buttonClick)="onSendClick()">
       </kc-button>
     </div>

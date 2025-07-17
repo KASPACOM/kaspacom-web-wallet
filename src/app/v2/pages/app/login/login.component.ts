@@ -10,6 +10,7 @@ import { PasswordManagerService } from '../../../../services/password-manager.se
 import { WalletService } from '../../../../services/wallet.service';
 import { IFrameCommunicationApp } from '../../../../services/communication-service/communication-app/iframe-communication.service';
 import { Router, RouterLink } from '@angular/router';
+import { LOCAL_STORAGE_KEYS } from '../../../../config/consts';
 
 @Component({
   selector: 'app-login',
@@ -37,6 +38,8 @@ export class LoginComponent {
   passwordIcon = computed(() =>
     this.passwordType() === 'password' ? 'icon-eye' : 'icon-eye-crossed',
   );
+
+  isSubmitting = signal<boolean>(false);
 
   loginForm = this.fb.group({
     password: ['', [Validators.required]],
@@ -67,9 +70,11 @@ export class LoginComponent {
   }
 
   async onSubmit() {
-    if (this.loginForm.invalid) {
+    if (this.loginForm.invalid || this.isSubmitting()) {
       return;
     }
+
+    this.isSubmitting.set(true);
     const password = this.loginForm.value.password!;
 
     try {
@@ -81,14 +86,18 @@ export class LoginComponent {
       if (isValidPassword) {
         // this.loginError = false;
 
+        // Load wallets only once
         await this.walletService.loadWallets();
+
         if (IFrameCommunicationApp.isIframe()) {
           this.router.navigate(['./wallet-selection']);
-          return;
         } else {
-          await this.walletService.selectCurrentWalletFromLocalStorageNullsafe();
+          // Don't load wallets again, just select the current wallet
+          await this.walletService.selectCurrentWallet(
+            localStorage.getItem(LOCAL_STORAGE_KEYS.CURRENT_SELECTED_WALLET) ||
+            (this.walletService.getAllWallets()()?.length ? this.walletService.getAllWallets()()![0].getIdWithAccount() : '')
+          );
           this.router.navigate(['./app/home']);
-          return;
         }
         // if (this.walletService.getWalletsCount() === 0) {
         //   this.router.navigate(['/add-wallet']);
@@ -102,10 +111,12 @@ export class LoginComponent {
         // }
       } else {
         this.loginForm.get('password')?.setErrors({ invalidCredentials: true });
+        this.isSubmitting.set(false);
       }
     } catch (error) {
       console.error('Login failed', error);
       this.loginForm.get('password')?.setErrors({ invalidCredentials: true });
+      this.isSubmitting.set(false);
     }
   }
 

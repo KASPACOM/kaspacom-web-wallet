@@ -14,11 +14,10 @@
             [isValid]="!isInvalid('password')"
             [invalidReason]="getPasswordError()"
             [prepadInvalidReason]="true"
-            [prepadInvalidReason]="true"
-            (keydown.enter)="onSubmit()"
+            [isDisabled]="isSubmitting()"
           >
-            <div (click)="togglePwVisibility()" class="clickable" rightSideSlot>
-              <kc-icon iconClass="{{ passwordIcon() }}" [size]="'xs'"></kc-icon>
+            <div (click)="!isSubmitting() && togglePwVisibility()" [class]="isSubmitting() ? '' : 'clickable'" rightSideSlot>
+              <kc-icon iconClass="{{ passwordIcon() }}" [size]="'xs'" [class]="isSubmitting() ? 'disabled-icon' : ''"></kc-icon>
             </div>
           </kc-input>
 
@@ -29,9 +28,10 @@
 
         <div class="mt-16 full-width">
           <kc-button
-            [isDisabled]="!loginForm.valid"
-            (buttonClick)="onSubmit()"
+            [isDisabled]="!loginForm.valid || isSubmitting()"
+            (buttonClick)="loginForm.valid && onSubmit()"
             [isFullWidth]="true"
+            [isLoading]="isSubmitting()"
             [text]="'Login'"
           ></kc-button>
         </div>

@@ -56,3 +56,8 @@
     color: var(--primary);
   }
 }
+
+.disabled-icon {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -15,7 +15,7 @@ export interface IFlowPageNavigation {
   navigateBack(): void;
   navigateToPage(config: IFlowPageConfig): void;
   closePage(): void;
-  canGoBack(): boolean;
+  canNavigateBack(): boolean;
   getCurrentPage(): IFlowPageConfig | null;
 }
 

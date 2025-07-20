@@ -7,6 +7,7 @@ import { firstValueFrom } from 'rxjs';
 import {KasplexKrc20Service} from "../../../../../services/kasplex-api/kasplex-api.service";
 import {WalletService} from "../../../../../services/wallet.service";
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
+import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 
 @Component({
   selector: 'app-wallet-summary',
@@ -20,6 +21,7 @@ import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.compo
 export class WalletSummaryComponent implements OnInit {
   private walletService = inject(WalletService);
   private kasplexService = inject(KasplexKrc20Service);
+  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private router = inject(Router);
 
   tokens = signal<IToken[]>([]);
@@ -48,7 +50,7 @@ export class WalletSummaryComponent implements OnInit {
           name: token.tick,
           symbol: token.tick.toUpperCase(),
           address: token.tick,
-          balance: parseFloat(token.balance),
+          balance: this.kaspaNetworkActionsService.sompiToNumber(BigInt(token.balance)), // Convert from sompi
           usdPrice: 0.0
         }));
 

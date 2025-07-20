@@ -70,7 +70,7 @@ export class Krc20CompletedActionDataService implements ProtocolCompletedActionD
 
     private getKrc20MintActionDisplay(action: CommitRevealActionResult, operationData: KRC20OperationDataInterface): ActionDisplay {
         return {
-            title: "Mint KRC20 Token",
+            title: "Mint KRC20 Token Transaction",
             rows: [
                 {
                     fieldName: "Ticker",
@@ -79,7 +79,7 @@ export class Krc20CompletedActionDataService implements ProtocolCompletedActionD
                 {
                     fieldName: "Wallet",
                     fieldValue: action.performedByWallet
-                }
+                },
             ]
         }
     }
@@ -98,15 +98,15 @@ export class Krc20CompletedActionDataService implements ProtocolCompletedActionD
                 },
                 {
                     fieldName: "Max Supply",
-                    fieldValue: this.kaspaNetworkActionsService.sompiToNumber(BigInt(operationData.max!)).toString()
+                    fieldValue: this.kaspaNetworkActionsService.sompiToNumber(BigInt(operationData.max || '0')).toString()
                 },
                 {
                     fieldName: "Tokens Per Mint",
-                    fieldValue: this.kaspaNetworkActionsService.sompiToNumber(BigInt(operationData.lim!)).toString()
+                    fieldValue: this.kaspaNetworkActionsService.sompiToNumber(BigInt(operationData.lim || '0')).toString()
                 },
                 {
                     fieldName: "Pre Allocation",
-                    fieldValue: `${this.kaspaNetworkActionsService.sompiToNumber(BigInt(operationData.pre!)).toString()} (${(Number(operationData.pre!) / Number(operationData.max!) * 100).toFixed(2)}%)`
+                    fieldValue: `${this.kaspaNetworkActionsService.sompiToNumber(BigInt(operationData.pre || '0'))} (${operationData.max && operationData.pre ? (Number(operationData.pre) / Number(operationData.max) * 100).toFixed(2) : '0'}%)`
                 },
             ]
         }
@@ -134,7 +134,7 @@ export class Krc20CompletedActionDataService implements ProtocolCompletedActionD
                 },
                 {
                     fieldName: "Amount",
-                    fieldValue: `${this.kaspaNetworkActionsService.sompiToNumber(BigInt(operationData.amt!)).toString()} ${operationData.tick.toUpperCase()}`
+                    fieldValue: `${this.kaspaNetworkActionsService.sompiToNumber(BigInt(operationData.amt || '0'))} ${operationData.tick.toUpperCase()}`
                 },
                 {
                     fieldName: "Price",

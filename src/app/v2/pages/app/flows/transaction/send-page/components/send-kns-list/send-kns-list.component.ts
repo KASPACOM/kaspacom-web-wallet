@@ -1,11 +1,11 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-import { FlowPageBaseComponent } from '../../flow-page/base/flow-page-base.component';
-import { IFlowPageConfig } from '../../flow-page/interfaces/flow-page.interface';
-import { SkeletonComponent } from '../../../../../shared/ui/skeleton/skeleton.component';
-import { KnsApiService } from '../../../../../../services/kns-api/kns-api.service';
-import { WalletService } from '../../../../../../services/wallet.service';
-import { KnsDomainAsset } from '../../../../../../services/kns-api/dtos/kns-domain.dto';
+import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
+import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
+import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
+import { KnsApiService } from '../../../../../../../../services/kns-api/kns-api.service';
+import { WalletService } from '../../../../../../../../services/wallet.service';
+import { KnsDomainAsset } from '../../../../../../../../services/kns-api/dtos/kns-domain.dto';
 
 @Component({
   selector: 'app-send-kns-list',

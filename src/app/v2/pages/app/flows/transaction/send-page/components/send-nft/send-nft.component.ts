@@ -1,13 +1,13 @@
 import { Component, OnInit, signal, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FlowPageBaseComponent } from '../../flow-page/base/flow-page-base.component';
-import { IFlowPageConfig } from '../../flow-page/interfaces/flow-page.interface';
+import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
+import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
 import { KcInputComponent, KcCheckboxComponent, KcButtonComponent } from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
-import { SkeletonComponent } from '../../../../../shared/ui/skeleton/skeleton.component';
-import { INft } from '../../../common/interfaces/nft.interface';
-import { Krc721ApiService } from '../../../../../../services/krc721-api/krc721-api.service';
-import { WalletService } from '../../../../../../services/wallet.service';
+import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
+import { INft } from '../../../../../common/interfaces/nft.interface';
+import { Krc721ApiService } from '../../../../../../../../services/krc721-api/krc721-api.service';
+import { WalletService } from '../../../../../../../../services/wallet.service';
 import { firstValueFrom } from 'rxjs';
 
 @Component({

@@ -371,6 +371,7 @@ export class KaspaNetworkTransactionsManagerService {
 
     if (!entry) {
       // not support to happen
+      console.log(entry, )
       throw new Error(
         `Commit UTXO not found, revealTransactionId: ${commitUtxoTransactionId}, scriptAddress: ${operationScript.scriptAddress
         }, wallet address: ${wallet.getAddress()}`
@@ -453,7 +454,7 @@ export class KaspaNetworkTransactionsManagerService {
     }
 
     const l2Transaction = await this.etherService.createTransactionAndPopulate(transactionOptions, l2Wallet);
-    
+
 
     const signedTransactionString = await this.etherService.signTransaction(l2Transaction, l2Wallet);
     const signedTransactionHash = keccak256(signedTransactionString);

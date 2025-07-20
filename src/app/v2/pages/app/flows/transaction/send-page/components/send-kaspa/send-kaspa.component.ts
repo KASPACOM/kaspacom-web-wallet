@@ -1,15 +1,16 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FlowPageBaseComponent } from '../../flow-page/base/flow-page-base.component';
-import { IFlowPageConfig } from '../../flow-page/interfaces/flow-page.interface';
+import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
+import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
 import { KcInputComponent, KcCheckboxComponent, KcButtonComponent } from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
-import { WalletService } from '../../../../../../services/wallet.service';
-import { WalletActionService } from '../../../../../../services/wallet-action.service';
-import { KaspaNetworkActionsService, MINIMAL_AMOUNT_TO_SEND } from '../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
-import { UtilsHelper } from '../../../../../../services/utils.service';
-import { MessagePopupService } from '../../../../../../services/message-popup.service';
+import { WalletService } from '../../../../../../../../services/wallet.service';
+import { WalletActionService } from '../../../../../../../../services/wallet-action.service';
+import { KaspaNetworkActionsService, MINIMAL_AMOUNT_TO_SEND } from '../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
+import { UtilsHelper } from '../../../../../../../../services/utils.service';
+import { MessagePopupService } from '../../../../../../../../services/message-popup.service';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
+import { ApprovalFlowService } from '../../../../../common/services/approval-flow.service';
 
 @Component({
   selector: 'app-send-kaspa',
@@ -18,23 +19,49 @@ import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
   templateUrl: './send-kaspa.component.html',
   styleUrl: './send-kaspa.component.scss'
 })
-export class SendKaspaComponent extends FlowPageBaseComponent {
+export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit {
   private walletService = inject(WalletService);
   private walletActionService = inject(WalletActionService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private utilsHelper = inject(UtilsHelper);
   private messagePopupService = inject(MessagePopupService);
+  private approvalFlowService = inject(ApprovalFlowService);
 
-  walletAddress = '';
+  // Form data
+  walletAddress: string = '';
   kaspaAmount: number | null = null;
-  replaceByFee = false;
+  replaceByFee: boolean = false;
+
+  // Loading state
   isLoading = false;
+
+  // Track if we're waiting for approval flow completion
+  private waitingForApprovalCompletion = false;
 
   // Validation states
   isAddressValid = true;
   isAmountValid = true;
   addressErrorMessage = '';
   amountErrorMessage = '';
+
+  constructor() {
+    super();
+    
+    // Effect to watch for approval flow completion
+    effect(() => {
+      const completion = this.approvalFlowService.completion();
+      if (completion && this.waitingForApprovalCompletion) {
+        this.waitingForApprovalCompletion = false;
+        
+        if (completion.success) {
+          // Transaction was successful, navigate back
+          this.messagePopupService.showSuccess('Transaction sent successfully!');
+          this.navigateBack();
+        }
+        // Error cases are handled by the approval flow itself
+      }
+    });
+  }
 
   get config(): IFlowPageConfig {
     return {
@@ -145,9 +172,17 @@ export class SendKaspaComponent extends FlowPageBaseComponent {
         this.walletAddress = '';
         this.kaspaAmount = null;
         this.replaceByFee = false;
-        this.messagePopupService.showSuccess('Transaction sent successfully!');
-        // Navigate back to send page or close flow
-        this.navigateBack();
+        
+        // Only show success message and navigate if not using v2 flow
+        // v2 flow handles success display in the approval flow
+        if (!result.isUsingV2Flow) {
+          this.messagePopupService.showSuccess('Transaction sent successfully!');
+          // Navigate back to send page or close flow
+          this.navigateBack();
+        } else {
+          // For v2 flow, wait for approval flow completion
+          this.waitingForApprovalCompletion = true;
+        }
       } else {
         if (result.errorCode !== ERROR_CODES.EIP1193.USER_REJECTED) {
           const errorMessage = result.errorCode
@@ -155,10 +190,14 @@ export class SendKaspaComponent extends FlowPageBaseComponent {
             : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR];
           this.messagePopupService.showError(errorMessage);
         }
+        
+        // Reset the waiting flag if transaction failed
+        this.waitingForApprovalCompletion = false;
       }
     } catch (error) {
       console.error('Send transaction error:', error);
       this.messagePopupService.showError('An unexpected error occurred');
+      this.waitingForApprovalCompletion = false;
     } finally {
       this.isLoading = false;
     }

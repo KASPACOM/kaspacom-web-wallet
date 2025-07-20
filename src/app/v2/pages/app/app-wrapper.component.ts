@@ -5,18 +5,19 @@ import { navAnimation } from './common/animation/nav.animation';
 import { WrapperHeaderComponent } from './common/wrapper-header/wrapper-header.component';
 import { WrapperNavComponent } from './common/wrapper-nav/wrapper-nav.component';
 import { FlowPageComponent } from './common/flow-page/flow-page.component';
-import { WalletManagementPageComponent } from './common/wallet-management-page/wallet-management-page.component';
-import { SendPageComponent } from './common/send-page/send-page.component';
-import { SendKaspaComponent } from './common/send-page/components/send-kaspa.component';
-import { SendKrc20ListComponent } from './common/send-page/components/send-krc20-list.component';
-import { SendKrc20Component } from './common/send-page/components/send-krc20.component';
-import { SendNftListComponent } from './common/send-page/components/send-nft-list.component';
-import { SendNftComponent } from './common/send-page/components/send-nft.component';
-import { SendKnsListComponent } from './common/send-page/components/send-kns-list.component';
-import { SendKnsComponent } from './common/send-page/components/send-kns.component';
+import { WalletManagementPageComponent } from './flows/wallet-management/wallet-management-page/wallet-management-page.component';
+import { SendPageComponent } from './flows/transaction/send-page/send-page.component';
+import { SendKaspaComponent } from './flows/transaction/send-page/components/send-kaspa/send-kaspa.component';
+import { SendKrc20ListComponent } from './flows/transaction/send-page/components/send-krc20-list/send-krc20-list.component';
+import { SendKrc20Component } from './flows/transaction/send-page/components/send-krc20/send-krc20.component';
+import { SendNftListComponent } from './flows/transaction/send-page/components/send-nft-list/send-nft-list.component';
+import { SendNftComponent } from './flows/transaction/send-page/components/send-nft/send-nft.component';
+import { SendKnsListComponent } from './flows/transaction/send-page/components/send-kns-list/send-kns-list.component';
+import { SendKnsComponent } from './flows/transaction/send-page/components/send-kns/send-kns.component';
 import { AccountSettingsService } from './common/services/account-settings.service';
 import { FlowPagesService } from './common/services/flow-pages.service';
 import { ReviewActionComponent } from '../../../components/wallet-actions-reviews/review-action/review-action.component';
+import { ApprovalFlowPageComponent } from './flows/approval/approval-flow-page/approval-flow-page.component';
 
 @Component({
   selector: 'app-app-wrapper',
@@ -35,7 +36,8 @@ import { ReviewActionComponent } from '../../../components/wallet-actions-review
     SendNftComponent,
     SendKnsListComponent,
     SendKnsComponent,
-    ReviewActionComponent
+    ReviewActionComponent,
+    ApprovalFlowPageComponent
   ],
   templateUrl: './app-wrapper.component.html',
   styleUrl: './app-wrapper.component.scss',

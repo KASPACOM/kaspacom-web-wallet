@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FlowPageBaseComponent } from '../flow-page/base/flow-page-base.component';
-import { IFlowPageConfig } from '../flow-page/interfaces/flow-page.interface';
-import { TokenLogoComponent } from '../token-logo/token-logo.component';
+import { FlowPageBaseComponent } from '../../../common/flow-page/base/flow-page-base.component';
+import { IFlowPageConfig } from '../../../common/flow-page/interfaces/flow-page.interface';
+import { TokenLogoComponent } from '../../../common/token-logo/token-logo.component';
 
 @Component({
   selector: 'app-send-page',

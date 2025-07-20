@@ -1,8 +1,8 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
-import { FlowPageBaseComponent } from '../flow-page/base/flow-page-base.component';
-import { IFlowPageConfig } from '../flow-page/interfaces/flow-page.interface';
+import { FlowPageBaseComponent } from '../../../common/flow-page/base/flow-page-base.component';
+import { IFlowPageConfig } from '../../../common/flow-page/interfaces/flow-page.interface';
 
 interface WalletAccount {
   id: string;

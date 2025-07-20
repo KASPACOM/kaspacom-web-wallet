@@ -1,0 +1,259 @@
+.approval-flow-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  color: var(--text-primary, #ffffff);
+  font-family: 'Poppins', 'Roboto', sans-serif;
+}
+
+.approval-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  min-height: 0;
+  max-height: calc(100vh - 200px);
+}
+
+// Transaction Header (matches original)
+.transaction-header {
+  text-align: center;
+  margin-bottom: 20px;
+  word-break: break-word;
+
+  h2 {
+    margin: 0;
+    font-size: 1.6rem;
+    color: #6fc7ba; // Primary color for dark theme
+    font-weight: 600;
+  }
+
+  p {
+    margin: 5px 0 0;
+    font-size: 1rem;
+    color: var(--text-secondary, #a0a0a0);
+  }
+}
+
+// Action Title and Subtitle
+.action-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 20px 0 8px 0;
+  color: var(--text-primary, #ffffff);
+}
+
+.action-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary, #a0a0a0);
+  margin: 0 0 20px 0;
+  font-weight: 400;
+}
+
+// Unknown Action
+.unknown-action {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-secondary, #a0a0a0);
+}
+
+// Action Details (matches original structure)
+.action-details {
+  margin-bottom: 20px;
+}
+
+.detail {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(111, 199, 186, 0.2);
+  
+  .label {
+    font-weight: bold;
+    color: var(--text-secondary, #a0a0a0);
+    min-width: 100px;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+  }
+
+  .value {
+    color: var(--text-primary, #ffffff);
+    font-family: 'SF Mono', 'Monaco', monospace;
+    word-wrap: break-word;
+    word-break: break-all;
+    overflow-wrap: break-word;
+    white-space: normal;
+    font-size: 0.9rem;
+    text-align: right;
+    flex: 1;
+    margin-left: 16px;
+  }
+}
+
+.detail-signing-message {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(111, 199, 186, 0.2);
+
+  .label {
+    font-weight: bold;
+    color: var(--text-secondary, #a0a0a0);
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+  }
+
+  .value {
+    white-space: pre-wrap;
+    overflow: auto;
+    color: var(--text-primary, #ffffff);
+    word-break: break-word;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(111, 199, 186, 0.2);
+    font-family: 'SF Mono', 'Monaco', monospace;
+    font-size: 0.85rem;
+    max-height: 200px;
+  }
+}
+
+// Checkbox Container (matches original)
+.checkbox-container {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(111, 199, 186, 0.2);
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: #6fc7ba;
+    }
+
+    span {
+      font-weight: 500;
+      color: var(--text-primary, #ffffff);
+      font-size: 0.9rem;
+    }
+  }
+}
+
+// Priority Fee Selection
+priority-fee-selection {
+  margin-top: 20px;
+  display: block;
+}
+
+// Clean and modern design for approval flow
+
+// Action Buttons
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  padding: 20px;
+  flex-shrink: 0;
+  
+  .reject-button,
+  .accept-button {
+    flex: 1;
+  }
+}
+
+// Ensure proper spacing and layout
+.approval-flow-container {
+  .action-details {
+    > div:last-child {
+      border-bottom: none;
+    }
+  }
+}
+
+// Scrollbar Styling
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(111, 199, 186, 0.1);
+  border-radius: 3px;
+}
+
+// Error State Styles
+.error-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--vampire-black);
+  color: var(--text-primary, #ffffff);
+  font-family: 'Poppins', 'Roboto', sans-serif;
+  padding: 32px 20px 20px 20px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.error-content {
+  max-width: 400px;
+  width: 100%;
+
+  h2 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    color: #E04242; // Error red from design system
+    line-height: 1.3;
+  }
+
+  p {
+    font-size: 1rem;
+    color: var(--text-secondary, #a0a0a0);
+    margin: 0 0 32px 0;
+    font-weight: 400;
+    line-height: 1.4;
+  }
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(111, 199, 186, 0.3);
+  border-radius: 3px;
+  
+  &:hover {
+    background: rgba(111, 199, 186, 0.5);
+  }
+}
+
+// Responsive Design
+@media (max-width: 480px) {
+  .approval-content {
+    padding: 16px;
+  }
+  
+  .action-header {
+    margin-bottom: 20px;
+    
+    .action-title {
+      font-size: 1.3rem;
+    }
+  }
+  
+  .detail-display,
+  .input-field-row {
+    padding: 14px;
+  }
+  
+  .priority-fee-section {
+    padding: 16px;
+  }
+  
+  .action-buttons {
+    padding: 16px;
+    gap: 10px;
+  }
+} 

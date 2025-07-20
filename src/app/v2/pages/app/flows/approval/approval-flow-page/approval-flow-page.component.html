@@ -1,0 +1,118 @@
+<div *ngIf="approvalConfig()" [ngSwitch]="currentState()">
+  
+  <!-- Approval State -->
+  <div *ngSwitchCase="ApprovalFlowState.APPROVAL" class="approval-flow-container">
+    <div class="approval-content">
+      
+      <!-- Transaction Header -->
+      <div class="transaction-header">
+        <h2 *ngIf="isActionHasPriorityFee()">Transaction Review</h2>
+        <h2 *ngIf="!isActionHasPriorityFee()">Action Review</h2>
+        <p>Please review the details below before proceeding.</p>
+      </div>
+
+      <!-- Action Details Section -->
+      <ng-container *ngIf="actionDisplay(); else unknownAction">
+        <h3 class="action-title">{{ actionDisplay()!.title }}</h3>
+        <h4 class="action-subtitle" *ngIf="actionDisplay()!.subtitle">{{ actionDisplay()!.subtitle }}</h4>
+        
+        <!-- Action Detail Rows -->
+        <div class="action-details">
+          <div *ngFor="let row of actionDisplay()!.rows">
+            
+            <!-- Input Fields (checkboxes) -->
+            <div *ngIf="row.inputField; else noInputField">
+              <div *ngIf="row.inputField.fieldType === InputFieldType.CHECKBOX">
+                <div class="checkbox-container">
+                  <label class="checkbox-label">
+                    <input 
+                      type="checkbox" 
+                      [(ngModel)]="additionalParams[row.inputField.fieldParam]" 
+                      [checked]="row.fieldValue === 'true'" 
+                    />
+                    <span>{{ row.fieldName }}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Regular Detail Rows -->
+            <ng-template #noInputField>
+              <div [ngClass]="{'detail': !row.isCodeBlock, 'detail-signing-message': row.isCodeBlock}">
+                <div class="label">{{ row.fieldName }}:</div>
+                <div class="value">{{ row.fieldValue }}</div>
+              </div>
+            </ng-template>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Unknown Action Fallback -->
+      <ng-template #unknownAction>
+        <div class="unknown-action">
+          <p>Unknown Action Type ({{ approvalConfig()?.action?.type }})</p>
+        </div>
+      </ng-template>
+
+      <!-- Priority Fee Selection -->
+      <priority-fee-selection 
+        *ngIf="isActionHasPriorityFee() && approvalConfig()"
+        [action]="approvalConfig()!.action" 
+        [wallet]="wallet()"
+        (priorityFeeSelected)="setCurrentPriorityFee($event)">
+      </priority-fee-selection>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <kc-button 
+        [text]="isLoading ? 'Processing...' : 'Approve'"
+        variant="primary" 
+        size="lg"
+        role="success"
+        [isFullWidth]="true"
+        [isDisabled]="!isAvailableForApproval()"
+        [isLoading]="isLoading"
+        (buttonClick)="onAccept()"
+        class="accept-button">
+      </kc-button>
+      
+      <kc-button 
+        [text]="'Reject'"
+        variant="secondary" 
+        size="lg"
+        role="danger"
+        [isFullWidth]="true"
+        [isDisabled]="isLoading"
+        (buttonClick)="onReject()"
+        class="reject-button">
+      </kc-button>
+    </div>
+  </div>
+
+  <!-- Processing/Loading State -->
+  <app-approval-loading-page *ngSwitchCase="ApprovalFlowState.PROCESSING">
+  </app-approval-loading-page>
+
+  <!-- Success State -->
+  <app-approval-success-page 
+    *ngSwitchCase="ApprovalFlowState.SUCCESS"
+    [actionResult]="approvalConfig()!.result!">
+  </app-approval-success-page>
+
+  <!-- Error State -->
+  <div *ngSwitchCase="ApprovalFlowState.ERROR" class="error-container">
+    <div class="error-content">
+      <h2>Transaction Failed</h2>
+      <p>{{ approvalConfig()?.error || 'An unexpected error occurred' }}</p>
+      <kc-button 
+        [text]="'Close'"
+        variant="secondary" 
+        size="lg"
+        [isFullWidth]="true"
+        (buttonClick)="approvalFlowService.closeApproval()">
+      </kc-button>
+    </div>
+  </div>
+
+</div> 

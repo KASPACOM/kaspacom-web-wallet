@@ -67,6 +67,9 @@
           <p class="text-gray-60 typo-text-2">Send Confirmation page - Coming soon</p>
         </div>
       }
+      @if (flowPagesService.isPageOpen('action-approval')) {
+        <app-approval-flow-page></app-approval-flow-page>
+      }
     </app-flow-page>
   </div>
 </div>

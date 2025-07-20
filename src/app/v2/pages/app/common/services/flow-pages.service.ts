@@ -16,7 +16,7 @@ export class FlowPagesService implements IFlowPageNavigation {
     return stack.currentIndex >= 0 ? stack.pages[stack.currentIndex] : null;
   });
   
-  canGoBack = computed(() => {
+  canNavigateBack = computed(() => {
     const stack = this.pageStackSignal();
     const currentPage = stack.currentIndex >= 0 ? stack.pages[stack.currentIndex] : null;
     // Show back button if there's a previous page OR if current page allows navigation back
@@ -97,10 +97,7 @@ export class FlowPagesService implements IFlowPageNavigation {
     return stack.currentIndex > 0 ? stack.pages[stack.currentIndex - 1] : null;
   }
   
-  // Check if we can navigate back (has previous page or current page allows it)
-  canNavigateBack(): boolean {
-    return this.canGoBack();
-  }
+  // canNavigateBack is now implemented as a computed property above
   
   // Check if we have a previous page in the stack
   hasPreviousPage(): boolean {

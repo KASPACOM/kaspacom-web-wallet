@@ -6,6 +6,7 @@ import {
   Output,
   SimpleChanges,
 } from '@angular/core';
+import { trigger, state, style, transition, animate } from '@angular/animations';
 import {
   CommonModule,
   JsonPipe,
@@ -21,6 +22,7 @@ import { AppWallet } from '../../../classes/AppWallet';
 import { IFeeEstimate } from '../../../../../public/kaspa/kaspa';
 import { FormsModule } from '@angular/forms';
 import { Krc20OperationDataService } from '../../../services/protocols/krc20/krc20-operation-data.service';
+import { KcIconComponent, KcInputComponent } from 'kaspacom-ui';
 
 type BucketFeeRate = {
   priorityFee: bigint;
@@ -42,6 +44,28 @@ type AvailableOption = 'low' | 'normal' | 'priority' | 'custom';
         FormsModule,
         TitleCasePipe,
         CommonModule,
+        KcIconComponent,
+        KcInputComponent,
+    ],
+    animations: [
+        trigger('slideDown', [
+            state('closed', style({
+                height: '0px',
+                opacity: 0,
+                overflow: 'hidden'
+            })),
+            state('open', style({
+                height: '*',
+                opacity: 1,
+                overflow: 'visible'
+            })),
+            transition('closed => open', [
+                animate('400ms ease-out')
+            ]),
+            transition('open => closed', [
+                animate('300ms ease-in')
+            ])
+        ])
     ]
 })
 export class PriorityFeeSelectionComponent implements OnChanges {
@@ -94,7 +118,8 @@ export class PriorityFeeSelectionComponent implements OnChanges {
 
     this.transactionMass = BigInt(maxTransactionMass);
 
-    this.showPriorityFeeSelection = this.currentFeeRates?.lowBuckets[0].feerate != this.currentFeeRates?.priorityBucket.feerate
+    // Always start with spoiler closed - users can click to expand
+    this.showPriorityFeeSelection = false;
 
     this.currentOptions = {
       low: {
@@ -172,5 +197,9 @@ export class PriorityFeeSelectionComponent implements OnChanges {
     }
 
     return 0n;
+  }
+
+  toggleFeeSelection() {
+    this.showPriorityFeeSelection = !this.showPriorityFeeSelection;
   }
 }

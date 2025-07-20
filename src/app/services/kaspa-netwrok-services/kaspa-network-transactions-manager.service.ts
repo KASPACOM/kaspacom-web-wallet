@@ -567,8 +567,9 @@ export class KaspaNetworkTransactionsManagerService {
     const commitOptions: DoTransactionOptions = {
       notifyCreatedTransactions: async (transactionId) => {
         resultTransactions.commitTransactionId = transactionId;
-        await notifyUpdate(resultTransactions);
+        await notifyUpdate({...resultTransactions});
       },
+      waitForTransactionToBeConfirmed: true,
       ...(baseTransactionOptions || {}),
       ...(commitTransactionAdditionalOptions || {}),
     };
@@ -578,7 +579,7 @@ export class KaspaNetworkTransactionsManagerService {
     const revealOptions: DoTransactionOptions = {
       notifyCreatedTransactions: async (transactionId) => {
         resultTransactions.revealTransactionId = transactionId;
-        await notifyUpdate(resultTransactions);
+        await notifyUpdate({...resultTransactions});
       },
       additionalProtocolPaymentAmount: minimalOperationCost,
       ...(baseTransactionOptions || {}),

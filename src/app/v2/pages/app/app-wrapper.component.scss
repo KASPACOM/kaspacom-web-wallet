@@ -13,7 +13,7 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
 }
 
 .wrapper {
-  background-color: var(--vampire-black);
+  background-color: var(--gray-10);
   border-radius: 12px;
   backdrop-filter: blur(8px);
   align-items: center;
@@ -33,19 +33,20 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
   &__header {
     width: 100%;
     flex-shrink: 0;
-    padding: 20px 16px;
-    background: var(--vampire-black);
+    padding: 8px 12px;
+    padding-right: 16px;
+    background: var(--gray-15);
     backdrop-filter: blur(20px);
     border-bottom: 1px dashed $glass-border-color;
     z-index: 10;
   }
 
   &__nav {
-    background: $glass-bg-color;
+    background: var(--gray-15);
     backdrop-filter: blur(20px);
     width: 100%;
     flex-shrink: 0;
-    border-top: 1px solid $glass-border-color;
+    border-top: 1px dashed var(--gray-25);
     z-index: 10;
   }
 

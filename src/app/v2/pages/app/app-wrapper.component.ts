@@ -66,4 +66,14 @@ export class AppWrapperComponent {
       this.flowPagesService.closePage();
     }
   }
+  
+  onFlowPageClose() {
+    // Handle close icon click - close the current page
+    const activePage = this.flowPagesService.activePage();
+    if (activePage?.id === 'wallet-management') {
+      this.accountSettingsService.close();
+    } else {
+      this.flowPagesService.closePage();
+    }
+  }
 }

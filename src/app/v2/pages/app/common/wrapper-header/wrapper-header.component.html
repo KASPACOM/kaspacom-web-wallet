@@ -2,30 +2,23 @@
   <app-search-bar></app-search-bar>
 } @else {
   <div class="header-container-home full-height">
-    <div class="profile-container">
-      <kc-icon
+    <div class="profile-container" (click)="toggleAccountSettings()">
+      <app-wallet-profile-orb
         class="profile-container__chain-icon"
-        [iconClass]="'icon-user-12px'"
-        [size]="'md'"
-      ></kc-icon>
+      ></app-wallet-profile-orb>
       <div class="profile-container__info">
-        <div class="profile-container__account-name">{{ accountName() }}</div>
-        <div class="profile-container__address">
-          <span>{{ shortenedAddress() }}</span>
-          <kc-icon
-            class="profile-container__copy-icon"
-            [iconClass]="'icon-copy'"
+        <div class="profile-container__wallet-name-section">
+          <div class="profile-container__wallet-name">{{ accountName() }}</div>
+        </div>
+        <div class="profile-container__account-section">
+          <div class="profile-container__account-name">Account 1</div>
+          <app-copy-button
+            [value]="walletAddress()"
             [size]="'xs'"
-            (click)="onCopyAddress()"
-          ></kc-icon>
+            (click)="onCopyButtonClick($event)"
+          ></app-copy-button>
         </div>
       </div>
-      <kc-icon
-        class="profile-container__chevron-icon"
-        [iconClass]="chevronIconClass()"
-        [size]="'md'"
-        (click)="toggleAccountSettings()"
-      ></kc-icon>
     </div>
     <kc-icon
       class="settings-icon"

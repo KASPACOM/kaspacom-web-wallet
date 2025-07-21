@@ -2,28 +2,9 @@
   padding: 0;
   margin: 0;
 
-  .utxos-header {
-    padding-bottom: 8px;
-    
-    .utxos-count {
-      .utxos-title {
-        font-size: calc(0.75rem + 2px); // typo-text-1 base size + 2px
-      }
-      
-      .typo-title-5 {
-        font-weight: 600;
-        font-size: 1.125rem;
-      }
-    }
-
-    .compound-button {
-      // Custom styling for compound button if needed
-    }
-  }
-
   .utxos-list-container {
     .utxo-card {
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(255, 255, 255, 0.1);
       border-radius: 12px;
       padding: 16px;
       transition: background 0.3s ease;

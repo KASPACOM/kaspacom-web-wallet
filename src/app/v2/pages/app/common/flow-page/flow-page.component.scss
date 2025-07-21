@@ -4,7 +4,6 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
   z-index: 100;
   display: flex;
@@ -21,7 +20,7 @@
 }
 
 .flow-page-content {
-  background: rgba(0,0,0, 0.60); // Semi-transparent vampire black
+  background: rgba(0,0,0, 0.8); // Semi-transparent vampire black
   backdrop-filter: blur(8px);
   border-radius: 0 0 12px 12px;
   padding: 16px;
@@ -45,13 +44,18 @@
 .flow-page-header {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   min-height: 32px;
 
   &__left {
     display: flex;
     align-items: center;
     gap: 16px;
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
   }
 }
 
@@ -90,6 +94,18 @@
 
   &:hover {
     color: var(--white);
+  }
+}
+
+.flow-page-close {
+  ::ng-deep .icon {
+    cursor: pointer;
+    color: var(--gray-60) !important;
+    transition: color 0.2s ease;
+  
+    &:hover {
+      color: var(--white) !important;
+    }
   }
 }
 

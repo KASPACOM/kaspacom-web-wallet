@@ -5,10 +5,12 @@ import { SearchBarComponent } from '../../home/search/search-bar/search-bar.comp
 import { WalletService } from '../../../../../services/wallet.service';
 import { UtilsHelper } from '../../../../../services/utils.service';
 import { AccountSettingsService } from '../services/account-settings.service';
+import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
+import { WalletProfileOrbComponent } from '../../../../shared/ui/wallet-profile-orb/wallet-profile-orb.component';
 
 @Component({
   selector: 'app-wrapper-header',
-  imports: [KcIconComponent, KcButtonComponent, RouterModule, SearchBarComponent],
+  imports: [KcIconComponent, KcButtonComponent, RouterModule, SearchBarComponent, CopyButtonComponent, WalletProfileOrbComponent],
   templateUrl: './wrapper-header.component.html',
   styleUrl: './wrapper-header.component.scss',
 })
@@ -47,24 +49,20 @@ export class WrapperHeaderComponent {
     return address ? this.utilsHelper.shortenAddress(address) : '';
   });
 
-  chevronIconClass = computed(() => {
-    return this.accountSettingsService.isOpen ? 'icon-chevron-up' : 'icon-chevron-down';
-  });
+
 
   onSettingsClick(): void {
     // Navigate to settings page or implement settings logic
     console.log('Settings clicked');
   }
 
-  onCopyAddress(): void {
-    const address = this.walletAddress();
-    if (address) {
-      navigator.clipboard.writeText(address);
-      // You might want to show a toast notification here
-    }
-  }
+
 
   toggleAccountSettings(): void {
     this.accountSettingsService.toggle();
+  }
+
+  onCopyButtonClick(event: Event): void {
+    event.stopPropagation();
   }
 }

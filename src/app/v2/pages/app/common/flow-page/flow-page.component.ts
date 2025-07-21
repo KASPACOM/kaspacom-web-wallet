@@ -45,10 +45,12 @@ export class FlowPageComponent {
   @Input() isOpen = false;
   @Input() title = '';
   @Input() canNavigateBack = false;
+  @Input() canClose = false;
   @Input() showTitle = true;
   @Input() showBackground = true;
   @Output() navigateBack = new EventEmitter<void>();
   @Output() backdropClick = new EventEmitter<void>();
+  @Output() close = new EventEmitter<void>();
   
   // Track animation state to prevent content changes during animation
   isAnimating = false;
@@ -59,6 +61,10 @@ export class FlowPageComponent {
   
   onBackdropClick(): void {
     this.backdropClick.emit();
+  }
+  
+  onClose(): void {
+    this.close.emit();
   }
   
   onAnimationStart(): void {

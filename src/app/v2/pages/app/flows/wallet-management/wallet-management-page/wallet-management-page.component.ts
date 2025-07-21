@@ -24,8 +24,9 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
   get config(): IFlowPageConfig {
     return {
       id: 'wallet-management',
-      title: 'Manage wallets',
-      canNavigateBack: false // Explicitly disable back navigation
+      title: 'Manage accounts',
+      canNavigateBack: false, // Explicitly disable back navigation
+      canClose: true
     };
   }
   // Mock wallet data
@@ -88,6 +89,18 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
     this.navigateToNextPage({
       id: 'create-wallet',
       title: 'Create Wallet',
+      canNavigateBack: true
+    });
+  }
+  
+  manageWallets(): void {
+    // Navigate to manage wallets functionality
+    // You can implement the specific functionality here
+    console.log('Manage wallets clicked');
+    // For now, could navigate to add wallet page as an example
+    this.navigateToNextPage({
+      id: 'add-wallet',
+      title: 'Add Wallet',
       canNavigateBack: true
     });
   }

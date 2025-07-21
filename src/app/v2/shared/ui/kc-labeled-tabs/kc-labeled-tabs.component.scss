@@ -4,6 +4,7 @@
   width: 100%;
   background: transparent;
   border: none;
+  padding: 0 4px;
 }
 
 .kc-labeled-tabs-header {
@@ -11,8 +12,8 @@
   flex-direction: row;
   align-items: center;
   background: transparent;
-  border-bottom: solid 1px var(--gray-0);
-  padding: 16px;
+  border-bottom: solid 1px var(--gray-15);
+  padding: 8px;
 }
 
 .kc-labeled-tabs-prefix {
@@ -55,7 +56,7 @@
   &.disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    
+
     &:hover {
       color: var(--gray-20);
     }
@@ -66,4 +67,4 @@
   background: transparent;
   border: none;
   margin-top: 24px;
-} 
+}

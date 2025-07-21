@@ -1,7 +1,19 @@
+.page-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.header-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px 0 16px;
+}
+
 .wallets-container {
   flex: 1;
   overflow-y: auto;
-  margin-bottom: 16px;
   min-height: 0; // Ensure proper flex shrinking
   
   &::-webkit-scrollbar {
@@ -42,11 +54,36 @@
   
   &:hover {
     background: rgba(255, 255, 255, 0.08);
+    
+    .wallet-item__pencil {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .wallet-item__trash {
+      opacity: 1;
+      visibility: visible;
+    }
   }
   
   &.selected {
-    border-color: var(--primary);
+    position: relative;
+    border: 1px solid transparent;
     background: rgba(111, 199, 186, 0.1);
+    
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      padding: 1px;
+      background: var(--gradient-1);
+      border-radius: inherit;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: xor;
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      pointer-events: none;
+    }
   }
   
   &__info {
@@ -56,10 +93,33 @@
     gap: 4px;
   }
   
+  &__name-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
   &__name {
     font-size: 16px;
     font-weight: 500;
     color: var(--white);
+  }
+  
+  &__pencil {
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    
+    ::ng-deep .icon {
+      color: var(--gray-60) !important;
+    }
+    
+    &:hover {
+      ::ng-deep .icon {
+        color: white !important;
+      }
+    }
   }
   
   &__address {
@@ -74,34 +134,24 @@
     margin-top: 4px;
   }
   
-  &__delete {
+  &__trash {
+    opacity: 0;
+    visibility: hidden;
     background: transparent;
     border: none;
     padding: 8px;
     cursor: pointer;
-    color: var(--gray-60);
     transition: all 0.2s ease;
     border-radius: 8px;
     
+    ::ng-deep .icon {
+      color: var(--red-20) !important;
+    }
+    
     &:hover {
-      color: var(--red-20);
-      
-      ::ng-deep {
-        .icon {
-          color: var(--red-20);
-        }
+      ::ng-deep .icon {
+        color: var(--red-10) !important;
       }
     }
   }
-}
-
-.action-buttons {
-  display: flex;
-  gap: 12px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  position: sticky;
-  bottom: 0;
-  background: rgba(7, 9, 10, 0.95); // Match content background
-  backdrop-filter: blur(8px);
 }

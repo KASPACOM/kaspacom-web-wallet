@@ -22,10 +22,12 @@
       [isOpen]="flowPagesService.isAnyPageOpen()"
       [title]="flowPagesService.activePage()?.title || ''"
       [canNavigateBack]="flowPagesService.canNavigateBack()"
+      [canClose]="flowPagesService.activePage()?.canClose ?? false"
       [showTitle]="flowPagesService.activePage()?.showTitle ?? true"
       [showBackground]="flowPagesService.activePage()?.showBackground ?? true"
       (navigateBack)="flowPagesService.navigateBack()"
       (backdropClick)="onFlowPageBackdropClick()"
+      (close)="onFlowPageClose()"
     >
       @if (flowPagesService.isPageOpen('wallet-management')) {
         <app-wallet-management-page></app-wallet-management-page>

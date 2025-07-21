@@ -14,8 +14,9 @@ export class AccountSettingsService {
   open() {
     this.flowPagesService.openFlow({
       id: 'wallet-management',
-      title: 'Manage wallets',
-      canNavigateBack: false // Wallet management is controlled by chevron in header
+      title: 'Manage accounts',
+      canNavigateBack: false, // Wallet management is controlled by chevron in header
+      canClose: true
     });
   }
   

@@ -1,6 +1,6 @@
 .crypto-actions-container {
   &__card {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     flex: 1;
     height: 80px;
@@ -10,6 +10,45 @@
 
     &:hover {
       background: rgba(255, 255, 255, 0.08);
+    }
+
+    // Target the first and second cards (Send and Receive actions)
+    &:nth-child(1), &:nth-child(2) {
+      kc-icon {
+        ::ng-deep * {
+          color: var(--gray-75) !important;
+        }
+      }
+
+      &:hover {
+        kc-icon {
+          ::ng-deep * {
+            color: var(--gray-95) !important;
+          }
+        }
+      }
+    }
+
+    // Target the third card (Swap action)
+    &:nth-child(3) {
+      .crypto-actions-container__title {
+        background: var(--gradient-2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      kc-icon {
+        ::ng-deep {
+          * {
+            background: var(--gradient-2) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+            color: transparent !important;
+          }
+        }
+      }
     }
   }
   

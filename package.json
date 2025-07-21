@@ -54,7 +54,9 @@
     "karma-jasmine-html-reporter": "~2.1.0",
     "npm": "^10.9.1",
     "prettier": "^3.5.3",
-    "typescript": "~5.8.3",
+    "typescript": "~5.8.3"
+  },
+  "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "^4.45.1"
   }
 }

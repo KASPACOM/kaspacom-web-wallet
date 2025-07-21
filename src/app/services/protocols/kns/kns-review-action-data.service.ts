@@ -39,11 +39,11 @@ export class KnsReviewActionDataService implements ProtocolReviewActionDataInter
 
     private getKnsTransferActionDisplay(operationData: KnsTransfer, wallet: AppWallet): ActionDisplay {
         return {
-            title: "Transfer KNS Domain",
+            title: "Transfer KNS Asset",
             rows: [
                 {
-                    fieldName: "Domain",
-                    fieldValue: operationData.name
+                    fieldName: "Asset",
+                    fieldValue: operationData.id
                 },
                 {
                     fieldName: "From",
@@ -60,8 +60,8 @@ export class KnsReviewActionDataService implements ProtocolReviewActionDataInter
     private getKnsInscribeActionDisplay(operationData: KnsInscribe, wallet: AppWallet): ActionDisplay {
         const rows = [
             {
-                fieldName: "Domain",
-                fieldValue: operationData.name
+                fieldName: "Asset",
+                fieldValue: operationData.id
             },
             {
                 fieldName: "Owner",
@@ -80,7 +80,7 @@ export class KnsReviewActionDataService implements ProtocolReviewActionDataInter
         }
 
         return {
-            title: "Inscribe KNS Domain",
+            title: "Inscribe KNS Asset",
             rows: rows
         }
     }
@@ -88,8 +88,8 @@ export class KnsReviewActionDataService implements ProtocolReviewActionDataInter
     private getKnsUpdateActionDisplay(operationData: KnsUpdate, wallet: AppWallet): ActionDisplay {
         const rows = [
             {
-                fieldName: "Domain",
-                fieldValue: operationData.name
+                fieldName: "Asset",
+                fieldValue: operationData.id
             },
             {
                 fieldName: "Owner",
@@ -108,7 +108,7 @@ export class KnsReviewActionDataService implements ProtocolReviewActionDataInter
         }
 
         return {
-            title: "Update KNS Domain",
+            title: "Update KNS Asset",
             rows: rows
         }
     }

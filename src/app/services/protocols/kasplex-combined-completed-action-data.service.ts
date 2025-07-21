@@ -5,7 +5,6 @@ import { CompletedActionDisplay } from "../../types/completed-action-display.typ
 import { CommitRevealActionResult } from "@kaspacom/wallet-messages";
 import { Krc20CompletedActionDataService } from "./krc20/krc20-completed-action-data.service";
 import { Krc721CompletedActionDataService } from "./krc721/krc721-completed-action-data.service";
-import { KnsCompletedActionDataService } from "./kns/kns-completed-action-data.service";
 
 @Injectable({
     providedIn: 'root',
@@ -13,7 +12,6 @@ import { KnsCompletedActionDataService } from "./kns/kns-completed-action-data.s
 export class KasplexCombinedCompletedActionDataService implements ProtocolCompletedActionDataInterface {
     private krc20CompletedService = inject(Krc20CompletedActionDataService);
     private krc721CompletedService = inject(Krc721CompletedActionDataService);
-    private knsCompletedService = inject(KnsCompletedActionDataService);
 
     getActionDisplay(action: CommitRevealActionResult): CompletedActionDisplay | undefined {
         try {
@@ -24,8 +22,6 @@ export class KasplexCombinedCompletedActionDataService implements ProtocolComple
                 return this.krc20CompletedService.getActionDisplay(action);
             } else if (data.p === 'krc-721') {
                 return this.krc721CompletedService.getActionDisplay(action);
-            } else if (data.p === 'kns') {
-                return this.knsCompletedService.getActionDisplay(action);
             }
         } catch (error) {
             console.error('Error parsing protocol action:', error);

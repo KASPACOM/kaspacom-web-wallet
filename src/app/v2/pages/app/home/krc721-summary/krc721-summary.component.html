@@ -23,7 +23,7 @@
   } @else if (nfts().length === 0) {
     <div class="text-gray-60 p-16">No KRC721 NFTs found</div>
   } @else {
-    @for ( nft of nfts(); track nft.tick + nft.tokenId ) {
+    @for ( nft of nfts(); track trackByNft($index, nft) ) {
     <div
       class="krc721-summary-container__card flex full-width align-items-center justify-content-between p-16 fade-in cursor-pointer"
       (click)="onNftClick(nft)"

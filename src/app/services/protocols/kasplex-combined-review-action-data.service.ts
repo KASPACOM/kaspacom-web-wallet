@@ -5,7 +5,6 @@ import { ActionDisplay } from "../../types/action-display.type";
 import { ProtocolReviewActionDataInterface } from "./interfaces/protocol-review-action-data.interface";
 import { Krc20ReviewActionDataService } from "./krc20/krc20-review-action-data.service";
 import { Krc721ReviewActionDataService } from "./krc721/krc721-review-action-data.service";
-import { KnsReviewActionDataService } from "./kns/kns-review-action-data.service";
 
 @Injectable({
     providedIn: 'root',
@@ -13,7 +12,6 @@ import { KnsReviewActionDataService } from "./kns/kns-review-action-data.service
 export class KasplexCombinedReviewActionDataService implements ProtocolReviewActionDataInterface {
     private krc20ReviewService = inject(Krc20ReviewActionDataService);
     private krc721ReviewService = inject(Krc721ReviewActionDataService);
-    private knsReviewService = inject(KnsReviewActionDataService);
 
     getActionDisplay(action: CommitRevealAction | undefined, wallet: AppWallet): ActionDisplay | undefined {
         if (!action?.actionScript.stringifyAction) {
@@ -28,8 +26,6 @@ export class KasplexCombinedReviewActionDataService implements ProtocolReviewAct
                 return this.krc20ReviewService.getActionDisplay(action, wallet);
             } else if (data.p === 'krc-721') {
                 return this.krc721ReviewService.getActionDisplay(action, wallet);
-            } else if (data.p === 'kns') {
-                return this.knsReviewService.getActionDisplay(action, wallet);
             }
         } catch (error) {
             console.error('Error parsing action script:', error);

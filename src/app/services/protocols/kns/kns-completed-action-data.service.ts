@@ -35,11 +35,11 @@ export class KnsCompletedActionDataService implements ProtocolCompletedActionDat
 
     private getKnsTransferActionDisplay(action: CommitRevealActionResult, operationData: KnsTransfer): ActionDisplay {
         return {
-            title: "Transfer KNS Domain Transaction",
+            title: "Transfer KNS Asset Transaction",
             rows: [
                 {
-                    fieldName: "Domain",
-                    fieldValue: operationData.name
+                    fieldName: "Asset",
+                    fieldValue: operationData.id
                 },
                 {
                     fieldName: "From",
@@ -56,8 +56,8 @@ export class KnsCompletedActionDataService implements ProtocolCompletedActionDat
     private getKnsInscribeActionDisplay(action: CommitRevealActionResult, operationData: KnsInscribe): ActionDisplay {
         const rows = [
             {
-                fieldName: "Domain",
-                fieldValue: operationData.name
+                fieldName: "Asset",
+                fieldValue: operationData.id
             },
             {
                 fieldName: "Inscribed By",
@@ -76,7 +76,7 @@ export class KnsCompletedActionDataService implements ProtocolCompletedActionDat
         }
 
         return {
-            title: "Inscribe KNS Domain Transaction",
+            title: "Inscribe KNS Asset Transaction",
             rows: rows
         }
     }
@@ -84,8 +84,8 @@ export class KnsCompletedActionDataService implements ProtocolCompletedActionDat
     private getKnsUpdateActionDisplay(action: CommitRevealActionResult, operationData: KnsUpdate): ActionDisplay {
         const rows = [
             {
-                fieldName: "Domain",
-                fieldValue: operationData.name
+                fieldName: "Asset",
+                fieldValue: operationData.id
             },
             {
                 fieldName: "Updated By",
@@ -104,7 +104,7 @@ export class KnsCompletedActionDataService implements ProtocolCompletedActionDat
         }
 
         return {
-            title: "Update KNS Domain Transaction",
+            title: "Update KNS Asset Transaction",
             rows: rows
         }
     }

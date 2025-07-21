@@ -54,82 +54,63 @@ export class KnsActionsValidatorService implements ProtocolActionsValidatorInter
             };
         }
 
-        if (this.utils.isNullOrEmptyString(knsCommand.name)) {
+        if (this.utils.isNullOrEmptyString(knsCommand.id)) {
             return {
                 isValidated: false,
-                errorCode: ERROR_CODES.WALLET_ACTION.INVALID_TICKER, // Reusing for domain name
+                errorCode: ERROR_CODES.WALLET_ACTION.INVALID_TICKER, // Reusing for asset ID
             };
         }
 
-        return await this.checkDomainOwnership(knsCommand.name, wallet);
+        return await this.checkDomainOwnership(knsCommand.id, wallet);
     }
 
     private async validateInscribeKnsAction(knsCommand: KnsInscribe, wallet: AppWallet): Promise<{ isValidated: boolean; errorCode?: number; }> {
-        if (this.utils.isNullOrEmptyString(knsCommand.name)) {
+        if (this.utils.isNullOrEmptyString(knsCommand.id)) {
             return {
                 isValidated: false,
-                errorCode: ERROR_CODES.WALLET_ACTION.INVALID_TICKER, // Reusing for domain name
+                errorCode: ERROR_CODES.WALLET_ACTION.INVALID_TICKER, // Reusing for asset ID
             };
         }
 
-        // Check if domain name is available by searching for it
-        try {
-            const domainData = await firstValueFrom(
-                this.knsService.fetchAssets(1, 1, undefined, undefined, undefined, knsCommand.name)
-            );
-
-            if (domainData.data && domainData.data.assets.length > 0) {
-                return {
-                    isValidated: false,
-                    errorCode: ERROR_CODES.WALLET_ACTION.TOKEN_NAME_IS_NOT_AVAILABLE_TO_DEPLOY,
-                };
-            }
-
-            return { isValidated: true };
-        } catch (error) {
-            console.error(error);
-            return {
-                isValidated: false,
-                errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
-            };
-        }
+        // For inscribe operations with asset ID, check if the user owns the asset
+        return await this.checkDomainOwnership(knsCommand.id, wallet);
     }
 
     private async validateUpdateKnsAction(knsCommand: KnsUpdate, wallet: AppWallet): Promise<{ isValidated: boolean; errorCode?: number; }> {
-        if (this.utils.isNullOrEmptyString(knsCommand.name)) {
+        if (this.utils.isNullOrEmptyString(knsCommand.id)) {
             return {
                 isValidated: false,
-                errorCode: ERROR_CODES.WALLET_ACTION.INVALID_TICKER, // Reusing for domain name
+                errorCode: ERROR_CODES.WALLET_ACTION.INVALID_TICKER, // Reusing for asset ID
             };
         }
 
-        return await this.checkDomainOwnership(knsCommand.name, wallet);
+        return await this.checkDomainOwnership(knsCommand.id, wallet);
     }
 
-    private async checkDomainOwnership(domainName: string, wallet: AppWallet): Promise<{ isValidated: boolean; errorCode?: number; }> {
+    private async checkDomainOwnership(assetId: string, wallet: AppWallet): Promise<{ isValidated: boolean; errorCode?: number; }> {
         try {
-            const domainData = await firstValueFrom(
-                this.knsService.fetchAssets(1, 1, undefined, undefined, undefined, domainName)
+            const assetResponse = await firstValueFrom(
+                this.knsService.fetchAssetByAssetId(assetId)
             );
 
-            if (!domainData.data || domainData.data.assets.length === 0) {
+            if (!assetResponse.data) {
                 return {
                     isValidated: false,
-                    errorCode: ERROR_CODES.WALLET_ACTION.TICKER_NOT_FOUND,
+                    errorCode: ERROR_CODES.WALLET_ACTION.TICKER_NOT_FOUND, // Asset not found
                 };
             }
 
-            const domain = domainData.data.assets[0];
-            if (domain.owner !== wallet.getAddress()) {
+            if (assetResponse.data.owner !== wallet.getAddress()) {
+                console.warn(`Asset ownership validation failed: asset "${assetId}" is owned by "${assetResponse.data.owner}" but wallet address is "${wallet.getAddress()}"`);
                 return {
                     isValidated: false,
-                    errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE, // Reusing this for "not owner"
+                    errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE, // Not the owner (reusing this error)
                 };
             }
 
             return { isValidated: true };
         } catch (error) {
-            console.error(error);
+            console.error('Error checking asset ownership:', error);
             return {
                 isValidated: false,
                 errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,

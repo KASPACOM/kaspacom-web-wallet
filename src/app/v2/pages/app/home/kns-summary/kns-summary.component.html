@@ -8,7 +8,7 @@
   } @else if (domains().length === 0) {
     <div class="text-gray-60 p-16">No KNS domains found</div>
   } @else {
-    @for ( domain of domains(); track domain.assetId ) {
+    @for ( domain of domains(); track trackByDomain($index, domain) ) {
     <div
       class="kns-summary-container__card flex full-width align-items-center justify-content-between p-16 fade-in"
     >

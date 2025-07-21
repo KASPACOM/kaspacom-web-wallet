@@ -27,4 +27,9 @@ export class KnsSummaryComponent {
       day: 'numeric'
     });
   }
+
+  // TrackBy function to prevent unnecessary re-renders
+  trackByDomain(index: number, domain: any): string {
+    return domain.assetId;
+  }
 } 

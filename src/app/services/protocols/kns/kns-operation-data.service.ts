@@ -18,14 +18,19 @@ export const KNS_TRANSACTIONS_PRICE = {
 export class KnsOperationDataService {
   
   getInscribeData(
-    domainName: string,
+    assetId: string,
+    isDomain: boolean,
     textRecords?: { [key: string]: string }
   ): KnsInscribe {
     const inscribeData: KnsInscribe = {
-      p: 'kns',
       op: KnsOperationType.INSCRIBE,
-      name: domainName,
+      id: assetId,
     };
+
+    // Only include 'p' field if it's a domain
+    if (isDomain) {
+      inscribeData.p = 'domain';
+    }
 
     if (textRecords && Object.keys(textRecords).length > 0) {
       inscribeData.text = textRecords;
@@ -34,24 +39,37 @@ export class KnsOperationDataService {
     return inscribeData;
   }
 
-  getTransferData(domainName: string, toAddress: string): KnsTransfer {
-    return {
-      p: 'kns',
+  getTransferData(assetId: string, isDomain: boolean, toAddress: string): KnsTransfer {
+    const transferData: KnsTransfer = {
       op: KnsOperationType.TRANSFER,
-      name: domainName,
+      id: assetId,
       to: toAddress,
     };
+
+    // Only include 'p' field if it's a domain
+    if (isDomain) {
+      transferData.p = 'domain';
+    }
+
+    return transferData;
   }
 
   getUpdateData(
-    domainName: string,
+    assetId: string,
+    isDomain: boolean,
     textRecords: { [key: string]: string }
   ): KnsUpdate {
-    return {
-      p: 'kns',
+    const updateData: KnsUpdate = {
       op: KnsOperationType.UPDATE,
-      name: domainName,
+      id: assetId,
       text: textRecords,
     };
+
+    // Only include 'p' field if it's a domain
+    if (isDomain) {
+      updateData.p = 'domain';
+    }
+
+    return updateData;
   }
 }

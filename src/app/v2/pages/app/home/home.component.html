@@ -11,6 +11,9 @@
     (selectedTabChange)="onTabChange($event)"
   >
     @switch (selectedTabId()) {
+      @case ('utxos') {
+        <app-utxos-summary></app-utxos-summary>
+      }
       @case ('krc20') {
         <app-wallet-summary></app-wallet-summary>
       }

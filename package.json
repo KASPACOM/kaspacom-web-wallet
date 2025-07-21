@@ -30,7 +30,7 @@
     "ethers": "^6.13.5",
     "express": "^4.18.2",
     "html5-qrcode": "^2.3.8",
-    "kaspacom-ui": "^1.0.40",
+    "kaspacom-ui": "1.0.40",
     "lodash": "^4.17.21",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
@@ -57,6 +57,6 @@
     "typescript": "~5.8.3"
   },
   "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "^4.44.2"
+    "@rollup/rollup-linux-x64-gnu": "^4.45.1"
   }
 }

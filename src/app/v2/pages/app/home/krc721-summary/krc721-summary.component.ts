@@ -109,6 +109,11 @@ export class Krc721SummaryComponent implements OnInit, OnDestroy, AfterViewInit 
     this.router.navigate(['/app/home/asset/krc721', nft.tick, nft.tokenId]);
   }
 
+  // TrackBy function to prevent unnecessary re-renders
+  trackByNft(index: number, nft: INftWithMetadata): string {
+    return `${nft.tick}-${nft.tokenId}`;
+  }
+
   // Helper method to get display name
   getDisplayName(nft: INftWithMetadata): string {
     return this.krc721MetadataService.getDisplayName(nft, nft as any);

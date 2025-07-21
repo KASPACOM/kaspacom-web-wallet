@@ -119,6 +119,11 @@ export class WalletSummaryComponent implements OnInit, OnDestroy, AfterViewInit 
     this.router.navigate(['/app/home/asset/krc20', token.address]);
   }
 
+  // TrackBy function to prevent unnecessary re-renders
+  trackByToken(index: number, token: ITokenWithMetadata): string {
+    return token.address;
+  }
+
   /**
    * Get item elements for viewport detection
    */

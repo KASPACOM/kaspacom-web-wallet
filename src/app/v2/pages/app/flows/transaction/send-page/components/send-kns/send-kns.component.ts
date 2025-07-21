@@ -140,8 +140,9 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit {
     try {
       // Create KNS transfer action
       const action = this.knsWalletActionService.createTransferWalletAction(
-        currentDomain.asset,   // domain name
-        this.walletAddress     // to address
+        currentDomain.assetId,   // asset ID
+        currentDomain.isDomain,  // whether it's a domain
+        this.walletAddress       // to address
       );
       
       console.log('KNS Transfer Action:', action, currentWallet, currentDomain);

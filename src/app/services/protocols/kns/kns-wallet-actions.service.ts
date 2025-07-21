@@ -5,7 +5,7 @@ import { KaspaNetworkActionsService } from "../../kaspa-netwrok-services/kaspa-n
 import { UtilsHelper } from "../../utils.service";
 import { ProtocolType } from "@kaspacom/wallet-messages/dist/types/protocol-type.enum";
 
-const CURRENT_PROTOCOL = ProtocolType.KASPLEX;
+const CURRENT_PROTOCOL = ProtocolType.KNS;
 
 @Injectable({
     providedIn: 'root',
@@ -18,7 +18,8 @@ export class KnsWalletActionService {
     ) { }
 
     createInscribeWalletAction(
-        domainName: string,
+        assetId: string,
+        isDomain: boolean,
         textRecords?: { [key: string]: string }
     ): WalletAction {
         return {
@@ -27,7 +28,7 @@ export class KnsWalletActionService {
                 actionScript: {
                     type: CURRENT_PROTOCOL,
                     stringifyAction: this.utils.stringifyProtocolAction(
-                        this.knsOperationDataService.getInscribeData(domainName, textRecords)
+                        this.knsOperationDataService.getInscribeData(assetId, isDomain, textRecords)
                     ),
                 },
                 options: {
@@ -37,14 +38,14 @@ export class KnsWalletActionService {
         };
     }
 
-    createTransferWalletAction(domainName: string, toAddress: string): WalletAction {
+    createTransferWalletAction(assetId: string, isDomain: boolean, toAddress: string): WalletAction {
         return {
             type: WalletActionType.COMMIT_REVEAL,
             data: {
                 actionScript: {
                     type: CURRENT_PROTOCOL,
                     stringifyAction: this.utils.stringifyProtocolAction(
-                        this.knsOperationDataService.getTransferData(domainName, toAddress)
+                        this.knsOperationDataService.getTransferData(assetId, isDomain, toAddress)
                     ),
                 },
                 options: {
@@ -55,7 +56,8 @@ export class KnsWalletActionService {
     }
 
     createUpdateWalletAction(
-        domainName: string,
+        assetId: string,
+        isDomain: boolean,
         textRecords: { [key: string]: string }
     ): WalletAction {
         return {
@@ -64,7 +66,7 @@ export class KnsWalletActionService {
                 actionScript: {
                     type: CURRENT_PROTOCOL,
                     stringifyAction: this.utils.stringifyProtocolAction(
-                        this.knsOperationDataService.getUpdateData(domainName, textRecords)
+                        this.knsOperationDataService.getUpdateData(assetId, isDomain, textRecords)
                     ),
                 },
                 options: {

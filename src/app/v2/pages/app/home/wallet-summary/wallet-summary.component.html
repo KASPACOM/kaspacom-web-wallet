@@ -12,7 +12,7 @@
   } @else if (tokens().length === 0) {
     <div class="text-gray-60 p-16">No KRC20 tokens found</div>
   } @else {
-    @for ( token of tokens(); track token.address ) {
+    @for ( token of tokens(); track trackByToken($index, token) ) {
     <div
       class="wallet-summary-container__card flex full-width align-items-center justify-content-between p-16 fade-in cursor-pointer"
       (click)="onTokenClick(token)"

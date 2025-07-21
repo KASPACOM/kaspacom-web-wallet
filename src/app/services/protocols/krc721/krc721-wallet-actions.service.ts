@@ -5,7 +5,7 @@ import { KaspaNetworkActionsService } from "../../kaspa-netwrok-services/kaspa-n
 import { UtilsHelper } from "../../utils.service";
 import { ProtocolType } from "@kaspacom/wallet-messages/dist/types/protocol-type.enum";
 
-const CURRENT_PROTOCOL = ProtocolType.KASPLEX;
+const CURRENT_PROTOCOL = ProtocolType.KSPR;
 
 @Injectable({
     providedIn: 'root',

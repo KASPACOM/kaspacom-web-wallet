@@ -29,6 +29,19 @@
   }
 }
 
+// Add missing styles for nft-list-card to match homepage styling
+.nft-list-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
 .nft-card {
   background: rgba(255, 255, 255, 0.03);
   border: none;
@@ -81,6 +94,11 @@
 .empty-state {
   flex: 1;
   min-height: 200px;
+}
+
+// Ensure loading more and completion messages are properly centered
+.loading-more-container {
+  width: 100%;
 }
 
 .fade-in {

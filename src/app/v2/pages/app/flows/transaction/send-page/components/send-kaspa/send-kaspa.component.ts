@@ -11,6 +11,7 @@ import { UtilsHelper } from '../../../../../../../../services/utils.service';
 import { MessagePopupService } from '../../../../../../../../services/message-popup.service';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { ApprovalFlowService } from '../../../../../common/services/approval-flow.service';
+import { AssetsStoreService } from '../../../../../../../../services/assets-store.service';
 
 @Component({
   selector: 'app-send-kaspa',
@@ -26,6 +27,7 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit 
   private utilsHelper = inject(UtilsHelper);
   private messagePopupService = inject(MessagePopupService);
   private approvalFlowService = inject(ApprovalFlowService);
+  private assetsStore = inject(AssetsStoreService);
 
   // Form data
   walletAddress: string = '';

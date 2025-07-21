@@ -1,5 +1,9 @@
 <div
   class="krc721-summary-container flex column justify-content-center align-items-center full-width gap-12"
+  appInfiniteScroll
+  [scrollThreshold]="70"
+  (scrolled)="onScrolled($event)"
+  (thresholdReached)="onThresholdReached()"
 >
   @if (loading()) {
     @for (item of [1,2,3]; track item) {
@@ -28,7 +32,9 @@
         class="krc721-summary-container__nft-info flex align-items-center gap-16"
       >
         <div class="krc721-summary-container__image-container">
-          @if (getImageUrl(nft)) {
+          @if (nft.isLoadingMetadata) {
+            <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false"></app-skeleton>
+          } @else if (getImageUrl(nft)) {
             <img 
               [src]="getImageUrl(nft)" 
               [alt]="getDisplayName(nft)"
@@ -43,19 +49,26 @@
           }
         </div>
         <div class="flex column gap-4">
-          <div class="text-gray-90">{{ getDisplayName(nft) | titlecase }}</div>
-          <div class="text-gray-60 typo-text-1">
-            {{ nft.tick | uppercase }} #{{ nft.tokenId }}
-          </div>
-          @if (nft.description) {
-            <div class="text-gray-50 typo-text-1 description">
-              {{ nft.description }}
+          @if (nft.isLoadingMetadata) {
+            <app-skeleton [height]="'20px'" [width]="'120px'" [fullRound]="false"></app-skeleton>
+            <app-skeleton [height]="'16px'" [width]="'80px'" [fullRound]="false"></app-skeleton>
+          } @else {
+            <div class="text-gray-90">{{ getDisplayName(nft) | titlecase }}</div>
+            <div class="text-gray-60 typo-text-1">
+              {{ nft.tick | uppercase }} #{{ nft.tokenId }}
             </div>
+            @if (nft.description) {
+              <div class="text-gray-50 typo-text-1 description">
+                {{ nft.description }}
+              </div>
+            }
           }
         </div>
       </div>
       <div class="krc721-summary-container__attributes flex column align-items-end">
-        @if (nft.attributes && nft.attributes.length > 0) {
+        @if (nft.isLoadingMetadata) {
+          <app-skeleton [height]="'16px'" [width]="'60px'" [fullRound]="false"></app-skeleton>
+        } @else if (nft.attributes && nft.attributes.length > 0) {
           <div class="text-gray-90 typo-text-1">
             {{ nft.attributes.length }} traits
           </div>
@@ -64,6 +77,26 @@
         }
       </div>
     </div>
+    }
+    
+    @if (isLoadingMore()) {
+      <div class="loading-more-container flex justify-content-center p-16 full-width">
+        <div class="krc721-summary-container__card flex full-width align-items-center justify-content-between p-16">
+          <div class="krc721-summary-container__nft-info flex align-items-center gap-16">
+            <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false"></app-skeleton>
+            <div class="flex column gap-4">
+              <app-skeleton [height]="'20px'" [width]="'120px'" [fullRound]="false"></app-skeleton>
+              <app-skeleton [height]="'16px'" [width]="'80px'" [fullRound]="false"></app-skeleton>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+    
+    @if (!hasMore() && nfts().length > 0) {
+      <div class="text-gray-50 typo-text-1 text-center p-16">
+        All NFTs loaded
+      </div>
     }
   }
 </div> 

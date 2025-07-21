@@ -9,4 +9,10 @@ export interface INft {
     trait_type: string;
     value: string | number;
   }>;
+}
+
+// Extended interface for NFTs with metadata loading state
+export interface INftWithMetadata extends INft {
+  isLoadingMetadata?: boolean;
+  metadataLoaded?: boolean;
 } 

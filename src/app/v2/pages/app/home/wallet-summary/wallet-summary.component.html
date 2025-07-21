@@ -1,5 +1,9 @@
 <div
   class="wallet-summary-container flex column justify-content-center align-items-center full-width gap-12"
+  appInfiniteScroll
+  [scrollThreshold]="70"
+  (scrolled)="onScrolled($event)"
+  (thresholdReached)="onThresholdReached()"
 >
   @if (loading()) {
     @for (item of [1,2,3]; track item) {
@@ -28,6 +32,14 @@
               token.symbol | uppercase
             }}
           </div>
+          @if (token.maxSupply && !token.isLoadingMetadata) {
+            <div class="text-gray-50 typo-text-1">
+              Supply: {{ token.maxSupply }}
+            </div>
+          }
+          @if (token.isLoadingMetadata) {
+            <app-skeleton [height]="'14px'" [width]="'100px'" [fullRound]="false"></app-skeleton>
+          }
         </div>
       </div>
       <div class="wallet-summary-container__usd-info flex column align-items-end">
@@ -35,8 +47,25 @@
           ${{ token.balance * token.usdPrice | number : "1.2-2" }}
         </div>
         <div class="text-gray-60 typo-text-1">$0.00</div>
+        @if (token.holders && !token.isLoadingMetadata) {
+          <div class="text-gray-50 typo-text-1">
+            {{ token.holders }} holders
+          </div>
+        }
       </div>
     </div>
+    }
+    
+    @if (isLoadingMore()) {
+      <div class="loading-more-container flex justify-content-center p-16 full-width">
+        <app-skeleton [height]="'75px'" [width]="'100%'" [fullRound]="false"></app-skeleton>
+      </div>
+    }
+    
+    @if (!hasMore() && tokens().length > 0) {
+      <div class="text-gray-50 typo-text-1 text-center p-16">
+        All tokens loaded
+      </div>
     }
   }
 </div>

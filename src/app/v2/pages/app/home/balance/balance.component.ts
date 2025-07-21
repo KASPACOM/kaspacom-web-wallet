@@ -5,6 +5,7 @@ import { WalletService } from '../../../../../services/wallet.service';
 import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { CommaFormatterPipe } from '../../../../../pipes/comma-formatter.pipe';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
+import { AssetsStoreService } from '../../../../../services/assets-store.service';
 
 @Component({
   selector: 'app-balance',
@@ -15,6 +16,7 @@ import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.compo
 export class BalanceComponent {
   private walletService = inject(WalletService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  private assetsStore = inject(AssetsStoreService);
 
   usdBalance = computed(() => 13.45);
   
@@ -25,23 +27,18 @@ export class BalanceComponent {
       return true;
     }
     
-    const balanceData = wallet.getCurrentWalletStateBalanceSignalValue();
-    return !balanceData;
+    // Check if kaspa assets are loading
+    return this.assetsStore.isAssetTypeLoading('kaspa');
   });
   
-  // Get the actual KAS balance from the wallet
+  // Get the actual KAS balance from the assets store
   kasBalance = computed(() => {
-    const wallet = this.walletService.getCurrentWallet();
-    if (!wallet) {
+    const kaspaAssets = this.assetsStore.kaspaAssets();
+    if (!kaspaAssets) {
       return 0;
     }
     
-    const balanceData = wallet.getCurrentWalletStateBalanceSignalValue();
-    if (!balanceData?.mature) {
-      return 0;
-    }
-    
-    return this.kaspaNetworkActionsService.sompiToNumber(balanceData.mature);
+    return this.kaspaNetworkActionsService.sompiToNumber(kaspaAssets.totalBalance);
   });
 
 }

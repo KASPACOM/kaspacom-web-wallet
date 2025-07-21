@@ -22,6 +22,8 @@
       [isOpen]="flowPagesService.isAnyPageOpen()"
       [title]="flowPagesService.activePage()?.title || ''"
       [canNavigateBack]="flowPagesService.canNavigateBack()"
+      [showTitle]="flowPagesService.activePage()?.showTitle ?? true"
+      [showBackground]="flowPagesService.activePage()?.showBackground ?? true"
       (navigateBack)="flowPagesService.navigateBack()"
       (backdropClick)="onFlowPageBackdropClick()"
     >

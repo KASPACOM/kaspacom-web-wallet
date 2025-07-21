@@ -1,4 +1,8 @@
-<div class="send-krc20-list-content">
+<div class="send-krc20-list-content"
+     appInfiniteScroll
+     [scrollThreshold]="70"
+     (scrolled)="onScrolled($event)"
+     (thresholdReached)="onThresholdReached()">
   <div class="krc20-tokens-container flex column align-items-center full-width gap-12">
     @if (loading()) {
       <!-- Skeleton loading states -->
@@ -24,6 +28,9 @@
               <div class="text-gray-60 typo-text-1">
                 {{ token.balance | number : "1.0-4" }}&nbsp;{{ token.symbol | uppercase }}
               </div>
+              @if (token.isLoadingMetadata) {
+                <app-skeleton [height]="'14px'" [width]="'80px'" [fullRound]="false"></app-skeleton>
+              }
             </div>
           </div>
           <!-- USD value section -->
@@ -33,6 +40,18 @@
             </div>
             <div class="text-gray-60 typo-text-1">Available</div>
           </div>
+        </div>
+      }
+      
+      @if (isLoadingMore()) {
+        <div class="loading-more-container flex justify-content-center p-16 full-width">
+          <app-skeleton class="full-width" [height]="'75px'" [width]="'auto'" [fullRound]="false"></app-skeleton>
+        </div>
+      }
+      
+      @if (!hasMore() && tokens().length > 0) {
+        <div class="text-gray-50 typo-text-1 text-center p-16">
+          All tokens loaded
         </div>
       }
     }

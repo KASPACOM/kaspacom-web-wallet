@@ -1,6 +1,6 @@
 import { Component, computed, inject, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ApprovalFlowService } from '../../../../common/services/approval-flow.service';
+import { ApprovalFlowService } from '../../services/approval-flow.service';
 import { KcIconComponent } from 'kaspacom-ui';
 
 @Component({

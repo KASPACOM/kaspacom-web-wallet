@@ -103,11 +103,17 @@ export class ApprovalFlowService {
   setProcessingState(progress: number = 0) {
     const config = this.currentApprovalConfigSignal();
     if (config) {
-      this.currentApprovalConfigSignal.set({
+      const newConfig = {
         ...config,
         state: ApprovalFlowState.PROCESSING,
         progress
-      });
+      };
+      this.currentApprovalConfigSignal.set(newConfig);
+      
+      // Update flow page configuration to disable back navigation
+      if (config.mode === ApprovalDisplayMode.FLOW_PAGE) {
+        this.updateFlowPageConfig(newConfig);
+      }
     }
   }
 
@@ -117,15 +123,24 @@ export class ApprovalFlowService {
   setSuccessState(result: WalletActionResult) {
     const config = this.currentApprovalConfigSignal();
     if (config) {
-      this.currentApprovalConfigSignal.set({
-        ...config,
-        state: ApprovalFlowState.SUCCESS,
-        result,
-        progress: 100
-      });
-      
-      // Emit completion event for components to listen to
-      this.completionSignal.set({ success: true, result });
+      // Add a 600ms delay before showing the success page
+      setTimeout(() => {
+        const newConfig = {
+          ...config,
+          state: ApprovalFlowState.SUCCESS,
+          result,
+          progress: 100
+        };
+        this.currentApprovalConfigSignal.set(newConfig);
+        
+        // Update flow page configuration to disable back navigation
+        if (config.mode === ApprovalDisplayMode.FLOW_PAGE) {
+          this.updateFlowPageConfig(newConfig);
+        }
+        
+        // Emit completion event for components to listen to
+        this.completionSignal.set({ success: true, result });
+      }, 600);
     }
   }
 
@@ -196,12 +211,27 @@ export class ApprovalFlowService {
     this.flowPagesService.openFlow({
       id: 'action-approval',
       title: this.getApprovalTitle(config.action),
-      canNavigateBack: config.state === ApprovalFlowState.APPROVAL
+      canNavigateBack: config.state === ApprovalFlowState.APPROVAL,
+      showTitle: config.state === ApprovalFlowState.APPROVAL,
+      showBackground: config.state === ApprovalFlowState.APPROVAL
     });
   }
   
   private showAsFullPage(config: ApprovalFlowConfig) {
     this.router.navigate(['/review-action']);
+  }
+  
+  /**
+   * Updates the flow page configuration when approval state changes
+   */
+  private updateFlowPageConfig(config: ApprovalFlowConfig) {
+    this.flowPagesService.navigateToPage({
+      id: 'action-approval',
+      title: this.getApprovalTitle(config.action),
+      canNavigateBack: config.state === ApprovalFlowState.APPROVAL,
+      showTitle: config.state === ApprovalFlowState.APPROVAL,
+      showBackground: config.state === ApprovalFlowState.APPROVAL
+    });
   }
   
   private cleanupApproval() {

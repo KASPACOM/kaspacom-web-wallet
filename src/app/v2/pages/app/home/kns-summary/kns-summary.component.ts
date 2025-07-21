@@ -1,10 +1,7 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { TitleCasePipe, UpperCasePipe, DatePipe } from '@angular/common';
-import { firstValueFrom } from 'rxjs';
-import { KnsApiService } from '../../../../../services/kns-api/kns-api.service';
-import { WalletService } from '../../../../../services/wallet.service';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
-import { KnsDomainAsset } from '../../../../../services/kns-api/dtos/kns-domain.dto';
+import { AssetsStoreService } from '../../../../../services/assets-store.service';
 
 @Component({
   selector: 'app-kns-summary',
@@ -15,16 +12,12 @@ import { KnsDomainAsset } from '../../../../../services/kns-api/dtos/kns-domain.
     '[class.full-width]': 'true',
   },
 })
-export class KnsSummaryComponent implements OnInit {
-  private walletService = inject(WalletService);
-  private knsService = inject(KnsApiService);
+export class KnsSummaryComponent {
+  private assetsStore = inject(AssetsStoreService);
 
-  domains = signal<KnsDomainAsset[]>([]);
-  loading = signal<boolean>(true);
-
-  async ngOnInit() {
-    await this.loadKnsDomains();
-  }
+  // Use domains directly from assets store
+  domains = computed(() => this.assetsStore.knsAssets());
+  loading = computed(() => this.assetsStore.isAssetTypeLoading('kns'));
 
   formatDate(dateString: string): string {
     const date = new Date(dateString);
@@ -33,28 +26,5 @@ export class KnsSummaryComponent implements OnInit {
       month: 'short',
       day: 'numeric'
     });
-  }
-
-  private async loadKnsDomains() {
-    try {
-      this.loading.set(true);
-      const currentWallet = this.walletService.getCurrentWallet();
-
-      if (!currentWallet) {
-        console.warn('No current wallet selected');
-        return;
-      }
-
-      // Use the getAllWalletDomains method which handles pagination
-      const domains = await this.knsService.getAllWalletDomains(currentWallet.getAddress());
-
-      console.log('KNS API Response:', domains);
-
-      this.domains.set(domains);
-    } catch (error) {
-      console.error('Failed to load KNS domains:', error);
-    } finally {
-      this.loading.set(false);
-    }
   }
 } 

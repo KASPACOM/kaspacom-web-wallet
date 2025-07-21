@@ -8,6 +8,12 @@ import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skele
 import { KnsDomainAsset } from '../../../../../../../../services/kns-api/dtos/kns-domain.dto';
 import { KnsApiService } from '../../../../../../../../services/kns-api/kns-api.service';
 import { WalletService } from '../../../../../../../../services/wallet.service';
+import { AssetsStoreService } from '../../../../../../../../services/assets-store.service';
+import { WalletActionService } from '../../../../../../../../services/wallet-action.service';
+import { KnsWalletActionService } from '../../../../../../../../services/protocols/kns/kns-wallet-actions.service';
+import { MessagePopupService } from '../../../../../../../../services/message-popup.service';
+import { ApprovalFlowService } from '../../../../../common/services/approval-flow.service';
+import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -20,14 +26,44 @@ import { firstValueFrom } from 'rxjs';
 export class SendKnsComponent extends FlowPageBaseComponent implements OnInit {
   private walletService = inject(WalletService);
   private knsService = inject(KnsApiService);
+  private assetsStore = inject(AssetsStoreService);
+  private walletActionService = inject(WalletActionService);
+  private knsWalletActionService = inject(KnsWalletActionService);
+  private messagePopupService = inject(MessagePopupService);
+  private approvalFlowService = inject(ApprovalFlowService);
   
   domain = signal<KnsDomainAsset | undefined>(undefined);
   loading = signal<boolean>(true);
   walletAddress = '';
   replaceByFee = false;
   
+  // Loading state
+  isLoading = false;
+  
+  // Track if we're waiting for approval flow completion
+  private waitingForApprovalCompletion = false;
+  
+  // Validation states
+  isAddressValid = true;
+  addressErrorMessage = '';
+  
   constructor() {
     super();
+    
+    // Effect to watch for approval flow completion
+    effect(() => {
+      const completion = this.approvalFlowService.completion();
+      if (completion && this.waitingForApprovalCompletion) {
+        this.waitingForApprovalCompletion = false;
+        
+        if (completion.success) {
+          // Transaction was successful, navigate back
+          this.messagePopupService.showSuccess('KNS domain sent successfully!');
+          this.navigateBack();
+        }
+        // Error cases are handled by the approval flow itself
+      }
+    });
     
     // React to page configuration changes
     effect(() => {
@@ -52,29 +88,98 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit {
   }
   
   get isFormValid(): boolean {
-    return this.walletAddress.trim().length > 0;
+    return this.walletAddress.trim().length > 0 && this.isAddressValid;
   }
   
   onWalletAddressChange(value: string): void {
     this.walletAddress = value;
+    this.validateAddress();
+  }
+  
+  private validateAddress(): void {
+    if (!this.walletAddress.trim()) {
+      this.isAddressValid = false;
+      this.addressErrorMessage = 'Address is required';
+      return;
+    }
+    
+    // Basic address validation (can be enhanced with proper address validation)
+    if (this.walletAddress.trim().length < 10) {
+      this.isAddressValid = false;
+      this.addressErrorMessage = 'Invalid address format';
+      return;
+    }
+    
+    this.isAddressValid = true;
+    this.addressErrorMessage = '';
   }
   
   onRbfChange(value: boolean): void {
     this.replaceByFee = value;
   }
   
-  onSendClick(): void {
-    const currentDomain = this.domain();
-    if (!this.isFormValid || !currentDomain) {
+  async onSendClick(): Promise<void> {
+    if (!this.isFormValid || !this.domain()) {
       return;
     }
     
-    // Handle send KNS transaction logic here
-    console.log('Send KNS:', {
-      domain: currentDomain,
-      walletAddress: this.walletAddress,
-      replaceByFee: this.replaceByFee
-    });
+    const currentWallet = this.walletService.getCurrentWallet();
+    if (!currentWallet) {
+      this.messagePopupService.showError('No wallet selected');
+      return;
+    }
+    
+    const currentDomain = this.domain()!;
+    if (!currentDomain.asset) {
+      this.messagePopupService.showError('Invalid domain data');
+      return;
+    }
+    
+    this.isLoading = true;
+    
+    try {
+      // Create KNS transfer action
+      const action = this.knsWalletActionService.createTransferWalletAction(
+        currentDomain.asset,   // domain name
+        this.walletAddress     // to address
+      );
+      
+      console.log('KNS Transfer Action:', action, currentWallet, currentDomain);
+      
+      const result = await this.walletActionService.validateAndDoActionAfterApproval(action, false);
+      
+      if (result.success) {
+        // Clear form on success
+        this.walletAddress = '';
+        this.replaceByFee = false;
+        
+        // Only show success message and navigate if not using v2 flow
+        // v2 flow handles success display in the approval flow
+        if (!result.isUsingV2Flow) {
+          this.messagePopupService.showSuccess('KNS domain sent successfully!');
+          this.navigateBack();
+        } else {
+          // For v2 flow, wait for approval flow completion
+          this.waitingForApprovalCompletion = true;
+        }
+      } else {
+        if (result.errorCode !== ERROR_CODES.EIP1193.USER_REJECTED) {
+          const errorMessage = result.errorCode
+            ? ERROR_CODES_MESSAGES[result.errorCode]
+            : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR];
+          this.messagePopupService.showError(errorMessage);
+        }
+        
+        // Reset the waiting flag if transaction failed
+        this.waitingForApprovalCompletion = false;
+      }
+    } catch (error) {
+      console.error('Error sending KNS domain:', error);
+      this.messagePopupService.showError('Failed to send KNS domain');
+      this.waitingForApprovalCompletion = false;
+    } finally {
+      this.isLoading = false;
+    }
   }
 
   private async loadDomainData(): Promise<void> {
@@ -85,21 +190,32 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit {
       this.walletAddress = '';
       this.replaceByFee = false;
       
-      // Get navigation data
+      // Get navigation data - should contain the full domain object
       const navigationData = this.getNavigationData();
+      const domainData = navigationData?.domain as KnsDomainAsset;
       
-      if (!navigationData || !navigationData.assetId) {
-        console.warn('No domain assetId provided in navigation data');
-        return;
-      }
+      if (domainData) {
+        // Use domain data from navigation (which comes from assets store)
+        this.domain.set(domainData);
+      } else if (navigationData?.assetId) {
+        // Fallback: try to find domain in assets store
+        const knsAssets = this.assetsStore.knsAssets();
+        const storedDomain = knsAssets.find(domain => domain.assetId === navigationData.assetId);
+        
+        if (storedDomain) {
+          this.domain.set(storedDomain);
+        } else {
+          // Final fallback: load from API
+          const response = await firstValueFrom(
+            this.knsService.fetchAssetByAssetId(navigationData.assetId)
+          );
 
-      // Load domain data using the assetId
-      const response = await firstValueFrom(
-        this.knsService.fetchAssetByAssetId(navigationData.assetId)
-      );
-
-      if (response.data) {
-        this.domain.set(response.data);
+          if (response.data) {
+            this.domain.set(response.data);
+          }
+        }
+      } else {
+        console.warn('No domain data provided in navigation');
       }
     } catch (error) {
       console.error('Failed to load KNS domain data:', error);

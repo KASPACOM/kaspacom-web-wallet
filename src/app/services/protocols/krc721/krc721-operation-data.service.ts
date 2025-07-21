@@ -66,7 +66,7 @@ export class Krc721OperationDataService {
       op: Krc721OperationType.TRANSFER,
       tick: ticker,
       to: toAddress,
-      tid: tokenId,
+      tokenId: tokenId,
     };
   }
 }

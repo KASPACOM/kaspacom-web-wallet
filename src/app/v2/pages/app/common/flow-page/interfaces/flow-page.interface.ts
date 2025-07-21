@@ -2,6 +2,8 @@ export interface IFlowPageConfig {
   id: string;
   title: string;
   canNavigateBack?: boolean;
+  showTitle?: boolean;
+  showBackground?: boolean;
   previousPageId?: string | null;
   data?: any;
 }

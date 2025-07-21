@@ -215,7 +215,7 @@ export class WalletActionService {
     action: WalletAction,
     isFromIframe: boolean = false,
     onActionApproval: undefined | (() => Promise<void>) = undefined,
-  ): Promise<WalletActionResultWithError & { isUsingV2Flow?: boolean }> {
+  ): Promise<WalletActionResultWithError & { isUsingV2Flow?: boolean }> {debugger
     const validationResult = await this.validateAction(
       action,
       this.walletService.getCurrentWallet()!,
@@ -355,6 +355,11 @@ export class WalletActionService {
 
   getActionResultSignal(): Signal<WalletActionResult | undefined> {
     return this.actionResultSignal.asReadonly();
+  }
+
+  clearActionResult(): void {
+    this.actionResultSignal.set(undefined);
+    this.currentProgressSignal.set(undefined);
   }
 
   private async showTransactionLoaderToUser(progress?: number | undefined, walletAddress?: string) {

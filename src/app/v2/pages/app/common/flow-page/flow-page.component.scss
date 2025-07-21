@@ -92,3 +92,14 @@
     color: var(--white);
   }
 }
+
+// No background styles for loading and success pages
+.flow-page-overlay.no-background {
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.flow-page-content.no-background {
+  background: var(--vampire-black); // Keep normal page background
+  backdrop-filter: none; // Remove the blur effect
+}

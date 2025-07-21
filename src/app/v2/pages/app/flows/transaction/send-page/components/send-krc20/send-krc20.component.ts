@@ -16,6 +16,7 @@ import { ApprovalFlowService } from '../../../../../common/services/approval-flo
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { firstValueFrom } from 'rxjs';
 import { KaspaNetworkActionsService } from '../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
+import { AssetsStoreService } from '../../../../../../../../services/assets-store.service';
 
 @Component({
   selector: 'app-send-krc20',
@@ -33,6 +34,7 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit 
   private messagePopupService = inject(MessagePopupService);
   private approvalFlowService = inject(ApprovalFlowService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  private assetsStore = inject(AssetsStoreService);
 
   // Token data
   token = signal<IToken | undefined>(undefined);
@@ -107,62 +109,33 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit 
            this.tokenAmount > 0 && !this.isLoading;
   }
 
-  private async loadTokenData(): Promise<void> {
-    try {
-      this.loading.set(true);
+  private async loadTokenData() {
+    const tokenData = this.flowPagesService.activePage()?.data?.['token'] as IToken;
+    
+    if (tokenData) {
+      // First try to get updated data from assets store
+      const krc20Assets = this.assetsStore.krc20Assets();
+      const storedToken = krc20Assets.find(t => t.tick === tokenData.address);
       
-      // Clear form data when loading new token
-      this.walletAddress = '';
-      this.tokenAmount = null;
-      this.replaceByFee = false;
-      
-      // Get navigation data
-      const navigationData = this.getNavigationData();
-      
-      if (!navigationData?.token) {
-        console.warn('No token data provided in navigation data');
-        return;
-      }
-
-      const tokenData = navigationData.token as IToken;
-      
-      // Refresh token balance and get token info (including decimals) from API
-      const currentWallet = this.walletService.getCurrentWallet();
-      if (currentWallet) {
-        try {
-          // Get both balance and token info in parallel
-          const [balanceResponse, tokenInfoResponse] = await Promise.all([
-            firstValueFrom(
-              this.kasplexService.getTokenWalletBalanceInfo(currentWallet.getAddress(), tokenData.address)
-            ),
-            firstValueFrom(
-              this.kasplexService.getTokenInfo(tokenData.address)
-            )
-          ]);
-          
-          if (balanceResponse.result?.[0] && tokenInfoResponse.result?.[0]) {
-            // Update token with fresh balance and decimals info
-            const tokenInfo = tokenInfoResponse.result[0];
-            const updatedToken: IToken = {
-              ...tokenData,
-              balance: this.kaspaNetworkActionsService.sompiToNumber(BigInt(balanceResponse.result[0].balance)), // Convert from sompi
-              decimals: parseInt(tokenInfo.dec || '0') // Include decimals information
-            };
-            this.token.set(updatedToken);
-          } else {
-            this.token.set(tokenData);
-          }
-        } catch (error) {
-          console.error('Failed to refresh token balance:', error);
-          this.token.set(tokenData);
-        }
+      if (storedToken) {
+        this.token.set({
+          name: storedToken.tick,
+          symbol: storedToken.tick.toUpperCase(),
+          address: storedToken.tick,
+          balance: storedToken.balance,
+          usdPrice: 0.0
+        });
+        this.loading.set(false);
       } else {
+        // Fallback to the passed token data
         this.token.set(tokenData);
+        this.loading.set(false);
       }
-    } catch (error) {
-      console.error('Failed to load token data:', error);
-    } finally {
+    } else {
+      // No token data passed, can't proceed
       this.loading.set(false);
+      this.messagePopupService.showError('No token selected');
+      this.navigateBack();
     }
   }
 
@@ -187,8 +160,10 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit 
   }
 
   onMaxAmountClick(): void {
+    console.log('Max button clicked, available balance:', this.availableBalance);
     this.tokenAmount = this.availableBalance;
     this.validateAmount();
+    console.log('Token amount set to:', this.tokenAmount);
   }
 
   private validateAddress(): void {

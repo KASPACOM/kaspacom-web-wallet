@@ -8,6 +8,12 @@ import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skele
 import { INft } from '../../../../../common/interfaces/nft.interface';
 import { Krc721ApiService } from '../../../../../../../../services/krc721-api/krc721-api.service';
 import { WalletService } from '../../../../../../../../services/wallet.service';
+import { AssetsStoreService } from '../../../../../../../../services/assets-store.service';
+import { WalletActionService } from '../../../../../../../../services/wallet-action.service';
+import { Krc721WalletActionService } from '../../../../../../../../services/protocols/krc721/krc721-wallet-actions.service';
+import { MessagePopupService } from '../../../../../../../../services/message-popup.service';
+import { ApprovalFlowService } from '../../../../../common/services/approval-flow.service';
+import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -20,14 +26,44 @@ import { firstValueFrom } from 'rxjs';
 export class SendNftComponent extends FlowPageBaseComponent implements OnInit {
   private walletService = inject(WalletService);
   private krc721Service = inject(Krc721ApiService);
+  private assetsStore = inject(AssetsStoreService);
+  private walletActionService = inject(WalletActionService);
+  private krc721WalletActionService = inject(Krc721WalletActionService);
+  private messagePopupService = inject(MessagePopupService);
+  private approvalFlowService = inject(ApprovalFlowService);
   
   nft = signal<INft | undefined>(undefined);
   loading = signal<boolean>(true);
   walletAddress = '';
   replaceByFee = false;
   
+  // Loading state
+  isLoading = false;
+  
+  // Track if we're waiting for approval flow completion
+  private waitingForApprovalCompletion = false;
+  
+  // Validation states
+  isAddressValid = true;
+  addressErrorMessage = '';
+  
   constructor() {
     super();
+    
+    // Effect to watch for approval flow completion
+    effect(() => {
+      const completion = this.approvalFlowService.completion();
+      if (completion && this.waitingForApprovalCompletion) {
+        this.waitingForApprovalCompletion = false;
+        
+        if (completion.success) {
+          // Transaction was successful, navigate back
+          this.messagePopupService.showSuccess('NFT sent successfully!');
+          this.navigateBack();
+        }
+        // Error cases are handled by the approval flow itself
+      }
+    });
     
     // React to page configuration changes
     effect(() => {
@@ -52,29 +88,99 @@ export class SendNftComponent extends FlowPageBaseComponent implements OnInit {
   }
   
   get isFormValid(): boolean {
-    return this.walletAddress.trim().length > 0;
+    return this.walletAddress.trim().length > 0 && this.isAddressValid;
   }
   
   onWalletAddressChange(value: string): void {
     this.walletAddress = value;
+    this.validateAddress();
+  }
+  
+  private validateAddress(): void {
+    if (!this.walletAddress.trim()) {
+      this.isAddressValid = false;
+      this.addressErrorMessage = 'Address is required';
+      return;
+    }
+    
+    // Basic address validation (can be enhanced with proper address validation)
+    if (this.walletAddress.trim().length < 10) {
+      this.isAddressValid = false;
+      this.addressErrorMessage = 'Invalid address format';
+      return;
+    }
+    
+    this.isAddressValid = true;
+    this.addressErrorMessage = '';
   }
   
   onRbfChange(value: boolean): void {
     this.replaceByFee = value;
   }
   
-  onSendClick(): void {
-    const currentNft = this.nft();
-    if (!this.isFormValid || !currentNft) {
+  async onSendClick(): Promise<void> {
+    if (!this.isFormValid || !this.nft()) {
       return;
     }
     
-    // Handle send NFT transaction logic here
-    console.log('Send NFT:', {
-      nft: currentNft,
-      walletAddress: this.walletAddress,
-      replaceByFee: this.replaceByFee
-    });
+    const currentWallet = this.walletService.getCurrentWallet();
+    if (!currentWallet) {
+      this.messagePopupService.showError('No wallet selected');
+      return;
+    }
+    
+    const currentNft = this.nft()!;
+    if (!currentNft.tick || !currentNft.tokenId) {
+      this.messagePopupService.showError('Invalid NFT data');
+      return;
+    }
+    
+    this.isLoading = true;
+    
+    try {
+      // Create KRC721 transfer action
+      const action = this.krc721WalletActionService.createTransferWalletAction(
+        currentNft.tick.toLowerCase(),       // ticker (lowercase)
+        currentNft.tokenId,    // tokenId
+        this.walletAddress     // to address
+      );
+      
+      console.log('KRC721 Transfer Action:', action, currentWallet, currentNft);
+      
+      const result = await this.walletActionService.validateAndDoActionAfterApproval(action, false);
+      
+      if (result.success) {
+        // Clear form on success
+        this.walletAddress = '';
+        this.replaceByFee = false;
+        
+        // Only show success message and navigate if not using v2 flow
+        // v2 flow handles success display in the approval flow
+        if (!result.isUsingV2Flow) {
+          this.messagePopupService.showSuccess('NFT sent successfully!');
+          this.navigateBack();
+        } else {
+          // For v2 flow, wait for approval flow completion
+          this.waitingForApprovalCompletion = true;
+        }
+      } else {
+        if (result.errorCode !== ERROR_CODES.EIP1193.USER_REJECTED) {
+          const errorMessage = result.errorCode
+            ? ERROR_CODES_MESSAGES[result.errorCode]
+            : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR];
+          this.messagePopupService.showError(errorMessage);
+        }
+        
+        // Reset the waiting flag if transaction failed
+        this.waitingForApprovalCompletion = false;
+      }
+    } catch (error) {
+      console.error('Error sending NFT:', error);
+      this.messagePopupService.showError('Failed to send NFT');
+      this.waitingForApprovalCompletion = false;
+    } finally {
+      this.isLoading = false;
+    }
   }
 
   private async loadNftData(): Promise<void> {
@@ -85,35 +191,55 @@ export class SendNftComponent extends FlowPageBaseComponent implements OnInit {
       this.walletAddress = '';
       this.replaceByFee = false;
       
-      // Get navigation data
+      // Get navigation data - should contain the full NFT object
       const navigationData = this.getNavigationData();
+      const nftData = navigationData?.nft as INft;
       
-      if (!navigationData || !navigationData.tick || !navigationData.tokenId) {
-        console.warn('No NFT tick/tokenId provided in navigation data');
-        return;
+      if (nftData) {
+        // Use NFT data from navigation (which comes from assets store)
+        this.nft.set(nftData);
+      } else if (navigationData?.tick && navigationData?.tokenId) {
+        // Fallback: try to find NFT in assets store
+        const krc721Assets = this.assetsStore.krc721Assets();
+        const storedNft = krc721Assets.find(
+          nft => nft.tick === navigationData.tick && nft.tokenId === navigationData.tokenId
+        );
+        
+        if (storedNft) {
+          const nft: INft = {
+            tick: storedNft.tick,
+            tokenId: storedNft.tokenId,
+            owner: storedNft.owner,
+            name: storedNft.metadata?.name,
+            description: storedNft.metadata?.description,
+            attributes: storedNft.metadata?.attributes,
+            image: storedNft.metadata?.image
+          };
+          this.nft.set(nft);
+        } else {
+          // Final fallback: create basic NFT and load metadata
+          const currentWallet = this.walletService.getCurrentWallet();
+          if (!currentWallet) {
+            console.warn('No current wallet selected');
+            return;
+          }
+
+          const basicNft: INft = {
+            tick: navigationData.tick,
+            tokenId: navigationData.tokenId,
+            owner: currentWallet.getAddress(),
+            name: undefined,
+            description: undefined,
+            attributes: undefined,
+            image: undefined
+          };
+
+          this.nft.set(basicNft);
+          await this.loadNftMetadata(basicNft);
+        }
+      } else {
+        console.warn('No NFT data provided in navigation');
       }
-
-      const currentWallet = this.walletService.getCurrentWallet();
-      if (!currentWallet) {
-        console.warn('No current wallet selected');
-        return;
-      }
-
-      // Create basic NFT object
-      const basicNft: INft = {
-        tick: navigationData.tick,
-        tokenId: navigationData.tokenId,
-        owner: currentWallet.getAddress(),
-        name: undefined,
-        description: undefined,
-        attributes: undefined,
-        image: undefined
-      };
-
-      this.nft.set(basicNft);
-
-      // Load metadata
-      await this.loadNftMetadata(basicNft);
     } catch (error) {
       console.error('Failed to load NFT data:', error);
     } finally {

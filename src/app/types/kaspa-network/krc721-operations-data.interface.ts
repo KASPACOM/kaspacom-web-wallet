@@ -30,5 +30,5 @@ export interface Krc721Transfer {
   op: Krc721OperationType.TRANSFER;
   tick: string;
   to: string;
-  tid: string;
+  tokenId: string;
 }

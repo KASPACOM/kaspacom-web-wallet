@@ -45,6 +45,8 @@ export class FlowPageComponent {
   @Input() isOpen = false;
   @Input() title = '';
   @Input() canNavigateBack = false;
+  @Input() showTitle = true;
+  @Input() showBackground = true;
   @Output() navigateBack = new EventEmitter<void>();
   @Output() backdropClick = new EventEmitter<void>();
   

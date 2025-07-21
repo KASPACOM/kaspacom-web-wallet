@@ -1,9 +1,11 @@
-import { Component, computed, inject, Input } from '@angular/core';
+import {Component, computed, inject, Input, OnInit} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { WalletActionResult } from '@kaspacom/wallet-messages';
+import { WalletActionResult, WalletActionResultType, CommitRevealActionResult, ProtocolType } from '@kaspacom/wallet-messages';
 import { CompletedActionOverviewService } from '../../../../../../../services/action-info-services/completed-action-overview.service';
 import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { ApprovalFlowService } from '../../../../common/services/approval-flow.service';
+import { AssetsStoreService } from '../../../../../../../services/assets-store.service';
+import { Krc20MetadataService } from '../../../../../../../services/asset-metadata/krc20-metadata.service';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 
 @Component({
@@ -19,7 +21,7 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
       <!-- Success Header -->
       <div class="success-header">
         <h2 class="typo-title-3">Transaction Successful!</h2>
-        
+
         <!-- Success Icon -->
         <div class="success-icon-wrapper">
           <img src="/svgs/success.svg" alt="Success" class="success-icon" width="334" height="226" />
@@ -31,13 +33,13 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
         <!-- Details Toggle Header -->
         <div class="details-spoiler-toggle" (click)="toggleDetails()">
           <div class="spoiler-left">
-            <kc-icon iconClass="icon-receipt" size="sm" color="#6fc7ba"></kc-icon>
+            <kc-icon iconClass="icon-info" size="sm" color="#6fc7ba"></kc-icon>
             <span class="spoiler-label">Transaction Details</span>
           </div>
           <div class="spoiler-chevron">
-            <kc-icon 
-              [iconClass]="showDetails ? 'icon-chevron-up' : 'icon-chevron-down'" 
-              size="sm" 
+            <kc-icon
+              [iconClass]="showDetails ? 'icon-chevron-up' : 'icon-chevron-down'"
+              size="sm"
               color="var(--gray-60, #9E9E9E)">
             </kc-icon>
           </div>
@@ -47,7 +49,7 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
         <div class="details-content" [@slideDown]="showDetails ? 'open' : 'closed'">
           <div class="details-inner">
             <h3 class="details-title">{{ actionDisplay()!.title }}</h3>
-            
+
             <div class="details-grid">
               <div class="detail-item" *ngFor="let row of actionDisplay()!.rows">
                 <div class="detail-label">{{ row.fieldName }}</div>
@@ -62,9 +64,9 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
 
       <!-- Action Button -->
       <div class="action-button">
-        <kc-button 
+        <kc-button
           [text]="'Done'"
-          variant="primary" 
+          variant="primary"
           size="lg"
           role="success"
           [isFullWidth]="true"
@@ -96,16 +98,22 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
     ])
   ]
 })
-export class ApprovalSuccessPageComponent {
+export class ApprovalSuccessPageComponent implements OnInit {
   private completedActionOverviewService = inject(CompletedActionOverviewService);
   private approvalFlowService = inject(ApprovalFlowService);
+  private assetsStore = inject(AssetsStoreService);
+  private krc20MetadataService = inject(Krc20MetadataService);
 
   @Input() actionResult!: WalletActionResult;
 
   // Spoiler state
   protected showDetails = false;
 
-  actionDisplay = computed(() => 
+  ngOnInit() {
+    this.assetsStore.reloadAll(2000);
+  }
+
+  actionDisplay = computed(() =>
     this.completedActionOverviewService.getActionDisplay(this.actionResult)
   );
 
@@ -114,6 +122,7 @@ export class ApprovalSuccessPageComponent {
   }
 
   onDone() {
+    // Close the approval flow
     this.approvalFlowService.closeApproval();
   }
-} 
+}

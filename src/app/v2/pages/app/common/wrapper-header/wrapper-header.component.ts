@@ -23,9 +23,14 @@ export class WrapperHeaderComponent {
   // Use signals for reactive updates
   currentWallet = this.walletService.getCurrentWalletSignal();
   
+  walletName = computed(() => {
+    const wallet = this.currentWallet();
+    return wallet?.getName() || 'Wallet';
+  });
+
   accountName = computed(() => {
     const wallet = this.currentWallet();
-    return wallet?.getDisplayName() || 'Account 1';
+    return wallet?.getAccountName() || 'Account 1';
   });
 
   walletAddress = computed(() => {

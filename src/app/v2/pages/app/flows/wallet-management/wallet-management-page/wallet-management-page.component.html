@@ -2,16 +2,6 @@
   <!-- Buttons section under title -->
   <div class="header-buttons">
     <kc-button
-      [text]="'Create account'"
-      [variant]="'gradient_1'"
-      [size]="'md'"
-      [isFullWidth]="false"
-      [prefixIcon]="'icon-add'"
-      [prefixIconColor]="'black'"
-      (buttonClick)="createWallet()"
-    ></kc-button>
-    
-    <kc-button
       [text]="'Change wallet'"
       [variant]="'tertiary'"
       [size]="'md'"
@@ -37,6 +27,7 @@
                 class="wallet-item__pencil"
                 [iconClass]="'icon-pencil'"
                 [size]="'xs'"
+                (click)="editWalletAccount(wallet); $event.stopPropagation()"
               ></kc-icon>
             </div>
             <div class="wallet-item__address">{{ shortenAddress(wallet.address) }}</div>
@@ -46,9 +37,18 @@
             class="wallet-item__trash"
             [iconClass]="'icon-trash'"
             [size]="'sm'"
+            (click)="deleteWallet(wallet); $event.stopPropagation()"
           ></kc-icon>
         </div>
       }
     </div>
+  </div>
+
+  <!-- Floating Create Account Orb -->
+  <div class="floating-orb" (click)="onAddAccountClick()">
+    <kc-icon
+      [iconClass]="'icon-user_plus_icon'"
+      [size]="'lg'"
+    ></kc-icon>
   </div>
 </div>

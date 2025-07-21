@@ -5,6 +5,9 @@ import { navAnimation } from './common/animation/nav.animation';
 import { WrapperHeaderComponent } from './common/wrapper-header/wrapper-header.component';
 import { WrapperNavComponent } from './common/wrapper-nav/wrapper-nav.component';
 import { FlowPageComponent } from './common/flow-page/flow-page.component';
+import { QuickActionDialogComponent } from './common/quick-action-dialog/quick-action-dialog.component';
+import { CreateWalletAccountQuickActionDialogComponent } from './common/quick-action-dialog/wrappers/create-wallet-account-quick-action-dialog.component';
+import { DeleteWalletAccountQuickActionDialogComponent } from './common/quick-action-dialog/wrappers/delete-wallet-account-quick-action-dialog.component';
 import { WalletManagementPageComponent } from './flows/wallet-management/wallet-management-page/wallet-management-page.component';
 import { SendPageComponent } from './flows/transaction/send-page/send-page.component';
 import { SendKaspaComponent } from './flows/transaction/send-page/components/send-kaspa/send-kaspa.component';
@@ -16,8 +19,10 @@ import { SendKnsListComponent } from './flows/transaction/send-page/components/s
 import { SendKnsComponent } from './flows/transaction/send-page/components/send-kns/send-kns.component';
 import { AccountSettingsService } from './common/services/account-settings.service';
 import { FlowPagesService } from './common/services/flow-pages.service';
+import { QuickActionDialogService } from './common/services/quick-action-dialog.service';
 import { ReviewActionComponent } from '../../../components/wallet-actions-reviews/review-action/review-action.component';
 import { ApprovalFlowPageComponent } from './flows/approval/approval-flow-page/approval-flow-page.component';
+import { KcSnackbarComponent } from 'kaspacom-ui';
 
 @Component({
   selector: 'app-app-wrapper',
@@ -27,6 +32,9 @@ import { ApprovalFlowPageComponent } from './flows/approval/approval-flow-page/a
     WrapperHeaderComponent,
     WrapperNavComponent,
     FlowPageComponent,
+    QuickActionDialogComponent,
+    CreateWalletAccountQuickActionDialogComponent,
+    DeleteWalletAccountQuickActionDialogComponent,
     WalletManagementPageComponent,
     SendPageComponent,
     SendKaspaComponent,
@@ -37,7 +45,8 @@ import { ApprovalFlowPageComponent } from './flows/approval/approval-flow-page/a
     SendKnsListComponent,
     SendKnsComponent,
     ReviewActionComponent,
-    ApprovalFlowPageComponent
+    ApprovalFlowPageComponent,
+    KcSnackbarComponent
   ],
   templateUrl: './app-wrapper.component.html',
   styleUrl: './app-wrapper.component.scss',
@@ -47,6 +56,7 @@ export class AppWrapperComponent {
   private contexts = inject(ChildrenOutletContexts);
   accountSettingsService = inject(AccountSettingsService);
   flowPagesService = inject(FlowPagesService);
+  quickActionDialogService = inject(QuickActionDialogService);
 
   getRouteAnimationData() {
     return this.contexts.getContext('primary')?.route?.snapshot?.data?.[
@@ -75,5 +85,15 @@ export class AppWrapperComponent {
     } else {
       this.flowPagesService.closePage();
     }
+  }
+  
+  onQuickActionDialogBackdropClick() {
+    // Handle backdrop click - close the quick action dialog
+    this.quickActionDialogService.closeDialog();
+  }
+  
+  onQuickActionDialogClose() {
+    // Handle close icon click - close the quick action dialog
+    this.quickActionDialogService.closeDialog();
   }
 }

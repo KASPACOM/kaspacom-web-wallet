@@ -75,5 +75,27 @@
         <app-approval-flow-page></app-approval-flow-page>
       }
     </app-flow-page>
+    
+    <!-- Quick Action Dialog System -->
+    @if (quickActionDialogService.activeDialog()?.id === 'add-account' || quickActionDialogService.activeDialog()?.id === 'edit-account') {
+      <app-create-wallet-account-quick-action-dialog
+        [isOpen]="quickActionDialogService.isAnyDialogOpen()"
+        [data]="quickActionDialogService.activeDialog()?.data"
+        (backdropClick)="onQuickActionDialogBackdropClick()"
+        (close)="onQuickActionDialogClose()"
+      ></app-create-wallet-account-quick-action-dialog>
+    }
+    
+    @if (quickActionDialogService.activeDialog()?.id === 'delete-account') {
+      <app-delete-wallet-account-quick-action-dialog
+        [isOpen]="quickActionDialogService.isAnyDialogOpen()"
+        [data]="quickActionDialogService.activeDialog()?.data"
+        (backdropClick)="onQuickActionDialogBackdropClick()"
+        (close)="onQuickActionDialogClose()"
+      ></app-delete-wallet-account-quick-action-dialog>
+    }
+    
+    <!-- Notification Snackbar System -->
+    <kc-snackbar></kc-snackbar>
   </div>
 </div>

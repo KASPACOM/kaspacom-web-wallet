@@ -1,8 +1,11 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { FlowPageBaseComponent } from '../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../common/flow-page/interfaces/flow-page.interface';
+import { QuickActionDialogService, IQuickActionDialogConfig } from '../../../common/services/quick-action-dialog.service';
+import { WalletService } from '../../../../../../services/wallet.service';
+import { AppWallet } from '../../../../../../classes/AppWallet';
 
 interface WalletAccount {
   id: string;
@@ -10,6 +13,7 @@ interface WalletAccount {
   address: string;
   balance: number;
   isSelected: boolean;
+  wallet: AppWallet;
 }
 
 @Component({
@@ -20,6 +24,8 @@ interface WalletAccount {
   styleUrl: './wallet-management-page.component.scss'
 })
 export class WalletManagementPageComponent extends FlowPageBaseComponent {
+  private quickActionDialogService = inject(QuickActionDialogService);
+  private walletService = inject(WalletService);
   
   get config(): IFlowPageConfig {
     return {
@@ -29,50 +35,114 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
       canClose: true
     };
   }
-  // Mock wallet data
-  wallets = signal<WalletAccount[]>([
-    {
-      id: '1',
-      name: 'Account 1',
-      address: 'kaspa:qr0qs5y4hv8uc9ey6wqv5xmq8fakm2kxn9vg7msc8guu5d5vquqkqgh7vu5h4',
-      balance: 1234.56,
-      isSelected: true
-    },
-    {
-      id: '2',
-      name: 'Account 2',
-      address: 'kaspa:qpamkvfgh8smy7d9eqgqua5hpc9xnt2w4yjmg9we9z0xpd5vyn2xqa58ch3az',
-      balance: 5678.90,
-      isSelected: false
-    },
-    {
-      id: '3',
-      name: 'Account 3',
-      address: 'kaspa:qz3ty9xlkdrqwerty8wqpw8asdfg4hjkl2zxcvbn5mkjh8765fghyuiopqwer',
-      balance: 987.65,
-      isSelected: false
-    },
-    {
-      id: '4',
-      name: 'Account 4',
-      address: 'kaspa:qr8asdfg8hjklzxcvbn4mkjh8wqpw8765fghyuiop2qwerty9xlkdrq3ty5za',
-      balance: 3456.78,
-      isSelected: false
-    }
-  ]);
+  // Convert wallet accounts to our interface
+  wallets = signal<WalletAccount[]>([]);
   
-  selectWallet(wallet: WalletAccount): void {
-    this.wallets.update(wallets => 
-      wallets.map(w => ({
-        ...w,
-        isSelected: w.id === wallet.id
-      }))
-    );
+  constructor() {
+    super();
+    this.loadWalletAccounts();
   }
   
-  deleteWallet(wallet: WalletAccount): void {
-    // Logic for deleting wallet would go here
-    console.log('Delete wallet:', wallet.name);
+  override ngOnInit(): void {
+    super.ngOnInit();
+  }
+  
+  override ngOnDestroy(): void {
+    super.ngOnDestroy();
+  }
+  
+  public loadWalletAccounts(): void {
+    // Get all wallets and current wallet - force fresh data by calling the signal
+    const allWallets = this.walletService.getAllWallets(true)() || [];
+    const currentWallet = this.walletService.getCurrentWallet();
+    
+    // Group wallets by ID to get accounts
+    const walletGroups = new Map<number, AppWallet[]>();
+    allWallets.forEach(wallet => {
+      const id = wallet.getId();
+      if (!walletGroups.has(id)) {
+        walletGroups.set(id, []);
+      }
+      walletGroups.get(id)!.push(wallet);
+    });
+    
+    // Convert to our interface format
+    const accounts: WalletAccount[] = [];
+    walletGroups.forEach(walletGroup => {
+      // Only process wallets that have accounts
+      if (walletGroup.length > 0 && walletGroup[0].supportAccounts()) {
+        walletGroup.forEach(wallet => {
+          accounts.push({
+            id: wallet.getIdWithAccount(),
+            name: wallet.getAccountName() || wallet.getName(),
+            address: wallet.getAddress(),
+            balance: wallet.getTotalBalanceAsSignal() || 0,
+            isSelected: currentWallet?.getIdWithAccount() === wallet.getIdWithAccount(),
+            wallet: wallet
+          });
+        });
+      } else if (walletGroup.length > 0) {
+        // Single wallet without accounts
+        const wallet = walletGroup[0];
+        accounts.push({
+          id: wallet.getIdWithAccount(),
+          name: wallet.getName(),
+          address: wallet.getAddress(),
+          balance: wallet.getTotalBalanceAsSignal() || 0,
+          isSelected: currentWallet?.getIdWithAccount() === wallet.getIdWithAccount(),
+          wallet: wallet
+        });
+      }
+    });
+    
+    this.wallets.set(accounts);
+  }
+  
+  async selectWallet(walletAccount: WalletAccount): Promise<void> {
+    await this.walletService.selectCurrentWallet(walletAccount.wallet.getIdWithAccount());
+    this.loadWalletAccounts(); // Reload to update selected state
+    
+    // Close the wallet management page after selection
+    this.closeFlow();
+  }
+  
+  editWalletAccount(walletAccount: WalletAccount): void {
+    // Open the quick action dialog for editing account
+    this.quickActionDialogService.openDialog({
+      id: 'edit-account',
+      title: 'Edit account',
+      isCloseable: true,
+      data: {
+        accountName: walletAccount.name,
+        wallet: walletAccount.wallet,
+        isEditMode: true,
+        // Pass callback to refresh accounts after successful operation
+        onSuccess: async () => {
+          // Give the wallet service time to update its internal state
+          await new Promise(resolve => setTimeout(resolve, 100));
+          this.loadWalletAccounts();
+        }
+      }
+    });
+  }
+  
+  deleteWallet(walletAccount: WalletAccount): void {
+    // Open the delete confirmation dialog
+    this.quickActionDialogService.openDialog({
+      id: 'delete-account',
+      title: 'Delete account',
+      isCloseable: true,
+      data: {
+        accountName: walletAccount.name,
+        wallet: walletAccount.wallet,
+        // Pass callback to refresh accounts after successful operation
+        onSuccess: async () => {
+          // Give the wallet service time to update its internal state
+          await new Promise(resolve => setTimeout(resolve, 100));
+          this.loadWalletAccounts();
+        }
+      }
+    });
   }
   
   addWallet(): void {
@@ -108,5 +178,22 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
   shortenAddress(address: string): string {
     if (!address) return '';
     return `${address.slice(0, 10)}...${address.slice(-8)}`;
+  }
+  
+  onAddAccountClick(): void {
+    // Open the quick action dialog for add account
+    this.quickActionDialogService.openDialog({
+      id: 'add-account',
+      title: 'Add account',
+      isCloseable: true,
+      data: {
+        // Pass callback to refresh accounts after successful operation
+        onSuccess: async () => {
+          // Give the wallet service time to update its internal state
+          await new Promise(resolve => setTimeout(resolve, 100));
+          this.loadWalletAccounts();
+        }
+      }
+    });
   }
 }

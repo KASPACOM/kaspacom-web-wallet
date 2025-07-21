@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  position: relative;
 }
 
 .header-buttons {
@@ -15,6 +16,7 @@
   flex: 1;
   overflow-y: auto;
   min-height: 0; // Ensure proper flex shrinking
+  padding-bottom: 80px; // Add padding to prevent content from being hidden behind orb
   
   &::-webkit-scrollbar {
     width: 6px;
@@ -39,6 +41,35 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.floating-orb {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--gradient-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  
+  &:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2), 0 3px 6px rgba(0, 0, 0, 0.15);
+  }
+  
+  &:active {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  ::ng-deep .icon {
+    color: var(--black) !important;
+  }
 }
 
 .wallet-item {
@@ -120,6 +151,12 @@
         color: white !important;
       }
     }
+    
+    // Always visible on mobile
+    @media (max-width: 768px) {
+      opacity: 1;
+      visibility: visible;
+    }
   }
   
   &__address {
@@ -152,6 +189,12 @@
       ::ng-deep .icon {
         color: var(--red-10) !important;
       }
+    }
+    
+    // Always visible on mobile
+    @media (max-width: 768px) {
+      opacity: 1;
+      visibility: visible;
     }
   }
 }

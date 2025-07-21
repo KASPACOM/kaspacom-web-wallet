@@ -8,10 +8,10 @@
       ></app-wallet-profile-orb>
       <div class="profile-container__info">
         <div class="profile-container__wallet-name-section">
-          <div class="profile-container__wallet-name">{{ accountName() }}</div>
+          <div class="profile-container__wallet-name">{{ walletName() }}</div>
         </div>
         <div class="profile-container__account-section">
-          <div class="profile-container__account-name">Account 1</div>
+          <div class="profile-container__account-name">{{ accountName() }}</div>
           <app-copy-button
             [value]="walletAddress()"
             [size]="'xs'"

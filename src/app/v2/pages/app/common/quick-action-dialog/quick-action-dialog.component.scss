@@ -1,0 +1,106 @@
+.quick-action-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4); // Darken the background
+  backdrop-filter: blur(4px); // Blur effect
+  z-index: 1000; // High z-index to appear above everything
+  display: flex; // Always flex when component exists
+  flex-direction: column;
+  justify-content: flex-end; // Stick to bottom
+  pointer-events: all; // Let animation control visibility
+}
+
+.quick-action-dialog-content {
+  background: var(--vampire-black);
+  border-radius: 16px 16px 0 0; // Rounded top corners only
+  padding: 24px;
+  width: 100%;
+  height: 40%; // Fill 40% of the container as required
+  display: flex;
+  flex-direction: column;
+  min-height: 0; // Allow content to shrink properly
+  overflow: hidden;
+  transform: translateZ(0); // Force hardware acceleration
+  will-change: transform, opacity; // Optimize for animation
+  box-shadow: 0 -8px 2px 4px rgba(0, 0, 0, 0.45); // Drop shadow upward with black 0.45 opacity, 2px blur, and spread
+
+  // Add media query for mobile
+  @media (max-width: 480px) {
+    padding: 16px;
+    border-radius: 12px 12px 0 0;
+  }
+}
+
+.quick-action-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 32px;
+  margin-bottom: 20px;
+
+  // If only close button and no title, center the close button
+  &:has(.quick-action-dialog-close):not(:has(.quick-action-dialog-title)) {
+    justify-content: flex-end;
+  }
+}
+
+.quick-action-dialog-title {
+  color: var(--white);
+  margin: 0;
+  flex: 1;
+}
+
+.quick-action-dialog-close {
+  cursor: pointer;
+
+  ::ng-deep .icon {
+    color: var(--gray-60) !important;
+  }
+
+  &:hover ::ng-deep .icon {
+    color: var(--white) !important;
+  }
+}
+
+.quick-action-dialog-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  
+  // Custom scrollbar styling
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+}
+
+// Content and footer styling for projected content
+.dialog-content {
+  flex: 1;
+  min-height: 0; // Allow proper flexbox shrinking
+}
+
+.dialog-footer {
+  margin-top: auto;
+  padding-top: 24px;
+  flex-shrink: 0; // Prevent footer from shrinking
+} 

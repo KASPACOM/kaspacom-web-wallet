@@ -132,18 +132,20 @@
 }
 
 .wallet-item {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--base-2);
   border: 1px solid transparent;
   border-radius: 12px;
   padding: 16px;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
+  flex-direction: row;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 16px;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--base-3);
 
     .wallet-item__pencil {
       opacity: 1;
@@ -159,7 +161,7 @@
   &.selected {
     position: relative;
     border: 1px solid transparent;
-    background: rgba(111, 199, 186, 0.1);
+    background: var(--base-3);
 
     &::before {
       content: '';
@@ -173,6 +175,18 @@
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       pointer-events: none;
+    }
+
+    .wallet-item__icon {
+      ::ng-deep .icon {
+        color: var(--white) !important;
+      }
+    }
+  }
+
+  &__icon {
+    ::ng-deep .icon {
+      color: var(--text-base-0) !important;
     }
   }
 
@@ -239,6 +253,7 @@
     cursor: pointer;
     transition: all 0.2s ease;
     border-radius: 8px;
+    margin-left: auto;
 
     ::ng-deep .icon {
       color: var(--red-20) !important;

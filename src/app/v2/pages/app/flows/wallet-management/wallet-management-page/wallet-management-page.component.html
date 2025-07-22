@@ -37,6 +37,11 @@
           [class.selected]="wallet.isSelected"
           (click)="selectWallet(wallet)"
         >
+          <kc-icon
+            class="wallet-item__icon"
+            [iconClass]="wallet.isSelected ? 'icon-user' : 'icon-user-12px'"
+            [size]="'md'"
+          ></kc-icon>
           <div class="wallet-item__info">
             <div class="wallet-item__name-container">
               <div class="wallet-item__name">{{ wallet.name }}</div>

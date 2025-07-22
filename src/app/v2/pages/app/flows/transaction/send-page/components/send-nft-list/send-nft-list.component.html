@@ -20,7 +20,7 @@
     } @else {
       <!-- NFT list -->
       @for (nft of nfts(); track nft.tick + nft.tokenId) {
-        <div class="nft-list-card flex full-width align-items-center justify-content-between p-16 fade-in cursor-pointer"
+        <div class="nft-list-card card-0 card-hover flex full-width align-items-center justify-content-between p-16 fade-in cursor-pointer"
              (click)="onNftClick(nft)">
           <!-- NFT info section -->
           <div class="nft-card__info flex align-items-center gap-16">

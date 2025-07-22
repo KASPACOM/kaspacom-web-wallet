@@ -1,6 +1,6 @@
 .flow-page-overlay {
   position: absolute;
-  top: 67px; // Start after header
+  top: 0; // Start after header
   left: 0;
   right: 0;
   bottom: 0;
@@ -20,8 +20,8 @@
 }
 
 .flow-page-content {
-  background: rgba(15,15,15, 0.88); // Semi-transparent vampire black
-  backdrop-filter: blur(10px);
+  background: rgba(#141117, 0.88); // Semi-transparent vampire black
+  backdrop-filter: blur(20px);
   border-radius: 0 0 12px 12px;
   padding: 16px;
   width: 100%;

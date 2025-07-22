@@ -55,7 +55,12 @@
   border-radius: 14px;
   padding: 12px 16px;
   transition: background-color ease-in-out 0.3s;
+  box-shadow: 0 4px 16px -4px rgba(0,0,0,0.34);
   &.card-hover:hover {
     background-color: var(--base-3);
   }
 } 
+
+.kc-input-wrapper {
+  background-color: transparent !important;
+}

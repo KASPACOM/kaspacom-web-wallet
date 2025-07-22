@@ -18,13 +18,13 @@
   
   // Apply gradient text to the success title
   .success-title {
-    background: var(--gradient-2);
+    background: var(--gradient-1);
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
     display: inline-block;
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 700;
     line-height: 1.2;
   }
@@ -177,7 +177,7 @@
   }
 
   .success-header .success-title {
-    font-size: 22px; // Smaller on mobile but still prominent
+    font-size: 24px; // Smaller on mobile but still prominent
     font-weight: 700;
   }
 

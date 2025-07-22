@@ -79,22 +79,6 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
     animation: ambient-float-left 10s ease-in-out infinite;
   }
 
-  &::after {
-    content: '';
-    position: fixed;
-    top: -180px;
-    right: -180px;
-    width: 380px;
-    height: 320px;
-    background: radial-gradient(circle, #6fc7ba 0%, rgba(111, 199, 186, 0.2) 25%, rgba(111, 199, 186, 0.25) 50%, transparent 100%);
-    border-radius: 50%;
-    filter: blur(90px);
-    opacity: 0.18;
-    pointer-events: none;
-    z-index: 0;
-    animation: ambient-float-right 13s ease-in-out infinite 3s;
-  }
-
   @include mobile {
     width: 100%;
     height: 100vh;

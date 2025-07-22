@@ -2,9 +2,9 @@
 :root {
   // Base colors
   --base-0: #07090A;
-  --base-1: #141117;
-  --base-2: #201B26;
-  --base-3: #322A3E;
+  --base-1: #110f12;
+  --base-2: #1d1b21;
+  --base-3: #3f3a46;
   --base-4: #594D66;
   --base-4: #7B6E88;
 
@@ -59,7 +59,7 @@
   &.card-hover:hover {
     background-color: var(--base-3);
   }
-} 
+}
 
 .kc-input-wrapper {
   background-color: transparent !important;

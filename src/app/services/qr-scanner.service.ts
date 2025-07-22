@@ -126,7 +126,7 @@ export class QrScannerService {
       
       const qrConfig = {
         fps: 10,
-        qrbox: { width: 250, height: 250 },
+        qrbox: { width: 290, height: 290 }, // Make it fill almost the entire 300x300 container
         aspectRatio: 1.0
       };
 

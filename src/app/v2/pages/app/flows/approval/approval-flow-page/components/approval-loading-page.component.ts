@@ -49,7 +49,7 @@ import { KcIconComponent } from 'kaspacom-ui';
               [size]="'sm'">
             </kc-icon>
           </div>
-          <span class="step-text">Commit</span>
+          <span class="step-text">Commit transaction</span>
         </div>
         
         <div class="step" [class.active]="currentProgress() >= 100">
@@ -59,7 +59,7 @@ import { KcIconComponent } from 'kaspacom-ui';
               [size]="'sm'">
             </kc-icon>
           </div>
-          <span class="step-text">Reveal</span>
+          <span class="step-text">Reveal transaction</span>
         </div>
       </div>
     </div>

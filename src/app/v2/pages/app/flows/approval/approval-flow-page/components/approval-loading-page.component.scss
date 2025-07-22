@@ -68,7 +68,7 @@
 
   .progress-fill {
     height: 100%;
-    background: var(--gradient-2);
+    background: var(--gradient-1);
     border-radius: 4px;
     transition: width 0.3s ease;
     position: relative;
@@ -103,25 +103,33 @@
   width: 100%;
   max-width: 350px;
   animation: fadeIn 0.6s ease-out 0.4s both;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .step {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 16px;
   padding: 12px 0;
   transition: all 0.3s ease;
   opacity: 0.5;
+  width: 100%;
 
   &.active {
     opacity: 1;
     
     .step-icon {
-      background: rgba(63, 199, 83, 0.2);
-      border-color: #3FC753;
+      background: var(--gradient-1);
+      border: 2px solid transparent;
+      background-origin: border-box;
+      background-clip: padding-box, border-box;
       
       kc-icon {
-        color: #3FC753;
+        color: #ffffff;
       }
     }
     
@@ -134,8 +142,8 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: rgba(111, 199, 186, 0.1);
-    border: 2px solid rgba(111, 199, 186, 0.3);
+    background: rgba(180, 58, 237, 0.1); // Using purple from gradient-1 with low opacity
+    border: 2px solid rgba(180, 58, 237, 0.3); // Purple border
     display: flex;
     align-items: center;
     justify-content: center;

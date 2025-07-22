@@ -15,6 +15,19 @@
   text-align: center;
   margin-bottom: 32px;
   animation: fadeInUp 0.6s ease-out;
+  
+  // Apply gradient text to the success title
+  .success-title {
+    background: var(--gradient-2);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    display: inline-block;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
 }
 
 .success-icon-wrapper {
@@ -163,8 +176,9 @@
     padding: 24px 16px 16px 16px;
   }
 
-  .success-title {
-    font-size: 1.5rem;
+  .success-header .success-title {
+    font-size: 22px; // Smaller on mobile but still prominent
+    font-weight: 700;
   }
 
   .success-icon-wrapper .success-icon {

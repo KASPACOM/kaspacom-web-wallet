@@ -29,12 +29,18 @@ export class Krc721MetadataService extends BaseAssetMetadataService<Krc721Nft, K
     // Update pagination state
     this.paginationStateSignal.update(state => ({
       ...state,
-      totalItems: this.allAssets.length
+      totalItems: this.allAssets.length,
+      hasMore: this.allAssets.length > 0 // Reset hasMore flag based on available assets
     }));
 
-    // Reset and load initial page
+    // Reset pagination state and load initial page
+    // This ensures stale data from previous wallet is cleared
     this.reset();
-    this.loadMore();
+    
+    // Only load more if we have assets to display
+    if (this.allAssets.length > 0) {
+      this.loadMore();
+    }
   }
 
   protected override getAssetsFromStore(): Krc721Nft[] {

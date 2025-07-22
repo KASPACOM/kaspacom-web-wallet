@@ -1,10 +1,12 @@
 <div
-  class="kns-summary-container flex column justify-content-center align-items-center full-width gap-12"
+  class="kns-summary-container flex column justify-content-center align-items-center full-width gap-16"
 >
   @if (loading()) {
-    @for (item of [1,2,3]; track item) {
-      <app-skeleton class="full-width" [height]="'75px'" [width]="'auto'" [fullRound]="false"></app-skeleton>
-    }
+    <div class="skeleton-loading-container flex column gap-16 full-width">
+      @for (item of [1,2,3]; track item) {
+        <app-skeleton class="full-width" [height]="'75px'" [width]="'auto'" [fullRound]="false"></app-skeleton>
+      }
+    </div>
   } @else if (domains().length === 0) {
     <div class="text-gray-60 p-16">No KNS domains found</div>
   } @else {

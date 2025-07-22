@@ -16,24 +16,26 @@
     <div class="activity-list-container">
       @if (isLoading()) {
         <!-- Loading skeletons -->
-        <div class="activity-list">
-          @for (item of [1,2,3,4,5]; track item) {
-            <div class="activity-item bg-gray-15 border-radius-12 p-16 mb-12">
-              <div class="activity-content flex justify-content-between align-items-center">
-                <div class="activity-info flex align-items-center gap-12">
-                  <app-skeleton [height]="'32px'" [width]="'32px'" [fullRound]="true"></app-skeleton>
-                  <div class="activity-details">
-                    <app-skeleton [height]="'18px'" [width]="'120px'" class="mb-4"></app-skeleton>
-                    <app-skeleton [height]="'14px'" [width]="'80px'"></app-skeleton>
+        <div class="skeleton-loading-container">
+          <div class="activity-list flex column gap-16">
+            @for (item of [1,2,3,4,5]; track item) {
+              <div class="activity-item bg-gray-15 border-radius-12 p-16">
+                <div class="activity-content flex justify-content-between align-items-center">
+                  <div class="activity-info flex align-items-center gap-12">
+                    <app-skeleton [height]="'32px'" [width]="'32px'" [fullRound]="true"></app-skeleton>
+                    <div class="activity-details">
+                      <app-skeleton [height]="'18px'" [width]="'120px'" class="mb-4"></app-skeleton>
+                      <app-skeleton [height]="'14px'" [width]="'80px'"></app-skeleton>
+                    </div>
+                  </div>
+                  <div class="activity-amount-info text-right">
+                    <app-skeleton [height]="'18px'" [width]="'80px'" class="mb-4 ml-auto"></app-skeleton>
+                    <app-skeleton [height]="'14px'" [width]="'60px'" class="ml-auto"></app-skeleton>
                   </div>
                 </div>
-                <div class="activity-amount-info text-right">
-                  <app-skeleton [height]="'18px'" [width]="'80px'" class="mb-4 ml-auto"></app-skeleton>
-                  <app-skeleton [height]="'14px'" [width]="'60px'" class="ml-auto"></app-skeleton>
-                </div>
               </div>
-            </div>
-          }
+            }
+          </div>
         </div>
       } @else if (filteredActivity().length === 0) {
         <!-- Empty state -->

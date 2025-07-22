@@ -76,16 +76,12 @@ export class SendNftListComponent extends FlowPageBaseComponent implements OnIni
     );
     
     // Subscribe to assets store changes and reinitialize metadata service
+    // IMPORTANT: Always reinitialize to handle wallet account changes properly
     this.krc721Assets$.pipe(
       takeUntil(this.destroy$)
     ).subscribe(assets => {
-      if (assets.length > 0) {
-        // Only initialize if metadata service doesn't have any assets yet
-        const currentPaginatedAssets = this.krc721MetadataService.paginatedAssets();
-        if (currentPaginatedAssets.length === 0) {
-          this.krc721MetadataService.initialize(assets);
-        }
-      }
+      // Always initialize to ensure metadata service is reset on wallet changes
+      this.krc721MetadataService.initialize(assets);
     });
   }
 

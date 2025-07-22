@@ -69,12 +69,13 @@ export class Krc721SummaryComponent implements OnInit, OnDestroy, AfterViewInit 
     );
     
     // Subscribe to assets store changes and reinitialize metadata service
+    // IMPORTANT: Always reinitialize, even with empty arrays, to clear stale data
     this.krc721Assets$.pipe(
       takeUntil(this.destroy$)
     ).subscribe(assets => {
-      if (assets.length > 0) {
-        this.krc721MetadataService.initialize(assets);
-      }
+      // Always initialize to ensure metadata service is reset on wallet changes
+      // This fixes the sync bug where old account's NFTs were shown after switching accounts
+      this.krc721MetadataService.initialize(assets);
     });
   }
 

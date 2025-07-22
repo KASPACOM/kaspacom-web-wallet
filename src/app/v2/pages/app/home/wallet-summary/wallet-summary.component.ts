@@ -75,20 +75,16 @@ export class WalletSummaryComponent implements OnInit, OnDestroy, AfterViewInit 
       toObservable(this.assetsStore.krc20Assets)
     );
     
-    // Initialize metadata service when assets are available, but don't block display
+    // Subscribe to assets store changes and reinitialize metadata service
+    // IMPORTANT: Always reinitialize, even with empty arrays, to clear stale data
     this.krc20Assets$.pipe(
       takeUntil(this.destroy$)
     ).subscribe(assets => {
-      if (assets.length > 0) {
-        // Only initialize if metadata service doesn't have any assets yet
-        const currentPaginatedAssets = this.krc20MetadataService.paginatedAssets();
-        if (currentPaginatedAssets.length === 0) {
-          // Initialize metadata service in background
-          setTimeout(() => {
-            this.krc20MetadataService.initialize(assets);
-          }, 100);
-        }
-      }
+      // Always initialize to ensure metadata service is reset on wallet changes
+      // This fixes the sync bug where old account's tokens were shown after switching accounts
+      setTimeout(() => {
+        this.krc20MetadataService.initialize(assets);
+      }, 100);
     });
   }
 

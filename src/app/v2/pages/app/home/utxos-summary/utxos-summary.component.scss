@@ -17,7 +17,9 @@
       .utxo-content {
         .utxo-info {
           flex: 1;
-
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
           .utxo-tx-id-container {
             .utxo-tx-id {
               font-family: 'Courier New', monospace;
@@ -33,12 +35,12 @@
               width: 6px;
               height: 6px;
               border-radius: 50%;
-              
+
               &.confirmed {
                 background-color: var(--green-20);
                 box-shadow: 0 0 4px rgba(63, 199, 83, 0.4);
               }
-              
+
               &.pending {
                 background-color: var(--orange-20);
                 box-shadow: 0 0 4px rgba(230, 162, 35, 0.4);
@@ -62,18 +64,6 @@
     }
 
 
-  }
-}
-
-// Loading state styles
-.utxo-card {
-  .utxo-content {
-    .utxo-info, .utxo-amount {
-      app-skeleton {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 4px;
-      }
-    }
   }
 }
 
@@ -124,4 +114,4 @@
 // Utility classes
 .cursor-pointer {
   cursor: pointer;
-} 
+}

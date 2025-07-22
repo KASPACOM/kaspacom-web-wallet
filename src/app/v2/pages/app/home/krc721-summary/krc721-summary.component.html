@@ -1,25 +1,27 @@
 <div
-  class="krc721-summary-container flex column justify-content-center align-items-center full-width gap-12"
+  class="krc721-summary-container flex column justify-content-center align-items-center full-width gap-16"
   appInfiniteScroll
   [scrollThreshold]="70"
   (scrolled)="onScrolled($event)"
   (thresholdReached)="onThresholdReached()"
 >
   @if (loading()) {
-    @for (item of [1,2,3]; track item) {
-      <div class="krc721-summary-container__card flex full-width align-items-center justify-content-between p-16">
-        <div class="krc721-summary-container__nft-info flex align-items-center gap-16">
-          <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false"></app-skeleton>
-          <div class="flex column gap-4">
-            <app-skeleton [height]="'20px'" [width]="'120px'" [fullRound]="false"></app-skeleton>
-            <app-skeleton [height]="'16px'" [width]="'80px'" [fullRound]="false"></app-skeleton>
+    <div class="skeleton-loading-container flex column gap-16 full-width">
+      @for (item of [1,2,3]; track item) {
+        <div class="krc721-summary-container__card flex full-width align-items-center justify-content-between p-16">
+          <div class="krc721-summary-container__nft-info flex align-items-center gap-16">
+            <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false"></app-skeleton>
+            <div class="flex column gap-4">
+              <app-skeleton [height]="'20px'" [width]="'120px'" [fullRound]="false"></app-skeleton>
+              <app-skeleton [height]="'16px'" [width]="'80px'" [fullRound]="false"></app-skeleton>
+            </div>
+          </div>
+          <div class="krc721-summary-container__attributes">
+            <app-skeleton [height]="'16px'" [width]="'60px'" [fullRound]="false"></app-skeleton>
           </div>
         </div>
-        <div class="krc721-summary-container__attributes">
-          <app-skeleton [height]="'16px'" [width]="'60px'" [fullRound]="false"></app-skeleton>
-        </div>
-      </div>
-    }
+      }
+    </div>
   } @else if (nfts().length === 0) {
     <div class="text-gray-60 p-16">No KRC721 NFTs found</div>
   } @else {

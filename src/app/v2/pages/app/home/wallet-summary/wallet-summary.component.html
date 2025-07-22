@@ -1,14 +1,16 @@
 <div
-  class="wallet-summary-container flex column justify-content-center align-items-center full-width gap-12"
+  class="wallet-summary-container flex column justify-content-center align-items-center full-width gap-16"
   appInfiniteScroll
   [scrollThreshold]="70"
   (scrolled)="onScrolled($event)"
   (thresholdReached)="onThresholdReached()"
 >
   @if (loading()) {
-    @for (item of [1,2,3]; track item) {
-      <app-skeleton class="full-width" [height]="'75px'" [width]="'auto'" [fullRound]="false"></app-skeleton>
-    }
+    <div class="skeleton-loading-container flex column gap-16 full-width">
+      @for (item of [1,2,3]; track item) {
+        <app-skeleton class="full-width" [height]="'75px'" [width]="'auto'" [fullRound]="false"></app-skeleton>
+      }
+    </div>
   } @else if (tokens().length === 0) {
     <div class="text-gray-60 p-16">No KRC20 tokens found</div>
   } @else {

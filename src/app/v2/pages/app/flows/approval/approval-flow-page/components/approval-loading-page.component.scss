@@ -68,7 +68,7 @@
 
   .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #6fc7ba 0%, #3FC753 100%);
+    background: var(--gradient-2);
     border-radius: 4px;
     transition: width 0.3s ease;
     position: relative;

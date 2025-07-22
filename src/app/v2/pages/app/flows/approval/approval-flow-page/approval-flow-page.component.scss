@@ -67,7 +67,7 @@
   justify-content: space-between;
   padding: 12px 0;
   border-bottom: 1px solid rgba(111, 199, 186, 0.2);
-  
+
   .label {
     font-weight: bold;
     color: var(--text-secondary, #a0a0a0);
@@ -159,10 +159,13 @@ priority-fee-selection {
   padding: 20px;
   flex-shrink: 0;
   // Add background and border to separate from content when scrolling
-  background: var(--vampire-black);
+  background: rgba(15, 15, 15, 0.88);
   border-top: 1px solid rgba(111, 199, 186, 0.1);
-  margin-top: auto; // Push to bottom
-  
+  // Make buttons sticky to bottom like mobile apps
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+
   .reject-button,
   .accept-button {
     flex: 1;
@@ -227,7 +230,7 @@ priority-fee-selection {
 ::-webkit-scrollbar-thumb {
   background: rgba(111, 199, 186, 0.3);
   border-radius: 3px;
-  
+
   &:hover {
     background: rgba(111, 199, 186, 0.5);
   }
@@ -240,30 +243,27 @@ priority-fee-selection {
     // Ensure content doesn't get cut off on small screens
     padding-bottom: 8px; // Reduced bottom padding since buttons have their own padding
   }
-  
+
   .action-header {
     margin-bottom: 20px;
-    
+
     .action-title {
       font-size: 1.3rem;
     }
   }
-  
+
   .detail-display,
   .input-field-row {
     padding: 14px;
   }
-  
+
   .priority-fee-section {
     padding: 16px;
   }
-  
+
   .action-buttons {
     padding: 16px;
     gap: 10px;
-    // Ensure buttons are always visible on small screens
-    position: sticky;
-    bottom: 0;
-    z-index: 10;
+    // Sticky positioning is now applied globally above
   }
-} 
+}

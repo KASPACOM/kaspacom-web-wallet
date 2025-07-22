@@ -20,7 +20,7 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
     <div class="success-container">
       <!-- Success Header -->
       <div class="success-header">
-        <h2 class="typo-title-3">Transaction Successful!</h2>
+        <h2 class="typo-title-3 success-title">Transaction Successful!</h2>
 
         <!-- Success Icon -->
         <div class="success-icon-wrapper">
@@ -68,7 +68,6 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
           [text]="'Done'"
           variant="primary"
           size="lg"
-          role="success"
           [isFullWidth]="true"
           (buttonClick)="onDone()"
           class="done-button">

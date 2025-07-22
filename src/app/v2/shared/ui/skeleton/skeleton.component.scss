@@ -1,9 +1,9 @@
 .skeleton {
   background: linear-gradient(
     90deg,
-    var(--gray-0) 25%,
-    var(--gray-15) 50%,
-    var(--gray-0) 75%
+    rgba(255, 255, 255, 0.05) 25%,
+      rgba(255, 255, 255, 0.15) 50%,
+      rgba(255, 255, 255, 0.05) 75%
   );
   background-size: 200% 100%;
   border-radius: 8px;
@@ -15,6 +15,41 @@
   }
 }
 
+// Skeleton loading container for proper spacing
+.skeleton-loading-container {
+  &.flex.column {
+    gap: 16px !important; // Ensure proper gap for column layouts
+  }
+  
+  // Specific spacing for different contexts
+  &.home-tab-skeleton {
+    gap: 20px !important;
+  }
+  
+  &.activity-skeleton {
+    gap: 16px !important;
+  }
+  
+  &.send-list-skeleton {
+    gap: 16px !important;
+  }
+}
+
+// Global skeleton spacing utilities for column flex layouts
+.flex.column {
+  &.skeleton-gap-sm {
+    gap: 12px !important;
+  }
+  
+  &.skeleton-gap-md {
+    gap: 16px !important;
+  }
+  
+  &.skeleton-gap-lg {
+    gap: 20px !important;
+  }
+}
+
 @keyframes skeleton-loading {
   0% {
     background-position: 200% 0;
@@ -22,4 +57,4 @@
   100% {
     background-position: -200% 0;
   }
-} 
+}

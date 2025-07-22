@@ -28,12 +28,6 @@ export class CryptoActionsComponent {
       iconColor: '',
       action: () => this.openReceivePage(),
     },
-    {
-      title: 'swap',
-      iconClass: 'icon-chain',
-      iconColor: '',
-      action: () => this.openSwapPage(),
-    },
   ];
 
   private openReceivePage(): void {
@@ -49,8 +43,5 @@ export class CryptoActionsComponent {
     });
   }
 
-  private openSwapPage(): void {
-    // TODO: Implement swap page
-    console.log('Open swap page');
-  }
+
 }

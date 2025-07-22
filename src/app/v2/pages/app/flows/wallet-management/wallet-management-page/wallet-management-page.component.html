@@ -1,21 +1,38 @@
 <div class="page-content">
-  <!-- Buttons section under title -->
-  <div class="header-buttons">
-    <kc-button
-      [text]="'Change wallet'"
-      [variant]="'tertiary'"
-      [size]="'md'"
-      [isFullWidth]="false"
-      [prefixIcon]="'icon-update'"
-      [prefixIconColor]="'white'"
-      (buttonClick)="manageWallets()"
-    ></kc-button>
+  <!-- Custom Header -->
+  <div class="custom-header">
+    <div class="header-left">
+      <span class="wallet-name">{{ currentWalletName() }}</span>
+      <kc-icon
+        class="pencil-icon"
+        [iconClass]="'icon-pencil'"
+        [size]="'xs'"
+        (click)="onEditWalletName()"
+      ></kc-icon>
+    </div>
+    <div class="header-right">
+      <kc-button
+        [text]="'Change wallet'"
+        [variant]="'tertiary'"
+        [size]="'xs'"
+        [isFullWidth]="false"
+        [prefixIcon]="'icon-update'"
+        [prefixIconColor]="'white'"
+        (buttonClick)="manageWallets()"
+      ></kc-button>
+      <kc-icon
+        class="close-icon"
+        [iconClass]="'icon-close'"
+        [size]="'md'"
+        (click)="onCloseClick()"
+      ></kc-icon>
+    </div>
   </div>
 
   <div class="wallets-container">
     <div class="wallets-list">
       @for (wallet of wallets(); track wallet.id) {
-        <div 
+        <div
           class="wallet-item"
           [class.selected]="wallet.isSelected"
           (click)="selectWallet(wallet)"

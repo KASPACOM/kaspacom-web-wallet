@@ -1,30 +1,26 @@
-@if (router.url === "/app/home/search") {
-  <app-search-bar></app-search-bar>
-} @else {
-  <div class="header-container-home full-height">
-    <div class="profile-container" (click)="toggleAccountSettings()">
-      <app-wallet-profile-orb
-        class="profile-container__chain-icon"
-      ></app-wallet-profile-orb>
-      <div class="profile-container__info">
-        <div class="profile-container__wallet-name-section">
-          <div class="profile-container__wallet-name">{{ walletName() }}</div>
-        </div>
-        <div class="profile-container__account-section">
-          <div class="profile-container__account-name">{{ accountName() }}</div>
-          <app-copy-button
-            [value]="walletAddress()"
-            [size]="'xs'"
-            (click)="onCopyButtonClick($event)"
-          ></app-copy-button>
-        </div>
+<div class="header-container-home full-height">
+  <div class="profile-container" (click)="toggleAccountSettings()">
+    <app-wallet-profile-orb
+      class="profile-container__chain-icon"
+    ></app-wallet-profile-orb>
+    <div class="profile-container__info">
+      <div class="profile-container__wallet-name-section">
+        <div class="profile-container__wallet-name">{{ walletName() }}</div>
+      </div>
+      <div class="profile-container__account-section">
+        <div class="profile-container__account-name">{{ accountName() }}</div>
+        <app-copy-button
+          [value]="walletAddress()"
+          [size]="'xs'"
+          (click)="onCopyButtonClick($event)"
+        ></app-copy-button>
       </div>
     </div>
-    <kc-icon
-      class="settings-icon"
-      [iconClass]="'icon-settings'"
-      [size]="'md'"
-      (click)="onSettingsClick()"
-    ></kc-icon>
   </div>
-}
+  <kc-icon
+    class="settings-icon"
+    [iconClass]="'icon-settings'"
+    [size]="'md'"
+    (click)="onSettingsClick()"
+  ></kc-icon>
+</div>

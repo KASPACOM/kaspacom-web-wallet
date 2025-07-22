@@ -1,18 +1,15 @@
-import { EnvironmentInjector, Injectable, Signal, signal } from '@angular/core';
-import { PasswordManagerService } from './password-manager.service';
-import {
-  SavedWalletAccount,
-  SavedWalletData,
-} from '../types/saved-wallet-data';
-import { KaspaNetworkActionsService } from './kaspa-netwrok-services/kaspa-network-actions.service';
-import * as _ from 'lodash';
-import { AppWallet } from '../classes/AppWallet';
-import { LOCAL_STORAGE_KEYS } from '../config/consts';
-import { AssetType, TransferableAsset } from '../types/transferable-asset';
-import { KasplexKrc20Service } from './kasplex-api/kasplex-api.service';
-import { firstValueFrom } from 'rxjs';
-import { UtilsHelper } from './utils.service';
-import { RpcConnectionStatus } from '../types/kaspa-network/rpc-connection-status.enum';
+import {EnvironmentInjector, Injectable, Signal, signal} from '@angular/core';
+import {PasswordManagerService} from './password-manager.service';
+import {SavedWalletAccount, SavedWalletData,} from '../types/saved-wallet-data';
+import {KaspaNetworkActionsService} from './kaspa-netwrok-services/kaspa-network-actions.service';
+import {AppWallet} from '../classes/AppWallet';
+import {LOCAL_STORAGE_KEYS} from '../config/consts';
+import {AssetType, TransferableAsset} from '../types/transferable-asset';
+import {KasplexKrc20Service} from './kasplex-api/kasplex-api.service';
+import {firstValueFrom} from 'rxjs';
+import {UtilsHelper} from './utils.service';
+import {RpcConnectionStatus} from '../types/kaspa-network/rpc-connection-status.enum';
+import {cloneDeep} from "lodash";
 
 @Injectable({
   providedIn: 'root',
@@ -27,7 +24,8 @@ export class WalletService {
     private readonly kasplexService: KasplexKrc20Service,
     private readonly utilsService: UtilsHelper,
     private readonly injector: EnvironmentInjector,
-  ) {}
+  ) {
+  }
 
   async addWallet(
     name: string,
@@ -102,9 +100,9 @@ export class WalletService {
     });
 
     if (result) {
-      return { sucess: true };
+      return {sucess: true};
     } else {
-      return { sucess: false, error: 'Error adding wallet' };
+      return {sucess: false, error: 'Error adding wallet'};
     }
   }
 
@@ -534,6 +532,11 @@ export class WalletService {
 
     if (walletData) {
       walletData.name = newName;
+      const currentWallet = this.currentWalletSignal()!;
+      if (walletData.id === currentWallet.getId()) {
+        currentWallet?.setName(walletData.name);
+        this.currentWalletSignal.set(cloneDeep(currentWallet));
+      }
     } else {
       return false;
     }

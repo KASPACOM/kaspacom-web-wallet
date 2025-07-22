@@ -16,7 +16,8 @@ export class AccountSettingsService {
       id: 'wallet-management',
       title: 'Manage accounts',
       canNavigateBack: false, // Wallet management is controlled by chevron in header
-      canClose: true
+      canClose: false, // Disable default close button since we have custom one
+      showTitle: false // Hide the default header completely
     });
   }
   

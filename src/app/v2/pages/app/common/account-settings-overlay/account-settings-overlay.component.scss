@@ -93,8 +93,23 @@
   }
   
   &.selected {
-    border-color: var(--primary);
+    position: relative;
+    border: 1px solid transparent;
     background: rgba(111, 199, 186, 0.1);
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      padding: 1px;
+      background: var(--gradient-2);
+      border-radius: inherit;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: xor;
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      pointer-events: none;
+    }
   }
   
   &__info {

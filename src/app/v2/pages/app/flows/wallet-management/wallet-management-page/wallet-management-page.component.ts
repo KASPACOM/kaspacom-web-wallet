@@ -1,4 +1,4 @@
-import { Component, signal, inject, effect } from '@angular/core';
+import { Component, signal, inject, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { FlowPageBaseComponent } from '../../../common/flow-page/base/flow-page-base.component';
@@ -26,36 +26,43 @@ interface WalletAccount {
 export class WalletManagementPageComponent extends FlowPageBaseComponent {
   private quickActionDialogService = inject(QuickActionDialogService);
   private walletService = inject(WalletService);
-  
+
   get config(): IFlowPageConfig {
     return {
       id: 'wallet-management',
       title: 'Manage accounts',
       canNavigateBack: false, // Explicitly disable back navigation
-      canClose: true
+      canClose: false, // Disable default close button since we'll have custom one
+      showTitle: false // Hide the default header completely
     };
   }
   // Convert wallet accounts to our interface
   wallets = signal<WalletAccount[]>([]);
-  
+
+  // Get current wallet name for header
+  currentWalletName = computed(() => {
+    const wallet = this.walletService.getCurrentWallet();
+    return wallet?.getName() || 'Wallet';
+  });
+
   constructor() {
     super();
     this.loadWalletAccounts();
   }
-  
+
   override ngOnInit(): void {
     super.ngOnInit();
   }
-  
+
   override ngOnDestroy(): void {
     super.ngOnDestroy();
   }
-  
+
   public loadWalletAccounts(): void {
     // Get all wallets and current wallet - force fresh data by calling the signal
     const allWallets = this.walletService.getAllWallets(true)() || [];
     const currentWallet = this.walletService.getCurrentWallet();
-    
+
     // Group wallets by ID to get accounts
     const walletGroups = new Map<number, AppWallet[]>();
     allWallets.forEach(wallet => {
@@ -65,7 +72,7 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
       }
       walletGroups.get(id)!.push(wallet);
     });
-    
+
     // Convert to our interface format
     const accounts: WalletAccount[] = [];
     walletGroups.forEach(walletGroup => {
@@ -94,18 +101,18 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
         });
       }
     });
-    
+
     this.wallets.set(accounts);
   }
-  
+
   async selectWallet(walletAccount: WalletAccount): Promise<void> {
     await this.walletService.selectCurrentWallet(walletAccount.wallet.getIdWithAccount());
     this.loadWalletAccounts(); // Reload to update selected state
-    
+
     // Close the wallet management page after selection
     this.closeFlow();
   }
-  
+
   editWalletAccount(walletAccount: WalletAccount): void {
     // Open the quick action dialog for editing account
     this.quickActionDialogService.openDialog({
@@ -125,7 +132,7 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
       }
     });
   }
-  
+
   deleteWallet(walletAccount: WalletAccount): void {
     // Open the delete confirmation dialog
     this.quickActionDialogService.openDialog({
@@ -144,7 +151,7 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
       }
     });
   }
-  
+
   addWallet(): void {
     // Navigate to add wallet page
     this.navigateToNextPage({
@@ -153,7 +160,7 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
       canNavigateBack: true
     });
   }
-  
+
   createWallet(): void {
     // Navigate to create wallet page
     this.navigateToNextPage({
@@ -162,7 +169,7 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
       canNavigateBack: true
     });
   }
-  
+
   manageWallets(): void {
     // Navigate to manage wallets functionality
     // You can implement the specific functionality here
@@ -174,12 +181,7 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
       canNavigateBack: true
     });
   }
-  
-  shortenAddress(address: string): string {
-    if (!address) return '';
-    return `${address.slice(0, 10)}...${address.slice(-8)}`;
-  }
-  
+
   onAddAccountClick(): void {
     // Open the quick action dialog for add account
     this.quickActionDialogService.openDialog({
@@ -195,5 +197,38 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
         }
       }
     });
+  }
+
+  onCloseClick(): void {
+    // Close the wallet management page
+    this.closeFlow();
+  }
+
+  onEditWalletName(): void {
+    const currentWallet = this.walletService.getCurrentWallet();
+    if (!currentWallet) return;
+
+    // Open the quick action dialog for editing wallet name
+    this.quickActionDialogService.openDialog({
+      id: 'edit-wallet',
+      title: 'Edit wallet name',
+      isCloseable: true,
+      data: {
+        walletName: currentWallet.getName(),
+        wallet: currentWallet,
+        isEditMode: true,
+        // Pass callback to refresh wallet name after successful operation
+        onSuccess: async () => {
+          // Give the wallet service time to update its internal state
+          await new Promise(resolve => setTimeout(resolve, 100));
+          this.loadWalletAccounts();
+        }
+      }
+    });
+  }
+
+  shortenAddress(address: string): string {
+    if (!address) return '';
+    return `${address.slice(0, 10)}...${address.slice(-8)}`;
   }
 }

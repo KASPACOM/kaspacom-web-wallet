@@ -20,8 +20,8 @@
 }
 
 .flow-page-content {
-  background: rgba(0,0,0, 0.8); // Semi-transparent vampire black
-  backdrop-filter: blur(8px);
+  background: rgba(0,0,0, 0.88); // Semi-transparent vampire black
+  backdrop-filter: blur(10px);
   border-radius: 0 0 12px 12px;
   padding: 16px;
   width: 100%;
@@ -102,7 +102,7 @@
     cursor: pointer;
     color: var(--gray-60) !important;
     transition: color 0.2s ease;
-  
+
     &:hover {
       color: var(--white) !important;
     }

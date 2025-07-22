@@ -13,10 +13,10 @@
     <div class="wrapper__nav">
       <app-wrapper-nav></app-wrapper-nav>
     </div>
-    
+
     <!-- Review Action Component for approval dialogs -->
     <review-action></review-action>
-    
+
     <!-- Flow Pages System -->
     <app-flow-page
       [isOpen]="flowPagesService.isAnyPageOpen()"
@@ -75,7 +75,7 @@
         <app-approval-flow-page></app-approval-flow-page>
       }
     </app-flow-page>
-    
+
     <!-- Quick Action Dialog System -->
     @if (quickActionDialogService.activeDialog()?.id === 'add-account' || quickActionDialogService.activeDialog()?.id === 'edit-account') {
       <app-create-wallet-account-quick-action-dialog
@@ -85,7 +85,16 @@
         (close)="onQuickActionDialogClose()"
       ></app-create-wallet-account-quick-action-dialog>
     }
-    
+
+    @if (quickActionDialogService.activeDialog()?.id === 'edit-wallet') {
+      <app-edit-wallet-quick-action-dialog
+        [isOpen]="quickActionDialogService.isAnyDialogOpen()"
+        [data]="quickActionDialogService.activeDialog()?.data"
+        (backdropClick)="onQuickActionDialogBackdropClick()"
+        (close)="onQuickActionDialogClose()"
+      ></app-edit-wallet-quick-action-dialog>
+    }
+
     @if (quickActionDialogService.activeDialog()?.id === 'delete-account') {
       <app-delete-wallet-account-quick-action-dialog
         [isOpen]="quickActionDialogService.isAnyDialogOpen()"
@@ -94,7 +103,7 @@
         (close)="onQuickActionDialogClose()"
       ></app-delete-wallet-account-quick-action-dialog>
     }
-    
+
     <!-- Notification Snackbar System -->
     <kc-snackbar></kc-snackbar>
   </div>

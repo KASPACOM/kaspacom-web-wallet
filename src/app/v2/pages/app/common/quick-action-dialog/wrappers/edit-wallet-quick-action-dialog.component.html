@@ -1,28 +1,28 @@
 <app-quick-action-dialog
   [isOpen]="isDialogOpen"
-  [title]="dialogTitle"
+  [title]="dialogTitle()"
   [isCloseable]="true"
   (backdropClick)="onBackdropClick()"
   (close)="onClose()"
 >
   <!-- Content slot for form -->
-  <div slot="content" class="account-form">
+  <div slot="content" class="wallet-form">
     <kc-input
-      [label]="'Account name'"
-      [placeholder]="'Enter account name'"
-      [(ngModel)]="accountName"
+      [label]="'Wallet name'"
+      [placeholder]="'Enter wallet name'"
+      [(ngModel)]="walletName"
     ></kc-input>
   </div>
   
   <!-- Footer slot for action button -->
   <div slot="footer">
     <kc-button
-      [text]="buttonText"
+      [text]="buttonText()"
       [variant]="'gradient_2'"
       [size]="'md'"
       [isFullWidth]="true"
-      [isDisabled]="!accountName.trim()"
-      (buttonClick)="onCreateAccount()"
+      [isDisabled]="!walletName.trim()"
+      (buttonClick)="onSaveWallet()"
     ></kc-button>
   </div>
 </app-quick-action-dialog> 

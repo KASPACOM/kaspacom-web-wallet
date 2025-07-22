@@ -8,7 +8,7 @@
   @if (loading()) {
     <div class="skeleton-loading-container flex column gap-16 full-width">
       @for (item of [1,2,3]; track item) {
-        <div class="krc721-summary-container__card flex full-width align-items-center justify-content-between p-16">
+        <div class="krc721-summary-container__card card-0 flex full-width align-items-center justify-content-between p-16">
           <div class="krc721-summary-container__nft-info flex align-items-center gap-16">
             <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false"></app-skeleton>
             <div class="flex column gap-4">
@@ -27,7 +27,7 @@
   } @else {
     @for ( nft of nfts(); track trackByNft($index, nft) ) {
     <div
-      class="krc721-summary-container__card flex full-width align-items-center justify-content-between p-16 fade-in cursor-pointer"
+      class="krc721-summary-container__card card-0 card-hover flex full-width align-items-center justify-content-between p-16 fade-in cursor-pointer"
       (click)="onNftClick(nft)"
     >
       <div
@@ -83,7 +83,7 @@
     
     @if (isLoadingMore()) {
       <div class="loading-more-container flex justify-content-center p-16 full-width">
-        <div class="krc721-summary-container__card flex full-width align-items-center justify-content-between p-16">
+        <div class="krc721-summary-container__card card-0 flex full-width align-items-center justify-content-between p-16">
           <div class="krc721-summary-container__nft-info flex align-items-center gap-16">
             <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false"></app-skeleton>
             <div class="flex column gap-4">

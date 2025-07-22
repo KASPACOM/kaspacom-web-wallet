@@ -1,0 +1,61 @@
+// Wallet Color System
+:root {
+  // Base colors
+  --base-0: #07090A;
+  --base-1: #141117;
+  --base-2: #201B26;
+  --base-3: #322A3E;
+  --base-4: #594D66;
+  --base-4: #7B6E88;
+
+  // Primary colors
+  --primary-wallet: #6fc7ba;
+  --secondary-wallet: #b43aed;
+
+  // Text colors
+  --text-base-0: #594D66;
+  --text-base-1: white;
+
+  // Icon colors
+  --icon-base-0: #ABFACE;
+  --icon-base-1: #63FFA9;
+}
+
+// Background utility classes
+.bg-base-0 { background-color: var(--base-0); }
+.bg-base-1 { background-color: var(--base-1); }
+.bg-base-2 { background-color: var(--base-2); }
+.bg-base-3 { background-color: var(--base-3); }
+.bg-base-4 { background-color: var(--base-4); }
+
+.bg-primary-wallet { background-color: var(--primary-wallet); }
+.bg-secondary-wallet { background-color: var(--secondary-wallet); }
+
+// Text color utility classes
+.text-base-0 { color: var(--text-base-0); }
+.text-base-1 { color: var(--text-base-1); }
+
+.text-primary-wallet { color: var(--primary-wallet); }
+.text-secondary-wallet { color: var(--secondary-wallet); }
+
+// Icon color utility classes
+.icon-base-0 { color: var(--icon-base-0); }
+.icon-base-1 { color: var(--icon-base-1); }
+
+// Border utility classes
+.border-base-0 { border-color: var(--base-0); }
+.border-base-1 { border-color: var(--base-1); }
+.border-base-2 { border-color: var(--base-2); }
+.border-base-3 { border-color: var(--base-3); }
+.border-base-4 { border-color: var(--base-4); }
+
+// Component classes
+.card-0 {
+  background-color: var(--base-2);
+  border-radius: 14px;
+  padding: 12px 16px;
+  transition: background-color ease-in-out 0.3s;
+  &.card-hover:hover {
+    background-color: var(--base-3);
+  }
+} 

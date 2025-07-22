@@ -1,14 +1,7 @@
 .wallet-summary-container {
   &__card {
-    background: rgba(255, 255, 255, 0.1);
     border: none;
-    border-radius: 12px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    
-    &:hover {
-      background: rgba(255, 255, 255, 0.08);
-    }
   }
 }
 

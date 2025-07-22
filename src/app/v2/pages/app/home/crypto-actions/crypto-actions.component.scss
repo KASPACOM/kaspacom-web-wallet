@@ -1,16 +1,10 @@
 .crypto-actions-container {
   &__card {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
     flex: 1;
     height: 80px;
     cursor: pointer;
     transition: all 0.3s ease;
     gap: 8px;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.08);
-    }
 
     // Target the cards (Send and Receive actions)
     kc-icon {

@@ -4,16 +4,55 @@
 $glass-bg-color: rgba(111, 199, 186, 0.1);
 $glass-border-color: rgba(111, 199, 186, 0.2);
 
+// Ambient light animations
+@keyframes ambient-float-left {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-40px, 30px) scale(1.3);
+  }
+}
+
+@keyframes ambient-float-right {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(35px, 40px) scale(1.2);
+  }
+}
+
+// Mobile-optimized animations with smaller movement
+@keyframes ambient-float-left-mobile {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-25px, 20px) scale(1.2);
+  }
+}
+
+@keyframes ambient-float-right-mobile {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(25px, 25px) scale(1.15);
+  }
+}
+
 .screen {
   width: 100%;
   height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow: visible;
 }
 
 .wrapper {
-  background-color: var(--gray-10);
+  background-color: var(--base-1);
   border-radius: 12px;
   backdrop-filter: blur(8px);
   align-items: center;
@@ -24,11 +63,65 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
   width: 480px;
   position: relative;
 
+  // Blurred circle ambient light effects
+  &::before {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: -200px;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, #6fc7ba 0%, rgba(111, 199, 186, 0.2) 25%, rgba(111, 199, 186, 0.25) 50%, transparent 100%);
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.15;
+    pointer-events: none;
+    z-index: 0;
+    animation: ambient-float-left 10s ease-in-out infinite;
+  }
+
+  &::after {
+    content: '';
+    position: fixed;
+    top: -180px;
+    right: -180px;
+    width: 380px;
+    height: 320px;
+    background: radial-gradient(circle, #8b5cf6 0%, rgba(139, 92, 246, 0.35) 25%, rgba(99, 102, 241, 0.3) 50%, rgba(59, 130, 246, 0.2) 70%, transparent 100%);
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.18;
+    pointer-events: none;
+    z-index: 0;
+    animation: ambient-float-right 13s ease-in-out infinite 3s;
+  }
+
   @include mobile {
     width: 100%;
     height: 100vh;
     height: 100dvh;
     border-radius: 0;
+    
+    // Adjust circle positions for mobile
+    &::before {
+      top: -150px;
+      left: -150px;
+      width: 380px;
+      height: 380px;
+      filter: blur(80px);
+      opacity: 0.12;
+      animation: ambient-float-left-mobile 10s ease-in-out infinite;
+    }
+
+    &::after {
+      top: -140px;
+      right: -140px;
+      width: 350px;
+      height: 350px;
+      filter: blur(75px);
+      opacity: 0.15;
+      animation: ambient-float-right-mobile 13s ease-in-out infinite 2s;
+    }
   }
 
   &__header {
@@ -36,18 +129,19 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
     flex-shrink: 0;
     padding: 8px 12px;
     padding-right: 16px;
-    background: var(--gray-0);
+    background: var(--base-2);
     backdrop-filter: blur(20px);
-    border-bottom: 1px dashed $glass-border-color;
+    border-bottom: 1px dashed rgba(#6fc7ba, 0.45);
+    box-shadow: 0 16px 32px 2px rgba(0,0,0,0.2);
     z-index: 10;
   }
 
   &__nav {
-    background: var(--gray-15);
+    background: var(--base-2);
     backdrop-filter: blur(20px);
     width: 100%;
     flex-shrink: 0;
-    border-top: 1px dashed var(--gray-25);
+    border-top: 1px dashed rgba(#6fc7ba, 0.45);
     z-index: 10;
   }
 

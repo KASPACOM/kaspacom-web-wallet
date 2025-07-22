@@ -24,7 +24,7 @@ export class CryptoActionsComponent {
     },
     {
       title: 'receive',
-      iconClass: 'icon-arrow-down',
+      iconClass: 'icon-qr',
       iconColor: '',
       action: () => this.openReceivePage(),
     },

@@ -28,7 +28,7 @@
     @if (loading()) {
       <div class="skeleton-loading-container flex column gap-16">
         @for (item of [1,2,3]; track item) {
-          <div class="utxo-card">
+          <div class="utxo-card card-0 card-hover">
             <div class="utxo-content flex justify-content-between align-items-center">
               <div class="utxo-info">
                 <app-skeleton [height]="'20px'" [width]="'120px'" [fullRound]="false" class="mb-4"></app-skeleton>
@@ -47,7 +47,7 @@
       </div>
     } @else {
       @for (utxo of utxos(); track trackByUtxo($index, utxo)) {
-        <div class="utxo-card fade-in">
+        <div class="utxo-card card-0 card-hover fade-in">
           <div class="utxo-content flex justify-content-between align-items-start">
             <div class="utxo-info flex column gap-12">
               <div class="utxo-tx-id-container flex align-items-center gap-8">

@@ -10,9 +10,9 @@
 .approval-content {
   flex: 1;
   padding: 20px;
-  overflow-y: auto;
+  // Remove overflow-y: auto and max-height to prevent double scroll
+  // Let the parent flow-page-body handle all scrolling
   min-height: 0;
-  max-height: calc(100vh - 200px);
 }
 
 // Transaction Header (matches original)
@@ -158,6 +158,10 @@ priority-fee-selection {
   gap: 12px;
   padding: 20px;
   flex-shrink: 0;
+  // Add background and border to separate from content when scrolling
+  background: var(--vampire-black);
+  border-top: 1px solid rgba(111, 199, 186, 0.1);
+  margin-top: auto; // Push to bottom
   
   .reject-button,
   .accept-button {
@@ -233,6 +237,8 @@ priority-fee-selection {
 @media (max-width: 480px) {
   .approval-content {
     padding: 16px;
+    // Ensure content doesn't get cut off on small screens
+    padding-bottom: 8px; // Reduced bottom padding since buttons have their own padding
   }
   
   .action-header {
@@ -255,5 +261,9 @@ priority-fee-selection {
   .action-buttons {
     padding: 16px;
     gap: 10px;
+    // Ensure buttons are always visible on small screens
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
   }
 } 

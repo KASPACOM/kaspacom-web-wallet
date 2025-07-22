@@ -23,6 +23,7 @@ import { FlowPagesService } from './common/services/flow-pages.service';
 import { QuickActionDialogService } from './common/services/quick-action-dialog.service';
 import { ReviewActionComponent } from '../../../components/wallet-actions-reviews/review-action/review-action.component';
 import { ApprovalFlowPageComponent } from './flows/approval/approval-flow-page/approval-flow-page.component';
+import { ReceiveFlowPageComponent } from './flows/receive/receive-flow-page.component';
 import { KcSnackbarComponent } from 'kaspacom-ui';
 
 @Component({
@@ -48,6 +49,7 @@ import { KcSnackbarComponent } from 'kaspacom-ui';
     SendKnsComponent,
     ReviewActionComponent,
     ApprovalFlowPageComponent,
+    ReceiveFlowPageComponent,
     KcSnackbarComponent
   ],
   templateUrl: './app-wrapper.component.html',

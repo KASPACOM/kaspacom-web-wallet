@@ -6,7 +6,8 @@
   color: var(--text-primary, #ffffff);
   font-family: 'Poppins', 'Roboto', sans-serif;
   padding: 32px 20px 20px 20px;
-  overflow-y: auto;
+  // Remove overflow-y: auto to prevent double scroll
+  // Let the parent flow-page-body handle all scrolling
 }
 
 // Success Header

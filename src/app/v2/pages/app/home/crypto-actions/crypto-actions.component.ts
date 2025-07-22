@@ -31,8 +31,11 @@ export class CryptoActionsComponent {
   ];
 
   private openReceivePage(): void {
-    // TODO: Implement receive page
-    console.log('Open receive page');
+    this.flowPagesService.openFlow({
+      id: 'receive',
+      title: 'Receive',
+      canNavigateBack: true
+    });
   }
 
   private openSendPage(): void {

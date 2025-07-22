@@ -1,0 +1,43 @@
+<div class="receive-container flex column full-width full-height p-24 gap-32">
+  @if (isLoading()) {
+    <!-- Loading State -->
+    <div class="receive-loading flex column align-items-center gap-24">
+      <app-skeleton [height]="'280px'" [width]="'280px'" [fullRound]="false"></app-skeleton>
+      <div class="wallet-info-loading flex column align-items-center gap-16">
+        <app-skeleton [height]="'24px'" [width]="'200px'" [fullRound]="false"></app-skeleton>
+        <app-skeleton [height]="'40px'" [width]="'300px'" [fullRound]="false"></app-skeleton>
+      </div>
+    </div>
+  } @else {
+    <!-- QR Code Section -->
+    <div class="qr-section flex column align-items-center gap-24">
+      <div class="qr-container">
+        <qrcode
+          [qrdata]="walletAddress()"
+          [width]="qrCodeSize"
+          [errorCorrectionLevel]="'M'"
+          [elementType]="'canvas'"
+          [margin]="2">
+        </qrcode>
+      </div>
+
+      <div class="qr-info flex column align-items-center gap-8">
+        <span class="text-gray-75 typo-text-1 text-center">
+          Scan this QR code to get the wallet address
+        </span>
+      </div>
+    </div>
+
+    <!-- Wallet Information Section -->
+    <div class="wallet-info flex column gap-20">
+      <!-- Wallet Address -->
+      <div class="info-row flex column gap-8">
+        <label class="info-label text-gray-60 typo-text-1">Wallet Address</label>
+        <div class="info-content flex align-items-center justify-content-between p-16 rounded-lg gap-12">
+          <span class="address-text text-white typo-text-2 text-truncate">{{ walletAddress() }}</span>
+          <app-copy-button [value]="walletAddress()" [size]="'sm'"></app-copy-button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

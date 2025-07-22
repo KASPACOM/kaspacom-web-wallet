@@ -74,6 +74,9 @@
       @if (flowPagesService.isPageOpen('action-approval')) {
         <app-approval-flow-page></app-approval-flow-page>
       }
+      @if (flowPagesService.isPageOpen('receive')) {
+        <app-receive-flow-page></app-receive-flow-page>
+      }
     </app-flow-page>
 
     <!-- Quick Action Dialog System -->

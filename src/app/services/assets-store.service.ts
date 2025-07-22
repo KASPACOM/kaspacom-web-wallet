@@ -1,6 +1,7 @@
 import { Injectable, Signal, WritableSignal, computed, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Subscription, firstValueFrom } from 'rxjs';
+import { Router } from '@angular/router';
 import { AppWallet } from '../classes/AppWallet';
 import { WalletService } from './wallet.service';
 import { KaspaNetworkActionsService } from './kaspa-netwrok-services/kaspa-network-actions.service';
@@ -78,7 +79,8 @@ export class AssetsStoreService {
     private kaspaNetworkActionsService: KaspaNetworkActionsService,
     private kasplexKrc20Service: KasplexKrc20Service,
     private krc721ApiService: Krc721ApiService,
-    private knsApiService: KnsApiService
+    private knsApiService: KnsApiService,
+    private router: Router
   ) {
     this.initializeWalletListener();
   }
@@ -109,9 +111,18 @@ export class AssetsStoreService {
 
       if (wallet) {
         console.log('[AssetsStore] Loading assets for wallet:', wallet.getIdWithAccount());
+        
+        // Navigate to homepage when wallet account changes
+        if (this.router.url.startsWith('/app/')) {
+          this.router.navigate(['/app/home']);
+        }
+        
         await this.reloadAll();
         // Start auto-reload for new wallet
         this.startAutoReload();
+      } else {
+        // If wallet is null, navigate to appropriate page
+        this.router.navigate(['/']);
       }
     }
   }

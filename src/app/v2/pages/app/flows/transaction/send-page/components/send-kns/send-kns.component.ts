@@ -1,8 +1,8 @@
-import { Component, OnInit, signal, inject, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, inject, effect } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
-import { KcInputComponent, KcCheckboxComponent, KcButtonComponent } from 'kaspacom-ui';
+import { KcInputComponent, KcCheckboxComponent, KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
 import { KnsDomainAsset } from '../../../../../../../../services/kns-api/dtos/kns-domain.dto';
@@ -15,15 +15,17 @@ import { MessagePopupService } from '../../../../../../../../services/message-po
 import { ApprovalFlowService } from '../../../../../common/services/approval-flow.service';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { firstValueFrom } from 'rxjs';
+import { UtilsHelper } from '../../../../../../../../services/utils.service';
+import { QrScannerService } from '../../../../../../../../services/qr-scanner.service';
 
 @Component({
   selector: 'app-send-kns',
   standalone: true,
-  imports: [CommonModule, KcInputComponent, KcCheckboxComponent, KcButtonComponent, FormsModule, DatePipe, SkeletonComponent],
+  imports: [CommonModule, KcInputComponent, KcCheckboxComponent, KcButtonComponent, KcIconComponent, FormsModule, DatePipe, SkeletonComponent],
   templateUrl: './send-kns.component.html',
   styleUrl: './send-kns.component.scss'
 })
-export class SendKnsComponent extends FlowPageBaseComponent implements OnInit {
+export class SendKnsComponent extends FlowPageBaseComponent implements OnInit, OnDestroy {
   private walletService = inject(WalletService);
   private knsService = inject(KnsApiService);
   private assetsStore = inject(AssetsStoreService);
@@ -31,6 +33,8 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit {
   private knsWalletActionService = inject(KnsWalletActionService);
   private messagePopupService = inject(MessagePopupService);
   private approvalFlowService = inject(ApprovalFlowService);
+  private utilsHelper = inject(UtilsHelper);
+  private qrScannerService = inject(QrScannerService);
   
   domain = signal<KnsDomainAsset | undefined>(undefined);
   loading = signal<boolean>(true);
@@ -46,7 +50,7 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit {
   // Validation states
   isAddressValid = true;
   addressErrorMessage = '';
-  
+
   constructor() {
     super();
     
@@ -74,15 +78,19 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit {
     });
   }
   
+  override ngOnDestroy() {
+    // Clean up QR scanner when component is destroyed
+    this.qrScannerService.stopScanning();
+  }
+
   override async ngOnInit(): Promise<void> {
     // Initial load will be handled by the effect
   }
   
   get config(): IFlowPageConfig {
-    const currentDomain = this.domain();
     return {
       id: 'send-kns',
-      title: `Send ${currentDomain?.asset || 'KNS'}`,
+      title: `Send ${this.domain()?.asset || 'Domain'}`,
       canNavigateBack: true
     };
   }
@@ -95,6 +103,24 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit {
     this.walletAddress = value;
     this.validateAddress();
   }
+
+  onQrScanClick(): void {
+    if (this.qrScannerService.isCurrentlyScanning()) {
+      this.qrScannerService.stopScanning();
+    } else {
+      this.qrScannerService.startScanning({
+        scannerId: 'qr-scanner-kns',
+        title: 'Scan KNS Address',
+        onSuccess: (address: string) => {
+          this.walletAddress = address;
+          this.validateAddress();
+        },
+        onError: (error: string) => {
+          console.error('QR scanning error:', error);
+        }
+      });
+    }
+  }
   
   private validateAddress(): void {
     if (!this.walletAddress.trim()) {
@@ -103,10 +129,9 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit {
       return;
     }
     
-    // Basic address validation (can be enhanced with proper address validation)
-    if (this.walletAddress.trim().length < 10) {
+    if (!this.utilsHelper.isValidWalletAddress(this.walletAddress)) {
       this.isAddressValid = false;
-      this.addressErrorMessage = 'Invalid address format';
+      this.addressErrorMessage = 'Invalid wallet address format';
       return;
     }
     

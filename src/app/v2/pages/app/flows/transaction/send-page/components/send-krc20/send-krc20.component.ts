@@ -1,8 +1,8 @@
-import { Component, inject, OnInit, signal, effect } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
-import { KcInputComponent, KcCheckboxComponent, KcButtonComponent } from 'kaspacom-ui';
+import { KcInputComponent, KcCheckboxComponent, KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
 import { IToken } from '../../../../../common/interfaces/token.interface';
 import { TokenLogoComponent } from '../../../../../common/token-logo/token-logo.component';
@@ -17,15 +17,16 @@ import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { firstValueFrom } from 'rxjs';
 import { KaspaNetworkActionsService } from '../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { AssetsStoreService } from '../../../../../../../../services/assets-store.service';
+import { QrScannerService } from '../../../../../../../../services/qr-scanner.service';
 
 @Component({
   selector: 'app-send-krc20',
   standalone: true,
-  imports: [CommonModule, KcInputComponent, KcCheckboxComponent, KcButtonComponent, FormsModule, TokenLogoComponent],
+  imports: [CommonModule, KcInputComponent, KcCheckboxComponent, KcButtonComponent, KcIconComponent, FormsModule, TokenLogoComponent],
   templateUrl: './send-krc20.component.html',
   styleUrl: './send-krc20.component.scss'
 })
-export class SendKrc20Component extends FlowPageBaseComponent implements OnInit {
+export class SendKrc20Component extends FlowPageBaseComponent implements OnInit, OnDestroy {
   private walletService = inject(WalletService);
   private walletActionService = inject(WalletActionService);
   private krc20WalletActionService = inject(Krc20WalletActionService);
@@ -35,6 +36,7 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit 
   private approvalFlowService = inject(ApprovalFlowService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private assetsStore = inject(AssetsStoreService);
+  private qrScannerService = inject(QrScannerService);
 
   // Token data
   token = signal<IToken | undefined>(undefined);
@@ -91,10 +93,15 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit 
     }
   }
 
+  override ngOnDestroy(): void {
+    super.ngOnDestroy();
+    this.qrScannerService.stopScanning();
+  }
+
   get config(): IFlowPageConfig {
     return {
       id: 'send-krc20',
-      title: `Send ${this.token()?.name || 'KRC20'}`,
+      title: `Send ${this.token()?.symbol || 'Token'}`,
       canNavigateBack: true
     };
   }
@@ -150,13 +157,13 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit 
     this.validateAddress();
   }
 
-  onAmountChange(amount: number): void {
-    this.tokenAmount = amount;
+  onAmountChange(amount: any): void {
+    this.tokenAmount = amount || null;
     this.validateAmount();
   }
 
-  onRbfChange(checked: boolean): void {
-    this.replaceByFee = checked;
+  onRbfChange(rbf: boolean): void {
+    this.replaceByFee = rbf;
   }
 
   onMaxAmountClick(): void {
@@ -164,6 +171,24 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit 
     this.tokenAmount = this.availableBalance;
     this.validateAmount();
     console.log('Token amount set to:', this.tokenAmount);
+  }
+
+  onQrScanClick(): void {
+    if (this.qrScannerService.isCurrentlyScanning()) {
+      this.qrScannerService.stopScanning();
+    } else {
+      this.qrScannerService.startScanning({
+        scannerId: 'qr-scanner-krc20',
+        title: 'Scan KRC20 Address',
+        onSuccess: (address: string) => {
+          this.walletAddress = address;
+          this.validateAddress();
+        },
+        onError: (error: string) => {
+          console.error('QR scanning error:', error);
+        }
+      });
+    }
   }
 
   private validateAddress(): void {

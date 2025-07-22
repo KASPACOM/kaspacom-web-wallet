@@ -1,8 +1,8 @@
-import { Component, OnInit, signal, inject, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
-import { KcInputComponent, KcCheckboxComponent, KcButtonComponent } from 'kaspacom-ui';
+import { KcInputComponent, KcCheckboxComponent, KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
 import { INft } from '../../../../../common/interfaces/nft.interface';
@@ -15,15 +15,17 @@ import { MessagePopupService } from '../../../../../../../../services/message-po
 import { ApprovalFlowService } from '../../../../../common/services/approval-flow.service';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { firstValueFrom } from 'rxjs';
+import { UtilsHelper } from '../../../../../../../../services/utils.service';
+import { QrScannerService } from '../../../../../../../../services/qr-scanner.service';
 
 @Component({
   selector: 'app-send-nft',
   standalone: true,
-  imports: [CommonModule, KcInputComponent, KcCheckboxComponent, KcButtonComponent, FormsModule, SkeletonComponent],
+  imports: [CommonModule, KcInputComponent, KcCheckboxComponent, KcButtonComponent, KcIconComponent, FormsModule, SkeletonComponent],
   templateUrl: './send-nft.component.html',
   styleUrl: './send-nft.component.scss'
 })
-export class SendNftComponent extends FlowPageBaseComponent implements OnInit {
+export class SendNftComponent extends FlowPageBaseComponent implements OnInit, OnDestroy {
   private walletService = inject(WalletService);
   private krc721Service = inject(Krc721ApiService);
   private assetsStore = inject(AssetsStoreService);
@@ -31,6 +33,8 @@ export class SendNftComponent extends FlowPageBaseComponent implements OnInit {
   private krc721WalletActionService = inject(Krc721WalletActionService);
   private messagePopupService = inject(MessagePopupService);
   private approvalFlowService = inject(ApprovalFlowService);
+  private utilsHelper = inject(UtilsHelper);
+  private qrScannerService = inject(QrScannerService);
   
   nft = signal<INft | undefined>(undefined);
   loading = signal<boolean>(true);
@@ -46,7 +50,7 @@ export class SendNftComponent extends FlowPageBaseComponent implements OnInit {
   // Validation states
   isAddressValid = true;
   addressErrorMessage = '';
-  
+
   constructor() {
     super();
     
@@ -74,15 +78,15 @@ export class SendNftComponent extends FlowPageBaseComponent implements OnInit {
     });
   }
   
-  override async ngOnInit(): Promise<void> {
-    // Initial load will be handled by the effect
+  override ngOnDestroy() {
+    // Clean up QR scanner when component is destroyed
+    this.qrScannerService.stopScanning();
   }
-  
+
   get config(): IFlowPageConfig {
-    const currentNft = this.nft();
     return {
       id: 'send-nft',
-      title: `Send ${currentNft?.name || currentNft?.tick || 'NFT'}`,
+      title: `Send ${this.nft()?.name || 'NFT'}`,
       canNavigateBack: true
     };
   }
@@ -95,7 +99,25 @@ export class SendNftComponent extends FlowPageBaseComponent implements OnInit {
     this.walletAddress = value;
     this.validateAddress();
   }
-  
+
+  onQrScanClick(): void {
+    if (this.qrScannerService.isCurrentlyScanning()) {
+      this.qrScannerService.stopScanning();
+    } else {
+      this.qrScannerService.startScanning({
+        scannerId: 'qr-scanner-nft',
+        title: 'Scan NFT Address',
+        onSuccess: (address: string) => {
+          this.walletAddress = address;
+          this.validateAddress();
+        },
+        onError: (error: string) => {
+          console.error('QR scanning error:', error);
+        }
+      });
+    }
+  }
+
   private validateAddress(): void {
     if (!this.walletAddress.trim()) {
       this.isAddressValid = false;
@@ -103,10 +125,9 @@ export class SendNftComponent extends FlowPageBaseComponent implements OnInit {
       return;
     }
     
-    // Basic address validation (can be enhanced with proper address validation)
-    if (this.walletAddress.trim().length < 10) {
+    if (!this.utilsHelper.isValidWalletAddress(this.walletAddress)) {
       this.isAddressValid = false;
-      this.addressErrorMessage = 'Invalid address format';
+      this.addressErrorMessage = 'Invalid wallet address format';
       return;
     }
     

@@ -45,7 +45,19 @@
         [placeholder]="'Enter recipient wallet address'"
         [type]="'text'"
         [isFullWidth]="true"
+        [isValid]="isAddressValid"
+        [invalidReason]="addressErrorMessage"
+        [isDisabled]="isLoading"
+        [ngModel]="walletAddress"
         (valueChange)="onWalletAddressChange($event)">
+        <div (click)="!isLoading && onQrScanClick()" [class]="isLoading ? 'qr-button disabled' : 'qr-button clickable'" rightSideSlot>
+          <kc-icon 
+            [iconClass]="'icon-qr'" 
+            [size]="'xs'" 
+            [color]="'var(--gray-60)'"
+            class="qr-icon">
+          </kc-icon>
+        </div>
       </kc-input>
     </div>
 

@@ -1,9 +1,10 @@
-import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
-import { KcInputComponent, KcCheckboxComponent, KcButtonComponent } from 'kaspacom-ui';
+import { KcInputComponent, KcCheckboxComponent, KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
+import { TokenLogoComponent } from '../../../../../common/token-logo/token-logo.component';
 import { WalletService } from '../../../../../../../../services/wallet.service';
 import { WalletActionService } from '../../../../../../../../services/wallet-action.service';
 import { KaspaNetworkActionsService, MINIMAL_AMOUNT_TO_SEND } from '../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
@@ -12,15 +13,17 @@ import { MessagePopupService } from '../../../../../../../../services/message-po
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { ApprovalFlowService } from '../../../../../common/services/approval-flow.service';
 import { AssetsStoreService } from '../../../../../../../../services/assets-store.service';
+import { QrScannerService } from '../../../../../../../../services/qr-scanner.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-send-kaspa',
   standalone: true,
-  imports: [CommonModule, KcInputComponent, KcCheckboxComponent, KcButtonComponent, FormsModule],
+  imports: [CommonModule, KcInputComponent, KcCheckboxComponent, KcButtonComponent, KcIconComponent, FormsModule, TokenLogoComponent],
   templateUrl: './send-kaspa.component.html',
   styleUrl: './send-kaspa.component.scss'
 })
-export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit {
+export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit, OnDestroy {
   private walletService = inject(WalletService);
   private walletActionService = inject(WalletActionService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
@@ -28,6 +31,7 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit 
   private messagePopupService = inject(MessagePopupService);
   private approvalFlowService = inject(ApprovalFlowService);
   private assetsStore = inject(AssetsStoreService);
+  private qrScannerService = inject(QrScannerService);
 
   // Form data
   walletAddress: string = '';
@@ -45,6 +49,16 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit 
   isAmountValid = true;
   addressErrorMessage = '';
   amountErrorMessage = '';
+
+  // Available balance for display and max functionality
+  availableBalance = computed(() => {
+    const currentWallet = this.walletService.getCurrentWallet();
+    if (!currentWallet) {
+      return 0;
+    }
+    const currentBalance = currentWallet.getCurrentWalletStateBalanceSignalValue()?.mature || 0n;
+    return this.kaspaNetworkActionsService.sompiToNumber(currentBalance);
+  });
 
   constructor() {
     super();
@@ -65,6 +79,41 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit 
     });
   }
 
+  override ngOnInit() {
+    // React to page configuration changes
+    effect(() => {
+      const currentPage = this.flowPagesService.activePage();
+      if (currentPage?.id === 'send-kaspa') {
+        // Reset form when navigating to this page
+        this.walletAddress = '';
+        this.kaspaAmount = null;
+        this.replaceByFee = false;
+        this.validateAddress();
+        this.validateAmount();
+      }
+    });
+
+    // Effect to watch for approval flow completion
+    effect(() => {
+      const completion = this.approvalFlowService.completion();
+      if (completion && this.waitingForApprovalCompletion) {
+        this.waitingForApprovalCompletion = false;
+        
+        if (completion.success) {
+          // Transaction was successful, navigate back
+          this.messagePopupService.showSuccess('Kaspa sent successfully!');
+          this.navigateBack();
+        }
+        // Error cases are handled by the approval flow itself
+      }
+    });
+  }
+
+  override ngOnDestroy() {
+    // Clean up QR scanner when component is destroyed
+    this.qrScannerService.stopScanning();
+  }
+
   get config(): IFlowPageConfig {
     return {
       id: 'send-kaspa',
@@ -79,12 +128,67 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit 
   }
 
   onAmountChange(value: any): void {
-    this.kaspaAmount = value ? Number(value) : null;
+    this.kaspaAmount = value || null;
     this.validateAmount();
   }
 
-  onRbfChange(value: any): void {
-    this.replaceByFee = Boolean(value);
+  onRbfChange(value: boolean): void {
+    this.replaceByFee = value;
+  }
+
+  onMaxAmountClick(): void {
+    console.log('Max button clicked, available balance:', this.availableBalance());
+    this.kaspaAmount = this.availableBalance();
+    this.validateAmount();
+    console.log('Kaspa amount set to:', this.kaspaAmount);
+  }
+
+  onQrScanClick(): void {
+    if (this.qrScannerService.isCurrentlyScanning()) {
+      this.qrScannerService.stopScanning();
+    } else {
+      this.qrScannerService.startScanning({
+        scannerId: 'qr-scanner-kaspa',
+        title: 'Scan Kaspa Address',
+        onSuccess: (address: string) => {
+          this.walletAddress = address;
+          this.validateAddress();
+        },
+        onError: (error: string) => {
+          console.error('QR scanning error:', error);
+        }
+      });
+    }
+  }
+
+  private validateAmount(): void {
+    if (this.kaspaAmount === null || this.kaspaAmount === undefined) {
+      this.isAmountValid = false;
+      this.amountErrorMessage = 'Amount is required';
+      return;
+    }
+
+    if (this.kaspaAmount <= 0) {
+      this.isAmountValid = false;
+      this.amountErrorMessage = 'Amount must be greater than 0';
+      return;
+    }
+
+    const minimalAmount = this.kaspaNetworkActionsService.sompiToNumber(MINIMAL_AMOUNT_TO_SEND);
+    if (this.kaspaAmount < minimalAmount) {
+      this.isAmountValid = false;
+      this.amountErrorMessage = `Amount must be at least ${minimalAmount} KAS`;
+      return;
+    }
+
+    if (this.kaspaAmount > this.availableBalance()) {
+      this.isAmountValid = false;
+      this.amountErrorMessage = 'Insufficient balance';
+      return;
+    }
+
+    this.isAmountValid = true;
+    this.amountErrorMessage = '';
   }
 
   private validateAddress(): void {
@@ -104,47 +208,15 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit 
     this.addressErrorMessage = '';
   }
 
-  private validateAmount(): void {
-    if (!this.kaspaAmount || this.kaspaAmount <= 0) {
-      this.isAmountValid = false;
-      this.amountErrorMessage = 'Amount must be greater than 0';
-      return;
-    }
-
-    const amountInSompi = this.kaspaNetworkActionsService.kaspaToSompiFromNumber(this.kaspaAmount);
-    const minAmountInKaspa = this.kaspaNetworkActionsService.sompiToNumber(MINIMAL_AMOUNT_TO_SEND);
-
-    if (amountInSompi < MINIMAL_AMOUNT_TO_SEND) {
-      this.isAmountValid = false;
-      this.amountErrorMessage = `Minimum amount is ${minAmountInKaspa} KAS`;
-      return;
-    }
-
-    // Check if wallet has sufficient balance
-    const currentWallet = this.walletService.getCurrentWallet();
-    if (currentWallet) {
-      const currentBalance = currentWallet.getCurrentWalletStateBalanceSignalValue()?.mature || 0n;
-      const balanceInKaspa = this.kaspaNetworkActionsService.sompiToNumber(currentBalance);
-
-      if (this.kaspaAmount > balanceInKaspa) {
-        this.isAmountValid = false;
-        this.amountErrorMessage = 'Insufficient balance';
-        return;
-      }
-    }
-
-    this.isAmountValid = true;
-    this.amountErrorMessage = '';
-  }
-
-  private isFormValid(): boolean {
+  async onSendClick(): Promise<void> {
     this.validateAddress();
     this.validateAmount();
-    return this.isAddressValid && this.isAmountValid && !this.isLoading;
-  }
 
-  async onSendClick(): Promise<void> {
-    if (!this.isFormValid()) {
+    if (!this.isAddressValid || !this.isAmountValid) {
+      return;
+    }
+
+    if (this.isLoading) {
       return;
     }
 

@@ -5,6 +5,13 @@
   padding: 16px 0;
 }
 
+.kaspa-info-header {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
 .send-kaspa-form {
   display: flex;
   flex-direction: column;
@@ -19,6 +26,75 @@
   // Add spacing between fields
   &:not(:last-child) {
     margin-bottom: 8px;
+  }
+}
+
+.max-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 100%;
+  
+  span {
+    color: var(--gray-30);
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 1;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+  
+  &.clickable {
+    cursor: pointer;
+    
+    span:hover {
+      color: white;
+      background: rgba(255, 255, 255, 0.15);
+    }
+  }
+  
+  &.disabled {
+    cursor: not-allowed;
+    
+    span {
+      opacity: 0.5;
+    }
+  }
+}
+
+.qr-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 100%;
+  
+  .qr-icon {
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    color: var(--gray-60);
+  }
+  
+  &.clickable {
+    cursor: pointer;
+    
+    .qr-icon:hover {
+      color: white;
+      background: rgba(255, 255, 255, 0.15);
+    }
+  }
+  
+  &.disabled {
+    cursor: not-allowed;
+    
+    .qr-icon {
+      opacity: 0.5;
+    }
   }
 }
 

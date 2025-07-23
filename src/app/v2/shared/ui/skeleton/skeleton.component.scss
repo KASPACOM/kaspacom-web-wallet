@@ -1,9 +1,9 @@
 .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(210, 194, 255, 0.05) 25%,
-    rgba(210, 194, 255, 0.12) 50%,
-    rgba(210, 194, 255, 0.05) 75%
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.05) 75%
   );
   background-size: 200% 100%;
   border-radius: 8px;
@@ -20,16 +20,16 @@
   &.flex.column {
     gap: 16px !important; // Ensure proper gap for column layouts
   }
-  
+
   // Specific spacing for different contexts
   &.home-tab-skeleton {
     gap: 20px !important;
   }
-  
+
   &.activity-skeleton {
     gap: 16px !important;
   }
-  
+
   &.send-list-skeleton {
     gap: 16px !important;
   }
@@ -40,11 +40,11 @@
   &.skeleton-gap-sm {
     gap: 12px !important;
   }
-  
+
   &.skeleton-gap-md {
     gap: 16px !important;
   }
-  
+
   &.skeleton-gap-lg {
     gap: 20px !important;
   }

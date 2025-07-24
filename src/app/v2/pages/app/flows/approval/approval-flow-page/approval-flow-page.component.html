@@ -1,4 +1,4 @@
-<div *ngIf="approvalConfig()" [ngSwitch]="currentState()">
+<div *ngIf="approvalConfig()" [ngSwitch]="currentState()" class="approval-flow-root">
   
   <!-- Approval State -->
   <div *ngSwitchCase="ApprovalFlowState.APPROVAL" class="approval-flow-container">

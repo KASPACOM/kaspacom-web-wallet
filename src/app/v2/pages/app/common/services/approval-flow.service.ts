@@ -140,7 +140,7 @@ export class ApprovalFlowService {
         
         // Emit completion event for components to listen to
         this.completionSignal.set({ success: true, result });
-      }, 600);
+      }, 1000);
     }
   }
 

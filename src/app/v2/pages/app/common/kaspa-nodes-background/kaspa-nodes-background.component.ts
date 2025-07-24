@@ -110,7 +110,7 @@ export class KaspaNodesBackgroundComponent implements AfterViewInit, OnDestroy {
   private readonly defaultConfig: Required<KaspaNodesConfig> = {
     // Use kaspacom UI colors
     nodeColor: 'var(--kaspa-20)', // This will be resolved to the actual color value
-    lineColor: 'var(--gray-25)',
+    lineColor: '#6e6e6e', // More visible gray color for connection lines
     nodeCount: 24, // Fixed to always show 24 nodes
     connectionProbability: 0.6,
     maxDistance: 150,

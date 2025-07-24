@@ -25,21 +25,21 @@
   min-height: 0;
   overflow-y: auto;
   padding: 0 20px;
-  
+
   // Custom scrollbar
   &::-webkit-scrollbar {
     width: 6px;
   }
-  
+
   &::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 3px;
   }
-  
+
   &::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 3px;
-    
+
     &:hover {
       background: rgba(255, 255, 255, 0.3);
     }
@@ -50,13 +50,6 @@
 .transaction-header {
   text-align: center;
   word-break: break-word;
-
-  .header-icon {
-    margin-bottom: 16px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
 
   h2 {
     margin: 0;
@@ -239,28 +232,6 @@ priority-fee-selection {
 // Action buttons styling
 .action-buttons {
   display: flex;
-  gap: 16px;
-  padding: 24px 20px 20px 20px;
-  // Enhanced background with blur effect for modern look
-  background: rgba(7, 9, 10, 0.95);
-  backdrop-filter: blur(10px);
-  border-top: 1px solid var(--gray-20);
-  border-radius: 12px;
-  // Add subtle shadow to separate from content
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
-
-  .reject-button,
-  .accept-button {
-    flex: 1;
-    // Enhanced button spacing and styling
-    min-height: 48px;
-    
-    // Add subtle hover enhancements
-    &:hover {
-      transform: translateY(-1px);
-      transition: all 0.2s ease;
-    }
-  }
 }
 
 // Ensure proper spacing and layout
@@ -324,7 +295,7 @@ app-approval-success-page {
   .approval-flow-container {
     padding: 8px 0;
   }
-  
+
   .approval-flow-content {
     padding: 0 16px;
     gap: 20px;

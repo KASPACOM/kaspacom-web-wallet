@@ -1,14 +1,11 @@
 <div *ngIf="approvalConfig()" [ngSwitch]="currentState()" class="approval-flow-root">
-  
+
   <!-- Approval State -->
   <div *ngSwitchCase="ApprovalFlowState.APPROVAL" class="approval-flow-container">
     <div class="approval-flow-content">
-      
+
       <!-- Transaction Header -->
       <div class="transaction-header">
-        <div class="header-icon">
-          <kc-icon iconClass="icon-check-circle" size="lg" color="var(--kaspa-20)"></kc-icon>
-        </div>
         <h2 *ngIf="isActionHasPriorityFee()">Transaction Review</h2>
         <h2 *ngIf="!isActionHasPriorityFee()">Action Review</h2>
         <p>Please review the details below before proceeding.</p>
@@ -21,18 +18,18 @@
             <h3 class="action-title">{{ actionDisplay()!.title }}</h3>
             <h4 class="action-subtitle" *ngIf="actionDisplay()!.subtitle">{{ actionDisplay()!.subtitle }}</h4>
           </div>
-          
+
           <!-- Action Detail Rows -->
           <div class="action-details-grid">
             <ng-container *ngFor="let row of actionDisplay()!.rows">
-              
+
               <!-- Input Fields (checkboxes) -->
               <div *ngIf="row.inputField; else noInputField" class="detail-card checkbox-container">
                 <div *ngIf="row.inputField.fieldType === InputFieldType.CHECKBOX">
                   <label class="checkbox-label">
-                    <input 
-                      type="checkbox" 
-                      [(ngModel)]="additionalParams[row.inputField.fieldParam]" 
+                    <input
+                      type="checkbox"
+                      [(ngModel)]="additionalParams[row.inputField.fieldParam]"
                       [checked]="row.fieldValue === 'true'">
                     <span>{{ row.fieldName }}</span>
                   </label>
@@ -69,7 +66,7 @@
 
       <!-- Priority Fee Selection -->
       <ng-container *ngIf="isActionHasPriorityFee()">
-        <priority-fee-selection 
+        <priority-fee-selection
           [action]="approvalConfig()!.action"
           [wallet]="wallet()"
           (priorityFeeSelected)="setCurrentPriorityFee($event)">
@@ -79,9 +76,9 @@
       <!-- Action Buttons - Last element that gets pushed to bottom -->
       <div class="action-buttons-section">
         <div class="action-buttons">
-          <kc-button 
+          <kc-button
             [text]="isLoading ? 'Processing...' : 'Approve'"
-            variant="primary" 
+            variant="primary"
             size="lg"
             [isFullWidth]="true"
             [isDisabled]="!isAvailableForApproval()"
@@ -89,10 +86,10 @@
             (buttonClick)="onAccept()"
             class="accept-button">
           </kc-button>
-          
-          <kc-button 
+
+          <kc-button
             [text]="'Reject'"
-            variant="tertiary" 
+            variant="tertiary"
             size="lg"
             [isFullWidth]="true"
             [isDisabled]="isLoading"
@@ -109,7 +106,7 @@
   </app-approval-loading-page>
 
   <!-- Success State -->
-  <app-approval-success-page 
+  <app-approval-success-page
     *ngSwitchCase="ApprovalFlowState.SUCCESS"
     [actionResult]="approvalConfig()!.result!">
   </app-approval-success-page>
@@ -119,9 +116,9 @@
     <div class="error-content">
       <h2>Transaction Failed</h2>
       <p>{{ approvalConfig()?.error || 'An unexpected error occurred' }}</p>
-      <kc-button 
+      <kc-button
         [text]="'Close'"
-        variant="secondary" 
+        variant="secondary"
         size="lg"
         [isFullWidth]="true"
         (buttonClick)="approvalFlowService.closeApproval()">
@@ -129,4 +126,4 @@
     </div>
   </div>
 
-</div> 
+</div>

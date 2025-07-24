@@ -108,9 +108,8 @@ export class KaspaNodesBackgroundComponent implements AfterViewInit, OnDestroy {
   private resizeObserver?: ResizeObserver;
   
   private readonly defaultConfig: Required<KaspaNodesConfig> = {
-    // Use kaspacom UI colors
-    nodeColor: 'var(--kaspa-20)', // This will be resolved to the actual color value
-    lineColor: '#6e6e6e', // More visible gray color for connection lines
+    nodeColor: '#6FC7BA', // Kaspa teal color for nodes
+    lineColor: '#6e6e6e', // Gray color for connection lines
     nodeCount: 24, // Fixed to always show 24 nodes
     connectionProbability: 0.6,
     maxDistance: 150,
@@ -199,9 +198,7 @@ export class KaspaNodesBackgroundComponent implements AfterViewInit, OnDestroy {
 
   private drawConnections() {
     const config = this.mergedConfig;
-    // Resolve CSS variable to actual color
-    const lineColor = this.resolveCSSColor(config.lineColor);
-    this.ctx.strokeStyle = lineColor;
+    this.ctx.strokeStyle = config.lineColor;
     this.ctx.lineWidth = 1.5;
     
     for (let i = 0; i < this.nodes.length; i++) {
@@ -217,7 +214,7 @@ export class KaspaNodesBackgroundComponent implements AfterViewInit, OnDestroy {
         if (distance < config.maxDistance) {
           const distanceOpacity = 1 - (distance / config.maxDistance);
           const averageNodeOpacity = (this.nodes[i].opacity + this.nodes[j].opacity) / 2;
-          this.ctx.globalAlpha = distanceOpacity * averageNodeOpacity * 0.4; // Reduced opacity for better readability
+          this.ctx.globalAlpha = distanceOpacity * averageNodeOpacity * 0.7; // Increased opacity for better visibility
           
           this.ctx.beginPath();
           this.ctx.moveTo(this.nodes[i].x, this.nodes[i].y);
@@ -229,16 +226,7 @@ export class KaspaNodesBackgroundComponent implements AfterViewInit, OnDestroy {
     this.ctx.globalAlpha = 1;
   }
 
-  private resolveCSSColor(color: string): string {
-    // If it's a CSS variable, try to resolve it
-    if (color.startsWith('var(')) {
-      const computedStyle = getComputedStyle(document.documentElement);
-      const variableName = color.slice(4, -1); // Remove 'var(' and ')'
-      const resolvedColor = computedStyle.getPropertyValue(variableName).trim();
-      return resolvedColor || '#404040'; // Fallback color
-    }
-    return color;
-  }
+
 
   private animate = () => {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -247,10 +235,9 @@ export class KaspaNodesBackgroundComponent implements AfterViewInit, OnDestroy {
     this.drawConnections();
     
     // Update and draw nodes
-    const nodeColor = this.resolveCSSColor(this.mergedConfig.nodeColor);
     this.nodes.forEach(node => {
       node.update(this.canvas.width, this.canvas.height);
-      node.draw(this.ctx, nodeColor);
+      node.draw(this.ctx, this.mergedConfig.nodeColor);
     });
     
     this.animationId = requestAnimationFrame(this.animate);

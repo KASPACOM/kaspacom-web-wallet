@@ -6,27 +6,49 @@
   flex-direction: column;
 }
 
+// Main container - matches send-kaspa-content pattern
 .approval-flow-container {
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-height: 0;
   color: var(--text-primary, #ffffff);
   font-family: 'Poppins', 'Roboto', sans-serif;
+  padding: 16px 0;
 }
 
-.approval-content {
+// Content container - matches send-kaspa-form pattern
+.approval-flow-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   flex: 1;
-  padding: 20px;
-  // Remove overflow-y: auto and max-height to prevent double scroll
-  // Let the parent flow-page-body handle all scrolling
   min-height: 0;
+  overflow-y: auto;
+  padding: 0 20px;
+  
+  // Custom scrollbar
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
 }
 
 // Transaction Header (improved with icon)
 .transaction-header {
   text-align: center;
-  margin-bottom: 24px;
   word-break: break-word;
 
   .header-icon {
@@ -58,7 +80,6 @@
   border: 1px solid var(--gray-15);
   border-radius: 12px;
   padding: 20px;
-  margin-bottom: 20px;
   transition: all 0.3s ease;
 
   &:hover {
@@ -180,7 +201,6 @@
   background: rgba(230, 162, 35, 0.1);
   border: 1px solid var(--orange-20);
   border-radius: 12px;
-  margin-bottom: 20px;
 
   kc-icon {
     margin-bottom: 16px;
@@ -204,26 +224,28 @@
 
 // Priority Fee Selection
 priority-fee-selection {
-  margin-top: 20px;
   display: block;
 }
 
 // Clean and modern design for approval flow
 
-// Action Buttons - Enhanced Design
+// Button section that gets pushed to bottom - matches send-kaspa pattern
+.action-buttons-section {
+  margin-top: auto;
+  padding-top: 16px;
+  flex-shrink: 0;
+}
+
+// Action buttons styling
 .action-buttons {
   display: flex;
   gap: 16px;
   padding: 24px 20px 20px 20px;
-  flex-shrink: 0;
   // Enhanced background with blur effect for modern look
   background: rgba(7, 9, 10, 0.95);
   backdrop-filter: blur(10px);
   border-top: 1px solid var(--gray-20);
-  // Make buttons sticky to bottom like mobile apps
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
+  border-radius: 12px;
   // Add subtle shadow to separate from content
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
 
@@ -250,15 +272,7 @@ priority-fee-selection {
   }
 }
 
-// Scrollbar Styling
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(111, 199, 186, 0.1);
-  border-radius: 3px;
-}
+// Scrollbar styling is now handled within approval-flow-content
 
 // Error State Styles
 .error-container {
@@ -303,21 +317,17 @@ app-approval-success-page {
   }
 }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(111, 199, 186, 0.3);
-  border-radius: 3px;
-
-  &:hover {
-    background: rgba(111, 199, 186, 0.5);
-  }
-}
+// Scrollbar thumb styling is now handled within approval-flow-content
 
 // Responsive Design
 @media (max-width: 480px) {
-  .approval-content {
-    padding: 16px;
-    // Ensure content doesn't get cut off on small screens
-    padding-bottom: 8px; // Reduced bottom padding since buttons have their own padding
+  .approval-flow-container {
+    padding: 8px 0;
+  }
+  
+  .approval-flow-content {
+    padding: 0 16px;
+    gap: 20px;
   }
 
   .action-header {
@@ -337,9 +347,12 @@ app-approval-success-page {
     padding: 16px;
   }
 
+  .action-buttons-section {
+    padding-top: 12px;
+  }
+
   .action-buttons {
     padding: 16px;
     gap: 10px;
-    // Sticky positioning is now applied globally above
   }
 }

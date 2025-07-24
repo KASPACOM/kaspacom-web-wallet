@@ -2,7 +2,7 @@
   
   <!-- Approval State -->
   <div *ngSwitchCase="ApprovalFlowState.APPROVAL" class="approval-flow-container">
-    <div class="approval-content">
+    <div class="approval-flow-content">
       
       <!-- Transaction Header -->
       <div class="transaction-header">
@@ -75,30 +75,32 @@
           (priorityFeeSelected)="setCurrentPriorityFee($event)">
         </priority-fee-selection>
       </ng-container>
-    </div>
 
-    <!-- Action Buttons -->
-    <div class="action-buttons">
-      <kc-button 
-        [text]="isLoading ? 'Processing...' : 'Approve'"
-        variant="primary" 
-        size="lg"
-        [isFullWidth]="true"
-        [isDisabled]="!isAvailableForApproval()"
-        [isLoading]="isLoading"
-        (buttonClick)="onAccept()"
-        class="accept-button">
-      </kc-button>
-      
-      <kc-button 
-        [text]="'Reject'"
-        variant="tertiary" 
-        size="lg"
-        [isFullWidth]="true"
-        [isDisabled]="isLoading"
-        (buttonClick)="onReject()"
-        class="reject-button">
-      </kc-button>
+      <!-- Action Buttons - Last element that gets pushed to bottom -->
+      <div class="action-buttons-section">
+        <div class="action-buttons">
+          <kc-button 
+            [text]="isLoading ? 'Processing...' : 'Approve'"
+            variant="primary" 
+            size="lg"
+            [isFullWidth]="true"
+            [isDisabled]="!isAvailableForApproval()"
+            [isLoading]="isLoading"
+            (buttonClick)="onAccept()"
+            class="accept-button">
+          </kc-button>
+          
+          <kc-button 
+            [text]="'Reject'"
+            variant="tertiary" 
+            size="lg"
+            [isFullWidth]="true"
+            [isDisabled]="isLoading"
+            (buttonClick)="onReject()"
+            class="reject-button">
+          </kc-button>
+        </div>
+      </div>
     </div>
   </div>
 

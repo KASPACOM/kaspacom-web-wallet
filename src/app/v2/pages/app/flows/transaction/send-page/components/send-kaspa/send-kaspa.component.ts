@@ -50,6 +50,10 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit,
   addressErrorMessage = '';
   amountErrorMessage = '';
 
+  // Track if fields have been touched/interacted with
+  private addressTouched = false;
+  private amountTouched = false;
+
   // Available balance for display and max functionality
   availableBalance = computed(() => {
     const currentWallet = this.walletService.getCurrentWallet();
@@ -86,6 +90,8 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit,
         this.walletAddress = '';
         this.kaspaAmount = null;
         this.replaceByFee = false;
+        this.addressTouched = false;
+        this.amountTouched = false;
         this.validateAddress();
         this.validateAmount();
       }
@@ -111,11 +117,13 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit,
 
   onWalletAddressChange(value: any): void {
     this.walletAddress = value || '';
+    this.addressTouched = true;
     this.validateAddress();
   }
 
   onAmountChange(value: any): void {
     this.kaspaAmount = value || null;
+    this.amountTouched = true;
     this.validateAmount();
   }
 
@@ -150,8 +158,8 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit,
 
   private validateAmount(): void {
     if (this.kaspaAmount === null || this.kaspaAmount === undefined) {
-      this.isAmountValid = false;
-      this.amountErrorMessage = 'Amount is required';
+      this.isAmountValid = !this.amountTouched;
+      this.amountErrorMessage = this.amountTouched ? 'Amount is required' : '';
       return;
     }
 
@@ -180,8 +188,8 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit,
 
   private validateAddress(): void {
     if (!this.walletAddress) {
-      this.isAddressValid = false;
-      this.addressErrorMessage = 'Wallet address is required';
+      this.isAddressValid = !this.addressTouched;
+      this.addressErrorMessage = this.addressTouched ? 'Wallet address is required' : '';
       return;
     }
 
@@ -196,6 +204,10 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit,
   }
 
   async onSendClick(): Promise<void> {
+    // Mark fields as touched so validation errors show if invalid
+    this.addressTouched = true;
+    this.amountTouched = true;
+    
     this.validateAddress();
     this.validateAmount();
 

@@ -1,4 +1,5 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit, inject } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { BalanceComponent } from './balance/balance.component';
 import { WalletSummaryComponent } from './wallet-summary/wallet-summary.component';
 import { CryptoActionsComponent } from './crypto-actions/crypto-actions.component';
@@ -21,7 +22,10 @@ import { UtxosSummaryComponent } from './utxos-summary/utxos-summary.component';
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
-export class HomeComponent {
+export class HomeComponent implements OnInit {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  
   selectedTabId = signal<string>('utxos');
 
   tabs: TabItem[] = [
@@ -31,7 +35,28 @@ export class HomeComponent {
     { id: 'kns', label: 'KNS' }
   ];
 
+  ngOnInit() {
+    // Check for tab parameter in query params
+    this.route.queryParams.subscribe(params => {
+      const tabParam = params['tab'];
+      if (tabParam && this.isValidTab(tabParam)) {
+        this.selectedTabId.set(tabParam);
+      }
+    });
+  }
+
   onTabChange(tabId: string) {
     this.selectedTabId.set(tabId);
+    // Update URL with current tab (without navigating)
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab: tabId },
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
+  }
+
+  private isValidTab(tabId: string): boolean {
+    return this.tabs.some(tab => tab.id === tabId);
   }
 }

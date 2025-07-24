@@ -109,7 +109,7 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: var(--gradient-2);
+  background: var(--gradient-1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -127,7 +127,7 @@
   }
 
   ::ng-deep .icon {
-    color: var(--white) !important;
+    color: var(--black) !important;
   }
 }
 

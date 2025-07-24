@@ -1,14 +1,14 @@
-<div class="nft-page-container full-width full-height column p-16" [class.loading]="loading() || metadataLoading()">
+<div class="nft-page-container flex column full-width gap-16" [class.loading]="loading() || metadataLoading()">
   <!-- Header with back button and name -->
-  <div class="nft-header flex align-items-center mb-24">
+  <div class="asset-header flex align-items-center justify-content-between">
     <div class="header-left flex align-items-center gap-16">
       <kc-icon 
         [iconClass]="'icon-arrow-left'"
         [size]="'md'"
         (click)="goBack()"
-        class="cursor-pointer">
+        class="cursor-pointer hover-opacity">
       </kc-icon>
-      <h1 class="nft-title text-gray-90">{{ getDisplayName() }}</h1>
+      <h1 class="asset-title text-gray-90">{{ getDisplayName() }}</h1>
     </div>
   </div>
 
@@ -45,7 +45,7 @@
   </div>
 
   <!-- NFT Details -->
-  <div class="nft-details flex-1">
+  <div class="nft-details">
     @if (metadataLoading()) {
       <!-- Description skeleton -->
       <app-skeleton [height]="'24px'" [width]="'150px'" class="mb-16"></app-skeleton>
@@ -62,7 +62,7 @@
       @if (getDescription()) {
         <div class="description-section mb-24">
           <h3 class="section-title text-gray-90 mb-16">Description</h3>
-          <p class="description-text text-gray-70">{{ getDescription() }}</p>
+          <p class="description-text text-gray-60">{{ getDescription() }}</p>
         </div>
       }
 

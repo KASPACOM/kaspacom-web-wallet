@@ -1,5 +1,6 @@
 import { Component, computed, inject, OnInit, signal, OnDestroy } from '@angular/core';
 import { CommonModule, DecimalPipe, DatePipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
+import { Router } from '@angular/router';
 import { KcIconComponent } from 'kaspacom-ui';
 import { KcLabeledTabsComponent, TabItem } from '../../../shared/ui/kc-labeled-tabs/kc-labeled-tabs.component';
 import { SkeletonComponent } from '../../../shared/ui/skeleton/skeleton.component';
@@ -62,6 +63,7 @@ export class ActivityComponent implements OnInit, OnDestroy {
   private kaspaApiService = inject(KaspaApiService);
   private kasplexService = inject(KasplexKrc20Service);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  private router = inject(Router);
   private destroy$ = new Subject<void>();
 
   // Signals for reactive state
@@ -114,6 +116,26 @@ export class ActivityComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  onTransactionClick(item: ActivityItem): void {
+    if (item.type === 'kaspa') {
+      // Navigate to Kaspa transaction details with transaction data
+      const kaspaItem = item as KaspaActivityItem;
+      const transactionData = this.kaspaTransactions().find(tx => tx.transaction_id === item.id);
+      
+      if (transactionData) {
+        this.router.navigate(['/app/home/transaction/kaspa', item.id], {
+          state: { transactionData }
+        });
+      }
+    } else if (item.type === 'krc20') {
+      // Navigate to KRC20 transaction details with return context
+      const krc20Item = item as Krc20ActivityItem;
+      this.router.navigate(['/app/home/asset/krc20', krc20Item.ticker, 'transaction', item.id], {
+        state: { returnTo: 'activity' }
+      });
+    }
   }
 
   onTabChange(tabId: string) {

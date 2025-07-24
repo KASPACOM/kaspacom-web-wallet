@@ -1,0 +1,131 @@
+<div class="asset-page-container full-width full-height column flex column gap-24" [class.loading]="loading()">
+  <!-- Header with back button -->
+  <div class="asset-header flex align-items-center justify-content-between">
+    <!-- Left side: back button and title -->
+    <div class="header-left flex align-items-center gap-16">
+      <kc-icon 
+        [iconClass]="'icon-arrow-left'"
+        [size]="'md'"
+        (click)="goBack()"
+        class="cursor-pointer hover-opacity">
+      </kc-icon>
+      <h1 class="asset-title text-gray-90">UTXO Details</h1>
+    </div>
+    
+    <!-- Right side: amount with Kaspa icon -->
+    <div class="header-right flex align-items-center gap-8">
+      @if (loading()) {
+        <app-skeleton [height]="'28px'" [width]="'120px'"></app-skeleton>
+      } @else if (utxo()) {
+        <kc-icon
+          [iconClass]="'icon-kaspa-coin'"
+          [size]="'sm'"
+        ></kc-icon>
+        <span class="typo-title-4 text-gray-90">{{ formatAmount() }}</span>
+      }
+    </div>
+  </div>
+
+  <!-- UTXO Details Card -->
+  <div class="utxo-detail-card card-0 flex column gap-20 mb-24">
+    
+    @if (loading()) {
+      <!-- Loading skeleton -->
+      <div class="utxo-detail-row">
+        <app-skeleton [height]="'20px'" [width]="'80px'" class="mb-8"></app-skeleton>
+        <app-skeleton [height]="'24px'" [width]="'100%'"></app-skeleton>
+      </div>
+      <div class="utxo-detail-row">
+        <app-skeleton [height]="'20px'" [width]="'60px'" class="mb-8"></app-skeleton>
+        <app-skeleton [height]="'32px'" [width]="'150px'"></app-skeleton>
+      </div>
+      <div class="utxo-detail-row">
+        <app-skeleton [height]="'20px'" [width]="'100px'" class="mb-8"></app-skeleton>
+        <app-skeleton [height]="'24px'" [width]="'100%'"></app-skeleton>
+      </div>
+    } @else if (utxo()) {
+      <!-- Address -->
+      <div class="utxo-detail-row">
+        <div class="detail-label text-gray-60 typo-text-2 mb-8">Address</div>
+        <div class="detail-value-container flex align-items-center gap-12">
+          <div class="detail-value text-gray-90 typo-text-2 font-weight-medium break-all">
+            {{ getAddress() }}
+          </div>
+          <app-copy-button
+            [value]="getAddress()"
+            [size]="'xs'"
+          ></app-copy-button>
+        </div>
+      </div>
+
+
+
+      <!-- Transaction ID -->
+      <div class="utxo-detail-row">
+        <div class="detail-label text-gray-60 typo-text-2 mb-8">Transaction ID</div>
+        <div class="detail-value-container flex align-items-center gap-12">
+          <div class="detail-value text-gray-90 typo-text-2 font-weight-medium break-all">
+            {{ getTransactionId() }}
+          </div>
+          <app-copy-button
+            [value]="getTransactionId()"
+            [size]="'xs'"
+          ></app-copy-button>
+          <kc-icon
+            [iconClass]="'icon-link'"
+            [size]="'xs'"
+            [color]="'var(--gray-60)'"
+            class="cursor-pointer"
+            (click)="openInExplorer()"
+          ></kc-icon>
+        </div>
+      </div>
+
+      <!-- Script Public Key -->
+      <div class="utxo-detail-row">
+        <div class="detail-label text-gray-60 typo-text-2 mb-8">Script Public Key</div>
+        <div class="detail-value-container flex align-items-center gap-12">
+          <div class="detail-value text-gray-90 typo-text-1 font-mono break-all">
+            {{ getScriptPublicKey() }}
+          </div>
+          <app-copy-button
+            [value]="getScriptPublicKey()"
+            [size]="'xs'"
+          ></app-copy-button>
+        </div>
+      </div>
+
+      <!-- Block DAA Score -->
+      <div class="utxo-detail-row">
+        <div class="detail-label text-gray-60 typo-text-2 mb-8">Block DAA Score</div>
+        <div class="detail-value text-gray-90 typo-text-2 font-weight-medium">
+          {{ getBlockDaaScore() }}
+        </div>
+      </div>
+
+      <!-- Is Coinbase -->
+      <div class="utxo-detail-row">
+        <div class="detail-label text-gray-60 typo-text-2 mb-8">Is Coinbase</div>
+        <div class="detail-value text-gray-90 typo-text-2 font-weight-medium">
+          {{ getIsCoinbase() }}
+        </div>
+      </div>
+    } @else {
+      <!-- UTXO not found -->
+      <div class="no-utxo text-center p-24 text-gray-60">
+        UTXO not found or no longer available
+      </div>
+    }
+  </div>
+
+  <!-- Info Section -->
+  <div class="info-section flex-1">
+    <div class="info-card card-0 p-20">
+      <h3 class="info-title text-gray-90 typo-title-5 mb-16">About UTXOs</h3>
+      <p class="info-text text-gray-60 typo-text-2 leading-relaxed">
+        A UTXO (Unspent Transaction Output) represents spendable funds in your wallet. 
+        Each UTXO contains a specific amount of KAS that can be used as input for new transactions.
+      </p>
+    </div>
+  </div>
+</div> 

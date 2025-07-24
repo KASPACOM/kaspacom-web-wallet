@@ -1,29 +1,15 @@
 // KRC721 NFT Asset Page Styles
 
 .nft-page-container {
-  max-width: 100%;
-  overflow-x: hidden;
+  padding: 0 16px 24px 16px;
+  margin: 0;
   
   &.loading {
     overflow: hidden;
   }
 }
 
-.nft-header {
-  .header-left {
-    min-width: 0; // Allow flex items to shrink
-    flex: 1;
-    
-    .nft-title {
-      font-size: 1.5rem;
-      font-weight: 600;
-      margin: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-  }
-}
+// Title styling now inherited from base-asset-page.component.scss
 
 // NFT Image section
 .nft-image-section {
@@ -93,16 +79,9 @@
       gap: 12px;
       
       .attribute-card {
-        background: rgba(255, 255, 255, 0.1);
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 8px;
         padding: 16px;
-        transition: all 0.3s ease;
-        
-        &:hover {
-          background: rgba(255, 255, 255, 0.05);
-          border-color: rgba(255, 255, 255, 0.2);
-        }
         
         .attribute-type {
           font-size: 0.8rem;
@@ -130,14 +109,6 @@
 
 // Responsive design
 @media (max-width: 768px) {
-  .nft-header {
-    .header-left {
-      .nft-title {
-        font-size: 1.3rem;
-      }
-    }
-  }
-  
   .nft-image-section {
     .nft-image-container {
       width: 200px;
@@ -168,6 +139,14 @@
   }
 }
 
+// Responsive design for bottom padding
+@media (max-width: 768px) {
+  .nft-page-container {
+    padding: 0 12px 24px 12px;
+    margin: 0;
+  }
+}
+
 // Ensure proper content fitting
 * {
   box-sizing: border-box;
@@ -184,5 +163,18 @@
       width: 100%;
       min-width: 0; // Allow grid items to shrink
     }
+  }
+}
+
+// Utility classes
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.hover-opacity {
+  transition: opacity 0.2s ease;
+  
+  &:hover {
+    opacity: 0.7;
   }
 } 

@@ -1,75 +1,197 @@
-// KRC20-specific styles that extend the base asset page
-// Most styles are inherited from base-asset-page.component.scss
+@import '../../../../../../styles/design-system/colors.style.scss';
 
-.krc20-specific {
-  // Add any KRC20-specific styling here if needed
-}
-
-// Hide scrollbar during loading states
 .asset-page-container {
+  min-height: 100vh;
+  overflow-y: auto;
+
   &.loading {
-    overflow: hidden;
+    .transaction-history {
+      opacity: 0.6;
+    }
   }
-}
 
-.transaction-history {
-  &.loading {
-    overflow: hidden;
+  .asset-header {
+    .header-left {
+      .asset-title {
+        margin: 0;
+      }
+    }
   }
-}
 
-// Transaction list styling to match homepage KRC20 cards
-.transaction-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px; // Gap between transaction items
-  
-  &.loading {
-    overflow: hidden;
+  // Transaction History Styles
+  .transaction-history {
+    .transaction-list {
+      &.loading {
+        opacity: 0.6;
+      }
+
+      .skeleton-loading-container {
+        .transaction-item-card {
+          // card-0 class provides the styling
+        }
+      }
+
+      .no-transactions {
+        background: var(--base-2);
+        border-radius: 14px;
+        padding: 24px;
+        text-align: center;
+        color: var(--gray-60);
+        box-shadow: 0 4px 16px -4px rgba(0,0,0,0.34);
+      }
+
+      .transaction-item-card {
+        // card-0 and card-hover classes provide the styling
+        margin-bottom: 8px;
+
+        &.fade-in {
+          animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .transaction-content {
+          .transaction-info {
+            flex: 1;
+
+            .transaction-type {
+              font-size: 16px;
+              margin-bottom: 4px;
+            }
+
+            .transaction-details {
+              font-size: 14px;
+              opacity: 0.7;
+            }
+          }
+
+          .transaction-amount {
+            text-align: right;
+
+            .amount {
+              font-size: 16px;
+              margin-bottom: 4px;
+
+              &.transaction-positive {
+                color: var(--green-20);
+              }
+
+              &.transaction-negative {
+                color: var(--red-20);
+              }
+            }
+
+            .timestamp-container {
+              .timestamp {
+                font-size: 12px;
+                opacity: 0.7;
+              }
+
+              kc-icon {
+                &:hover {
+                  opacity: 0.8;
+                  transform: scale(1.1);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
-}
 
-.transaction-item-card {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  border-radius: 12px;
-  padding: 16px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background: rgba(255, 255, 255, 0.08);
+  // Token Info Styles
+  .token-info-content {
+    .skeleton-loading-container {
+      .info-item-card {
+        // card-0 class provides the styling
+      }
+    }
+
+    .no-token-info {
+      background: var(--base-2);
+      border-radius: 14px;
+      padding: 24px;
+      text-align: center;
+      color: var(--gray-60);
+      box-shadow: 0 4px 16px -4px rgba(0,0,0,0.34);
+    }
+
+    .token-info-grid {
+      .info-item-card {
+        // card-0 and card-hover classes provide the styling
+
+        .info-content {
+          width: 100%;
+
+          .info-label {
+            font-size: 14px;
+            color: var(--gray-60);
+            font-weight: 500;
+          }
+
+          .info-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--gray-90);
+            text-align: right;
+            word-break: break-all;
+          }
+        }
+      }
+    }
   }
-}
 
-// Transaction amount colors
-.transaction-positive {
-  color: var(--green-20); // Green for positive/incoming amounts
-}
-
-.transaction-negative {
-  color: var(--red-20); // Red for negative/outgoing amounts
-}
-
-// Override or extend base styles if necessary
-.transaction-item {
-  // KRC20 transactions might have specific styling
-  &[data-transaction-type="transfer"] {
-    // Specific styling for transfer transactions
+  // Common utility classes
+  .cursor-pointer {
+    cursor: pointer;
   }
-  
-  &[data-transaction-type="mint"] {
-    // Specific styling for mint transactions
-  }
-  
-  &[data-transaction-type="deploy"] {
-    // Specific styling for deploy transactions
-  }
-}
 
-// Add fade-in animation
-.fade-in {
-  animation: fadeIn 0.3s ease-in;
+  .hover-opacity {
+    transition: opacity 0.2s ease;
+
+    &:hover {
+      opacity: 0.7;
+    }
+  }
+
+  .text-right {
+    text-align: right;
+  }
+
+  .text-center {
+    text-align: center;
+  }
+
+  .mb-4 {
+    margin-bottom: 4px;
+  }
+
+  .mb-16 {
+    margin-bottom: 16px;
+  }
+
+  .mb-24 {
+    margin-bottom: 24px;
+  }
+
+  .ml-auto {
+    margin-left: auto;
+  }
+
+  .p-24 {
+    padding: 24px;
+  }
+
+  .gap-8 {
+    gap: 8px;
+  }
+
+  .gap-12 {
+    gap: 12px;
+  }
+
+  .gap-16 {
+    gap: 16px;
+  }
 }
 
 @keyframes fadeIn {

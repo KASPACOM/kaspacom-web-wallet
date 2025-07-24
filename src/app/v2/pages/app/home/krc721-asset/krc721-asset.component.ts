@@ -6,6 +6,8 @@ import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { BaseAssetPageComponent } from '../../common/base-asset-page/base-asset-page.component';
 import { Krc721ApiService } from '../../../../../services/krc721-api/krc721-api.service';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
+import { FlowPagesService } from '../../common/services/flow-pages.service';
+import { environment } from '../../../../../../environments/environment';
 
 interface NftMetadata {
   name?: string;
@@ -35,6 +37,7 @@ interface NftMetadata {
 export class Krc721AssetComponent extends BaseAssetPageComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private krc721Service = inject(Krc721ApiService);
+  private flowPagesService = inject(FlowPagesService);
 
   private tick: string = '';
   private tokenId: string = '';
@@ -105,12 +108,35 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
   }
 
   protected override onSendAction(): void {
-    // TODO: Navigate to send KRC721 form
-    console.log('Send KRC721 action triggered for:', this.tick, this.tokenId);
+    if (!this.tick || !this.tokenId) {
+      console.warn('No tick or tokenId available');
+      return;
+    }
+
+    const nftMetadata = this.nftMetadata();
+    
+    // Create NFT data for the send form
+    const nftData = {
+      tick: this.tick,
+      tokenId: this.tokenId,
+      owner: this.getCurrentWalletAddress(),
+      name: nftMetadata?.name,
+      description: nftMetadata?.description,
+      attributes: nftMetadata?.attributes,
+      image: nftMetadata?.image
+    };
+
+    // Navigate directly to the send NFT form with NFT pre-selected
+    this.flowPagesService.openFlow({
+      id: 'send-nft',
+      title: `Send ${this.getDisplayName()}`,
+      canNavigateBack: true,
+      data: { nft: nftData }
+    });
   }
 
   protected override goBack(): void {
-    this.router.navigate(['/app/home']);
+    this.router.navigate(['/app/home'], { queryParams: { tab: 'krc721' } });
   }
 
   // Helper method to get display name
@@ -153,5 +179,13 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
     if (target) {
       target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgdmlld0JveD0iMCAwIDI1NiAyNTYiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiBmaWxsPSIjMzMzIiByeD0iMTIiLz4KPHN2ZyB4PSI5NiIgeT0iOTYiIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2NjYiIHN0cm9rZS13aWR0aD0iMiI+CjxyZWN0IHg9IjMiIHk9IjMiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgcng9IjIiIHJ5PSIyIi8+CjxjaXJjbGUgY3g9Ijg1IiBjeT0iOC41IiByPSIxLjUiLz4KPGR5bGluZSB4MT0iMjEiIHkxPSIxNSIgeDI9IjEyIiB5Mj0iNiIvPgo8L3N2Zz4KPC9zdmc+';
     }
+  }
+
+  // Open NFT in explorer (currently not implemented as transaction ID is not readily available)
+  // This could be enhanced in the future by loading ownership history or operations
+  protected openInExplorer(): void {
+    // For now, we could search for the NFT by tick and tokenId
+    // or implement a method to get the transaction ID from operations
+    console.log('Explorer functionality for KRC721 needs transaction ID from operations');
   }
 } 

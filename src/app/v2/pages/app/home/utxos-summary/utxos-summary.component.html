@@ -47,8 +47,8 @@
       </div>
     } @else {
       @for (utxo of utxos(); track trackByUtxo($index, utxo)) {
-        <div class="utxo-card card-0 card-hover fade-in">
-          <div class="utxo-content flex justify-content-between align-items-start">
+        <div class="utxo-card card-0 card-hover fade-in cursor-pointer" (click)="openUtxoDetail(utxo)">
+          <div class="utxo-content flex justify-content-between align-items-center">
             <div class="utxo-info flex column gap-12">
               <div class="utxo-tx-id-container flex align-items-center gap-8">
                 <div class="utxo-tx-id text-gray-60 typo-text-1">
@@ -59,13 +59,9 @@
                   [size]="'xs'"
                 ></app-copy-button>
               </div>
-              <div class="utxo-status flex align-items-center gap-4">
-                <div class="status-indicator confirmed"></div>
-                <span class="text-gray-75 typo-text-1">Confirmed</span>
-              </div>
             </div>
             <div class="utxo-amount-section flex align-items-end">
-              <div class="utxo-amount-main text-gray-90 font-weight-bold flex align-items-center gap-4">
+              <div class="utxo-amount-main text-gray-90 font-weight-bold flex align-items-center gap-8">
                 <kc-icon
                   [iconClass]="'icon-kaspa-coin'"
                   [size]="'sm'"

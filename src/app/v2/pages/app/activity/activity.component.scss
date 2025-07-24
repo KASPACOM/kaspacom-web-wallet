@@ -25,6 +25,14 @@
 .activity-item {
   border: 1px solid transparent;
   border-radius: 12px;
+  
+  &.cursor-pointer {
+    cursor: pointer;
+    
+    &:hover {
+      border-color: var(--gray-30);
+    }
+  }
 }
 
 .activity-content {
@@ -47,7 +55,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 4px;
 }
 
 .activity-type {
@@ -64,7 +72,7 @@
   min-width: 120px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 4px;
 }
 
 .activity-amount {

@@ -26,6 +26,7 @@ export interface Environment {
   kaspaApiBaseurl: string;
   krc721ApiBaseurl: string;
   knsApiBaseurl: string;
+  kaspaExplorerBaseurl: string;
   kaspaNetwork: string;
   allowedDomains: string[];
   isL2Enabled: boolean;

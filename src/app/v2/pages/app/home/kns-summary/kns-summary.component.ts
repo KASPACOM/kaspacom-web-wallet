@@ -1,7 +1,9 @@
 import { Component, computed, inject } from '@angular/core';
 import { TitleCasePipe, UpperCasePipe, DatePipe } from '@angular/common';
+import { Router } from '@angular/router';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { AssetsStoreService } from '../../../../../services/assets-store.service';
+import { KnsDomainAsset } from '../../../../../services/kns-api/dtos/kns-domain.dto';
 
 @Component({
   selector: 'app-kns-summary',
@@ -14,6 +16,7 @@ import { AssetsStoreService } from '../../../../../services/assets-store.service
 })
 export class KnsSummaryComponent {
   private assetsStore = inject(AssetsStoreService);
+  private router = inject(Router);
 
   // Use domains directly from assets store
   domains = computed(() => this.assetsStore.knsAssets());
@@ -31,5 +34,10 @@ export class KnsSummaryComponent {
   // TrackBy function to prevent unnecessary re-renders
   trackByDomain(index: number, domain: any): string {
     return domain.assetId;
+  }
+
+  // Navigate to KNS domain detail page
+  onDomainClick(domain: KnsDomainAsset): void {
+    this.router.navigate(['/app/home/asset/kns', domain.assetId]);
   }
 } 

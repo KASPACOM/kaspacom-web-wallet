@@ -1,0 +1,127 @@
+.kns-page-container {
+  padding: 0 16px 24px 16px;
+  margin: 0;
+
+  &.loading {
+    overflow: hidden;
+  }
+
+  .action-buttons {
+    gap: 12px;
+
+    kc-button {
+      flex: 1;
+    }
+  }
+
+  .kns-details {
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .detail-card {
+      background: var(--gray-10);
+      border-radius: 12px;
+      padding: 16px;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: var(--gray-15);
+      }
+
+      .detail-label {
+        color: var(--gray-60);
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+      }
+
+      .detail-value-container {
+        min-height: 24px;
+      }
+
+      .detail-value {
+        color: var(--gray-90);
+        font-size: 14px;
+        line-height: 1.4;
+        word-break: break-all;
+        flex: 1;
+      }
+    }
+  }
+}
+
+// Verified badge styling
+.verified-badge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background-color: rgba(34, 197, 94, 0.2);
+  color: rgb(34, 197, 94);
+}
+
+// Monospace font for technical fields
+.font-mono {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Droid Sans Mono', 'Source Code Pro', monospace;
+}
+
+// Utility classes
+.break-all {
+  word-break: break-all;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.hover-opacity {
+  transition: opacity 0.2s ease;
+  
+  &:hover {
+    opacity: 0.7;
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .kns-page-container {
+    padding: 12px;
+
+    .kns-details {
+      .details-grid {
+        gap: 12px;
+      }
+
+      .detail-card {
+        padding: 12px;
+      }
+    }
+  }
+}
+
+// Animation for smooth entry
+.kns-page-container {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+} 

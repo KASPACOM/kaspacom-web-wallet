@@ -54,7 +54,7 @@
         <!-- Activity items -->
         <div class="activity-list">
           @for (item of filteredActivity(); track item.id) {
-            <div class="activity-item card-0 card-hover mb-12">
+            <div class="activity-item card-0 card-hover mb-12 cursor-pointer" (click)="onTransactionClick(item)">
               <div class="activity-content flex justify-content-between align-items-center">
                 
                 <!-- Left side: Icon and details -->

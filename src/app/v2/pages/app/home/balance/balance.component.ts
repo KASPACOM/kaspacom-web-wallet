@@ -6,6 +6,7 @@ import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwro
 import { CommaFormatterPipe } from '../../../../../pipes/comma-formatter.pipe';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { AssetsStoreService } from '../../../../../services/assets-store.service';
+import { KaspaPriceService } from '../../../../../services/kaspa-price.service';
 
 @Component({
   selector: 'app-balance',
@@ -17,8 +18,21 @@ export class BalanceComponent {
   private walletService = inject(WalletService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private assetsStore = inject(AssetsStoreService);
+  private kaspaPriceService = inject(KaspaPriceService);
 
-  usdBalance = computed(() => 13.45);
+  // Calculate USD balance by multiplying kasBalance * kaspaPrice with max 3 decimal rounding
+  usdBalance = computed(() => {
+    const kasBalance = this.kasBalance();
+    const kaspaPrice = this.kaspaPriceService.price();
+    
+    if (kasBalance === 0 || kaspaPrice === 0) {
+      return 0;
+    }
+    
+    const usdValue = kasBalance * kaspaPrice;
+    // Round to max 3 decimals
+    return Math.round(usdValue * 1000) / 1000;
+  });
   
   // Check if wallet data is loading
   isLoading = computed(() => {

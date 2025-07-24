@@ -7,6 +7,8 @@ import { SompiToNumberPipe } from '../../../../../pipes/sompi-to-number.pipe';
 import { CommaFormatterPipe } from '../../../../../pipes/comma-formatter.pipe';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
+import { Router } from '@angular/router';
+import { UtxoEntryReference } from '../../../../../../../public/kaspa/kaspa';
 
 @Component({
   selector: 'app-utxos-summary',
@@ -29,6 +31,7 @@ import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-butt
 export class UtxosSummaryComponent {
   private walletService = inject(WalletService);
   private walletActionService = inject(WalletActionService);
+  private router = inject(Router);
 
   // Get current wallet and its UTXOs
   currentWallet = computed(() => this.walletService.getCurrentWallet());
@@ -80,5 +83,10 @@ export class UtxosSummaryComponent {
   // TrackBy function to prevent unnecessary re-renders
   trackByUtxo(index: number, utxo: any): string {
     return `${utxo.outpoint.transactionId}-${utxo.outpoint.index}`;
+  }
+
+  // Navigate to UTXO detail page
+  openUtxoDetail(utxo: UtxoEntryReference): void {
+    this.router.navigate(['/app/home/asset/utxo', utxo.outpoint.transactionId]);
   }
 } 

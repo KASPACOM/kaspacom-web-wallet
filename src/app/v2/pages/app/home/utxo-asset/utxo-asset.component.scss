@@ -1,0 +1,138 @@
+// UTXO-specific styles that extend the base asset page
+// Most styles are inherited from base-asset-page.component.scss
+
+.utxo-detail-card {
+  background: var(--gray-10);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.utxo-detail-row {
+  padding: 16px 0;
+  
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--gray-15);
+  }
+}
+
+.detail-label {
+  color: var(--gray-60);
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-value-container {
+  min-height: 24px;
+}
+
+.detail-value {
+  color: var(--gray-90);
+  font-size: 14px;
+  line-height: 1.4;
+  word-break: break-all;
+  flex: 1;
+}
+
+.detail-amount-container {
+  .detail-amount {
+    color: var(--white);
+    font-size: 24px;
+    font-weight: 700;
+  }
+}
+
+.font-mono {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Droid Sans Mono', 'Source Code Pro', monospace;
+}
+
+.break-all {
+  word-break: break-all;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+  
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+.hover-opacity {
+  transition: opacity 0.2s ease;
+  
+  &:hover {
+    opacity: 0.7;
+  }
+}
+
+.info-section {
+  .info-card {
+    background: var(--gray-10);
+    border-radius: 12px;
+  }
+  
+  .info-title {
+    color: var(--gray-90);
+    margin-bottom: 16px;
+  }
+  
+  .info-text {
+    color: var(--gray-60);
+    line-height: 1.6;
+  }
+}
+
+.no-utxo {
+  padding: 32px 24px;
+  color: var(--gray-60);
+  text-align: center;
+  font-style: italic;
+}
+
+.asset-page-container {
+  padding: 0 16px 24px 16px;
+  &.loading {
+    overflow: hidden;
+  }
+}
+
+// Animation for smooth entry
+.utxo-detail-card {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .asset-page-container {
+    padding: 0 12px 24px 12px;  // top right bottom left - no top padding
+  }
+  
+  .utxo-detail-card {
+    padding: 20px;
+  }
+  
+  .detail-amount-container {
+    .detail-amount {
+      font-size: 20px;
+    }
+  }
+  
+  .header-right {
+    .typo-title-4 {
+      font-size: 18px;
+    }
+  }
+} 

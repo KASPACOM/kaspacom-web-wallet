@@ -108,9 +108,9 @@
         </div>
 
         <!-- TX State -->
-        <div class="detail-card">
+        <div class="detail-card" *ngIf="isOperationAccepted(operationDetails()!)">
           <div class="detail-label">TX State</div>
-          <div class="detail-value font-weight-medium status-confirmed">
+          <div class="detail-value font-weight-medium status-accepted">
             {{ getOperationStatus(operationDetails()!) }}
           </div>
         </div>

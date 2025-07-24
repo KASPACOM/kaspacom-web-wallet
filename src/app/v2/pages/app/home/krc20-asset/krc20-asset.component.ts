@@ -241,7 +241,7 @@ export class Krc20AssetComponent extends BaseAssetPageComponent implements OnIni
           amount: operation.amt || '0',
           from: operation.from,
           to: operation.to,
-          timestamp: operation.mtsAdd,
+          timestamp: operation.mtsAdd, // Keep as string for consistency with AssetTransaction interface
           status: operation.opAccept === '1' ? 'accepted' : 'rejected'
         }));
 

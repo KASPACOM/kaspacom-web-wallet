@@ -89,7 +89,7 @@ export class KaspaTransactionDetailsComponent implements OnInit {
   }
 
   protected formatDate(timestamp: number): string {
-    const date = new Date(timestamp * 1000); // Convert from seconds to milliseconds
+    const date = new Date(timestamp); // Already in milliseconds
     return date.toLocaleString('en-US', {
       year: 'numeric',
       month: '2-digit',
@@ -107,7 +107,7 @@ export class KaspaTransactionDetailsComponent implements OnInit {
   }
 
   protected getTransactionStatus(transaction: FullTransactionResponseItem): string {
-    return transaction.is_accepted ? 'Confirmed' : 'Pending';
+    return transaction.is_accepted ? 'Accepted' : 'Pending';
   }
 
   protected openTransactionInExplorer(): void {

@@ -86,7 +86,7 @@ export class TransactionHistoryComponent {
       senders,
       receivers,
       totalForThisWallet,
-      date: new Date(transaction.block_time),
+      date: new Date(transaction.block_time), // Already in milliseconds
       confirmed: transaction.is_accepted,
       fee,
     };

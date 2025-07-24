@@ -103,9 +103,9 @@
         </div>
 
         <!-- Status -->
-        <div class="detail-card">
+        <div class="detail-card" *ngIf="transactionDetails()?.is_accepted">
           <div class="detail-label">Status</div>
-          <div class="detail-value font-weight-medium status-confirmed">
+          <div class="detail-value font-weight-medium status-accepted">
             {{ getTransactionStatus(transactionDetails()!) }}
           </div>
         </div>

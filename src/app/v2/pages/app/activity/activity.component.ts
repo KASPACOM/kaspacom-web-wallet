@@ -11,6 +11,7 @@ import { FullTransactionResponse, FullTransactionResponseItem } from '../../../.
 import { OperationDetails } from '../../../../services/kasplex-api/dtos/operation-details-response';
 import { KaspaNetworkActionsService } from '../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { SompiToNumberPipe } from '../../../../pipes/sompi-to-number.pipe';
+import { TimeAgoPipe } from '../../../../pipes/time-ago.pipe';
 import { firstValueFrom, catchError, of, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -19,7 +20,7 @@ interface BaseActivityItem {
   id: string;
   type: 'kaspa' | 'krc20';
   timestamp: number;
-  status: 'confirmed' | 'pending' | 'rejected';
+  status: 'accepted' | 'pending' | 'rejected';
 }
 
 interface KaspaActivityItem extends BaseActivityItem {
@@ -53,7 +54,8 @@ type ActivityItem = KaspaActivityItem | Krc20ActivityItem;
     KcIconComponent,
     KcLabeledTabsComponent,
     SkeletonComponent,
-    SompiToNumberPipe
+    SompiToNumberPipe,
+    TimeAgoPipe
   ],
   templateUrl: './activity.component.html',
   styleUrl: './activity.component.scss'
@@ -81,7 +83,12 @@ export class ActivityComponent implements OnInit, OnDestroy {
     const krc20Items = this.krc20Operations().map(op => this.transformKrc20Operation(op));
     
     // Combine and sort by timestamp (newest first)
-    return [...kaspaItems, ...krc20Items].sort((a, b) => b.timestamp - a.timestamp);
+    // Ensure both timestamps are numbers for proper sorting
+    return [...kaspaItems, ...krc20Items].sort((a, b) => {
+      const timestampA = typeof a.timestamp === 'number' ? a.timestamp : parseInt(String(a.timestamp));
+      const timestampB = typeof b.timestamp === 'number' ? b.timestamp : parseInt(String(b.timestamp));
+      return timestampB - timestampA;
+    });
   });
 
   // Filtered activity based on selected tab
@@ -253,8 +260,8 @@ export class ActivityComponent implements OnInit, OnDestroy {
     return {
       id: transaction.transaction_id,
       type: 'kaspa',
-      timestamp: transaction.block_time * 1000, // Convert to milliseconds
-      status: transaction.is_accepted ? 'confirmed' : 'pending',
+      timestamp: transaction.block_time, // Already in milliseconds
+      status: transaction.is_accepted ? 'accepted' : 'pending',
       amount: totalForThisWallet < 0n ? -totalForThisWallet : totalForThisWallet,
       isIncoming,
       fee,
@@ -267,9 +274,9 @@ export class ActivityComponent implements OnInit, OnDestroy {
     const currentWallet = this.walletService.getCurrentWallet();
     const walletAddress = currentWallet?.getAddress() || '';
 
-    let status: 'confirmed' | 'pending' | 'rejected' = 'pending';
-    if (operation.opAccept === '1') {
-      status = 'confirmed';
+    let status: 'accepted' | 'pending' | 'rejected' = 'pending';
+    if (operation.opAccept === '1' && operation.txAccept === '1') {
+      status = 'accepted';
     } else if (operation.opAccept === '-1') {
       status = 'rejected';
     }
@@ -289,22 +296,15 @@ export class ActivityComponent implements OnInit, OnDestroy {
 
   // Template helper methods
   formatTimestamp(timestamp: number): string {
+    const timeAgo = new TimeAgoPipe().transform(timestamp);
     const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffHours = diffMs / (1000 * 60 * 60);
-
-    if (diffHours < 24) {
-      return date.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      });
-    } else {
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric' 
-      });
-    }
+    const formattedDate = date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+    });
+    
+    return `${timeAgo} • ${formattedDate}`;
   }
 
   shortenAddress(address: string): string {
@@ -331,18 +331,7 @@ export class ActivityComponent implements OnInit, OnDestroy {
     return title;
   }
 
-  getStatusColor(status: string): string {
-    switch (status) {
-      case 'confirmed':
-        return 'var(--green-20)';
-      case 'pending':
-        return 'var(--orange-20)';
-      case 'rejected':
-        return 'var(--red-20)';
-      default:
-        return 'var(--gray-60)';
-    }
-  }
+
 
   getActivityIcon(item: ActivityItem): string {
     if (item.type === 'kaspa') {

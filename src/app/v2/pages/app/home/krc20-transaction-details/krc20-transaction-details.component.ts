@@ -110,12 +110,16 @@ export class Krc20TransactionDetailsComponent implements OnInit {
 
   protected getOperationStatus(operation: OperationDetails): string {
     if (operation.txAccept === '1' && operation.opAccept === '1') {
-      return 'Confirmed';
+      return 'Accepted';
     } else if (operation.txAccept === '1' && operation.opAccept !== '1') {
       return 'Implemented';
     } else {
       return 'Pending';
     }
+  }
+
+  protected isOperationAccepted(operation: OperationDetails): boolean {
+    return operation.txAccept === '1' && operation.opAccept === '1';
   }
 
   protected openTransactionInExplorer(): void {

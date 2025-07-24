@@ -77,14 +77,14 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit, O
       }
     });
   }
+
+  override ngOnInit() {
+    // Remove effects from here since they're now in constructor
+  }
   
   override ngOnDestroy() {
     // Clean up QR scanner when component is destroyed
     this.qrScannerService.stopScanning();
-  }
-
-  override async ngOnInit(): Promise<void> {
-    // Initial load will be handled by the effect
   }
   
   get config(): IFlowPageConfig {

@@ -6,6 +6,9 @@
       
       <!-- Transaction Header -->
       <div class="transaction-header">
+        <div class="header-icon">
+          <kc-icon iconClass="icon-check-circle" size="lg" color="var(--kaspa-20)"></kc-icon>
+        </div>
         <h2 *ngIf="isActionHasPriorityFee()">Transaction Review</h2>
         <h2 *ngIf="!isActionHasPriorityFee()">Action Review</h2>
         <p>Please review the details below before proceeding.</p>
@@ -13,54 +16,65 @@
 
       <!-- Action Details Section -->
       <ng-container *ngIf="actionDisplay(); else unknownAction">
-        <h3 class="action-title">{{ actionDisplay()!.title }}</h3>
-        <h4 class="action-subtitle" *ngIf="actionDisplay()!.subtitle">{{ actionDisplay()!.subtitle }}</h4>
-        
-        <!-- Action Detail Rows -->
-        <div class="action-details">
-          <div *ngFor="let row of actionDisplay()!.rows">
-            
-            <!-- Input Fields (checkboxes) -->
-            <div *ngIf="row.inputField; else noInputField">
-              <div *ngIf="row.inputField.fieldType === InputFieldType.CHECKBOX">
-                <div class="checkbox-container">
+        <div class="action-overview-card">
+          <div class="action-header">
+            <h3 class="action-title">{{ actionDisplay()!.title }}</h3>
+            <h4 class="action-subtitle" *ngIf="actionDisplay()!.subtitle">{{ actionDisplay()!.subtitle }}</h4>
+          </div>
+          
+          <!-- Action Detail Rows -->
+          <div class="action-details-grid">
+            <ng-container *ngFor="let row of actionDisplay()!.rows">
+              
+              <!-- Input Fields (checkboxes) -->
+              <div *ngIf="row.inputField; else noInputField" class="detail-card checkbox-container">
+                <div *ngIf="row.inputField.fieldType === InputFieldType.CHECKBOX">
                   <label class="checkbox-label">
                     <input 
                       type="checkbox" 
                       [(ngModel)]="additionalParams[row.inputField.fieldParam]" 
-                      [checked]="row.fieldValue === 'true'" 
-                    />
+                      [checked]="row.fieldValue === 'true'">
                     <span>{{ row.fieldName }}</span>
                   </label>
                 </div>
               </div>
-            </div>
-            
-            <!-- Regular Detail Rows -->
-            <ng-template #noInputField>
-              <div [ngClass]="{'detail': !row.isCodeBlock, 'detail-signing-message': row.isCodeBlock}">
-                <div class="label">{{ row.fieldName }}:</div>
-                <div class="value">{{ row.fieldValue }}</div>
-              </div>
-            </ng-template>
+
+              <!-- Regular Detail Rows -->
+              <ng-template #noInputField>
+                <!-- Signing Message Detail -->
+                <div *ngIf="row.isCodeBlock" class="detail-card detail-signing-message">
+                  <div class="detail-label">{{ row.fieldName }}</div>
+                  <div class="detail-value">{{ row.fieldValue }}</div>
+                </div>
+
+                <!-- Regular Detail -->
+                <div *ngIf="!row.isCodeBlock" class="detail-card">
+                  <div class="detail-label">{{ row.fieldName }}</div>
+                  <div class="detail-value">{{ row.fieldValue }}</div>
+                </div>
+              </ng-template>
+
+            </ng-container>
           </div>
         </div>
       </ng-container>
 
-      <!-- Unknown Action Fallback -->
       <ng-template #unknownAction>
-        <div class="unknown-action">
-          <p>Unknown Action Type ({{ approvalConfig()?.action?.type }})</p>
+        <div class="unknown-action-card">
+          <kc-icon iconClass="icon-warning" size="lg" color="var(--orange-20)"></kc-icon>
+          <h3>Unknown Action</h3>
+          <p>This action type is not recognized. Please proceed with caution.</p>
         </div>
       </ng-template>
 
       <!-- Priority Fee Selection -->
-      <priority-fee-selection 
-        *ngIf="isActionHasPriorityFee() && approvalConfig()"
-        [action]="approvalConfig()!.action" 
-        [wallet]="wallet()"
-        (priorityFeeSelected)="setCurrentPriorityFee($event)">
-      </priority-fee-selection>
+      <ng-container *ngIf="isActionHasPriorityFee()">
+        <priority-fee-selection 
+          [action]="approvalConfig()!.action"
+          [wallet]="wallet()"
+          (priorityFeeSelected)="setCurrentPriorityFee($event)">
+        </priority-fee-selection>
+      </ng-container>
     </div>
 
     <!-- Action Buttons -->
@@ -69,7 +83,6 @@
         [text]="isLoading ? 'Processing...' : 'Approve'"
         variant="primary" 
         size="lg"
-        role="success"
         [isFullWidth]="true"
         [isDisabled]="!isAvailableForApproval()"
         [isLoading]="isLoading"
@@ -79,9 +92,8 @@
       
       <kc-button 
         [text]="'Reject'"
-        variant="secondary" 
+        variant="tertiary" 
         size="lg"
-        role="danger"
         [isFullWidth]="true"
         [isDisabled]="isLoading"
         (buttonClick)="onReject()"

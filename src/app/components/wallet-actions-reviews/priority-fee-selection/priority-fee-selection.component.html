@@ -2,7 +2,7 @@
   <!-- Fee Toggle Header -->
   <div class="fee-spoiler-toggle" (click)="toggleFeeSelection()">
     <div class="fee-summary-left">
-      <kc-icon iconClass="icon-chain" size="sm" color="#6fc7ba"></kc-icon>
+      <kc-icon iconClass="icon-chain" size="sm" color="var(--kaspa-20)"></kc-icon>
       <span class="fee-label">
         <ng-container *ngIf="totalTransactionsMass && totalTransactionsMass.length > 1">
           Estimated Total Fees: 
@@ -11,24 +11,29 @@
           Total Fee: 
         </ng-container>
       </span>
-      <span class="fee-value">
+      <div class="fee-value">
         <ng-container *ngIf="totalTransactionsMass && totalTransactionsMass.length > 1">
-          ≈{{ getEstimatedTotalFees() | sompiToNumber }} KAS
+          <span>≈{{ getEstimatedTotalFees() | sompiToNumber }}</span>
+          <!-- Always show kaspa icon for fees -->
+          <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
         </ng-container>
         <ng-container *ngIf="totalTransactionsMass && totalTransactionsMass.length == 1">
-          {{
-            additionalPriorityFee === undefined
-            ? "Not selected"
-            : (additionalPriorityFee + transactionMass! | sompiToNumber) + " KAS"
-          }}
+          <ng-container *ngIf="additionalPriorityFee === undefined">
+            <span>Not selected</span>
+          </ng-container>
+          <ng-container *ngIf="additionalPriorityFee !== undefined">
+            <span>{{ (additionalPriorityFee + transactionMass!) | sompiToNumber }}</span>
+            <!-- Always show kaspa icon for fees -->
+            <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+          </ng-container>
         </ng-container>
-      </span>
+      </div>
     </div>
     <div class="fee-spoiler-chevron">
       <kc-icon 
         [iconClass]="showPriorityFeeSelection ? 'icon-chevron-up' : 'icon-chevron-down'" 
         size="sm" 
-        color="var(--gray-60, #9E9E9E)">
+        color="var(--gray-60)">
       </kc-icon>
     </div>
   </div>
@@ -44,7 +49,11 @@
              [class.selected]="selectedOption === option.key" 
              (click)="selectOption(option.key)">
           <div class="option-title">{{ option.key | titlecase }}</div>
-          <div class="option-fee">{{ option.value.priorityFee | sompiToNumber }} KAS</div>
+          <div class="option-fee">
+            <span>{{ option.value.priorityFee | sompiToNumber }}</span>
+            <!-- Always show kaspa icon for fees -->
+            <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+          </div>
           <div class="option-time">~{{ option.value.estimatedSeconds.toFixed(1) }}s</div>
         </div>
       </div>
@@ -60,9 +69,13 @@
           <div class="custom-fee-input">
             <kc-input 
               type="number"
-              placeholder="Enter amount in KAS"
+              placeholder="Enter amount"
               [(ngModel)]="customFee"
               (valueChange)="selectOption('custom')">
+              <div rightSideSlot class="input-icon">
+                <!-- Always show kaspa icon for fees -->
+                <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+              </div>
             </kc-input>
           </div>
         </div>
@@ -72,28 +85,42 @@
       <div class="fee-details-section">
         <div class="fee-detail-row">
           <span class="detail-label">Minimum transaction fee:</span>
-          <span class="detail-value">{{ transactionMass! | sompiToNumber }} KAS</span>
+          <div class="detail-value">
+            <span>{{ transactionMass! | sompiToNumber }}</span>
+            <!-- Always show kaspa icon for fees -->
+            <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+          </div>
         </div>
         
         <div class="fee-detail-row">
           <span class="detail-label">Additional Priority fee:</span>
-          <span class="detail-value">
-            {{
-              additionalPriorityFee === undefined
-              ? "Not selected"
-              : (additionalPriorityFee | sompiToNumber) + " KAS"
-            }}
-          </span>
+          <div class="detail-value">
+            <ng-container *ngIf="additionalPriorityFee === undefined">
+              <span>Not selected</span>
+            </ng-container>
+            <ng-container *ngIf="additionalPriorityFee !== undefined">
+              <span>{{ additionalPriorityFee | sompiToNumber }}</span>
+              <!-- Always show kaspa icon for fees -->
+              <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+            </ng-container>
+          </div>
         </div>
 
         <div *ngIf="getAdditionalCommitActionPrice() > 0" class="fee-detail-row">
           <span class="detail-label">Protocol Action Fee:</span>
-          <span class="detail-value">{{ getAdditionalCommitActionPrice() | sompiToNumber }} KAS</span>
+          <div class="detail-value">
+            <span>{{ getAdditionalCommitActionPrice() | sompiToNumber }}</span>
+            <!-- Always show kaspa icon for fees -->
+            <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+          </div>
         </div>
 
         <div *ngIf="totalTransactionsMass && totalTransactionsMass.length > 1" class="fee-detail-row">
           <span class="detail-label">Number Of Transactions:</span>
-          <span class="detail-value">{{ totalTransactionsMass!.length }}</span>
+          <div class="detail-value">
+            <span>{{ totalTransactionsMass!.length }}</span>
+            <!-- No icon needed for transaction count -->
+          </div>
         </div>
       </div>
 

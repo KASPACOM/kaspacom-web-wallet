@@ -2,6 +2,7 @@ import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { KcButtonComponent } from 'kaspacom-ui';
+import { KcIconComponent } from 'kaspacom-ui';
 import { PriorityFeeSelectionComponent } from '../../../../../../components/wallet-actions-reviews/priority-fee-selection/priority-fee-selection.component';
 import { ApprovalFlowService, ApprovalFlowState } from '../../../common/services/approval-flow.service';
 import { WalletService } from '../../../../../../services/wallet.service';
@@ -18,6 +19,7 @@ import { ApprovalLoadingPageComponent } from './components/approval-loading-page
     CommonModule,
     FormsModule,
     KcButtonComponent,
+    KcIconComponent,
     PriorityFeeSelectionComponent,
     ApprovalSuccessPageComponent,
     ApprovalLoadingPageComponent

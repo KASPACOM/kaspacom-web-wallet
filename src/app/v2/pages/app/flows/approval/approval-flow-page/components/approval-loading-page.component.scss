@@ -1,3 +1,27 @@
+// Canvas background
+.background-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  background: transparent;
+  opacity: 0;
+  animation: fadeInCanvas 600ms ease-out forwards;
+}
+
+@keyframes fadeInCanvas {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// Original loading container styles
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -10,6 +34,13 @@
   justify-content: center;
   align-items: center;
   text-align: center;
+  position: relative;
+}
+
+// Loading Content - make sure it's above canvas
+.loading-content {
+  position: relative;
+  z-index: 1;
 }
 
 // Loading Header
@@ -20,11 +51,11 @@
 
 .loading-icon-wrapper {
   margin-bottom: 24px;
-  
+
   .loading-spinner {
     position: relative;
     display: inline-block;
-    
+
     .spinner-icon {
       color: #6fc7ba; // Primary teal color
       animation: spin 2s linear infinite;
@@ -135,10 +166,12 @@
     
     .step-text {
       color: var(--text-primary, #ffffff);
+      font-weight: 500;
     }
   }
+}
 
-  .step-icon {
+.step-icon {
     width: 32px;
     height: 32px;
     border-radius: 50%;
@@ -154,16 +187,15 @@
       color: var(--text-secondary, #a0a0a0);
       transition: color 0.3s ease;
     }
-  }
+}
 
-  .step-text {
+.step-text {
     font-size: 0.9rem;
     color: var(--text-secondary, #a0a0a0);
     font-weight: 500;
     transition: color 0.3s ease;
     text-align: left;
     flex: 1;
-  }
 }
 
 // Animations
@@ -215,27 +247,27 @@
   .loading-container {
     padding: 24px 16px 16px 16px;
   }
-
+  
   .loading-title {
     font-size: 1.5rem;
   }
-
+  
   .progress-section {
     max-width: 250px;
   }
-
+  
   .loading-steps {
     max-width: 300px;
   }
-
+  
   .step {
     gap: 12px;
-
+    
     .step-icon {
       width: 28px;
       height: 28px;
     }
-
+    
     .step-text {
       font-size: 0.85rem;
     }

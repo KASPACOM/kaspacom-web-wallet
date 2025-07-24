@@ -86,11 +86,8 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit,
     });
   }
 
-  override ngOnInit(): void {
-    super.ngOnInit();
-    if (!this.token()) {
-      this.loadTokenData();
-    }
+  override ngOnInit() {
+    // Remove effects from here since they're now in constructor
   }
 
   override ngOnDestroy(): void {

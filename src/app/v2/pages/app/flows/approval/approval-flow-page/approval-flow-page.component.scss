@@ -15,132 +15,182 @@
   min-height: 0;
 }
 
-// Transaction Header (matches original)
+// Transaction Header (improved with icon)
 .transaction-header {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   word-break: break-word;
+
+  .header-icon {
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 
   h2 {
     margin: 0;
     font-size: 1.6rem;
-    color: #6fc7ba; // Primary color for dark theme
+    color: var(--kaspa-20);
     font-weight: 600;
+    margin-bottom: 8px;
   }
 
   p {
-    margin: 5px 0 0;
+    margin: 0;
     font-size: 1rem;
-    color: var(--text-secondary, #a0a0a0);
+    color: var(--gray-60);
+    font-weight: 400;
   }
 }
 
-// Action Title and Subtitle
-.action-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 20px 0 8px 0;
-  color: var(--text-primary, #ffffff);
-}
-
-.action-subtitle {
-  font-size: 0.9rem;
-  color: var(--text-secondary, #a0a0a0);
-  margin: 0 0 20px 0;
-  font-weight: 400;
-}
-
-// Unknown Action
-.unknown-action {
-  text-align: center;
+// Action Overview Card
+.action-overview-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--gray-15);
+  border-radius: 12px;
   padding: 20px;
-  color: var(--text-secondary, #a0a0a0);
-}
-
-// Action Details (matches original structure)
-.action-details {
   margin-bottom: 20px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: var(--gray-20);
+    background: rgba(255, 255, 255, 0.05);
+  }
 }
 
-.detail {
-  display: flex;
-  justify-content: space-between;
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(111, 199, 186, 0.2);
+// Action Header inside card
+.action-header {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--gray-15);
 
-  .label {
-    font-weight: bold;
-    color: var(--text-secondary, #a0a0a0);
-    min-width: 100px;
-    flex-shrink: 0;
-    font-size: 0.9rem;
+  .action-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+    color: var(--white);
   }
 
-  .value {
-    color: var(--text-primary, #ffffff);
+  .action-subtitle {
+    font-size: 0.9rem;
+    color: var(--gray-60);
+    margin: 0;
+    font-weight: 400;
+  }
+}
+
+// Action Details Grid
+.action-details-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+// Detail Cards
+.detail-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--gray-10);
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: var(--gray-15);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .detail-label {
+    font-weight: 600;
+    color: var(--gray-75);
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .detail-value {
+    color: var(--white);
     font-family: 'SF Mono', 'Monaco', monospace;
     word-wrap: break-word;
     word-break: break-all;
     overflow-wrap: break-word;
     white-space: normal;
-    font-size: 0.9rem;
-    text-align: right;
-    flex: 1;
-    margin-left: 16px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.4;
   }
 }
 
+// Special styling for signing message
 .detail-signing-message {
-  display: flex;
-  flex-direction: column;
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(111, 199, 186, 0.2);
-
-  .label {
-    font-weight: bold;
-    color: var(--text-secondary, #a0a0a0);
-    margin-bottom: 10px;
-    font-size: 0.9rem;
-  }
-
-  .value {
+  .detail-value {
     white-space: pre-wrap;
     overflow: auto;
-    color: var(--text-primary, #ffffff);
     word-break: break-word;
     padding: 12px;
-    border-radius: 8px;
-    border: 1px solid rgba(111, 199, 186, 0.2);
+    border-radius: 6px;
+    border: 1px solid var(--gray-15);
     font-family: 'SF Mono', 'Monaco', monospace;
     font-size: 0.85rem;
     max-height: 200px;
+    background: rgba(0, 0, 0, 0.2);
+    margin-top: 4px;
   }
 }
 
-// Checkbox Container (matches original)
+// Checkbox Container enhanced
 .checkbox-container {
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(111, 199, 186, 0.2);
-
   .checkbox-label {
     display: flex;
     align-items: center;
     gap: 12px;
     cursor: pointer;
     user-select: none;
+    padding: 4px 0;
 
     input[type="checkbox"] {
       width: 18px;
       height: 18px;
       cursor: pointer;
-      accent-color: #6fc7ba;
+      accent-color: var(--kaspa-20);
+      border-radius: 4px;
     }
 
     span {
       font-weight: 500;
-      color: var(--text-primary, #ffffff);
-      font-size: 0.9rem;
+      color: var(--white);
+      font-size: 0.95rem;
     }
+  }
+}
+
+// Unknown Action Card
+.unknown-action-card {
+  text-align: center;
+  padding: 32px 20px;
+  background: rgba(230, 162, 35, 0.1);
+  border: 1px solid var(--orange-20);
+  border-radius: 12px;
+  margin-bottom: 20px;
+
+  kc-icon {
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--orange-20);
+    margin: 0 0 8px 0;
+  }
+
+  p {
+    color: var(--gray-75);
+    font-size: 0.9rem;
+    margin: 0;
+    line-height: 1.4;
   }
 }
 
@@ -152,23 +202,34 @@ priority-fee-selection {
 
 // Clean and modern design for approval flow
 
-// Action Buttons
+// Action Buttons - Enhanced Design
 .action-buttons {
   display: flex;
-  gap: 12px;
-  padding: 20px;
+  gap: 16px;
+  padding: 24px 20px 20px 20px;
   flex-shrink: 0;
-  // Add background and border to separate from content when scrolling
-  background: rgba(15, 15, 15, 0.88);
-  border-top: 1px solid rgba(111, 199, 186, 0.1);
+  // Enhanced background with blur effect for modern look
+  background: rgba(7, 9, 10, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--gray-20);
   // Make buttons sticky to bottom like mobile apps
   position: sticky;
   bottom: 0;
   z-index: 10;
+  // Add subtle shadow to separate from content
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
 
   .reject-button,
   .accept-button {
     flex: 1;
+    // Enhanced button spacing and styling
+    min-height: 48px;
+    
+    // Add subtle hover enhancements
+    &:hover {
+      transform: translateY(-1px);
+      transition: all 0.2s ease;
+    }
   }
 }
 

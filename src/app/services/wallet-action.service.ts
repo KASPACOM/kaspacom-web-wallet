@@ -246,6 +246,11 @@ export class WalletActionService {
 
     action.priorityFee = result.priorityFee || action.priorityFee;
 
+    // Add 2-second delay to allow canvas animation to show before processing
+    if (isUsingV2Flow) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+
     const actionSteps = this.getActionSteps(action);
     let currentStep = 0;
     const currentWalletAddress = this.walletService.getCurrentWallet()!.getAddress();

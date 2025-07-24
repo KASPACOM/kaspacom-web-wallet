@@ -77,9 +77,7 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit,
         // Error cases are handled by the approval flow itself
       }
     });
-  }
 
-  override ngOnInit() {
     // React to page configuration changes
     effect(() => {
       const currentPage = this.flowPagesService.activePage();
@@ -92,21 +90,10 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit,
         this.validateAmount();
       }
     });
+  }
 
-    // Effect to watch for approval flow completion
-    effect(() => {
-      const completion = this.approvalFlowService.completion();
-      if (completion && this.waitingForApprovalCompletion) {
-        this.waitingForApprovalCompletion = false;
-        
-        if (completion.success) {
-          // Transaction was successful, navigate back
-          this.messagePopupService.showSuccess('Kaspa sent successfully!');
-          this.navigateBack();
-        }
-        // Error cases are handled by the approval flow itself
-      }
-    });
+  override ngOnInit() {
+    // Remove duplicate effects from here since they're now in constructor
   }
 
   override ngOnDestroy() {
@@ -229,6 +216,15 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit,
     this.isLoading = true;
 
     try {
+      // Ensure wallet is ready for transactions
+      await currentWallet.waitForWalletToBeReadyForTransactions();
+      
+      // Check if utxo processor manager is available
+      if (!currentWallet.getUtxoProcessorManager()) {
+        this.messagePopupService.showError('Wallet is not ready for transactions. Please wait and try again.');
+        return;
+      }
+
       const amountInSompi = this.kaspaNetworkActionsService.kaspaToSompiFromNumber(this.kaspaAmount!);
 
       const action = this.walletActionService.createTransferKasWalletAction(
@@ -270,7 +266,7 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit,
       }
     } catch (error) {
       console.error('Send transaction error:', error);
-      this.messagePopupService.showError('An unexpected error occurred');
+      this.messagePopupService.showError('An unexpected error occurred. Please ensure your wallet is ready and try again.');
       this.waitingForApprovalCompletion = false;
     } finally {
       this.isLoading = false;

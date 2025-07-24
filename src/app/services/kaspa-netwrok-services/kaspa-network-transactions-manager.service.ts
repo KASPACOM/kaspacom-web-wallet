@@ -324,6 +324,16 @@ export class KaspaNetworkTransactionsManagerService {
     baseTransactionAmount = SUBMIT_REVEAL_MIN_UTXO_AMOUNT,
     transactionOptions: DoTransactionOptions = {}
   ) {
+    // Ensure wallet has utxo processor manager initialized
+    const utxoProcessorManager = wallet.getUtxoProcessorManager();
+    if (!utxoProcessorManager) {
+      console.error('UtxoProcessorManager is not initialized for wallet');
+      return {
+        success: false,
+        errorCode: 500, // Internal server error
+      };
+    }
+
     const outputs = [
       {
         address: operationScript.scriptAddress,
@@ -332,7 +342,7 @@ export class KaspaNetworkTransactionsManagerService {
     ];
 
     return await this.doTransactionWithUtxoProcessor(
-      wallet.getUtxoProcessorManager()!,
+      utxoProcessorManager,
       wallet.getPrivateKey(),
       maxPriorityFee,
       outputs,
@@ -415,8 +425,18 @@ export class KaspaNetworkTransactionsManagerService {
 
 
 
+    // Ensure wallet has utxo processor manager initialized
+    const utxoProcessorManager = wallet.getUtxoProcessorManager();
+    if (!utxoProcessorManager) {
+      console.error('UtxoProcessorManager is not initialized for wallet');
+      return {
+        success: false,
+        errorCode: 500, // Internal server error
+      };
+    }
+
     return await this.doTransactionWithUtxoProcessor(
-      wallet.getUtxoProcessorManager()!,
+      utxoProcessorManager,
       wallet.getPrivateKey(),
       maxPriorityFee,
       outputs,
@@ -481,8 +501,18 @@ export class KaspaNetworkTransactionsManagerService {
       amount: output.amount,
     })) || [];
 
+    // Ensure wallet has utxo processor manager initialized
+    const utxoProcessorManager = wallet.getUtxoProcessorManager();
+    if (!utxoProcessorManager) {
+      console.error('UtxoProcessorManager is not initialized for wallet');
+      return {
+        success: false,
+        errorCode: 500, // Internal server error
+      };
+    }
+
     const result = await this.doTransactionWithUtxoProcessor(
-      wallet.getUtxoProcessorManager()!,
+      utxoProcessorManager,
       wallet.getPrivateKey(),
       priorityFee,
       payments,
@@ -519,8 +549,18 @@ export class KaspaNetworkTransactionsManagerService {
     errorCode?: number;
     result?: ICreateTransactions;
   }> {
+    // Ensure wallet has utxo processor manager initialized
+    const utxoProcessorManager = wallet.getUtxoProcessorManager();
+    if (!utxoProcessorManager) {
+      console.error('UtxoProcessorManager is not initialized for wallet');
+      return {
+        success: false,
+        errorCode: 500, // Internal server error
+      };
+    }
+
     return await this.doTransactionWithUtxoProcessor(
-      wallet.getUtxoProcessorManager()!,
+      utxoProcessorManager,
       wallet.getPrivateKey(),
       priorityFee,
       payments,

@@ -4,41 +4,54 @@
   margin: 16px 0;
 }
 
-// Fee Toggle Header (Spoiler)
+// Fee Toggle Header (Spoiler) - Enhanced Design
 .fee-spoiler-toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
-  background: transparent;
-  border: 1px solid var(--gray-15, rgba(255, 255, 255, 0.15));
-  border-radius: 8px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--gray-15);
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
   
   &:hover {
-    border-color: var(--gray-20, rgba(255, 255, 255, 0.2));
-    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--gray-20);
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 }
 
 .fee-summary-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   flex: 1;
   
   .fee-label {
-    font-size: 0.9rem;
-    color: var(--text-secondary, #a0a0a0);
-    font-weight: 500;
+    font-size: 0.95rem;
+    color: var(--gray-75);
+    font-weight: 600;
   }
   
   .fee-value {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     font-size: 1rem;
-    color: #6fc7ba;
+    color: var(--kaspa-20);
     font-weight: 600;
     font-family: 'SF Mono', 'Monaco', monospace;
+    
+    span {
+      color: var(--kaspa-20);
+    }
+    
+    kc-icon {
+      flex-shrink: 0;
+    }
   }
 }
 
@@ -52,101 +65,153 @@
   }
 }
 
-// Fee Selection Content (Collapsible)
+// Fee Selection Content (Collapsible) - Enhanced
 .fee-selection-content {
   // Angular animations handle the open/close states
 }
 
 .fee-selection-inner {
-  padding: 20px 16px 16px 16px;
-  border-left: 1px solid var(--gray-15, rgba(255, 255, 255, 0.15));
-  border-right: 1px solid var(--gray-15, rgba(255, 255, 255, 0.15));
-  border-bottom: 1px solid var(--gray-15, rgba(255, 255, 255, 0.15));
+  padding: 24px 20px 20px 20px;
+  border-left: 1px solid var(--gray-15);
+  border-right: 1px solid var(--gray-15);
+  border-bottom: 1px solid var(--gray-15);
   border-top: none;
-  border-radius: 0 0 8px 8px;
+  border-radius: 0 0 12px 12px;
   margin-top: -1px; // Connect with toggle border
-  background: transparent;
+  background: rgba(255, 255, 255, 0.02);
 }
 
-// Fee Options Grid
+// Fee Options Grid - Enhanced
 .fee-options-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
 .fee-option-card {
-  background: transparent;
-  border: 1px solid var(--gray-15, rgba(255, 255, 255, 0.15));
-  border-radius: 8px;
-  padding: 16px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--gray-15);
+  border-radius: 10px;
+  padding: 20px 14px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: transparent;
+    transition: all 0.3s ease;
+  }
   
   &:hover {
-    border-color: var(--gray-20, rgba(255, 255, 255, 0.2));
-    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--gray-25);
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
   
   &.selected {
-    border-color: #6fc7ba;
-    background: rgba(111, 199, 186, 0.1);
+    border-color: var(--kaspa-20);
+    background: rgba(111, 199, 186, 0.08);
+    
+    &::before {
+      background: var(--kaspa-20);
+    }
   }
   
   .option-title {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-primary, #ffffff);
-    margin-bottom: 8px;
-    text-transform: capitalize;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
   
   .option-fee {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #6fc7ba;
-    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--kaspa-20);
+    margin-bottom: 6px;
     font-family: 'SF Mono', 'Monaco', monospace;
+    
+    span {
+      color: var(--kaspa-20);
+    }
+    
+    kc-icon {
+      flex-shrink: 0;
+    }
   }
   
   .option-time {
-    font-size: 0.75rem;
-    color: var(--text-secondary, #a0a0a0);
+    font-size: 0.8rem;
+    color: var(--gray-60);
+    font-weight: 500;
   }
 }
 
-// Custom Fee Section
+// Custom Fee Section - Enhanced
 .custom-fee-section {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .custom-fee-card {
-  background: transparent;
-  border: 1px solid var(--gray-15, rgba(255, 255, 255, 0.15));
-  border-radius: 8px;
-  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--gray-15);
+  border-radius: 10px;
+  padding: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: transparent;
+    transition: all 0.3s ease;
+    border-radius: 10px 10px 0 0;
+  }
   
   &:hover {
-    border-color: var(--gray-20, rgba(255, 255, 255, 0.2));
-    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--gray-25);
+    background: rgba(255, 255, 255, 0.06);
   }
   
   &.selected {
-    border-color: #6fc7ba;
-    background: rgba(111, 199, 186, 0.1);
+    border-color: var(--kaspa-20);
+    background: rgba(111, 199, 186, 0.08);
+    
+    &::before {
+      background: var(--kaspa-20);
+    }
   }
   
   .custom-fee-header {
-    margin-bottom: 12px;
+    margin-bottom: 16px;
     
     .custom-fee-title {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--text-primary, #ffffff);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--white);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
   }
   
@@ -154,42 +219,84 @@
     kc-input {
       width: 100%;
     }
+    
+    .input-icon {
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      
+      kc-icon {
+        color: var(--gray-60);
+      }
+    }
   }
 }
 
-// Fee Details Section
+// Fee Details Section - Enhanced
 .fee-details-section {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid var(--gray-15, rgba(255, 255, 255, 0.15));
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--gray-20);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  padding: 20px;
 }
 
 .fee-detail-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
+  padding: 10px 0;
+  
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--gray-10);
+  }
   
   .detail-label {
-    font-size: 0.85rem;
-    color: var(--text-secondary, #a0a0a0);
-    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--gray-75);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
   }
   
   .detail-value {
-    font-size: 0.85rem;
-    color: var(--text-primary, #ffffff);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.9rem;
+    color: var(--white);
     font-weight: 600;
     font-family: 'SF Mono', 'Monaco', monospace;
+    
+    span {
+      color: var(--white);
+    }
+    
+    kc-icon {
+      flex-shrink: 0;
+    }
   }
 }
 
-// Loading State
+// Loading State - Enhanced
 .fee-loading {
-  padding: 20px;
+  padding: 32px 20px;
   text-align: center;
-  color: var(--text-secondary, #a0a0a0);
-  font-size: 0.9rem;
+  color: var(--gray-60);
+  font-size: 1rem;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--gray-15);
+  border-radius: 12px;
+  margin: 16px 0;
+  
+  &::before {
+    content: '⏳';
+    display: block;
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+  }
 }
 
 // Responsive Design

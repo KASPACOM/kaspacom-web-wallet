@@ -112,8 +112,14 @@
                       </div>
                     }
                   } @else {
-                    <div class="activity-amount text-white typo-text-2 font-weight-medium">
-                      {{ getKrc20AmountDisplay(item) }}
+                    <div class="activity-amount flex align-items-center gap-8">
+                      <span class="text-white typo-text-2 font-weight-medium">
+                        {{ getKrc20AmountDisplay(item) }}
+                      </span>
+                      <kc-icon 
+                        [iconClass]="'icon-tokens'" 
+                        [size]="'sm'">
+                      </kc-icon>
                     </div>
                   }
                   

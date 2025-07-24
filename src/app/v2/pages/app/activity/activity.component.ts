@@ -402,8 +402,8 @@ export class ActivityComponent implements OnInit, OnDestroy {
 
   getKrc20AmountDisplay(item: ActivityItem): string {
     const krc20Item = item as Krc20ActivityItem;
-    const amount = parseFloat(krc20Item.amount);
-    return `${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 4 })} ${krc20Item.ticker.toUpperCase()}`;
+    const amount = this.kaspaNetworkActionsService.sompiToNumber(BigInt(krc20Item.amount));
+    return `${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 4 })}`;
   }
 
   hasKaspaFee(item: ActivityItem): boolean {

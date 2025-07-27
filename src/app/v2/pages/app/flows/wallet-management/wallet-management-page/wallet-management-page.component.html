@@ -11,15 +11,12 @@
       ></kc-icon>
     </div>
     <div class="header-right">
-      <kc-button
-        [text]="'Change wallet'"
-        [variant]="'tertiary'"
-        [size]="'xs'"
-        [isFullWidth]="false"
-        [prefixIcon]="'icon-update'"
-        [prefixIconColor]="'white'"
-        (buttonClick)="manageWallets()"
-      ></kc-button>
+      <kc-icon
+        class="more-options-icon"
+        [iconClass]="'icon-more-options'"
+        [size]="'md'"
+        (click)="onWalletOptionsClick()"
+      ></kc-icon>
       <kc-icon
         class="close-icon"
         [iconClass]="'icon-close'"

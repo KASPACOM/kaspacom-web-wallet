@@ -9,6 +9,7 @@ import { QuickActionDialogComponent } from './common/quick-action-dialog/quick-a
 import { CreateWalletAccountQuickActionDialogComponent } from './common/quick-action-dialog/wrappers/create-wallet-account-quick-action-dialog.component';
 import { EditWalletQuickActionDialogComponent } from './common/quick-action-dialog/wrappers/edit-wallet-quick-action-dialog.component';
 import { DeleteWalletAccountQuickActionDialogComponent } from './common/quick-action-dialog/wrappers/delete-wallet-account-quick-action-dialog.component';
+import { WalletOptionsQuickActionDialogComponent } from './common/quick-action-dialog/wrappers/wallet-options-quick-action-dialog.component';
 import { WalletManagementPageComponent } from './flows/wallet-management/wallet-management-page/wallet-management-page.component';
 import { SendPageComponent } from './flows/transaction/send-page/send-page.component';
 import { SendKaspaComponent } from './flows/transaction/send-page/components/send-kaspa/send-kaspa.component';
@@ -39,6 +40,7 @@ import { KcSnackbarComponent } from 'kaspacom-ui';
     CreateWalletAccountQuickActionDialogComponent,
     EditWalletQuickActionDialogComponent,
     DeleteWalletAccountQuickActionDialogComponent,
+    WalletOptionsQuickActionDialogComponent,
     WalletManagementPageComponent,
     SendPageComponent,
     SendKaspaComponent,

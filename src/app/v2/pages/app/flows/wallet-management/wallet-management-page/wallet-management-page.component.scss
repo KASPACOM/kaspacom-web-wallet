@@ -47,6 +47,21 @@
     align-items: center;
     gap: 16px;
 
+    .more-options-icon {
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      ::ng-deep .icon {
+        color: var(--gray-60) !important;
+      }
+
+      &:hover {
+        ::ng-deep .icon {
+          color: white !important;
+        }
+      }
+    }
+
     .close-icon {
       cursor: pointer;
       transition: all 0.2s ease;

@@ -170,17 +170,7 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
     });
   }
 
-  manageWallets(): void {
-    // Navigate to manage wallets functionality
-    // You can implement the specific functionality here
-    console.log('Manage wallets clicked');
-    // For now, could navigate to add wallet page as an example
-    this.navigateToNextPage({
-      id: 'add-wallet',
-      title: 'Add Wallet',
-      canNavigateBack: true
-    });
-  }
+
 
   onAddAccountClick(): void {
     // Open the quick action dialog for add account
@@ -224,6 +214,16 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
           this.loadWalletAccounts();
         }
       }
+    });
+  }
+
+  onWalletOptionsClick(): void {
+    // Open the wallet options dialog
+    this.quickActionDialogService.openDialog({
+      id: 'wallet-options',
+      title: 'Wallet options',
+      isCloseable: true,
+      data: {}
     });
   }
 

@@ -108,6 +108,15 @@
       ></app-delete-wallet-account-quick-action-dialog>
     }
 
+    @if (quickActionDialogService.activeDialog()?.id === 'wallet-options') {
+      <app-wallet-options-quick-action-dialog
+        [isOpen]="quickActionDialogService.isAnyDialogOpen()"
+        [data]="quickActionDialogService.activeDialog()?.data"
+        (backdropClick)="onQuickActionDialogBackdropClick()"
+        (close)="onQuickActionDialogClose()"
+      ></app-wallet-options-quick-action-dialog>
+    }
+
     <!-- Notification Snackbar System -->
     <kc-snackbar></kc-snackbar>
   </div>

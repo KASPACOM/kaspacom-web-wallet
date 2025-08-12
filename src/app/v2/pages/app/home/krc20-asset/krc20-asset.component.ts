@@ -1,18 +1,17 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule, DecimalPipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
+import { CommonModule, TitleCasePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
 import { BaseAssetPageComponent, AssetDetail, AssetTransaction } from '../../common/base-asset-page/base-asset-page.component';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { KasplexKrc20Service } from '../../../../../services/kasplex-api/kasplex-api.service';
 import { AssetsStoreService } from '../../../../../services/assets-store.service';
-import { FlowPagesService } from '../../common/services/flow-pages.service';
+import { FlowPagesService } from '../../../../services/flow-pages.service';
 import { OperationDetails } from '../../../../../services/kasplex-api/dtos/operation-details-response';
 import { environment } from '../../../../../../environments/environment';
 import { KcLabeledTabsComponent, TabItem } from '../../../../shared/ui/kc-labeled-tabs/kc-labeled-tabs.component';
-import { GetTokenInfoResponse } from '../../../../../services/kasplex-api/dtos/token-list-info.dto';
-import { TokenLogoComponent } from '../../common/token-logo/token-logo.component';
+import { TokenLogoComponent } from '../../common/krc20/token-logo/token-logo.component';
 import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 
 interface TokenInfo {
@@ -34,9 +33,7 @@ interface TokenInfo {
   selector: 'app-krc20-asset',
   imports: [
     CommonModule,
-    DecimalPipe,
     TitleCasePipe,
-    UpperCasePipe,
     KcButtonComponent,
     KcIconComponent,
     SkeletonComponent,
@@ -52,16 +49,16 @@ export class Krc20AssetComponent extends BaseAssetPageComponent implements OnIni
   private assetsStore = inject(AssetsStoreService);
   private flowPagesService = inject(FlowPagesService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
-  
+
   ticker: string | null = null;
-  
+
   // Tab management
   selectedTabId = signal<string>('transactions');
   tabs: TabItem[] = [
     { id: 'transactions', label: 'Transactions' },
     { id: 'token-info', label: 'Token Info' }
   ];
-  
+
   // Token metadata
   protected tokenInfo = signal<TokenInfo | null>(null);
   protected tokenInfoLoading = signal<boolean>(true);
@@ -87,14 +84,14 @@ export class Krc20AssetComponent extends BaseAssetPageComponent implements OnIni
 
     try {
       this.tokenInfoLoading.set(true);
-      
+
       const tokenInfoResponse = await firstValueFrom(
         this.kasplexService.getTokenInfo(this.ticker)
       );
 
       if (tokenInfoResponse.message === 'successful' && tokenInfoResponse.result?.[0]) {
         const tokenData = tokenInfoResponse.result[0];
-        
+
         const tokenInfo: TokenInfo = {
           tick: tokenData.tick,
           max: tokenData.max,
@@ -136,12 +133,12 @@ export class Krc20AssetComponent extends BaseAssetPageComponent implements OnIni
   protected getStateDisplay(): string {
     const tokenInfo = this.tokenInfo();
     if (!tokenInfo) return '';
-    
+
     if (tokenInfo.state === 'finished') {
       const percentage = this.calculatePercentage(tokenInfo.minted, tokenInfo.max);
       return `${percentage}% Minted`;
     }
-    
+
     return tokenInfo.state === 'deployed' ? 'Active' : tokenInfo.state;
   }
 
@@ -149,11 +146,11 @@ export class Krc20AssetComponent extends BaseAssetPageComponent implements OnIni
   protected getBurnedAmount(): string {
     const tokenInfo = this.tokenInfo();
     if (!tokenInfo) return '0';
-    
+
     const maxSupply = parseInt(tokenInfo.max || '0');
     const minted = parseInt(tokenInfo.minted || '0');
     const burned = Math.max(0, maxSupply - minted);
-    
+
     return burned.toLocaleString();
   }
 
@@ -165,11 +162,11 @@ export class Krc20AssetComponent extends BaseAssetPageComponent implements OnIni
 
     try {
       this.loading.set(true);
-      
+
       // First try to get the token from the assets store
       const krc20Assets = this.assetsStore.krc20Assets();
       const storedToken = krc20Assets.find(token => token.tick === this.ticker);
-      
+
       if (storedToken) {
         // Use data from store
         const assetDetail: AssetDetail = {
@@ -182,7 +179,7 @@ export class Krc20AssetComponent extends BaseAssetPageComponent implements OnIni
       } else {
         // Fallback to API if not in store (shouldn't happen in normal flow)
         const currentWallet = this.walletService.getCurrentWallet();
-        
+
         if (!currentWallet) {
           console.warn('No current wallet selected');
           return;
@@ -224,7 +221,7 @@ export class Krc20AssetComponent extends BaseAssetPageComponent implements OnIni
     try {
       this.historyLoading.set(true);
       const currentWallet = this.walletService.getCurrentWallet();
-      
+
       if (!currentWallet) {
         console.warn('No current wallet selected');
         return;
@@ -261,7 +258,7 @@ export class Krc20AssetComponent extends BaseAssetPageComponent implements OnIni
     }
 
     const assetDetail = this.assetDetail()!;
-    
+
     // Create token data for the send form
     const tokenData = {
       name: assetDetail.name,
@@ -284,14 +281,14 @@ export class Krc20AssetComponent extends BaseAssetPageComponent implements OnIni
   // Override formatTransactionAmount to properly convert from sompi
   protected override formatTransactionAmount(transaction: AssetTransaction): string {
     if (!transaction.amount) return '0';
-    
+
     const amountInSompi = BigInt(transaction.amount);
     const amountNumber = this.kaspaNetworkActionsService.sompiToNumber(amountInSompi);
     const sign = transaction.type === 'transfer' && transaction.from === this.getCurrentWalletAddress() ? '-' : '+';
-    
-    return `${sign}${amountNumber.toLocaleString('en-US', { 
-      minimumFractionDigits: 0, 
-      maximumFractionDigits: 8 
+
+    return `${sign}${amountNumber.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 8
     })}`;
   }
 
@@ -311,7 +308,7 @@ export class Krc20AssetComponent extends BaseAssetPageComponent implements OnIni
       console.warn('No ticker available for navigation');
       return;
     }
-    
+
     this.router.navigate(['/app/home/asset/krc20', this.ticker, 'transaction', transaction.id]);
   }
 
@@ -321,10 +318,10 @@ export class Krc20AssetComponent extends BaseAssetPageComponent implements OnIni
     if (event) {
       event.stopPropagation();
     }
-    
+
     if (!transaction.id) return;
-    
+
     const explorerUrl = `${environment.kaspaExplorerBaseurl}/txs/${transaction.id}`;
     window.open(explorerUrl, '_blank');
   }
-} 
+}

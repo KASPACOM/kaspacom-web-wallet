@@ -1,7 +1,7 @@
 import { Component, computed, inject, OnInit, OnDestroy, ViewChild, AfterViewInit, ElementRef, Injector } from '@angular/core';
 import { DecimalPipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
-import { TokenLogoComponent } from '../../common/token-logo/token-logo.component';
+import { TokenLogoComponent } from '../../common/krc20/token-logo/token-logo.component';
 import { IToken, ITokenWithMetadata } from '../../common/interfaces/token.interface';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { AssetsStoreService } from '../../../../../services/assets-store.service';

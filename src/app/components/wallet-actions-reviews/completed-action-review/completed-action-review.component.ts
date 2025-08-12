@@ -11,7 +11,7 @@ import { Krc20MetadataService } from '../../../services/asset-metadata/krc20-met
     selector: 'completed-action-review',
     templateUrl: './completed-action-review.component.html',
     styleUrls: ['./completed-action-review.component.scss'],
-    imports: [NgIf, NgFor, SompiToNumberPipe]
+    imports: [NgIf, NgFor]
 })
 export class CompletedActionReview {
   completedActionOverviewService = inject(CompletedActionOverviewService);
@@ -26,7 +26,7 @@ export class CompletedActionReview {
   onDone() {
     // Check if this was a KRC20 transaction and trigger assets update
     this.handlePostTransactionUpdates();
-    
+
     // Clear the action result to dismiss the modal
     this.walletActionService.clearActionResult();
   }
@@ -47,17 +47,17 @@ export class CompletedActionReview {
       // Check if this is a commit-reveal action result (used by KRC20)
       if (this.actionResult.type === WalletActionResultType.CommitReveal) {
         const commitRevealResult = this.actionResult as CommitRevealActionResult;
-        
+
         // Check if the protocol is KASPLEX (used for KRC20 operations)
         if (commitRevealResult.protocol === ProtocolType.KASPLEX) {
           // Parse the protocol action to confirm it's a KRC20 operation
           const protocolAction = JSON.parse(commitRevealResult.protocolAction);
-          
+
           // KRC20 operations have an 'op' field with values like 'transfer', 'mint', 'deploy', etc.
           return protocolAction && typeof protocolAction.op === 'string';
         }
       }
-      
+
       return false;
     } catch (error) {
       console.warn('[CompletedActionReview] Error checking if KRC20 transaction:', error);

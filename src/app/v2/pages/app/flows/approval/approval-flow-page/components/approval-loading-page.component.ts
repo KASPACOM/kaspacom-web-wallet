@@ -1,7 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ApprovalFlowService } from '../../../../common/services/approval-flow.service';
-import { KcIconComponent } from 'kaspacom-ui';
+import { ApprovalFlowService } from '../../../../../../services/approval-flow.service';
+import { KcIconComponent } from '@kaspacom/ui';
 import { KaspaNodesBackgroundComponent } from '../../../../common/kaspa-nodes-background/kaspa-nodes-background.component';
 
 @Component({
@@ -16,13 +16,13 @@ import { KaspaNodesBackgroundComponent } from '../../../../common/kaspa-nodes-ba
     <div class="loading-container">
       <!-- Background Canvas -->
       <kaspa-nodes-background class="background-canvas"></kaspa-nodes-background>
-      
+
       <!-- Loading Header -->
       <div class="loading-header">
         <div class="loading-icon-wrapper">
           <div class="loading-spinner">
-            <kc-icon 
-              [iconClass]="'icon-refresh'" 
+            <kc-icon
+              [iconClass]="'icon-refresh'"
               [size]="'xlg'"
               class="spinner-icon">
             </kc-icon>
@@ -35,8 +35,8 @@ import { KaspaNodesBackgroundComponent } from '../../../../common/kaspa-nodes-ba
       <!-- Progress Bar -->
       <div class="progress-section">
         <div class="progress-bar">
-          <div 
-            class="progress-fill" 
+          <div
+            class="progress-fill"
             [style.width.%]="currentProgress()">
           </div>
         </div>
@@ -49,18 +49,18 @@ import { KaspaNodesBackgroundComponent } from '../../../../common/kaspa-nodes-ba
       <div class="loading-steps">
         <div class="step" [class.active]="currentProgress() >= 50">
           <div class="step-icon">
-            <kc-icon 
-              [iconClass]="currentProgress() >= 50 ? 'icon-check' : 'icon-clock'" 
+            <kc-icon
+              [iconClass]="currentProgress() >= 50 ? 'icon-check' : 'icon-clock'"
               [size]="'sm'">
             </kc-icon>
           </div>
           <span class="step-text">Commit transaction</span>
         </div>
-        
+
         <div class="step" [class.active]="currentProgress() >= 100">
           <div class="step-icon">
-            <kc-icon 
-              [iconClass]="currentProgress() >= 100 ? 'icon-check' : 'icon-clock'" 
+            <kc-icon
+              [iconClass]="currentProgress() >= 100 ? 'icon-check' : 'icon-clock'"
               [size]="'sm'">
             </kc-icon>
           </div>
@@ -73,6 +73,6 @@ import { KaspaNodesBackgroundComponent } from '../../../../common/kaspa-nodes-ba
 })
 export class ApprovalLoadingPageComponent {
   private approvalFlowService = inject(ApprovalFlowService);
-  
+
   currentProgress = computed(() => this.approvalFlowService.currentProgress());
-} 
+}

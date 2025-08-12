@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, signal, inject, effect } from '@angular/c
 import { CommonModule, DatePipe } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
-import { KcInputComponent, KcCheckboxComponent, KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcInputComponent, KcCheckboxComponent, KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
 import { FormsModule } from '@angular/forms';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
 import { KnsDomainAsset } from '../../../../../../../../services/kns-api/dtos/kns-domain.dto';
@@ -12,7 +12,7 @@ import { AssetsStoreService } from '../../../../../../../../services/assets-stor
 import { WalletActionService } from '../../../../../../../../services/wallet-action.service';
 import { KnsWalletActionService } from '../../../../../../../../services/protocols/kns/kns-wallet-actions.service';
 import { MessagePopupService } from '../../../../../../../../services/message-popup.service';
-import { ApprovalFlowService } from '../../../../../common/services/approval-flow.service';
+import { ApprovalFlowService } from '../../../../../../../services/approval-flow.service';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { firstValueFrom } from 'rxjs';
 import { UtilsHelper } from '../../../../../../../../services/utils.service';
@@ -35,31 +35,31 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit, O
   private approvalFlowService = inject(ApprovalFlowService);
   private utilsHelper = inject(UtilsHelper);
   private qrScannerService = inject(QrScannerService);
-  
+
   domain = signal<KnsDomainAsset | undefined>(undefined);
   loading = signal<boolean>(true);
   walletAddress = '';
   replaceByFee = false;
-  
+
   // Loading state
   isLoading = false;
-  
+
   // Track if we're waiting for approval flow completion
   private waitingForApprovalCompletion = false;
-  
+
   // Validation states
   isAddressValid = true;
   addressErrorMessage = '';
 
   constructor() {
     super();
-    
+
     // Effect to watch for approval flow completion
     effect(() => {
       const completion = this.approvalFlowService.completion();
       if (completion && this.waitingForApprovalCompletion) {
         this.waitingForApprovalCompletion = false;
-        
+
         if (completion.success) {
           // Transaction was successful, navigate back
           this.messagePopupService.showSuccess('KNS domain sent successfully!');
@@ -68,7 +68,7 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit, O
         // Error cases are handled by the approval flow itself
       }
     });
-    
+
     // React to page configuration changes
     effect(() => {
       const currentPage = this.flowPagesService.activePage();
@@ -81,12 +81,12 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit, O
   override ngOnInit() {
     // Remove effects from here since they're now in constructor
   }
-  
+
   override ngOnDestroy() {
     // Clean up QR scanner when component is destroyed
     this.qrScannerService.stopScanning();
   }
-  
+
   get config(): IFlowPageConfig {
     return {
       id: 'send-kns',
@@ -94,11 +94,11 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit, O
       canNavigateBack: true
     };
   }
-  
+
   get isFormValid(): boolean {
     return this.walletAddress.trim().length > 0 && this.isAddressValid;
   }
-  
+
   onWalletAddressChange(value: string): void {
     this.walletAddress = value;
     this.validateAddress();
@@ -121,47 +121,47 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit, O
       });
     }
   }
-  
+
   private validateAddress(): void {
     if (!this.walletAddress.trim()) {
       this.isAddressValid = false;
       this.addressErrorMessage = 'Address is required';
       return;
     }
-    
+
     if (!this.utilsHelper.isValidWalletAddress(this.walletAddress)) {
       this.isAddressValid = false;
       this.addressErrorMessage = 'Invalid wallet address format';
       return;
     }
-    
+
     this.isAddressValid = true;
     this.addressErrorMessage = '';
   }
-  
+
   onRbfChange(value: boolean): void {
     this.replaceByFee = value;
   }
-  
+
   async onSendClick(): Promise<void> {
     if (!this.isFormValid || !this.domain()) {
       return;
     }
-    
+
     const currentWallet = this.walletService.getCurrentWallet();
     if (!currentWallet) {
       this.messagePopupService.showError('No wallet selected');
       return;
     }
-    
+
     const currentDomain = this.domain()!;
     if (!currentDomain.asset) {
       this.messagePopupService.showError('Invalid domain data');
       return;
     }
-    
+
     this.isLoading = true;
-    
+
     try {
       // Create KNS transfer action
       const action = this.knsWalletActionService.createTransferWalletAction(
@@ -169,16 +169,16 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit, O
         currentDomain.isDomain,  // whether it's a domain
         this.walletAddress       // to address
       );
-      
+
       console.log('KNS Transfer Action:', action, currentWallet, currentDomain);
-      
+
       const result = await this.walletActionService.validateAndDoActionAfterApproval(action, false);
-      
+
       if (result.success) {
         // Clear form on success
         this.walletAddress = '';
         this.replaceByFee = false;
-        
+
         // Only show success message and navigate if not using v2 flow
         // v2 flow handles success display in the approval flow
         if (!result.isUsingV2Flow) {
@@ -195,7 +195,7 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit, O
             : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR];
           this.messagePopupService.showError(errorMessage);
         }
-        
+
         // Reset the waiting flag if transaction failed
         this.waitingForApprovalCompletion = false;
       }
@@ -211,15 +211,15 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit, O
   private async loadDomainData(): Promise<void> {
     try {
       this.loading.set(true);
-      
+
       // Clear form data when loading new domain
       this.walletAddress = '';
       this.replaceByFee = false;
-      
+
       // Get navigation data - should contain the full domain object
       const navigationData = this.getNavigationData();
       const domainData = navigationData?.domain as KnsDomainAsset;
-      
+
       if (domainData) {
         // Use domain data from navigation (which comes from assets store)
         this.domain.set(domainData);
@@ -227,7 +227,7 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit, O
         // Fallback: try to find domain in assets store
         const knsAssets = this.assetsStore.knsAssets();
         const storedDomain = knsAssets.find(domain => domain.assetId === navigationData.assetId);
-        
+
         if (storedDomain) {
           this.domain.set(storedDomain);
         } else {

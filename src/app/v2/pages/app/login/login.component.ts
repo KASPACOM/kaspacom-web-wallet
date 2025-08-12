@@ -5,7 +5,7 @@ import {
   KcButtonComponent,
   KcIconComponent,
   KcInputComponent,
-} from 'kaspacom-ui';
+} from '@kaspacom/ui';
 import { PasswordManagerService } from '../../../../services/password-manager.service';
 import { WalletService } from '../../../../services/wallet.service';
 import { IFrameCommunicationApp } from '../../../../services/communication-service/communication-app/iframe-communication.service';

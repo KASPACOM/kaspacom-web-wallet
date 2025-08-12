@@ -1,7 +1,7 @@
 # Kaspacom UI Components Guide
 
 ## Overview
-**kaspacom-ui** is an Angular UI Component Library for KaspaCom DeFi Applications. This guide provides comprehensive documentation for all available components, their properties, and usage examples.
+**@kaspacom/ui** is an Angular UI Component Library for KaspaCom DeFi Applications. This guide provides comprehensive documentation for all available components, their properties, and usage examples.
 
 **Version:** 1.0.40  
 **Framework:** Angular 19.2.0+  
@@ -10,7 +10,7 @@
 ## Installation
 
 ```bash
-npm install kaspacom-ui --save
+npm install @kaspacom/ui --save
 ```
 
 ## Import Statement
@@ -21,7 +21,7 @@ import {
   KcInputComponent, 
   KcCardComponent,
   // ... other components
-} from 'kaspacom-ui';
+} from '@kaspacom/ui';
 ```
 
 ---
@@ -401,7 +401,7 @@ countryOptions: DropdownOption[] = [
 
 #### Usage Example
 ```typescript
-import { NotificationService } from 'kaspacom-ui';
+import { NotificationService } from '@kaspacom/ui';
 
 constructor(private notificationService: NotificationService) {}
 
@@ -532,4 +532,4 @@ All components use the `ComponentSize` type:
 
 ---
 
-This guide covers all the main components in the kaspacom-ui library. Refer to the individual component definitions for the most up-to-date properties and methods.
+This guide covers all the main components in the @kaspacom/ui library. Refer to the individual component definitions for the most up-to-date properties and methods.

@@ -12,7 +12,7 @@ import {
   KcButtonComponent,
   KcIconComponent,
   KcInputComponent,
-} from 'kaspacom-ui';
+} from '@kaspacom/ui';
 import { ImportSwitchComponent } from './component/import-switch/import-switch.component';
 import { ImportSwitchMethod } from './component/import-switch/import-switch-method.enum';
 import { RadioInputComponent } from '../../../../../../shared/ui/input/radio/radio-input/radio-input.component';

@@ -1,9 +1,9 @@
 import { Component, signal, inject, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
 import { FlowPageBaseComponent } from '../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../common/flow-page/interfaces/flow-page.interface';
-import { QuickActionDialogService, IQuickActionDialogConfig } from '../../../common/services/quick-action-dialog.service';
+import { QuickActionDialogService, IQuickActionDialogConfig } from '../../../../../services/quick-action-dialog.service';
 import { WalletService } from '../../../../../../services/wallet.service';
 import { AppWallet } from '../../../../../../classes/AppWallet';
 

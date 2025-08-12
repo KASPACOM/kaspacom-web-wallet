@@ -22,8 +22,8 @@ import { AppWallet } from '../../../classes/AppWallet';
 import { IFeeEstimate } from '../../../../../public/kaspa/kaspa';
 import { FormsModule } from '@angular/forms';
 import { Krc20OperationDataService } from '../../../services/protocols/krc20/krc20-operation-data.service';
-import { KcIconComponent, KcInputComponent } from 'kaspacom-ui';
-import { TokenLogoComponent } from '../../../v2/pages/app/common/token-logo/token-logo.component';
+import { KcIconComponent, KcInputComponent } from '@kaspacom/ui';
+import { TokenLogoComponent } from '../../../v2/pages/app/common/krc20/token-logo/token-logo.component';
 
 type BucketFeeRate = {
   priorityFee: bigint;
@@ -40,14 +40,11 @@ type AvailableOption = 'low' | 'normal' | 'priority' | 'custom';
         NgIf,
         NgFor,
         SompiToNumberPipe,
-        CompletedActionReview,
-        JsonPipe,
         FormsModule,
         TitleCasePipe,
         CommonModule,
         KcIconComponent,
         KcInputComponent,
-        TokenLogoComponent,
     ],
     animations: [
         trigger('slideDown', [
@@ -101,7 +98,7 @@ export class PriorityFeeSelectionComponent implements OnChanges {
     if (this.action.type === WalletActionType.TRANSFER_KAS) {
       return { type: 'kaspa' };
     }
-    
+
     if (this.action.type === WalletActionType.COMMIT_REVEAL) {
       try {
         const actionScript = this.action.data.actionScript?.stringifyAction;
@@ -121,7 +118,7 @@ export class PriorityFeeSelectionComponent implements OnChanges {
         console.warn('Failed to parse action script:', error);
       }
     }
-    
+
     // Default to kaspa for other transaction types
     return { type: 'kaspa' };
   }

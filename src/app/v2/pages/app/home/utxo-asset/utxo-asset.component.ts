@@ -1,19 +1,17 @@
 import { Component, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
-import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
-import { BaseAssetPageComponent, AssetDetail, AssetTransaction } from '../../common/base-asset-page/base-asset-page.component';
+import { KcIconComponent } from '@kaspacom/ui';
+import { BaseAssetPageComponent, AssetDetail } from '../../common/base-asset-page/base-asset-page.component';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { UtxoEntryReference } from '../../../../../../../public/kaspa/kaspa';
-import { WalletService } from '../../../../../services/wallet.service';
 import { environment } from '../../../../../../environments/environment';
 
 @Component({
   selector: 'app-utxo-asset',
   imports: [
     CommonModule,
-    KcButtonComponent,
     KcIconComponent,
     CopyButtonComponent,
     SkeletonComponent
@@ -23,16 +21,16 @@ import { environment } from '../../../../../../environments/environment';
 })
 export class UtxoAssetComponent extends BaseAssetPageComponent implements OnInit {
   protected route = inject(ActivatedRoute);
-  
+
   private transactionId: string = '';
   protected utxo = computed<UtxoEntryReference | null>(() => {
     const wallet = this.walletService.getCurrentWallet();
     if (!wallet || !this.transactionId) return null;
-    
+
     const balance = wallet.getBalanceSignal()();
     if (!balance?.utxoEntries) return null;
-    
-    return balance.utxoEntries.find(utxo => 
+
+    return balance.utxoEntries.find(utxo =>
       utxo.outpoint.transactionId === this.transactionId
     ) || null;
   });
@@ -49,9 +47,9 @@ export class UtxoAssetComponent extends BaseAssetPageComponent implements OnInit
   protected override async loadAssetData(): Promise<void> {
     try {
       this.loading.set(true);
-      
+
       const utxoData = this.utxo();
-      
+
       if (utxoData) {
         // Convert UTXO data to AssetDetail format
         const kasAmount = Number(utxoData.amount) / 100000000;
@@ -85,7 +83,7 @@ export class UtxoAssetComponent extends BaseAssetPageComponent implements OnInit
   formatAmount(): string {
     const utxoData = this.utxo();
     if (!utxoData) return '0.000';
-    
+
     const kasAmount = Number(utxoData.amount) / 100000000;
     return kasAmount.toFixed(3);
   }
@@ -123,7 +121,7 @@ export class UtxoAssetComponent extends BaseAssetPageComponent implements OnInit
   openInExplorer(): void {
     const utxoData = this.utxo();
     if (!utxoData?.outpoint?.transactionId) return;
-    
+
     const explorerUrl = `${environment.kaspaExplorerBaseurl}/txs/${utxoData.outpoint.transactionId}`;
     window.open(explorerUrl, '_blank');
   }
@@ -132,4 +130,4 @@ export class UtxoAssetComponent extends BaseAssetPageComponent implements OnInit
   protected override goBack(): void {
     this.router.navigate(['/app/home'], { queryParams: { tab: 'utxos' } });
   }
-} 
+}

@@ -1,5 +1,5 @@
 import { Component, signal } from '@angular/core';
-import { KcButtonComponent } from 'kaspacom-ui';
+import { KcButtonComponent } from '@kaspacom/ui';
 import { OnboardingStep } from './onboarding-step.enum';
 import { ImportExistingFlowComponent } from './flows/import-existing-flow/import-existing-flow.component';
 import { NewWalletFlowComponent } from './flows/new-wallet-flow/new-wallet-flow.component';

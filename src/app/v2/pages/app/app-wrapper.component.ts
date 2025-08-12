@@ -6,10 +6,10 @@ import { WrapperHeaderComponent } from './common/wrapper-header/wrapper-header.c
 import { WrapperNavComponent } from './common/wrapper-nav/wrapper-nav.component';
 import { FlowPageComponent } from './common/flow-page/flow-page.component';
 import { QuickActionDialogComponent } from './common/quick-action-dialog/quick-action-dialog.component';
-import { CreateWalletAccountQuickActionDialogComponent } from './common/quick-action-dialog/wrappers/create-wallet-account-quick-action-dialog.component';
-import { EditWalletQuickActionDialogComponent } from './common/quick-action-dialog/wrappers/edit-wallet-quick-action-dialog.component';
-import { DeleteWalletAccountQuickActionDialogComponent } from './common/quick-action-dialog/wrappers/delete-wallet-account-quick-action-dialog.component';
-import { WalletOptionsQuickActionDialogComponent } from './common/quick-action-dialog/wrappers/wallet-options-quick-action-dialog.component';
+import { CreateWalletAccountQuickActionDialogComponent } from './common/quick-action-dialog/implementations/create-wallet-account/create-wallet-account-quick-action-dialog.component';
+import { EditWalletQuickActionDialogComponent } from './common/quick-action-dialog/implementations/edit-wallet/edit-wallet-quick-action-dialog.component';
+import { DeleteWalletAccountQuickActionDialogComponent } from './common/quick-action-dialog/implementations/delete-wallet-account/delete-wallet-account-quick-action-dialog.component';
+import { WalletOptionsQuickActionDialogComponent } from './common/quick-action-dialog/implementations/wallet-options/wallet-options-quick-action-dialog.component';
 import { WalletManagementPageComponent } from './flows/wallet-management/wallet-management-page/wallet-management-page.component';
 import { SendPageComponent } from './flows/transaction/send-page/send-page.component';
 import { SendKaspaComponent } from './flows/transaction/send-page/components/send-kaspa/send-kaspa.component';
@@ -19,14 +19,14 @@ import { SendNftListComponent } from './flows/transaction/send-page/components/s
 import { SendNftComponent } from './flows/transaction/send-page/components/send-nft/send-nft.component';
 import { SendKnsListComponent } from './flows/transaction/send-page/components/send-kns-list/send-kns-list.component';
 import { SendKnsComponent } from './flows/transaction/send-page/components/send-kns/send-kns.component';
-import { AccountSettingsService } from './common/services/account-settings.service';
-import { FlowPagesService } from './common/services/flow-pages.service';
-import { QuickActionDialogService } from './common/services/quick-action-dialog.service';
+import { AccountSettingsService } from '../../services/account-settings.service';
+import { FlowPagesService } from '../../services/flow-pages.service';
+import { QuickActionDialogService } from '../../services/quick-action-dialog.service';
 import { ReviewActionComponent } from '../../../components/wallet-actions-reviews/review-action/review-action.component';
 import { ApprovalFlowPageComponent } from './flows/approval/approval-flow-page/approval-flow-page.component';
 import { ReceiveFlowPageComponent } from './flows/receive/receive-flow-page.component';
 
-import { KcSnackbarComponent } from 'kaspacom-ui';
+import { KcSnackbarComponent } from '@kaspacom/ui';
 
 @Component({
   selector: 'app-app-wrapper',

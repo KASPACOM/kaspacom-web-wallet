@@ -11,7 +11,7 @@ import {
   KcButtonComponent,
   KcIconComponent,
   KcInputComponent,
-} from 'kaspacom-ui';
+} from '@kaspacom/ui';
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 
 @Component({

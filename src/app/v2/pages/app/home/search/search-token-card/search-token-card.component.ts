@@ -1,8 +1,8 @@
 import { DecimalPipe, TitleCasePipe } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
-import { KcIconComponent } from 'kaspacom-ui';
+import { KcIconComponent } from '@kaspacom/ui';
 import { IToken } from '../../../common/interfaces/token.interface';
-import { TokenLogoComponent } from '../../../common/token-logo/token-logo.component';
+import { TokenLogoComponent } from '../../../common/krc20/token-logo/token-logo.component';
 
 @Component({
   selector: 'app-search-token-card',

@@ -1,7 +1,7 @@
 import { Component, computed, inject, OnInit, signal, OnDestroy } from '@angular/core';
 import { CommonModule, DecimalPipe, DatePipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
-import { KcIconComponent } from 'kaspacom-ui';
+import { KcIconComponent } from '@kaspacom/ui';
 import { KcLabeledTabsComponent, TabItem } from '../../../shared/ui/kc-labeled-tabs/kc-labeled-tabs.component';
 import { SkeletonComponent } from '../../../shared/ui/skeleton/skeleton.component';
 import { WalletService } from '../../../../services/wallet.service';
@@ -47,15 +47,9 @@ type ActivityItem = KaspaActivityItem | Krc20ActivityItem;
   selector: 'app-activity',
   imports: [
     CommonModule,
-    DecimalPipe,
-    DatePipe,
-    TitleCasePipe,
-    UpperCasePipe,
     KcIconComponent,
     KcLabeledTabsComponent,
     SkeletonComponent,
-    SompiToNumberPipe,
-    TimeAgoPipe
   ],
   templateUrl: './activity.component.html',
   styleUrl: './activity.component.scss'
@@ -73,15 +67,15 @@ export class ActivityComponent implements OnInit, OnDestroy {
   private krc20Operations = signal<OperationDetails[]>([]);
   private isLoadingKaspa = signal<boolean>(true);
   private isLoadingKrc20 = signal<boolean>(true);
-  
+
   // Tab selection
   selectedTabId = signal<string>('all');
-  
+
   // Computed combined activity list
   allActivity = computed<ActivityItem[]>(() => {
     const kaspaItems = this.kaspaTransactions().map(tx => this.transformKaspaTransaction(tx));
     const krc20Items = this.krc20Operations().map(op => this.transformKrc20Operation(op));
-    
+
     // Combine and sort by timestamp (newest first)
     // Ensure both timestamps are numbers for proper sorting
     return [...kaspaItems, ...krc20Items].sort((a, b) => {
@@ -95,7 +89,7 @@ export class ActivityComponent implements OnInit, OnDestroy {
   filteredActivity = computed<ActivityItem[]>(() => {
     const selectedTab = this.selectedTabId();
     const allItems = this.allActivity();
-    
+
     switch (selectedTab) {
       case 'kaspa':
         return allItems.filter(item => item.type === 'kaspa');
@@ -130,7 +124,7 @@ export class ActivityComponent implements OnInit, OnDestroy {
       // Navigate to Kaspa transaction details with transaction data
       const kaspaItem = item as KaspaActivityItem;
       const transactionData = this.kaspaTransactions().find(tx => tx.transaction_id === item.id);
-      
+
       if (transactionData) {
         this.router.navigate(['/app/home/transaction/kaspa', item.id], {
           state: { transactionData }
@@ -170,7 +164,7 @@ export class ActivityComponent implements OnInit, OnDestroy {
   private async loadKaspaTransactions(walletAddress: string) {
     try {
       this.isLoadingKaspa.set(true);
-      
+
       const transactions = await firstValueFrom(
         this.kaspaApiService.getFullTransactions(walletAddress, 'light', 20).pipe(
           catchError((err: any) => {
@@ -193,7 +187,7 @@ export class ActivityComponent implements OnInit, OnDestroy {
   private async loadKrc20Operations(walletAddress: string) {
     try {
       this.isLoadingKrc20.set(true);
-      
+
       const operationsResponse = await firstValueFrom(
         this.kasplexService.getWalletOperationHistory(walletAddress).pipe(
           catchError((err: any) => {
@@ -242,7 +236,7 @@ export class ActivityComponent implements OnInit, OnDestroy {
 
     const totalForThisWallet = (receivers[walletAddress] || BigInt(0)) - (senders[walletAddress] || BigInt(0));
     const isIncoming = totalForThisWallet > 0;
-    
+
     // Calculate fee
     const fee = Object.values(senders).reduce((acc: bigint, val: bigint) => acc + val, 0n) -
       Object.values(receivers).reduce((acc: bigint, val: bigint) => acc + val, 0n);
@@ -253,7 +247,7 @@ export class ActivityComponent implements OnInit, OnDestroy {
       // Find sender address (excluding our wallet)
       otherAddress = Object.keys(senders).find(addr => addr !== walletAddress) || '';
     } else {
-      // Find receiver address (excluding our wallet)  
+      // Find receiver address (excluding our wallet)
       otherAddress = Object.keys(receivers).find(addr => addr !== walletAddress) || '';
     }
 
@@ -303,7 +297,7 @@ export class ActivityComponent implements OnInit, OnDestroy {
       day: 'numeric',
       year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
     });
-    
+
     return `${timeAgo} • ${formattedDate}`;
   }
 
@@ -315,9 +309,9 @@ export class ActivityComponent implements OnInit, OnDestroy {
   getOperationTitle(operation: string, fromAddress?: string, toAddress?: string): string {
     const currentWallet = this.walletService.getCurrentWallet();
     const walletAddress = currentWallet?.getAddress() || '';
-    
+
     let title = operation.charAt(0).toUpperCase() + operation.slice(1);
-    
+
     if (operation === 'transfer' || operation === 'send') {
       if (fromAddress === walletAddress && toAddress === walletAddress) {
         title = 'Cancel List';
@@ -327,7 +321,7 @@ export class ActivityComponent implements OnInit, OnDestroy {
         title = 'Sent';
       }
     }
-    
+
     return title;
   }
 

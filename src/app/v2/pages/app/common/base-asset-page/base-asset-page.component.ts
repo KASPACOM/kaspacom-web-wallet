@@ -1,7 +1,7 @@
 import { Component, Input, signal, OnInit, inject } from '@angular/core';
 import { CommonModule, DecimalPipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
-import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { WalletService } from '../../../../../services/wallet.service';
 
@@ -33,92 +33,7 @@ export interface AssetDetail {
     KcIconComponent,
     SkeletonComponent
   ],
-  template: `
-    <div class="asset-page-container full-width full-height column p-16">
-      <!-- Header with back button -->
-      <div class="asset-header flex align-items-center gap-16 mb-24">
-        <kc-icon 
-          [iconClass]="'icon-arrow-left'"
-          [size]="'md'"
-          (click)="goBack()"
-          class="cursor-pointer">
-        </kc-icon>
-        <h1 class="asset-title">{{ assetDetail()?.name || 'Loading...' }}</h1>
-      </div>
-
-      <!-- Asset Details Card -->
-      <div class="asset-details-card bg-surface border-radius-12 p-16 mb-24">
-        @if (loading()) {
-          <app-skeleton [height]="'60px'" class="mb-16"></app-skeleton>
-          <app-skeleton [height]="'40px'"></app-skeleton>
-        } @else {
-          <div class="asset-balance text-center">
-            <div class="balance-amount text-large font-weight-bold">
-              {{ formatBalance() }}
-            </div>
-            <div class="balance-symbol text-medium text-secondary">
-              {{ assetDetail()?.symbol | uppercase }}
-            </div>
-          </div>
-        }
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="action-buttons flex gap-12 mb-24">
-        <kc-button 
-          [variant]="'primary'"
-          [size]="'md'"
-          class="flex-1"
-          (click)="onSendAction()">
-          Send
-        </kc-button>
-        <!-- Can add more action buttons here -->
-      </div>
-
-      <!-- Transaction History -->
-      <div class="transaction-history flex-1">
-        <h3 class="history-title mb-16">Transaction History</h3>
-        
-        <div class="transaction-list bg-surface border-radius-12 overflow-hidden">
-          @if (historyLoading()) {
-            @for (item of [1,2,3,4,5]; track item) {
-              <div class="transaction-item p-16 border-bottom">
-                <app-skeleton [height]="'20px'" class="mb-8"></app-skeleton>
-                <app-skeleton [height]="'16px'" [width]="'60%'"></app-skeleton>
-              </div>
-            }
-          } @else if (transactions().length === 0) {
-            <div class="no-transactions text-center p-24 text-secondary">
-              No transactions found
-            </div>
-          } @else {
-            @for (transaction of transactions(); track transaction.id) {
-              <div class="transaction-item p-16 border-bottom-light hover:bg-hover cursor-pointer">
-                <div class="transaction-content flex justify-content-between align-items-center">
-                  <div class="transaction-info">
-                    <div class="transaction-type font-weight-medium">
-                      {{ transaction.type | titlecase }}
-                    </div>
-                    <div class="transaction-details text-small text-secondary">
-                      {{ formatTransactionDetails(transaction) }}
-                    </div>
-                  </div>
-                  <div class="transaction-amount text-right">
-                    <div class="amount font-weight-medium">
-                      {{ formatTransactionAmount(transaction) }}
-                    </div>
-                    <div class="timestamp text-small text-secondary">
-                      {{ formatTimestamp(transaction.timestamp) }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            }
-          }
-        </div>
-      </div>
-    </div>
-  `,
+  templateUrl: './base-asset-page.component.html',
   styleUrl: './base-asset-page.component.scss'
 })
 export class BaseAssetPageComponent implements OnInit {
@@ -160,7 +75,7 @@ export class BaseAssetPageComponent implements OnInit {
   protected formatBalance(): string {
     const detail = this.assetDetail();
     if (!detail) return '0';
-    
+
     const balance = parseFloat(detail.balance);
     return balance.toLocaleString('en-US', {
       minimumFractionDigits: 0,
@@ -204,4 +119,4 @@ export class BaseAssetPageComponent implements OnInit {
   protected getCurrentWalletAddress(): string {
     return this.walletService.getCurrentWallet()?.getAddress() || '';
   }
-} 
+}

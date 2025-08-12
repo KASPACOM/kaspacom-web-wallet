@@ -2,16 +2,16 @@ import { Component, computed, effect, inject, OnInit, OnDestroy, signal } from '
 import { CommonModule } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
-import { KcInputComponent, KcCheckboxComponent, KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcInputComponent, KcCheckboxComponent, KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
 import { FormsModule } from '@angular/forms';
-import { TokenLogoComponent } from '../../../../../common/token-logo/token-logo.component';
+import { TokenLogoComponent } from '../../../../../common/krc20/token-logo/token-logo.component';
 import { WalletService } from '../../../../../../../../services/wallet.service';
 import { WalletActionService } from '../../../../../../../../services/wallet-action.service';
 import { KaspaNetworkActionsService, MINIMAL_AMOUNT_TO_SEND } from '../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { UtilsHelper } from '../../../../../../../../services/utils.service';
 import { MessagePopupService } from '../../../../../../../../services/message-popup.service';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import { ApprovalFlowService } from '../../../../../common/services/approval-flow.service';
+import { ApprovalFlowService } from '../../../../../../../services/approval-flow.service';
 import { AssetsStoreService } from '../../../../../../../../services/assets-store.service';
 import { QrScannerService } from '../../../../../../../../services/qr-scanner.service';
 import { firstValueFrom } from 'rxjs';
@@ -66,13 +66,13 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit,
 
   constructor() {
     super();
-    
+
     // Effect to watch for approval flow completion
     effect(() => {
       const completion = this.approvalFlowService.completion();
       if (completion && this.waitingForApprovalCompletion) {
         this.waitingForApprovalCompletion = false;
-        
+
         if (completion.success) {
           // Transaction was successful, navigate back
           this.messagePopupService.showSuccess('Transaction sent successfully!');
@@ -207,7 +207,7 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit,
     // Mark fields as touched so validation errors show if invalid
     this.addressTouched = true;
     this.amountTouched = true;
-    
+
     this.validateAddress();
     this.validateAmount();
 
@@ -230,7 +230,7 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit,
     try {
       // Ensure wallet is ready for transactions
       await currentWallet.waitForWalletToBeReadyForTransactions();
-      
+
       // Check if utxo processor manager is available
       if (!currentWallet.getUtxoProcessorManager()) {
         this.messagePopupService.showError('Wallet is not ready for transactions. Please wait and try again.');
@@ -254,7 +254,7 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit,
         this.walletAddress = '';
         this.kaspaAmount = null;
         this.replaceByFee = false;
-        
+
         // Only show success message and navigate if not using v2 flow
         // v2 flow handles success display in the approval flow
         if (!result.isUsingV2Flow) {
@@ -272,7 +272,7 @@ export class SendKaspaComponent extends FlowPageBaseComponent implements OnInit,
             : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR];
           this.messagePopupService.showError(errorMessage);
         }
-        
+
         // Reset the waiting flag if transaction failed
         this.waitingForApprovalCompletion = false;
       }

@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, signal, inject, effect } from '@angular/c
 import { CommonModule } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
-import { KcInputComponent, KcCheckboxComponent, KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcInputComponent, KcCheckboxComponent, KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
 import { FormsModule } from '@angular/forms';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
 import { INft } from '../../../../../common/interfaces/nft.interface';
@@ -12,7 +12,7 @@ import { AssetsStoreService } from '../../../../../../../../services/assets-stor
 import { WalletActionService } from '../../../../../../../../services/wallet-action.service';
 import { Krc721WalletActionService } from '../../../../../../../../services/protocols/krc721/krc721-wallet-actions.service';
 import { MessagePopupService } from '../../../../../../../../services/message-popup.service';
-import { ApprovalFlowService } from '../../../../../common/services/approval-flow.service';
+import { ApprovalFlowService } from '../../../../../../../services/approval-flow.service';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { firstValueFrom } from 'rxjs';
 import { UtilsHelper } from '../../../../../../../../services/utils.service';
@@ -35,31 +35,31 @@ export class SendNftComponent extends FlowPageBaseComponent implements OnInit, O
   private approvalFlowService = inject(ApprovalFlowService);
   private utilsHelper = inject(UtilsHelper);
   private qrScannerService = inject(QrScannerService);
-  
+
   nft = signal<INft | undefined>(undefined);
   loading = signal<boolean>(true);
   walletAddress = '';
   replaceByFee = false;
-  
+
   // Loading state
   isLoading = false;
-  
+
   // Track if we're waiting for approval flow completion
   private waitingForApprovalCompletion = false;
-  
+
   // Validation states
   isAddressValid = true;
   addressErrorMessage = '';
 
   constructor() {
     super();
-    
+
     // Effect to watch for approval flow completion
     effect(() => {
       const completion = this.approvalFlowService.completion();
       if (completion && this.waitingForApprovalCompletion) {
         this.waitingForApprovalCompletion = false;
-        
+
         if (completion.success) {
           // Transaction was successful, navigate back
           this.messagePopupService.showSuccess('NFT sent successfully!');
@@ -68,7 +68,7 @@ export class SendNftComponent extends FlowPageBaseComponent implements OnInit, O
         // Error cases are handled by the approval flow itself
       }
     });
-    
+
     // React to page configuration changes
     effect(() => {
       const currentPage = this.flowPagesService.activePage();
@@ -77,7 +77,7 @@ export class SendNftComponent extends FlowPageBaseComponent implements OnInit, O
       }
     });
   }
-  
+
   override ngOnDestroy() {
     // Clean up QR scanner when component is destroyed
     this.qrScannerService.stopScanning();
@@ -90,11 +90,11 @@ export class SendNftComponent extends FlowPageBaseComponent implements OnInit, O
       canNavigateBack: true
     };
   }
-  
+
   get isFormValid(): boolean {
     return this.walletAddress.trim().length > 0 && this.isAddressValid;
   }
-  
+
   onWalletAddressChange(value: string): void {
     this.walletAddress = value;
     this.validateAddress();
@@ -124,40 +124,40 @@ export class SendNftComponent extends FlowPageBaseComponent implements OnInit, O
       this.addressErrorMessage = 'Address is required';
       return;
     }
-    
+
     if (!this.utilsHelper.isValidWalletAddress(this.walletAddress)) {
       this.isAddressValid = false;
       this.addressErrorMessage = 'Invalid wallet address format';
       return;
     }
-    
+
     this.isAddressValid = true;
     this.addressErrorMessage = '';
   }
-  
+
   onRbfChange(value: boolean): void {
     this.replaceByFee = value;
   }
-  
+
   async onSendClick(): Promise<void> {
     if (!this.isFormValid || !this.nft()) {
       return;
     }
-    
+
     const currentWallet = this.walletService.getCurrentWallet();
     if (!currentWallet) {
       this.messagePopupService.showError('No wallet selected');
       return;
     }
-    
+
     const currentNft = this.nft()!;
     if (!currentNft.tick || !currentNft.tokenId) {
       this.messagePopupService.showError('Invalid NFT data');
       return;
     }
-    
+
     this.isLoading = true;
-    
+
     try {
       // Create KRC721 transfer action
       const action = this.krc721WalletActionService.createTransferWalletAction(
@@ -165,16 +165,16 @@ export class SendNftComponent extends FlowPageBaseComponent implements OnInit, O
         currentNft.tokenId,    // tokenId
         this.walletAddress     // to address
       );
-      
+
       console.log('KRC721 Transfer Action:', action, currentWallet, currentNft);
-      
+
       const result = await this.walletActionService.validateAndDoActionAfterApproval(action, false);
-      
+
       if (result.success) {
         // Clear form on success
         this.walletAddress = '';
         this.replaceByFee = false;
-        
+
         // Only show success message and navigate if not using v2 flow
         // v2 flow handles success display in the approval flow
         if (!result.isUsingV2Flow) {
@@ -191,7 +191,7 @@ export class SendNftComponent extends FlowPageBaseComponent implements OnInit, O
             : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR];
           this.messagePopupService.showError(errorMessage);
         }
-        
+
         // Reset the waiting flag if transaction failed
         this.waitingForApprovalCompletion = false;
       }
@@ -207,15 +207,15 @@ export class SendNftComponent extends FlowPageBaseComponent implements OnInit, O
   private async loadNftData(): Promise<void> {
     try {
       this.loading.set(true);
-      
+
       // Clear form data when loading new NFT
       this.walletAddress = '';
       this.replaceByFee = false;
-      
+
       // Get navigation data - should contain the full NFT object
       const navigationData = this.getNavigationData();
       const nftData = navigationData?.nft as INft;
-      
+
       if (nftData) {
         // Use NFT data from navigation (which comes from assets store)
         this.nft.set(nftData);
@@ -225,7 +225,7 @@ export class SendNftComponent extends FlowPageBaseComponent implements OnInit, O
         const storedNft = krc721Assets.find(
           nft => nft.tick === navigationData.tick && nft.tokenId === navigationData.tokenId
         );
-        
+
         if (storedNft) {
           const nft: INft = {
             tick: storedNft.tick,
@@ -298,12 +298,12 @@ export class SendNftComponent extends FlowPageBaseComponent implements OnInit, O
 
   private processImageUrl(imageUrl?: string): string | undefined {
     if (!imageUrl) return undefined;
-    
+
     // Convert IPFS URLs to HTTP
     if (imageUrl.startsWith('ipfs://')) {
       return imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/');
     }
-    
+
     return imageUrl;
   }
 

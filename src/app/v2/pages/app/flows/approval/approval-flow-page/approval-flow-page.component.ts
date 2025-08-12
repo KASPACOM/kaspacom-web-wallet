@@ -1,10 +1,10 @@
 import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { KcButtonComponent } from 'kaspacom-ui';
-import { KcIconComponent } from 'kaspacom-ui';
+import { KcButtonComponent } from '@kaspacom/ui';
+import { KcIconComponent } from '@kaspacom/ui';
 import { PriorityFeeSelectionComponent } from '../../../../../../components/wallet-actions-reviews/priority-fee-selection/priority-fee-selection.component';
-import { ApprovalFlowService, ApprovalFlowState } from '../../../common/services/approval-flow.service';
+import { ApprovalFlowService, ApprovalFlowState } from '../../../../../services/approval-flow.service';
 import { WalletService } from '../../../../../../services/wallet.service';
 import { ReviewActionDataService } from '../../../../../../services/action-info-services/review-action-data.service';
 import { WalletActionType } from '../../../../../../types/wallet-action';
@@ -41,7 +41,7 @@ export class ApprovalFlowPageComponent {
   approvalConfig = computed(() => this.approvalFlowService.currentApprovalConfig());
   wallet = computed(() => this.walletService.getCurrentWallet()!);
   currentState = computed(() => this.approvalFlowService.currentState());
-  
+
   actionDisplay = computed(() => {
     const config = this.approvalConfig();
     if (!config) return undefined;
@@ -106,4 +106,4 @@ export class ApprovalFlowPageComponent {
   setCurrentPriorityFee(priorityFee: bigint | undefined) {
     this.currentPriorityFee = priorityFee;
   }
-} 
+}

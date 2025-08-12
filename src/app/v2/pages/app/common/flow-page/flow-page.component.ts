@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcIconComponent } from 'kaspacom-ui';
+import { KcIconComponent } from '@kaspacom/ui';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 
 @Component({
@@ -22,7 +22,7 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
         visibility: 'visible'
       })),
       transition('closed => open', [
-        style({ 
+        style({
           visibility: 'visible',
           transform: 'translateY(-100%)',
           opacity: 0
@@ -51,26 +51,26 @@ export class FlowPageComponent {
   @Output() navigateBack = new EventEmitter<void>();
   @Output() backdropClick = new EventEmitter<void>();
   @Output() close = new EventEmitter<void>();
-  
+
   // Track animation state to prevent content changes during animation
   isAnimating = false;
-  
+
   onNavigateBack(): void {
     this.navigateBack.emit();
   }
-  
+
   onBackdropClick(): void {
     this.backdropClick.emit();
   }
-  
+
   onClose(): void {
     this.close.emit();
   }
-  
+
   onAnimationStart(): void {
     this.isAnimating = true;
   }
-  
+
   onAnimationDone(): void {
     this.isAnimating = false;
   }

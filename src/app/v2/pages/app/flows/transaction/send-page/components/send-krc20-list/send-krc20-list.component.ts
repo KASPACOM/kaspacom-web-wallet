@@ -2,7 +2,7 @@ import { Component, computed, inject, OnInit, OnDestroy, ViewChild, AfterViewIni
 import { CommonModule, DecimalPipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
-import { TokenLogoComponent } from '../../../../../common/token-logo/token-logo.component';
+import { TokenLogoComponent } from '../../../../../common/krc20/token-logo/token-logo.component';
 import { IToken, ITokenWithMetadata } from '../../../../../common/interfaces/token.interface';
 import { SkeletonComponent } from "../../../../../../../shared/ui/skeleton";
 import { AssetsStoreService } from '../../../../../../../../services/assets-store.service';

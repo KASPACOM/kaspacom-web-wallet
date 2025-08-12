@@ -1,9 +1,9 @@
 import { Component, Input, Output, EventEmitter, inject, ChangeDetectorRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcButtonComponent, NotificationService } from 'kaspacom-ui';
-import { QuickActionDialogComponent } from '../quick-action-dialog.component';
-import { WalletService } from '../../../../../../services/wallet.service';
-import { AppWallet } from '../../../../../../classes/AppWallet';
+import { KcButtonComponent, NotificationService } from '@kaspacom/ui';
+import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
+import { WalletService } from '../../../../../../../services/wallet.service';
+import { AppWallet } from '../../../../../../../classes/AppWallet';
 
 @Component({
   selector: 'app-delete-wallet-account-quick-action-dialog',
@@ -17,14 +17,14 @@ export class DeleteWalletAccountQuickActionDialogComponent implements AfterViewI
   @Input() data: any;
   @Output() backdropClick = new EventEmitter<void>();
   @Output() close = new EventEmitter<void>();
-  
+
   private notificationService = inject(NotificationService);
   private walletService = inject(WalletService);
   private cdr = inject(ChangeDetectorRef);
-  
+
   // Internal state for animation
   isDialogOpen = false;
-  
+
   ngAfterViewInit(): void {
     // Start with dialog closed, then open it to trigger animation
     setTimeout(() => {
@@ -32,23 +32,23 @@ export class DeleteWalletAccountQuickActionDialogComponent implements AfterViewI
       this.cdr.detectChanges();
     }, 50);
   }
-  
+
   get accountName(): string {
     return this.data?.accountName || '';
   }
-  
+
   onBackdropClick(): void {
     this.closeDialog();
   }
-  
+
   onClose(): void {
     this.closeDialog();
   }
-  
+
   onCancel(): void {
     this.closeDialog();
   }
-  
+
   private closeDialog(): void {
     this.isDialogOpen = false;
     // Wait for animation to complete before emitting close
@@ -56,7 +56,7 @@ export class DeleteWalletAccountQuickActionDialogComponent implements AfterViewI
       this.close.emit();
     }, 300);
   }
-  
+
   async onDelete(): Promise<void> {
     try {
       const wallet: AppWallet = this.data?.wallet;
@@ -64,16 +64,16 @@ export class DeleteWalletAccountQuickActionDialogComponent implements AfterViewI
         this.notificationService.error('Error', 'No wallet selected');
         return;
       }
-      
+
       const result = await this.walletService.removeWalletAccount(wallet.getIdWithAccount());
-      
+
       if (result.success) {
         this.notificationService.success('Success', `Account "${this.accountName}" deleted successfully!`);
         // Call the success callback to refresh the parent component
         if (this.data?.onSuccess) {
           this.data.onSuccess();
         }
-        
+
         this.closeDialog();
       } else {
         this.notificationService.error('Error', result.error || 'Failed to delete account');
@@ -85,4 +85,4 @@ export class DeleteWalletAccountQuickActionDialogComponent implements AfterViewI
       this.closeDialog();
     }
   }
-} 
+}

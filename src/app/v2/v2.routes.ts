@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { OnboardingPageComponent } from './pages/onboarding-page/onboarding-page.component';
-import { DesignSystemShowcaseComponent } from 'kaspacom-ui';
+import { DesignSystemShowcaseComponent } from '@kaspacom/ui';
 import { AuthGuard } from './guard/auth.guard';
 import { routes } from '../core/app.routes';
 import { loggedRoutes } from './pages/app/logged.routes';

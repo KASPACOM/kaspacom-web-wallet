@@ -2,10 +2,10 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule, DecimalPipe, TitleCasePipe, UpperCasePipe, DatePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
 import { BaseAssetPageComponent } from '../../common/base-asset-page/base-asset-page.component';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
-import { FlowPagesService } from '../../common/services/flow-pages.service';
+import { FlowPagesService } from '../../../../services/flow-pages.service';
 import { KnsApiService } from '../../../../../services/kns-api/kns-api.service';
 import { KnsDomainAsset } from '../../../../../services/kns-api/dtos/kns-domain.dto';
 import { AssetsStoreService } from '../../../../../services/assets-store.service';
@@ -35,7 +35,7 @@ export class KnsAssetComponent extends BaseAssetPageComponent implements OnInit 
   private flowPagesService = inject(FlowPagesService);
 
   private assetId: string = '';
-  
+
   protected knsDetail = signal<KnsDomainAsset | null>(null);
   protected detailLoading = signal<boolean>(true);
 
@@ -58,11 +58,11 @@ export class KnsAssetComponent extends BaseAssetPageComponent implements OnInit 
 
     try {
       this.loading.set(true);
-      
+
       // First try to get the domain from the assets store
       const knsAssets = this.assetsStore.knsAssets();
       const storedDomain = knsAssets.find(domain => domain.assetId === this.assetId);
-      
+
       if (storedDomain) {
         // Use data from store
         const assetDetail = {
@@ -76,7 +76,7 @@ export class KnsAssetComponent extends BaseAssetPageComponent implements OnInit 
       } else {
         // Fallback to API if not in store
         const response = await firstValueFrom(this.knsService.fetchAssetByAssetId(this.assetId));
-        
+
         if (response.data) {
           const domain = response.data;
           const assetDetail = {
@@ -104,11 +104,11 @@ export class KnsAssetComponent extends BaseAssetPageComponent implements OnInit 
 
     try {
       this.detailLoading.set(true);
-      
+
       // Try to get from store first
       const knsAssets = this.assetsStore.knsAssets();
       const storedDomain = knsAssets.find(domain => domain.assetId === this.assetId);
-      
+
       if (storedDomain) {
         this.knsDetail.set(storedDomain);
       } else {
@@ -136,7 +136,7 @@ export class KnsAssetComponent extends BaseAssetPageComponent implements OnInit 
   protected getDisplayName(): string {
     const detail = this.knsDetail();
     if (!detail) return 'Loading...';
-    
+
     return detail.isDomain ? detail.asset.charAt(0).toUpperCase() + detail.asset.slice(1) : detail.asset;
   }
 
@@ -199,7 +199,7 @@ export class KnsAssetComponent extends BaseAssetPageComponent implements OnInit 
   protected openInExplorer(): void {
     const detail = this.knsDetail();
     if (!detail?.transactionId) return;
-    
+
     const explorerUrl = `${environment.kaspaExplorerBaseurl}/txs/${detail.transactionId}`;
     window.open(explorerUrl, '_blank');
   }
@@ -208,4 +208,4 @@ export class KnsAssetComponent extends BaseAssetPageComponent implements OnInit 
   protected override goBack(): void {
     this.router.navigate(['/app/home'], { queryParams: { tab: 'kns' } });
   }
-} 
+}

@@ -1,8 +1,8 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcIconComponent } from '@kaspacom/ui';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { KasplexKrc20Service } from '../../../../../services/kasplex-api/kasplex-api.service';
@@ -14,8 +14,6 @@ import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwro
   selector: 'app-krc20-transaction-details',
   imports: [
     CommonModule,
-    DatePipe,
-    KcButtonComponent,
     KcIconComponent,
     SkeletonComponent,
     CopyButtonComponent
@@ -37,7 +35,7 @@ export class Krc20TransactionDetailsComponent implements OnInit {
   ngOnInit(): void {
     this.ticker = this.route.snapshot.paramMap.get('ticker');
     this.transactionId = this.route.snapshot.paramMap.get('transactionId');
-    
+
     if (this.transactionId) {
       this.loadOperationDetails();
     } else {
@@ -68,9 +66,9 @@ export class Krc20TransactionDetailsComponent implements OnInit {
     // Check if we came from activity page
     const navigationState = this.router.getCurrentNavigation()?.extras?.state;
     const historyState = history.state;
-    
+
     const returnTo = navigationState?.['returnTo'] || historyState?.['returnTo'];
-    
+
     if (returnTo === 'activity') {
       this.router.navigate(['/app/activity']);
     } else if (this.ticker) {
@@ -129,4 +127,4 @@ export class Krc20TransactionDetailsComponent implements OnInit {
       window.open(explorerUrl, '_blank');
     }
   }
-} 
+}

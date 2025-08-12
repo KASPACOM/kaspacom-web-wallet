@@ -1,5 +1,5 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { IFlowPageConfig, IFlowPageStack, IFlowPageNavigation } from '../flow-page/interfaces/flow-page.interface';
+import { IFlowPageConfig, IFlowPageStack, IFlowPageNavigation } from '../pages/app/common/flow-page/interfaces/flow-page.interface';
 
 @Injectable({
   providedIn: 'root'

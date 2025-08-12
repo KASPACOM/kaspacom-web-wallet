@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 
 interface WalletAccount {
@@ -30,7 +30,7 @@ interface WalletAccount {
         visibility: 'visible'
       })),
       transition('closed => open', [
-        style({ 
+        style({
           visibility: 'visible',
           transform: 'translateY(-100%)',
           opacity: 0
@@ -53,7 +53,7 @@ interface WalletAccount {
 export class AccountSettingsOverlayComponent {
   @Input() isOpen = false;
   @Output() close = new EventEmitter<void>();
-  
+
   // Mock wallet data
   wallets = signal<WalletAccount[]>([
     {
@@ -85,37 +85,37 @@ export class AccountSettingsOverlayComponent {
       isSelected: false
     }
   ]);
-  
+
   onClose(): void {
     this.close.emit();
   }
-  
+
   selectWallet(wallet: WalletAccount): void {
-    this.wallets.update(wallets => 
+    this.wallets.update(wallets =>
       wallets.map(w => ({
         ...w,
         isSelected: w.id === wallet.id
       }))
     );
   }
-  
+
   deleteWallet(wallet: WalletAccount): void {
     // Logic for deleting wallet would go here
     console.log('Delete wallet:', wallet.name);
   }
-  
+
   addWallet(): void {
     // Logic for adding wallet
     console.log('Add wallet clicked');
   }
-  
+
   createWallet(): void {
     // Logic for creating wallet
     console.log('Create wallet clicked');
   }
-  
+
   shortenAddress(address: string): string {
     if (!address) return '';
     return `${address.slice(0, 10)}...${address.slice(-8)}`;
   }
-} 
+}

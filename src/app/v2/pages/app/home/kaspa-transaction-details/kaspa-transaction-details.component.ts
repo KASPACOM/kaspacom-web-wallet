@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { KaspaApiService } from '../../../../../services/kaspa-api/kaspa-api.service';
@@ -37,7 +37,7 @@ export class KaspaTransactionDetailsComponent implements OnInit {
 
   ngOnInit(): void {
     this.transactionId = this.route.snapshot.paramMap.get('transactionId');
-    
+
     if (this.transactionId) {
       this.loadTransactionDetails();
     } else {
@@ -50,7 +50,7 @@ export class KaspaTransactionDetailsComponent implements OnInit {
 
     try {
       this.loading.set(true);
-      
+
       // Check if transaction data was passed via navigation state
       const navigationState = this.router.getCurrentNavigation()?.extras?.state;
       if (navigationState && navigationState['transactionData']) {
@@ -185,4 +185,4 @@ export class KaspaTransactionDetailsComponent implements OnInit {
     // Return the first block hash if it's an array
     return Array.isArray(transaction.block_hash) ? transaction.block_hash[0] : transaction.block_hash;
   }
-} 
+}

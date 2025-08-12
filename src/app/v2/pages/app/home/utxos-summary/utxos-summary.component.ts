@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
-import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
 import { WalletService } from '../../../../../services/wallet.service';
 import { WalletActionService } from '../../../../../services/wallet-action.service';
 import { SompiToNumberPipe } from '../../../../../pipes/sompi-to-number.pipe';
@@ -17,8 +17,6 @@ import { UtxoEntryReference } from '../../../../../../../public/kaspa/kaspa';
     DecimalPipe,
     KcButtonComponent,
     KcIconComponent,
-    SompiToNumberPipe,
-    CommaFormatterPipe,
     SkeletonComponent,
     CopyButtonComponent
   ],
@@ -35,7 +33,7 @@ export class UtxosSummaryComponent {
 
   // Get current wallet and its UTXOs
   currentWallet = computed(() => this.walletService.getCurrentWallet());
-  
+
   // Get UTXOs from wallet balance
   utxos = computed(() => {
     const wallet = this.currentWallet();
@@ -89,4 +87,4 @@ export class UtxosSummaryComponent {
   openUtxoDetail(utxo: UtxoEntryReference): void {
     this.router.navigate(['/app/home/asset/utxo', utxo.outpoint.transactionId]);
   }
-} 
+}

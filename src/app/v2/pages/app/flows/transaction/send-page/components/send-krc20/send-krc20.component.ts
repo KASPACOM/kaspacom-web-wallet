@@ -2,17 +2,17 @@ import { Component, inject, OnInit, OnDestroy, signal, effect } from '@angular/c
 import { CommonModule } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
-import { KcInputComponent, KcCheckboxComponent, KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcInputComponent, KcCheckboxComponent, KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
 import { FormsModule } from '@angular/forms';
 import { IToken } from '../../../../../common/interfaces/token.interface';
-import { TokenLogoComponent } from '../../../../../common/token-logo/token-logo.component';
+import { TokenLogoComponent } from '../../../../../common/krc20/token-logo/token-logo.component';
 import { WalletService } from '../../../../../../../../services/wallet.service';
 import { WalletActionService } from '../../../../../../../../services/wallet-action.service';
 import { Krc20WalletActionService } from '../../../../../../../../services/protocols/krc20/krc20-wallet-actions.service';
 import { KasplexKrc20Service } from '../../../../../../../../services/kasplex-api/kasplex-api.service';
 import { UtilsHelper } from '../../../../../../../../services/utils.service';
 import { MessagePopupService } from '../../../../../../../../services/message-popup.service';
-import { ApprovalFlowService } from '../../../../../common/services/approval-flow.service';
+import { ApprovalFlowService } from '../../../../../../../services/approval-flow.service';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { firstValueFrom } from 'rxjs';
 import { KaspaNetworkActionsService } from '../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
@@ -61,13 +61,13 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit,
 
   constructor() {
     super();
-    
+
     // Effect to watch for approval flow completion
     effect(() => {
       const completion = this.approvalFlowService.completion();
       if (completion && this.waitingForApprovalCompletion) {
         this.waitingForApprovalCompletion = false;
-        
+
         if (completion.success) {
           // Transaction was successful, navigate back
           this.messagePopupService.showSuccess('KRC20 token sent successfully!');
@@ -108,19 +108,19 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit,
   }
 
   get isFormValid(): boolean {
-    return this.isAddressValid && this.isAmountValid && 
-           !!this.walletAddress && !!this.tokenAmount && 
+    return this.isAddressValid && this.isAmountValid &&
+           !!this.walletAddress && !!this.tokenAmount &&
            this.tokenAmount > 0 && !this.isLoading;
   }
 
   private async loadTokenData() {
     const tokenData = this.flowPagesService.activePage()?.data?.['token'] as IToken;
-    
+
     if (tokenData) {
       // First try to get updated data from assets store
       const krc20Assets = this.assetsStore.krc20Assets();
       const storedToken = krc20Assets.find(t => t.tick === tokenData.address);
-      
+
       if (storedToken) {
         this.token.set({
           name: storedToken.tick,
@@ -247,7 +247,7 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit,
       );
 
       console.log('KRC20 Transfer Action:', action, currentWallet, this.tokenAmount);
-      
+
       const result = await this.walletActionService.validateAndDoActionAfterApproval(action, false);
 
       if (result.success) {
@@ -255,7 +255,7 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit,
         this.walletAddress = '';
         this.tokenAmount = null;
         this.replaceByFee = false;
-        
+
         // Only show success message and navigate if not using v2 flow
         // v2 flow handles success display in the approval flow
         if (!result.isUsingV2Flow) {
@@ -272,7 +272,7 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit,
             : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR];
           this.messagePopupService.showError(errorMessage);
         }
-        
+
         // Reset the waiting flag if transaction failed
         this.waitingForApprovalCompletion = false;
       }

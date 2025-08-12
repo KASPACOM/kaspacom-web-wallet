@@ -1,10 +1,10 @@
 import { Component, Input, Output, EventEmitter, computed, AfterViewInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { KcInputComponent, KcButtonComponent } from 'kaspacom-ui';
-import { QuickActionDialogComponent } from '../quick-action-dialog.component';
-import { WalletService } from '../../../../../../services/wallet.service';
-import { MessagePopupService } from '../../../../../../services/message-popup.service';
+import { KcInputComponent, KcButtonComponent } from '@kaspacom/ui';
+import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
+import { WalletService } from '../../../../../../../services/wallet.service';
+import { MessagePopupService } from '../../../../../../../services/message-popup.service';
 
 @Component({
   selector: 'app-edit-wallet-quick-action-dialog',
@@ -25,7 +25,7 @@ export class EditWalletQuickActionDialogComponent implements AfterViewInit {
 
   // Form data
   walletName = '';
-  
+
   // Internal state for animation
   isDialogOpen = false;
 
@@ -42,7 +42,7 @@ export class EditWalletQuickActionDialogComponent implements AfterViewInit {
     if (this.data?.walletName) {
       this.walletName = this.data.walletName;
     }
-    
+
     // Start with dialog closed, then open it to trigger animation
     setTimeout(() => {
       this.isDialogOpen = true;
@@ -76,10 +76,10 @@ export class EditWalletQuickActionDialogComponent implements AfterViewInit {
         // Update wallet name
         const wallet = this.data.wallet;
         const success = await this.walletService.updateWalletName(wallet, this.walletName.trim());
-        
+
         if (success) {
           this.messagePopupService.showSuccess(`Wallet renamed to "${this.walletName}"`);
-          
+
           // Call the success callback to refresh the parent component
           if (this.data?.onSuccess) {
             this.data.onSuccess();
@@ -88,10 +88,10 @@ export class EditWalletQuickActionDialogComponent implements AfterViewInit {
           this.messagePopupService.showError('Failed to update wallet name');
         }
       }
-      
+
       // Reset form
       this.walletName = '';
-      
+
       // Close dialog
       this.closeDialog();
     } catch (error) {
@@ -99,4 +99,4 @@ export class EditWalletQuickActionDialogComponent implements AfterViewInit {
       this.messagePopupService.showError('Failed to update wallet name');
     }
   }
-} 
+}

@@ -1,5 +1,5 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
-import { WalletAction, WalletActionType } from '../../../../../types/wallet-action';
+import { WalletAction, WalletActionType } from '../../types/wallet-action';
 import { FlowPagesService } from './flow-pages.service';
 import { Router } from '@angular/router';
 import { WalletActionResult } from '@kaspacom/wallet-messages';

@@ -26,7 +26,7 @@ import { BaseProtocolClassesService } from './protocols/base-protocol-classes.se
 import { Router } from '@angular/router';
 import { EthereumHandleActionRequestService } from './etherium-services/etherium-handle-action-request.service';
 import { BaseCommunicationApp } from './communication-service/communication-app/base-communication-app';
-import { ApprovalFlowService } from '../v2/pages/app/common/services/approval-flow.service';
+import { ApprovalFlowService } from '../v2/services/approval-flow.service';
 
 const INSTANT_ACTIONS: { [key: string]: boolean } = {
   [WalletActionType.SIGN_MESSAGE]: true,

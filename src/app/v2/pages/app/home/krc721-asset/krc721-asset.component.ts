@@ -1,13 +1,12 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule, DecimalPipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
 import { BaseAssetPageComponent } from '../../common/base-asset-page/base-asset-page.component';
 import { Krc721ApiService } from '../../../../../services/krc721-api/krc721-api.service';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
-import { FlowPagesService } from '../../common/services/flow-pages.service';
-import { environment } from '../../../../../../environments/environment';
+import { FlowPagesService } from '../../../../services/flow-pages.service';
 
 interface NftMetadata {
   name?: string;
@@ -24,9 +23,6 @@ interface NftMetadata {
   selector: 'app-krc721-asset',
   imports: [
     CommonModule,
-    DecimalPipe,
-    TitleCasePipe,
-    UpperCasePipe,
     KcButtonComponent,
     KcIconComponent,
     SkeletonComponent
@@ -41,7 +37,7 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
 
   private tick: string = '';
   private tokenId: string = '';
-  
+
   protected nftMetadata = signal<NftMetadata | null>(null);
   protected metadataLoading = signal<boolean>(true);
 
@@ -65,7 +61,7 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
 
     try {
       this.loading.set(true);
-      
+
       // Set basic asset details
       const assetDetail = {
         name: this.tick.toUpperCase(),
@@ -85,7 +81,7 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
   protected async loadNftMetadata(): Promise<void> {
     try {
       this.metadataLoading.set(true);
-      
+
       const metadata = await firstValueFrom(
         this.krc721Service.getNftMetadata(this.tick, this.tokenId)
       );
@@ -114,7 +110,7 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
     }
 
     const nftMetadata = this.nftMetadata();
-    
+
     // Create NFT data for the send form
     const nftData = {
       tick: this.tick,
@@ -188,4 +184,4 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
     // or implement a method to get the transaction ID from operations
     console.log('Explorer functionality for KRC721 needs transaction ID from operations');
   }
-} 
+}

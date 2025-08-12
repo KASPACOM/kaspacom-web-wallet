@@ -3,7 +3,7 @@ import {
   KcButtonComponent,
   KcSnackbarComponent,
   NotificationService,
-} from 'kaspacom-ui';
+} from '@kaspacom/ui';
 import { RadioInputComponent } from '../../../../../../shared/ui/input/radio/radio-input/radio-input.component';
 import { SeedPhraseWordComponent } from './component/seed-phrase-word/seed-phrase-word.component';
 import { WalletService } from '../../../../../../../services/wallet.service';

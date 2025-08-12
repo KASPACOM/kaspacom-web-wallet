@@ -1,6 +1,6 @@
 import { Directive, inject, OnInit, OnDestroy } from '@angular/core';
 import { FlowPageBase, IFlowPageConfig } from '../interfaces/flow-page.interface';
-import { FlowPagesService } from '../../services/flow-pages.service';
+import { FlowPagesService } from '../../../../../services/flow-pages.service';
 
 @Directive()
 export abstract class FlowPageBaseComponent extends FlowPageBase implements OnInit, OnDestroy {

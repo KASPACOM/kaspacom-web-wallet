@@ -8,7 +8,7 @@ import {
   Renderer2,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { KcInputComponent } from 'kaspacom-ui';
+import { KcInputComponent } from '@kaspacom/ui';
 import { Subject } from 'rxjs';
 import { TokenSearchService } from '../../services/token-search.service';
 

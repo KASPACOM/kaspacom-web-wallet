@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, input, signal } from '@angular/core';
-import { ComponentSize } from '../types/sizing.type';
+import { ComponentSize } from '../../types/sizing.type';
 
 @Component({
   selector: 'kc-token-logo',

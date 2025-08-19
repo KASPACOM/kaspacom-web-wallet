@@ -1,0 +1,20 @@
+<div class="flex column align-items-center gap-24 full-width">
+	<div class="flex column align-items-center gap-4">
+		<span class="typo-title-3 p-4">Seed Phrase</span>
+		<span class="typo-text-2 text-medium text-align-center">This seed phrase is the only way to recover your wallet. Do NOT share it with anyone.</span>
+	</div>
+	<div class="seed-container" *ngIf="hasMnemonic(); else noMnemonic">
+		@for (item of seedWords(); track $index) {
+			<app-seed-phrase-word class="seed-container__word" [idx]="$index + 1" [word]="item"></app-seed-phrase-word>
+		}
+	</div>
+	<ng-template #noMnemonic>
+		<div class="flex column align-items-center gap-8">
+			<span class="typo-text-2 text-align-center">This wallet was created without a seed phrase (private key only) or the seed phrase is unavailable.</span>
+		</div>
+	</ng-template>
+	<div class="flex full-width justify-content-between" *ngIf="hasMnemonic()">
+		<kc-button [variant]="'tertiary'" [suffixIcon]="'icon-copy'" [text]="'Copy'" (buttonClick)="copySeedToClipboard()"></kc-button>
+		<kc-button [variant]="'primary'" [suffixIcon]="'icon-download'" [text]="'Download .txt'" (buttonClick)="downloadSeedAsTxt()"></kc-button>
+	</div>
+</div> 

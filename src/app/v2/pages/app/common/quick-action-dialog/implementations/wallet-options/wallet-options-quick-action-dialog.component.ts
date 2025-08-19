@@ -1,14 +1,23 @@
-import { Component, Input, Output, EventEmitter, inject, ChangeDetectorRef, AfterViewInit } from '@angular/core';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  inject,
+  ChangeDetectorRef,
+  AfterViewInit,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { KcIconComponent } from '@kaspacom/ui';
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
+import { FlowPagesService } from '../../../../../../services/flow-pages.service';
 
 @Component({
   selector: 'app-wallet-options-quick-action-dialog',
   standalone: true,
   imports: [CommonModule, KcIconComponent, QuickActionDialogComponent],
   templateUrl: './wallet-options-quick-action-dialog.component.html',
-  styleUrl: './wallet-options-quick-action-dialog.component.scss'
+  styleUrl: './wallet-options-quick-action-dialog.component.scss',
 })
 export class WalletOptionsQuickActionDialogComponent implements AfterViewInit {
   @Input() isOpen = false;
@@ -17,6 +26,7 @@ export class WalletOptionsQuickActionDialogComponent implements AfterViewInit {
   @Output() close = new EventEmitter<void>();
 
   private cdr = inject(ChangeDetectorRef);
+  private flowPagesService = inject(FlowPagesService);
 
   // Internal state for animation
   isDialogOpen = false;
@@ -51,15 +61,15 @@ export class WalletOptionsQuickActionDialogComponent implements AfterViewInit {
     this.closeDialog();
   }
 
-  onSyncWithOtherDevice(): void {
-    // TODO: Implement sync with other device functionality
-    console.log('Sync with other device clicked');
-    this.closeDialog();
-  }
-
   onExportWallet(): void {
-    // TODO: Implement export wallet functionality
-    console.log('Export wallet clicked');
+    // Navigate to export wallet flow page
+    this.flowPagesService.navigateToPage({
+      id: 'export-wallet',
+      title: 'Export Wallet',
+      canNavigateBack: true,
+      showTitle: true,
+      showBackground: true,
+    });
     this.closeDialog();
   }
 }

@@ -25,6 +25,7 @@ import { QuickActionDialogService } from '../../services/quick-action-dialog.ser
 import { ReviewActionComponent } from '../../../components/wallet-actions-reviews/review-action/review-action.component';
 import { ApprovalFlowPageComponent } from './flows/approval/approval-flow-page/approval-flow-page.component';
 import { ReceiveFlowPageComponent } from './flows/receive/receive-flow-page.component';
+import { ExportWalletComponent } from './flows/export-wallet/export-wallet.component';
 
 import { KcSnackbarComponent } from '@kaspacom/ui';
 
@@ -53,8 +54,9 @@ import { KcSnackbarComponent } from '@kaspacom/ui';
     ReviewActionComponent,
     ApprovalFlowPageComponent,
     ReceiveFlowPageComponent,
+    ExportWalletComponent,
 
-    KcSnackbarComponent
+    KcSnackbarComponent,
   ],
   templateUrl: './app-wrapper.component.html',
   styleUrl: './app-wrapper.component.scss',

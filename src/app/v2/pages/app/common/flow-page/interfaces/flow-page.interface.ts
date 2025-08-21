@@ -1,5 +1,7 @@
+import { FlowPageId } from '../flow-page.registry';
+
 export interface IFlowPageConfig {
-  id: string;
+  id: FlowPageId;
   title: string;
   canNavigateBack?: boolean;
   canClose?: boolean;
@@ -24,7 +26,7 @@ export interface IFlowPageNavigation {
 
 export abstract class FlowPageBase {
   abstract get config(): IFlowPageConfig;
-  
+
   onPageEnter?(): void;
   onPageExit?(): void;
   onNavigateBack?(): boolean; // Return false to prevent navigation

@@ -29,96 +29,11 @@
       (backdropClick)="onFlowPageBackdropClick()"
       (close)="onFlowPageClose()"
     >
-      @if (flowPagesService.isPageOpen('wallet-management')) {
-        <app-wallet-management-page></app-wallet-management-page>
-      }
-      @if (flowPagesService.isPageOpen('send')) {
-        <app-send-page></app-send-page>
-      }
-      @if (flowPagesService.isPageOpen('send-kaspa')) {
-        <app-send-kaspa></app-send-kaspa>
-      }
-      @if (flowPagesService.isPageOpen('send-krc20-list')) {
-        <app-send-krc20-list></app-send-krc20-list>
-      }
-      @if (flowPagesService.isPageOpen('send-krc20')) {
-        <app-send-krc20></app-send-krc20>
-      }
-      @if (flowPagesService.isPageOpen('send-nft-list')) {
-        <app-send-nft-list></app-send-nft-list>
-      }
-      @if (flowPagesService.isPageOpen('send-nft')) {
-        <app-send-nft></app-send-nft>
-      }
-      @if (flowPagesService.isPageOpen('send-kns-list')) {
-        <app-send-kns-list></app-send-kns-list>
-      }
-      @if (flowPagesService.isPageOpen('send-kns')) {
-        <app-send-kns></app-send-kns>
-      }
-      @if (flowPagesService.isPageOpen('add-wallet')) {
-        <div class="placeholder-page">
-          <p class="text-gray-60 typo-text-2">Add Wallet page - Coming soon</p>
-        </div>
-      }
-      @if (flowPagesService.isPageOpen('create-wallet')) {
-        <div class="placeholder-page">
-          <p class="text-gray-60 typo-text-2">Create Wallet page - Coming soon</p>
-        </div>
-      }
-      @if (flowPagesService.isPageOpen('send-confirmation')) {
-        <div class="placeholder-page">
-          <p class="text-gray-60 typo-text-2">Send Confirmation page - Coming soon</p>
-        </div>
-      }
-      @if (flowPagesService.isPageOpen('action-approval')) {
-        <app-approval-flow-page></app-approval-flow-page>
-      }
-      @if (flowPagesService.isPageOpen('receive')) {
-        <app-receive-flow-page></app-receive-flow-page>
-      }
-      @if (flowPagesService.isPageOpen('export-wallet')) {
-        <app-export-wallet></app-export-wallet>
-      }
-
+      <app-dynamic-flow-page-outlet></app-dynamic-flow-page-outlet>
     </app-flow-page>
 
     <!-- Quick Action Dialog System -->
-    @if (quickActionDialogService.activeDialog()?.id === 'add-account' || quickActionDialogService.activeDialog()?.id === 'edit-account') {
-      <app-create-wallet-account-quick-action-dialog
-        [isOpen]="quickActionDialogService.isAnyDialogOpen()"
-        [data]="quickActionDialogService.activeDialog()?.data"
-        (backdropClick)="onQuickActionDialogBackdropClick()"
-        (close)="onQuickActionDialogClose()"
-      ></app-create-wallet-account-quick-action-dialog>
-    }
-
-    @if (quickActionDialogService.activeDialog()?.id === 'edit-wallet') {
-      <app-edit-wallet-quick-action-dialog
-        [isOpen]="quickActionDialogService.isAnyDialogOpen()"
-        [data]="quickActionDialogService.activeDialog()?.data"
-        (backdropClick)="onQuickActionDialogBackdropClick()"
-        (close)="onQuickActionDialogClose()"
-      ></app-edit-wallet-quick-action-dialog>
-    }
-
-    @if (quickActionDialogService.activeDialog()?.id === 'delete-account') {
-      <app-delete-wallet-account-quick-action-dialog
-        [isOpen]="quickActionDialogService.isAnyDialogOpen()"
-        [data]="quickActionDialogService.activeDialog()?.data"
-        (backdropClick)="onQuickActionDialogBackdropClick()"
-        (close)="onQuickActionDialogClose()"
-      ></app-delete-wallet-account-quick-action-dialog>
-    }
-
-    @if (quickActionDialogService.activeDialog()?.id === 'wallet-options') {
-      <app-wallet-options-quick-action-dialog
-        [isOpen]="quickActionDialogService.isAnyDialogOpen()"
-        [data]="quickActionDialogService.activeDialog()?.data"
-        (backdropClick)="onQuickActionDialogBackdropClick()"
-        (close)="onQuickActionDialogClose()"
-      ></app-wallet-options-quick-action-dialog>
-    }
+    <app-dynamic-quick-action-dialog-outlet></app-dynamic-quick-action-dialog-outlet>
 
     <!-- Notification Snackbar System -->
     <kc-snackbar></kc-snackbar>

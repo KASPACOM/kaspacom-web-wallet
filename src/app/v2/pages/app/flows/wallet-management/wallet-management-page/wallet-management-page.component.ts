@@ -150,13 +150,13 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
     // Open the delete confirmation dialog
     const isWalletWithoutAccounts = !walletAccount.wallet.supportAccounts();
     this.quickActionDialogService.openDialog({
-      id: 'delete-account',
+      id: isWalletWithoutAccounts ? 'delete-wallet' : 'delete-account',
       title: isWalletWithoutAccounts ? 'Delete wallet' : 'Delete account',
       isCloseable: true,
       data: {
-        accountName: walletAccount.name,
-        wallet: walletAccount.wallet,
-        deleteEntireWallet: isWalletWithoutAccounts,
+        ...(isWalletWithoutAccounts
+          ? { walletName: walletAccount.name, wallet: walletAccount.wallet }
+          : { accountName: walletAccount.name, wallet: walletAccount.wallet }),
         // Pass callback to refresh accounts after successful operation
         onSuccess: async () => {
           // Give the wallet service time to update its internal state

@@ -13,6 +13,12 @@ import { QuickActionDialogComponent } from '../../quick-action-dialog.component'
 import { WalletService } from '../../../../../../../services/wallet.service';
 import { AppWallet } from '../../../../../../../classes/AppWallet';
 
+interface DeleteAccountDialogData {
+  accountName: string;
+  wallet: AppWallet;
+  onSuccess?: () => void;
+}
+
 @Component({
   selector: 'app-delete-wallet-account-quick-action-dialog',
   standalone: true,
@@ -24,7 +30,7 @@ export class DeleteWalletAccountQuickActionDialogComponent
   implements AfterViewInit
 {
   @Input() isOpen = false;
-  @Input() data: any;
+  @Input() data: DeleteAccountDialogData | undefined;
   @Output() backdropClick = new EventEmitter<void>();
   @Output() close = new EventEmitter<void>();
 
@@ -34,10 +40,6 @@ export class DeleteWalletAccountQuickActionDialogComponent
 
   // Internal state for animation
   isDialogOpen = false;
-
-  get isDeleteEntireWallet(): boolean {
-    return this.data?.deleteEntireWallet === true;
-  }
 
   ngAfterViewInit(): void {
     // Start with dialog closed, then open it to trigger animation
@@ -49,10 +51,6 @@ export class DeleteWalletAccountQuickActionDialogComponent
 
   get accountName(): string {
     return this.data?.accountName || '';
-  }
-
-  get dialogTitle(): string {
-    return this.isDeleteEntireWallet ? 'Delete wallet' : 'Delete account';
   }
 
   onBackdropClick(): void {
@@ -77,33 +75,21 @@ export class DeleteWalletAccountQuickActionDialogComponent
 
   async onDelete(): Promise<void> {
     try {
-      const wallet: AppWallet = this.data?.wallet;
+      const wallet: AppWallet | undefined = this.data?.wallet;
       if (!wallet) {
-        this.notificationService.error('Error', 'No wallet selected');
+        this.notificationService.error('Error', 'No account selected');
         return;
       }
-      let success = false;
-      let error: string | undefined;
-      if (this.isDeleteEntireWallet) {
-        const deleted = await this.walletService.deleteWallet(
-          wallet.getIdWithAccount(),
+
+      const result = await this.walletService.removeWalletAccount(
+        wallet.getIdWithAccount(),
+      );
+
+      if (result.success) {
+        this.notificationService.success(
+          'Success',
+          `Account "${this.accountName}" deleted successfully!`,
         );
-        success = deleted;
-        if (!deleted) {
-          error = 'Failed to delete wallet';
-        }
-      } else {
-        const result = await this.walletService.removeWalletAccount(
-          wallet.getIdWithAccount(),
-        );
-        success = result.success;
-        error = result.error;
-      }
-      if (success) {
-        const msg = this.isDeleteEntireWallet
-          ? `Wallet "${this.accountName}" deleted successfully!`
-          : `Account "${this.accountName}" deleted successfully!`;
-        this.notificationService.success('Success', msg);
         // Call the success callback to refresh the parent component
         if (this.data?.onSuccess) {
           this.data.onSuccess();
@@ -111,21 +97,17 @@ export class DeleteWalletAccountQuickActionDialogComponent
 
         this.closeDialog();
       } else {
-        const err =
-          error ||
-          (this.isDeleteEntireWallet
-            ? 'Failed to delete wallet'
-            : 'Failed to delete account');
-        this.notificationService.error('Error', err);
+        this.notificationService.error(
+          'Error',
+          result.error || 'Failed to delete account',
+        );
         this.closeDialog();
       }
     } catch (error) {
       console.error('Error deleting account:', error);
       this.notificationService.error(
         'Error',
-        this.isDeleteEntireWallet
-          ? 'An error occurred while deleting the wallet'
-          : 'An error occurred while deleting the account',
+        'An error occurred while deleting the account',
       );
       this.closeDialog();
     }

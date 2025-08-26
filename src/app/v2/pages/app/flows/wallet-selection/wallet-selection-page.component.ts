@@ -99,13 +99,12 @@ export class WalletSelectionPageComponent extends FlowPageBaseComponent {
   deleteWallet(item: WalletGroupItem): void {
     const target = item.group[0];
     this.quickActionDialogService.openDialog({
-      id: 'delete-account',
+      id: 'delete-wallet',
       title: 'Delete wallet',
       isCloseable: true,
       data: {
-        accountName: target.getName(),
+        walletName: target.getName(),
         wallet: target,
-        deleteEntireWallet: true,
         onSuccess: async () => {
           await new Promise((r) => setTimeout(r, 100));
           this.loadWallets();

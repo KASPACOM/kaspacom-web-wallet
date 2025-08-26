@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { ImportExistingStep } from './import-existing-step.enum';
 import { ImportExistingFlowService } from './service/import-existing-flow.service';
 import {
@@ -31,6 +31,8 @@ export class ImportExistingFlowComponent {
     ImportExistingFlowService,
   );
 
+  skipPassword = input<boolean>(false);
+
   readonly stepOrder = [
     ImportExistingStep.IMPORT_SWTICH,
     ImportExistingStep.CREATE_PIN,
@@ -44,6 +46,14 @@ export class ImportExistingFlowComponent {
 
   ngOnInit(): void {
     this.importExistingFlowService.init();
+
+    // If coming from Change Wallet flow, skip password step
+    if (this.skipPassword()) {
+      this.stepOrder.splice(
+        this.stepOrder.indexOf(ImportExistingStep.CREATE_PIN),
+        1,
+      );
+    }
   }
 
   next() {

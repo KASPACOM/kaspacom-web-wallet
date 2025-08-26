@@ -12,6 +12,9 @@ import { ApprovalFlowPageComponent } from '../../flows/approval/approval-flow-pa
 import { ReceiveFlowPageComponent } from '../../flows/receive/receive-flow-page.component';
 import { ExportWalletComponent } from '../../flows/export-wallet/export-wallet.component';
 import { PlaceholderFlowPageComponent } from './placeholder-flow-page.component';
+import { ImportExistingFlowComponent } from '../../../onboarding-page/flows/import-existing-flow/import-existing-flow.component';
+import { NewWalletFlowComponent } from '../../../onboarding-page/flows/new-wallet-flow/new-wallet-flow.component';
+import { WalletSelectionPageComponent } from '../../flows/wallet-selection/wallet-selection-page.component';
 import { IFlowPageConfig } from './interfaces/flow-page.interface';
 
 export type FlowPageRegistryEntry =
@@ -23,6 +26,7 @@ export type FlowPageRegistryEntry =
 
 export const FLOW_PAGE_IDS = [
   'wallet-management',
+  'wallet-selection',
   'send',
   'send-kaspa',
   'send-krc20-list',
@@ -43,6 +47,7 @@ export type FlowPageId = (typeof FLOW_PAGE_IDS)[number];
 
 export const FLOW_PAGE_REGISTRY: Record<FlowPageId, FlowPageRegistryEntry> = {
   'wallet-management': WalletManagementPageComponent,
+  'wallet-selection': WalletSelectionPageComponent,
   send: SendPageComponent,
   'send-kaspa': SendKaspaComponent,
   'send-krc20-list': SendKrc20ListComponent,
@@ -54,15 +59,13 @@ export const FLOW_PAGE_REGISTRY: Record<FlowPageId, FlowPageRegistryEntry> = {
   'action-approval': ApprovalFlowPageComponent,
   receive: ReceiveFlowPageComponent,
   'export-wallet': ExportWalletComponent,
-
-  // Placeholders
   'add-wallet': {
-    component: PlaceholderFlowPageComponent,
-    getInputs: () => ({ text: 'Add Wallet page - Coming soon' }),
+    component: ImportExistingFlowComponent,
+    getInputs: () => ({ skipPassword: true }),
   },
   'create-wallet': {
-    component: PlaceholderFlowPageComponent,
-    getInputs: () => ({ text: 'Create Wallet page - Coming soon' }),
+    component: NewWalletFlowComponent,
+    getInputs: () => ({ skipPassword: true }),
   },
   'send-confirmation': {
     component: PlaceholderFlowPageComponent,

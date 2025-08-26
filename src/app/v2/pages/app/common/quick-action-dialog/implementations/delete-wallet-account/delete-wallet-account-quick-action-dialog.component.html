@@ -1,15 +1,19 @@
 <app-quick-action-dialog
   [isOpen]="isDialogOpen"
-  [title]="'Delete account'"
+  [title]="dialogTitle"
   [isCloseable]="true"
   (backdropClick)="onBackdropClick()"
   (close)="onClose()"
 >
   <!-- Content slot for confirmation message -->
   <div slot="content" class="delete-confirmation">
-    <p>
+    <p *ngIf="!isDeleteEntireWallet">
       Are you sure you want to delete the account <strong>{{ accountName }}</strong>? 
       This action cannot be undone and you will lose access to this account permanently.
+    </p>
+    <p *ngIf="isDeleteEntireWallet">
+      Are you sure you want to delete the wallet <strong>{{ accountName }}</strong>? 
+      This will remove all accounts associated with this wallet from this device.
     </p>
   </div>
   
@@ -23,7 +27,7 @@
       (buttonClick)="onCancel()"
     ></kc-button>
     <kc-button
-      [text]="'Delete'"
+      [text]="isDeleteEntireWallet ? 'Delete wallet' : 'Delete account'"
       [variant]="'secondary'"
       [role]="'danger'"
       [size]="'md'"

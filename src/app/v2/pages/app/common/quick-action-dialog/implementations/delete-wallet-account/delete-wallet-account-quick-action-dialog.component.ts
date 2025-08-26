@@ -1,4 +1,12 @@
-import { Component, Input, Output, EventEmitter, inject, ChangeDetectorRef, AfterViewInit } from '@angular/core';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  inject,
+  ChangeDetectorRef,
+  AfterViewInit,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { KcButtonComponent, NotificationService } from '@kaspacom/ui';
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
@@ -10,9 +18,11 @@ import { AppWallet } from '../../../../../../../classes/AppWallet';
   standalone: true,
   imports: [CommonModule, KcButtonComponent, QuickActionDialogComponent],
   templateUrl: './delete-wallet-account-quick-action-dialog.component.html',
-  styleUrl: './delete-wallet-account-quick-action-dialog.component.scss'
+  styleUrl: './delete-wallet-account-quick-action-dialog.component.scss',
 })
-export class DeleteWalletAccountQuickActionDialogComponent implements AfterViewInit {
+export class DeleteWalletAccountQuickActionDialogComponent
+  implements AfterViewInit
+{
   @Input() isOpen = false;
   @Input() data: any;
   @Output() backdropClick = new EventEmitter<void>();
@@ -25,6 +35,10 @@ export class DeleteWalletAccountQuickActionDialogComponent implements AfterViewI
   // Internal state for animation
   isDialogOpen = false;
 
+  get isDeleteEntireWallet(): boolean {
+    return this.data?.deleteEntireWallet === true;
+  }
+
   ngAfterViewInit(): void {
     // Start with dialog closed, then open it to trigger animation
     setTimeout(() => {
@@ -35,6 +49,10 @@ export class DeleteWalletAccountQuickActionDialogComponent implements AfterViewI
 
   get accountName(): string {
     return this.data?.accountName || '';
+  }
+
+  get dialogTitle(): string {
+    return this.isDeleteEntireWallet ? 'Delete wallet' : 'Delete account';
   }
 
   onBackdropClick(): void {
@@ -64,11 +82,28 @@ export class DeleteWalletAccountQuickActionDialogComponent implements AfterViewI
         this.notificationService.error('Error', 'No wallet selected');
         return;
       }
-
-      const result = await this.walletService.removeWalletAccount(wallet.getIdWithAccount());
-
-      if (result.success) {
-        this.notificationService.success('Success', `Account "${this.accountName}" deleted successfully!`);
+      let success = false;
+      let error: string | undefined;
+      if (this.isDeleteEntireWallet) {
+        const deleted = await this.walletService.deleteWallet(
+          wallet.getIdWithAccount(),
+        );
+        success = deleted;
+        if (!deleted) {
+          error = 'Failed to delete wallet';
+        }
+      } else {
+        const result = await this.walletService.removeWalletAccount(
+          wallet.getIdWithAccount(),
+        );
+        success = result.success;
+        error = result.error;
+      }
+      if (success) {
+        const msg = this.isDeleteEntireWallet
+          ? `Wallet "${this.accountName}" deleted successfully!`
+          : `Account "${this.accountName}" deleted successfully!`;
+        this.notificationService.success('Success', msg);
         // Call the success callback to refresh the parent component
         if (this.data?.onSuccess) {
           this.data.onSuccess();
@@ -76,12 +111,22 @@ export class DeleteWalletAccountQuickActionDialogComponent implements AfterViewI
 
         this.closeDialog();
       } else {
-        this.notificationService.error('Error', result.error || 'Failed to delete account');
+        const err =
+          error ||
+          (this.isDeleteEntireWallet
+            ? 'Failed to delete wallet'
+            : 'Failed to delete account');
+        this.notificationService.error('Error', err);
         this.closeDialog();
       }
     } catch (error) {
       console.error('Error deleting account:', error);
-      this.notificationService.error('Error', 'An error occurred while deleting the account');
+      this.notificationService.error(
+        'Error',
+        this.isDeleteEntireWallet
+          ? 'An error occurred while deleting the wallet'
+          : 'An error occurred while deleting the account',
+      );
       this.closeDialog();
     }
   }

@@ -74,11 +74,14 @@ export class ImportExistingFlowService {
     try {
       const walletCount = this.walletService.getWalletsCount();
 
-      const res1 = await this.passwordManagerService.setSavedPassword(
-        this._model().password,
-        true,
-      );
-      const res2 = await this.passwordManagerService.checkAndLoadPassword(
+      // Only set a new saved password if there is no user data yet.
+      if (!this.passwordManagerService.isUserHasSavedPassword()) {
+        await this.passwordManagerService.setSavedPassword(
+          this._model().password,
+        );
+      }
+      // Ensure password is loaded
+      await this.passwordManagerService.checkAndLoadPassword(
         this._model().password,
       );
 

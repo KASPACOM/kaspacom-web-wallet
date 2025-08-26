@@ -13,6 +13,8 @@ import { DynamicFlowPageOutletComponent } from './common/flow-page/dynamic-flow-
 import { DynamicQuickActionDialogOutletComponent } from './common/quick-action-dialog/dynamic-quick-action-dialog-outlet.component';
 
 import { KcSnackbarComponent } from '@kaspacom/ui';
+import { OnInit } from '@angular/core';
+import { WalletService } from '../../../services/wallet.service';
 
 @Component({
   selector: 'app-app-wrapper',
@@ -32,11 +34,19 @@ import { KcSnackbarComponent } from '@kaspacom/ui';
   styleUrl: './app-wrapper.component.scss',
   animations: [navAnimation],
 })
-export class AppWrapperComponent {
+export class AppWrapperComponent implements OnInit {
   private contexts = inject(ChildrenOutletContexts);
   accountSettingsService = inject(AccountSettingsService);
   flowPagesService = inject(FlowPagesService);
   quickActionDialogService = inject(QuickActionDialogService);
+  private walletService = inject(WalletService);
+
+  async ngOnInit(): Promise<void> {
+    // Ensure wallets are loaded into memory on app shell load
+    await this.walletService.loadWallets();
+    // Restore current selection (or pick first available)
+    await this.walletService.selectCurrentWalletFromLocalStorageNullsafe();
+  }
 
   getRouteAnimationData() {
     return this.contexts.getContext('primary')?.route?.snapshot?.data?.[

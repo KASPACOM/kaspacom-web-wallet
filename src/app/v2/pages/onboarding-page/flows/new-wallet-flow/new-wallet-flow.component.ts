@@ -1,4 +1,11 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  computed,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { NewWalletStep } from './new-wallet-step.enum';
 import {
   SlideDirection,
@@ -31,6 +38,8 @@ export class NewWalletFlowComponent implements OnInit {
 
   private readonly newWalletFlowService = inject(NewWalletFlowService);
 
+  skipPassword = input<boolean>(false);
+
   readonly stepOrder = [
     NewWalletStep.CREATE_PASSWORD,
     NewWalletStep.CREATE_SEED_PHRASE,
@@ -44,6 +53,16 @@ export class NewWalletFlowComponent implements OnInit {
 
   ngOnInit(): void {
     this.newWalletFlowService.initNewWallet();
+
+    // If coming from Change Wallet flow, skip password step
+    if (this.skipPassword()) {
+      const idx = this.stepOrder.indexOf(NewWalletStep.CREATE_PASSWORD);
+      if (idx !== -1) {
+        this.stepOrder.splice(idx, 1);
+        // Reset current step to first available
+        this.onboardingStep.set(this.stepOrder[0]);
+      }
+    }
   }
 
   next() {

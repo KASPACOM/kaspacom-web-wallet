@@ -1,19 +1,17 @@
 <app-quick-action-dialog
   [isOpen]="isDialogOpen"
-  [title]="'Delete account'"
+  [title]="'Delete wallet'"
   [isCloseable]="true"
   (backdropClick)="onBackdropClick()"
   (close)="onClose()"
 >
-  <!-- Content slot for confirmation message -->
   <div slot="content" class="delete-confirmation">
     <p>
-      Are you sure you want to delete the account <strong>{{ accountName }}</strong>?
-      This action cannot be undone and you will lose access to this account permanently.
+      Are you sure you want to delete the wallet <strong>{{ walletName }}</strong>?
+      This will remove all accounts associated with this wallet from this device.
     </p>
   </div>
-  
-  <!-- Footer slot for action buttons -->
+
   <div slot="footer" class="button-row">
     <kc-button
       [text]="'Cancel'"
@@ -23,7 +21,7 @@
       (buttonClick)="onCancel()"
     ></kc-button>
     <kc-button
-      [text]="'Delete'"
+      [text]="'Delete wallet'"
       [variant]="'secondary'"
       [role]="'danger'"
       [size]="'md'"
@@ -31,4 +29,4 @@
       (buttonClick)="onDelete()"
     ></kc-button>
   </div>
-</app-quick-action-dialog>
+</app-quick-action-dialog> 

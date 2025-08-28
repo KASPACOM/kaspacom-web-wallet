@@ -1,0 +1,11 @@
+.delete-confirmation {
+  p {
+    margin: 0;
+  }
+}
+
+.button-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}

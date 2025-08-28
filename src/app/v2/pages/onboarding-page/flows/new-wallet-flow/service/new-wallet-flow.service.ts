@@ -99,10 +99,13 @@ export class NewWalletFlowService {
       walletAddress,
     });
     this.printState();
-    await this.passwordManagerService.setSavedPassword(
-      this._newWallet().password,
-      true,
-    );
+    // Only set a new saved password if there is no user data yet.
+    if (!this.passwordManagerService.isUserHasSavedPassword()) {
+      await this.passwordManagerService.setSavedPassword(
+        this._newWallet().password,
+      );
+    }
+    // Ensure the password is loaded for subsequent storage operations
     await this.passwordManagerService.checkAndLoadPassword(
       this._newWallet().password,
     );

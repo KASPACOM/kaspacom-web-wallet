@@ -56,8 +56,13 @@ export class WalletOptionsQuickActionDialogComponent implements AfterViewInit {
   }
 
   onChangeWallet(): void {
-    // TODO: Implement change wallet functionality
-    console.log('Change wallet clicked');
+    this.flowPagesService.navigateToPage({
+      id: 'wallet-selection',
+      title: 'Select wallet',
+      canNavigateBack: true,
+      showTitle: true,
+      showBackground: true,
+    });
     this.closeDialog();
   }
 

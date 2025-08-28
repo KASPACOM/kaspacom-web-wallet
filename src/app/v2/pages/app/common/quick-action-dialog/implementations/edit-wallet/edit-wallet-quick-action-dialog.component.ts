@@ -1,4 +1,13 @@
-import { Component, Input, Output, EventEmitter, computed, AfterViewInit, inject, ChangeDetectorRef } from '@angular/core';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  computed,
+  AfterViewInit,
+  inject,
+  ChangeDetectorRef,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { KcInputComponent, KcButtonComponent } from '@kaspacom/ui';
@@ -9,9 +18,15 @@ import { MessagePopupService } from '../../../../../../../services/message-popup
 @Component({
   selector: 'app-edit-wallet-quick-action-dialog',
   standalone: true,
-  imports: [CommonModule, FormsModule, KcInputComponent, KcButtonComponent, QuickActionDialogComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    KcInputComponent,
+    KcButtonComponent,
+    QuickActionDialogComponent,
+  ],
   templateUrl: './edit-wallet-quick-action-dialog.component.html',
-  styleUrl: './edit-wallet-quick-action-dialog.component.scss'
+  styleUrl: './edit-wallet-quick-action-dialog.component.scss',
 })
 export class EditWalletQuickActionDialogComponent implements AfterViewInit {
   @Input() isOpen = false;
@@ -75,10 +90,17 @@ export class EditWalletQuickActionDialogComponent implements AfterViewInit {
       if (this.data?.isEditMode && this.data?.wallet) {
         // Update wallet name
         const wallet = this.data.wallet;
-        const success = await this.walletService.updateWalletName(wallet, this.walletName.trim());
+        const success = await this.walletService.updateWalletName(
+          wallet,
+          this.walletName.trim(),
+        );
 
         if (success) {
-          this.messagePopupService.showSuccess(`Wallet renamed to "${this.walletName}"`);
+          // Reload wallets so all lists reflect the new name immediately
+          await this.walletService.loadWallets();
+          this.messagePopupService.showSuccess(
+            `Wallet renamed to "${this.walletName}"`,
+          );
 
           // Call the success callback to refresh the parent component
           if (this.data?.onSuccess) {

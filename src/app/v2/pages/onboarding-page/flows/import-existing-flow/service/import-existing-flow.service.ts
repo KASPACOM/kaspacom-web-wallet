@@ -8,6 +8,7 @@ export interface IImportExistingWallet {
   importSwitchMethod: ImportSwitchMethod;
   wordCount: number;
   seedPhrase: string;
+  seedPassphrase: string;
   privateKey: string;
   password: string;
   confirmPassword: string;
@@ -30,10 +31,21 @@ export class ImportExistingFlowService {
     importSwitchMethod: ImportSwitchMethod.SEED_PHRASE,
     wordCount: 12,
     seedPhrase: '',
+    seedPassphrase: '',
     privateKey: '',
     password: '',
     confirmPassword: '',
   });
+
+  private _skipPassword = false;
+
+  setSkipPassword(skip: boolean) {
+    this._skipPassword = skip;
+  }
+
+  isSkipPassword(): boolean {
+    return this._skipPassword;
+  }
 
   get model() {
     return this._model;
@@ -41,20 +53,20 @@ export class ImportExistingFlowService {
 
   init() {}
 
-  printState() {
-    console.log('Import Existing Wallet State:', this._model());
-  }
+  printState() {}
 
   submitSeedPhraseStep(
     seedPhrase: string,
     wordCount: number,
     importSwitchMethod: ImportSwitchMethod,
+    seedPassphrase: string = '',
   ) {
     this._model.set({
       ...this._model(),
       seedPhrase,
       wordCount,
       importSwitchMethod,
+      seedPassphrase,
     });
     this.printState();
   }
@@ -63,7 +75,11 @@ export class ImportExistingFlowService {
     privateKey: string,
     importSwitchMethod: ImportSwitchMethod,
   ) {
-    this._model.set({ ...this._model(), privateKey, importSwitchMethod });
+    this._model.set({
+      ...this._model(),
+      privateKey,
+      importSwitchMethod,
+    });
     this.printState();
   }
 
@@ -90,7 +106,7 @@ export class ImportExistingFlowService {
           'Saved Wallet ' + walletCount,
           this._model().privateKey.trim(),
           undefined,
-          this._model().password,
+          undefined,
         );
         importResult = { success: tmp.sucess, error: tmp.error };
       } else {
@@ -102,8 +118,8 @@ export class ImportExistingFlowService {
           'Saved Wallet ' + walletCount,
           this._model().seedPhrase.trim(),
           DEFAULT_DERIVED_PATH,
-          `# + ${accountNumber}`,
-          this._model().password,
+          `# ${accountNumber}`,
+          this._model().seedPassphrase,
         );
         importResult = { success: tmp.sucess, error: tmp.error };
       }
@@ -113,5 +129,40 @@ export class ImportExistingFlowService {
       importResult = { success: false, error: importError };
     }
     return importResult;
+  }
+
+  async finalSubmitSkipPassword(): Promise<IWalletImportResult> {
+    let importResult: IWalletImportResult | undefined = undefined;
+
+    try {
+      const walletCount = this.walletService.getWalletsCount();
+
+      if (this._model().importSwitchMethod === ImportSwitchMethod.PRIVATE_KEY) {
+        const tmp = await this.walletService.addWallet(
+          'Saved Wallet ' + walletCount,
+          this._model().privateKey.trim(),
+        );
+        importResult = { success: tmp.sucess, error: tmp.error };
+      } else {
+        const accountNumber =
+          this.walletService.getWalletAccountNumberFromDerivedPath(
+            DEFAULT_DERIVED_PATH,
+          );
+        const tmp = await this.walletService.addWalletFromMemonic(
+          'Saved Wallet ' + walletCount,
+          this._model().seedPhrase.trim(),
+          DEFAULT_DERIVED_PATH,
+          `# ${accountNumber}`,
+          this._model().seedPassphrase,
+        );
+        importResult = { success: tmp.sucess, error: tmp.error };
+      }
+    } catch (error) {
+      console.error('Error importing wallet:', error);
+      const importError = 'Error importing wallet. Please try again.';
+      importResult = { success: false, error: importError };
+    }
+
+    return importResult!;
   }
 }

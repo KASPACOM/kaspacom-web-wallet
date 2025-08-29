@@ -12,6 +12,8 @@ import {
   KcButtonComponent,
   KcIconComponent,
   KcInputComponent,
+  KcSnackbarComponent,
+  NotificationService,
 } from '@kaspacom/ui';
 import { ImportSwitchComponent } from './component/import-switch/import-switch.component';
 import { ImportSwitchMethod } from './component/import-switch/import-switch-method.enum';
@@ -23,6 +25,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
+import { WalletService } from '../../../../../../../services/wallet.service';
 
 @Component({
   selector: 'app-import-switch-import-existing-step',
@@ -32,6 +35,7 @@ import { ImportExistingFlowService } from '../../service/import-existing-flow.se
     ImportSwitchComponent,
     RadioInputComponent,
     KcInputComponent,
+    KcSnackbarComponent,
     ReactiveFormsModule,
     KcIconComponent,
   ],
@@ -52,9 +56,16 @@ export class ImportSwitchImportExistingStepComponent {
     ImportExistingFlowService,
   );
 
+  private readonly notificationService = inject(NotificationService);
+
+  private readonly walletService = inject(WalletService);
+
   importMethod = signal<ImportSwitchMethod>(ImportSwitchMethod.SEED_PHRASE);
 
-  seedPhraseForm = this.fb.group({ words: this.fb.array([]) });
+  seedPhraseForm = this.fb.group({
+    words: this.fb.array([]),
+    seedPassphrase: [''],
+  });
 
   privateKeyForm = this.fb.group({
     privateKey: ['', [Validators.required]],
@@ -67,10 +78,6 @@ export class ImportSwitchImportExistingStepComponent {
   }
 
   wordCount = signal<number>(12);
-
-  // wordSpots = computed(() =>
-  //   Array.from({ length: this.wordCount() }, (_, i) => ''),
-  // );
 
   privateKeyFieldType = signal<'text' | 'password'>('password');
 
@@ -96,6 +103,9 @@ export class ImportSwitchImportExistingStepComponent {
       const initialValue = i < initialWords.length ? initialWords[i] : '';
       this.words.push(this.fb.control(initialValue, [Validators.required]));
     }
+    this.seedPhraseForm.patchValue({
+      seedPassphrase: this.importExistingFlowService.model().seedPassphrase,
+    });
   }
 
   reInitSeedPhraseForm() {
@@ -141,7 +151,6 @@ export class ImportSwitchImportExistingStepComponent {
       this.words.at(i).setValue(pastedWord.trim());
       i++;
     }
-    console.log(this.words);
   }
 
   canSubmit(): boolean {
@@ -153,17 +162,51 @@ export class ImportSwitchImportExistingStepComponent {
     return false;
   }
 
-  submitSeedPhrase() {
+  private async doImportIfNeeded(): Promise<boolean> {
+    if (!this.importExistingFlowService.isSkipPassword()) {
+      return true; // handled in PIN step
+    }
+    const result =
+      await this.importExistingFlowService.finalSubmitSkipPassword();
+    if (!result.success) {
+      this.notificationService.error(
+        'Error',
+        result.error ?? 'Failed to import wallet.',
+      );
+      return false;
+    }
+    return true;
+  }
+
+  async submitSeedPhrase() {
     let tmp = '';
     for (let word of this.words.controls) {
       tmp = `${tmp} ${word.value}`.trim();
     }
+
+    const passphrase = this.seedPhraseForm.value.seedPassphrase || undefined;
+    const derivedAddr = this.walletService.getWalletAddressFromMnemonic(
+      tmp,
+      passphrase,
+    );
+    if (!derivedAddr) {
+      this.notificationService.error(
+        'Invalid seed phrase',
+        'Please enter a valid seed phrase.',
+      );
+      return;
+    }
+
     this.importExistingFlowService.submitSeedPhraseStep(
       tmp,
       this.wordCount(),
       this.importMethod(),
+      this.seedPhraseForm.value.seedPassphrase || '',
     );
-    this.next.emit();
+
+    if (await this.doImportIfNeeded()) {
+      this.next.emit();
+    }
   }
 
   isPrivateKeyInvalid(controlName: string): boolean {
@@ -173,26 +216,25 @@ export class ImportSwitchImportExistingStepComponent {
       : false;
   }
 
-  submitPrivateKey() {
+  async submitPrivateKey() {
     this.importExistingFlowService.submitPrivateKeyStep(
       this.privateKeyForm.value.privateKey!,
       this.importMethod(),
     );
-    this.next.emit();
+
+    if (await this.doImportIfNeeded()) {
+      this.next.emit();
+    }
   }
 
-  handleSubmit() {
+  async handleSubmit() {
     if (!this.canSubmit()) {
       return;
     }
     if (this.importMethod() === ImportSwitchMethod.SEED_PHRASE) {
-      this.submitSeedPhrase();
+      await this.submitSeedPhrase();
     } else if (this.importMethod() === ImportSwitchMethod.PRIVATE_KEY) {
-      this.submitPrivateKey();
+      await this.submitPrivateKey();
     }
   }
-
-  // onChangeSeedPhraseWord(value: string, idx: number) {
-  //   this.wordSpots()[idx] = value;
-  // }
 }

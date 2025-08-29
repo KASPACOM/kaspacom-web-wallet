@@ -35,6 +35,14 @@
         ></app-seed-phrase-word>
       }
     </div>
+    <kc-input
+      [isFullWidth]="true"
+      [label]="'Seed passphrase (optional)'"
+      [type]="'password'"
+      [placeholder]="'Enter seed passphrase'"
+      [ngModel]="seedPassphrase()"
+      (valueChange)="onSeedPassphraseChange($event)"
+    ></kc-input>
     <div class="flex full-width justify-content-between">
       <kc-button
         [variant]="'tertiary'"

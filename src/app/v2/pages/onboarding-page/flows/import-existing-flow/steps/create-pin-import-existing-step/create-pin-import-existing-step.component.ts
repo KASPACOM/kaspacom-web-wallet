@@ -15,6 +15,7 @@ import {
   NotificationService,
 } from '@kaspacom/ui';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
+import { ImportExistingStep } from '../../import-existing-step.enum';
 
 @Component({
   selector: 'app-create-pin-import-existing-step',

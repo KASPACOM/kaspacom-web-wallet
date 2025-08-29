@@ -54,6 +54,7 @@ export class ImportExistingFlowComponent {
         1,
       );
     }
+    this.importExistingFlowService.setSkipPassword(this.skipPassword());
   }
 
   next() {

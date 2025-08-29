@@ -43,6 +43,13 @@
             ></kc-input>
           }
         </div>
+        <kc-input
+          [isFullWidth]="true"
+          [label]="'Seed passphrase (optional)'"
+          [type]="'password'"
+          [placeholder]="'Enter seed passphrase'"
+          formControlName="seedPassphrase"
+        ></kc-input>
       </div>
     </form>
   } @else if (importMethod() === ImportSwitchMethod.PRIVATE_KEY) {

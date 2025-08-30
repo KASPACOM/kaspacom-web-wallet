@@ -1,4 +1,4 @@
-name: Deploy Prod ENV React App to AWS S3
+name: Deploy Stage ENV
 
 on:
   push:
@@ -22,7 +22,7 @@ jobs:
       run: npm install
 
     - name: Build Angular app
-      run: npm run build
+      run: npm run build:stage
 
     - name: Install AWS CLI
       run: |

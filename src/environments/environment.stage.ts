@@ -10,7 +10,7 @@ export const environment: Environment = {
   knsApiBaseurl: 'https://api.knsdomains.org/mainnet',
   kaspaExplorerBaseurl: 'https://explorer.kaspa.org',
   kaspaNetwork: KASPA_NETWORKS.MAINNET,
-  allowedDomains: ['wallet.kaspa.com'],
+  allowedDomains: ['stage-wallet.kaspa.com'],
   isL2Enabled: true,
   l2Configs: {
     kasplex: {

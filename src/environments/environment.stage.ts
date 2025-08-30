@@ -2,7 +2,7 @@ import { KASPA_NETWORKS } from '../app/config/consts';
 import { Environment } from './environment.interface';
 
 export const environment: Environment = {
-  isProduction: true,
+  isProduction: false,
   backendApiBaseurl: 'https://api.kaspiano.com',
   kasplexApiBaseurl: 'https://api.kasplex.org/v1',
   kaspaApiBaseurl: 'https://api.kaspa.org',
@@ -11,7 +11,7 @@ export const environment: Environment = {
   kaspaExplorerBaseurl: 'https://explorer.kaspa.org',
   kaspaNetwork: KASPA_NETWORKS.MAINNET,
   allowedDomains: ['wallet.kaspa.com'],
-  isL2Enabled: false,
+  isL2Enabled: true,
   l2Configs: {
     kasplex: {
       l1PayloadPrefix: 'kasplex',

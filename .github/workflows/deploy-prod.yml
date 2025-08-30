@@ -1,4 +1,4 @@
-name: Deploy Prod ENV React App to AWS S3
+name: Deploy Prod ENV
 
 on:
   push:

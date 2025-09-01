@@ -1,4 +1,4 @@
-name: Deploy Dev ENV
+name: Deploy Stage ENV
 
 on:
   push:
@@ -22,7 +22,7 @@ jobs:
       run: npm install
 
     - name: Build Angular app
-      run: npm run build:dev
+      run: npm run build:stage
 
     - name: Install AWS CLI
       run: |
@@ -44,14 +44,15 @@ jobs:
 
     - name: Deploy to S3
       run: |
-        aws s3 sync dist/wallet-front-new/browser s3://${{ env.S3_BUCKET_NAME_DEV }}/ --delete
+        # Sync all files EXCEPT index.html
+        aws s3 sync dist/wallet-front-new/browser s3://stage-${{ env.S3_BUCKET_NAME }}/ --delete
+
         # Upload index.html separately with no-cache
-        aws s3 cp dist/wallet-front-new/browser/index.html s3://${{ env.S3_BUCKET_NAME_DEV }}/index.html \
+        aws s3 cp dist/wallet-front-new/browser/index.html s3://stage-${{ env.S3_BUCKET_NAME }}/index.html \
           --cache-control "no-cache, no-store, must-revalidate" \
           --content-type "text/html"
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_REGION: ${{ secrets.AWS_REGION }}
-        S3_BUCKET_NAME_DEV: ${{ secrets.S3_BUCKET_NAME_DEV }}
-
+        S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}

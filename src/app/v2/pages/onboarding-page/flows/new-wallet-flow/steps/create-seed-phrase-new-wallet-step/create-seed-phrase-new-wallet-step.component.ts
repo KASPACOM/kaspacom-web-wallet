@@ -105,16 +105,16 @@ export class CreateSeedPhraseNewWalletStepComponent implements OnInit {
     if (!this.seedPhraseSaved()) {
       return;
     }
-    const result = await this.newWalletFlowService.submitSeedPhraseStep(
-      this.seedPhrase().join(' '),
-      this.wordCount(),
-    );
-    if (result.success) {
+    try {
+      this.newWalletFlowService.prepareSeedPhrase(
+        this.seedPhrase().join(' '),
+        this.wordCount(),
+      );
       this.next.emit();
-    } else {
+    } catch (e: any) {
       this.notificationService.error(
         'Error',
-        result.error ?? 'Failed to create wallet.',
+        e?.message ?? 'Failed to derive wallet address from seed phrase.',
       );
     }
   }

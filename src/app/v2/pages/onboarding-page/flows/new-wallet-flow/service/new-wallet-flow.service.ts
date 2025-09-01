@@ -60,6 +60,23 @@ export class NewWalletFlowService {
     this.printState();
   }
 
+  prepareSeedPhrase(seedPhrase: string, seedPhraseWordCount: number) {
+    const walletAddress = this.walletService.getWalletAddressFromMnemonic(
+      seedPhrase,
+      this._newWallet().seedPassphrase,
+    );
+    if (!walletAddress) {
+      throw new Error('Failed to derive wallet address from seed phrase.');
+    }
+    this._newWallet.set({
+      ...this._newWallet(),
+      seedPhrase,
+      seedPhraseWordCount,
+      walletAddress,
+    });
+    this.printState();
+  }
+
   private async createWallet(): Promise<IWalletCreationResult> {
     let walletAdditionResult: IWalletCreationResult | undefined = undefined;
     const newWallet = this._newWallet();
@@ -86,6 +103,18 @@ export class NewWalletFlowService {
     }
 
     return walletAdditionResult;
+  }
+
+  async finalizeWalletCreation(): Promise<IWalletCreationResult> {
+    if (!this.passwordManagerService.isUserHasSavedPassword()) {
+      await this.passwordManagerService.setSavedPassword(
+        this._newWallet().password,
+      );
+    }
+    await this.passwordManagerService.checkAndLoadPassword(
+      this._newWallet().password,
+    );
+    return await this.createWallet();
   }
 
   async submitSeedPhraseStep(

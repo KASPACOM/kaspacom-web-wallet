@@ -80,15 +80,17 @@
   </div>
 
   <div class="flex full-width gap-16">
-    <div class="full-width">
-      <kc-button
-        [isFullWidth]="true"
-        [variant]="'tertiary'"
-        [text]="'Back'"
-        [isDisabled]="false"
-        (buttonClick)="previous.emit()"
-      ></kc-button>
-    </div>
+    @if (!hideBackButton()) {
+      <div class="full-width">
+        <kc-button
+          [isFullWidth]="true"
+          [variant]="'tertiary'"
+          [text]="'Back'"
+          [isDisabled]="false"
+          (buttonClick)="previous.emit()"
+        ></kc-button>
+      </div>
+    }
     <div class="full-width">
       <kc-button
         [isFullWidth]="true"

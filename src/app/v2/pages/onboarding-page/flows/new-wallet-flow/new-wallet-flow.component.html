@@ -18,6 +18,7 @@
         <app-create-seed-phrase-new-wallet-step
           (next)="next()"
           (previous)="previous()"
+          [hideBackButton]="skipPassword()"
         ></app-create-seed-phrase-new-wallet-step>
       </div>
     }

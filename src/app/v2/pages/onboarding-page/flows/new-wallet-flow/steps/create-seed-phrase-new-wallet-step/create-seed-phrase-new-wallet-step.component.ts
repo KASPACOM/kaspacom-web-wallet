@@ -11,6 +11,7 @@ import { CheckboxInputComponent } from '../../../../../../shared/ui/input/checkb
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 import { KcInputComponent } from '@kaspacom/ui';
 import { FormsModule } from '@angular/forms';
+import { input } from '@angular/core';
 
 @Component({
   selector: 'app-create-seed-phrase-new-wallet-step',
@@ -29,6 +30,7 @@ import { FormsModule } from '@angular/forms';
 export class CreateSeedPhraseNewWalletStepComponent implements OnInit {
   next = output<void>();
   previous = output<void>();
+  hideBackButton = input<boolean>(false);
 
   private readonly walletService = inject(WalletService);
 

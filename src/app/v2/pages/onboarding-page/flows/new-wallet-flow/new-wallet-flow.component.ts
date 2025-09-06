@@ -18,12 +18,14 @@ import { SuccessNewWalletStepComponent } from './steps/success-new-wallet-step/s
 import { ErrorNewWalletStepComponent } from './steps/error-new-wallet-step/error-new-wallet-step.component';
 import { StepIndicatorComponent } from '../../shared/component/step-indicator/step-indicator.component';
 import { NewWalletFlowService } from './service/new-wallet-flow.service';
+import { VerifySeedPhraseNewWalletStepComponent } from './steps/verify-seed-phrase-new-wallet-step/verify-seed-phrase-new-wallet-step.component';
 
 @Component({
   selector: 'app-new-wallet-flow',
   imports: [
     CreatePasswordNewWalletStepComponent,
     CreateSeedPhraseNewWalletStepComponent,
+    VerifySeedPhraseNewWalletStepComponent,
     AddressNewWalletStepComponent,
     SuccessNewWalletStepComponent,
     ErrorNewWalletStepComponent,
@@ -43,6 +45,7 @@ export class NewWalletFlowComponent implements OnInit {
   readonly stepOrder = [
     NewWalletStep.CREATE_PASSWORD,
     NewWalletStep.CREATE_SEED_PHRASE,
+    NewWalletStep.VERIFY_SEED_PHRASE,
     NewWalletStep.ADDRESS,
   ];
   slideDirection = signal<SlideDirection>(SlideDirection.FORWARD);

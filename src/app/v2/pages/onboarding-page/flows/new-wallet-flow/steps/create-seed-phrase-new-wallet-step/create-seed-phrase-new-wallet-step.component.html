@@ -53,25 +53,44 @@
         <div rightSideSlot>foo</div>
       </kc-button>
     </div>
-  </div>
-  <div class="flex justify-content-start full-width">
-    <app-checkbox-input
-      [checked]="seedPhraseSaved()"
-      (checkedChange)="onSeedPhraseSavedChange($event)"
-    >
-      <span class="typo-text-3">I saved my seed phrase</span>
-    </app-checkbox-input>
-  </div>
-  <div class="flex full-width gap-16">
-    <div class="full-width">
-      <kc-button
-        [isFullWidth]="true"
-        [variant]="'tertiary'"
-        [text]="'Back'"
-        [isDisabled]="false"
-        (buttonClick)="previous.emit()"
-      ></kc-button>
+
+    <div class="flex justify-content-start full-width">
+      <app-checkbox-input
+        [checked]="seedPhraseSaved()"
+        (checkedChange)="onSeedPhraseSavedChange($event)"
+      >
+        <span class="typo-text-3">I saved my seed phrase</span>
+      </app-checkbox-input>
     </div>
+
+    <div class="full-width">
+      <kc-input
+        [isFullWidth]="true"
+        [label]="'Seed passphrase (optional)'"
+        [type]="'password'"
+        [placeholder]="'Enter seed passphrase'"
+        [ngModel]="seedPassphrase()"
+        (valueChange)="onSeedPassphraseChange($event)"
+      ></kc-input>
+
+      <div class="full-width text-gray-60 typo-text-2 pt-8">
+        Adding a password provides an extra layer of security.
+      </div>
+    </div>
+  </div>
+
+  <div class="flex full-width gap-16">
+    @if (!hideBackButton()) {
+      <div class="full-width">
+        <kc-button
+          [isFullWidth]="true"
+          [variant]="'tertiary'"
+          [text]="'Back'"
+          [isDisabled]="false"
+          (buttonClick)="previous.emit()"
+        ></kc-button>
+      </div>
+    }
     <div class="full-width">
       <kc-button
         [isFullWidth]="true"

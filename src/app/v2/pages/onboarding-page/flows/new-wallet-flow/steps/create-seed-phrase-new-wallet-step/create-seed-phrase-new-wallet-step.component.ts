@@ -9,6 +9,9 @@ import { SeedPhraseWordComponent } from './component/seed-phrase-word/seed-phras
 import { WalletService } from '../../../../../../../services/wallet.service';
 import { CheckboxInputComponent } from '../../../../../../shared/ui/input/checkbox/checkbox-input/checkbox-input.component';
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
+import { KcInputComponent } from '@kaspacom/ui';
+import { FormsModule } from '@angular/forms';
+import { input } from '@angular/core';
 
 @Component({
   selector: 'app-create-seed-phrase-new-wallet-step',
@@ -18,6 +21,8 @@ import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
     RadioInputComponent,
     SeedPhraseWordComponent,
     CheckboxInputComponent,
+    KcInputComponent,
+    FormsModule,
   ],
   templateUrl: './create-seed-phrase-new-wallet-step.component.html',
   styleUrl: './create-seed-phrase-new-wallet-step.component.scss',
@@ -25,6 +30,7 @@ import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 export class CreateSeedPhraseNewWalletStepComponent implements OnInit {
   next = output<void>();
   previous = output<void>();
+  hideBackButton = input<boolean>(false);
 
   private readonly walletService = inject(WalletService);
 
@@ -38,16 +44,20 @@ export class CreateSeedPhraseNewWalletStepComponent implements OnInit {
 
   seedPhraseSaved = signal<boolean>(false);
 
+  seedPassphrase = signal<string>('');
+
   ngOnInit(): void {
     const walletState = this.newWalletFlowService.newWallet();
     if (walletState.seedPhrase !== '') {
       this.seedPhrase.set(walletState.seedPhrase.split(' '));
       this.wordCount.set(walletState.seedPhraseWordCount);
       this.seedPhraseSaved.set(walletState.seedPhraseSaved);
+      this.seedPassphrase.set(walletState.seedPassphrase);
     } else {
       this.seedPhrase.set(
         this.walletService.generateMnemonic(this.wordCount()).split(' '),
       );
+      this.onSeedPhraseSavedChange(false);
     }
   }
 
@@ -81,6 +91,11 @@ export class CreateSeedPhraseNewWalletStepComponent implements OnInit {
     this.onSeedPhraseSavedChange(false);
   }
 
+  onSeedPassphraseChange(value: string) {
+    this.seedPassphrase.set(value);
+    this.newWalletFlowService.setSeedPassphrase(value);
+  }
+
   onSeedPhraseSavedChange(event: boolean) {
     this.seedPhraseSaved.set(event);
     this.newWalletFlowService.submitSeedPhraseSaved(this.seedPhraseSaved());
@@ -90,16 +105,16 @@ export class CreateSeedPhraseNewWalletStepComponent implements OnInit {
     if (!this.seedPhraseSaved()) {
       return;
     }
-    const result = await this.newWalletFlowService.submitSeedPhraseStep(
-      this.seedPhrase().join(' '),
-      this.wordCount(),
-    );
-    if (result.success) {
+    try {
+      this.newWalletFlowService.prepareSeedPhrase(
+        this.seedPhrase().join(' '),
+        this.wordCount(),
+      );
       this.next.emit();
-    } else {
+    } catch (e: any) {
       this.notificationService.error(
         'Error',
-        result.error ?? 'Failed to create wallet.',
+        e?.message ?? 'Failed to derive wallet address from seed phrase.',
       );
     }
   }

@@ -1,8 +1,20 @@
-import { Component, OnInit, OnDestroy, signal, inject, effect } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  signal,
+  inject,
+  effect,
+} from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
-import { KcInputComponent, KcCheckboxComponent, KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
+import {
+  KcInputComponent,
+  KcCheckboxComponent,
+  KcButtonComponent,
+  KcIconComponent,
+} from '@kaspacom/ui';
 import { FormsModule } from '@angular/forms';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
 import { KnsDomainAsset } from '../../../../../../../../services/kns-api/dtos/kns-domain.dto';
@@ -17,15 +29,30 @@ import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { firstValueFrom } from 'rxjs';
 import { UtilsHelper } from '../../../../../../../../services/utils.service';
 import { QrScannerService } from '../../../../../../../../services/qr-scanner.service';
+import { AddressSmartInputComponent } from '../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
+import { AddressResolutionResult } from '../../../../../../../../services/address-resolution.service';
 
 @Component({
   selector: 'app-send-kns',
   standalone: true,
-  imports: [CommonModule, KcInputComponent, KcCheckboxComponent, KcButtonComponent, KcIconComponent, FormsModule, DatePipe, SkeletonComponent],
+  imports: [
+    CommonModule,
+    KcInputComponent,
+    KcCheckboxComponent,
+    KcButtonComponent,
+    KcIconComponent,
+    FormsModule,
+    DatePipe,
+    SkeletonComponent,
+    AddressSmartInputComponent,
+  ],
   templateUrl: './send-kns.component.html',
-  styleUrl: './send-kns.component.scss'
+  styleUrl: './send-kns.component.scss',
 })
-export class SendKnsComponent extends FlowPageBaseComponent implements OnInit, OnDestroy {
+export class SendKnsComponent
+  extends FlowPageBaseComponent
+  implements OnInit, OnDestroy
+{
   private walletService = inject(WalletService);
   private knsService = inject(KnsApiService);
   private assetsStore = inject(AssetsStoreService);
@@ -91,7 +118,7 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit, O
     return {
       id: 'send-kns',
       title: `Send ${this.domain()?.asset || 'Domain'}`,
-      canNavigateBack: true
+      canNavigateBack: true,
     };
   }
 
@@ -102,6 +129,19 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit, O
   onWalletAddressChange(value: string): void {
     this.walletAddress = value;
     this.validateAddress();
+  }
+
+  onAddressResolved(result: AddressResolutionResult): void {
+    if (result.effectiveAddress) {
+      this.walletAddress = result.effectiveAddress;
+      this.isAddressValid = true;
+      this.addressErrorMessage = '';
+    } else if (result.source === 'kns' && result.error) {
+      this.isAddressValid = false;
+      this.addressErrorMessage = result.error;
+    } else {
+      this.validateAddress();
+    }
   }
 
   onQrScanClick(): void {
@@ -117,7 +157,7 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit, O
         },
         onError: (error: string) => {
           console.error('QR scanning error:', error);
-        }
+        },
       });
     }
   }
@@ -165,14 +205,18 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit, O
     try {
       // Create KNS transfer action
       const action = this.knsWalletActionService.createTransferWalletAction(
-        currentDomain.assetId,   // asset ID
-        currentDomain.isDomain,  // whether it's a domain
-        this.walletAddress       // to address
+        currentDomain.assetId, // asset ID
+        currentDomain.isDomain, // whether it's a domain
+        this.walletAddress, // to address
       );
 
       console.log('KNS Transfer Action:', action, currentWallet, currentDomain);
 
-      const result = await this.walletActionService.validateAndDoActionAfterApproval(action, false);
+      const result =
+        await this.walletActionService.validateAndDoActionAfterApproval(
+          action,
+          false,
+        );
 
       if (result.success) {
         // Clear form on success
@@ -202,7 +246,6 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit, O
     } catch (error) {
       console.error('Error sending KNS domain:', error);
       this.messagePopupService.showError('Failed to send KNS domain');
-      this.waitingForApprovalCompletion = false;
     } finally {
       this.isLoading = false;
     }
@@ -226,14 +269,16 @@ export class SendKnsComponent extends FlowPageBaseComponent implements OnInit, O
       } else if (navigationData?.assetId) {
         // Fallback: try to find domain in assets store
         const knsAssets = this.assetsStore.knsAssets();
-        const storedDomain = knsAssets.find(domain => domain.assetId === navigationData.assetId);
+        const storedDomain = knsAssets.find(
+          (domain) => domain.assetId === navigationData.assetId,
+        );
 
         if (storedDomain) {
           this.domain.set(storedDomain);
         } else {
           // Final fallback: load from API
           const response = await firstValueFrom(
-            this.knsService.fetchAssetByAssetId(navigationData.assetId)
+            this.knsService.fetchAssetByAssetId(navigationData.assetId),
           );
 
           if (response.data) {

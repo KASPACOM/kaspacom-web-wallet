@@ -70,8 +70,11 @@ export class AddressSmartInputComponent implements OnChanges {
         clearTimeout(this.validationTimer);
       }
       this.validationTimer = setTimeout(() => {
-        this.displayIsValid.set(this.isValid);
-        this.displayInvalidReason.set(this.invalidReason);
+        // Do not surface external validation while we're resolving or considering a domain
+        if (!this.isResolving() && !this.isDomainCandidate()) {
+          this.displayIsValid.set(this.isValid);
+          this.displayInvalidReason.set(this.invalidReason);
+        }
       }, this.validationDebounceMs);
     }
   }
@@ -81,6 +84,12 @@ export class AddressSmartInputComponent implements OnChanges {
     this.valueChange.emit(this.value);
 
     const input = (this.value || '').trim();
+
+    // Immediately clear any previously displayed errors when user changes input
+    this.resolveError.set('');
+    this.displayInvalidReason.set('');
+    this.displayIsValid.set(true);
+
     // Show resolving spinner during debounce if looks like a domain (not a kaspa address)
     if (!input) {
       this.isResolving.set(false);

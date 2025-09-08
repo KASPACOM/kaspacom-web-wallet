@@ -1,0 +1,34 @@
+.address-smart-input {
+  .right-slot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .qr-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+
+    &.disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+
+  .resolved-address {
+    margin-top: 6px;
+    color: var(--gray-60);
+  }
+
+  .resolve-error {
+    margin-top: 6px;
+    color: var(--red-60);
+  }
+
+  .resolve-success {
+    margin-top: 6px;
+    color: var(--green-60);
+  }
+}

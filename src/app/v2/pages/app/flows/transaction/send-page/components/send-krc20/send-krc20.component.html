@@ -13,25 +13,18 @@
   <div class="send-krc20-form">
     <!-- Wallet Address Input -->
     <div class="form-field">
-      <kc-input
+      <app-address-smart-input
         [label]="'Wallet Address'"
-        [placeholder]="'Enter recipient wallet address'"
-        [type]="'text'"
+        [placeholder]="'Enter recipient wallet address or KNS domain'"
         [isFullWidth]="true"
         [isValid]="isAddressValid"
         [invalidReason]="addressErrorMessage"
         [isDisabled]="isLoading"
-        [ngModel]="walletAddress"
-        (valueChange)="onWalletAddressChange($event)">
-        <div (click)="!isLoading && onQrScanClick()" [class]="isLoading ? 'qr-button disabled' : 'qr-button clickable'" rightSideSlot>
-          <kc-icon 
-            [iconClass]="'icon-qr'" 
-            [size]="'xs'" 
-            [color]="'var(--gray-60)'"
-            class="qr-icon">
-          </kc-icon>
-        </div>
-      </kc-input>
+        [value]="walletAddress"
+        (valueChange)="onWalletAddressChange($event)"
+        (resolved)="onAddressResolved($event)"
+        (qrClick)="onQrScanClick()">
+      </app-address-smart-input>
     </div>
 
     <!-- Amount Input -->

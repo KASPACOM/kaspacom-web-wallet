@@ -1,64 +1,27 @@
 <div class="send-kns-content">
-  <!-- KNS Domain Info Header -->
-  <div class="kns-info-header card-0 align-items-center gap-16 p-16 mb-24">
-    @if (loading()) {
-      <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false"></app-skeleton>
-      <div class="flex column gap-4">
-        <app-skeleton [height]="'20px'" [width]="'120px'" [fullRound]="false"></app-skeleton>
-        <app-skeleton [height]="'16px'" [width]="'80px'" [fullRound]="false"></app-skeleton>
-      </div>
-    } @else {
-      <div class="kns-placeholder flex align-items-center justify-content-center">
-        <span class="text-gray-60 typo-text-1">{{ getDomainType() }}</span>
-      </div>
-      <div class="flex column gap-4 flex-1">
-        <div class="text-gray-90 typo-text-2">{{ getDisplayName() }}</div>
-        <div class="text-gray-60 typo-text-1">
-          {{ getDomainTypeLabel() }}
-        </div>
-        <div class="text-gray-50 typo-text-1">
-          Status: {{ getStatus() }}
-        </div>
-        @if (domain()?.creationBlockTime) {
-          <div class="text-gray-50 typo-text-1">
-            Created: {{ formatDate(domain()!.creationBlockTime) }}
-          </div>
-        }
-      </div>
-      @if (isVerified()) {
-        <div class="kns-status-info flex column align-items-end gap-8">
-          <div class="text-gray-90 typo-text-1">
-            <span class="verified-badge">
-              ✓ Verified
-            </span>
-          </div>
-        </div>
-      }
-    }
+  <!-- KNS Info Header -->
+  <div class="kns-info-header card-0 align-items-center gap-16 p-16">
+    <div class="flex column gap-4">
+      <div class="text-gray-90 typo-text-2">{{ domain()?.asset }}</div>
+      <div class="text-gray-60 typo-text-1" *ngIf="domain()">Asset ID: {{ domain()?.assetId }}</div>
+    </div>
   </div>
 
   <div class="send-kns-form">
     <!-- Wallet Address Input -->
     <div class="form-field">
-      <kc-input
+      <app-address-smart-input
         [label]="'Wallet Address'"
-        [placeholder]="'Enter recipient wallet address'"
-        [type]="'text'"
+        [placeholder]="'Enter recipient wallet address or KNS domain'"
         [isFullWidth]="true"
         [isValid]="isAddressValid"
         [invalidReason]="addressErrorMessage"
         [isDisabled]="isLoading"
-        [ngModel]="walletAddress"
-        (valueChange)="onWalletAddressChange($event)">
-        <div (click)="!isLoading && onQrScanClick()" [class]="isLoading ? 'qr-button disabled' : 'qr-button clickable'" rightSideSlot>
-          <kc-icon 
-            [iconClass]="'icon-qr'" 
-            [size]="'xs'" 
-            [color]="'var(--gray-60)'"
-            class="qr-icon">
-          </kc-icon>
-        </div>
-      </kc-input>
+        [value]="walletAddress"
+        (valueChange)="onWalletAddressChange($event)"
+        (resolved)="onAddressResolved($event)"
+        (qrClick)="onQrScanClick()">
+      </app-address-smart-input>
     </div>
 
     <!-- Replace By Fee Checkbox -->
@@ -66,6 +29,7 @@
       <kc-checkbox
         [label]="'Replace By Fee (RBF)'"
         [isChecked]="replaceByFee"
+        [isDisabled]="isLoading"
         (checkedChange)="onRbfChange($event)"
         size="md">
       </kc-checkbox>
@@ -74,9 +38,10 @@
     <!-- Send Button -->
     <div class="form-field">
       <kc-button
-        [text]="'Send Domain'"
+        [text]="isLoading ? 'Sending...' : 'Send Domain'"
         [variant]="'primary'"
         [isFullWidth]="true"
+        [isLoading]="isLoading"
         [isDisabled]="!isFormValid"
         (buttonClick)="onSendClick()">
       </kc-button>

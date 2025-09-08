@@ -1,8 +1,20 @@
-import { Component, inject, OnInit, OnDestroy, signal, effect } from '@angular/core';
+import {
+  Component,
+  inject,
+  OnInit,
+  OnDestroy,
+  signal,
+  effect,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
-import { KcInputComponent, KcCheckboxComponent, KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
+import {
+  KcInputComponent,
+  KcCheckboxComponent,
+  KcButtonComponent,
+  KcIconComponent,
+} from '@kaspacom/ui';
 import { FormsModule } from '@angular/forms';
 import { IToken } from '../../../../../common/interfaces/token.interface';
 import { TokenLogoComponent } from '../../../../../common/krc20/token-logo/token-logo.component';
@@ -18,15 +30,29 @@ import { firstValueFrom } from 'rxjs';
 import { KaspaNetworkActionsService } from '../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { AssetsStoreService } from '../../../../../../../../services/assets-store.service';
 import { QrScannerService } from '../../../../../../../../services/qr-scanner.service';
+import { AddressSmartInputComponent } from '../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
+import { AddressResolutionResult } from '../../../../../../../../services/address-resolution.service';
 
 @Component({
   selector: 'app-send-krc20',
   standalone: true,
-  imports: [CommonModule, KcInputComponent, KcCheckboxComponent, KcButtonComponent, KcIconComponent, FormsModule, TokenLogoComponent],
+  imports: [
+    CommonModule,
+    KcInputComponent,
+    KcCheckboxComponent,
+    KcButtonComponent,
+    KcIconComponent,
+    FormsModule,
+    TokenLogoComponent,
+    AddressSmartInputComponent,
+  ],
   templateUrl: './send-krc20.component.html',
-  styleUrl: './send-krc20.component.scss'
+  styleUrl: './send-krc20.component.scss',
 })
-export class SendKrc20Component extends FlowPageBaseComponent implements OnInit, OnDestroy {
+export class SendKrc20Component
+  extends FlowPageBaseComponent
+  implements OnInit, OnDestroy
+{
   private walletService = inject(WalletService);
   private walletActionService = inject(WalletActionService);
   private krc20WalletActionService = inject(Krc20WalletActionService);
@@ -46,6 +72,9 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit,
   walletAddress: string = '';
   tokenAmount: number | null = null;
   replaceByFee: boolean = false;
+
+  // Resolved address (from KNS) if present
+  private resolvedToAddress: string | null = null;
 
   // Loading state
   isLoading = false;
@@ -70,7 +99,9 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit,
 
         if (completion.success) {
           // Transaction was successful, navigate back
-          this.messagePopupService.showSuccess('KRC20 token sent successfully!');
+          this.messagePopupService.showSuccess(
+            'KRC20 token sent successfully!',
+          );
           this.navigateBack();
         }
         // Error cases are handled by the approval flow itself
@@ -99,7 +130,7 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit,
     return {
       id: 'send-krc20',
       title: `Send ${this.token()?.symbol || 'Token'}`,
-      canNavigateBack: true
+      canNavigateBack: true,
     };
   }
 
@@ -108,18 +139,25 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit,
   }
 
   get isFormValid(): boolean {
-    return this.isAddressValid && this.isAmountValid &&
-           !!this.walletAddress && !!this.tokenAmount &&
-           this.tokenAmount > 0 && !this.isLoading;
+    return (
+      this.isAddressValid &&
+      this.isAmountValid &&
+      !!this.walletAddress &&
+      !!this.tokenAmount &&
+      this.tokenAmount > 0 &&
+      !this.isLoading
+    );
   }
 
   private async loadTokenData() {
-    const tokenData = this.flowPagesService.activePage()?.data?.['token'] as IToken;
+    const tokenData = this.flowPagesService.activePage()?.data?.[
+      'token'
+    ] as IToken;
 
     if (tokenData) {
       // First try to get updated data from assets store
       const krc20Assets = this.assetsStore.krc20Assets();
-      const storedToken = krc20Assets.find(t => t.tick === tokenData.address);
+      const storedToken = krc20Assets.find((t) => t.tick === tokenData.address);
 
       if (storedToken) {
         this.token.set({
@@ -127,7 +165,7 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit,
           symbol: storedToken.tick.toUpperCase(),
           address: storedToken.tick,
           balance: storedToken.balance,
-          usdPrice: 0.0
+          usdPrice: 0.0,
         });
         this.loading.set(false);
       } else {
@@ -154,6 +192,22 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit,
     this.validateAddress();
   }
 
+  onAddressResolved(result: AddressResolutionResult): void {
+    // Do not overwrite input value; keep domain text if any
+    if (result.effectiveAddress) {
+      this.resolvedToAddress = result.effectiveAddress;
+      this.isAddressValid = true;
+      this.addressErrorMessage = '';
+    } else if (result.source === 'kns' && result.error) {
+      this.resolvedToAddress = null;
+      this.isAddressValid = false;
+      this.addressErrorMessage = result.error;
+    } else {
+      this.resolvedToAddress = null;
+      this.validateAddress();
+    }
+  }
+
   onAmountChange(amount: any): void {
     this.tokenAmount = amount || null;
     this.validateAmount();
@@ -164,7 +218,10 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit,
   }
 
   onMaxAmountClick(): void {
-    console.log('Max button clicked, available balance:', this.availableBalance);
+    console.log(
+      'Max button clicked, available balance:',
+      this.availableBalance,
+    );
     this.tokenAmount = this.availableBalance;
     this.validateAmount();
     console.log('Token amount set to:', this.tokenAmount);
@@ -183,7 +240,7 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit,
         },
         onError: (error: string) => {
           console.error('QR scanning error:', error);
-        }
+        },
       });
     }
   }
@@ -195,14 +252,17 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit,
       return;
     }
 
-    if (!this.utilsHelper.isValidWalletAddress(this.walletAddress)) {
-      this.isAddressValid = false;
-      this.addressErrorMessage = 'Invalid wallet address';
+    if (
+      this.utilsHelper.isValidWalletAddress(this.walletAddress) ||
+      !!this.resolvedToAddress
+    ) {
+      this.isAddressValid = true;
+      this.addressErrorMessage = '';
       return;
     }
 
-    this.isAddressValid = true;
-    this.addressErrorMessage = '';
+    this.isAddressValid = false;
+    this.addressErrorMessage = 'Invalid wallet address';
   }
 
   private validateAmount(): void {
@@ -237,29 +297,45 @@ export class SendKrc20Component extends FlowPageBaseComponent implements OnInit,
 
     try {
       // Convert token amount to BigInt using kaspaToSompiFromNumber (same as working sendAsset function)
-      const amountInSompi = this.kaspaNetworkActionsService.kaspaToSompiFromNumber(this.tokenAmount!);
+      const amountInSompi =
+        this.kaspaNetworkActionsService.kaspaToSompiFromNumber(
+          this.tokenAmount!,
+        );
+      const toAddress = this.resolvedToAddress || this.walletAddress;
 
       // Create KRC20 transfer action
       const action = this.krc20WalletActionService.createTransferWalletAction(
         this.token()!.address, // ticker
-        this.walletAddress,    // to address
-        amountInSompi          // amount in sompi format
+        toAddress, // to address
+        amountInSompi, // amount in sompi format
       );
 
-      console.log('KRC20 Transfer Action:', action, currentWallet, this.tokenAmount);
+      console.log(
+        'KRC20 Transfer Action:',
+        action,
+        currentWallet,
+        this.tokenAmount,
+      );
 
-      const result = await this.walletActionService.validateAndDoActionAfterApproval(action, false);
+      const result =
+        await this.walletActionService.validateAndDoActionAfterApproval(
+          action,
+          false,
+        );
 
       if (result.success) {
         // Clear form on success
         this.walletAddress = '';
         this.tokenAmount = null;
         this.replaceByFee = false;
+        this.resolvedToAddress = null;
 
         // Only show success message and navigate if not using v2 flow
         // v2 flow handles success display in the approval flow
         if (!result.isUsingV2Flow) {
-          this.messagePopupService.showSuccess('KRC20 token sent successfully!');
+          this.messagePopupService.showSuccess(
+            'KRC20 token sent successfully!',
+          );
           this.navigateBack();
         } else {
           // For v2 flow, wait for approval flow completion

@@ -1,5 +1,6 @@
 import {Component, computed, inject, Input, OnInit} from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { WalletActionResult, WalletActionResultType, CommitRevealActionResult, ProtocolType } from '@kaspacom/wallet-messages';
 import { CompletedActionOverviewService } from '../../../../../../../services/action-info-services/completed-action-overview.service';
 import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
@@ -102,6 +103,7 @@ export class ApprovalSuccessPageComponent implements OnInit {
   private approvalFlowService = inject(ApprovalFlowService);
   private assetsStore = inject(AssetsStoreService);
   private krc20MetadataService = inject(Krc20MetadataService);
+  private router = inject(Router);
 
   @Input() actionResult!: WalletActionResult;
 
@@ -121,7 +123,46 @@ export class ApprovalSuccessPageComponent implements OnInit {
   }
 
   onDone() {
+    // Determine the appropriate tab based on the action result
+    const tab = this.getTabForActionResult(this.actionResult);
+    
+    // Navigate to homepage with the correct tab
+    this.router.navigate(['/app/home'], { queryParams: { tab } });
+    
     // Close the approval flow
     this.approvalFlowService.closeApproval();
+  }
+
+  /**
+   * Determines which tab to navigate to based on the completed action result
+   */
+  private getTabForActionResult(actionResult: WalletActionResult): string {
+    switch (actionResult.type) {
+      case WalletActionResultType.KasTransfer:
+        // Kaspa transfer -> UTXOs tab
+        return 'utxos';
+        
+      case WalletActionResultType.CommitReveal:
+        // Protocol-based actions
+        const commitRevealResult = actionResult as CommitRevealActionResult;
+        switch (commitRevealResult.protocol) {
+          case ProtocolType.KASPLEX:
+            // KRC20 operations -> KRC20 tab
+            return 'krc20';
+          case ProtocolType.KNS:
+            // KNS operations -> KNS tab
+            return 'kns';
+          case ProtocolType.KSPR:
+            // KRC721/NFT operations -> KRC721 tab (KSPR protocol handles NFTs)
+            return 'krc721';
+          default:
+            // Default fallback -> UTXOs tab
+            return 'utxos';
+        }
+        
+      default:
+        // Default fallback for any other action types -> UTXOs tab
+        return 'utxos';
+    }
   }
 }

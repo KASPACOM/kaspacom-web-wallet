@@ -5,6 +5,8 @@ import { SearchBarComponent } from '../../home/search/search-bar/search-bar.comp
 import { WalletService } from '../../../../../services/wallet.service';
 import { UtilsHelper } from '../../../../../services/utils.service';
 import { AccountSettingsService } from '../../../../services/account-settings.service';
+import { FlowPagesService } from '../../../../services/flow-pages.service';
+import { FlowPageId } from '../flow-page/flow-page.registry';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { WalletProfileOrbComponent } from '../../../../shared/ui/wallet-profile-orb/wallet-profile-orb.component';
 
@@ -19,6 +21,7 @@ export class WrapperHeaderComponent {
   walletService = inject(WalletService);
   utilsHelper = inject(UtilsHelper);
   accountSettingsService = inject(AccountSettingsService);
+  flowPagesService = inject(FlowPagesService);
 
   // Use signals for reactive updates
   currentWallet = this.walletService.getCurrentWalletSignal();
@@ -57,8 +60,13 @@ export class WrapperHeaderComponent {
 
 
   onSettingsClick(): void {
-    // Navigate to settings page or implement settings logic
-    console.log('Settings clicked');
+    this.flowPagesService.openFlow({
+      id: 'settings-menu' as FlowPageId,
+      title: 'Settings',
+      canNavigateBack: true,
+      showTitle: true,
+      showBackground: true,
+    });
   }
 
 

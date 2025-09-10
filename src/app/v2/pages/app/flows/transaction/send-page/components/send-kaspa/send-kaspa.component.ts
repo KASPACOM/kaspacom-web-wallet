@@ -32,6 +32,7 @@ import { AssetsStoreService } from '../../../../../../../../services/assets-stor
 import { QrScannerService } from '../../../../../../../../services/qr-scanner.service';
 import { firstValueFrom } from 'rxjs';
 import { AddressSmartInputComponent } from '../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-send-kaspa',
@@ -61,6 +62,7 @@ export class SendKaspaComponent
   private approvalFlowService = inject(ApprovalFlowService);
   private assetsStore = inject(AssetsStoreService);
   private qrScannerService = inject(QrScannerService);
+  private router = inject(Router);
 
   // Form data
   walletAddress: string = '';
@@ -356,5 +358,14 @@ export class SendKaspaComponent
     } finally {
       this.isLoading = false;
     }
+  }
+
+  /**
+   * Override navigateBack to navigate to homepage with UTXOs tab selected
+   */
+  protected override navigateBack(): void {
+    // Close the flow and navigate to homepage with UTXOs tab
+    this.flowPagesService.closePage();
+    this.router.navigate(['/app/home'], { queryParams: { tab: 'utxos' } });
   }
 }

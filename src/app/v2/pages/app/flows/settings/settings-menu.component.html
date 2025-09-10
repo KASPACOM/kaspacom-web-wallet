@@ -1,0 +1,42 @@
+<div class="settings-menu-container">
+  <div class="settings-menu-content">
+    <!-- Settings Menu Items -->
+    <div class="menu-items">
+      <!-- Export KaspaCom Wallet -->
+      <div class="menu-item" (click)="onExportWallet()">
+        <div class="menu-item-icon">
+          <kc-icon
+            iconClass="icon-download"
+            size="md"
+            color="var(--text-primary)">
+          </kc-icon>
+        </div>
+        <div class="menu-item-content">
+          <div class="menu-item-title">Export KaspaCom wallet</div>
+          <div class="menu-item-subtitle">Backup your wallet seed phrase</div>
+        </div>
+        <div class="menu-item-arrow">
+          <kc-icon
+            iconClass="icon-chevron-right"
+            size="sm"
+            color="var(--text-secondary)">
+          </kc-icon>
+        </div>
+      </div>
+
+      <!-- Disconnect -->
+      <div class="menu-item disconnect-item" (click)="onDisconnect()">
+        <div class="menu-item-content">
+          <div class="menu-item-title disconnect-title">Disconnect</div>
+        </div>
+        <div class="menu-item-arrow">
+          <kc-icon
+            iconClass="icon-chevron-right"
+            size="sm"
+            color="var(--text-secondary)">
+          </kc-icon>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

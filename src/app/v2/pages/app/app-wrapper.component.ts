@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, ChildrenOutletContexts } from '@angular/router';
 import { navAnimation } from './common/animation/nav.animation';
@@ -15,6 +15,7 @@ import { DynamicQuickActionDialogOutletComponent } from './common/quick-action-d
 import { KcSnackbarComponent } from '@kaspacom/ui';
 import { OnInit } from '@angular/core';
 import { WalletService } from '../../../services/wallet.service';
+import { AssetsStoreService } from '../../../services/assets-store.service';
 
 @Component({
   selector: 'app-app-wrapper',
@@ -40,6 +41,26 @@ export class AppWrapperComponent implements OnInit {
   flowPagesService = inject(FlowPagesService);
   quickActionDialogService = inject(QuickActionDialogService);
   private walletService = inject(WalletService);
+  private assetsStore = inject(AssetsStoreService);
+
+  // Detect if any data is loading on the homepage
+  isMainContentLoading = computed(() => {
+    const currentWallet = this.walletService.getCurrentWallet();
+    
+    // If no wallet is selected, consider it loading
+    if (!currentWallet) {
+      return true;
+    }
+
+    // Check if any asset type is loading (kaspa, krc20, krc721, kns)
+    const isAssetsLoading = this.assetsStore.isAnyAssetLoading();
+    
+    // Check if wallet balance data is loading (for UTXOs)
+    const walletBalance = currentWallet.getBalanceSignal()();
+    const isUtxosLoading = !walletBalance;
+    
+    return isAssetsLoading || isUtxosLoading;
+  });
 
   async ngOnInit(): Promise<void> {
     // Ensure wallets are loaded into memory on app shell load

@@ -1,0 +1,155 @@
+@use '../../../../../ui-kit/color-system' as colors;
+
+.button-showcase {
+  padding: 40px;
+  background: colors.$black-900;
+  min-height: 100vh;
+  color: white;
+}
+
+.showcase-title {
+  text-align: center;
+  margin-bottom: 40px;
+  font-size: 36px;
+  color: colors.$primary-600;
+}
+
+.click-info {
+  padding: 20px;
+  margin-bottom: 40px;
+  text-align: center;
+  
+  p {
+    margin: 5px 0;
+    color: colors.$gray-100;
+  }
+}
+
+.showcase-section {
+  margin-bottom: 60px;
+}
+
+.section-title {
+  font-size: 24px;
+  margin-bottom: 30px;
+  color: colors.$primary-500;
+  border-bottom: 2px solid colors.$gray-700;
+  padding-bottom: 10px;
+}
+
+.examples-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 30px;
+}
+
+.example-card {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.example-title {
+  font-size: 16px;
+  color: colors.$gray-200;
+  margin: 0;
+  text-align: center;
+}
+
+.button-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+// States showcase
+.states-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.variant-states {
+  padding: 24px;
+}
+
+.variant-title {
+  font-size: 20px;
+  color: colors.$primary-400;
+  margin-bottom: 20px;
+}
+
+.states-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.state-example {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  
+  .state-label {
+    font-size: 14px;
+    color: colors.$gray-300;
+  }
+  
+  // Force hover state for demo
+  &.hover-example button {
+    &:not(:active) {
+      background: colors.$primary-500 !important;
+      
+      &.kc-button--secondary {
+        background: colors.$secondary-500 !important;
+      }
+      
+      &.kc-button--tertiary {
+        background: transparent !important;
+        border-color: colors.$gray-200 !important;
+        color: white !important;
+      }
+    }
+  }
+  
+  // Force active state for demo
+  &.active-example button {
+    background: colors.$primary-950 !important;
+    
+    &.kc-button--secondary {
+      background: colors.$secondary-950 !important;
+    }
+    
+    &.kc-button--tertiary {
+      background: transparent !important;
+      border-color: colors.$gray-100 !important;
+      color: colors.$gray-100 !important;
+    }
+  }
+}
+
+// Width examples
+.width-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.width-example {
+  padding: 24px;
+  
+  h3 {
+    font-size: 16px;
+    color: colors.$gray-200;
+    margin: 0 0 16px 0;
+  }
+  
+  &.full-width {
+    width: 100%;
+  }
+}

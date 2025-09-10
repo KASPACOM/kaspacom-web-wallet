@@ -1,0 +1,170 @@
+<div class="export-kaspacom-container flex column full-width full-height p-24 gap-32">
+
+  <!-- Initial Step -->
+  @if (currentStep() === 'initial') {
+    <div class="initial-step flex column align-items-center gap-24">
+      <div class="lock-icon-container">
+        <img src="svgs/lock.svg" alt="Lock icon" class="lock-icon">
+      </div>
+      
+      <div class="step-content flex column align-items-center gap-16 text-center">
+        <div class="typo-heading-2 text-white">Export Your Kaspacom Wallet</div>
+        <p class="typo-text-1 text-gray-60 max-width-400">
+          Export your wallet data as a QR code or download it as a secure file. You can use this to sync your wallets with other devices.
+        </p>
+      </div>
+
+      <div class="action-buttons flex column gap-16 full-width max-width-300">
+        <kc-button 
+          [text]="'Export wallet'"
+          variant="primary" 
+          size="lg" 
+          [isFullWidth]="true"
+          (buttonClick)="onStartExport()">
+        </kc-button>
+      </div>
+    </div>
+  }
+
+  <!-- Password Step -->
+  @if (showPasswordStep()) {
+    <div class="password-step flex column align-items-center gap-24">
+      <div class="lock-icon-container">
+        <img src="svgs/lock.svg" alt="Lock icon" class="lock-icon">
+      </div>
+
+      <div class="step-content flex column align-items-center gap-8 text-center">
+        <div class="typo-heading-2 text-white">Enter Your Password</div>
+        <p class="typo-text-1 text-gray-60">
+          Please enter your wallet password to proceed with the export
+        </p>
+      </div>
+
+      <div class="password-form flex column gap-16 full-width max-width-400">
+        <div class="input-group flex column gap-8">
+          <label class="typo-text-1 text-gray-60" for="password-input">Password</label>
+          <input
+            id="password-input"
+            type="password"
+            class="password-input p-16 rounded-lg typo-text-1"
+            [class.error]="passwordError()"
+            placeholder="Enter your password"
+            [(ngModel)]="password"
+            (input)="onPasswordInput()"
+            (keyup.enter)="onVerifyPassword()"
+            [disabled]="isLoading()"
+            #passwordInput>
+          @if (passwordError()) {
+            <div class="error-message typo-text-2">
+              {{ passwordError() }}
+            </div>
+          }
+        </div>
+
+        <div class="action-buttons flex column gap-12">
+          <kc-button 
+            [text]="'Verify Password'"
+            variant="primary" 
+            size="lg" 
+            [isFullWidth]="true"
+            [isLoading]="isLoading()"
+            [isDisabled]="!password().trim()"
+            (buttonClick)="onVerifyPassword()">
+          </kc-button>
+          
+          <kc-button 
+            [text]="'Cancel'"
+            variant="tertiary" 
+            size="md" 
+            [isFullWidth]="true"
+            [isDisabled]="isLoading()"
+            (buttonClick)="onHideKeyInfo()">
+          </kc-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Export Step -->
+  @if (showExportStep()) {
+    <div class="export-step flex column gap-24">
+      
+      <!-- QR Code Section -->
+      @if (canShowQrCode()) {
+        <div class="qr-section flex column align-items-center gap-20">
+          <div class="qr-header text-center">
+            <div class="typo-heading-3 text-white mb-8">Scan QR Code</div>
+            <p class="typo-text-1 text-gray-60">
+              Scan this QR code with your mobile wallet to sync your data
+            </p>
+          </div>
+
+          <div class="qr-container p-16 rounded-lg bg-white">
+            <qrcode
+              [qrdata]="encryptedUserData()!"
+              [width]="qrCodeSize()"
+              [errorCorrectionLevel]="'M'"
+              [elementType]="'canvas'"
+              [margin]="2">
+            </qrcode>
+          </div>
+
+          <div class="qr-actions flex gap-12">
+            <kc-button 
+              [text]="'Copy Data'"
+              variant="secondary" 
+              size="md"
+              (buttonClick)="onCopyQrData()">
+            </kc-button>
+          </div>
+        </div>
+      }
+
+      <!-- Data Too Big Warning -->
+      @if (dataTooBig()) {
+        <div class="warning-section flex column align-items-center gap-16">
+          <div class="warning-box p-16 rounded-lg">
+            <div class="flex align-items-start gap-12">
+              <kc-icon name="alert-triangle" size="sm" class="text-warning flex-shrink-0"></kc-icon>
+              <div class="warning-content">
+                <p class="typo-text-1 text-warning mb-4 font-medium">QR Code Not Available</p>
+                <p class="typo-text-2 text-gray-75">
+                  You have too many wallets to display in a QR code. Please use the download option instead.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Download Section -->
+      <div class="download-section flex column align-items-center gap-20">
+        <div class="download-header text-center">
+          <div class="typo-heading-3 text-white mb-8">Download Wallet File</div>
+          <p class="typo-text-1 text-gray-60">
+            Download your wallet data as a secure file for backup or transfer
+          </p>
+        </div>
+
+        <kc-button 
+          [text]="'Download Key File'"
+          variant="primary" 
+          size="lg"
+          (buttonClick)="onDownloadKeyFile()">
+        </kc-button>
+      </div>
+
+      <!-- Actions -->
+      <div class="export-actions flex column gap-12 mt-16">
+        <kc-button 
+          [text]="'Done'"
+          variant="tertiary" 
+          size="md" 
+          [isFullWidth]="true"
+          (buttonClick)="onHideKeyInfo()">
+        </kc-button>
+      </div>
+    </div>
+  }
+
+</div>

@@ -1,0 +1,186 @@
+.export-kaspacom-container {
+  color: var(--text-primary, #ffffff);
+  font-family: 'Poppins', 'Roboto', sans-serif;
+  
+  .lock-icon-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    .lock-icon {
+      width: 180px;
+      height: auto;
+      opacity: 0.8;
+    }
+  }
+
+  .step-content {
+    .max-width-400 {
+      max-width: 400px;
+    }
+  }
+
+  .action-buttons {
+    .max-width-300 {
+      max-width: 300px;
+    }
+  }
+}
+
+// Password Step Specific Styles
+.password-step {
+  .password-form {
+    .input-group {
+      .password-input {
+        background: var(--surface-secondary, rgba(255, 255, 255, 0.05));
+        border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.1));
+        color: var(--text-primary, #ffffff);
+        transition: all 0.2s ease;
+
+        &::placeholder {
+          color: var(--text-secondary, #a0a0a0);
+        }
+
+        &:focus {
+          outline: none;
+          border-color: #6fc7ba;
+          box-shadow: 0 0 0 3px rgba(111, 199, 186, 0.1);
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        &.error {
+          border-color: #ff6b6b;
+          box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+      }
+
+      .error-message {
+        color: #ff6b6b;
+        font-size: 0.875rem;
+        margin-top: 4px;
+      }
+    }
+  }
+}
+
+// Export Step Specific Styles
+.export-step {
+  .qr-section {
+    .qr-container {
+      background: white;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.1));
+      
+      // Ensure QR code canvas is properly centered
+      qrcode {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        canvas {
+          border-radius: 4px;
+        }
+      }
+    }
+
+    .qr-actions {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+  }
+
+  .download-section {
+    .download-header {
+      max-width: 400px;
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .export-kaspacom-container {
+    padding: 16px;
+    gap: 24px;
+
+    .lock-icon-container {
+      .lock-icon {
+        width: 140px;
+      }
+    }
+
+    .export-step {
+      .qr-section {
+        .qr-container {
+          padding: 12px;
+        }
+
+        .qr-actions {
+          gap: 8px;
+          
+          kc-button {
+            flex: 1;
+            min-width: 120px;
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .export-kaspacom-container {
+    padding: 12px;
+    gap: 20px;
+
+    .step-content {
+      gap: 12px;
+
+      h2 {
+        font-size: 1.25rem;
+      }
+    }
+
+    .password-step {
+      .password-form {
+        .action-buttons {
+          gap: 8px;
+        }
+      }
+    }
+
+    .export-step {
+      gap: 20px;
+
+      .qr-section {
+        gap: 16px;
+
+        .qr-container {
+          padding: 8px;
+        }
+      }
+
+      .download-section {
+        gap: 16px;
+      }
+
+      .export-actions {
+        margin-top: 12px;
+      }
+    }
+  }
+}
+
+// Utility Classes
+.max-width-400 {
+  max-width: 400px;
+}
+
+.max-width-300 {
+  max-width: 300px;
+}
+
+// No animations - removed for cleaner experience

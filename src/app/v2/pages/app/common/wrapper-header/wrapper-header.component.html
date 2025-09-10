@@ -1,21 +1,24 @@
 <div class="header-container-home full-height">
-  <div class="profile-container" (click)="toggleAccountSettings()">
-    <app-wallet-profile-orb
-      class="profile-container__chain-icon"
-    ></app-wallet-profile-orb>
-    <div class="profile-container__info">
-      <div class="profile-container__wallet-name-section">
-        <div class="profile-container__wallet-name">{{ walletName() }}</div>
-      </div>
-      <div class="profile-container__account-section">
-        <div class="profile-container__account-name">{{ accountName() }}</div>
-        <app-copy-button
-          [value]="walletAddress()"
-          [size]="'xs'"
-          (click)="onCopyButtonClick($event)"
-        ></app-copy-button>
+  <div class="profile-section">
+    <div class="profile-container" (click)="toggleAccountSettings()">
+      <app-wallet-profile-orb
+        class="profile-container__chain-icon"
+      ></app-wallet-profile-orb>
+      <div class="profile-container__info">
+        <div class="profile-container__wallet-name-section">
+          <div class="profile-container__wallet-name">{{ walletName() }}</div>
+        </div>
+        <div class="profile-container__account-section">
+          <div class="profile-container__account-name">{{ accountName() }}</div>
+        </div>
       </div>
     </div>
+    <app-copy-button
+      class="external-copy-button"
+      [value]="walletAddress()"
+      [size]="'sm'"
+      (click)="onCopyButtonClick($event)"
+    ></app-copy-button>
   </div>
   <kc-icon
     class="settings-icon"

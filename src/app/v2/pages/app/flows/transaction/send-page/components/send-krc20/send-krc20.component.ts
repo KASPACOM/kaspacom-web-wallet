@@ -32,6 +32,7 @@ import { AssetsStoreService } from '../../../../../../../../services/assets-stor
 import { QrScannerService } from '../../../../../../../../services/qr-scanner.service';
 import { AddressSmartInputComponent } from '../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { AddressResolutionResult } from '../../../../../../../../services/address-resolution.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-send-krc20',
@@ -63,6 +64,7 @@ export class SendKrc20Component
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private assetsStore = inject(AssetsStoreService);
   private qrScannerService = inject(QrScannerService);
+  private router = inject(Router);
 
   // Token data
   token = signal<IToken | undefined>(undefined);
@@ -359,5 +361,14 @@ export class SendKrc20Component
     } finally {
       this.isLoading = false;
     }
+  }
+
+  /**
+   * Override navigateBack to navigate to homepage with KRC20 tab selected
+   */
+  protected override navigateBack(): void {
+    // Close the flow and navigate to homepage with KRC20 tab
+    this.flowPagesService.closePage();
+    this.router.navigate(['/app/home'], { queryParams: { tab: 'krc20' } });
   }
 }

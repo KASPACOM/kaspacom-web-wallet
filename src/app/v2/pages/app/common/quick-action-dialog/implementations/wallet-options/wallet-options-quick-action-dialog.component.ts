@@ -78,3 +78,5 @@ export class WalletOptionsQuickActionDialogComponent implements AfterViewInit {
     this.closeDialog();
   }
 }
+
+

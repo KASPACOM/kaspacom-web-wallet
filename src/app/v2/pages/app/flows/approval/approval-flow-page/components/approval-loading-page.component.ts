@@ -2,7 +2,7 @@ import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApprovalFlowService } from '../../../../../../services/approval-flow.service';
 import { KcIconComponent } from '@kaspacom/ui';
-import { KaspaNodesBackgroundComponent } from '../../../../common/kaspa-nodes-background/kaspa-nodes-background.component';
+import { KaspaNodesBackgroundComponent } from '../../../../common/components/kaspa-nodes-background/kaspa-nodes-background.component';
 
 @Component({
   selector: 'app-approval-loading-page',
@@ -45,28 +45,6 @@ import { KaspaNodesBackgroundComponent } from '../../../../common/kaspa-nodes-ba
         </div>
       </div>
 
-      <!-- Loading Steps -->
-      <div class="loading-steps">
-        <div class="step" [class.active]="currentProgress() >= 50">
-          <div class="step-icon">
-            <kc-icon
-              [iconClass]="currentProgress() >= 50 ? 'icon-check' : 'icon-clock'"
-              [size]="'sm'">
-            </kc-icon>
-          </div>
-          <span class="step-text">Commit transaction</span>
-        </div>
-
-        <div class="step" [class.active]="currentProgress() >= 100">
-          <div class="step-icon">
-            <kc-icon
-              [iconClass]="currentProgress() >= 100 ? 'icon-check' : 'icon-clock'"
-              [size]="'sm'">
-            </kc-icon>
-          </div>
-          <span class="step-text">Reveal transaction</span>
-        </div>
-      </div>
     </div>
   `,
   styleUrl: './approval-loading-page.component.scss'

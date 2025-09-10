@@ -15,6 +15,9 @@ import { PlaceholderFlowPageComponent } from './placeholder-flow-page.component'
 import { ImportExistingFlowComponent } from '../../../onboarding-page/flows/import-existing-flow/import-existing-flow.component';
 import { NewWalletFlowComponent } from '../../../onboarding-page/flows/new-wallet-flow/new-wallet-flow.component';
 import { WalletSelectionPageComponent } from '../../flows/wallet-selection/wallet-selection-page.component';
+import { SettingsMenuComponent } from '../../flows/settings/settings-menu.component';
+import { DisconnectConfirmationComponent } from '../../flows/settings/disconnect-confirmation.component';
+import { ExportKaspacomWalletFlowPageComponent } from '../../flows/export-kaspacom-wallet/export-kaspacom-wallet-flow-page.component';
 import { IFlowPageConfig } from './interfaces/flow-page.interface';
 
 export type FlowPageRegistryEntry =
@@ -38,9 +41,12 @@ export const FLOW_PAGE_IDS = [
   'action-approval',
   'receive',
   'export-wallet',
+  'export-kaspacom-wallet',
   'add-wallet',
   'create-wallet',
   'send-confirmation',
+  'settings-menu',
+  'disconnect-confirmation',
 ] as const;
 
 export type FlowPageId = (typeof FLOW_PAGE_IDS)[number];
@@ -59,6 +65,7 @@ export const FLOW_PAGE_REGISTRY: Record<FlowPageId, FlowPageRegistryEntry> = {
   'action-approval': ApprovalFlowPageComponent,
   receive: ReceiveFlowPageComponent,
   'export-wallet': ExportWalletComponent,
+  'export-kaspacom-wallet': ExportKaspacomWalletFlowPageComponent,
   'add-wallet': {
     component: ImportExistingFlowComponent,
     getInputs: () => ({ skipPassword: true }),
@@ -71,4 +78,6 @@ export const FLOW_PAGE_REGISTRY: Record<FlowPageId, FlowPageRegistryEntry> = {
     component: PlaceholderFlowPageComponent,
     getInputs: () => ({ text: 'Send Confirmation page - Coming soon' }),
   },
+  'settings-menu': SettingsMenuComponent,
+  'disconnect-confirmation': DisconnectConfirmationComponent,
 } as const;

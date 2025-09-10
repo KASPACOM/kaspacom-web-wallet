@@ -31,6 +31,7 @@ import { UtilsHelper } from '../../../../../../../../services/utils.service';
 import { QrScannerService } from '../../../../../../../../services/qr-scanner.service';
 import { AddressSmartInputComponent } from '../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { AddressResolutionResult } from '../../../../../../../../services/address-resolution.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-send-nft',
@@ -61,6 +62,7 @@ export class SendNftComponent
   private approvalFlowService = inject(ApprovalFlowService);
   private utilsHelper = inject(UtilsHelper);
   private qrScannerService = inject(QrScannerService);
+  private router = inject(Router);
 
   nft = signal<INft | undefined>(undefined);
   loading = signal<boolean>(true);
@@ -391,5 +393,14 @@ export class SendNftComponent
     if (target) {
       target.style.display = 'none';
     }
+  }
+
+  /**
+   * Override navigateBack to navigate to homepage with KRC721 tab selected
+   */
+  protected override navigateBack(): void {
+    // Close the flow and navigate to homepage with KRC721 tab
+    this.flowPagesService.closePage();
+    this.router.navigate(['/app/home'], { queryParams: { tab: 'krc721' } });
   }
 }

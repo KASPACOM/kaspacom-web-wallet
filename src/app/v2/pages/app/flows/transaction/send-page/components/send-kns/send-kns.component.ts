@@ -31,6 +31,7 @@ import { UtilsHelper } from '../../../../../../../../services/utils.service';
 import { QrScannerService } from '../../../../../../../../services/qr-scanner.service';
 import { AddressSmartInputComponent } from '../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { AddressResolutionResult } from '../../../../../../../../services/address-resolution.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-send-kns',
@@ -62,6 +63,7 @@ export class SendKnsComponent
   private approvalFlowService = inject(ApprovalFlowService);
   private utilsHelper = inject(UtilsHelper);
   private qrScannerService = inject(QrScannerService);
+  private router = inject(Router);
 
   domain = signal<KnsDomainAsset | undefined>(undefined);
   loading = signal<boolean>(true);
@@ -333,5 +335,14 @@ export class SendKnsComponent
   isVerified(): boolean {
     const currentDomain = this.domain();
     return currentDomain?.isVerifiedDomain || false;
+  }
+
+  /**
+   * Override navigateBack to navigate to homepage with KNS tab selected
+   */
+  protected override navigateBack(): void {
+    // Close the flow and navigate to homepage with KNS tab
+    this.flowPagesService.closePage();
+    this.router.navigate(['/app/home'], { queryParams: { tab: 'kns' } });
   }
 }

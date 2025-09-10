@@ -119,74 +119,6 @@
   font-family: 'SF Mono', 'Monaco', monospace;
 }
 
-// Loading Steps
-.loading-steps {
-  width: 100%;
-  max-width: 350px;
-  animation: fadeIn 0.6s ease-out 0.4s both;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.step {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 16px;
-  padding: 12px 0;
-  transition: all 0.3s ease;
-  opacity: 0.5;
-  width: 100%;
-
-  &.active {
-    opacity: 1;
-    
-    .step-icon {
-      background: var(--gradient-1);
-      border: 2px solid transparent;
-      background-origin: border-box;
-      background-clip: padding-box, border-box;
-      
-      kc-icon {
-        color: #ffffff;
-      }
-    }
-    
-    .step-text {
-      color: var(--text-primary, #ffffff);
-      font-weight: 500;
-    }
-  }
-}
-
-.step-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: rgba(180, 58, 237, 0.1); // Using purple from gradient-1 with low opacity
-    border: 2px solid rgba(180, 58, 237, 0.3); // Purple border
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: all 0.3s ease;
-
-    kc-icon {
-      color: var(--text-secondary, #a0a0a0);
-      transition: color 0.3s ease;
-    }
-}
-
-.step-text {
-    font-size: 0.9rem;
-    color: var(--text-secondary, #a0a0a0);
-    font-weight: 500;
-    transition: color 0.3s ease;
-    text-align: left;
-    flex: 1;
-}
 
 // Animations
 @keyframes spin {
@@ -218,19 +150,6 @@
   }
 }
 
-// Pulse animation for active step
-.step.active .step-icon {
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(63, 199, 83, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(63, 199, 83, 0);
-  }
-}
 
 // Responsive Design
 @media (max-width: 480px) {
@@ -246,22 +165,6 @@
     max-width: 250px;
   }
   
-  .loading-steps {
-    max-width: 300px;
-  }
-  
-  .step {
-    gap: 12px;
-    
-    .step-icon {
-      width: 28px;
-      height: 28px;
-    }
-    
-    .step-text {
-      font-size: 0.85rem;
-    }
-  }
 }
 
 // Reduced motion support
@@ -274,7 +177,4 @@
     animation: none;
   }
   
-  .step.active .step-icon {
-    animation: none;
-  }
 } 

@@ -3,6 +3,8 @@ import { UtilsHelper } from './utils.service';
 import { KnsApiService } from './kns-api/kns-api.service';
 import { firstValueFrom } from 'rxjs';
 import { default as Graphemer } from 'graphemer';
+import { environment } from '../../environments/environment';
+import { KASPA_NETWORKS } from '../config/consts';
 
 export interface AddressResolutionResult {
   effectiveAddress: string | null;
@@ -26,13 +28,13 @@ export class AddressResolutionService {
     
     const trimmed = input.trim();
     
-    // Check if it ends with .kas or .kns (case insensitive)
-    if (!/\.(kas|kns)$/i.test(trimmed)) {
+    // Check if it ends with .kas (case insensitive)
+    if (!/\.kas$/i.test(trimmed)) {
       return false;
     }
     
-    // Extract the domain part (without .kas or .kns)
-    const domainPart = trimmed.replace(/\.(kas|kns)$/i, '');
+    // Extract the domain part (without .kas)
+    const domainPart = trimmed.replace(/\.kas$/i, '');
     
     // Use graphemer to get proper character count (handles emojis correctly)
     const graphemes = this.graphemer.splitGraphemes(domainPart);
@@ -59,9 +61,55 @@ export class AddressResolutionService {
   }
 
   /**
+   * Validate address format and return specific error message if invalid
+   */
+  validateAddressFormat(input: string): string | null {
+    if (!input?.trim()) {
+      return null;
+    }
+
+    const trimmed = input.trim();
+    
+    // If it's a potential domain, we don't validate address format here
+    if (this.isPotentialDomain(trimmed)) {
+      return null;
+    }
+
+    // Check if it's a valid address for the current network
+    if (this.isKaspaAddress(trimmed)) {
+      return null; // Valid
+    }
+
+    // Provide specific error based on network and address format
+    const isMainnet = environment.kaspaNetwork === KASPA_NETWORKS.MAINNET;
+    const expectedPrefix = isMainnet ? 'kaspa:' : 'kaspatest:';
+    const wrongPrefix = isMainnet ? 'kaspatest:' : 'kaspa:';
+    
+    // Check if using wrong network prefix
+    if (trimmed.startsWith(wrongPrefix)) {
+      const networkName = isMainnet ? 'mainnet' : 'testnet';
+      return `Invalid address format. This is a ${isMainnet ? 'testnet' : 'mainnet'} address, but you're on ${networkName}`;
+    }
+    
+    // Check if missing prefix entirely
+    if (!trimmed.includes(':')) {
+      return `Invalid address format. Address should start with '${expectedPrefix}'`;
+    }
+    
+    // Check if has correct prefix but invalid format
+    if (trimmed.startsWith(expectedPrefix)) {
+      return `Invalid address format. Please check the address and try again`;
+    }
+    
+    // General invalid format
+    return `Invalid address format. Expected format: ${expectedPrefix}[address]`;
+  }
+
+  /**
    * Resolve an input string into a Kaspa address.
    * - If input is already a Kaspa address, returns it immediately.
-   * - If input looks like a KNS domain (e.g. user.kas or user.kns), attempts to resolve via KNS API.
+   * - If input looks like a KNS domain (e.g. user.kas), attempts to resolve via KNS API.
+   * - If input appears to be an invalid address format, returns error message.
    * - Otherwise returns null with no error.
    */
   async resolve(input: string): Promise<AddressResolutionResult> {
@@ -75,45 +123,53 @@ export class AddressResolutionService {
       return { effectiveAddress: trimmed, source: 'direct' };
     }
 
-    if (!this.isPotentialDomain(trimmed)) {
-      // Not a kaspa address and not a domain; no resolution attempted
-      return { effectiveAddress: null, source: 'none' };
-    }
+    if (this.isPotentialDomain(trimmed)) {
+      // Handle KNS domain resolution
+      try {
+        const normalizedDomain = this.normalizeDomain(trimmed);
+        // Use fetchDomainInfo to get asset by domain and take owner address
+        const asset = await firstValueFrom(
+          this.knsApi.fetchDomainInfo(normalizedDomain),
+        );
+        if (asset && asset.owner) {
+          return {
+            effectiveAddress: asset.owner,
+            source: 'kns',
+            resolvedDomain: normalizedDomain,
+          };
+        }
 
-    try {
-      const normalizedDomain = this.normalizeDomain(trimmed);
-      // Use fetchDomainInfo to get asset by domain and take owner address
-      const asset = await firstValueFrom(
-        this.knsApi.fetchDomainInfo(normalizedDomain),
-      );
-      if (asset && asset.owner) {
         return {
-          effectiveAddress: asset.owner,
+          effectiveAddress: null,
           source: 'kns',
           resolvedDomain: normalizedDomain,
+          error: 'Domain not found',
+        };
+      } catch (error) {
+        return {
+          effectiveAddress: null,
+          source: 'kns',
+          error: 'Failed to resolve domain',
         };
       }
+    }
 
+    // Check if input appears to be an invalid address format
+    const addressFormatError = this.validateAddressFormat(trimmed);
+    if (addressFormatError) {
       return {
         effectiveAddress: null,
-        source: 'kns',
-        resolvedDomain: normalizedDomain,
-        error: 'Domain not found',
-      };
-    } catch (error) {
-      return {
-        effectiveAddress: null,
-        source: 'kns',
-        error: 'Failed to resolve domain',
+        source: 'none',
+        error: addressFormatError,
       };
     }
+
+    // Not a kaspa address, not a domain, and no validation error - no resolution attempted
+    return { effectiveAddress: null, source: 'none' };
   }
 
   private normalizeDomain(input: string): string {
     const lower = input.trim().toLowerCase();
-    if (lower.endsWith('.kns')) {
-      return lower.replace(/\.kns$/, '.kas');
-    }
     if (!lower.endsWith('.kas')) {
       return `${lower}.kas`;
     }

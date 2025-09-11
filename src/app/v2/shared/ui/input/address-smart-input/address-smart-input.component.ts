@@ -90,7 +90,7 @@ export class AddressSmartInputComponent implements OnChanges {
     this.displayInvalidReason.set('');
     this.displayIsValid.set(true);
 
-    // Show resolving spinner during debounce if looks like a domain (not a kaspa address)
+    // Show resolving spinner during debounce for domains and address validation
     if (!input) {
       this.isResolving.set(false);
       this.isDomainCandidate.set(false);
@@ -101,7 +101,8 @@ export class AddressSmartInputComponent implements OnChanges {
       this.isResolving.set(true);
       this.isDomainCandidate.set(true);
     } else {
-      this.isResolving.set(false);
+      // Might be an invalid address - show spinner while validating
+      this.isResolving.set(true);
       this.isDomainCandidate.set(false);
     }
 
@@ -128,35 +129,38 @@ export class AddressSmartInputComponent implements OnChanges {
       return;
     }
 
-    // If already a kaspa address, no need to call API
-    if (this.resolver.isKaspaAddress(input)) {
-      this.isResolving.set(false);
-      this.isDomainCandidate.set(false);
-      this.resolvedAddress.set(input);
-      this.resolved.emit({ effectiveAddress: input, source: 'direct' });
-      return;
-    }
-
-    // Only resolve if looks like a domain
-    if (!this.resolver.isPotentialDomain(input)) {
-      this.isResolving.set(false);
-      this.isDomainCandidate.set(false);
-      this.resolved.emit({ effectiveAddress: null, source: 'none' });
-      return;
-    }
-
-    this.isResolving.set(true);
-    this.isDomainCandidate.set(true);
+    // Always try to resolve through the service to get proper validation
     const result = await this.resolver.resolve(input);
-    this.isResolving.set(false);
-    this.isDomainCandidate.set(false);
 
-    if (result.effectiveAddress) {
-      this.resolvedAddress.set(result.effectiveAddress);
-      if (result.resolvedDomain) this.resolvedDomain.set(result.resolvedDomain);
+    if (result.source === 'direct') {
+      // Valid kaspa address
+      this.isResolving.set(false);
+      this.isDomainCandidate.set(false);
+      this.resolvedAddress.set(result.effectiveAddress!);
       this.resolveError.set('');
-    } else if (result.error) {
-      this.resolveError.set(result.error);
+    } else if (result.source === 'kns') {
+      // KNS domain resolution
+      this.isResolving.set(false);
+      this.isDomainCandidate.set(false);
+      
+      if (result.effectiveAddress) {
+        this.resolvedAddress.set(result.effectiveAddress);
+        if (result.resolvedDomain) this.resolvedDomain.set(result.resolvedDomain);
+        this.resolveError.set('');
+      } else if (result.error) {
+        this.resolveError.set(result.error);
+      }
+    } else {
+      // source === 'none' - either empty, or no resolution attempted, or validation error
+      this.isResolving.set(false);
+      this.isDomainCandidate.set(false);
+      
+      if (result.error) {
+        // Address format validation error
+        this.resolveError.set(result.error);
+      } else {
+        this.resolveError.set('');
+      }
     }
 
     this.resolved.emit(result);

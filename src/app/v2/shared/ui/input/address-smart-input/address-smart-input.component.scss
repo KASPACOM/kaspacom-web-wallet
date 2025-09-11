@@ -33,17 +33,8 @@
   }
 
   .kns-warning-text {
-    margin-top: 8px;
-    padding: 8px 12px;
-    background-color: var(--orange-10, #fef8e7);
-    border: 1px solid var(--orange-30, #fbbf24);
-    border-radius: 6px;
+    margin-top: 4px;
     font-size: 12px;
-    line-height: 16px;
-    color: var(--orange-80, #92400e);
-
-    .warning-icon {
-      margin-right: 6px;
-    }
+    color: var(--gray-60);
   }
 }

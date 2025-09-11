@@ -1,15 +1,17 @@
-import {EnvironmentInjector, Injectable, Signal, signal} from '@angular/core';
-import {PasswordManagerService} from './password-manager.service';
-import {SavedWalletAccount, SavedWalletData,} from '../types/saved-wallet-data';
-import {KaspaNetworkActionsService} from './kaspa-netwrok-services/kaspa-network-actions.service';
-import {AppWallet} from '../classes/AppWallet';
-import {LOCAL_STORAGE_KEYS} from '../config/consts';
-import {AssetType, TransferableAsset} from '../types/transferable-asset';
-import {KasplexKrc20Service} from './kasplex-api/kasplex-api.service';
-import {firstValueFrom} from 'rxjs';
-import {UtilsHelper} from './utils.service';
-import {RpcConnectionStatus} from '../types/kaspa-network/rpc-connection-status.enum';
-import {cloneDeep} from "lodash";
+import { EnvironmentInjector, Injectable, Signal, signal } from '@angular/core';
+import { PasswordManagerService } from './password-manager.service';
+import { SavedWalletAccount, SavedWalletData, } from '../types/saved-wallet-data';
+import { KaspaNetworkActionsService } from './kaspa-netwrok-services/kaspa-network-actions.service';
+import { AppWallet } from '../classes/AppWallet';
+import { LOCAL_STORAGE_KEYS } from '../config/consts';
+import { AssetType, TransferableAsset } from '../types/transferable-asset';
+import { KasplexKrc20Service } from './kasplex-api/kasplex-api.service';
+import { firstValueFrom } from 'rxjs';
+import { UtilsHelper } from './utils.service';
+import { RpcConnectionStatus } from '../types/kaspa-network/rpc-connection-status.enum';
+import { cloneDeep } from "lodash";
+import { environment } from '../../environments/environment';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root',
@@ -17,6 +19,7 @@ import {cloneDeep} from "lodash";
 export class WalletService {
   private currentWalletSignal = signal<AppWallet | undefined>(undefined);
   private allWalletsSignal = signal<AppWallet[] | undefined>(undefined);
+  private isWalletLoaded = false;
 
   constructor(
     private readonly passwordManagerService: PasswordManagerService,
@@ -24,6 +27,7 @@ export class WalletService {
     private readonly kasplexService: KasplexKrc20Service,
     private readonly utilsService: UtilsHelper,
     private readonly injector: EnvironmentInjector,
+    private readonly router: Router,
   ) {
   }
 
@@ -100,9 +104,9 @@ export class WalletService {
     });
 
     if (result) {
-      return {sucess: true};
+      return { sucess: true };
     } else {
-      return {sucess: false, error: 'Error adding wallet'};
+      return { sucess: false, error: 'Error adding wallet' };
     }
   }
 
@@ -315,6 +319,19 @@ export class WalletService {
   }
 
   async loadWallets(loadBalance: boolean = false): Promise<void> {
+    if (this.isWalletLoaded && !environment.isProduction) {
+      // Since you don't understand how important that is
+      // DON'T REMOVE THIS CODE 
+      alert("loadWallets IS CALLED TWICE - PLEASE FIX IT, SHOULD ONLY BE CALLED ONCE. THIS WILL MAKE PROBLEMS AND WALLETS WILL NOT WORK");
+      this.allWalletsSignal.set(undefined);
+      setTimeout(() => {
+        alert('REFRESH BECAUSE YOU NEED TO FIX YOUR CODE');
+        window.location.reload();
+      }, 5000);
+      throw new Error("loadWallets IS CALLED TWICE - PLEASE FIX IT, SHOULD ONLY BE CALLED ONCE. THIS WILL MAKE PROBLEMS AND WALLETS WILL NOT WORK");
+    }
+    this.isWalletLoaded = true;
+
     const walletsData = await this.passwordManagerService.getUserData();
 
     const allWallets = [];

@@ -321,11 +321,6 @@ export class WalletService {
       // Since you don't understand how important that is
       // DON'T REMOVE THIS CODE 
       alert("loadWallets IS CALLED TWICE - PLEASE FIX IT, SHOULD ONLY BE CALLED ONCE. THIS WILL MAKE PROBLEMS AND WALLETS WILL NOT WORK");
-      this.allWalletsSignal.set(undefined);
-      setTimeout(() => {
-        alert('REFRESH BECAUSE YOU NEED TO FIX YOUR CODE');
-        window.location.reload();
-      }, 5000);
       throw new Error("loadWallets IS CALLED TWICE - PLEASE FIX IT, SHOULD ONLY BE CALLED ONCE. THIS WILL MAKE PROBLEMS AND WALLETS WILL NOT WORK");
     }
 

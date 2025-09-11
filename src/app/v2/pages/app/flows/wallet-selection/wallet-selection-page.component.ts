@@ -90,6 +90,7 @@ export class WalletSelectionPageComponent extends FlowPageBaseComponent {
         isEditMode: true,
         onSuccess: async () => {
           await new Promise((r) => setTimeout(r, 100));
+          // Wallet operations already update state, just refresh UI
           this.loadWallets();
         },
       },
@@ -107,6 +108,7 @@ export class WalletSelectionPageComponent extends FlowPageBaseComponent {
         wallet: target,
         onSuccess: async () => {
           await new Promise((r) => setTimeout(r, 100));
+          // Wallet operations already update state, just refresh UI
           this.loadWallets();
         },
       },

@@ -96,8 +96,8 @@ export class EditWalletQuickActionDialogComponent implements AfterViewInit {
         );
 
         if (success) {
-          // Reload wallets so all lists reflect the new name immediately
-          await this.walletService.loadWallets();
+          // The updateWalletName method already updates the current wallet signal
+          // No need to call loadWallets() - state is already updated
           this.messagePopupService.showSuccess(
             `Wallet renamed to "${this.walletName}"`,
           );

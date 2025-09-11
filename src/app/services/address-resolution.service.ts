@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { UtilsHelper } from './utils.service';
 import { KnsApiService } from './kns-api/kns-api.service';
 import { firstValueFrom } from 'rxjs';
+import { default as Graphemer } from 'graphemer';
 
 export interface AddressResolutionResult {
   effectiveAddress: string | null;
@@ -14,9 +15,7 @@ export interface AddressResolutionResult {
 export class AddressResolutionService {
   private readonly utils = inject(UtilsHelper);
   private readonly knsApi = inject(KnsApiService);
-
-  private static readonly DOMAIN_REGEX =
-    /^[a-z0-9-]+(\.[a-z0-9-]+)*\.(kas|kns)$/i;
+  private readonly graphemer = new Graphemer();
 
   isKaspaAddress(input: string): boolean {
     return this.utils.isValidWalletAddress(input);
@@ -24,7 +23,39 @@ export class AddressResolutionService {
 
   isPotentialDomain(input: string): boolean {
     if (!input) return false;
-    return AddressResolutionService.DOMAIN_REGEX.test(input.trim());
+    
+    const trimmed = input.trim();
+    
+    // Check if it ends with .kas or .kns (case insensitive)
+    if (!/\.(kas|kns)$/i.test(trimmed)) {
+      return false;
+    }
+    
+    // Extract the domain part (without .kas or .kns)
+    const domainPart = trimmed.replace(/\.(kas|kns)$/i, '');
+    
+    // Use graphemer to get proper character count (handles emojis correctly)
+    const graphemes = this.graphemer.splitGraphemes(domainPart);
+    
+    // Domain must be between 1 and 63 characters (visual length, not string length)
+    if (graphemes.length === 0 || graphemes.length > 63) {
+      return false;
+    }
+    
+    // Check for valid characters: letters, numbers, emojis, CJK characters, hyphens, dots
+    // But not starting or ending with hyphen, and no consecutive dots
+    const validCharPattern = /^[a-zA-Z0-9\u{4E00}-\u{9FFF}\u{3400}-\u{4DBF}\u{20000}-\u{2A6DF}\u{2A700}-\u{2B73F}\u{2B740}-\u{2B81F}\u{2B820}-\u{2CEAF}\u{2CEB0}-\u{2EBEF}\u{30000}-\u{3134F}\u{1F000}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE0F}\u{200D}.-]+$/u;
+    
+    if (!validCharPattern.test(domainPart)) {
+      return false;
+    }
+    
+    // Additional validation: no consecutive dots, no starting/ending with hyphen
+    if (domainPart.includes('..') || domainPart.startsWith('-') || domainPart.endsWith('-')) {
+      return false;
+    }
+    
+    return true;
   }
 
   /**

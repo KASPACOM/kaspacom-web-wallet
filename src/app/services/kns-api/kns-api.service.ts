@@ -21,45 +21,6 @@ export class KnsApiService {
   constructor(private readonly httpClient: HttpClient) {}
 
   /**
-   * Fetch domain owner information
-   */
-  fetchDomainOwnerInfo(
-    domain: string,
-    suffix: string = 'kas'
-  ): Observable<KnsDomainOwnerResponse> {
-    return this.httpClient
-      .get<KnsDomainOwnerResponse>(`${this.baseUrl}/api/v1/${domain}.${suffix}/owner`)
-      .pipe(
-        catchError((error) => {
-          console.error(`Error fetching domain owner info for ${domain}.${suffix}:`, error);
-          return of({ data: null as any });
-        })
-      );
-  }
-
-  /**
-   * Check domain availability
-   */
-  checkDomainAvailability(
-    domain: string,
-    userWalletAddress: string
-  ): Observable<KnsDomainCheckResponse> {
-    const request: KnsDomainCheckRequest = {
-      address: userWalletAddress,
-      domainNames: [`${domain}.kas`]
-    };
-
-    return this.httpClient
-      .post<KnsDomainCheckResponse>(`${this.baseUrl}/api/v1/domains/check`, request)
-      .pipe(
-        catchError((error) => {
-          console.error(`Error checking domain availability for ${domain}:`, error);
-          return of({ data: [] });
-        })
-      );
-  }
-
-  /**
    * Fetch asset details by asset ID
    */
   fetchAssetByAssetId(assetId: string): Observable<KnsDomainResponse> {
@@ -105,16 +66,16 @@ export class KnsApiService {
       .pipe(
         catchError((error) => {
           console.error(`Error fetching assets by owner ${owner}:`, error);
-          return of({ 
-            data: { 
-              assets: [], 
-              pagination: { 
-                currentPage: 1, 
-                totalPages: 0, 
-                totalItems: 0, 
-                itemsPerPage: pageSize 
-              } 
-            } 
+          return of({
+            data: {
+              assets: [],
+              pagination: {
+                currentPage: 1,
+                totalPages: 0,
+                totalItems: 0,
+                itemsPerPage: pageSize
+              }
+            }
           });
         })
       );
@@ -158,67 +119,42 @@ export class KnsApiService {
       .pipe(
         catchError((error) => {
           console.error('Error fetching assets:', error);
-          return of({ 
-            data: { 
-              assets: [], 
-              pagination: { 
-                currentPage: 1, 
-                totalPages: 0, 
-                totalItems: 0, 
-                itemsPerPage: pageSize 
-              } 
-            } 
+          return of({
+            data: {
+              assets: [],
+              pagination: {
+                currentPage: 1,
+                totalPages: 0,
+                totalItems: 0,
+                itemsPerPage: pageSize
+              }
+            }
           });
         })
       );
   }
-
-  /**
-   * Fetch listed assets by owner
-   */
-  fetchListedAssetsByOwner(owner: string): Observable<KnsDomainsResponse> {
-    let params = new HttpParams()
-      .set('status', 'listed')
-      .set('type', 'domain')
-      .set('pageSize', '50')
-      .set('owner', owner);
-
-    return this.httpClient
-      .get<KnsDomainsResponse>(`${this.baseUrl}/api/v1/assets`, { params })
-      .pipe(
-        catchError((error) => {
-          console.error(`Error fetching listed assets by owner ${owner}:`, error);
-          return of({ 
-            data: { 
-              assets: [], 
-              pagination: { 
-                currentPage: 1, 
-                totalPages: 0, 
-                totalItems: 0, 
-                itemsPerPage: 50 
-              } 
-            } 
-          });
-        })
-      );
-  }
-
   /**
    * Fetch domain information by domain name
+   * Expects domain to be URL-encoded as per KNS documentation requirements
    */
   fetchDomainInfo(domain: string): Observable<KnsDomainAsset | undefined> {
-    const domainWithoutSuffix = domain.replace('.kas', '');
-    
+    // Decode the domain to get the original form for comparison
+    const decodedDomain = decodeURIComponent(domain);
+    const decodedDomainWithoutSuffix = decodedDomain.replace('.kas', '');
+
+    // Use the URL-encoded domain name (without suffix) in the API call
+    const encodedDomainWithoutSuffix = encodeURIComponent(decodedDomainWithoutSuffix);
+
     return this.httpClient
-      .get<KnsDomainsResponse>(`${this.baseUrl}/api/v1/assets?asset=${domainWithoutSuffix}`)
+      .get<KnsDomainsResponse>(`${this.baseUrl}/api/v1/assets?asset=${encodedDomainWithoutSuffix}`)
       .pipe(
         map((response) => {
           return response.data.assets.find(
-            (asset) => asset.asset === domain
+            (asset) => asset.asset === decodedDomain
           );
         }),
         catchError((error) => {
-          console.error(`Error fetching domain info for ${domain}:`, error);
+          console.error(`Error fetching domain info for ${decodedDomain}:`, error);
           return of(undefined);
         })
       );

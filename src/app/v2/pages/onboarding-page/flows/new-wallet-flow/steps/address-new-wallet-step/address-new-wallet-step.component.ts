@@ -67,7 +67,7 @@ export class AddressNewWalletStepComponent {
   }
 
   async onFinish() {
-    await this.walletService.loadWallets();
+    await this.walletService.forceReloadWallets();
     // Select the newly created wallet by picking the highest wallet id
     const all = this.walletService.getAllWallets()() || [];
     if (all.length > 0) {

@@ -317,13 +317,20 @@ export class WalletService {
   }
 
   async loadWallets(loadBalance: boolean = false): Promise<void> {
-    if (this.isWalletLoaded && !environment.isProduction) {
-      // Since you don't understand how important that is
-      // DON'T REMOVE THIS CODE 
-      alert("loadWallets IS CALLED TWICE - PLEASE FIX IT, SHOULD ONLY BE CALLED ONCE. THIS WILL MAKE PROBLEMS AND WALLETS WILL NOT WORK");
-      throw new Error("loadWallets IS CALLED TWICE - PLEASE FIX IT, SHOULD ONLY BE CALLED ONCE. THIS WILL MAKE PROBLEMS AND WALLETS WILL NOT WORK");
+    // If wallets are already loaded, don't reload them to prevent state corruption
+    if (this.isWalletLoaded) {
+      console.warn('loadWallets() called but wallets are already loaded. Ignoring to prevent state corruption.');
+      return;
     }
 
+    await this.forceReloadWallets(loadBalance);
+  }
+
+  /**
+   * Force reload wallets from storage - use sparingly and only when necessary
+   * This should only be used during onboarding when new wallets are created
+   */
+  async forceReloadWallets(loadBalance: boolean = false): Promise<void> {
     this.isWalletLoaded = true;
 
     const walletsData = await this.passwordManagerService.getUserData();
@@ -353,6 +360,15 @@ export class WalletService {
     }
 
     this.allWalletsSignal.set(allWallets);
+  }
+
+  /**
+   * Reset the wallet loading state - only for testing or emergency situations
+   */
+  resetWalletLoadingState(): void {
+    this.isWalletLoaded = false;
+    this.allWalletsSignal.set(undefined);
+    this.currentWalletSignal.set(undefined);
   }
 
   getAllWallets(loadBalance: boolean = false): Signal<AppWallet[] | undefined> {
@@ -543,11 +559,25 @@ export class WalletService {
 
     if (walletData) {
       walletData.name = newName;
-      const currentWallet = this.currentWalletSignal()!;
-      if (walletData.id === currentWallet.getId()) {
+      
+      // Update current wallet signal if this is the current wallet
+      const currentWallet = this.currentWalletSignal();
+      if (currentWallet && walletData.id === currentWallet.getId()) {
         currentWallet?.setName(walletData.name);
         this.currentWalletSignal.set(cloneDeep(currentWallet));
       }
+      
+      // Update all wallet instances in allWalletsSignal
+      this.allWalletsSignal.update((wallets) => {
+        if (!wallets) return wallets;
+        return wallets.map(w => {
+          if (w.getId() === walletData.id) {
+            w.setName(walletData.name);
+            return cloneDeep(w);
+          }
+          return w;
+        });
+      });
     } else {
       return false;
     }

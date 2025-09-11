@@ -85,8 +85,7 @@ export class CreateWalletAccountQuickActionDialogComponent implements AfterViewI
             const success = await this.updateAccountName(wallet, this.accountName);
             if (success) {
               this.notificationService.success('Success', `Account name updated successfully!`);
-              // Reload the wallet service's internal state
-              await this.walletService.loadWallets();
+              // Account name is already updated in storage, no need to reload
               // Call the success callback to refresh the parent component
               if (this.data?.onSuccess) {
                 this.data.onSuccess();
@@ -99,8 +98,7 @@ export class CreateWalletAccountQuickActionDialogComponent implements AfterViewI
             const success = await this.walletService.updateWalletName(wallet, this.accountName);
             if (success) {
               this.notificationService.success('Success', `Wallet name updated successfully!`);
-              // Reload the wallet service's internal state
-              await this.walletService.loadWallets();
+              // The updateWalletName method already updates the wallet signal
               // Call the success callback to refresh the parent component
               if (this.data?.onSuccess) {
                 this.data.onSuccess();

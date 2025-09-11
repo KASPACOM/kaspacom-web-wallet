@@ -21,7 +21,7 @@ export class SuccessImportExistingStepComponent {
   private readonly flowPagesService = inject(FlowPagesService);
 
   async finish() {
-    await this.walletService.loadWallets();
+    await this.walletService.forceReloadWallets();
     const all = this.walletService.getAllWallets()() || [];
     if (all.length > 0) {
       const byId = new Map<number, string>();

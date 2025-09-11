@@ -28,7 +28,7 @@ export class WalletSelectionComponent implements OnInit {
   }
 
   async loadWallets() {
-    const result = await this.walletService.getAllWallets(true)();
+    const result = this.walletService.getAllWallets(true)();
 
     const groupedWallets = _.groupBy(result, (wallet) => wallet.getId());
 
@@ -47,7 +47,7 @@ export class WalletSelectionComponent implements OnInit {
     );
     if (confirmDelete) {
       this.walletService.deleteWallet(wallet.getIdWithAccount()).then(() => {
-        // Reload the list of wallets
+        // The deleteWallet method already updates the wallet signals
         this.loadWallets();
       });
     }
@@ -60,8 +60,8 @@ export class WalletSelectionComponent implements OnInit {
 
   async updateWalletName(wallet: AppWallet) {
     await this.walletService.updateWalletName(wallet, wallet.getName());
-    // Reload the list of wallets
-    await this.loadWallets();
+    // The updateWalletName method already updates wallet signals
+    this.loadWallets();
   }
 
   onNameInput(event: Event, wallet: AppWallet): void {
@@ -76,11 +76,13 @@ export class WalletSelectionComponent implements OnInit {
     const newAccountNumber = maxAccount + 1;
 
     await this.walletService.addWalletAccount(walletGroup[0].getId(), this.walletService.replaceWalletAccountNumberFromDerivedPath(walletGroup[0].getDerivedPath()!, newAccountNumber), '#' + newAccountNumber.toString());
-    await this.loadWallets();
+    // The addWalletAccount method already updates wallet signals
+    this.loadWallets();
   }
 
   async removeAccount(wallet: AppWallet) {
     await this.walletService.removeWalletAccount(wallet.getIdWithAccount());
-    await this.loadWallets();
+    // The removeWalletAccount method already updates wallet signals
+    this.loadWallets();
   }
 }

@@ -11,7 +11,6 @@ import { UtilsHelper } from './utils.service';
 import { RpcConnectionStatus } from '../types/kaspa-network/rpc-connection-status.enum';
 import { cloneDeep } from "lodash";
 import { environment } from '../../environments/environment';
-import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root',
@@ -27,7 +26,6 @@ export class WalletService {
     private readonly kasplexService: KasplexKrc20Service,
     private readonly utilsService: UtilsHelper,
     private readonly injector: EnvironmentInjector,
-    private readonly router: Router,
   ) {
   }
 
@@ -330,6 +328,7 @@ export class WalletService {
       }, 5000);
       throw new Error("loadWallets IS CALLED TWICE - PLEASE FIX IT, SHOULD ONLY BE CALLED ONCE. THIS WILL MAKE PROBLEMS AND WALLETS WILL NOT WORK");
     }
+
     this.isWalletLoaded = true;
 
     const walletsData = await this.passwordManagerService.getUserData();

@@ -133,13 +133,14 @@ export class AddressSmartInputComponent implements OnChanges {
     const result = await this.resolver.resolve(input);
 
     if (result.source === 'direct') {
-      // Valid kaspa address
+      // Valid kaspa address - don't show resolved address section
       this.isResolving.set(false);
       this.isDomainCandidate.set(false);
-      this.resolvedAddress.set(result.effectiveAddress!);
+      this.resolvedAddress.set(''); // Clear resolved address for direct addresses
+      this.resolvedDomain.set('');
       this.resolveError.set('');
     } else if (result.source === 'kns') {
-      // KNS domain resolution
+      // KNS domain resolution - show resolved address section
       this.isResolving.set(false);
       this.isDomainCandidate.set(false);
       
@@ -149,11 +150,15 @@ export class AddressSmartInputComponent implements OnChanges {
         this.resolveError.set('');
       } else if (result.error) {
         this.resolveError.set(result.error);
+        this.resolvedAddress.set('');
+        this.resolvedDomain.set('');
       }
     } else {
       // source === 'none' - either empty, or no resolution attempted, or validation error
       this.isResolving.set(false);
       this.isDomainCandidate.set(false);
+      this.resolvedAddress.set('');
+      this.resolvedDomain.set('');
       
       if (result.error) {
         // Address format validation error

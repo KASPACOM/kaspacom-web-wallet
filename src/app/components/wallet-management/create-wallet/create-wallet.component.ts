@@ -9,17 +9,16 @@ import { MnemonicWordsComponent } from '../../shared/mnemonic-words/mnemonic-wor
 import { VerifyMnemonicComponent } from '../verify-mnemonic/verify-mnemonic.component';
 
 @Component({
-  selector: 'create-wallet',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
-    MnemonicWordsComponent,
-    VerifyMnemonicComponent
-  ],
-  templateUrl: './create-wallet.component.html',
-  styleUrls: ['./create-wallet.component.scss']
+    selector: 'create-wallet',
+    imports: [
+        CommonModule,
+        FormsModule,
+        ReactiveFormsModule,
+        MnemonicWordsComponent,
+        VerifyMnemonicComponent
+    ],
+    templateUrl: './create-wallet.component.html',
+    styleUrls: ['./create-wallet.component.scss']
 })
 export class CreateWalletComponent implements OnInit {
   mnemonicLength: number = 12;

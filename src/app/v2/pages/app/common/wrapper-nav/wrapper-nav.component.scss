@@ -1,0 +1,32 @@
+.nav-holder {
+  position: relative;
+
+  &__selected-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 70px;
+    height: 2px;
+    background-color: var(--primary);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+  }
+}
+.nav-item {
+  // position: relative;
+  color: var(--gray-45);
+  transition: color 0.3s;
+  &:hover {
+    color: var(--primary);
+  }
+  &.active {
+    color: var(--primary);
+  }
+}
+
+.icon svg {
+  width: 24px;
+  height: 24px;
+  display: inline-block;
+  vertical-align: middle;
+}

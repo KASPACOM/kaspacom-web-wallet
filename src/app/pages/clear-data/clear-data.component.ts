@@ -7,11 +7,10 @@ import { PasswordManagerService } from '../../services/password-manager.service'
 import { LOCAL_STORAGE_KEYS } from '../../config/consts';
 
 @Component({
-  selector: 'app-clear-data',
-  standalone: true,
-  templateUrl: './clear-data.component.html',
-  styleUrls: ['./clear-data.component.scss'],
-  imports: [FormsModule, ReactiveFormsModule, NgIf]
+    selector: 'app-clear-data',
+    templateUrl: './clear-data.component.html',
+    styleUrls: ['./clear-data.component.scss'],
+    imports: [FormsModule, ReactiveFormsModule, NgIf]
 })
 export class ClearDataComponent {
   clearDataForm: FormGroup = this.fb.group({

@@ -1,0 +1,26 @@
+.import-switch {
+  display: flex;
+  justify-content: space-between;
+  border-radius: 32px;
+  background-color: var(--vampire-black);
+  width: 100%;
+  &__item {
+    padding: 12px 18px;
+    border-radius: 32px;
+    cursor: pointer;
+    background-color: var(--vampire-black);
+    border: solid 1px var(--vampire-black);
+    transition:
+      background-color 0.3s,
+      border-color 0.3s;
+    &:hover {
+      border: solid 1px var(--primary);
+    }
+    &--active {
+      //background-color: var(--primary);
+      background-color: var(--gray-10);
+      border: solid 1px var(--primary);
+      color: var(--white);
+    }
+  }
+}

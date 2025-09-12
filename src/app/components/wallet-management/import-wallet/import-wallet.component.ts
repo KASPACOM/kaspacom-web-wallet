@@ -14,16 +14,15 @@ import { MnemonicWordsComponent } from '../../shared/mnemonic-words/mnemonic-wor
 import { DEFAULT_DERIVED_PATH } from '../../../config/consts';
 
 @Component({
-  selector: 'import-wallet',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
-    MnemonicWordsComponent,
-  ],
-  templateUrl: './import-wallet.component.html',
-  styleUrls: ['./import-wallet.component.scss']
+    selector: 'import-wallet',
+    imports: [
+        CommonModule,
+        FormsModule,
+        ReactiveFormsModule,
+        MnemonicWordsComponent,
+    ],
+    templateUrl: './import-wallet.component.html',
+    styleUrls: ['./import-wallet.component.scss']
 })
 export class ImportWalletComponent implements OnInit {
   selectedType: 'privateKey' | 'mnemonic' = 'privateKey';

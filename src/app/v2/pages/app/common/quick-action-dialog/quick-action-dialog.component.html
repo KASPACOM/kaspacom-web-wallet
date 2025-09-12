@@ -1,0 +1,38 @@
+<div
+  class="quick-action-dialog-overlay"
+  (click)="onBackdropClick()"
+>
+  <div
+    class="quick-action-dialog-content"
+    [@slideUp]="isOpen ? 'open' : 'closed'"
+    (@slideUp.start)="onAnimationStart()"
+    (@slideUp.done)="onAnimationDone()"
+    (click)="$event.stopPropagation()"
+  >
+    @if (title || isCloseable) {
+      <div class="quick-action-dialog-header">
+        @if (title) {
+          <h2 class="quick-action-dialog-title typo-title-4">{{ title }}</h2>
+        }
+        @if (isCloseable) {
+          <kc-icon
+            class="quick-action-dialog-close"
+            [iconClass]="'icon-close'"
+            [size]="'md'"
+            (click)="onClose()"
+          ></kc-icon>
+        }
+      </div>
+    }
+
+        <div class="quick-action-dialog-body">
+      <div class="dialog-content">
+        <ng-content select="[slot=content]"></ng-content>
+      </div>
+      
+      <div class="dialog-footer">
+        <ng-content select="[slot=footer]"></ng-content>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,290 @@
+.page-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  position: relative;
+  height: 100%;
+  padding-top: 0; // Remove padding since we have custom header
+}
+
+.custom-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0 24px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 24px;
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .wallet-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--white);
+    }
+
+    .pencil-icon {
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      ::ng-deep .icon {
+        color: var(--gray-60) !important;
+      }
+
+      &:hover {
+        ::ng-deep .icon {
+          color: white !important;
+        }
+      }
+    }
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    .more-options-icon {
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      ::ng-deep .icon {
+        color: var(--gray-60) !important;
+      }
+
+      &:hover {
+        ::ng-deep .icon {
+          color: white !important;
+        }
+      }
+    }
+
+    .close-icon {
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      ::ng-deep .icon {
+        color: var(--gray-60) !important;
+      }
+
+      &:hover {
+        ::ng-deep .icon {
+          color: white !important;
+        }
+      }
+    }
+  }
+}
+
+.header-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px 0 16px;
+}
+
+.wallets-container {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0; // Ensure proper flex shrinking
+  padding-bottom: 80px; // Add padding to prevent content from being hidden behind orb
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+}
+
+.wallets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.floating-orb {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--gradient-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+
+  &:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2), 0 3px 6px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  ::ng-deep .icon {
+    color: var(--black) !important;
+  }
+}
+
+.wallet-item {
+  background: rgba(white, 0.04);
+  backdrop-filter: blur(4px);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+
+  &:hover {
+    background: rgba(white, 0.065);
+
+    .wallet-item__pencil {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .wallet-item__trash {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+
+  &.selected {
+    position: relative;
+    border: 1px solid transparent;
+    background: rgba(#6FC7BA, 0.1);
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      padding: 1px;
+      background: var(--gradient-1);
+      border-radius: inherit;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: xor;
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      pointer-events: none;
+    }
+
+    .wallet-item__icon {
+      ::ng-deep .icon {
+        color: var(--white) !important;
+      }
+    }
+  }
+
+  &__icon {
+    ::ng-deep .icon {
+      color: var(--text-base-0) !important;
+    }
+  }
+
+  &__info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__name-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__name {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--white);
+  }
+
+  &__pencil {
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    cursor: pointer;
+
+    ::ng-deep .icon {
+      color: var(--gray-60) !important;
+    }
+
+    &:hover {
+      ::ng-deep .icon {
+        color: white !important;
+      }
+    }
+
+    // Always visible on mobile
+    @media (max-width: 768px) {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+
+  &__address {
+    font-size: 13px;
+    color: var(--gray-60);
+    font-family: monospace;
+  }
+
+  &__balance {
+    font-size: 14px;
+    color: var(--gray-80);
+    margin-top: 4px;
+  }
+
+  &__trash {
+    opacity: 0;
+    visibility: hidden;
+    background: transparent;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    margin-left: auto;
+
+    ::ng-deep .icon {
+      color: var(--red-20) !important;
+    }
+
+    &:hover {
+      ::ng-deep .icon {
+        color: var(--red-10) !important;
+      }
+    }
+
+    // Always visible on mobile
+    @media (max-width: 768px) {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+}

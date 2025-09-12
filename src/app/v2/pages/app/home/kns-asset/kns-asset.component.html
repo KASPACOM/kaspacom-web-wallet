@@ -1,0 +1,141 @@
+<div class="kns-page-container flex column full-width gap-8" [class.loading]="loading() || detailLoading()">
+  <!-- Header with back button and name -->
+  <div class="asset-header flex align-items-center justify-content-between mb-24">
+    <div class="header-left flex align-items-center gap-16">
+      <kc-icon 
+        [iconClass]="'icon-arrow-left'"
+        [size]="'md'"
+        (click)="goBack()"
+        class="cursor-pointer hover-opacity">
+      </kc-icon>
+      <h1 class="asset-title text-gray-90">{{ getDisplayName() }}</h1>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="action-buttons flex gap-12 mb-24">
+    <kc-button 
+      [variant]="'primary'"
+      [size]="'md'"
+      [text]="'Send'"
+      class="flex-1"
+      (click)="onSendAction()">
+    </kc-button>
+  </div>
+
+  <!-- Domain Details -->
+  <div class="kns-details">
+    @if (detailLoading()) {
+      <!-- Details skeleton -->
+      <div class="detail-section mb-24">
+        <app-skeleton [height]="'24px'" [width]="'120px'" class="mb-16"></app-skeleton>
+        <div class="details-grid gap-12">
+          @for (item of [1,2,3,4,5,6]; track item) {
+            <app-skeleton [height]="'60px'" [width]="'100%'"></app-skeleton>
+          }
+        </div>
+      </div>
+    } @else {
+      <!-- Domain Details Section -->
+      <div class="details-section flex column gap-16">
+        <h3 class="section-title text-gray-90">Domain Details</h3>
+        
+        <div class="details-grid">
+          <!-- Asset Name -->
+          <div class="detail-card">
+            <div class="detail-label text-gray-60 typo-text-1">Asset Name</div>
+            <div class="detail-value text-gray-90 typo-text-2 font-weight-medium">{{ knsDetail()?.asset || 'N/A' }}</div>
+          </div>
+
+          <!-- Domain Type -->
+          <div class="detail-card">
+            <div class="detail-label text-gray-60 typo-text-1">Type</div>
+            <div class="detail-value text-gray-90 typo-text-2 font-weight-medium">{{ getDomainTypeLabel() }}</div>
+          </div>
+
+          <!-- Status -->
+          <div class="detail-card">
+            <div class="detail-label text-gray-60 typo-text-1">Status</div>
+            <div class="detail-value flex align-items-center gap-8">
+              <span class="text-gray-90 typo-text-2 font-weight-medium">{{ getStatus() }}</span>
+              @if (isVerified()) {
+                <span class="verified-badge">✓ Verified</span>
+              }
+            </div>
+          </div>
+
+          <!-- Owner Address -->
+          <div class="detail-card">
+            <div class="detail-label text-gray-60 typo-text-1">Owner</div>
+            <div class="detail-value-container flex align-items-center gap-12">
+              <div class="detail-value text-gray-90 typo-text-1 font-mono break-all">
+                {{ getOwnerAddress() }}
+              </div>
+              @if (getOwnerAddress() !== 'N/A') {
+                <app-copy-button
+                  [value]="getOwnerAddress()"
+                  [size]="'xs'"
+                ></app-copy-button>
+              }
+            </div>
+          </div>
+
+          <!-- Transaction ID -->
+          <div class="detail-card">
+            <div class="detail-label text-gray-60 typo-text-1">Transaction ID</div>
+            <div class="detail-value-container flex align-items-center gap-12">
+              <div class="detail-value text-gray-90 typo-text-1 font-mono break-all">
+                {{ getTransactionId() }}
+              </div>
+              @if (getTransactionId() !== 'N/A') {
+                <app-copy-button
+                  [value]="getTransactionId()"
+                  [size]="'xs'"
+                ></app-copy-button>
+                <kc-icon
+                  [iconClass]="'icon-link'"
+                  [size]="'xs'"
+                  [color]="'var(--gray-60)'"
+                  class="cursor-pointer hover-opacity"
+                  (click)="openInExplorer()"
+                ></kc-icon>
+              }
+            </div>
+          </div>
+
+          <!-- Creation Date -->
+          <div class="detail-card">
+            <div class="detail-label text-gray-60 typo-text-1">Created</div>
+            <div class="detail-value text-gray-90 typo-text-2 font-weight-medium">
+              {{ formatDate(knsDetail()?.creationBlockTime) }}
+            </div>
+          </div>
+
+          <!-- MIME Type -->
+          <div class="detail-card">
+            <div class="detail-label text-gray-60 typo-text-1">MIME Type</div>
+            <div class="detail-value text-gray-90 typo-text-2 font-weight-medium font-mono">
+              {{ getMimeType() }}
+            </div>
+          </div>
+
+          <!-- Asset ID -->
+          <div class="detail-card">
+            <div class="detail-label text-gray-60 typo-text-1">Asset ID</div>
+            <div class="detail-value-container flex align-items-center gap-12">
+              <div class="detail-value text-gray-90 typo-text-1 font-mono break-all">
+                {{ knsDetail()?.assetId || 'N/A' }}
+              </div>
+              @if (knsDetail()?.assetId) {
+                <app-copy-button
+                  [value]="knsDetail()!.assetId"
+                  [size]="'xs'"
+                ></app-copy-button>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div> 

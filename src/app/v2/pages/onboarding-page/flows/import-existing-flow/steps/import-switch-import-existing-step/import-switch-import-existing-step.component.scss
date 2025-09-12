@@ -1,0 +1,16 @@
+@use "../../../../../../../../styles/responsive.scss" as *;
+
+.seed-container {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: 16px;
+  &__word {
+    overflow: hidden;
+    min-width: 0 !important;
+    flex: 0 0 calc(25% - 12px);
+    @include mobile {
+      flex: 0 0 calc(50% - 8px);
+    }
+  }
+}

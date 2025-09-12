@@ -6,6 +6,7 @@ import {
   Output,
   SimpleChanges,
 } from '@angular/core';
+import { trigger, state, style, transition, animate } from '@angular/animations';
 import {
   CommonModule,
   JsonPipe,
@@ -21,6 +22,8 @@ import { AppWallet } from '../../../classes/AppWallet';
 import { IFeeEstimate } from '../../../../../public/kaspa/kaspa';
 import { FormsModule } from '@angular/forms';
 import { Krc20OperationDataService } from '../../../services/protocols/krc20/krc20-operation-data.service';
+import { KcIconComponent, KcInputComponent } from '@kaspacom/ui';
+import { TokenLogoComponent } from '../../../v2/pages/app/common/krc20/token-logo/token-logo.component';
 
 type BucketFeeRate = {
   priorityFee: bigint;
@@ -30,20 +33,39 @@ type BucketFeeRate = {
 type AvailableOption = 'low' | 'normal' | 'priority' | 'custom';
 
 @Component({
-  selector: 'priority-fee-selection',
-  standalone: true,
-  templateUrl: './priority-fee-selection.component.html',
-  styleUrls: ['./priority-fee-selection.component.scss'],
-  imports: [
-    NgIf,
-    NgFor,
-    SompiToNumberPipe,
-    CompletedActionReview,
-    JsonPipe,
-    FormsModule,
-    TitleCasePipe,
-    CommonModule,
-  ],
+    selector: 'priority-fee-selection',
+    templateUrl: './priority-fee-selection.component.html',
+    styleUrls: ['./priority-fee-selection.component.scss'],
+    imports: [
+        NgIf,
+        NgFor,
+        SompiToNumberPipe,
+        FormsModule,
+        TitleCasePipe,
+        CommonModule,
+        KcIconComponent,
+        KcInputComponent,
+    ],
+    animations: [
+        trigger('slideDown', [
+            state('closed', style({
+                height: '0px',
+                opacity: 0,
+                overflow: 'hidden'
+            })),
+            state('open', style({
+                height: '*',
+                opacity: 1,
+                overflow: 'visible'
+            })),
+            transition('closed => open', [
+                animate('400ms ease-out')
+            ]),
+            transition('open => closed', [
+                animate('300ms ease-in')
+            ])
+        ])
+    ]
 })
 export class PriorityFeeSelectionComponent implements OnChanges {
   @Input() action!: WalletAction;
@@ -71,6 +93,41 @@ export class PriorityFeeSelectionComponent implements OnChanges {
     protected krc20OperationsDataService: Krc20OperationDataService,
   ) { }
 
+  // Methods to determine transaction type and asset info
+  getTransactionAssetInfo(): { type: 'kaspa' | 'krc20' | 'krc721' | 'kns', ticker?: string, imageUrl?: string } {
+    if (this.action.type === WalletActionType.TRANSFER_KAS) {
+      return { type: 'kaspa' };
+    }
+
+    if (this.action.type === WalletActionType.COMMIT_REVEAL) {
+      try {
+        const actionScript = this.action.data.actionScript?.stringifyAction;
+        if (actionScript) {
+          const parsed = JSON.parse(actionScript);
+          if (parsed.p === 'krc-20') {
+            return { type: 'krc20', ticker: parsed.tick || 'TOKEN' };
+          }
+          if (parsed.p === 'krc-721') {
+            return { type: 'krc721', imageUrl: parsed.image };
+          }
+          if (parsed.p === 'kns') {
+            return { type: 'kns' };
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to parse action script:', error);
+      }
+    }
+
+    // Default to kaspa for other transaction types
+    return { type: 'kaspa' };
+  }
+
+  shouldShowAssetIcon(): boolean {
+    const assetInfo = this.getTransactionAssetInfo();
+    return assetInfo.type !== 'kns'; // Show icons for all except KNS
+  }
+
   async ngOnChanges(changes: SimpleChanges): Promise<void> {
     this.totalTransactionsMass = undefined;
     this.feeSelected(undefined);
@@ -95,7 +152,8 @@ export class PriorityFeeSelectionComponent implements OnChanges {
 
     this.transactionMass = BigInt(maxTransactionMass);
 
-    this.showPriorityFeeSelection = this.currentFeeRates?.lowBuckets[0].feerate != this.currentFeeRates?.priorityBucket.feerate
+    // Always start with spoiler closed - users can click to expand
+    this.showPriorityFeeSelection = false;
 
     this.currentOptions = {
       low: {
@@ -173,5 +231,9 @@ export class PriorityFeeSelectionComponent implements OnChanges {
     }
 
     return 0n;
+  }
+
+  toggleFeeSelection() {
+    this.showPriorityFeeSelection = !this.showPriorityFeeSelection;
   }
 }

@@ -4,15 +4,14 @@ import { UtilsHelper } from '../../../services/utils.service';
 import { FormsModule } from '@angular/forms';
 import { WalletActionService } from '../../../services/wallet-action.service';
 import { Krc20WalletActionService } from '../../../services/protocols/krc20/krc20-wallet-actions.service';
-import { ERROR_CODES, ERROR_CODES_MESSAGES } from 'kaspacom-wallet-messages';
+import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { MessagePopupService } from '../../../services/message-popup.service';
 
 @Component({
-  selector: 'mint',
-  standalone: true,
-  templateUrl: './mint.component.html',
-  styleUrls: ['./mint.component.scss'],
-  imports: [NgIf, NgFor, FormsModule],
+    selector: 'mint',
+    templateUrl: './mint.component.html',
+    styleUrls: ['./mint.component.scss'],
+    imports: [NgIf, NgFor, FormsModule]
 })
 export class MintComponent {
   protected selectedToken = '';

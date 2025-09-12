@@ -1,0 +1,232 @@
+.success-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  color: var(--text-primary, #ffffff);
+  font-family: 'Poppins', 'Roboto', sans-serif;
+  padding: 32px 20px 20px 20px;
+  // Remove overflow-y: auto to prevent double scroll
+  // Let the parent flow-page-body handle all scrolling
+  position: relative; // Ensure proper positioning context for any absolutely positioned children
+}
+
+// Success Header
+.success-header {
+  text-align: center;
+  margin-bottom: 32px;
+  animation: fadeInUp 0.6s ease-out;
+  
+  // Apply gradient text to the success title
+  .success-title {
+    background: var(--gradient-1);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    display: inline-block;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+}
+
+.success-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+  .success-icon {
+    width: 334px;
+    height: 226px;
+    filter: drop-shadow(0 4px 12px rgba(95, 213, 207, 0.3));
+  }
+}
+
+// Details Spoiler Container
+.details-spoiler-container {
+  width: 100%;
+  margin-bottom: 32px;
+  animation: fadeInUp 0.6s ease-out 0.2s both;
+}
+
+// Details Toggle Header (Spoiler)
+.details-spoiler-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: transparent;
+  border: 1px solid rgba(111, 199, 186, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: rgba(111, 199, 186, 0.3);
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.spoiler-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  
+  .spoiler-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary, #a0a0a0);
+    font-weight: 500;
+  }
+}
+
+.spoiler-chevron {
+  display: flex;
+  align-items: center;
+  transition: transform 0.3s ease;
+  
+  kc-icon {
+    transition: transform 0.3s ease;
+  }
+}
+
+// Details Content (Collapsible)
+.details-content {
+  // Angular animations handle the open/close states
+}
+
+.details-inner {
+  padding: 20px 16px 16px 16px;
+  border-left: 1px solid rgba(111, 199, 186, 0.2);
+  border-right: 1px solid rgba(111, 199, 186, 0.2);
+  border-bottom: 1px solid rgba(111, 199, 186, 0.2);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  margin-top: -1px; // Connect with toggle border
+  background: transparent;
+}
+
+.details-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  color: #6fc7ba; // Primary teal color
+  text-align: center;
+}
+
+.details-grid {
+  border-radius: 8px;
+  border: 1px solid rgba(111, 199, 186, 0.2);
+  overflow: hidden;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(111, 199, 186, 0.1);
+  gap: 16px;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  .detail-label {
+    font-weight: 500;
+    color: var(--text-secondary, #a0a0a0);
+    font-size: 0.85rem;
+    min-width: 100px;
+    flex-shrink: 0;
+    text-transform: capitalize;
+  }
+
+  .detail-value {
+    color: var(--text-primary, #ffffff);
+    font-family: 'SF Mono', 'Monaco', monospace;
+    font-size: 0.85rem;
+    text-align: right;
+    flex: 1;
+    word-break: break-all;
+    line-height: 1.4;
+  }
+}
+
+// Action Button
+.action-button {
+  flex-shrink: 0;
+  animation: fadeInUp 0.6s ease-out 0.4s both;
+}
+
+// Animations
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Responsive Design
+@media (max-width: 480px) {
+  .success-container {
+    padding: 24px 16px 16px 16px;
+  }
+
+  .success-header .success-title {
+    font-size: 24px; // Smaller on mobile but still prominent
+    font-weight: 700;
+  }
+
+  .success-icon-wrapper .success-icon {
+    width: 250px;
+    height: 169px;
+  }
+
+  .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+
+    .detail-label {
+      min-width: unset;
+    }
+
+    .detail-value {
+      text-align: left;
+      width: 100%;
+    }
+  }
+
+  .spoiler-left {
+    gap: 8px;
+  }
+
+  .details-spoiler-toggle {
+    padding: 14px;
+  }
+
+  .details-inner {
+    padding: 16px 12px 12px 12px;
+  }
+}
+
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  .details-grid {
+    border-color: #6fc7ba;
+  }
+  
+  .detail-item {
+    border-bottom-color: rgba(111, 199, 186, 0.3);
+  }
+  
+  .details-spoiler-toggle {
+    border-color: #6fc7ba;
+  }
+} 

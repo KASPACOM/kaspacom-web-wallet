@@ -1,0 +1,33 @@
+<div class="flex column gap-16 align-items-center full-width">
+  <app-step-indicator
+    [currentStep]="currentIndex()"
+    [maxSteps]="stepOrder.length"
+  ></app-step-indicator>
+
+  @switch (importStep()) {
+    @case (ImportExistingStep.IMPORT_SWTICH) {
+      <div class="full-width" [@stepAnimation]="slideDirection()">
+        <app-import-switch-import-existing-step
+          (next)="next()"
+          (previous)="previous()"
+        ></app-import-switch-import-existing-step>
+      </div>
+    }
+    @case (ImportExistingStep.CREATE_PIN) {
+      <div class="full-width" [@stepAnimation]="slideDirection()">
+        <app-create-pin-import-existing-step
+          (next)="next()"
+          (previous)="previous()"
+        ></app-create-pin-import-existing-step>
+      </div>
+    }
+    @case (ImportExistingStep.SUCCESS) {
+      <div class="full-width" [@stepAnimation]="slideDirection()">
+        <app-success-import-existing-step
+          (next)="next()"
+          (previous)="previous()"
+        ></app-success-import-existing-step>
+      </div>
+    }
+  }
+</div>

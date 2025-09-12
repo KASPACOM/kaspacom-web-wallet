@@ -33,14 +33,13 @@ import { UtilsHelper } from '../utils.service';
 import { TotalBalanceWithUtxosInterface } from '../../types/kaspa-network/total-balance-with-utxos.interface';
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
-import { ERROR_CODES, KasTransactionParams, ProtocolScriptDataAndAddress } from 'kaspacom-wallet-messages';
+import { ERROR_CODES, KasTransactionParams, ProtocolScriptDataAndAddress, ProtocolType } from '@kaspacom/wallet-messages';
 import {
   MAX_TRANSACTION_FEE,
   MINIMAL_AMOUNT_TO_SEND,
 } from './kaspa-network-actions.service';
 import { AppWallet } from '../../classes/AppWallet';
 import { CommitRevealActionTransactions } from '../../types/kaspa-network/commit-reveal-action-transactions.interface';
-import { ProtocolType } from 'kaspacom-wallet-messages/dist/types/protocol-type.enum';
 import { MempoolTransactionManager } from '../../classes/MempoolTransactionManager';
 import { keccak256, TransactionRequest } from 'ethers';
 import { EtherService } from '../etherium-services/ether.service';
@@ -325,6 +324,16 @@ export class KaspaNetworkTransactionsManagerService {
     baseTransactionAmount = SUBMIT_REVEAL_MIN_UTXO_AMOUNT,
     transactionOptions: DoTransactionOptions = {}
   ) {
+    // Ensure wallet has utxo processor manager initialized
+    const utxoProcessorManager = wallet.getUtxoProcessorManager();
+    if (!utxoProcessorManager) {
+      console.error('UtxoProcessorManager is not initialized for wallet');
+      return {
+        success: false,
+        errorCode: 500, // Internal server error
+      };
+    }
+
     const outputs = [
       {
         address: operationScript.scriptAddress,
@@ -333,7 +342,7 @@ export class KaspaNetworkTransactionsManagerService {
     ];
 
     return await this.doTransactionWithUtxoProcessor(
-      wallet.getUtxoProcessorManager()!,
+      utxoProcessorManager,
       wallet.getPrivateKey(),
       maxPriorityFee,
       outputs,
@@ -372,6 +381,7 @@ export class KaspaNetworkTransactionsManagerService {
 
     if (!entry) {
       // not support to happen
+      console.log(entry, )
       throw new Error(
         `Commit UTXO not found, revealTransactionId: ${commitUtxoTransactionId}, scriptAddress: ${operationScript.scriptAddress
         }, wallet address: ${wallet.getAddress()}`
@@ -415,8 +425,18 @@ export class KaspaNetworkTransactionsManagerService {
 
 
 
+    // Ensure wallet has utxo processor manager initialized
+    const utxoProcessorManager = wallet.getUtxoProcessorManager();
+    if (!utxoProcessorManager) {
+      console.error('UtxoProcessorManager is not initialized for wallet');
+      return {
+        success: false,
+        errorCode: 500, // Internal server error
+      };
+    }
+
     return await this.doTransactionWithUtxoProcessor(
-      wallet.getUtxoProcessorManager()!,
+      utxoProcessorManager,
       wallet.getPrivateKey(),
       maxPriorityFee,
       outputs,
@@ -454,7 +474,7 @@ export class KaspaNetworkTransactionsManagerService {
     }
 
     const l2Transaction = await this.etherService.createTransactionAndPopulate(transactionOptions, l2Wallet);
-    
+
 
     const signedTransactionString = await this.etherService.signTransaction(l2Transaction, l2Wallet);
     const signedTransactionHash = keccak256(signedTransactionString);
@@ -481,8 +501,18 @@ export class KaspaNetworkTransactionsManagerService {
       amount: output.amount,
     })) || [];
 
+    // Ensure wallet has utxo processor manager initialized
+    const utxoProcessorManager = wallet.getUtxoProcessorManager();
+    if (!utxoProcessorManager) {
+      console.error('UtxoProcessorManager is not initialized for wallet');
+      return {
+        success: false,
+        errorCode: 500, // Internal server error
+      };
+    }
+
     const result = await this.doTransactionWithUtxoProcessor(
-      wallet.getUtxoProcessorManager()!,
+      utxoProcessorManager,
       wallet.getPrivateKey(),
       priorityFee,
       payments,
@@ -519,8 +549,18 @@ export class KaspaNetworkTransactionsManagerService {
     errorCode?: number;
     result?: ICreateTransactions;
   }> {
+    // Ensure wallet has utxo processor manager initialized
+    const utxoProcessorManager = wallet.getUtxoProcessorManager();
+    if (!utxoProcessorManager) {
+      console.error('UtxoProcessorManager is not initialized for wallet');
+      return {
+        success: false,
+        errorCode: 500, // Internal server error
+      };
+    }
+
     return await this.doTransactionWithUtxoProcessor(
-      wallet.getUtxoProcessorManager()!,
+      utxoProcessorManager,
       wallet.getPrivateKey(),
       priorityFee,
       payments,
@@ -567,8 +607,9 @@ export class KaspaNetworkTransactionsManagerService {
     const commitOptions: DoTransactionOptions = {
       notifyCreatedTransactions: async (transactionId) => {
         resultTransactions.commitTransactionId = transactionId;
-        await notifyUpdate(resultTransactions);
+        await notifyUpdate({...resultTransactions});
       },
+      waitForTransactionToBeConfirmed: true,
       ...(baseTransactionOptions || {}),
       ...(commitTransactionAdditionalOptions || {}),
     };
@@ -578,7 +619,7 @@ export class KaspaNetworkTransactionsManagerService {
     const revealOptions: DoTransactionOptions = {
       notifyCreatedTransactions: async (transactionId) => {
         resultTransactions.revealTransactionId = transactionId;
-        await notifyUpdate(resultTransactions);
+        await notifyUpdate({...resultTransactions});
       },
       additionalProtocolPaymentAmount: minimalOperationCost,
       ...(baseTransactionOptions || {}),

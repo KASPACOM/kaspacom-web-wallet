@@ -1,5 +1,5 @@
-<div class="transaction-review-container">
-  <ng-container *ngIf="currentActionSignal(); else noAction">
+<div class="modal-overlay" *ngIf="currentActionSignal()">
+  <div class="transaction-review-container">
     <div class="transaction-header">
       <h2 *ngIf="isActionHasPriorityFee">Transaction Review</h2>
       <h2 *ngIf="!isActionHasPriorityFee">Action Review</h2>
@@ -30,41 +30,43 @@
     </ng-container>
 
     <ng-template #unknownAction>
-      <div class="unknown-action">
-        <h3>Unknown Transaction</h3>
-        <p>This transaction type is not recognized. Please approve only if you know what you are doing. if not, please
-          contact support.</p>
-      </div>
+      <p>Unknown Action Type ({{ currentActionSignal()?.action?.type }})</p>
     </ng-template>
 
+    <!-- Priority fee -->
     <priority-fee-selection *ngIf="isActionHasPriorityFee && currentActionSignal()"
       [action]="currentActionSignal()!.action" [wallet]="wallet"
       (priorityFeeSelected)="setCurrentPriorityFee($event)"></priority-fee-selection>
 
+    <!-- Actions buttons -->
     <div class="transaction-actions">
       <button class="accept-btn" (click)="acceptTransaction()" [disabled]="!isAvailableForApproval()">Accept</button>
       <button class="reject-btn" (click)="rejectTransaction()">Reject</button>
     </div>
+  </div>
+</div>
+
+<!-- Progress and result handling - shown without modal overlay -->
+<ng-container *ngIf="!currentActionSignal()">
+  <ng-container *ngIf="currentProgressSignal() !== undefined || actionResultSignal(); else noActionToShow">
+    <div class="modal-overlay">
+      <div class="transaction-review-container">
+        <ng-container *ngIf="currentProgressSignal() !== undefined">
+          <div class="progress-container">
+            <h3>Processing Action...</h3>
+            <p>{{ currentProgressSignal() }}</p>
+            <div class="progress-bar">
+              <div class="progress-fill"></div>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="actionResultSignal()">
+          <completed-action-review [actionResult]="actionResultSignal()!"></completed-action-review>
+        </ng-container>
+      </div>
+    </div>
   </ng-container>
 
-  <ng-template #noAction>
-    <ng-container *ngIf="currentProgressSignal() !== undefined || actionResultSignal(); else noActionToShow">
-      <ng-container *ngIf="currentProgressSignal() !== undefined">
-        <p *ngIf="!actionResultSignal()">Performing action...</p>
-        <p *ngIf="actionResultSignal()">Action Completed</p>
-        <div class="progress-container">
-          <div class="progress-bar" [style.width.%]="currentProgressSignal()"></div>
-          <div class="progress-label">{{ currentProgressSignal() }}%</div>
-        </div>
-      </ng-container>
-
-      <ng-container *ngIf="actionResultSignal()">
-        <completed-action-review [actionResult]="actionResultSignal()!"></completed-action-review>
-      </ng-container>
-    </ng-container>
-
-    <ng-template #noActionToShow>
-      <p>No action to review.</p>
-    </ng-template>
-  </ng-template>
-</div>
+  <ng-template #noActionToShow></ng-template>
+</ng-container>

@@ -1,0 +1,18 @@
+.copy-button-host {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.copy-button {
+  transition: color 0.2s ease;
+  cursor: pointer;
+  
+  &:hover {
+    color: white !important;
+  }
+}
+
+.cursor-pointer {
+  cursor: pointer;
+} 

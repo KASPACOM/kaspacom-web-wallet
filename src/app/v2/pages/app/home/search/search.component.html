@@ -1,0 +1,13 @@
+@if (suggestions().length) {
+  <div class="flex column gap-8">
+    @for (token of suggestions(); track token.address) {
+      <app-search-token-card [token]="token"></app-search-token-card>
+    }
+  </div>
+} @else {
+  <div
+    class="flex full-width full-height align-items-center justify-content-center text-gray-60"
+  >
+    {{ currentQuery() ? "No results found" : "Search results..." }}
+  </div>
+}

@@ -4,15 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { WalletActionService } from '../../../services/wallet-action.service';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { Krc20WalletActionService } from '../../../services/protocols/krc20/krc20-wallet-actions.service';
-import { ERROR_CODES, ERROR_CODES_MESSAGES } from 'kaspacom-wallet-messages';
+import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { MessagePopupService } from '../../../services/message-popup.service';
 
 @Component({
-  selector: 'deploy',
-  standalone: true,
-  templateUrl: './deploy.component.html',
-  styleUrls: ['./deploy.component.scss'],
-  imports: [NgIf, NgFor, FormsModule],
+    selector: 'deploy',
+    templateUrl: './deploy.component.html',
+    styleUrls: ['./deploy.component.scss'],
+    imports: [NgIf, NgFor, FormsModule]
 })
 export class DeployComponent {
   protected selectedToken = '';

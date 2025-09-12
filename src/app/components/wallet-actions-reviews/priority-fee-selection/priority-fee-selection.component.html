@@ -1,58 +1,134 @@
-<div>
-  <div class="priority-fee-selection" *ngIf="currentOptions && showPriorityFeeSelection; else noShow">
-    <h3>Select Priority Fee</h3>
-    <div class="fee-options">
-      <div *ngFor="let option of currentOptions | keyvalue" class="fee-option"
-        [class.selected]="selectedOption === option.key" (click)="selectOption(option.key)">
-        <div class="title">{{ option.key | titlecase }}</div>
-        <div class="fee">{{ option.value.priorityFee | sompiToNumber }} KAS</div>
-        <div class="seconds">
-          {{ option.value.estimatedSeconds.toFixed(4) }} seconds
-        </div>
+<div class="fee-spoiler-container" *ngIf="currentOptions">
+  <!-- Fee Toggle Header -->
+  <div class="fee-spoiler-toggle" (click)="toggleFeeSelection()">
+    <div class="fee-summary-left">
+      <kc-icon iconClass="icon-chain" size="sm" color="var(--kaspa-20)"></kc-icon>
+      <span class="fee-label">
+        <ng-container *ngIf="totalTransactionsMass && totalTransactionsMass.length > 1">
+          Estimated Total Fees: 
+        </ng-container>
+        <ng-container *ngIf="totalTransactionsMass && totalTransactionsMass.length == 1">
+          Total Fee: 
+        </ng-container>
+      </span>
+      <div class="fee-value">
+        <ng-container *ngIf="totalTransactionsMass && totalTransactionsMass.length > 1">
+          <span>≈{{ getEstimatedTotalFees() | sompiToNumber }}</span>
+          <!-- Always show kaspa icon for fees -->
+          <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+        </ng-container>
+        <ng-container *ngIf="totalTransactionsMass && totalTransactionsMass.length == 1">
+          <ng-container *ngIf="additionalPriorityFee === undefined">
+            <span>Not selected</span>
+          </ng-container>
+          <ng-container *ngIf="additionalPriorityFee !== undefined">
+            <span>{{ (additionalPriorityFee + transactionMass!) | sompiToNumber }}</span>
+            <!-- Always show kaspa icon for fees -->
+            <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+          </ng-container>
+        </ng-container>
       </div>
     </div>
-    <div class="custom-fee" (click)="selectOption('custom')" [class.selected]="selectedOption === 'custom'">
-      <label for="customFee">Custom Fee:</label>
-      <input type="number" id="customFee" [(ngModel)]="customFee" placeholder="Enter custom fee"
-        (change)="selectOption('custom')" />
-    </div>
-
-    <div>Minimum transaction fee: {{ transactionMass! | sompiToNumber }}</div>
-    <div>
-      Additional Priority fee:
-      {{
-      additionalPriorityFee === undefined
-      ? "Not selected"
-      : (additionalPriorityFee | sompiToNumber)
-      }}
-    </div>
-
-    <div *ngIf="totalTransactionsMass && totalTransactionsMass.length == 1">
-      Total Fee that will be payed:
-      {{
-      additionalPriorityFee === undefined
-      ? "Not selected"
-      : (additionalPriorityFee + transactionMass! | sompiToNumber)
-      }}
-    </div>
-
-    <div *ngIf="getAdditionalCommitActionPrice() > 0; n">
-      Protocol Action Fee:
-      {{ getAdditionalCommitActionPrice() | sompiToNumber }}
-    </div>
-
-    <div *ngIf="totalTransactionsMass && totalTransactionsMass.length > 1">
-      <div>Number Of Transactions: {{ totalTransactionsMass!.length }}</div>
-      <div>
-        Estimated Total Fees: ≈{{ getEstimatedTotalFees() | sompiToNumber }}
-      </div>
+    <div class="fee-spoiler-chevron">
+      <kc-icon 
+        [iconClass]="showPriorityFeeSelection ? 'icon-chevron-up' : 'icon-chevron-down'" 
+        size="sm" 
+        color="var(--gray-60)">
+      </kc-icon>
     </div>
   </div>
-  <ng-template #noShow>
-    <p *ngIf="!currentOptions">Loading Priority Fees...</p>
-    <button *ngIf="currentOptions && !showPriorityFeeSelection" class="confirm-selection"
-      (click)="showPriorityFeeSelection = true"> Estimated Total Fees: ≈{{ getEstimatedTotalFees() | sompiToNumber }}
-    </button>
 
-  </ng-template>
+  <!-- Fee Selection Content (Collapsible) -->
+  <div class="fee-selection-content" [@slideDown]="showPriorityFeeSelection ? 'open' : 'closed'">
+    <div class="fee-selection-inner">
+      
+      <!-- Fee Options -->
+      <div class="fee-options-grid">
+        <div *ngFor="let option of currentOptions | keyvalue" 
+             class="fee-option-card"
+             [class.selected]="selectedOption === option.key" 
+             (click)="selectOption(option.key)">
+          <div class="option-title">{{ option.key | titlecase }}</div>
+          <div class="option-fee">
+            <span>{{ option.value.priorityFee | sompiToNumber }}</span>
+            <!-- Always show kaspa icon for fees -->
+            <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+          </div>
+          <div class="option-time">~{{ option.value.estimatedSeconds.toFixed(1) }}s</div>
+        </div>
+      </div>
+
+      <!-- Custom Fee -->
+      <div class="custom-fee-section">
+        <div class="custom-fee-card" 
+             [class.selected]="selectedOption === 'custom'" 
+             (click)="selectOption('custom')">
+          <div class="custom-fee-header">
+            <span class="custom-fee-title">Custom Fee</span>
+          </div>
+          <div class="custom-fee-input">
+            <kc-input 
+              type="number"
+              placeholder="Enter amount"
+              [(ngModel)]="customFee"
+              (valueChange)="selectOption('custom')">
+              <div rightSideSlot class="input-icon">
+                <!-- Always show kaspa icon for fees -->
+                <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+              </div>
+            </kc-input>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fee Details -->
+      <div class="fee-details-section">
+        <div class="fee-detail-row">
+          <span class="detail-label">Minimum transaction fee:</span>
+          <div class="detail-value">
+            <span>{{ transactionMass! | sompiToNumber }}</span>
+            <!-- Always show kaspa icon for fees -->
+            <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+          </div>
+        </div>
+        
+        <div class="fee-detail-row">
+          <span class="detail-label">Additional Priority fee:</span>
+          <div class="detail-value">
+            <ng-container *ngIf="additionalPriorityFee === undefined">
+              <span>Not selected</span>
+            </ng-container>
+            <ng-container *ngIf="additionalPriorityFee !== undefined">
+              <span>{{ additionalPriorityFee | sompiToNumber }}</span>
+              <!-- Always show kaspa icon for fees -->
+              <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+            </ng-container>
+          </div>
+        </div>
+
+        <div *ngIf="getAdditionalCommitActionPrice() > 0" class="fee-detail-row">
+          <span class="detail-label">Protocol Action Fee:</span>
+          <div class="detail-value">
+            <span>{{ getAdditionalCommitActionPrice() | sompiToNumber }}</span>
+            <!-- Always show kaspa icon for fees -->
+            <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+          </div>
+        </div>
+
+        <div *ngIf="totalTransactionsMass && totalTransactionsMass.length > 1" class="fee-detail-row">
+          <span class="detail-label">Number Of Transactions:</span>
+          <div class="detail-value">
+            <span>{{ totalTransactionsMass!.length }}</span>
+            <!-- No icon needed for transaction count -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Loading State -->
+<div *ngIf="!currentOptions" class="fee-loading">
+  <p>Loading Priority Fees...</p>
 </div>

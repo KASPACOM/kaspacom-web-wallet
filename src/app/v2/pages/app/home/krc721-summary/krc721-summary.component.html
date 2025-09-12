@@ -1,0 +1,100 @@
+<div
+  class="krc721-summary-container flex column justify-content-center align-items-center full-width gap-16"
+  appInfiniteScroll
+  [scrollThreshold]="70"
+  (scrolled)="onScrolled($event)"
+  (thresholdReached)="onThresholdReached()"
+>
+  @if (loading()) {
+    <div class="skeleton-loading-container flex column gap-16 full-width">
+      @for (item of [1,2,3]; track item) {
+        <div class="krc721-summary-container__card card-0 flex full-width align-items-center justify-content-between p-16">
+          <div class="krc721-summary-container__nft-info flex align-items-center gap-16">
+            <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false"></app-skeleton>
+            <div class="flex column gap-4">
+              <app-skeleton [height]="'20px'" [width]="'120px'" [fullRound]="false"></app-skeleton>
+              <app-skeleton [height]="'16px'" [width]="'80px'" [fullRound]="false"></app-skeleton>
+            </div>
+          </div>
+          <div class="krc721-summary-container__attributes">
+            <app-skeleton [height]="'16px'" [width]="'60px'" [fullRound]="false"></app-skeleton>
+          </div>
+        </div>
+      }
+    </div>
+  } @else if (nfts().length === 0) {
+    <div class="text-gray-60 p-16">No KRC721 NFTs found</div>
+  } @else {
+    @for ( nft of nfts(); track trackByNft($index, nft) ) {
+    <div
+      class="krc721-summary-container__card card-0 card-hover flex full-width align-items-center justify-content-between p-16 fade-in cursor-pointer"
+      (click)="onNftClick(nft)"
+    >
+      <div
+        class="krc721-summary-container__nft-info flex align-items-center gap-16"
+      >
+        <div class="krc721-summary-container__image-container">
+          @if (nft.isLoadingMetadata) {
+            <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false"></app-skeleton>
+          } @else if (getImageUrl(nft)) {
+            <img 
+              [src]="getImageUrl(nft)" 
+              [alt]="getDisplayName(nft)"
+              class="krc721-summary-container__image"
+              (error)="onImageError($event)">
+          } @else {
+            <div
+              class="krc721-summary-container__placeholder flex align-items-center justify-content-center"
+            >
+              <span class="text-gray-60 typo-text-1">NFT</span>
+            </div>
+          }
+        </div>
+        <div class="flex column gap-4">
+          @if (nft.isLoadingMetadata) {
+            <app-skeleton [height]="'20px'" [width]="'120px'" [fullRound]="false"></app-skeleton>
+            <app-skeleton [height]="'16px'" [width]="'80px'" [fullRound]="false"></app-skeleton>
+          } @else {
+            <div class="text-gray-90">{{ getDisplayName(nft) | titlecase }}</div>
+            <div class="text-gray-60 typo-text-1">
+              {{ nft.tick | uppercase }} #{{ nft.tokenId }}
+            </div>
+            @if (nft.description) {
+              <div class="text-gray-50 typo-text-1 description">
+                {{ nft.description }}
+              </div>
+            }
+          }
+        </div>
+      </div>
+      <div class="krc721-summary-container__attributes flex column align-items-end">
+        @if (nft.isLoadingMetadata) {
+          <app-skeleton [height]="'16px'" [width]="'60px'" [fullRound]="false"></app-skeleton>
+        } @else if (nft.attributes && nft.attributes.length > 0) {
+          <div class="text-gray-90 typo-text-1">
+            {{ nft.attributes.length }} traits
+          </div>
+        } @else {
+          <div class="text-gray-60 typo-text-1">No traits</div>
+        }
+      </div>
+    </div>
+    }
+    
+    @if (isLoadingMore()) {
+      <div class="loading-more-container flex justify-content-center p-16 full-width">
+        <div class="krc721-summary-container__card card-0 flex full-width align-items-center justify-content-between p-16">
+          <div class="krc721-summary-container__nft-info flex align-items-center gap-16">
+            <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false"></app-skeleton>
+            <div class="flex column gap-4">
+              <app-skeleton [height]="'20px'" [width]="'120px'" [fullRound]="false"></app-skeleton>
+              <app-skeleton [height]="'16px'" [width]="'80px'" [fullRound]="false"></app-skeleton>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+    
+
+  }
+</div> 

@@ -1,0 +1,110 @@
+.send-nft-list-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.nft-tokens-container {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+}
+
+// Add missing styles for nft-list-card to match homepage styling
+.nft-list-card {
+  border: none;
+  cursor: pointer;
+}
+
+.nft-card {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  
+  &__image {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.05);
+    
+    .nft-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    
+    .nft-placeholder {
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+    }
+  }
+  
+  &__info {
+    flex: 1;
+  }
+  
+  &__attributes {
+    // Additional styling for attributes container if needed
+  }
+}
+
+.nft-description {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty-state {
+  flex: 1;
+  min-height: 200px;
+}
+
+// Ensure loading more and completion messages are properly centered
+.loading-more-container {
+  width: 100%;
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

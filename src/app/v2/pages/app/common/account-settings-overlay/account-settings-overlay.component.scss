@@ -1,0 +1,170 @@
+.account-settings-overlay {
+  position: absolute;
+  top: 76px; // Start after header (20px padding + content + 20px padding)
+  left: 0;
+  right: 0;
+  bottom: 0;
+  backdrop-filter: blur(6px);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 300ms ease;
+  
+  &.open {
+    pointer-events: all;
+    opacity: 1;
+  }
+}
+
+.account-settings-content {
+  background: rgba(7, 9, 10, 0.95); // Semi-transparent vampire black
+  backdrop-filter: blur(8px);
+  border-radius: 0 0 12px 12px;
+  padding: 16px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; // Allow content to shrink properly
+  flex: 1; // Take available space
+  overflow: hidden;
+  transform: translateZ(0); // Force hardware acceleration
+  will-change: transform, opacity; // Optimize for animation
+  
+  // Add media query for mobile
+  @media (max-width: 480px) {
+    max-width: 100%;
+    border-radius: 0;
+  }
+}
+
+.account-settings-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: var(--white);
+}
+
+.wallets-container {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 16px;
+  min-height: 0; // Ensure proper flex shrinking
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+}
+
+.wallets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wallet-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  
+  &.selected {
+    position: relative;
+    border: 1px solid transparent;
+    background: rgba(111, 199, 186, 0.1);
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      padding: 1px;
+      background: var(--gradient-2);
+      border-radius: inherit;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: xor;
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      pointer-events: none;
+    }
+  }
+  
+  &__info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  &__name {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--white);
+  }
+  
+  &__address {
+    font-size: 13px;
+    color: var(--gray-60);
+    font-family: monospace;
+  }
+  
+  &__balance {
+    font-size: 14px;
+    color: var(--gray-80);
+    margin-top: 4px;
+  }
+  
+  &__delete {
+    background: transparent;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    color: var(--gray-60);
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    
+    &:hover {
+      color: var(--red-20);
+      
+      ::ng-deep {
+        .icon {
+          color: var(--red-20);
+        }
+      }
+    }
+  }
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  bottom: 0;
+  background: rgba(7, 9, 10, 0.95); // Match content background
+  backdrop-filter: blur(8px);
+} 

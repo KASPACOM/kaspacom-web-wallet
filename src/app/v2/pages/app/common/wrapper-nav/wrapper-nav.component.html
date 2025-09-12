@@ -1,0 +1,11 @@
+<div #navHost class="nav-holder flex justify-content-around pb-8 pt-8">
+  <div
+    class="nav-holder nav-holder__selected-indicator"
+    [style.left]="selectedIndicatorOffset()"
+  ></div>
+  @for (item of routes(); track $index) {
+    <a [routerLink]="[item.link]" routerLinkActive="active" class="nav-item">
+      <span class="icon" [innerHTML]="item.svgContent"></span>
+    </a>
+  }
+</div>

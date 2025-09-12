@@ -6,15 +6,14 @@ import { AssetType, TransferableAsset } from '../../../types/transferable-asset'
 import { WalletAction, WalletActionType } from '../../../types/wallet-action';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { WalletActionService } from '../../../services/wallet-action.service';
-import { ERROR_CODES, ERROR_CODES_MESSAGES } from 'kaspacom-wallet-messages';
+import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { MessagePopupService } from '../../../services/message-popup.service';
 
 @Component({
-  selector: 'send-asset',
-  standalone: true,
-  templateUrl: './send-asset.component.html',
-  styleUrls: ['./send-asset.component.scss'],
-  imports: [FormsModule, ReactiveFormsModule, NgIf, NgFor],
+    selector: 'send-asset',
+    templateUrl: './send-asset.component.html',
+    styleUrls: ['./send-asset.component.scss'],
+    imports: [FormsModule, ReactiveFormsModule, NgIf, NgFor]
 })
 export class SendAssetComponent implements OnInit {
   public AssetType = AssetType;

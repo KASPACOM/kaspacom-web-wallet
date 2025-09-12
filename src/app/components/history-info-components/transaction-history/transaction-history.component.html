@@ -17,11 +17,9 @@
         <span class="transaction-id">{{ tx.id }}</span>
       </div>
       <div class="transaction-details">
-        <div class="transaction-confirmation">
-          <strong>Confirmed:</strong>
-          <span class="confirmation-status">{{
-            tx.confirmed ? "Yes" : "No"
-          }}</span>
+        <div class="transaction-confirmation" *ngIf="tx.confirmed">
+          <strong>Status:</strong>
+          <span class="confirmation-status">Accepted</span>
         </div>
         <div class="transaction-time">
           <strong>Time:</strong>

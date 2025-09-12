@@ -1,0 +1,69 @@
+<div class="send-nft-content">
+  <!-- NFT Info Header -->
+  <div class="nft-info-header card-0 align-items-center gap-16 p-16 mb-24">
+    <div class="nft-image-container">
+      @if (loading()) {
+        <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false"></app-skeleton>
+      } @else if (getImageUrl()) {
+        <img 
+          [src]="getImageUrl()" 
+          [alt]="getDisplayName()"
+          class="nft-image"
+          (error)="onImageError($event)">
+      } @else {
+        <div class="nft-placeholder flex align-items-center justify-content-center">
+          <span class="text-gray-60 typo-text-1">NFT</span>
+        </div>
+      }
+    </div>
+    <div class="flex column gap-4">
+      @if (loading()) {
+        <div class="text-gray-60 typo-text-2">Loading...</div>
+      } @else {
+        <div class="text-gray-90 typo-text-2">{{ getDisplayName() }}</div>
+        <div class="text-gray-60 typo-text-1">
+          {{ nft()?.tick }} #{{ nft()?.tokenId }}
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="send-nft-form">
+    <!-- Wallet Address Input -->
+    <div class="form-field">
+      <app-address-smart-input
+        [label]="'Wallet Address'"
+        [placeholder]="'Enter recipient wallet address or KNS domain'"
+        [isFullWidth]="true"
+        [isValid]="isAddressValid"
+        [invalidReason]="addressErrorMessage"
+        [isDisabled]="isLoading"
+        [value]="walletAddress"
+        (valueChange)="onWalletAddressChange($event)"
+        (resolved)="onAddressResolved($event)"
+        (qrClick)="onQrScanClick()">
+      </app-address-smart-input>
+    </div>
+
+    <!-- Replace By Fee Checkbox -->
+    <div class="form-field">
+      <kc-checkbox
+        [label]="'Replace By Fee (RBF)'"
+        [isChecked]="replaceByFee"
+        (checkedChange)="onRbfChange($event)"
+        size="md">
+      </kc-checkbox>
+    </div>
+
+    <!-- Send Button -->
+    <div class="form-field">
+      <kc-button
+        [text]="'Send NFT'"
+        [variant]="'primary'"
+        [isFullWidth]="true"
+        [isDisabled]="!isFormValid"
+        (buttonClick)="onSendClick()">
+      </kc-button>
+    </div>
+  </div>
+</div>

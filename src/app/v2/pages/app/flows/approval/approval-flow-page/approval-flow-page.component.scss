@@ -1,0 +1,329 @@
+// Root container that ensures full height inheritance
+.approval-flow-root {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+// Main container - matches send-kaspa-content pattern
+.approval-flow-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: var(--text-primary, #ffffff);
+  font-family: 'Poppins', 'Roboto', sans-serif;
+  padding: 16px 0;
+}
+
+// Content container - matches send-kaspa-form pattern
+.approval-flow-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 20px;
+
+  // Custom scrollbar
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+}
+
+// Transaction Header (improved with icon)
+.transaction-header {
+  text-align: center;
+  word-break: break-word;
+
+  h2 {
+    margin: 0;
+    font-size: 1.6rem;
+    color: var(--kaspa-20);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--gray-60);
+    font-weight: 400;
+  }
+}
+
+// Action Overview Card
+.action-overview-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--gray-15);
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: var(--gray-20);
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+// Action Header inside card
+.action-header {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--gray-15);
+
+  .action-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+    color: var(--white);
+  }
+
+  .action-subtitle {
+    font-size: 0.9rem;
+    color: var(--gray-60);
+    margin: 0;
+    font-weight: 400;
+  }
+}
+
+// Action Details Grid
+.action-details-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+// Detail Cards
+.detail-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--gray-10);
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: var(--gray-15);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .detail-label {
+    font-weight: 600;
+    color: var(--gray-75);
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .detail-value {
+    color: var(--white);
+    font-family: 'SF Mono', 'Monaco', monospace;
+    word-wrap: break-word;
+    word-break: break-all;
+    overflow-wrap: break-word;
+    white-space: normal;
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+}
+
+// Special styling for signing message
+.detail-signing-message {
+  .detail-value {
+    white-space: pre-wrap;
+    overflow: auto;
+    word-break: break-word;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--gray-15);
+    font-family: 'SF Mono', 'Monaco', monospace;
+    font-size: 0.85rem;
+    max-height: 200px;
+    background: rgba(0, 0, 0, 0.2);
+    margin-top: 4px;
+  }
+}
+
+// Checkbox Container enhanced
+.checkbox-container {
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    padding: 4px 0;
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--kaspa-20);
+      border-radius: 4px;
+    }
+
+    span {
+      font-weight: 500;
+      color: var(--white);
+      font-size: 0.95rem;
+    }
+  }
+}
+
+// Unknown Action Card
+.unknown-action-card {
+  text-align: center;
+  padding: 32px 20px;
+  background: rgba(230, 162, 35, 0.1);
+  border: 1px solid var(--orange-20);
+  border-radius: 12px;
+
+  kc-icon {
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--orange-20);
+    margin: 0 0 8px 0;
+  }
+
+  p {
+    color: var(--gray-75);
+    font-size: 0.9rem;
+    margin: 0;
+    line-height: 1.4;
+  }
+}
+
+// Priority Fee Selection
+priority-fee-selection {
+  display: block;
+}
+
+// Clean and modern design for approval flow
+
+// Button section that gets pushed to bottom - matches send-kaspa pattern
+.action-buttons-section {
+  margin-top: auto;
+  padding-top: 16px;
+  flex-shrink: 0;
+}
+
+// Action buttons styling
+.action-buttons {
+  display: flex;
+}
+
+// Ensure proper spacing and layout
+.approval-flow-container {
+  .action-details {
+    > div:last-child {
+      border-bottom: none;
+    }
+  }
+}
+
+// Scrollbar styling is now handled within approval-flow-content
+
+// Error State Styles
+.error-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--vampire-black);
+  color: var(--text-primary, #ffffff);
+  font-family: 'Poppins', 'Roboto', sans-serif;
+  padding: 32px 20px 20px 20px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+// Ensure child components also take full height
+app-approval-loading-page,
+app-approval-success-page {
+  height: 100%;
+  display: block;
+}
+
+.error-content {
+  max-width: 400px;
+  width: 100%;
+
+  h2 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    color: #E04242; // Error red from design system
+    line-height: 1.3;
+  }
+
+  p {
+    font-size: 1rem;
+    color: var(--text-secondary, #a0a0a0);
+    margin: 0 0 32px 0;
+    font-weight: 400;
+    line-height: 1.4;
+  }
+}
+
+// Scrollbar thumb styling is now handled within approval-flow-content
+
+// Responsive Design
+@media (max-width: 480px) {
+  .approval-flow-container {
+    padding: 8px 0;
+  }
+
+  .approval-flow-content {
+    padding: 0 16px;
+    gap: 20px;
+  }
+
+  .action-header {
+    margin-bottom: 20px;
+
+    .action-title {
+      font-size: 1.3rem;
+    }
+  }
+
+  .detail-display,
+  .input-field-row {
+    padding: 14px;
+  }
+
+  .priority-fee-section {
+    padding: 16px;
+  }
+
+  .action-buttons-section {
+    padding-top: 12px;
+  }
+
+  .action-buttons {
+    padding: 16px;
+    gap: 10px;
+  }
+}

@@ -1,0 +1,32 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  pointer-events: none; // Ensure the entire component doesn't block interactions
+}
+
+.kaspa-nodes-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1; // Place behind all content to prevent overlap
+  pointer-events: none;
+  opacity: 0;
+  animation: fadeInCanvas 600ms ease-out forwards;
+}
+
+// Fade in animation for the entire canvas
+@keyframes fadeInCanvas {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+} 

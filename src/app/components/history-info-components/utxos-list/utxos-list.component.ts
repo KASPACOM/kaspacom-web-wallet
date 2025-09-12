@@ -7,11 +7,10 @@ import { AppWallet } from '../../../classes/AppWallet';
 import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
 
 @Component({
-  selector: 'utxos-list',
-  standalone: true,
-  templateUrl: './utxos-list.component.html',
-  styleUrls: ['./utxos-list.component.scss'],
-  imports: [NgIf, NgFor, FormsModule, SompiToNumberPipe],
+    selector: 'utxos-list',
+    templateUrl: './utxos-list.component.html',
+    styleUrls: ['./utxos-list.component.scss'],
+    imports: [NgIf, NgFor, FormsModule, SompiToNumberPipe]
 })
 export class UtxosListComponent {
   @Input() wallet!: AppWallet;

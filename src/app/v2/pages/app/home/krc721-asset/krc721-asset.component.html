@@ -1,0 +1,89 @@
+<div class="nft-page-container flex column full-width gap-16" [class.loading]="loading() || metadataLoading()">
+  <!-- Header with back button and name -->
+  <div class="asset-header flex align-items-center justify-content-between">
+    <div class="header-left flex align-items-center gap-16">
+      <kc-icon 
+        [iconClass]="'icon-arrow-left'"
+        [size]="'md'"
+        (click)="goBack()"
+        class="cursor-pointer hover-opacity">
+      </kc-icon>
+      <h1 class="asset-title text-gray-90">{{ getDisplayName() }}</h1>
+    </div>
+  </div>
+
+  <!-- NFT image - centered under header -->
+  <div class="nft-image-section flex justify-content-center mb-24">
+    @if (metadataLoading()) {
+      <app-skeleton [height]="'256px'" [width]="'256px'"></app-skeleton>
+    } @else {
+      <div class="nft-image-container">
+        @if (getImageUrl()) {
+          <img 
+            [src]="getImageUrl()" 
+            [alt]="getDisplayName()"
+            class="nft-image"
+            (error)="onImageError($event)">
+        } @else {
+          <div class="nft-placeholder">
+            <span class="text-gray-60">NFT</span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="action-buttons flex gap-12 mb-24">
+    <kc-button 
+      [variant]="'primary'"
+      [size]="'md'"
+      [text]="'Send'"
+      class="flex-1"
+      (click)="onSendAction()">
+    </kc-button>
+  </div>
+
+  <!-- NFT Details -->
+  <div class="nft-details">
+    @if (metadataLoading()) {
+      <!-- Description skeleton -->
+      <app-skeleton [height]="'24px'" [width]="'150px'" class="mb-16"></app-skeleton>
+      <app-skeleton [height]="'60px'" [width]="'100%'" class="mb-24"></app-skeleton>
+      <!-- Attributes skeleton -->
+      <app-skeleton [height]="'24px'" [width]="'120px'" class="mb-16"></app-skeleton>
+      <div class="attributes-grid gap-12">
+        @for (item of [1,2,3,4]; track item) {
+          <app-skeleton [height]="'70px'" [width]="'100%'"></app-skeleton>
+        }
+      </div>
+    } @else {
+      <!-- Description Section -->
+      @if (getDescription()) {
+        <div class="description-section mb-24">
+          <h3 class="section-title text-gray-90 mb-16">Description</h3>
+          <p class="description-text text-gray-60">{{ getDescription() }}</p>
+        </div>
+      }
+
+      <!-- Attributes Section -->
+      <div class="attributes-section flex column gap-16">
+        <h3 class="section-title text-gray-90">Attributes</h3>
+        @if (getAttributes().length > 0) {
+          <div class="attributes-grid">
+            @for (attribute of getAttributes(); track attribute.trait_type) {
+              <div class="attribute-card">
+                <div class="attribute-type text-gray-60 typo-text-1">{{ attribute.trait_type }}</div>
+                <div class="attribute-value text-gray-90">{{ attribute.value }}</div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="no-attributes text-center p-24 text-gray-60">
+            No attributes
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div> 

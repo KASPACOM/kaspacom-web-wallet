@@ -6,15 +6,14 @@ import { CreateWalletComponent } from '../../components/wallet-management/create
 import { WalletService } from '../../services/wallet.service';
 
 @Component({
-  selector: 'app-add-wallet',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ImportWalletComponent,
-    CreateWalletComponent
-  ],
-  templateUrl: './add-wallet.component.html',
-  styleUrl: './add-wallet.component.scss'
+    selector: 'app-add-wallet',
+    imports: [
+        CommonModule,
+        ImportWalletComponent,
+        CreateWalletComponent
+    ],
+    templateUrl: './add-wallet.component.html',
+    styleUrl: './add-wallet.component.scss'
 })
 export class AddWalletComponent {
   selectedAction: 'create' | 'import' = 'create';

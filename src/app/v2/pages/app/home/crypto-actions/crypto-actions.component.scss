@@ -1,0 +1,38 @@
+.crypto-actions-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+
+  &__card {
+    width: 136px;
+    height: 90px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    gap: 8px;
+
+    color: var(--gray-40);
+    // Target the cards (Send and Receive actions)
+    kc-icon {
+      ::ng-deep * {
+        color: var(--gray-75) !important;
+      }
+    }
+
+    &:hover {
+      color: white !important;
+      kc-icon {
+        ::ng-deep * {
+          color: var(--gray-95) !important;
+        }
+      }
+    }
+  }
+
+  &__title {
+    font-weight: 600;
+    font-size: calc(var(--typo-text-1-size, 12px) + 2px);
+    transition: all 0.3s ease;
+
+  }
+}

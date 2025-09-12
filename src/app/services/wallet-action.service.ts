@@ -10,7 +10,7 @@ import {
 } from '../types/wallet-action';
 import { AssetType, TransferableAsset } from '../types/transferable-asset';
 import { WalletService } from './wallet.service';
-import { EIP1193RequestPayload, EIP1193RequestType, ERROR_CODES, ProtocolType, PsktActionsEnum, WalletActionResult } from 'kaspacom-wallet-messages';
+import { EIP1193RequestPayload, EIP1193RequestType, ERROR_CODES, ERROR_CODES_MESSAGES, ProtocolType, PsktActionsEnum, WalletActionResult } from '@kaspacom/wallet-messages';
 import { UtilsHelper } from './utils.service';
 import {
   KaspaNetworkActionsService,
@@ -26,6 +26,7 @@ import { BaseProtocolClassesService } from './protocols/base-protocol-classes.se
 import { Router } from '@angular/router';
 import { EthereumHandleActionRequestService } from './etherium-services/etherium-handle-action-request.service';
 import { BaseCommunicationApp } from './communication-service/communication-app/base-communication-app';
+import { ApprovalFlowService } from '../v2/services/approval-flow.service';
 
 const INSTANT_ACTIONS: { [key: string]: boolean } = {
   [WalletActionType.SIGN_MESSAGE]: true,
@@ -59,6 +60,7 @@ export class WalletActionService {
     private baseProtocolClassesService: BaseProtocolClassesService,
     private readonly router: Router,
     private readonly ethereumHandleActionRequestService: EthereumHandleActionRequestService,
+    private readonly approvalFlowService: ApprovalFlowService,
   ) {
 
     this.actionsListByWallet.set({});
@@ -213,7 +215,7 @@ export class WalletActionService {
     action: WalletAction,
     isFromIframe: boolean = false,
     onActionApproval: undefined | (() => Promise<void>) = undefined,
-  ): Promise<WalletActionResultWithError> {
+  ): Promise<WalletActionResultWithError & { isUsingV2Flow?: boolean }> {
     const validationResult = await this.validateAction(
       action,
       this.walletService.getCurrentWallet()!,
@@ -225,6 +227,7 @@ export class WalletActionService {
       };
     }
 
+    const isUsingV2Flow = !isFromIframe && this.isV2AppContext();
     const result = await this.showApprovalDialogToUser(action, isFromIframe);
 
     if (!result.isApproved) {
@@ -234,9 +237,19 @@ export class WalletActionService {
       };
     }
 
+    // If using v2 flow, immediately transition to processing state
+    if (isUsingV2Flow) {
+      this.approvalFlowService.setProcessingState(0);
+    }
+
     await onActionApproval?.();
 
     action.priorityFee = result.priorityFee || action.priorityFee;
+
+    // Add 2-second delay to allow canvas animation to show before processing
+    if (isUsingV2Flow) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
 
     const actionSteps = this.getActionSteps(action);
     let currentStep = 0;
@@ -244,21 +257,36 @@ export class WalletActionService {
 
     const actionResult = await this.doWalletAction(action, async (data) => {
       currentStep++;
+      const progress = Math.round((currentStep / actionSteps) * 100);
 
-      this.showTransactionLoaderToUser(
-        Math.round((currentStep / actionSteps) * 100),
-        currentWalletAddress,
-      );
-
+      if (isUsingV2Flow) {
+        // Update the new approval flow with progress
+        this.approvalFlowService.updateProgress(progress);
+      } else {
+        // Use legacy progress display
+        this.showTransactionLoaderToUser(progress, currentWalletAddress);
+      }
     });
 
     if (!actionResult.success) {
-      return actionResult;
+      if (isUsingV2Flow) {
+        const errorMessage = actionResult.errorCode
+          ? ERROR_CODES_MESSAGES[actionResult.errorCode]
+          : 'Transaction failed';
+        this.approvalFlowService.setErrorState(errorMessage);
+      }
+      return { ...actionResult, isUsingV2Flow };
     }
 
-    await this.showTransactionResultToUser(actionResult.result!, currentWalletAddress);
+    if (isUsingV2Flow) {
+      // Show success page in the new approval flow
+      this.approvalFlowService.setSuccessState(actionResult.result!);
+    } else {
+      // Use legacy success display
+      await this.showTransactionResultToUser(actionResult.result!, currentWalletAddress);
+    }
 
-    return actionResult;
+    return { ...actionResult, isUsingV2Flow };
   }
 
   async showCommunicationAppApprovalDialogToUser(app: BaseCommunicationApp, isFromIframe: boolean = false): Promise<{
@@ -282,6 +310,12 @@ export class WalletActionService {
     additionalParams?: { [parmName: string]: any };
   }> {
 
+    // Use the new approval flow service for modern flow-based approvals
+    if (!isFromIframe && this.isV2AppContext()) {
+      return await this.approvalFlowService.showApproval(action, isFromIframe);
+    }
+
+    // Legacy approval system for iframe and legacy contexts
     if (this.actionToApprove()) {
       this.actionToApprove()!.resolve({ isApproved: false });
       this.actionToApprove.set(undefined);
@@ -307,6 +341,11 @@ export class WalletActionService {
     });
   }
 
+  private isV2AppContext(): boolean {
+    // Check if we're in the v2 app context (not in legacy routes)
+    return !this.router.url.startsWith('/legacy') && this.router.url.startsWith('/app');
+  }
+
   getActionToApproveSignal(): Signal<{
     action: WalletAction, resolve: (data: {
       isApproved: boolean, priorityFee?: bigint, additionalParams?: { [parmName: string]: any };
@@ -321,6 +360,11 @@ export class WalletActionService {
 
   getActionResultSignal(): Signal<WalletActionResult | undefined> {
     return this.actionResultSignal.asReadonly();
+  }
+
+  clearActionResult(): void {
+    this.actionResultSignal.set(undefined);
+    this.currentProgressSignal.set(undefined);
   }
 
   private async showTransactionLoaderToUser(progress?: number | undefined, walletAddress?: string) {

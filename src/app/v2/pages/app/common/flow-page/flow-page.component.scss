@@ -1,0 +1,121 @@
+.flow-page-overlay {
+  position: absolute;
+  top: 0; // Start after header
+  left: 0;
+  right: 0;
+  bottom: 0;
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms ease; // Match close animation timing
+
+  &.open {
+    pointer-events: all;
+    opacity: 1;
+    transition: opacity 300ms ease; // Match open animation timing
+  }
+}
+
+.flow-page-content {
+  background: rgba(#0e100f, 0.88); // Semi-transparent vampire black
+  backdrop-filter: blur(20px);
+  border-radius: 0 0 12px 12px;
+  padding: 16px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; // Allow content to shrink properly
+  flex: 1; // Take available space
+  overflow: hidden;
+  transform: translateZ(0); // Force hardware acceleration
+  will-change: transform, opacity; // Optimize for animation
+
+  // Add media query for mobile
+  @media (max-width: 480px) {
+    max-width: 100%;
+    border-radius: 0;
+  }
+}
+
+.flow-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 32px;
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.flow-page-title {
+  color: var(--white);
+}
+
+
+.flow-page-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+}
+
+.flow-page-back {
+  cursor: pointer;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--white);
+  }
+}
+
+.flow-page-close {
+  ::ng-deep .icon {
+    cursor: pointer;
+    color: var(--gray-60) !important;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: var(--white) !important;
+    }
+  }
+}
+
+// No background styles for loading and success pages
+.flow-page-overlay.no-background {
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.flow-page-content.no-background {
+  background: var(--vampire-black); // Keep normal page background
+  backdrop-filter: none; // Remove the blur effect
+}

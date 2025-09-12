@@ -6,16 +6,15 @@ import { TransferableAsset } from '../../../types/transferable-asset';
 import { WalletAction, WalletActionType } from '../../../types/wallet-action';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { WalletActionService } from '../../../services/wallet-action.service';
-import { ERROR_CODES, ERROR_CODES_MESSAGES } from 'kaspacom-wallet-messages';
+import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { Krc20WalletActionService } from '../../../services/protocols/krc20/krc20-wallet-actions.service';
 import { MessagePopupService } from '../../../services/message-popup.service';
 
 @Component({
-  selector: 'list-krc20-token',
-  standalone: true,
-  templateUrl: './list-krc20-component.component.html',
-  styleUrls: ['./list-krc20-component.component.scss'],
-  imports: [FormsModule, ReactiveFormsModule, NgIf, NgFor],
+    selector: 'list-krc20-token',
+    templateUrl: './list-krc20-component.component.html',
+    styleUrls: ['./list-krc20-component.component.scss'],
+    imports: [FormsModule, ReactiveFormsModule, NgIf, NgFor]
 })
 export class ListKrc20Component implements OnInit {
   assets: undefined | TransferableAsset[] = undefined; // Replace with your dynamic asset list

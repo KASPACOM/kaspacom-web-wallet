@@ -1,0 +1,124 @@
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  &__search-icon {
+    cursor: pointer;
+
+    &:hover {
+      ::ng-deep {
+        .icon-wrapper {
+          color: var(--white);
+        }
+      }
+    }
+  }
+}
+
+.header-container-home {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.profile-section {
+  display: flex;
+  align-items: center;
+}
+
+.profile-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 12px;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  &__chain-icon {
+    flex-shrink: 0;
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__wallet-name-section {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  &__wallet-name {
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 1.2;
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  &__account-section {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__account-name {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 1.2;
+    color: var(--white);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  }
+
+
+
+  &__copy-icon {
+    cursor: pointer;
+    flex-shrink: 0;
+
+    &:hover {
+      ::ng-deep {
+        .icon {
+          color: var(--white);
+        }
+      }
+    }
+  }
+
+
+}
+
+.external-copy-button {
+  flex-shrink: 0;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.settings-icon {
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover {
+    ::ng-deep {
+      .icon {
+        color: var(--white);
+      }
+    }
+  }
+}

@@ -21,11 +21,10 @@ import { MessagePopupService } from '../../services/message-popup.service';
 import { Html5Qrcode } from 'html5-qrcode';
 
 @Component({
-  selector: 'app-set-password',
-  standalone: true,
-  templateUrl: './set-password.component.html',
-  styleUrls: ['./set-password.component.scss'],
-  imports: [FormsModule, ReactiveFormsModule, NgIf],
+    selector: 'app-set-password',
+    templateUrl: './set-password.component.html',
+    styleUrls: ['./set-password.component.scss'],
+    imports: [FormsModule, ReactiveFormsModule, NgIf]
 })
 export class SetPasswordComponent implements OnInit, OnDestroy {
   @ViewChild('scanner') scannerElement!: ElementRef;

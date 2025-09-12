@@ -6,37 +6,41 @@
     "start": "ng serve",
     "build": "ng build",
     "build:dev": "ng build --configuration development",
+    "build:stage": "ng build --configuration stage",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:wallet-front-new": "node dist/wallet-front-new/server/server.mjs"
   },
   "private": true,
   "dependencies": {
-    "@angular/animations": "^18.0.0",
-    "@angular/common": "^18.0.0",
-    "@angular/compiler": "^18.0.0",
-    "@angular/core": "^18.0.0",
-    "@angular/forms": "^18.0.0",
-    "@angular/platform-browser": "^18.0.0",
-    "@angular/platform-browser-dynamic": "^18.0.0",
-    "@angular/platform-server": "^18.0.0",
-    "@angular/router": "^18.0.0",
-    "@angular/ssr": "^18.0.1",
+    "@angular/animations": "^19.2.13",
+    "@angular/cdk": "^19.2.17",
+    "@angular/common": "^19.2.13",
+    "@angular/compiler": "^19.2.13",
+    "@angular/core": "^19.2.13",
+    "@angular/forms": "^19.2.13",
+    "@angular/platform-browser": "^19.2.13",
+    "@angular/platform-browser-dynamic": "^19.2.13",
+    "@angular/platform-server": "^19.2.13",
+    "@angular/router": "^19.2.13",
+    "@angular/ssr": "^19.2.13",
+    "@kaspacom/ui": "^1.0.51",
+    "@kaspacom/wallet-messages": "^1.0.23",
+    "angularx-qrcode": "^19.0.0",
     "crypto-js": "^4.2.0",
     "ethers": "^6.13.5",
     "express": "^4.18.2",
+    "graphemer": "^1.4.0",
     "html5-qrcode": "^2.3.8",
-    "angularx-qrcode": "^18.0.2",
-    "kaspacom-wallet-messages": "github:KASPIANO/kaspacom-wallet-messages#v1.0.21",
     "lodash": "^4.17.21",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
-    "zone.js": "~0.14.3"
+    "zone.js": "~0.15.1"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^18.0.1",
-    "@angular/cli": "^18.0.1",
-    "@angular/compiler-cli": "^18.0.0",
+    "@angular-devkit/build-angular": "^19.2.13",
+    "@angular/cli": "^19.2.13",
+    "@angular/compiler-cli": "^19.2.13",
     "@types/express": "^4.17.17",
     "@types/jasmine": "~5.1.0",
     "@types/lodash": "^4.17.13",
@@ -50,9 +54,10 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "npm": "^10.9.1",
-    "typescript": "~5.4.2"
+    "prettier": "^3.5.3",
+    "typescript": "~5.8.3"
   },
   "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "*"
+    "@rollup/rollup-linux-x64-gnu": "^4.45.1"
   }
 }

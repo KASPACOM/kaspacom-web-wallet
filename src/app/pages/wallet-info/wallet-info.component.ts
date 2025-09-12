@@ -29,7 +29,7 @@ import { TransactionHistoryComponent } from '../../components/history-info-compo
 import { Krc20OperationHistoryComponent } from '../../components/history-info-components/krc20-operation-history/krc20-operation-history.component';
 import { OperationDetails } from '../../services/kasplex-api/dtos/operation-details-response';
 import { MempoolTransactionsComponent } from '../../components/history-info-components/mempool-transactions/mempool-transactions.component';
-import { EIP1193ProviderChain } from 'kaspacom-wallet-messages';
+import { EIP1193ProviderChain } from '@kaspacom/wallet-messages';
 import { AddL2ChainComponent } from '../../components/wallet-actions-forms/add-l2-chain/add-l2-chain.component';
 import { L2TransactionComponent } from '../../components/wallet-actions-forms/l2-transaction/l2-transaction.component';
 import { toObservable } from '@angular/core/rxjs-interop';
@@ -40,30 +40,27 @@ type ActionTabs = 'send' | 'mint' | 'deploy' | 'list' | 'buy' | 'kasplex-l2';
 type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
 
 @Component({
-  selector: 'wallet-info',
-  standalone: true,
-  templateUrl: './wallet-info.component.html',
-  styleUrls: ['./wallet-info.component.scss'],
-  imports: [
-    FormsModule,
-    ReactiveFormsModule,
-    NgIf,
-    NgFor,
-    SompiToNumberPipe,
-    SendAssetComponent,
-    MintComponent,
-    ReviewActionComponent,
-    CommonModule,
-    ListKrc20Component,
-    BuyKrc20Component,
-    DeployComponent,
-    UtxosListComponent,
-    TransactionHistoryComponent,
-    Krc20OperationHistoryComponent,
-    MempoolTransactionsComponent,
-    AddL2ChainComponent,
-    L2TransactionComponent,
-  ],
+    selector: 'wallet-info',
+    templateUrl: './wallet-info.component.html',
+    styleUrls: ['./wallet-info.component.scss'],
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        NgIf,
+        NgFor,
+        SompiToNumberPipe,
+        SendAssetComponent,
+        MintComponent,
+        ReviewActionComponent,
+        CommonModule,
+        DeployComponent,
+        UtxosListComponent,
+        TransactionHistoryComponent,
+        Krc20OperationHistoryComponent,
+        MempoolTransactionsComponent,
+        AddL2ChainComponent,
+        L2TransactionComponent,
+    ]
 })
 export class WalletInfoComponent implements OnInit, OnDestroy {
   @ViewChild('reviewActionComponent')
@@ -148,7 +145,7 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
   private initializeL2Networks() {
     const chainsByChainId = this.ethereumWalletChainManager.getAllChainsByChainId();
     this.availableChains = Object.values(chainsByChainId);
-    
+
     // Set initial selected chain
     const currentChain = this.currentL2Chain();
     this.selectedChain = currentChain;

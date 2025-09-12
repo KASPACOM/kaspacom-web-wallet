@@ -5,14 +5,13 @@ import { WalletActionService } from '../../../services/wallet-action.service';
 import { WalletService } from '../../../services/wallet.service';
 import { parseEther } from 'ethers';
 import { EthereumWalletChainManager } from '../../../services/etherium-services/etherium-wallet-chain.manager';
-import { EIP1193RequestType, EthTransactionParams } from 'kaspacom-wallet-messages';
+import { EIP1193RequestType, EthTransactionParams } from '@kaspacom/wallet-messages';
 
 @Component({
-  selector: 'l2-transaction',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
-  templateUrl: './l2-transaction.component.html',
-  styleUrls: ['./l2-transaction.component.scss']
+    selector: 'l2-transaction',
+    imports: [CommonModule, FormsModule, ReactiveFormsModule],
+    templateUrl: './l2-transaction.component.html',
+    styleUrls: ['./l2-transaction.component.scss']
 })
 export class L2TransactionComponent implements OnInit {
   ethForm: FormGroup;
@@ -50,6 +49,8 @@ export class L2TransactionComponent implements OnInit {
       );
 
       const result = await this.walletActionService.validateAndDoActionAfterApproval(action);
+
+      console.log('result', result);
     }
   }
 } 

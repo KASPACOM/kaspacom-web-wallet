@@ -1,0 +1,36 @@
+<app-quick-action-dialog
+  [isOpen]="isDialogOpen"
+  [title]="'Delete account'"
+  [isCloseable]="true"
+  (backdropClick)="onBackdropClick()"
+  (close)="onClose()"
+>
+  <!-- Content slot for confirmation message -->
+  <div slot="content" class="delete-confirmation">
+    <p>
+      Are you sure you want to delete the account <strong>{{ accountName }}</strong>?
+      This action cannot be undone and you will lose access to this account permanently.
+    </p>
+  </div>
+  
+  <!-- Footer slot for action buttons -->
+  <div slot="footer" class="button-row">
+    <kc-button
+      [text]="'Cancel'"
+      [variant]="'tertiary'"
+      [size]="'md'"
+      [isFullWidth]="true"
+      (buttonClick)="onCancel()"
+    ></kc-button>
+    <kc-button
+      [text]="'Delete'"
+      [variant]="'secondary'"
+      [role]="'danger'"
+      [size]="'md'"
+      [isFullWidth]="true"
+      (buttonClick)="onDelete()"
+    ></kc-button>
+  </div>
+</app-quick-action-dialog>
+
+

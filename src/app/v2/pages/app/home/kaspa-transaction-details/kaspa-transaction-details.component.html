@@ -1,0 +1,235 @@
+<div class="transaction-details-container full-width full-height column p-16 flex column gap-24" [class.loading]="loading()">
+  <!-- Header with back button -->
+  <div class="transaction-header flex align-items-center justify-content-between">
+    <!-- Left side: back button and title -->
+    <div class="header-left flex align-items-center gap-16">
+      <kc-icon 
+        [iconClass]="'icon-arrow-left'"
+        [size]="'md'"
+        (click)="goBack()"
+        class="cursor-pointer hover-opacity">
+      </kc-icon>
+      <h1 class="transaction-title text-gray-90">Transaction Details</h1>
+    </div>
+    
+    <!-- Right side: chevron or additional actions if needed -->
+    <div class="header-right">
+      <!-- Could add additional actions here if needed -->
+    </div>
+  </div>
+
+  @if (loading()) {
+    <!-- Loading state -->
+    <div class="details-section flex column gap-16">
+      <app-skeleton [height]="'24px'" [width]="'180px'" class="mb-16"></app-skeleton>
+      <div class="details-grid">
+        @for (item of [1,2,3,4,5,6,7,8]; track item) {
+          <div class="detail-card">
+            <app-skeleton [height]="'16px'" [width]="'80px'" class="mb-8"></app-skeleton>
+            <app-skeleton [height]="'20px'" [width]="'100%'"></app-skeleton>
+          </div>
+        }
+      </div>
+    </div>
+  } @else if (transactionDetails()) {
+    <!-- Transaction Details Section -->
+    <div class="details-section flex column gap-16">
+      <h3 class="section-title text-gray-90">Transaction Details</h3>
+      
+      <div class="details-grid">
+        <!-- Net Amount -->
+        <div class="detail-card">
+          <div class="detail-label">Net Amount</div>
+          <div class="detail-value-container flex align-items-center">
+            <div class="kaspa-amount-display flex align-items-center gap-8">
+              <kc-icon 
+                [iconClass]="'icon-kaspa-coin'" 
+                [size]="'sm'">
+              </kc-icon>
+              <div class="detail-value kaspa-amount font-weight-bold" 
+                   [style.color]="getNetAmountForWallet().isIncoming ? 'var(--success)' : 'var(--error)'">
+                {{ (getNetAmountForWallet().isIncoming ? '+' : '-') + formatAmount(getNetAmountForWallet().amount) }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transaction Fee -->
+        <div class="detail-card">
+          <div class="detail-label">Transaction Fee</div>
+          <div class="detail-value-container flex align-items-center">
+            <div class="kaspa-amount-display flex align-items-center gap-8">
+              <kc-icon 
+                [iconClass]="'icon-kaspa-coin'" 
+                [size]="'sm'">
+              </kc-icon>
+              <div class="detail-value kaspa-amount font-weight-bold text-white">
+                {{ formatAmount(getTransactionFee()) }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Total Input Amount -->
+        <div class="detail-card">
+          <div class="detail-label">Total Input</div>
+          <div class="detail-value-container flex align-items-center">
+            <div class="kaspa-amount-display flex align-items-center gap-8">
+              <kc-icon 
+                [iconClass]="'icon-kaspa-coin'" 
+                [size]="'sm'">
+              </kc-icon>
+              <div class="detail-value kaspa-amount font-weight-bold text-white">
+                {{ formatAmount(getTotalInputAmount()) }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Total Output Amount -->
+        <div class="detail-card">
+          <div class="detail-label">Total Output</div>
+          <div class="detail-value-container flex align-items-center">
+            <div class="kaspa-amount-display flex align-items-center gap-8">
+              <kc-icon 
+                [iconClass]="'icon-kaspa-coin'" 
+                [size]="'sm'">
+              </kc-icon>
+              <div class="detail-value kaspa-amount font-weight-bold text-white">
+                {{ formatAmount(getTotalOutputAmount()) }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div class="detail-card" *ngIf="transactionDetails()?.is_accepted">
+          <div class="detail-label">Status</div>
+          <div class="detail-value font-weight-medium status-accepted">
+            {{ getTransactionStatus(transactionDetails()!) }}
+          </div>
+        </div>
+
+        <!-- Block Time -->
+        <div class="detail-card">
+          <div class="detail-label">Block Time</div>
+          <div class="detail-value">
+            {{ formatDate(transactionDetails()?.block_time || 0) }}
+          </div>
+        </div>
+
+        <!-- Block Hash -->
+        @if (getBlockHashDisplay()) {
+          <div class="detail-card">
+            <div class="detail-label">Block Hash</div>
+            <div class="detail-value-container flex align-items-center gap-8">
+              <div class="detail-value font-mono break-all">
+                {{ shortenAddress(getBlockHashDisplay()) }}
+              </div>
+              <app-copy-button 
+                [value]="getBlockHashDisplay()"
+                [size]="'xs'">
+              </app-copy-button>
+            </div>
+          </div>
+        }
+
+        <!-- Transaction ID -->
+        <div class="detail-card">
+          <div class="detail-label">Transaction ID</div>
+          <div class="detail-value-container flex align-items-center gap-8">
+            <div class="detail-value text-primary font-mono cursor-pointer hover-opacity break-all"
+                 (click)="openTransactionInExplorer()">
+              {{ transactionDetails()?.transaction_id }}
+            </div>
+            <app-copy-button 
+              [value]="transactionDetails()?.transaction_id || ''"
+              [size]="'xs'">
+            </app-copy-button>
+            <kc-icon
+              [iconClass]="'icon-link'"
+              [size]="'xs'"
+              [color]="'var(--gray-60)'"
+              class="cursor-pointer hover-opacity"
+              (click)="openTransactionInExplorer()"
+            ></kc-icon>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inputs Section -->
+      @if (transactionDetails()?.inputs && transactionDetails()!.inputs.length > 0) {
+        <div class="inputs-section">
+          <h4 class="section-subtitle text-gray-90">Inputs ({{ transactionDetails()!.inputs.length }})</h4>
+          <div class="inputs-list">
+            @for (input of transactionDetails()!.inputs; track input.previous_outpoint_hash + ':' + input.previous_outpoint_index) {
+              <div class="input-card detail-card">
+                <div class="input-header flex justify-content-between align-items-center mb-8">
+                  <div class="detail-label">Address</div>
+                  <div class="kaspa-amount-display flex align-items-center gap-8">
+                    <kc-icon 
+                      [iconClass]="'icon-kaspa-coin'" 
+                      [size]="'sm'">
+                    </kc-icon>
+                    <div class="detail-value kaspa-amount font-weight-bold text-white">
+                      {{ formatInputAmount(input.previous_outpoint_amount) }}
+                    </div>
+                  </div>
+                </div>
+                <div class="detail-value-container flex align-items-center gap-8">
+                  <div class="detail-value font-mono break-all">
+                    {{ shortenAddress(input.previous_outpoint_address || '') }}
+                  </div>
+                  <app-copy-button 
+                    [value]="input.previous_outpoint_address || ''"
+                    [size]="'xs'">
+                  </app-copy-button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Outputs Section -->
+      @if (transactionDetails()?.outputs && transactionDetails()!.outputs.length > 0) {
+        <div class="outputs-section">
+          <h4 class="section-subtitle text-gray-90">Outputs ({{ transactionDetails()!.outputs.length }})</h4>
+          <div class="outputs-list">
+            @for (output of transactionDetails()!.outputs; track $index) {
+              <div class="output-card detail-card">
+                <div class="output-header flex justify-content-between align-items-center mb-8">
+                  <div class="detail-label">Address</div>
+                  <div class="kaspa-amount-display flex align-items-center gap-8">
+                    <kc-icon 
+                      [iconClass]="'icon-kaspa-coin'" 
+                      [size]="'sm'">
+                    </kc-icon>
+                    <div class="detail-value kaspa-amount font-weight-bold text-white">
+                      {{ formatOutputAmount(output.amount) }}
+                    </div>
+                  </div>
+                </div>
+                <div class="detail-value-container flex align-items-center gap-8">
+                  <div class="detail-value font-mono break-all">
+                    {{ shortenAddress(output.script_public_key_address || '') }}
+                  </div>
+                  <app-copy-button 
+                    [value]="output.script_public_key_address || ''"
+                    [size]="'xs'">
+                  </app-copy-button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <!-- Error state -->
+    <div class="error-container flex column align-items-center justify-content-center gap-16 p-32">
+      <div class="text-gray-60 typo-text-2 text-center">Transaction not found</div>
+      <div class="text-gray-50 typo-text-1 text-center">The requested transaction details could not be loaded.</div>
+    </div>
+  }
+</div> 

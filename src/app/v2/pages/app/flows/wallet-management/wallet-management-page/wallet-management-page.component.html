@@ -1,0 +1,73 @@
+<div class="page-content">
+  <!-- Custom Header -->
+  <div class="custom-header">
+    <div class="header-left">
+      <span class="wallet-name">{{ currentWalletName() }}</span>
+      <kc-icon
+        class="pencil-icon"
+        [iconClass]="'icon-pencil'"
+        [size]="'xs'"
+        (click)="onEditWalletName()"
+      ></kc-icon>
+    </div>
+    <div class="header-right">
+      <kc-icon
+        class="more-options-icon"
+        [iconClass]="'icon-more-options'"
+        [size]="'md'"
+        (click)="onWalletOptionsClick()"
+      ></kc-icon>
+      <kc-icon
+        class="close-icon"
+        [iconClass]="'icon-close'"
+        [size]="'md'"
+        (click)="onCloseClick()"
+      ></kc-icon>
+    </div>
+  </div>
+
+  <div class="wallets-container">
+    <div class="wallets-list">
+      @for (wallet of wallets(); track wallet.id) {
+        <div
+          class="wallet-item"
+          [class.selected]="wallet.isSelected"
+          (click)="selectWallet(wallet)"
+        >
+          <kc-icon
+            class="wallet-item__icon"
+            [iconClass]="wallet.isSelected ? 'icon-user' : 'icon-user-12px'"
+            [size]="'md'"
+          ></kc-icon>
+          <div class="wallet-item__info">
+            <div class="wallet-item__name-container">
+              <div class="wallet-item__name">{{ wallet.name }}</div>
+              <kc-icon
+                class="wallet-item__pencil"
+                [iconClass]="'icon-pencil'"
+                [size]="'xs'"
+                (click)="editWalletAccount(wallet); $event.stopPropagation()"
+              ></kc-icon>
+            </div>
+            <div class="wallet-item__address">{{ shortenAddress(wallet.address) }}</div>
+            <div class="wallet-item__balance">{{ wallet.balance }} KAS</div>
+          </div>
+          <kc-icon
+            class="wallet-item__trash"
+            [iconClass]="'icon-trash'"
+            [size]="'sm'"
+            (click)="deleteWallet(wallet); $event.stopPropagation()"
+          ></kc-icon>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Floating Create Account Orb -->
+  <div class="floating-orb" (click)="onAddAccountClick()">
+    <kc-icon
+      [iconClass]="'icon-user_plus_icon'"
+      [size]="'md'"
+    ></kc-icon>
+  </div>
+</div>

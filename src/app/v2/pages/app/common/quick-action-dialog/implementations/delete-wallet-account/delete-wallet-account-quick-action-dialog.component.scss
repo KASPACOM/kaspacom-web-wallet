@@ -1,0 +1,31 @@
+.delete-confirmation {
+  padding: 16px 0;
+  
+  p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--gray-90);
+    
+    strong {
+      color: var(--white);
+      font-weight: 600;
+    }
+  }
+}
+
+.button-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  position: sticky;
+  bottom: 0;
+  background: var(--background);
+  padding: 16px 0;
+  
+  kc-button {
+    flex: 1;
+  }
+}
+
+

@@ -1,0 +1,42 @@
+<div class="screen">
+  <div class="wrapper">
+    <div
+      [@navAnimation]="getRouteAnimationData()"
+      class="wrapper__content full-width"
+      [class.no-scroll]="isMainContentLoading()"
+    >
+      <div class="wrapper__header">
+        <app-wrapper-header></app-wrapper-header>
+      </div>
+      <router-outlet #outlet="outlet"></router-outlet>
+    </div>
+
+    <div class="wrapper__nav">
+      <app-wrapper-nav></app-wrapper-nav>
+    </div>
+
+    <!-- Review Action Component for approval dialogs -->
+    <review-action></review-action>
+
+    <!-- Flow Pages System -->
+    <app-flow-page
+      [isOpen]="flowPagesService.isAnyPageOpen()"
+      [title]="flowPagesService.activePage()?.title || ''"
+      [canNavigateBack]="flowPagesService.canNavigateBack()"
+      [canClose]="flowPagesService.activePage()?.canClose ?? false"
+      [showTitle]="flowPagesService.activePage()?.showTitle ?? true"
+      [showBackground]="flowPagesService.activePage()?.showBackground ?? true"
+      (navigateBack)="flowPagesService.navigateBack()"
+      (backdropClick)="onFlowPageBackdropClick()"
+      (close)="onFlowPageClose()"
+    >
+      <app-dynamic-flow-page-outlet></app-dynamic-flow-page-outlet>
+    </app-flow-page>
+
+    <!-- Quick Action Dialog System -->
+    <app-dynamic-quick-action-dialog-outlet></app-dynamic-quick-action-dialog-outlet>
+
+    <!-- Notification Snackbar System -->
+    <kc-snackbar></kc-snackbar>
+  </div>
+</div>

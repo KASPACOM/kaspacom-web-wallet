@@ -1,0 +1,10 @@
+.seed-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px 24px;
+  width: 100%;
+}
+
+.seed-container__word {
+  width: 100%;
+}

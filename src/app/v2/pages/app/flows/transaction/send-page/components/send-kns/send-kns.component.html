@@ -1,0 +1,42 @@
+<div class="send-kns-content">
+  <div class="send-kns-form">
+    <!-- Wallet Address Input -->
+    <div class="form-field">
+      <app-address-smart-input
+        [label]="'Wallet Address'"
+        [placeholder]="'Enter recipient wallet address or KNS domain'"
+        [isFullWidth]="true"
+        [isValid]="isAddressValid"
+        [invalidReason]="addressErrorMessage"
+        [isDisabled]="isLoading"
+        [value]="walletAddress"
+        (valueChange)="onWalletAddressChange($event)"
+        (resolved)="onAddressResolved($event)"
+        (qrClick)="onQrScanClick()">
+      </app-address-smart-input>
+    </div>
+
+    <!-- Replace By Fee Checkbox -->
+    <div class="form-field">
+      <kc-checkbox
+        [label]="'Replace By Fee (RBF)'"
+        [isChecked]="replaceByFee"
+        [isDisabled]="isLoading"
+        (checkedChange)="onRbfChange($event)"
+        size="md">
+      </kc-checkbox>
+    </div>
+
+    <!-- Send Button -->
+    <div class="form-field">
+      <kc-button
+        [text]="isLoading ? 'Sending...' : 'Send Domain'"
+        [variant]="'primary'"
+        [isFullWidth]="true"
+        [isLoading]="isLoading"
+        [isDisabled]="!isFormValid"
+        (buttonClick)="onSendClick()">
+      </kc-button>
+    </div>
+  </div>
+</div>

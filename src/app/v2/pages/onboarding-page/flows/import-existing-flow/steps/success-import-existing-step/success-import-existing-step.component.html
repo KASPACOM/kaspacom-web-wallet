@@ -1,0 +1,22 @@
+<div class="flex column align-items-center gap-32">
+  <div class="flex column align-items-center gap-4">
+    <img
+      ngSrc="/svgs/wallet-loading.svg"
+      alt="Success image"
+      width="334"
+      height="226"
+      priority
+    />
+    <span class="typo-title-3 p-4">Wallet Loading</span>
+    <span class="typo-text-2 text-medium text-align-center"
+      >Import and view linked wallets</span
+    >
+  </div>
+  <kc-button
+    [isFullWidth]="true"
+    type="submit"
+    [text]="'Finish'"
+    [isDisabled]="false"
+    (buttonClick)="finish()"
+  ></kc-button>
+</div>

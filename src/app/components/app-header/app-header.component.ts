@@ -6,11 +6,10 @@ import { WalletService } from '../../services/wallet.service';
 import { AppWallet } from '../../classes/AppWallet';
 
 @Component({
-  selector: 'app-header',
-  standalone: true,
-  imports: [NgIf],
-  templateUrl: './app-header.component.html',
-  styleUrl: './app-header.component.scss',
+    selector: 'app-header',
+    imports: [NgIf],
+    templateUrl: './app-header.component.html',
+    styleUrl: './app-header.component.scss'
 })
 export class AppHeaderComponent {
   constructor(

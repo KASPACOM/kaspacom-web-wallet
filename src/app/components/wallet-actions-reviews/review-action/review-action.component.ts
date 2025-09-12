@@ -13,17 +13,16 @@ import { PriorityFeeSelectionComponent } from '../priority-fee-selection/priorit
 import { AppWallet } from '../../../classes/AppWallet';
 import { ReviewActionDataService } from '../../../services/action-info-services/review-action-data.service';
 import { WalletActionService } from '../../../services/wallet-action.service';
-import { EIP1193RequestPayload, EIP1193RequestType } from 'kaspacom-wallet-messages';
+import { EIP1193RequestPayload, EIP1193RequestType } from '@kaspacom/wallet-messages';
 import { InputFieldType } from '../../../types/action-display.type';
 
 const TIMEOUT = 2 * 60 * 1000;
 
 @Component({
-  selector: 'review-action',
-  standalone: true,
-  templateUrl: './review-action.component.html',
-  styleUrls: ['./review-action.component.scss'],
-  imports: [NgIf, NgFor, NgClass, SompiToNumberPipe, CompletedActionReview, JsonPipe, PriorityFeeSelectionComponent, FormsModule],
+    selector: 'review-action',
+    templateUrl: './review-action.component.html',
+    styleUrls: ['./review-action.component.scss'],
+    imports: [NgIf, NgFor, NgClass, CompletedActionReview, PriorityFeeSelectionComponent, FormsModule]
 })
 export class ReviewActionComponent {
   public WalletActionType = WalletActionType;

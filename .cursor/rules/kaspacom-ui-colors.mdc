@@ -1,0 +1,159 @@
+---
+alwaysApply: false
+---
+# Color Variables Documentation
+
+## Base Colors
+Variable: --white
+Color: #ffffff
+
+Variable: --black
+Color: hsl(0, 0%, 0%)
+
+Variable: --vampire-black
+Color: #07090a
+
+## Gray Colors
+Variable: --gray-0
+Color: #141414
+
+Variable: --gray-10
+Color: #181818
+
+Variable: --gray-15
+Color: #282828
+
+Variable: --gray-20
+Color: #333333
+
+Variable: --gray-25
+Color: #404040
+
+Variable: --gray-40
+Color: #616161
+
+Variable: --gray-45
+Color: #757575
+
+Variable: --gray-60
+Color: #9e9e9e
+
+Variable: --gray-75
+Color: #bdbdbd
+
+Variable: --gray-85
+Color: #d9d9d9
+
+Variable: --gray-90
+Color: #eeeeee
+
+Variable: --gray-95
+Color: #f8f8f8
+
+## Blue Colors
+Variable: --blue-10
+Color: #7477ff
+
+Variable: --blue-20
+Color: #595cff
+
+Variable: --blue-30
+Color: #383aa3
+
+## Green Colors
+Variable: --green-10
+Color: #96ffa5
+
+Variable: --green-20
+Color: #3fc753
+
+Variable: --green-30
+Color: #267d33
+
+## Orange Colors
+Variable: --orange-10
+Color: #ffd27d
+
+Variable: --orange-20
+Color: #e6a223
+
+Variable: --orange-30
+Color: #986b17
+
+## Red Colors
+Variable: --red-10
+Color: #ff7474
+
+Variable: --red-20
+Color: #e04242
+
+Variable: --red-30
+Color: #923c3c
+
+## Yellow Colors
+Variable: --yellow-10
+Color: #ffff8f
+
+Variable: --yellow-20
+Color: #fafa49
+
+Variable: --yellow-30
+Color: #b1b135
+
+## Purple Colors
+Variable: --purple-10
+Color: #d883ff
+
+Variable: --purple-20
+Color: #b43aed
+
+Variable: --purple-30
+Color: #6e1b94
+
+## Kaspa Colors
+Variable: --kaspa-10
+Color: #a2fff1
+
+Variable: --kaspa-20
+Color: rgb(111, 199, 186)
+
+Variable: --kaspa-30
+Color: #32635c
+
+## Semantic Colors
+Variable: --primary
+Color: var(--kaspa-20)
+
+Variable: --secondary
+Color: var(--purple-20)
+
+Variable: --tertiary
+Color: var(--blue-20)
+
+Variable: --universal-tertiary-color
+Color: rgba(255, 255, 255, 0.1)
+
+Variable: --universal-tertiary-2
+Color: rgba(255, 255, 255, 0.2)
+
+Variable: --primary-rgb
+Color: 111, 199, 186
+
+Variable: --primary-text
+Color: white
+
+Variable: --background
+Color: var(--vampire-black)
+
+Variable: --background-secondary
+Color: #0d1316
+
+Variable: --border-secondary
+Color: #1c2e2f
+
+## Gradients
+Variable: --gradient-1
+Color: linear-gradient(45deg, #fa709a 0%, #fee140 100%)
+
+Variable: --gradient-2
+Color: linear-gradient(90deg, #7477ff 0%, #595cff 30%, #b43aed 70%, #d883ff 100%) 

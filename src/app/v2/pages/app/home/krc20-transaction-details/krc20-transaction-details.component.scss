@@ -1,0 +1,141 @@
+@import '../../../../../../styles/design-system/colors.style.scss';
+
+.transaction-details-container {
+  padding: 0 16px 24px 16px;
+  margin: 0;
+  min-height: 100vh;
+  overflow-y: auto;
+
+  &.loading {
+    overflow: hidden;
+    
+    .detail-card {
+      opacity: 0.6;
+    }
+  }
+
+  .transaction-header {
+    .header-left {
+      .transaction-title {
+        margin: 0;
+      }
+    }
+  }
+
+  .details-section {
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .detail-card {
+      background: var(--gray-10);
+      border-radius: 12px;
+      padding: 16px;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: var(--gray-15);
+      }
+
+      .detail-label {
+        color: var(--gray-60);
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+      }
+
+      .detail-value-container {
+        min-height: 24px;
+      }
+
+      .detail-value {
+        color: var(--gray-90);
+        font-size: 14px;
+        line-height: 1.4;
+        word-break: break-all;
+        flex: 1;
+
+        &.operation-type {
+          text-transform: lowercase;
+        }
+        
+        &.status-accepted {
+          color: var(--success);
+        }
+      }
+    }
+  }
+
+  .error-container {
+    background: var(--base-2);
+    border-radius: 14px;
+    padding: 32px;
+    text-align: center;
+    box-shadow: 0 4px 16px -4px rgba(0,0,0,0.34);
+  }
+}
+
+// Monospace font for technical fields
+.font-mono {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Droid Sans Mono', 'Source Code Pro', monospace;
+}
+
+// Utility classes
+.break-all {
+  word-break: break-all;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.hover-opacity {
+  transition: opacity 0.2s ease;
+  
+  &:hover {
+    opacity: 0.7;
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .transaction-details-container {
+    padding: 12px;
+
+    .details-section {
+      .details-grid {
+        gap: 12px;
+      }
+
+      .detail-card {
+        padding: 12px;
+      }
+    }
+  }
+}
+
+// Animation for smooth entry
+.transaction-details-container {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+} 

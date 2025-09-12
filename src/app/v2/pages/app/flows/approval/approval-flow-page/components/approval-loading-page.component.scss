@@ -1,0 +1,180 @@
+// Canvas background
+.background-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1; // Ensure it stays behind all content
+  background: transparent;
+}
+
+
+
+// Original loading container styles
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  color: var(--text-primary, #ffffff);
+  font-family: 'Poppins', 'Roboto', sans-serif;
+  padding: 32px 20px 20px 20px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+
+// Loading Content - make sure it's above canvas
+.loading-content {
+  position: relative;
+  z-index: 10; // Higher z-index to ensure it stays above the background nodes
+}
+
+// Loading Header
+.loading-header {
+  margin-bottom: 40px;
+  animation: fadeIn 0.6s ease-out;
+}
+
+.loading-icon-wrapper {
+  margin-bottom: 24px;
+
+  .loading-spinner {
+    position: relative;
+    display: inline-block;
+
+    .spinner-icon {
+      color: #6fc7ba; // Primary teal color
+      animation: spin 2s linear infinite;
+      filter: drop-shadow(0 4px 12px rgba(111, 199, 186, 0.3));
+    }
+  }
+}
+
+.loading-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: var(--text-primary, #ffffff);
+  line-height: 1.3;
+}
+
+.loading-subtitle {
+  font-size: 1rem;
+  color: var(--text-secondary, #a0a0a0);
+  margin: 0;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+// Progress Section
+.progress-section {
+  width: 100%;
+  max-width: 300px;
+  margin-bottom: 40px;
+  animation: fadeIn 0.6s ease-out 0.2s both;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(111, 199, 186, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  position: relative;
+
+  .progress-fill {
+    height: 100%;
+    background: var(--gradient-1);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    position: relative;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.3) 50%,
+        transparent 70%
+      );
+      animation: shimmer 2s infinite;
+    }
+  }
+}
+
+.progress-text {
+  font-size: 0.9rem;
+  color: #6fc7ba;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Monaco', monospace;
+}
+
+
+// Animations
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+
+// Responsive Design
+@media (max-width: 480px) {
+  .loading-container {
+    padding: 24px 16px 16px 16px;
+  }
+  
+  .loading-title {
+    font-size: 1.5rem;
+  }
+  
+  .progress-section {
+    max-width: 250px;
+  }
+  
+}
+
+// Reduced motion support
+@media (prefers-reduced-motion: reduce) {
+  .spinner-icon {
+    animation: none;
+  }
+  
+  .progress-fill::after {
+    animation: none;
+  }
+  
+} 

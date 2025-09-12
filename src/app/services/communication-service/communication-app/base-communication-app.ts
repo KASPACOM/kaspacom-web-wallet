@@ -1,4 +1,4 @@
-import { WalletMessageInterface } from "kaspacom-wallet-messages";
+import { WalletMessageInterface } from "@kaspacom/wallet-messages";
 
 export abstract class BaseCommunicationApp {
     abstract sendMessage(message: WalletMessageInterface): Promise<void>;

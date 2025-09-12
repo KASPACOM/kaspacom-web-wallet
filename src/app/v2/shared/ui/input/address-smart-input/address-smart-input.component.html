@@ -1,0 +1,37 @@
+<div class="address-smart-input">
+	<kc-input
+		[label]="label"
+		[placeholder]="placeholder"
+		[type]="'text'"
+		[isFullWidth]="isFullWidth"
+		[isValid]="(isResolving() || isDomainCandidate()) ? true : (displayIsValid() && !resolveError())"
+		[invalidReason]="(isResolving() || isDomainCandidate()) ? '' : (resolveError() || displayInvalidReason())"
+		[isDisabled]="isDisabled"
+		[ngModel]="value"
+		(valueChange)="onInputChange($event)">
+		<!-- Right slot: QR and spinner -->
+		<div class="right-slot" rightSideSlot>
+			@if (isResolving()) {
+				<kc-spinner [size]="'xs'"></kc-spinner>
+			} @else if (showQrButton) {
+				<div (click)="!isDisabled && qrClick.emit()" [class]="isDisabled ? 'qr-button disabled' : 'qr-button clickable'">
+					<kc-icon [iconClass]="'icon-qr'" [size]="'xs'" [color]="'var(--gray-60)'"></kc-icon>
+				</div>
+			}
+		</div>
+	</kc-input>
+
+	@if (resolvedAddress() && resolvedDomain() && value && !isResolving()) {
+		<div class="resolved-address flex align-items-center gap-8">
+			<div class="font-mono">{{ shortenAddress(resolvedAddress()) }}</div>
+			<app-copy-button [value]="resolvedAddress()" [size]="'xs'"></app-copy-button>
+		</div>
+	}
+	
+	@if (value && !isResolving() && (resolvedAddress() || (!resolveError() && displayIsValid()))) {
+		<!-- Verification warning text for all valid addresses -->
+		<div class="address-warning-text">
+			Please verify that this is the correct wallet address before sending. Transactions cannot be reversed.
+		</div>
+	}
+</div> 

@@ -1,0 +1,20 @@
+<div class="import-switch">
+  <div
+    class="import-switch__item"
+    [class.import-switch__item--active]="
+      selectedMethod() === ImportSwitchMethod.SEED_PHRASE
+    "
+    (click)="methodChanged.emit(ImportSwitchMethod.SEED_PHRASE)"
+  >
+    Import by seed phrase
+  </div>
+  <div
+    class="import-switch__item"
+    [class.import-switch__item--active]="
+      selectedMethod() === ImportSwitchMethod.PRIVATE_KEY
+    "
+    (click)="methodChanged.emit(ImportSwitchMethod.PRIVATE_KEY)"
+  >
+    Import by private key
+  </div>
+</div>

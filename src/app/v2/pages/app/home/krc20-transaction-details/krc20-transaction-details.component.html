@@ -1,0 +1,186 @@
+<div class="transaction-details-container full-width full-height column p-16 flex column gap-24" [class.loading]="loading()">
+  <!-- Header with back button -->
+  <div class="transaction-header flex align-items-center justify-content-between">
+    <!-- Left side: back button and title -->
+    <div class="header-left flex align-items-center gap-16">
+      <kc-icon 
+        [iconClass]="'icon-arrow-left'"
+        [size]="'md'"
+        (click)="goBack()"
+        class="cursor-pointer hover-opacity">
+      </kc-icon>
+      <h1 class="transaction-title text-gray-90">Transaction Details</h1>
+    </div>
+    
+    <!-- Right side: chevron or additional actions if needed -->
+    <div class="header-right">
+      <!-- Could add additional actions here if needed -->
+    </div>
+  </div>
+
+  @if (loading()) {
+    <!-- Loading state -->
+    <div class="details-section flex column gap-16">
+      <app-skeleton [height]="'24px'" [width]="'180px'" class="mb-16"></app-skeleton>
+      <div class="details-grid">
+        @for (item of [1,2,3,4,5,6,7,8,9,10]; track item) {
+          <div class="detail-card">
+            <app-skeleton [height]="'16px'" [width]="'80px'" class="mb-8"></app-skeleton>
+            <app-skeleton [height]="'20px'" [width]="'100%'"></app-skeleton>
+          </div>
+        }
+      </div>
+    </div>
+  } @else if (operationDetails()) {
+    <!-- Transaction Details Section -->
+    <div class="details-section flex column gap-16">
+      <h3 class="section-title text-gray-90">Transaction Details</h3>
+      
+      <div class="details-grid">
+        <!-- Amount -->
+        <div class="detail-card">
+          <div class="detail-label">Amount</div>
+          <div class="detail-value font-weight-medium">
+            {{ formatAmount(operationDetails()?.amt) }}
+          </div>
+        </div>
+
+        <!-- From -->
+        <div class="detail-card">
+          <div class="detail-label">From</div>
+          <div class="detail-value-container flex align-items-center gap-8">
+            <div class="detail-value font-mono break-all">
+              {{ shortenAddress(operationDetails()?.from || '') }}
+            </div>
+            <app-copy-button 
+              [value]="operationDetails()?.from || ''"
+              [size]="'xs'">
+            </app-copy-button>
+          </div>
+        </div>
+
+        <!-- To -->
+        @if (operationDetails()?.to) {
+          <div class="detail-card">
+            <div class="detail-label">To</div>
+            <div class="detail-value-container flex align-items-center gap-8">
+              <div class="detail-value font-mono break-all">
+                {{ shortenAddress(operationDetails()?.to || '') }}
+              </div>
+              <app-copy-button 
+                [value]="operationDetails()?.to || ''"
+                [size]="'xs'">
+              </app-copy-button>
+            </div>
+          </div>
+        }
+
+        <!-- Protocol -->
+        <div class="detail-card">
+          <div class="detail-label">Protocol</div>
+          <div class="detail-value font-weight-medium">
+            {{ operationDetails()?.p || 'KRC-20' }}
+          </div>
+        </div>
+
+        <!-- OP -->
+        <div class="detail-card">
+          <div class="detail-label">OP</div>
+          <div class="detail-value font-weight-medium operation-type">
+            {{ operationDetails()?.op }}
+          </div>
+        </div>
+
+        <!-- OP Score -->
+        <div class="detail-card">
+          <div class="detail-label">OP Score</div>
+          <div class="detail-value font-mono">
+            {{ operationDetails()?.opScore }}
+          </div>
+        </div>
+
+        <!-- Reveal Fee -->
+        <div class="detail-card">
+          <div class="detail-label">Reveal Fee</div>
+          <div class="detail-value">
+            {{ formatAmount(operationDetails()?.feeRev) }} KAS
+          </div>
+        </div>
+
+        <!-- TX State -->
+        <div class="detail-card" *ngIf="isOperationAccepted(operationDetails()!)">
+          <div class="detail-label">TX State</div>
+          <div class="detail-value font-weight-medium status-accepted">
+            {{ getOperationStatus(operationDetails()!) }}
+          </div>
+        </div>
+
+        <!-- TX State (Second entry - "Implemented") -->
+        <div class="detail-card">
+          <div class="detail-label">TX State</div>
+          <div class="detail-value font-weight-medium">
+            Implemented
+          </div>
+        </div>
+
+        <!-- Check Point -->
+        <div class="detail-card">
+          <div class="detail-label">Check Point</div>
+          <div class="detail-value-container flex align-items-center gap-8">
+            <div class="detail-value font-mono break-all">
+              {{ operationDetails()?.checkpoint }}
+            </div>
+            <app-copy-button 
+              [value]="operationDetails()?.checkpoint || ''"
+              [size]="'xs'">
+            </app-copy-button>
+          </div>
+        </div>
+
+        <!-- OP Created at -->
+        <div class="detail-card">
+          <div class="detail-label">OP Created at</div>
+          <div class="detail-value">
+            {{ formatDate(operationDetails()?.mtsAdd || '') }}
+          </div>
+        </div>
+
+        <!-- OP Updated at -->
+        <div class="detail-card">
+          <div class="detail-label">OP Updated at</div>
+          <div class="detail-value">
+            {{ formatDate(operationDetails()?.mtsMod || '') }}
+          </div>
+        </div>
+
+        <!-- Reveal TX -->
+        <div class="detail-card">
+          <div class="detail-label">Reveal TX</div>
+          <div class="detail-value-container flex align-items-center gap-8">
+            <div class="detail-value text-primary font-mono cursor-pointer hover-opacity break-all"
+                 (click)="openTransactionInExplorer()">
+              {{ operationDetails()?.hashRev }}
+            </div>
+            <app-copy-button 
+              [value]="operationDetails()?.hashRev || ''"
+              [size]="'xs'">
+            </app-copy-button>
+            <kc-icon
+              [iconClass]="'icon-link'"
+              [size]="'xs'"
+              [color]="'var(--gray-60)'"
+              class="cursor-pointer hover-opacity"
+              (click)="openTransactionInExplorer()"
+            ></kc-icon>
+          </div>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <!-- Error state -->
+    <div class="error-container flex column align-items-center justify-content-center gap-16 p-32">
+      <div class="text-gray-60 typo-text-2 text-center">Transaction not found</div>
+      <div class="text-gray-50 typo-text-1 text-center">The requested transaction details could not be loaded.</div>
+    </div>
+  }
+</div> 

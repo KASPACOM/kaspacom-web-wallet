@@ -215,7 +215,7 @@ export class WalletActionService {
     action: WalletAction,
     isFromIframe: boolean = false,
     onActionApproval: undefined | (() => Promise<void>) = undefined,
-  ): Promise<WalletActionResultWithError & { isUsingV2Flow?: boolean }> {debugger
+  ): Promise<WalletActionResultWithError & { isUsingV2Flow?: boolean }> {
     const validationResult = await this.validateAction(
       action,
       this.walletService.getCurrentWallet()!,

@@ -1,0 +1,33 @@
+<div class="asset-card card-0 card-hover full-width flex align-items-center justify-content-between p-16 cursor-pointer" (click)="onClick()">
+  <div class="asset-card__info flex align-items-center gap-16">
+    <kc-token-logo
+      class="asset-card__logo"
+      [ticker]="(type() === 'krc20' ? krc20()?.symbol : erc20()?.symbol) || ''"
+      [size]="'lg'"
+    ></kc-token-logo>
+    <div class="flex column gap-4">
+      <div class="text-gray-90">{{ (type() === 'krc20' ? krc20()?.name : erc20()?.name) || '' | titlecase }}</div>
+      <div class="text-gray-60 typo-text-1">
+        {{ (type() === 'krc20' ? krc20()?.balance : erc20()?.balance) || 0 | number : '1.0-4' }}
+        &nbsp;{{ (type() === 'krc20' ? krc20()?.symbol : erc20()?.symbol) || '' | uppercase }}
+      </div>
+      <ng-container *ngIf="type() === 'krc20'">
+        <div *ngIf="krc20()?.maxSupply && !krc20()?.isLoadingMetadata" class="text-gray-50 typo-text-1">
+          Supply: {{ krc20()?.maxSupply }}
+        </div>
+        <app-skeleton *ngIf="krc20()?.isLoadingMetadata" [height]="'14px'" [width]="'100px'" [fullRound]="false"></app-skeleton>
+      </ng-container>
+    </div>
+  </div>
+  <div class="asset-card__usd-info flex column align-items-end">
+    <div class="text-gray-90">
+      ${{ (((type() === 'krc20' ? krc20()?.balance : erc20()?.balance) || 0) * ((type() === 'krc20' ? krc20()?.usdPrice : erc20()?.usdPrice) || 0)) | number : '1.2-2' }}
+    </div>
+    <div class="text-gray-60 typo-text-1">$0.00</div>
+    <div *ngIf="type() === 'krc20' && krc20()?.holders && !krc20()?.isLoadingMetadata" class="text-gray-50 typo-text-1">
+      {{ krc20()?.holders }} holders
+    </div>
+  </div>
+</div>
+
+

@@ -1,51 +1,8 @@
 <div class="send-page-content">
-  <div class="send-options-container">
-    <!-- Kaspa Card -->
-    <div class="send-option-card card-0 card-hover flex full-width align-items-center justify-content-between p-16 cursor-pointer" 
-         (click)="onKaspaCardClick()">
-      <div class="send-option-card__info flex align-items-center gap-16">
-        <kc-token-logo [ticker]="'KAS'" [size]="'lg'"></kc-token-logo>
-        <div class="flex column gap-4">
-          <div class="text-gray-90 typo-text-2">Kaspa</div>
-          <div class="text-gray-60 typo-text-1">Send KAS to another wallet address</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- KRC20 Card -->
-    <div class="send-option-card card-0 card-hover flex full-width align-items-center justify-content-between p-16 cursor-pointer" 
-         (click)="onKrc20CardClick()">
-      <div class="send-option-card__info flex align-items-center gap-16">
-        <kc-token-logo [ticker]="'KRC20'" [size]="'lg'"></kc-token-logo>
-        <div class="flex column gap-4">
-          <div class="text-gray-90 typo-text-2">KRC20 tokens</div>
-          <div class="text-gray-60 typo-text-1">Send KRC20 tokens to another wallet address</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- NFT Card -->
-    <div class="send-option-card card-0 card-hover flex full-width align-items-center justify-content-between p-16 cursor-pointer" 
-         (click)="onNftCardClick()">
-      <div class="send-option-card__info flex align-items-center gap-16">
-        <kc-token-logo [ticker]="'NFT'" [size]="'lg'"></kc-token-logo>
-        <div class="flex column gap-4">
-          <div class="text-gray-90 typo-text-2">NFT</div>
-          <div class="text-gray-60 typo-text-1">Send NFT/KRC721 to another wallet address</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- KNS Card -->
-    <div class="send-option-card card-0 card-hover flex full-width align-items-center justify-content-between p-16 cursor-pointer" 
-         (click)="onKnsCardClick()">
-      <div class="send-option-card__info flex align-items-center gap-16">
-        <kc-token-logo [ticker]="'KNS'" [size]="'lg'"></kc-token-logo>
-        <div class="flex column gap-4">
-          <div class="text-gray-90 typo-text-2">KNS</div>
-          <div class="text-gray-60 typo-text-1">Send KNS domains or text inscriptions to another wallet address</div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <app-l1-send-assets-container
+    (kaspaClick)="onKaspaCardClick()"
+    (krc20Click)="onKrc20CardClick()"
+    (nftClick)="onNftCardClick()"
+    (knsClick)="onKnsCardClick()"
+  ></app-l1-send-assets-container>
 </div>

@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { KcIconComponent } from '@kaspacom/ui';
 import { WalletService } from '../../../../../services/wallet.service';
 import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
@@ -10,11 +10,17 @@ import { KaspaPriceService } from '../../../../../services/kaspa-price.service';
 
 @Component({
   selector: 'app-balance',
-  imports: [DecimalPipe, CommaFormatterPipe, KcIconComponent, SkeletonComponent],
+  imports: [
+    DecimalPipe,
+    CommaFormatterPipe,
+    KcIconComponent,
+    SkeletonComponent,
+  ],
   templateUrl: './balance.component.html',
   styleUrl: './balance.component.scss',
 })
 export class BalanceComponent {
+  kasBalanceInput = input<number | null>(null);
   private walletService = inject(WalletService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private assetsStore = inject(AssetsStoreService);
@@ -41,18 +47,27 @@ export class BalanceComponent {
       return true;
     }
 
-    // Check if kaspa assets are loading
+    // If external balance is provided, loading is controlled by parent
+    if (this.kasBalanceInput() !== null) {
+      return false;
+    }
+
     return this.assetsStore.isAssetTypeLoading('kaspa');
   });
 
   // Get the actual KAS balance from the assets store
   kasBalance = computed(() => {
+    if (this.kasBalanceInput() !== null) {
+      return this.kasBalanceInput() as number;
+    }
+
     const kaspaAssets = this.assetsStore.kaspaAssets();
     if (!kaspaAssets) {
       return 0;
     }
 
-    return this.kaspaNetworkActionsService.sompiToNumber(kaspaAssets.totalBalance);
+    return this.kaspaNetworkActionsService.sompiToNumber(
+      kaspaAssets.totalBalance,
+    );
   });
-
 }

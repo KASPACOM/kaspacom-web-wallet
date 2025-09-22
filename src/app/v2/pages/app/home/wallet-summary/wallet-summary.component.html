@@ -15,16 +15,8 @@
     <div class="text-gray-60 p-16">No KRC20 tokens found</div>
   } @else {
     @for ( token of tokens(); track trackByToken($index, token) ) {
-      <app-asset-card
-        [type]="'krc20'"
-        [krc20]="{
-          name: token.name,
-          symbol: token.symbol,
-          address: token.address,
-          balance: token.balance,
-          usdPrice: token.usdPrice,
-          isLoadingMetadata: token.isLoadingMetadata
-        }"
+      <app-asset-card class="wallet-summary-container__card full-width"
+        [krc20]="token"
         (cardClick)="onTokenClick(token)"
       ></app-asset-card>
     }
@@ -34,7 +26,5 @@
         <app-skeleton [height]="'75px'" [width]="'100%'" [fullRound]="false"></app-skeleton>
       </div>
     }
-    
-
   }
 </div>

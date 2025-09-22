@@ -7,27 +7,7 @@ import {
 } from '@angular/common';
 import { TokenLogoComponent } from '../../pages/app/common/krc20/token-logo/token-logo.component';
 import { SkeletonComponent } from '../ui/skeleton/skeleton.component';
-
-export type AssetCardType = 'krc20' | 'erc20';
-
-export interface Krc20AssetCardData {
-  name: string;
-  symbol: string;
-  address: string;
-  balance: number;
-  usdPrice?: number;
-  isLoadingMetadata?: boolean;
-  holders?: number;
-  maxSupply?: string | number;
-}
-
-export interface Erc20AssetCardData {
-  name: string;
-  symbol: string;
-  address: string;
-  balance: number;
-  usdPrice?: number;
-}
+import { ITokenWithMetadata } from '../../pages/app/common/interfaces/token.interface';
 
 @Component({
   selector: 'app-asset-card',
@@ -44,9 +24,7 @@ export interface Erc20AssetCardData {
   styleUrl: './asset-card.component.scss',
 })
 export class AssetCardComponent {
-  type = input<AssetCardType>('krc20');
-  krc20 = input<Krc20AssetCardData | undefined>(undefined);
-  erc20 = input<Erc20AssetCardData | undefined>(undefined);
+  krc20 = input<ITokenWithMetadata | undefined>(undefined);
 
   @Output() cardClick = new EventEmitter<void>();
 

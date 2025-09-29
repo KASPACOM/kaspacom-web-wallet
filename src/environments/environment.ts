@@ -11,27 +11,26 @@ export const environment: Environment = {
   kaspaExplorerBaseurl: 'https://explorer.kaspa.org',
   kaspaNetwork: KASPA_NETWORKS.MAINNET,
   allowedDomains: ['wallet.kaspa.com'],
-  isL2Enabled: false,
+  isL2Enabled: true,
   l2Configs: {
     kasplex: {
       l1PayloadPrefix: 'kasplex',
       chainId: 12211,
-      name: "Kasplex",
-      network: "kasplex",
+      name: 'Kasplex',
+      network: 'kasplex',
       nativeCurrency: {
-        name: "Kasplex",
-        symbol: "KAS",
+        name: 'Kasplex',
+        symbol: 'KAS',
         decimals: 18,
       },
       rpcUrls: {
         default: {
-          http: ["https://rpc.kasplex.xyz"],
+          http: ['https://rpc.kasplex.xyz'],
         },
         public: {
-          http: ["https://rpc.kasplex.xyz"],
+          http: ['https://rpc.kasplex.xyz'],
         },
       },
     },
   },
 };
-

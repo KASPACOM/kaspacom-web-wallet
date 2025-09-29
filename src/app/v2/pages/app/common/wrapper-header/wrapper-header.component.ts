@@ -9,10 +9,21 @@ import { FlowPagesService } from '../../../../services/flow-pages.service';
 import { FlowPageId } from '../flow-page/flow-page.registry';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { WalletProfileOrbComponent } from '../../../../shared/ui/wallet-profile-orb/wallet-profile-orb.component';
+import {
+  NetworkService,
+  SupportedNetwork,
+} from '../../../../services/network.service';
 
 @Component({
   selector: 'app-wrapper-header',
-  imports: [KcIconComponent, KcButtonComponent, RouterModule, SearchBarComponent, CopyButtonComponent, WalletProfileOrbComponent],
+  imports: [
+    KcIconComponent,
+    KcButtonComponent,
+    RouterModule,
+    SearchBarComponent,
+    CopyButtonComponent,
+    WalletProfileOrbComponent,
+  ],
   templateUrl: './wrapper-header.component.html',
   styleUrl: './wrapper-header.component.scss',
 })
@@ -22,6 +33,7 @@ export class WrapperHeaderComponent {
   utilsHelper = inject(UtilsHelper);
   accountSettingsService = inject(AccountSettingsService);
   flowPagesService = inject(FlowPagesService);
+  networkService: NetworkService = inject(NetworkService);
 
   // Use signals for reactive updates
   currentWallet = this.walletService.getCurrentWalletSignal();
@@ -57,7 +69,9 @@ export class WrapperHeaderComponent {
     return address ? this.utilsHelper.shortenAddress(address) : '';
   });
 
-
+  selectedNetwork = computed<SupportedNetwork>(() =>
+    this.networkService.getSelectedNetwork()(),
+  );
 
   onSettingsClick(): void {
     this.flowPagesService.openFlow({
@@ -69,7 +83,15 @@ export class WrapperHeaderComponent {
     });
   }
 
-
+  onNetworkClick(): void {
+    this.flowPagesService.openFlow({
+      id: 'network-selection' as FlowPageId,
+      title: 'Select Network',
+      canNavigateBack: true,
+      showTitle: true,
+      showBackground: true,
+    });
+  }
 
   toggleAccountSettings(): void {
     this.accountSettingsService.toggle();

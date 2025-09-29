@@ -19,6 +19,7 @@ import { SettingsMenuComponent } from '../../flows/settings/settings-menu.compon
 import { DisconnectConfirmationComponent } from '../../flows/settings/disconnect-confirmation.component';
 import { ExportKaspacomWalletFlowPageComponent } from '../../flows/export-kaspacom-wallet/export-kaspacom-wallet-flow-page.component';
 import { IFlowPageConfig } from './interfaces/flow-page.interface';
+import { NetworkSelectionComponent } from '../../flows/network-selection/network-selection.component';
 
 export type FlowPageRegistryEntry =
   | Type<unknown>
@@ -47,6 +48,7 @@ export const FLOW_PAGE_IDS = [
   'send-confirmation',
   'settings-menu',
   'disconnect-confirmation',
+  'network-selection',
 ] as const;
 
 export type FlowPageId = (typeof FLOW_PAGE_IDS)[number];
@@ -80,4 +82,5 @@ export const FLOW_PAGE_REGISTRY: Record<FlowPageId, FlowPageRegistryEntry> = {
   },
   'settings-menu': SettingsMenuComponent,
   'disconnect-confirmation': DisconnectConfirmationComponent,
+  'network-selection': NetworkSelectionComponent,
 } as const;

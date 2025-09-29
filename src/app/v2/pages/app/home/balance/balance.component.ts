@@ -7,6 +7,8 @@ import { CommaFormatterPipe } from '../../../../../pipes/comma-formatter.pipe';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { AssetsStoreService } from '../../../../../services/assets-store.service';
 import { KaspaPriceService } from '../../../../../services/kaspa-price.service';
+import { NetworkService } from '../../../../services/network.service';
+import { L2WalletService } from '../../../../services/l2-wallet.service';
 
 @Component({
   selector: 'app-balance',
@@ -25,6 +27,8 @@ export class BalanceComponent {
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private assetsStore = inject(AssetsStoreService);
   private kaspaPriceService = inject(KaspaPriceService);
+  private networkService: NetworkService = inject(NetworkService);
+  private l2WalletService: L2WalletService = inject(L2WalletService);
 
   // Calculate USD balance by multiplying kasBalance * kaspaPrice with max 3 decimal rounding
   usdBalance = computed(() => {
@@ -59,6 +63,12 @@ export class BalanceComponent {
   kasBalance = computed(() => {
     if (this.kasBalanceInput() !== null) {
       return this.kasBalanceInput() as number;
+    }
+
+    // If L2 selected, display L2 native balance from Web3 provider
+    if (this.networkService.isL2Selected()) {
+      const v = this.l2WalletService.l2NativeBalance();
+      return v ? parseFloat(v as unknown as string) : 0;
     }
 
     const kaspaAssets = this.assetsStore.kaspaAssets();

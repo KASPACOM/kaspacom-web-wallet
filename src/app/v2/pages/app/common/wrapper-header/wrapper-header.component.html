@@ -20,10 +20,19 @@
       (click)="onCopyButtonClick($event)"
     ></app-copy-button>
   </div>
-  <kc-icon
-    class="settings-icon"
-    [iconClass]="'icon-settings'"
-    [size]="'md'"
-    (click)="onSettingsClick()"
-  ></kc-icon>
+  <div class="flex align-items-center gap-8">
+    <kc-icon
+      class="settings-icon"
+      [iconClass]="'icon-chain'"
+      [size]="'md'"
+      (click)="onNetworkClick()"
+    ></kc-icon>
+    <div class="network-label" (click)="onNetworkClick()"><b>{{ selectedNetwork() }}</b></div>
+    <kc-icon
+      class="settings-icon"
+      [iconClass]="'icon-settings'"
+      [size]="'md'"
+      (click)="onSettingsClick()"
+    ></kc-icon>
+  </div>
 </div>

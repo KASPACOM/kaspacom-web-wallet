@@ -47,14 +47,29 @@ export class WrapperHeaderComponent {
 
   walletAddress = computed(() => {
     const wallet = this.currentWallet();
+    const currentNetwork = this.currentNetwork();
     if (!wallet) {
       console.log('No wallet found in currentWallet signal');
       return '';
     }
+
     try {
-      const address = wallet.getAddress();
-      console.log('Wallet address:', address);
-      return address;
+      if (currentNetwork === 'l1-kaspa') {
+        const address = wallet.getAddress();
+        console.log('L1 Kaspa address:', address);
+        return address;
+      } else {
+        // For L2 networks, get the L2 address
+        const l2State = wallet.getL2WalletStateSignal()();
+        if (l2State?.address) {
+          console.log('L2 address:', l2State.address);
+          return l2State.address;
+        }
+        // Fallback to L1 address if L2 address not available
+        const address = wallet.getAddress();
+        console.log('Fallback L1 address:', address);
+        return address;
+      }
     } catch (error) {
       console.error('Error getting wallet address:', error);
       return '';
@@ -67,6 +82,10 @@ export class WrapperHeaderComponent {
   });
 
   currentNetwork = computed(() => {
+    return this.networkSelectionService.getCurrentNetwork();
+  });
+
+  currentNetworkConfig = computed(() => {
     return this.networkSelectionService.getCurrentNetworkConfig();
   });
 

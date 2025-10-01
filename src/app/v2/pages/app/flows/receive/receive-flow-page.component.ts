@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { QRCodeComponent } from 'angularx-qrcode';
 import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
 import { WalletService } from '../../../../../services/wallet.service';
+import { NetworkSelectionService } from '../../../../../services/network-selection.service';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { CommaFormatterPipe } from '../../../../../pipes/comma-formatter.pipe';
@@ -16,7 +17,7 @@ import { CommaFormatterPipe } from '../../../../../pipes/comma-formatter.pipe';
     KcIconComponent,
     CopyButtonComponent,
     SkeletonComponent,
-    CommaFormatterPipe
+    CommaFormatterPipe,
   ],
   templateUrl: './receive-flow-page.component.html',
   styleUrl: './receive-flow-page.component.scss',
@@ -27,11 +28,43 @@ import { CommaFormatterPipe } from '../../../../../pipes/comma-formatter.pipe';
 })
 export class ReceiveFlowPageComponent implements OnInit, OnDestroy {
   private walletService = inject(WalletService);
+  private networkSelectionService = inject(NetworkSelectionService);
 
   // Computed properties for reactive updates
   currentWallet = computed(() => this.walletService.getCurrentWallet());
-  walletAddress = computed(() => this.currentWallet()?.getAddress() || '');
-  walletName = computed(() => this.currentWallet()?.getDisplayName() || 'Wallet');
+  currentNetwork = computed(() =>
+    this.networkSelectionService.getCurrentNetwork(),
+  );
+
+  walletAddress = computed(() => {
+    const wallet = this.currentWallet();
+    const network = this.currentNetwork();
+    if (!wallet) return '';
+
+    if (network === 'l1-kaspa') {
+      return wallet.getAddress();
+    } else {
+      // For L2 networks, get the L2 address
+      const l2State = wallet.getL2WalletStateSignal()();
+      return l2State?.address || wallet.getAddress(); // fallback to L1
+    }
+  });
+
+  qrCodeData = computed(() => {
+    const network = this.currentNetwork();
+    const address = this.walletAddress();
+
+    if (network === 'l1-kaspa') {
+      return `kaspa:${address}`;
+    } else {
+      // For L2 networks, use ethereum: scheme since Kasplex uses 0x addresses
+      return `ethereum:${address}`;
+    }
+  });
+
+  walletName = computed(
+    () => this.currentWallet()?.getDisplayName() || 'Wallet',
+  );
 
   // Loading state
   isLoading = computed(() => !this.currentWallet());
@@ -62,11 +95,23 @@ export class ReceiveFlowPageComponent implements OnInit, OnDestroy {
 
   onShareWallet(): void {
     if (navigator.share && this.walletAddress()) {
-      navigator.share({
-        title: 'My Kaspa Wallet Address',
-        text: `Send Kaspa to: ${this.walletAddress()}`,
-        url: `kaspa:${this.walletAddress()}`
-      }).catch(err => {
+      const network = this.currentNetwork();
+      const address = this.walletAddress();
+
+      let shareData: any = {
+        title: `My ${network === 'l1-kaspa' ? 'Kaspa' : 'Kasplex'} Wallet Address`,
+        text: `Send ${network === 'l1-kaspa' ? 'Kaspa' : 'Kasplex'} to: ${address}`,
+      };
+
+      // Use appropriate URL scheme based on network
+      if (network === 'l1-kaspa') {
+        shareData.url = `kaspa:${address}`;
+      } else {
+        // For L2 networks, use ethereum: scheme since Kasplex uses 0x addresses
+        shareData.url = `ethereum:${address}`;
+      }
+
+      navigator.share(shareData).catch((err) => {
         console.log('Error sharing:', err);
         this.fallbackShare();
       });

@@ -23,10 +23,10 @@
   <div class="network-selection-section">
     <div class="network-info" (click)="onNetworkSelectionClick()">
       <div class="network-icon">
-        {{ currentNetwork()?.icon || '🌐' }}
+        {{ currentNetworkConfig()?.icon || '🌐' }}
       </div>
       <div class="network-name">
-        {{ currentNetwork()?.displayName || 'Kaspa L1' }}
+        {{ currentNetworkConfig()?.displayName || 'Kaspa L1' }}
       </div>
     </div>
     <kc-icon

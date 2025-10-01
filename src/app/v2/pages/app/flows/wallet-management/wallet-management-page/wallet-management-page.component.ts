@@ -8,6 +8,8 @@ import {
   IQuickActionDialogConfig,
 } from '../../../../../services/quick-action-dialog.service';
 import { WalletService } from '../../../../../../services/wallet.service';
+import { NetworkSelectionService } from '../../../../../../services/network-selection.service';
+import { KaspaNetworkActionsService } from '../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { AppWallet } from '../../../../../../classes/AppWallet';
 
 interface WalletAccount {
@@ -15,6 +17,7 @@ interface WalletAccount {
   name: string;
   address: string;
   balance: number;
+  balanceDisplay: string;
   isSelected: boolean;
   wallet: AppWallet;
 }
@@ -29,6 +32,8 @@ interface WalletAccount {
 export class WalletManagementPageComponent extends FlowPageBaseComponent {
   private quickActionDialogService = inject(QuickActionDialogService);
   private walletService = inject(WalletService);
+  private networkSelectionService = inject(NetworkSelectionService);
+  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
 
   get config(): IFlowPageConfig {
     return {
@@ -46,6 +51,11 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
   currentWalletName = computed(() => {
     const wallet = this.walletService.getCurrentWallet();
     return wallet?.getName() || 'Wallet';
+  });
+
+  // Current network for address/balance display
+  currentNetwork = computed(() => {
+    return this.networkSelectionService.getCurrentNetwork();
   });
 
   constructor() {
@@ -89,11 +99,16 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
     const accounts: WalletAccount[] = [];
     if (currentGroup.length > 0 && currentGroup[0].supportAccounts()) {
       currentGroup.forEach((wallet) => {
+        const network = this.networkSelectionService.getCurrentNetwork();
+        const address = this.getWalletAddress(wallet, network);
+        const balance = this.getWalletBalance(wallet, network);
+
         accounts.push({
           id: wallet.getIdWithAccount(),
           name: wallet.getAccountName() || wallet.getName(),
-          address: wallet.getAddress(),
-          balance: wallet.getTotalBalanceAsSignal() || 0,
+          address: address,
+          balance: balance,
+          balanceDisplay: `${balance} ${network === 'l1-kaspa' ? 'KAS' : 'KAS'}`,
           isSelected:
             currentWallet?.getIdWithAccount() === wallet.getIdWithAccount(),
           wallet: wallet,
@@ -102,11 +117,16 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
     } else if (currentGroup.length > 0) {
       // Single wallet without accounts
       const wallet = currentGroup[0];
+      const network = this.networkSelectionService.getCurrentNetwork();
+      const address = this.getWalletAddress(wallet, network);
+      const balance = this.getWalletBalance(wallet, network);
+
       accounts.push({
         id: wallet.getIdWithAccount(),
         name: wallet.getName(),
-        address: wallet.getAddress(),
-        balance: wallet.getTotalBalanceAsSignal() || 0,
+        address: address,
+        balance: balance,
+        balanceDisplay: `${balance} ${network === 'l1-kaspa' ? 'KAS' : 'KAS'}`,
         isSelected:
           currentWallet?.getIdWithAccount() === wallet.getIdWithAccount(),
         wallet: wallet,
@@ -238,6 +258,29 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
       isCloseable: true,
       data: {},
     });
+  }
+
+  private getWalletAddress(wallet: AppWallet, network: string): string {
+    if (network === 'l1-kaspa') {
+      return wallet.getAddress();
+    } else {
+      // For L2 networks, get the L2 address
+      const l2State = wallet.getL2WalletStateSignal()();
+      return l2State?.address || wallet.getAddress(); // fallback to L1
+    }
+  }
+
+  private getWalletBalance(wallet: AppWallet, network: string): number {
+    if (network === 'l1-kaspa') {
+      const balanceData = wallet.getCurrentWalletStateBalanceSignalValue();
+      return balanceData
+        ? this.kaspaNetworkActionsService.sompiToNumber(balanceData.mature)
+        : 0;
+    } else {
+      // For L2 networks, get the L2 balance
+      const l2State = wallet.getL2WalletStateSignal()();
+      return l2State ? l2State.balanceFormatted : 0;
+    }
   }
 
   shortenAddress(address: string): string {

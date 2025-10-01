@@ -8,13 +8,20 @@
     </div>
   }
   
-  <!-- KAS Balance -->
+  <!-- Network Balance -->
   @if (isLoading()) {
     <app-skeleton [height]="'33px'" [width]="'200px'" [fullRound]="false"></app-skeleton>
   } @else {
     <div class="kas-balance flex gap-8 align-items-center typo-title-4 fade-in" style="color: var(--gray-80)">
-      <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'md'"></kc-icon>
-      {{ kasBalance() | commaFormatter }}
+      <div class="network-indicator">
+        {{ currentNetworkInfo()?.icon || '🌐' }}
+      </div>
+      <span class="balance-amount">
+        {{ kasBalance() | commaFormatter }}
+      </span>
+      <span class="network-name">
+        {{ currentNetworkInfo()?.name?.toUpperCase() || 'KAS' }}
+      </span>
     </div>
   }
 </div>

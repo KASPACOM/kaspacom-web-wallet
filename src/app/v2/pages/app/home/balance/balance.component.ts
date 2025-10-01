@@ -7,6 +7,7 @@ import { CommaFormatterPipe } from '../../../../../pipes/comma-formatter.pipe';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { AssetsStoreService } from '../../../../../services/assets-store.service';
 import { KaspaPriceService } from '../../../../../services/kaspa-price.service';
+import { NetworkSelectionService } from '../../../../../services/network-selection.service';
 
 @Component({
   selector: 'app-balance',
@@ -23,8 +24,8 @@ export class BalanceComponent {
   kasBalanceInput = input<number | null>(null);
   private walletService = inject(WalletService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
-  private assetsStore = inject(AssetsStoreService);
   private kaspaPriceService = inject(KaspaPriceService);
+  private networkSelectionService = inject(NetworkSelectionService);
 
   // Calculate USD balance by multiplying kasBalance * kaspaPrice with max 3 decimal rounding
   usdBalance = computed(() => {
@@ -52,22 +53,47 @@ export class BalanceComponent {
       return false;
     }
 
-    return this.assetsStore.isAssetTypeLoading('kaspa');
+    const balanceData = wallet.getCurrentWalletStateBalanceSignalValue();
+    return !balanceData;
   });
 
-  // Get the actual KAS balance from the assets store
+  // Get the actual balance from the wallet based on network
   kasBalance = computed(() => {
+    const currentNetwork = this.networkSelectionService.getCurrentNetwork();
+
     if (this.kasBalanceInput() !== null) {
       return this.kasBalanceInput() as number;
     }
 
-    const kaspaAssets = this.assetsStore.kaspaAssets();
-    if (!kaspaAssets) {
+    const wallet = this.walletService.getCurrentWallet();
+    if (!wallet) {
       return 0;
     }
 
-    return this.kaspaNetworkActionsService.sompiToNumber(
-      kaspaAssets.totalBalance,
-    );
+    const balanceData = wallet.getCurrentWalletStateBalanceSignalValue();
+    if (!balanceData) {
+      return 0;
+    }
+
+    // For L1 Kaspa, use mature balance
+    if (currentNetwork === 'l1-kaspa') {
+      return this.kaspaNetworkActionsService.sompiToNumber(balanceData.mature);
+    }
+
+    // For L2 networks, check if there's L2 balance data
+    if (currentNetwork === 'kasplex' || currentNetwork === 'igra') {
+      const l2State = wallet.getL2WalletStateSignal()();
+      if (l2State) {
+        return l2State.balanceFormatted;
+      }
+      return 0;
+    }
+
+    return this.kaspaNetworkActionsService.sompiToNumber(balanceData.mature);
+  });
+
+  // Get network-specific display information
+  currentNetworkInfo = computed(() => {
+    return this.networkSelectionService.getCurrentNetworkConfig();
   });
 }

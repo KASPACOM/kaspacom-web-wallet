@@ -12,3 +12,18 @@
     transform: translateY(0);
   }
 }
+
+.network-indicator {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.balance-amount {
+  font-weight: 600;
+}
+
+.network-name {
+  font-size: 12px;
+  opacity: 0.8;
+  font-weight: 500;
+}

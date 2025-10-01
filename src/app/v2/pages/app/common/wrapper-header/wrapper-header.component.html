@@ -20,10 +20,20 @@
       (click)="onCopyButtonClick($event)"
     ></app-copy-button>
   </div>
-  <kc-icon
-    class="settings-icon"
-    [iconClass]="'icon-settings'"
-    [size]="'md'"
-    (click)="onSettingsClick()"
-  ></kc-icon>
+  <div class="network-selection-section">
+    <div class="network-info" (click)="onNetworkSelectionClick()">
+      <div class="network-icon">
+        {{ currentNetwork()?.icon || '🌐' }}
+      </div>
+      <div class="network-name">
+        {{ currentNetwork()?.displayName || 'Kaspa L1' }}
+      </div>
+    </div>
+    <kc-icon
+      class="settings-icon"
+      [iconClass]="'icon-settings'"
+      [size]="'md'"
+      (click)="onSettingsClick()"
+    ></kc-icon>
+  </div>
 </div>

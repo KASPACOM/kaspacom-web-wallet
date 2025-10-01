@@ -1,0 +1,92 @@
+.network-selection-modal {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-surface);
+  border-radius: 16px 16px 0 0;
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--color-border);
+
+    h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .close-icon {
+      cursor: pointer;
+      color: var(--color-text-secondary);
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: var(--color-text-primary);
+      }
+    }
+  }
+
+  .modal-content {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+
+    .networks-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      .network-item {
+        display: flex;
+        align-items: center;
+        padding: 16px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+
+        &:hover {
+          background: var(--color-surface-hover);
+        }
+
+        &.selected {
+          background: var(--color-primary-light);
+          border-color: var(--color-primary);
+        }
+
+        .network-icon {
+          font-size: 24px;
+          margin-right: 16px;
+          min-width: 32px;
+          text-align: center;
+        }
+
+        .network-info {
+          flex: 1;
+
+          .network-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            margin-bottom: 4px;
+          }
+
+          .network-description {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+          }
+        }
+
+        .network-status {
+          .icon-check {
+            color: var(--color-primary);
+          }
+        }
+      }
+    }
+  }
+}

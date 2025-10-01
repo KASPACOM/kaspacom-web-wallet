@@ -1,0 +1,37 @@
+<div class="network-selection-modal">
+  <div class="modal-header">
+    <h3>Select Network</h3>
+    <kc-icon
+      class="close-icon"
+      [iconClass]="'icon-close'"
+      [size]="'md'"
+      (click)="onClose()"
+    ></kc-icon>
+  </div>
+
+  <div class="modal-content">
+    <div class="networks-list">
+      <div
+        *ngFor="let network of networks()"
+        class="network-item"
+        [class.selected]="isCurrentNetwork(network.id)"
+        (click)="onNetworkSelect(network.id)"
+      >
+        <div class="network-icon">
+          {{ getNetworkIcon(network) }}
+        </div>
+        <div class="network-info">
+          <div class="network-name">{{ network.displayName }}</div>
+          <div class="network-description">{{ network.name }}</div>
+        </div>
+        <div class="network-status">
+          <kc-icon
+            *ngIf="isCurrentNetwork(network.id)"
+            [iconClass]="'icon-check'"
+            [size]="'sm'"
+          ></kc-icon>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

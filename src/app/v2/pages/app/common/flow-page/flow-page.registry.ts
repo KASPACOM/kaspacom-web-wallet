@@ -8,6 +8,8 @@ import { SendNftListComponent } from '../../flows/transaction/send-page/componen
 import { SendNftComponent } from '../../flows/transaction/send-page/components/send-nft/send-nft.component';
 import { SendKnsListComponent } from '../../flows/transaction/send-page/components/send-kns-list/send-kns-list.component';
 import { SendKnsComponent } from '../../flows/transaction/send-page/components/send-kns/send-kns.component';
+import { SendL2KaspaComponent } from '../../flows/transaction/send-page/components/send-l2-kaspa/send-l2-kaspa.component';
+import { SendL2Erc20ListComponent } from '../../flows/transaction/send-page/components/send-l2-erc20-list/send-l2-erc20-list.component';
 import { ApprovalFlowPageComponent } from '../../flows/approval/approval-flow-page/approval-flow-page.component';
 import { ReceiveFlowPageComponent } from '../../flows/receive/receive-flow-page.component';
 import { ExportWalletComponent } from '../../flows/export-wallet/export-wallet.component';
@@ -39,6 +41,8 @@ export const FLOW_PAGE_IDS = [
   'send-nft',
   'send-kns-list',
   'send-kns',
+  'send-l2-kaspa',
+  'send-l2-erc20-list',
   'action-approval',
   'receive',
   'export-wallet',
@@ -64,6 +68,8 @@ export const FLOW_PAGE_REGISTRY: Record<FlowPageId, FlowPageRegistryEntry> = {
   'send-nft': SendNftComponent,
   'send-kns-list': SendKnsListComponent,
   'send-kns': SendKnsComponent,
+  'send-l2-kaspa': SendL2KaspaComponent,
+  'send-l2-erc20-list': SendL2Erc20ListComponent,
   'action-approval': ApprovalFlowPageComponent,
   receive: ReceiveFlowPageComponent,
   'export-wallet': ExportWalletComponent,

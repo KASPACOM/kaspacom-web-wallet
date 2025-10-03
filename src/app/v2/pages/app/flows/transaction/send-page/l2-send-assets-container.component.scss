@@ -1,0 +1,19 @@
+.send-options-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .send-option-card {
+    background: var(--color-card-background);
+    border-radius: 12px;
+    transition: transform 0.2s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+    }
+
+    &__info {
+      flex: 1;
+    }
+  }
+}

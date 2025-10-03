@@ -1,0 +1,25 @@
+.send-l2-erc20-list-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.coming-soon-message {
+  h3 {
+    color: var(--color-text-primary);
+    margin-bottom: 16px;
+    font-size: 24px;
+    font-weight: 600;
+  }
+
+  p {
+    color: var(--color-text-secondary);
+    font-size: 16px;
+    line-height: 1.5;
+    max-width: 400px;
+  }
+}

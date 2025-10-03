@@ -9,27 +9,9 @@
   cursor: pointer;
   border: 2px solid transparent;
   transition: border-color 0.2s ease;
+  background-image: url("https://cache.krc721.stream/krc721/mainnet/optimized/YONATOSHI/6464");
 
   &:hover {
     border-color: rgba(255, 255, 255, 0.3);
-  }
-
-  &--l1 {
-    background-image: url("https://cache.krc721.stream/krc721/mainnet/optimized/YONATOSHI/6464");
-  }
-
-  &--l2 {
-    background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
-    position: relative;
-
-    &::before {
-      content: "💎";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 16px;
-      opacity: 0.8;
-    }
   }
 }

@@ -1,9 +1,31 @@
-import { signal } from '@angular/core';
+import { computed, inject, linkedSignal, signal } from '@angular/core';
+import { NetworkSelectionService } from '../../../../../services/network-selection.service';
+
+// Type-safe tab IDs
+export const ASSET_TAB_IDS = {
+  UTXOS: 'utxos',
+  KRC20: 'krc20',
+  KRC721: 'krc721',
+  KNS: 'kns',
+  L2_ERC20: 'l2-ERC20',
+} as const;
+
+export type AssetTabId = (typeof ASSET_TAB_IDS)[keyof typeof ASSET_TAB_IDS];
 
 export class BaseAssetsContainerComponent {
-  selectedTabId = signal<string>('utxos');
+  private networkService = inject(NetworkSelectionService);
+
+  // Network-reactive default tab selection
+  private defaultTabId = computed(() =>
+    this.networkService.isL1Network()
+      ? ASSET_TAB_IDS.UTXOS
+      : ASSET_TAB_IDS.L2_ERC20,
+  );
+
+  // Selected tab - linked to network changes for automatic default switching
+  selectedTabId = linkedSignal<AssetTabId>(() => this.defaultTabId());
 
   onTabChange(tabId: string): void {
-    this.selectedTabId.set(tabId);
+    this.selectedTabId.set(tabId as AssetTabId);
   }
 }

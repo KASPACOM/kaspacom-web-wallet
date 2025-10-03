@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { LOCAL_STORAGE_KEYS } from '../config/consts';
+import { LOCAL_STORAGE_KEYS, KASPA_NETWORKS } from '../config/consts';
 import { environment } from '../../environments/environment';
 
 export type NetworkType = 'l1-kaspa' | 'kasplex' | 'igra';
@@ -21,29 +21,39 @@ export class NetworkSelectionService {
       'l1-kaspa',
   );
 
-  private networks: NetworkConfig[] = [
-    {
-      id: 'l1-kaspa',
-      name: 'kaspa',
-      displayName: 'Kaspa L1',
-      enabled: true,
-      icon: '🌐',
-    },
-    {
-      id: 'kasplex',
-      name: 'kasplex',
-      displayName: 'Kasplex',
-      enabled: true,
-      icon: '💎',
-    },
-    {
-      id: 'igra',
-      name: 'igra',
-      displayName: 'Igra',
-      enabled: false, // Disabled for now as per requirements
-      icon: '🎮',
-    },
-  ];
+  private getNetworkConfig(): NetworkConfig[] {
+    const isMainnet = environment.kaspaNetwork === KASPA_NETWORKS.MAINNET;
+    const kaspaNetworkName = isMainnet ? 'Kaspa Mainnet' : 'Kaspa Testnet-10';
+    const kaspaNetworkFullName = `${kaspaNetworkName} (Layer 1)`;
+
+    return [
+      {
+        id: 'l1-kaspa',
+        name: kaspaNetworkFullName,
+        displayName: kaspaNetworkName,
+        enabled: true,
+        icon: '🌐',
+      },
+      {
+        id: 'kasplex',
+        name: 'Kasplex (Layer 2 DEX)',
+        displayName: 'Kasplex',
+        enabled: true,
+        icon: '💎',
+      },
+      {
+        id: 'igra',
+        name: 'Igra (Layer 2 Gaming)',
+        displayName: 'Igra Test',
+        enabled: false, // Disabled for now as per requirements
+        icon: '🎮',
+      },
+    ];
+  }
+
+  private get networks(): NetworkConfig[] {
+    return this.getNetworkConfig();
+  }
 
   constructor() {
     // Initialize with available networks from environment if needed

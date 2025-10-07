@@ -10,11 +10,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
-import {
-  KcInputComponent,
-  KcButtonComponent,
-  KcIconComponent,
-} from '@kaspacom/ui';
+import { KcInputComponent, KcButtonComponent } from '@kaspacom/ui';
 import { FormsModule } from '@angular/forms';
 import { TokenLogoComponent } from '../../../../../common/krc20/token-logo/token-logo.component';
 import { WalletService } from '../../../../../../../../services/wallet.service';
@@ -25,6 +21,9 @@ import { QrScannerService } from '../../../../../../../../services/qr-scanner.se
 import { Router } from '@angular/router';
 import { AddressSmartInputComponent } from '../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { NetworkSelectionService } from '../../../../../../../../services/network-selection.service';
+import { UtilsHelper } from '../../../../../../../../services/utils.service';
+import { KaspaNetworkActionsService } from '../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
+import { EIP1193RequestType } from '@kaspacom/wallet-messages';
 
 @Component({
   selector: 'app-send-l2-kaspa',
@@ -33,7 +32,6 @@ import { NetworkSelectionService } from '../../../../../../../../services/networ
     CommonModule,
     KcInputComponent,
     KcButtonComponent,
-    KcIconComponent,
     FormsModule,
     TokenLogoComponent,
     AddressSmartInputComponent,
@@ -54,6 +52,8 @@ export class SendL2KaspaComponent
   private networkSelectionService = inject(
     NetworkSelectionService,
   ) as NetworkSelectionService;
+  private utilsHelper = inject(UtilsHelper);
+  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
 
   // Form data
   walletAddress: string = '';
@@ -226,23 +226,22 @@ export class SendL2KaspaComponent
   }
 
   private validateAddress(): void {
-    if (!this.walletAddress) {
-      this.isAddressValid = !this.addressTouched;
-      this.addressErrorMessage = this.addressTouched
-        ? 'Wallet address is required'
-        : '';
-      return;
-    }
+    // Use network-aware address validation with proper error messages
+    const isL2Network = this.networkSelectionService.isL2Network();
+    const errorMessage = this.utilsHelper.getAddressValidationErrorMessage(
+      this.walletAddress,
+      isL2Network,
+    );
 
-    // Basic address validation for L2 (simplified for now)
-    if (this.walletAddress.length >= 30 && this.walletAddress.length <= 100) {
+    if (this.walletAddress && !errorMessage) {
+      // Valid address
       this.isAddressValid = true;
       this.addressErrorMessage = '';
-      return;
+    } else {
+      // Invalid or empty address
+      this.isAddressValid = !this.addressTouched && !this.walletAddress;
+      this.addressErrorMessage = this.addressTouched ? errorMessage : '';
     }
-
-    this.isAddressValid = false;
-    this.addressErrorMessage = 'Invalid wallet address format';
   }
 
   async onSendClick(): Promise<void> {
@@ -270,17 +269,58 @@ export class SendL2KaspaComponent
     this.isLoading = true;
 
     try {
-      // For L2 transactions, we'll create a simplified flow for now
-      // TODO: Implement actual L2 transaction logic
+      // Get the L2 wallet address for the sender
+      const l2WalletAddress = await currentWallet.getL2WalletAddress();
+      if (!l2WalletAddress) {
+        this.messagePopupService.showError('L2 wallet not available');
+        return;
+      }
 
-      // Show success message for now (placeholder implementation)
-      this.messagePopupService.showSuccess(
-        'L2 Kaspa transaction feature coming soon!',
+      const l2Provider = currentWallet.getL2Provider();
+      if (!l2Provider) {
+        this.messagePopupService.showError('L2 provider not available');
+        return;
+      }
+
+      // Convert Kaspa amount to L2 blockchain format (e.g., 1 KAS -> appropriate wei amount)
+      const l2Amount = l2Provider.fromReadableNumberToBlockchainNumber(
+        this.kaspaAmount!,
       );
-      this.navigateBack();
+
+      // Create EIP1193 action for L2 Kaspa transaction
+      const l2TransactionParams = {
+        from: l2WalletAddress, // Sender address (L2 address)
+        to: this.walletAddress, // Destination address (L2 address)
+        value: l2Amount.toString(), // Amount in L2 native currency as string
+        gasLimit: '21000', // Standard gas limit for simple transfers
+      };
+
+      console.warn('l2TransactionParams', l2TransactionParams);
+      const action = this.walletActionService.createEIP1193Action({
+        method: EIP1193RequestType.SEND_TRANSACTION,
+        params: [l2TransactionParams],
+      });
+
+      // Use the existing approval flow and wallet action service
+      const result =
+        await this.walletActionService.validateAndDoActionAfterApproval(action);
+
+      if (result.success) {
+        // Refresh the L2 balance after successful transaction
+        await currentWallet.refreshL2Balance();
+
+        this.messagePopupService.showSuccess(
+          'L2 Kaspa transaction sent successfully!',
+        );
+        this.navigateBack();
+      } else {
+        this.messagePopupService.showError(
+          'Failed to send L2 Kaspa transaction',
+        );
+      }
     } catch (error) {
-      console.error('Error sending L2 transaction:', error);
-      this.messagePopupService.showError('Failed to send L2 transaction');
+      console.error('Error sending L2 Kaspa transaction:', error);
+      this.messagePopupService.showError('Failed to send L2 Kaspa transaction');
     } finally {
       this.isLoading = false;
     }

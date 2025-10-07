@@ -708,8 +708,10 @@ export class AssetsStoreService {
     return new Promise((resolve) => {
       setTimeout(async () => {
         try {
-          // For now, we'll use the existing wallet's L2 balance
-          // In the future, this could be extended to load ERC20 tokens from Kasplex
+          // Actually refresh the L2 balance by calling refreshL2Balance
+          // This ensures fresh balance data instead of cached values
+          await this.currentWallet!.refreshL2Balance();
+
           const wallet = this.currentWallet!;
           const l2State = wallet.getL2WalletStateSignal()();
 
@@ -757,7 +759,10 @@ export class AssetsStoreService {
     return new Promise((resolve) => {
       setTimeout(async () => {
         try {
-          // For now, we'll use the existing wallet's L2 balance
+          // Actually refresh the L2 balance by calling refreshL2Balance
+          // This ensures fresh balance data instead of cached values during periodic refresh
+          await this.currentWallet!.refreshL2Balance();
+
           const wallet = this.currentWallet!;
           const l2State = wallet.getL2WalletStateSignal()();
 
@@ -767,6 +772,10 @@ export class AssetsStoreService {
               utxoEntries: [],
             };
             this.kaspaAssetsSignal.set(mockL2Balance);
+            console.log(
+              '[AssetsStore] L2 balance silently refreshed:',
+              l2State.balanceFormatted,
+            );
           } else {
             this.kaspaAssetsSignal.set(null);
           }

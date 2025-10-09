@@ -33,6 +33,20 @@
           border-color: var(--color-primary);
         }
 
+        &.disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+
+          &:hover {
+            background: transparent;
+          }
+
+          .network-name,
+          .network-description {
+            color: var(--color-text-disabled);
+          }
+        }
+
         .network-icon {
           font-size: 24px;
           margin-right: 16px;

@@ -5,7 +5,8 @@
         *ngFor="let network of networks()"
         class="network-item"
         [class.selected]="isCurrentNetwork(network.id)"
-        (click)="onNetworkSelect(network.id)"
+        [class.disabled]="isNetworkDisabled(network)"
+        (click)="isNetworkDisabled(network) ? null : onNetworkSelect(network.id)"
       >
         <div class="network-icon">
           {{ getNetworkIcon(network) }}

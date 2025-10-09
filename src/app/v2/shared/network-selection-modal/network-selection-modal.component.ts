@@ -7,11 +7,11 @@ import {
   NetworkType,
 } from '../../../services/network-selection.service';
 import { FlowPagesService } from '../../services/flow-pages.service';
-import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
+import { KcIconComponent } from '@kaspacom/ui';
 
 @Component({
   selector: 'app-network-selection-modal',
-  imports: [CommonModule, KcButtonComponent, KcIconComponent],
+  imports: [CommonModule, KcIconComponent],
   templateUrl: './network-selection-modal.component.html',
   styleUrl: './network-selection-modal.component.scss',
 })
@@ -30,11 +30,18 @@ export class NetworkSelectionModalComponent {
       this.currentNetwork.set(network);
     });
 
-    // Load available networks
-    this.networks.set(this.networkSelectionService.getNetworks());
+    // Load all networks (including disabled ones for visibility)
+    this.networks.set(this.networkSelectionService.getAllNetworks());
   }
 
   onNetworkSelect(networkId: string): void {
+    const networkConfig = this.networkSelectionService.getNetworkById(
+      networkId as NetworkType,
+    );
+    if (!networkConfig?.enabled) {
+      return; // Don't allow selection of disabled networks
+    }
+
     this.networkSelectionService.setCurrentNetwork(networkId as NetworkType);
     this.flowPagesService.closePage();
   }
@@ -49,5 +56,9 @@ export class NetworkSelectionModalComponent {
 
   isCurrentNetwork(networkId: string): boolean {
     return this.currentNetwork() === networkId;
+  }
+
+  isNetworkDisabled(network: NetworkConfig): boolean {
+    return !network.enabled;
   }
 }

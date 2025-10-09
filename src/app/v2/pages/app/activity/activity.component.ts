@@ -5,6 +5,7 @@ import {
   OnInit,
   signal,
   OnDestroy,
+  effect,
 } from '@angular/core';
 import { BaseActivityComponent } from './base-activity.component';
 import { CommonModule } from '@angular/common';
@@ -20,7 +21,12 @@ import { KaspaApiService } from '../../../../services/kaspa-api/kaspa-api.servic
 import { KasplexKrc20Service } from '../../../../services/kasplex-api/kasplex-api.service';
 import { FullTransactionResponseItem } from '../../../../services/kaspa-api/dtos/full-transaction-response.dto';
 import { OperationDetails } from '../../../../services/kasplex-api/dtos/operation-details-response';
+import {
+  Erc20TransactionService,
+  ERC20Transaction,
+} from '../../../../services/etherium-services/erc20-transaction.service';
 import { KaspaNetworkActionsService } from '../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
+import { NetworkSelectionService } from '../../../../services/network-selection.service';
 import { TimeAgoPipe } from '../../../../pipes/time-ago.pipe';
 import { firstValueFrom, catchError, of, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -28,7 +34,7 @@ import { takeUntil } from 'rxjs/operators';
 // Types for activity items
 interface BaseActivityItem {
   id: string;
-  type: 'kaspa' | 'krc20';
+  type: 'kaspa' | 'krc20' | 'erc20';
   timestamp: number;
   status: 'accepted' | 'pending' | 'rejected';
 }
@@ -51,7 +57,20 @@ interface Krc20ActivityItem extends BaseActivityItem {
   toAddress?: string;
 }
 
-type ActivityItem = KaspaActivityItem | Krc20ActivityItem;
+export interface Erc20ActivityItem extends BaseActivityItem {
+  type: 'erc20';
+  tokenAddress: string;
+  tokenSymbol?: string;
+  tokenName?: string;
+  amount: string;
+  isIncoming: boolean;
+  fromAddress?: string;
+  toAddress?: string;
+  gasUsed?: string;
+  gasPrice?: string;
+}
+
+type ActivityItem = KaspaActivityItem | Krc20ActivityItem | Erc20ActivityItem;
 
 @Component({
   selector: 'app-activity',
@@ -71,28 +90,40 @@ export class ActivityComponent
   private walletService = inject(WalletService);
   private kaspaApiService = inject(KaspaApiService);
   private kasplexService = inject(KasplexKrc20Service);
+  private erc20TransactionService = inject(Erc20TransactionService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  private networkSelectionService = inject(NetworkSelectionService);
   private router = inject(Router);
   private destroy$ = new Subject<void>();
 
   // Signals for reactive state
   private kaspaTransactions = signal<FullTransactionResponseItem[]>([]);
   private krc20Operations = signal<OperationDetails[]>([]);
+  private erc20Transactions = signal<ERC20Transaction[]>([]);
+  private combinedActivityItems = signal<ActivityItem[]>([]);
   private isLoadingKaspa = signal<boolean>(true);
   private isLoadingKrc20 = signal<boolean>(true);
+  private isLoadingErc20 = signal<boolean>(true);
 
   // Computed combined activity list
   allActivity = computed<ActivityItem[]>(() => {
-    const kaspaItems = this.kaspaTransactions().map((tx) =>
-      this.transformKaspaTransaction(tx),
+    return this.combinedActivityItems();
+  });
+
+  // Async computed for combined activity (L1: Kaspa + KRC20)
+  private async getCombinedActivity(): Promise<ActivityItem[]> {
+    const kaspaItems = await Promise.all(
+      this.kaspaTransactions().map((tx) => this.transformKaspaTransaction(tx)),
     );
-    const krc20Items = this.krc20Operations().map((op) =>
-      this.transformKrc20Operation(op),
+    const krc20Items = await Promise.all(
+      this.krc20Operations().map((op) => this.transformKrc20Operation(op)),
+    );
+    const erc20Items = this.erc20Transactions().map((tx) =>
+      this.transformErc20Transaction(tx),
     );
 
     // Combine and sort by timestamp (newest first)
-    // Ensure both timestamps are numbers for proper sorting
-    return [...kaspaItems, ...krc20Items].sort((a, b) => {
+    return [...kaspaItems, ...krc20Items, ...erc20Items].sort((a, b) => {
       const timestampA =
         typeof a.timestamp === 'number'
           ? a.timestamp
@@ -103,7 +134,27 @@ export class ActivityComponent
           : parseInt(String(b.timestamp));
       return timestampB - timestampA;
     });
-  });
+  }
+
+  // TODO: Implement proper L2 activity fetching
+  private async getCombinedActivityForL2(): Promise<ActivityItem[]> {
+    const erc20Items = this.erc20Transactions().map((tx) =>
+      this.transformErc20Transaction(tx),
+    );
+
+    // Sort by timestamp (newest first)
+    return erc20Items.sort((a, b) => {
+      const timestampA =
+        typeof a.timestamp === 'number'
+          ? a.timestamp
+          : parseInt(String(a.timestamp));
+      const timestampB =
+        typeof b.timestamp === 'number'
+          ? b.timestamp
+          : parseInt(String(b.timestamp));
+      return timestampB - timestampA;
+    });
+  }
 
   // Filtered activity based on selected tab
   override filteredActivity = computed<ActivityItem[]>(() => {
@@ -113,25 +164,58 @@ export class ActivityComponent
     switch (selectedTab) {
       case 'kaspa':
         return allItems.filter((item) => item.type === 'kaspa');
-      case 'krc20':
-        return allItems.filter((item) => item.type === 'krc20');
+      case 'erc20':
+        return allItems.filter((item) => item.type === 'erc20');
       default:
         return allItems;
     }
   });
 
-  // Loading state
-  isLoading = computed(() => this.isLoadingKaspa() || this.isLoadingKrc20());
+  // Current network signal
+  currentNetwork = computed(() =>
+    this.networkSelectionService.getCurrentNetwork(),
+  );
 
-  // Tabs configuration
-  tabs: TabItem[] = [
-    { id: 'all', label: 'All Activity' },
-    { id: 'kaspa', label: 'Kaspa' },
-    { id: 'krc20', label: 'KRC20' },
-  ];
+  // Loading state
+  isLoading = computed(
+    () =>
+      this.isLoadingKaspa() || this.isLoadingKrc20() || this.isLoadingErc20(),
+  );
+
+  // Reactive tabs configuration based on current network
+  tabs = computed<TabItem[]>(() => {
+    const isL2Network = this.networkSelectionService.isL2Network();
+
+    if (isL2Network) {
+      return [
+        { id: 'all', label: 'All Activity' },
+        { id: 'erc20', label: 'ERC20' },
+      ];
+    } else {
+      return [
+        { id: 'all', label: 'All Activity' },
+        { id: 'kaspa', label: 'Kaspa' },
+        { id: 'erc20', label: 'ERC20' },
+      ];
+    }
+  });
+
+  constructor() {
+    super();
+
+    // Effect to reload activity data when network changes
+    effect(() => {
+      // This will trigger whenever currentNetwork changes
+      const network = this.currentNetwork();
+
+      // Reset all loading states and data when network changes
+      this.resetActivityData();
+      this.loadActivityData();
+    });
+  }
 
   ngOnInit() {
-    this.loadActivityData();
+    // Initial load is handled by the effect in constructor
   }
 
   ngOnDestroy() {
@@ -160,6 +244,27 @@ export class ActivityComponent
           state: { returnTo: 'activity' },
         },
       );
+    } else if (item.type === 'erc20') {
+      // TODO: Create ERC20 transaction details page
+      const erc20Item = item as Erc20ActivityItem;
+      console.log('ERC20 transaction clicked:', erc20Item);
+    }
+  }
+
+  private resetActivityData() {
+    this.kaspaTransactions.set([]);
+    this.krc20Operations.set([]);
+    this.erc20Transactions.set([]);
+    this.combinedActivityItems.set([]);
+    this.isLoadingKaspa.set(true);
+    this.isLoadingKrc20.set(true);
+    this.isLoadingErc20.set(true);
+
+    const currentTab = this.selectedTabId();
+    const availableTabs = this.tabs().map((tab) => tab.id);
+
+    if (!availableTabs.includes(currentTab)) {
+      this.selectedTabId.set('all');
     }
   }
 
@@ -169,16 +274,35 @@ export class ActivityComponent
       console.warn('No current wallet selected');
       this.isLoadingKaspa.set(false);
       this.isLoadingKrc20.set(false);
+      this.isLoadingErc20.set(false);
       return;
     }
 
-    const walletAddress = currentWallet.getAddress();
+    const isL2Network = this.networkSelectionService.isL2Network();
 
-    // Load Kaspa transactions and KRC20 operations in parallel
-    await Promise.all([
-      this.loadKaspaTransactions(walletAddress),
-      this.loadKrc20Operations(walletAddress),
-    ]);
+    if (isL2Network) {
+      // TODO: L2 transaction history needs implementation
+      const l2WalletAddress = await currentWallet.getL2WalletAddress();
+      if (l2WalletAddress) {
+        await this.loadErc20Transactions(l2WalletAddress);
+      }
+      this.isLoadingKaspa.set(false);
+      this.isLoadingKrc20.set(false);
+
+      const combinedItems = await this.getCombinedActivityForL2();
+      this.combinedActivityItems.set(combinedItems);
+    } else {
+      const walletAddress = currentWallet.getAddress();
+
+      await Promise.all([
+        this.loadKaspaTransactions(walletAddress),
+        this.loadKrc20Operations(walletAddress),
+      ]);
+      this.isLoadingErc20.set(false);
+
+      const combinedItems = await this.getCombinedActivity();
+      this.combinedActivityItems.set(combinedItems);
+    }
   }
 
   private async loadKaspaTransactions(walletAddress: string) {
@@ -241,11 +365,37 @@ export class ActivityComponent
     }
   }
 
-  private transformKaspaTransaction(
+  private async loadErc20Transactions(walletAddress: string) {
+    try {
+      this.isLoadingErc20.set(true);
+
+      const erc20Transactions =
+        await this.erc20TransactionService.getERC20TransactionHistory(
+          walletAddress,
+          50,
+        );
+
+      this.erc20Transactions.set(erc20Transactions || []);
+    } catch (error) {
+      console.error('Failed to load ERC20 transactions:', error);
+      this.erc20Transactions.set([]);
+    } finally {
+      this.isLoadingErc20.set(false);
+    }
+  }
+
+  private async transformKaspaTransaction(
     transaction: FullTransactionResponseItem,
-  ): KaspaActivityItem {
+  ): Promise<KaspaActivityItem> {
     const currentWallet = this.walletService.getCurrentWallet();
-    const walletAddress = currentWallet?.getAddress() || '';
+    if (!currentWallet) {
+      throw new Error('No current wallet');
+    }
+
+    const isL2Network = this.networkSelectionService.isL2Network();
+    const walletAddress = isL2Network
+      ? (await currentWallet.getL2WalletAddress()) || currentWallet.getAddress()
+      : currentWallet.getAddress();
 
     // Calculate input and output amounts for this wallet
     const senders = transaction.inputs.reduce(
@@ -314,11 +464,18 @@ export class ActivityComponent
     };
   }
 
-  private transformKrc20Operation(
+  private async transformKrc20Operation(
     operation: OperationDetails,
-  ): Krc20ActivityItem {
+  ): Promise<Krc20ActivityItem> {
     const currentWallet = this.walletService.getCurrentWallet();
-    const walletAddress = currentWallet?.getAddress() || '';
+    if (!currentWallet) {
+      throw new Error('No current wallet');
+    }
+
+    const isL2Network = this.networkSelectionService.isL2Network();
+    const walletAddress = isL2Network
+      ? (await currentWallet.getL2WalletAddress()) || currentWallet.getAddress()
+      : currentWallet.getAddress();
 
     let status: 'accepted' | 'pending' | 'rejected' = 'pending';
     if (operation.opAccept === '1' && operation.txAccept === '1') {
@@ -337,6 +494,33 @@ export class ActivityComponent
       amount: operation.amt || '0',
       fromAddress: operation.from,
       toAddress: operation.to,
+    };
+  }
+
+  private transformErc20Transaction(
+    transaction: ERC20Transaction,
+  ): Erc20ActivityItem {
+    const currentWallet = this.walletService.getCurrentWallet();
+    const walletAddress = currentWallet?.getAddress() || '';
+
+    // Determine if this transaction is incoming or outgoing for the current wallet
+    const isIncoming =
+      transaction.to.toLowerCase() === walletAddress.toLowerCase();
+
+    return {
+      id: transaction.hash,
+      type: 'erc20',
+      timestamp: transaction.timestamp,
+      status: transaction.status,
+      tokenAddress: transaction.tokenAddress,
+      tokenSymbol: transaction.tokenSymbol,
+      tokenName: transaction.tokenName,
+      amount: transaction.value,
+      isIncoming,
+      fromAddress: transaction.from,
+      toAddress: transaction.to,
+      gasUsed: transaction.gasUsed,
+      gasPrice: transaction.gasPrice,
     };
   }
 
@@ -387,6 +571,10 @@ export class ActivityComponent
       return (item as KaspaActivityItem).isIncoming
         ? 'icon-arrow-down'
         : 'icon-arrow-up';
+    } else if (item.type === 'erc20') {
+      return (item as Erc20ActivityItem).isIncoming
+        ? 'icon-arrow-down'
+        : 'icon-arrow-up';
     } else {
       const operation = (item as Krc20ActivityItem).operation;
       switch (operation) {
@@ -408,6 +596,10 @@ export class ActivityComponent
   getActivityIconColor(item: ActivityItem): string {
     if (item.type === 'kaspa') {
       return (item as KaspaActivityItem).isIncoming
+        ? 'var(--green-20)'
+        : 'var(--red-20)';
+    } else if (item.type === 'erc20') {
+      return (item as Erc20ActivityItem).isIncoming
         ? 'var(--green-20)'
         : 'var(--red-20)';
     } else {
@@ -450,6 +642,22 @@ export class ActivityComponent
     return `${direction}: ${this.shortenAddress(address || '')}`;
   }
 
+  getErc20ActivityTitle(item: ActivityItem): string {
+    const erc20Item = item as Erc20ActivityItem;
+    const action = erc20Item.isIncoming ? 'Received' : 'Sent';
+    const tokenSymbol = erc20Item.tokenSymbol || 'TOKEN';
+    return `${action} ${tokenSymbol.toUpperCase()}`;
+  }
+
+  getErc20ActivitySubtitle(item: ActivityItem): string {
+    const erc20Item = item as Erc20ActivityItem;
+    const direction = erc20Item.isIncoming ? 'From' : 'To';
+    const address = erc20Item.isIncoming
+      ? erc20Item.fromAddress
+      : erc20Item.toAddress;
+    return `${direction}: ${this.shortenAddress(address || '')}`;
+  }
+
   hasKrc20Address(item: ActivityItem): boolean {
     const krc20Item = item as Krc20ActivityItem;
     return !!(krc20Item.fromAddress && krc20Item.toAddress);
@@ -470,6 +678,28 @@ export class ActivityComponent
       BigInt(krc20Item.amount),
     );
     return `${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 4 })}`;
+  }
+
+  getErc20AmountDisplay(item: ActivityItem): string {
+    const erc20Item = item as Erc20ActivityItem;
+    const sign = erc20Item.isIncoming ? '+' : '-';
+    const amount = this.formatErc20Amount(
+      erc20Item.amount,
+      erc20Item.tokenAddress,
+    );
+    return `${sign}${amount}`;
+  }
+
+  private formatErc20Amount(amount: string, tokenAddress: string): string {
+    // For now, assume 18 decimals for ERC20 tokens
+    // In a real implementation, you'd fetch the token's decimals
+    const decimals = 18;
+    const numericAmount = Number(BigInt(amount) / BigInt(10 ** decimals));
+
+    return numericAmount.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 6,
+    });
   }
 
   hasKaspaFee(item: ActivityItem): boolean {

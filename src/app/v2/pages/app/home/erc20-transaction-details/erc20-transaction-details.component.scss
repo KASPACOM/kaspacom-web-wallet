@@ -1,0 +1,34 @@
+.transaction-details-container {
+  background: var(--gray-10);
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--gray-20);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .detail-label {
+      font-weight: 500;
+    }
+
+    .detail-value {
+      text-align: right;
+      word-break: break-all;
+    }
+  }
+
+  .transaction-status {
+    background: var(--gray-15);
+    border-radius: 8px;
+
+    .flex {
+      gap: 8px;
+    }
+  }
+}
+

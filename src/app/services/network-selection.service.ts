@@ -30,7 +30,7 @@ export class NetworkSelectionService {
       {
         id: 'l1-kaspa',
         name: kaspaNetworkFullName,
-        displayName: kaspaNetworkName,
+        displayName: isMainnet ? 'Kaspa Mainnet' : 'Kaspa Testnet',
         enabled: true,
         icon: '🌐',
       },
@@ -43,10 +43,10 @@ export class NetworkSelectionService {
       },
       {
         id: 'igra',
-        name: 'Igra (Layer 2 Gaming)',
+        name: 'Igra (Layer 2 DEX)',
         displayName: 'Igra Test',
-        enabled: false, // Disabled for now as per requirements
-        icon: '🎮',
+        enabled: false,
+        icon: '🚀',
       },
     ];
   }
@@ -83,6 +83,10 @@ export class NetworkSelectionService {
 
   public getNetworks(): NetworkConfig[] {
     return this.networks.filter((network) => network.enabled);
+  }
+
+  public getAllNetworks(): NetworkConfig[] {
+    return this.networks;
   }
 
   public getNetworkById(networkId: NetworkType): NetworkConfig | undefined {

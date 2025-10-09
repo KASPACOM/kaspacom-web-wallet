@@ -7,6 +7,7 @@ import { KnsAssetComponent } from '../kns-asset/kns-asset.component';
 import { UtxoAssetComponent } from '../utxo-asset/utxo-asset.component';
 import { Krc20TransactionDetailsComponent } from '../krc20-transaction-details/krc20-transaction-details.component';
 import { KaspaTransactionDetailsComponent } from '../kaspa-transaction-details/kaspa-transaction-details.component';
+import { Erc20TransactionDetailsComponent } from '../erc20-transaction-details/erc20-transaction-details.component';
 
 export const HomeRoutes: Routes = [
   {
@@ -45,6 +46,11 @@ export const HomeRoutes: Routes = [
   {
     path: 'transaction/kaspa/:transactionId',
     component: KaspaTransactionDetailsComponent,
+    data: { animation: 'TransactionDetail' },
+  },
+  {
+    path: 'transaction/erc20/:transactionId',
+    component: Erc20TransactionDetailsComponent,
     data: { animation: 'TransactionDetail' },
   },
 ];

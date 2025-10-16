@@ -25,10 +25,10 @@ export const environment: Environment = {
       },
       rpcUrls: {
         default: {
-          http: ["https://rpc.kasplextest.xyz"],
+          http: ["https://rpc.kspr.bot/kasplex/testnet"],
         },
         public: {
-          http: ["https://rpc.kasplextest.xyz"],
+          http: ["https://rpc.kspr.bot/kasplex/testnet"],
         },
       },
     },

@@ -41,7 +41,7 @@ export class CreatePasswordNewWalletStepComponent {
         [
           Validators.required,
           Validators.minLength(8),
-          Validators.pattern(/^(?=.*[0-9])(?=.*[a-zA-Z])([a-zA-Z0-9]+)$/),
+          Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/)
         ],
       ],
       confirmPassword: [
@@ -108,7 +108,7 @@ export class CreatePasswordNewWalletStepComponent {
       return 'Password is too short';
     }
     if (this.passwordForm.hasError('pattern', 'password')) {
-      return 'Password must contain letters and numbers';
+      return 'Password must contain letters, numbers and special characters';
     }
     return undefined;
   }

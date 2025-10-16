@@ -48,8 +48,7 @@ export class CreatePinImportExistingStepComponent {
         this.importExistingFlowService.model().password,
         [
           Validators.required,
-          Validators.minLength(8),
-          Validators.pattern(/^(?=.*[0-9])(?=.*[a-zA-Z])([a-zA-Z0-9]+)$/),
+          Validators.minLength(1),
         ],
       ],
       confirmPassword: [
@@ -114,9 +113,6 @@ export class CreatePinImportExistingStepComponent {
     }
     if (this.passwordForm.hasError('minlength', 'password')) {
       return 'Password is too short';
-    }
-    if (this.passwordForm.hasError('pattern', 'password')) {
-      return 'Password must contain letters and numbers';
     }
     return undefined;
   }

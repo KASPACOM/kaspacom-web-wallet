@@ -15,7 +15,6 @@ import {
   NotificationService,
 } from '@kaspacom/ui';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
-import { ImportExistingStep } from '../../import-existing-step.enum';
 
 @Component({
   selector: 'app-create-pin-import-existing-step',
@@ -48,7 +47,8 @@ export class CreatePinImportExistingStepComponent {
         this.importExistingFlowService.model().password,
         [
           Validators.required,
-          Validators.minLength(1),
+          Validators.minLength(8),
+          Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/)
         ],
       ],
       confirmPassword: [
@@ -113,6 +113,9 @@ export class CreatePinImportExistingStepComponent {
     }
     if (this.passwordForm.hasError('minlength', 'password')) {
       return 'Password is too short';
+    }
+    if (this.passwordForm.hasError('pattern', 'password')) {
+      return 'Password must contain letters, numbers and special characters';
     }
     return undefined;
   }

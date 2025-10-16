@@ -54,7 +54,7 @@ export class AssetsStoreService {
   // Current wallet
   private currentWallet: AppWallet | undefined;
   private walletSubscription: Subscription | undefined;
-  
+
   // Auto-reload functionality
   private autoReloadInterval: NodeJS.Timeout | undefined;
   private readonly AUTO_RELOAD_INTERVAL = 5000; // 5 seconds
@@ -88,7 +88,6 @@ export class AssetsStoreService {
   private initializeWalletListener(): void {
     // Subscribe to wallet changes
     this.walletSubscription = toObservable(this.walletService.getCurrentWalletSignal()).subscribe(wallet => {
-      console.log('[AssetsStore] Wallet changed:', wallet?.getIdWithAccount());
       this.onWalletChanged(wallet);
     });
 
@@ -103,20 +102,18 @@ export class AssetsStoreService {
     if (wallet?.getIdWithAccount() !== this.currentWallet?.getIdWithAccount()) {
       // Stop auto-reload for previous wallet
       this.stopAutoReload();
-      
+
       // Clear previous assets
       this.clearAllAssets();
 
       this.currentWallet = wallet;
 
       if (wallet) {
-        console.log('[AssetsStore] Loading assets for wallet:', wallet.getIdWithAccount());
-        
         // Navigate to homepage when wallet account changes
         if (this.router.url.startsWith('/app/')) {
           this.router.navigate(['/app/home']);
         }
-        
+
         await this.reloadAll();
         // Start auto-reload for new wallet
         this.startAutoReload();
@@ -138,11 +135,9 @@ export class AssetsStoreService {
     if (this.autoReloadInterval) {
       clearInterval(this.autoReloadInterval);
     }
-    
-    console.log('[AssetsStore] Starting auto-reload every', this.AUTO_RELOAD_INTERVAL, 'ms');
+
     this.autoReloadInterval = setInterval(() => {
       if (this.currentWallet) {
-        console.log('[AssetsStore] Auto-reloading assets...');
         this.reloadAllSilent();
       }
     }, this.AUTO_RELOAD_INTERVAL);
@@ -150,7 +145,6 @@ export class AssetsStoreService {
 
   private stopAutoReload(): void {
     if (this.autoReloadInterval) {
-      console.log('[AssetsStore] Stopping auto-reload');
       clearInterval(this.autoReloadInterval);
       this.autoReloadInterval = undefined;
     }
@@ -163,11 +157,8 @@ export class AssetsStoreService {
    */
   public async reloadAll(delay = 0): Promise<void> {
     if (!this.currentWallet) {
-      console.log('[AssetsStore] No wallet selected, skipping reload');
       return;
     }
-
-    console.log('[AssetsStore] Reloading all assets');
 
     // Load all assets in parallel with individual delays
     await Promise.all([
@@ -183,11 +174,8 @@ export class AssetsStoreService {
    */
   public async reloadAllSilent(delay = 0): Promise<void> {
     if (!this.currentWallet) {
-      console.log('[AssetsStore] No wallet selected, skipping silent reload');
       return;
     }
-
-    console.log('[AssetsStore] Silent reloading all assets');
 
     // Load all assets in parallel with individual delays, without loading states
     await Promise.all([
@@ -205,7 +193,6 @@ export class AssetsStoreService {
     if (!this.currentWallet) return;
 
     this.setLoadingState('kaspa', true);
-    console.log('[AssetsStore] Loading Kaspa balance...');
 
     return new Promise(resolve => {
       setTimeout(async () => {
@@ -214,10 +201,6 @@ export class AssetsStoreService {
             this.currentWallet!.getAddress()
           );
           this.kaspaAssetsSignal.set(balance);
-          console.log('[AssetsStore] Kaspa balance loaded:', {
-            totalBalance: this.kaspaNetworkActionsService.sompiToNumber(balance.totalBalance),
-            utxoCount: balance.utxoEntries.length
-          });
         } catch (error) {
           console.error('[AssetsStore] Error loading Kaspa balance:', error);
           this.kaspaAssetsSignal.set(null);
@@ -236,7 +219,6 @@ export class AssetsStoreService {
     if (!this.currentWallet) return;
 
     this.setLoadingState('krc20', true);
-    console.log('[AssetsStore] Loading KRC20 tokens...');
 
     return new Promise(resolve => {
       setTimeout(async () => {
@@ -266,17 +248,12 @@ export class AssetsStoreService {
 
               allTokens.push(...tokens);
               pageCount++;
-              console.log(`[AssetsStore] Loaded KRC20 page ${pageCount}, tokens:`, tokens.length);
             }
 
             paginationKey = response.next;
           } while (paginationKey);
 
           this.krc20AssetsSignal.set(allTokens);
-          console.log('[AssetsStore] KRC20 tokens loaded:', {
-            totalTokens: allTokens.length,
-            pages: pageCount
-          });
         } catch (error) {
           console.error('[AssetsStore] Error loading KRC20 tokens:', error);
           this.krc20AssetsSignal.set([]);
@@ -295,7 +272,6 @@ export class AssetsStoreService {
     if (!this.currentWallet) return;
 
     this.setLoadingState('krc721', true);
-    console.log('[AssetsStore] Loading KRC721 NFTs...');
 
     return new Promise(resolve => {
       setTimeout(async () => {
@@ -307,15 +283,10 @@ export class AssetsStoreService {
 
           if (response.message === 'success' && response.result) {
             this.krc721AssetsSignal.set(response.result);
-            console.log('[AssetsStore] KRC721 NFTs loaded:', {
-              totalNfts: response.result.length
-            });
           } else {
-            console.warn('[AssetsStore] KRC721 API response not successful:', response);
             this.krc721AssetsSignal.set([]);
           }
         } catch (error) {
-          console.error('[AssetsStore] Error loading KRC721 NFTs:', error);
           this.krc721AssetsSignal.set([]);
         } finally {
           this.setLoadingState('krc721', false);
@@ -332,7 +303,6 @@ export class AssetsStoreService {
     if (!this.currentWallet) return;
 
     this.setLoadingState('kns', true);
-    console.log('[AssetsStore] Loading KNS domains...');
 
     return new Promise(resolve => {
       setTimeout(async () => {
@@ -342,9 +312,6 @@ export class AssetsStoreService {
           );
 
           this.knsAssetsSignal.set(allDomains);
-          console.log('[AssetsStore] KNS domains loaded:', {
-            totalDomains: allDomains.length
-          });
         } catch (error) {
           console.error('[AssetsStore] Error loading KNS domains:', error);
           this.knsAssetsSignal.set([]);
@@ -369,10 +336,6 @@ export class AssetsStoreService {
             this.currentWallet!.getAddress()
           );
           this.kaspaAssetsSignal.set(balance);
-          console.log('[AssetsStore] Kaspa balance silently loaded:', {
-            totalBalance: this.kaspaNetworkActionsService.sompiToNumber(balance.totalBalance),
-            utxoCount: balance.utxoEntries.length
-          });
         } catch (error) {
           console.error('[AssetsStore] Error silently loading Kaspa balance:', error);
           this.kaspaAssetsSignal.set(null);
@@ -423,10 +386,6 @@ export class AssetsStoreService {
           } while (paginationKey);
 
           this.krc20AssetsSignal.set(allTokens);
-          console.log('[AssetsStore] KRC20 tokens silently loaded:', {
-            totalTokens: allTokens.length,
-            pages: pageCount
-          });
         } catch (error) {
           console.error('[AssetsStore] Error silently loading KRC20 tokens:', error);
           this.krc20AssetsSignal.set([]);
@@ -452,9 +411,6 @@ export class AssetsStoreService {
 
           if (response.message === 'success' && response.result) {
             this.krc721AssetsSignal.set(response.result);
-            console.log('[AssetsStore] KRC721 NFTs silently loaded:', {
-              totalNfts: response.result.length
-            });
           } else {
             console.warn('[AssetsStore] KRC721 API response not successful (silent):', response);
             this.krc721AssetsSignal.set([]);
@@ -483,9 +439,6 @@ export class AssetsStoreService {
           );
 
           this.knsAssetsSignal.set(allDomains);
-          console.log('[AssetsStore] KNS domains silently loaded:', {
-            totalDomains: allDomains.length
-          });
         } catch (error) {
           console.error('[AssetsStore] Error silently loading KNS domains:', error);
           this.knsAssetsSignal.set([]);
@@ -571,7 +524,6 @@ export class AssetsStoreService {
       ...states,
       [type]: loading
     }));
-    console.log(`[AssetsStore] Loading state for ${type}:`, loading);
   }
 
   ngOnDestroy(): void {

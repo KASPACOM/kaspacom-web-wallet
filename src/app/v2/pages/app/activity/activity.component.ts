@@ -1,16 +1,26 @@
-import { Component, computed, inject, OnInit, signal, OnDestroy } from '@angular/core';
-import { CommonModule, DecimalPipe, DatePipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
+import {
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+  OnDestroy,
+} from '@angular/core';
+import { BaseActivityComponent } from './base-activity.component';
+import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { KcIconComponent } from '@kaspacom/ui';
-import { KcLabeledTabsComponent, TabItem } from '../../../shared/ui/kc-labeled-tabs/kc-labeled-tabs.component';
+import {
+  KcLabeledTabsComponent,
+  TabItem,
+} from '../../../shared/ui/kc-labeled-tabs/kc-labeled-tabs.component';
 import { SkeletonComponent } from '../../../shared/ui/skeleton/skeleton.component';
 import { WalletService } from '../../../../services/wallet.service';
 import { KaspaApiService } from '../../../../services/kaspa-api/kaspa-api.service';
 import { KasplexKrc20Service } from '../../../../services/kasplex-api/kasplex-api.service';
-import { FullTransactionResponse, FullTransactionResponseItem } from '../../../../services/kaspa-api/dtos/full-transaction-response.dto';
+import { FullTransactionResponseItem } from '../../../../services/kaspa-api/dtos/full-transaction-response.dto';
 import { OperationDetails } from '../../../../services/kasplex-api/dtos/operation-details-response';
 import { KaspaNetworkActionsService } from '../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
-import { SompiToNumberPipe } from '../../../../pipes/sompi-to-number.pipe';
 import { TimeAgoPipe } from '../../../../pipes/time-ago.pipe';
 import { firstValueFrom, catchError, of, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -52,9 +62,12 @@ type ActivityItem = KaspaActivityItem | Krc20ActivityItem;
     SkeletonComponent,
   ],
   templateUrl: './activity.component.html',
-  styleUrl: './activity.component.scss'
+  styleUrl: './activity.component.scss',
 })
-export class ActivityComponent implements OnInit, OnDestroy {
+export class ActivityComponent
+  extends BaseActivityComponent<ActivityItem>
+  implements OnInit, OnDestroy
+{
   private walletService = inject(WalletService);
   private kaspaApiService = inject(KaspaApiService);
   private kasplexService = inject(KasplexKrc20Service);
@@ -68,33 +81,40 @@ export class ActivityComponent implements OnInit, OnDestroy {
   private isLoadingKaspa = signal<boolean>(true);
   private isLoadingKrc20 = signal<boolean>(true);
 
-  // Tab selection
-  selectedTabId = signal<string>('all');
-
   // Computed combined activity list
   allActivity = computed<ActivityItem[]>(() => {
-    const kaspaItems = this.kaspaTransactions().map(tx => this.transformKaspaTransaction(tx));
-    const krc20Items = this.krc20Operations().map(op => this.transformKrc20Operation(op));
+    const kaspaItems = this.kaspaTransactions().map((tx) =>
+      this.transformKaspaTransaction(tx),
+    );
+    const krc20Items = this.krc20Operations().map((op) =>
+      this.transformKrc20Operation(op),
+    );
 
     // Combine and sort by timestamp (newest first)
     // Ensure both timestamps are numbers for proper sorting
     return [...kaspaItems, ...krc20Items].sort((a, b) => {
-      const timestampA = typeof a.timestamp === 'number' ? a.timestamp : parseInt(String(a.timestamp));
-      const timestampB = typeof b.timestamp === 'number' ? b.timestamp : parseInt(String(b.timestamp));
+      const timestampA =
+        typeof a.timestamp === 'number'
+          ? a.timestamp
+          : parseInt(String(a.timestamp));
+      const timestampB =
+        typeof b.timestamp === 'number'
+          ? b.timestamp
+          : parseInt(String(b.timestamp));
       return timestampB - timestampA;
     });
   });
 
   // Filtered activity based on selected tab
-  filteredActivity = computed<ActivityItem[]>(() => {
+  override filteredActivity = computed<ActivityItem[]>(() => {
     const selectedTab = this.selectedTabId();
     const allItems = this.allActivity();
 
     switch (selectedTab) {
       case 'kaspa':
-        return allItems.filter(item => item.type === 'kaspa');
+        return allItems.filter((item) => item.type === 'kaspa');
       case 'krc20':
-        return allItems.filter(item => item.type === 'krc20');
+        return allItems.filter((item) => item.type === 'krc20');
       default:
         return allItems;
     }
@@ -107,7 +127,7 @@ export class ActivityComponent implements OnInit, OnDestroy {
   tabs: TabItem[] = [
     { id: 'all', label: 'All Activity' },
     { id: 'kaspa', label: 'Kaspa' },
-    { id: 'krc20', label: 'KRC20' }
+    { id: 'krc20', label: 'KRC20' },
   ];
 
   ngOnInit() {
@@ -122,25 +142,25 @@ export class ActivityComponent implements OnInit, OnDestroy {
   onTransactionClick(item: ActivityItem): void {
     if (item.type === 'kaspa') {
       // Navigate to Kaspa transaction details with transaction data
-      const kaspaItem = item as KaspaActivityItem;
-      const transactionData = this.kaspaTransactions().find(tx => tx.transaction_id === item.id);
+      const transactionData = this.kaspaTransactions().find(
+        (tx) => tx.transaction_id === item.id,
+      );
 
       if (transactionData) {
         this.router.navigate(['/app/home/transaction/kaspa', item.id], {
-          state: { transactionData }
+          state: { transactionData },
         });
       }
     } else if (item.type === 'krc20') {
       // Navigate to KRC20 transaction details with return context
       const krc20Item = item as Krc20ActivityItem;
-      this.router.navigate(['/app/home/asset/krc20', krc20Item.ticker, 'transaction', item.id], {
-        state: { returnTo: 'activity' }
-      });
+      this.router.navigate(
+        ['/app/home/asset/krc20', krc20Item.ticker, 'transaction', item.id],
+        {
+          state: { returnTo: 'activity' },
+        },
+      );
     }
-  }
-
-  onTabChange(tabId: string) {
-    this.selectedTabId.set(tabId);
   }
 
   private async loadActivityData() {
@@ -157,7 +177,7 @@ export class ActivityComponent implements OnInit, OnDestroy {
     // Load Kaspa transactions and KRC20 operations in parallel
     await Promise.all([
       this.loadKaspaTransactions(walletAddress),
-      this.loadKrc20Operations(walletAddress)
+      this.loadKrc20Operations(walletAddress),
     ]);
   }
 
@@ -166,13 +186,15 @@ export class ActivityComponent implements OnInit, OnDestroy {
       this.isLoadingKaspa.set(true);
 
       const transactions = await firstValueFrom(
-        this.kaspaApiService.getFullTransactions(walletAddress, 'light', 20).pipe(
-          catchError((err: any) => {
-            console.error('Error fetching Kaspa transactions:', err);
-            return of([] as FullTransactionResponseItem[]);
-          }),
-          takeUntil(this.destroy$)
-        )
+        this.kaspaApiService
+          .getFullTransactions(walletAddress, 'light', 20)
+          .pipe(
+            catchError((err: any) => {
+              console.error('Error fetching Kaspa transactions:', err);
+              return of([] as FullTransactionResponseItem[]);
+            }),
+            takeUntil(this.destroy$),
+          ),
       );
 
       this.kaspaTransactions.set(transactions || []);
@@ -192,13 +214,21 @@ export class ActivityComponent implements OnInit, OnDestroy {
         this.kasplexService.getWalletOperationHistory(walletAddress).pipe(
           catchError((err: any) => {
             console.error('Error fetching KRC20 operations:', err);
-            return of({ message: 'error', prev: '', next: '', result: [] as OperationDetails[] });
+            return of({
+              message: 'error',
+              prev: '',
+              next: '',
+              result: [] as OperationDetails[],
+            });
           }),
-          takeUntil(this.destroy$)
-        )
+          takeUntil(this.destroy$),
+        ),
       );
 
-      if (operationsResponse.message === 'successful' && operationsResponse.result) {
+      if (
+        operationsResponse.message === 'successful' &&
+        operationsResponse.result
+      ) {
         this.krc20Operations.set(operationsResponse.result);
       } else {
         this.krc20Operations.set([]);
@@ -211,44 +241,63 @@ export class ActivityComponent implements OnInit, OnDestroy {
     }
   }
 
-  private transformKaspaTransaction(transaction: FullTransactionResponseItem): KaspaActivityItem {
+  private transformKaspaTransaction(
+    transaction: FullTransactionResponseItem,
+  ): KaspaActivityItem {
     const currentWallet = this.walletService.getCurrentWallet();
     const walletAddress = currentWallet?.getAddress() || '';
 
     // Calculate input and output amounts for this wallet
-    const senders = transaction.inputs.reduce((acc: Record<string, bigint>, input: any) => {
-      const address = input.previous_outpoint_address;
-      if (!acc[address]) {
-        acc[address] = BigInt(0);
-      }
-      acc[address] += BigInt(input.previous_outpoint_amount || 0);
-      return acc;
-    }, {} as Record<string, bigint>);
+    const senders = transaction.inputs.reduce(
+      (acc: Record<string, bigint>, input: any) => {
+        const address = input.previous_outpoint_address;
+        if (!acc[address]) {
+          acc[address] = BigInt(0);
+        }
+        acc[address] += BigInt(input.previous_outpoint_amount || 0);
+        return acc;
+      },
+      {} as Record<string, bigint>,
+    );
 
-    const receivers = transaction.outputs.reduce((acc: Record<string, bigint>, output: any) => {
-      const address = output.script_public_key_address;
-      if (!acc[address]) {
-        acc[address] = BigInt(0);
-      }
-      acc[address] += BigInt(output.amount);
-      return acc;
-    }, {} as Record<string, bigint>);
+    const receivers = transaction.outputs.reduce(
+      (acc: Record<string, bigint>, output: any) => {
+        const address = output.script_public_key_address;
+        if (!acc[address]) {
+          acc[address] = BigInt(0);
+        }
+        acc[address] += BigInt(output.amount);
+        return acc;
+      },
+      {} as Record<string, bigint>,
+    );
 
-    const totalForThisWallet = (receivers[walletAddress] || BigInt(0)) - (senders[walletAddress] || BigInt(0));
+    const totalForThisWallet =
+      (receivers[walletAddress] || BigInt(0)) -
+      (senders[walletAddress] || BigInt(0));
     const isIncoming = totalForThisWallet > 0;
 
     // Calculate fee
-    const fee = Object.values(senders).reduce((acc: bigint, val: bigint) => acc + val, 0n) -
-      Object.values(receivers).reduce((acc: bigint, val: bigint) => acc + val, 0n);
+    const fee =
+      Object.values(senders).reduce(
+        (acc: bigint, val: bigint) => acc + val,
+        0n,
+      ) -
+      Object.values(receivers).reduce(
+        (acc: bigint, val: bigint) => acc + val,
+        0n,
+      );
 
     // Find the other address (from or to)
     let otherAddress = '';
     if (isIncoming) {
       // Find sender address (excluding our wallet)
-      otherAddress = Object.keys(senders).find(addr => addr !== walletAddress) || '';
+      otherAddress =
+        Object.keys(senders).find((addr) => addr !== walletAddress) || '';
     } else {
       // Find receiver address (excluding our wallet)
-      otherAddress = Object.keys(receivers).find(addr => addr !== walletAddress) || '';
+      otherAddress =
+        Object.keys(receivers).find((addr) => addr !== walletAddress) || '';
     }
 
     return {
@@ -256,15 +305,18 @@ export class ActivityComponent implements OnInit, OnDestroy {
       type: 'kaspa',
       timestamp: transaction.block_time, // Already in milliseconds
       status: transaction.is_accepted ? 'accepted' : 'pending',
-      amount: totalForThisWallet < 0n ? -totalForThisWallet : totalForThisWallet,
+      amount:
+        totalForThisWallet < 0n ? -totalForThisWallet : totalForThisWallet,
       isIncoming,
       fee,
       fromAddress: isIncoming ? otherAddress : walletAddress,
-      toAddress: isIncoming ? walletAddress : otherAddress
+      toAddress: isIncoming ? walletAddress : otherAddress,
     };
   }
 
-  private transformKrc20Operation(operation: OperationDetails): Krc20ActivityItem {
+  private transformKrc20Operation(
+    operation: OperationDetails,
+  ): Krc20ActivityItem {
     const currentWallet = this.walletService.getCurrentWallet();
     const walletAddress = currentWallet?.getAddress() || '';
 
@@ -284,7 +336,7 @@ export class ActivityComponent implements OnInit, OnDestroy {
       ticker: operation.tick,
       amount: operation.amt || '0',
       fromAddress: operation.from,
-      toAddress: operation.to
+      toAddress: operation.to,
     };
   }
 
@@ -295,7 +347,8 @@ export class ActivityComponent implements OnInit, OnDestroy {
     const formattedDate = date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+      year:
+        date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
     });
 
     return `${timeAgo} • ${formattedDate}`;
@@ -306,7 +359,11 @@ export class ActivityComponent implements OnInit, OnDestroy {
     return `${address.slice(0, 8)}...${address.slice(-6)}`;
   }
 
-  getOperationTitle(operation: string, fromAddress?: string, toAddress?: string): string {
+  getOperationTitle(
+    operation: string,
+    fromAddress?: string,
+    toAddress?: string,
+  ): string {
     const currentWallet = this.walletService.getCurrentWallet();
     const walletAddress = currentWallet?.getAddress() || '';
 
@@ -325,11 +382,11 @@ export class ActivityComponent implements OnInit, OnDestroy {
     return title;
   }
 
-
-
   getActivityIcon(item: ActivityItem): string {
     if (item.type === 'kaspa') {
-      return (item as KaspaActivityItem).isIncoming ? 'icon-arrow-down' : 'icon-arrow-up';
+      return (item as KaspaActivityItem).isIncoming
+        ? 'icon-arrow-down'
+        : 'icon-arrow-up';
     } else {
       const operation = (item as Krc20ActivityItem).operation;
       switch (operation) {
@@ -350,7 +407,9 @@ export class ActivityComponent implements OnInit, OnDestroy {
 
   getActivityIconColor(item: ActivityItem): string {
     if (item.type === 'kaspa') {
-      return (item as KaspaActivityItem).isIncoming ? 'var(--green-20)' : 'var(--red-20)';
+      return (item as KaspaActivityItem).isIncoming
+        ? 'var(--green-20)'
+        : 'var(--red-20)';
     } else {
       return 'var(--purple-20)';
     }
@@ -365,19 +424,28 @@ export class ActivityComponent implements OnInit, OnDestroy {
   getKaspaActivitySubtitle(item: ActivityItem): string {
     const kaspaItem = item as KaspaActivityItem;
     const direction = kaspaItem.isIncoming ? 'From' : 'To';
-    const address = kaspaItem.isIncoming ? kaspaItem.fromAddress : kaspaItem.toAddress;
+    const address = kaspaItem.isIncoming
+      ? kaspaItem.fromAddress
+      : kaspaItem.toAddress;
     return `${direction}: ${this.shortenAddress(address || '')}`;
   }
 
   getKrc20ActivityTitle(item: ActivityItem): string {
     const krc20Item = item as Krc20ActivityItem;
-    const title = this.getOperationTitle(krc20Item.operation, krc20Item.fromAddress, krc20Item.toAddress);
+    const title = this.getOperationTitle(
+      krc20Item.operation,
+      krc20Item.fromAddress,
+      krc20Item.toAddress,
+    );
     return `${title} ${krc20Item.ticker.toUpperCase()}`;
   }
 
   getKrc20ActivitySubtitle(item: ActivityItem): string {
     const krc20Item = item as Krc20ActivityItem;
-    const direction = (krc20Item.operation === 'send' || krc20Item.operation === 'transfer') ? 'To' : 'From';
+    const direction =
+      krc20Item.operation === 'send' || krc20Item.operation === 'transfer'
+        ? 'To'
+        : 'From';
     const address = krc20Item.toAddress || krc20Item.fromAddress;
     return `${direction}: ${this.shortenAddress(address || '')}`;
   }
@@ -390,13 +458,17 @@ export class ActivityComponent implements OnInit, OnDestroy {
   getKaspaAmountDisplay(item: ActivityItem): string {
     const kaspaItem = item as KaspaActivityItem;
     const sign = kaspaItem.isIncoming ? '+' : '-';
-    const amount = this.kaspaNetworkActionsService.sompiToNumber(kaspaItem.amount);
+    const amount = this.kaspaNetworkActionsService.sompiToNumber(
+      kaspaItem.amount,
+    );
     return `${sign}${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 8 })}`;
   }
 
   getKrc20AmountDisplay(item: ActivityItem): string {
     const krc20Item = item as Krc20ActivityItem;
-    const amount = this.kaspaNetworkActionsService.sompiToNumber(BigInt(krc20Item.amount));
+    const amount = this.kaspaNetworkActionsService.sompiToNumber(
+      BigInt(krc20Item.amount),
+    );
     return `${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 4 })}`;
   }
 
@@ -408,6 +480,9 @@ export class ActivityComponent implements OnInit, OnDestroy {
   getKaspaFeeDisplay(item: ActivityItem): string {
     const kaspaItem = item as KaspaActivityItem;
     const fee = this.kaspaNetworkActionsService.sompiToNumber(kaspaItem.fee);
-    return fee.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 8 });
+    return fee.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 8,
+    });
   }
 }

@@ -1,8 +1,21 @@
-import { Component, computed, inject, OnInit, OnDestroy, ViewChild, AfterViewInit, ElementRef, Injector } from '@angular/core';
-import { DecimalPipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
+import {
+  Component,
+  computed,
+  inject,
+  OnInit,
+  OnDestroy,
+  ViewChild,
+  AfterViewInit,
+  ElementRef,
+  Injector,
+} from '@angular/core';
+import {} from '@angular/common';
 import { Router } from '@angular/router';
-import { TokenLogoComponent } from '../../common/krc20/token-logo/token-logo.component';
-import { IToken, ITokenWithMetadata } from '../../common/interfaces/token.interface';
+import { AssetCardComponent } from '../../../../shared/asset-card/asset-card.component';
+import {
+  IToken,
+  ITokenWithMetadata,
+} from '../../common/interfaces/token.interface';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { AssetsStoreService } from '../../../../../services/assets-store.service';
 import { Krc20MetadataService } from '../../../../../services/asset-metadata/krc20-metadata.service';
@@ -14,14 +27,16 @@ import { runInInjectionContext } from '@angular/core';
 
 @Component({
   selector: 'app-wallet-summary',
-  imports: [TokenLogoComponent, DecimalPipe, UpperCasePipe, TitleCasePipe, SkeletonComponent, InfiniteScrollDirective],
+  imports: [SkeletonComponent, InfiniteScrollDirective, AssetCardComponent],
   templateUrl: './wallet-summary.component.html',
   styleUrl: './wallet-summary.component.scss',
   host: {
     '[class.full-width]': 'true',
   },
 })
-export class WalletSummaryComponent implements OnInit, OnDestroy, AfterViewInit {
+export class WalletSummaryComponent
+  implements OnInit, OnDestroy, AfterViewInit
+{
   private assetsStore = inject(AssetsStoreService);
   private krc20MetadataService = inject(Krc20MetadataService);
   private router = inject(Router);
@@ -36,50 +51,49 @@ export class WalletSummaryComponent implements OnInit, OnDestroy, AfterViewInit 
   tokens = computed<ITokenWithMetadata[]>(() => {
     const krc20Assets = this.assetsStore.krc20Assets();
     const paginatedAssets = this.krc20MetadataService.paginatedAssets();
-    
+
     // Create a map of metadata by tick
     const metadataMap = new Map();
-    paginatedAssets.forEach(item => {
+    paginatedAssets.forEach((item) => {
       metadataMap.set(item.data.tick, {
         metadata: item.metadata,
-        isLoadingMetadata: item.isLoadingMetadata
+        isLoadingMetadata: item.isLoadingMetadata,
       });
     });
-    
-    return krc20Assets.map(token => {
+
+    return krc20Assets.map((token) => {
       const metadataInfo = metadataMap.get(token.tick);
-      
+
       return {
         name: token.tick,
         symbol: token.tick.toUpperCase(),
         address: token.tick,
         balance: token.balance,
         usdPrice: 0.0, // TODO: Add price data when available
-        isLoadingMetadata: metadataInfo?.isLoadingMetadata || false
+        isLoadingMetadata: metadataInfo?.isLoadingMetadata || false,
       };
     });
   });
-  
+
   loading = computed(() => this.assetsStore.isAssetTypeLoading('krc20'));
-  
-  isLoadingMore = computed(() => 
-    this.krc20MetadataService.isLoading() && 
-    this.krc20MetadataService.paginatedAssets().length > 0
+
+  isLoadingMore = computed(
+    () =>
+      this.krc20MetadataService.isLoading() &&
+      this.krc20MetadataService.paginatedAssets().length > 0,
   );
 
   hasMore = computed(() => this.krc20MetadataService.hasMoreItems());
 
   ngOnInit(): void {
     // Create observable within injection context to ensure proper signal binding
-    this.krc20Assets$ = runInInjectionContext(this.injector, () => 
-      toObservable(this.assetsStore.krc20Assets)
+    this.krc20Assets$ = runInInjectionContext(this.injector, () =>
+      toObservable(this.assetsStore.krc20Assets),
     );
-    
+
     // Subscribe to assets store changes and reinitialize metadata service
     // IMPORTANT: Always reinitialize, even with empty arrays, to clear stale data
-    this.krc20Assets$.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(assets => {
+    this.krc20Assets$.pipe(takeUntil(this.destroy$)).subscribe((assets) => {
       // Always initialize to ensure metadata service is reset on wallet changes
       // This fixes the sync bug where old account's tokens were shown after switching accounts
       setTimeout(() => {
@@ -125,7 +139,9 @@ export class WalletSummaryComponent implements OnInit, OnDestroy, AfterViewInit 
    */
   private getItemElements(): HTMLElement[] {
     const container = this.elementRef.nativeElement;
-    return Array.from(container.querySelectorAll('.wallet-summary-container__card'));
+    return Array.from(
+      container.querySelectorAll('.wallet-summary-container__card'),
+    );
   }
 
   /**

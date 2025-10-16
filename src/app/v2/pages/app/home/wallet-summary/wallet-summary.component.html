@@ -15,47 +15,10 @@
     <div class="text-gray-60 p-16">No KRC20 tokens found</div>
   } @else {
     @for ( token of tokens(); track trackByToken($index, token) ) {
-    <div
-      class="wallet-summary-container__card card-0 card-hover full-width flex align-items-center justify-content-between p-16 fade-in cursor-pointer"
-      (click)="onTokenClick(token)"
-    >
-      <div
-        class="wallet-summary-container__token-info flex align-items-center gap-16"
-      >
-        <kc-token-logo
-          class="wallet-summary-container__logo"
-          [ticker]="token.symbol || ''"
-          [size]="'lg'"
-        ></kc-token-logo>
-        <div class="flex column gap-4">
-          <div class="text-gray-90">{{ token.name | titlecase }}</div>
-          <div class="text-gray-60 typo-text-1">
-            {{ token.balance | number : "1.0-4" }}&nbsp;{{
-              token.symbol | uppercase
-            }}
-          </div>
-          @if (token.maxSupply && !token.isLoadingMetadata) {
-            <div class="text-gray-50 typo-text-1">
-              Supply: {{ token.maxSupply }}
-            </div>
-          }
-          @if (token.isLoadingMetadata) {
-            <app-skeleton [height]="'14px'" [width]="'100px'" [fullRound]="false"></app-skeleton>
-          }
-        </div>
-      </div>
-      <div class="wallet-summary-container__usd-info flex column align-items-end">
-        <div class="text-gray-90">
-          ${{ token.balance * token.usdPrice | number : "1.2-2" }}
-        </div>
-        <div class="text-gray-60 typo-text-1">$0.00</div>
-        @if (token.holders && !token.isLoadingMetadata) {
-          <div class="text-gray-50 typo-text-1">
-            {{ token.holders }} holders
-          </div>
-        }
-      </div>
-    </div>
+      <app-asset-card class="wallet-summary-container__card full-width"
+        [krc20]="token"
+        (cardClick)="onTokenClick(token)"
+      ></app-asset-card>
     }
     
     @if (isLoadingMore()) {
@@ -63,7 +26,5 @@
         <app-skeleton [height]="'75px'" [width]="'100%'" [fullRound]="false"></app-skeleton>
       </div>
     }
-    
-
   }
 </div>

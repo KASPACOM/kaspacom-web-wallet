@@ -8,9 +8,10 @@ import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.compo
 import { FlowPagesService } from '../../../../services/flow-pages.service';
 import { KnsApiService } from '../../../../../services/kns-api/kns-api.service';
 import { KnsDomainAsset } from '../../../../../services/kns-api/dtos/kns-domain.dto';
-import { AssetsStoreService } from '../../../../../services/assets-store.service';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { environment } from '../../../../../../environments/environment';
+import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';
+import { L1_ASSET_KEYS } from '../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 
 @Component({
   selector: 'app-kns-asset',
@@ -31,8 +32,8 @@ import { environment } from '../../../../../../environments/environment';
 export class KnsAssetComponent extends BaseAssetPageComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private knsService = inject(KnsApiService);
-  private assetsStore = inject(AssetsStoreService);
   private flowPagesService = inject(FlowPagesService);
+  private assetsManagerService = inject(AssetsManagerService);
 
   private assetId: string = '';
 
@@ -60,7 +61,7 @@ export class KnsAssetComponent extends BaseAssetPageComponent implements OnInit 
       this.loading.set(true);
 
       // First try to get the domain from the assets store
-      const knsAssets = this.assetsStore.knsAssets();
+      const knsAssets = this.assetsManagerService.getAllAssetStores().l1.getAssets(L1_ASSET_KEYS.kns);
       const storedDomain = knsAssets.find(domain => domain.assetId === this.assetId);
 
       if (storedDomain) {
@@ -106,7 +107,7 @@ export class KnsAssetComponent extends BaseAssetPageComponent implements OnInit 
       this.detailLoading.set(true);
 
       // Try to get from store first
-      const knsAssets = this.assetsStore.knsAssets();
+      const knsAssets = this.assetsManagerService.getAllAssetStores().l1.getAssets(L1_ASSET_KEYS.kns);
       const storedDomain = knsAssets.find(domain => domain.assetId === this.assetId);
 
       if (storedDomain) {

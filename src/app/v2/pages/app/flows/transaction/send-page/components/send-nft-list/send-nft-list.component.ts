@@ -4,13 +4,14 @@ import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow
 import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
 import { INft, INftWithMetadata } from '../../../../../common/interfaces/nft.interface';
-import { AssetsStoreService } from '../../../../../../../../services/assets-store.service';
 import { Krc721MetadataService } from '../../../../../../../../services/asset-metadata/krc721-metadata.service';
 import { InfiniteScrollDirective } from '../../../../../../../../directives/infinite-scroll.directive';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil, Observable } from 'rxjs';
 import { Krc721Nft } from '../../../../../../../../services/krc721-api/dtos/krc721-nft.dto';
 import { runInInjectionContext } from '@angular/core';
+import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
+import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 
 @Component({
   selector: 'app-send-nft-list',
@@ -20,11 +21,11 @@ import { runInInjectionContext } from '@angular/core';
   styleUrl: './send-nft-list.component.scss'
 })
 export class SendNftListComponent extends FlowPageBaseComponent implements OnInit, OnDestroy, AfterViewInit {
-  private assetsStore = inject(AssetsStoreService);
   private krc721MetadataService = inject(Krc721MetadataService);
   private injector = inject(Injector);
   private destroy$ = new Subject<void>();
-  private krc721Assets$!: Observable<Krc721Nft[]>;
+  private krc721Assets$!: Observable<Krc721Nft[] | undefined>;
+  private assetsManagerService = inject(AssetsManagerService);
 
   @ViewChild(InfiniteScrollDirective) infiniteScroll!: InfiniteScrollDirective;
   
@@ -48,7 +49,7 @@ export class SendNftListComponent extends FlowPageBaseComponent implements OnIni
   });
   
   loading = computed(() => 
-    this.assetsStore.isAssetTypeLoading('krc721') || 
+    !this.assetsManagerService.getAllAssetStores().l1.getAssetSignal(L1_ASSET_KEYS.krc721)() || 
     (this.krc721MetadataService.paginatedAssets().length === 0 && this.krc721MetadataService.isLoading())
   );
   
@@ -72,7 +73,7 @@ export class SendNftListComponent extends FlowPageBaseComponent implements OnIni
     
     // Create observable within injection context to ensure proper signal binding
     this.krc721Assets$ = runInInjectionContext(this.injector, () => 
-      toObservable(this.assetsStore.krc721Assets)
+      toObservable(this.assetsManagerService.getAllAssetStores().l1.getAssetSignal(L1_ASSET_KEYS.krc721))
     );
     
     // Subscribe to assets store changes and reinitialize metadata service

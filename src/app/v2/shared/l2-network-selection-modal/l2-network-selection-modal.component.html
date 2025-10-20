@@ -1,0 +1,25 @@
+<div class="l2-network-selection-modal">
+  <div class="modal-content">
+    <div class="networks-list">
+      <div
+        *ngFor="let network of networks"
+        class="network-item"
+        [class.selected]="isCurrentNetwork(network.chainId)"
+      >
+        <div class="network-icon">
+          {{ getNetworkIcon(network) }}
+        </div>
+        <div class="network-info">
+          <div class="network-name">{{ getNetworkName(network) }}</div>
+        </div>
+        <div class="network-status">
+          <kc-icon
+            *ngIf="isCurrentNetwork(network.chainId)"
+            [iconClass]="'icon-check'"
+            [size]="'sm'"
+          ></kc-icon>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

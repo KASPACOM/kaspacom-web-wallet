@@ -6,13 +6,14 @@ import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
 import { BaseAssetPageComponent, AssetDetail, AssetTransaction } from '../../common/base-asset-page/base-asset-page.component';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { KasplexKrc20Service } from '../../../../../services/kasplex-api/kasplex-api.service';
-import { AssetsStoreService } from '../../../../../services/assets-store.service';
 import { FlowPagesService } from '../../../../services/flow-pages.service';
 import { OperationDetails } from '../../../../../services/kasplex-api/dtos/operation-details-response';
 import { environment } from '../../../../../../environments/environment';
 import { KcLabeledTabsComponent, TabItem } from '../../../../shared/ui/kc-labeled-tabs/kc-labeled-tabs.component';
 import { TokenLogoComponent } from '../../common/krc20/token-logo/token-logo.component';
 import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
+import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';
+import { L1_ASSET_KEYS } from '../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 
 interface TokenInfo {
   tick: string;
@@ -46,9 +47,9 @@ interface TokenInfo {
 export class Krc20AssetComponent extends BaseAssetPageComponent implements OnInit {
   protected kasplexService = inject(KasplexKrc20Service);
   protected route = inject(ActivatedRoute);
-  private assetsStore = inject(AssetsStoreService);
   private flowPagesService = inject(FlowPagesService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  private assetsManagerService = inject(AssetsManagerService);
 
   ticker: string | null = null;
 
@@ -164,7 +165,7 @@ export class Krc20AssetComponent extends BaseAssetPageComponent implements OnIni
       this.loading.set(true);
 
       // First try to get the token from the assets store
-      const krc20Assets = this.assetsStore.krc20Assets();
+      const krc20Assets = this.assetsManagerService.getAllAssetStores().l1.getAssets(L1_ASSET_KEYS.krc20);
       const storedToken = krc20Assets.find(token => token.tick === this.ticker);
 
       if (storedToken) {

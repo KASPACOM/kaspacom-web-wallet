@@ -4,6 +4,7 @@ import { BaseEthereumProvider } from "./base-ethereum-provider";
 import { EIP1193ProviderChain } from "@kaspacom/wallet-messages";
 import { environment } from "../../../environments/environment";
 import { L2ConfigInterface } from "../../../environments/environment.interface";
+import { NETWORKS } from '@kaspacom/swap-sdk';
 
 @Injectable({
     providedIn: 'root',
@@ -12,6 +13,7 @@ export class EthereumWalletChainManager {
     private currentChain = signal<string | undefined>(localStorage.getItem(LOCAL_STORAGE_KEYS.CURRENT_ETHEREUM_CHAIN) || undefined);
     private currentProvider: BaseEthereumProvider | undefined = undefined;
     protected allChainsByChainId: { [chainId: string]: EIP1193ProviderChain } = {};
+    protected allChainsEnvConfigByChainId: { [chainId: string]: L2ConfigInterface } = {};
 
 
     constructor(
@@ -19,8 +21,16 @@ export class EthereumWalletChainManager {
         if (!environment.isL2Enabled) {
             return;
         }
+        environment.l2Configs.forEach((config: L2ConfigInterface) => {
+            this.allChainsEnvConfigByChainId[this.convertChainIdToHex(NETWORKS[config.sdkName].chainId)] = config;
+        });
+
         this.setAllChainsByChainId();
         this.setCurrentWalletProviderAndStopOldOne();
+    }
+
+    public getChainEnvConfig(chainId: string): L2ConfigInterface | undefined {
+        return this.allChainsEnvConfigByChainId[chainId];
     }
 
 
@@ -70,14 +80,13 @@ export class EthereumWalletChainManager {
     public getAllChainsByChainId(): { [chainId: string]: EIP1193ProviderChain } {
         return this.allChainsByChainId;
     }
-
     private setAllChainsByChainId(): void {
-        const allChains: EIP1193ProviderChain[] = Object.values(environment.l2Configs).map((config: any) => ({
-            chainId: this.convertChainIdToHex(config.chainId),
-            chainName: config.name,
-            nativeCurrency: config.nativeCurrency,
-            rpcUrls: [...config.rpcUrls.default.http],
-            blockExplorerUrls: config.blockExplorerUrls || []
+        const allChains: EIP1193ProviderChain[] = Object.values(environment.l2Configs).map((config: L2ConfigInterface) => ({
+            chainId: this.convertChainIdToHex(NETWORKS[config.sdkName].chainId),
+            chainName: NETWORKS[config.sdkName].name,
+            nativeCurrency: NETWORKS[config.sdkName].nativeToken,
+            rpcUrls: [NETWORKS[config.sdkName].rpcUrl],
+            blockExplorerUrls: NETWORKS[config.sdkName].blockExplorerUrl ? [NETWORKS[config.sdkName].blockExplorerUrl!] : [],
         })).concat(JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS) || '[]'));
 
         this.allChainsByChainId = allChains.reduce((acc, chain) => {

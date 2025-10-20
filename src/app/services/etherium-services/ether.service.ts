@@ -24,12 +24,12 @@ export class EtherService {
   }
 
   encodeTransactionPayload(signedTransaction: string): Uint8Array {
+    const chainConfig = this.ethereumChainService.getChainEnvConfig(this.ethereumChainService.getCurrentChainSignal()()!);
 
-    switch (this.ethereumChainService.getCurrentChainSignal()()) {
-      case this.ethereumChainService.convertChainIdToHex(environment.l2Configs.kasplex.chainId):
-        return this.encodeTransactionPayloadWithPrefix(signedTransaction, environment.l2Configs.kasplex.l1PayloadPrefix);
-      default:
-        throw new Error(`Unsupported chain id: ${this.ethereumChainService.getCurrentChainSignal()()}`);
+    if (chainConfig?.l1TransactionPrefix) {
+      return this.encodeTransactionPayloadWithPrefix(signedTransaction, chainConfig.l1TransactionPrefix);
+    } else {
+      throw new Error(`Unsupported chain id: ${this.ethereumChainService.getCurrentChainSignal()()}`);
     }
   }
 

@@ -3,7 +3,8 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
-import { AssetsStoreService } from '../../../../../../../../services/assets-store.service';
+import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
+import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 
 @Component({
   selector: 'app-send-kns-list',
@@ -13,11 +14,11 @@ import { AssetsStoreService } from '../../../../../../../../services/assets-stor
   styleUrl: './send-kns-list.component.scss'
 })
 export class SendKnsListComponent extends FlowPageBaseComponent {
-  private assetsStore = inject(AssetsStoreService);
+  private assetsManager = inject(AssetsManagerService);
   
   // Use KNS domains directly from assets store
-  domains = computed(() => this.assetsStore.knsAssets());
-  loading = computed(() => this.assetsStore.isAssetTypeLoading('kns'));
+  domains = computed(() => this.assetsManager.getAllAssetStores().l1.getAssetSignal(L1_ASSET_KEYS.kns)() || []);
+  loading = computed(() => !this.assetsManager.getAllAssetStores().l1.getAssetSignal(L1_ASSET_KEYS.kns)());
 
   get config(): IFlowPageConfig {
     return {

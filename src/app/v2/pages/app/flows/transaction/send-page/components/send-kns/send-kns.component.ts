@@ -20,7 +20,6 @@ import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skele
 import { KnsDomainAsset } from '../../../../../../../../services/kns-api/dtos/kns-domain.dto';
 import { KnsApiService } from '../../../../../../../../services/kns-api/kns-api.service';
 import { WalletService } from '../../../../../../../../services/wallet.service';
-import { AssetsStoreService } from '../../../../../../../../services/assets-store.service';
 import { WalletActionService } from '../../../../../../../../services/wallet-action.service';
 import { KnsWalletActionService } from '../../../../../../../../services/protocols/kns/kns-wallet-actions.service';
 import { MessagePopupService } from '../../../../../../../../services/message-popup.service';
@@ -32,6 +31,8 @@ import { QrScannerService } from '../../../../../../../../services/qr-scanner.se
 import { AddressSmartInputComponent } from '../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { AddressResolutionResult } from '../../../../../../../../services/address-resolution.service';
 import { Router } from '@angular/router';
+import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
+import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 
 @Component({
   selector: 'app-send-kns',
@@ -56,7 +57,7 @@ export class SendKnsComponent
 {
   private walletService = inject(WalletService);
   private knsService = inject(KnsApiService);
-  private assetsStore = inject(AssetsStoreService);
+  private assetsManagerService = inject(AssetsManagerService);
   private walletActionService = inject(WalletActionService);
   private knsWalletActionService = inject(KnsWalletActionService);
   private messagePopupService = inject(MessagePopupService);
@@ -270,7 +271,7 @@ export class SendKnsComponent
         this.domain.set(domainData);
       } else if (navigationData?.assetId) {
         // Fallback: try to find domain in assets store
-        const knsAssets = this.assetsStore.knsAssets();
+        const knsAssets = this.assetsManagerService.getAllAssetStores().l1.getAssets(L1_ASSET_KEYS.kns);
         const storedDomain = knsAssets.find(
           (domain) => domain.assetId === navigationData.assetId,
         );

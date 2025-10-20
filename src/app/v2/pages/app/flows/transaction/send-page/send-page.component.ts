@@ -4,7 +4,7 @@ import { FlowPageBaseComponent } from '../../../common/flow-page/base/flow-page-
 import { IFlowPageConfig } from '../../../common/flow-page/interfaces/flow-page.interface';
 import { L1SendAssetsContainerComponent } from './l1-send-assets-container.component';
 import { L2SendAssetsContainerComponent } from './l2-send-assets-container.component';
-import { NetworkSelectionService } from '../../../../../../services/network-selection.service';
+import { WalletService } from '../../../../../../services/wallet.service';
 
 @Component({
   selector: 'app-send-page',
@@ -18,36 +18,14 @@ import { NetworkSelectionService } from '../../../../../../services/network-sele
   styleUrl: './send-page.component.scss',
 })
 export class SendPageComponent extends FlowPageBaseComponent {
-  private networkSelectionService = inject(
-    NetworkSelectionService,
-  ) as NetworkSelectionService;
+  private walletService = inject(WalletService);
 
-  // Current network state
-  currentNetwork = computed(
-    () =>
-      this.networkSelectionService.getCurrentNetwork() as
-        | 'l1-kaspa'
-        | 'kasplex'
-        | 'igra',
-  );
-
-  // Assets container component based on network
-  assetsContainerComponent = computed(() => {
-    const network = this.currentNetwork();
-    return network === 'l1-kaspa'
-      ? L1SendAssetsContainerComponent
-      : L2SendAssetsContainerComponent;
-  });
+  isL2Network = computed(() => this.walletService.getIsL2DisplaySignal()());
 
   get config(): IFlowPageConfig {
-    const network = this.currentNetwork();
-    const networkConfig =
-      this.networkSelectionService.getCurrentNetworkConfig();
-    const networkName = networkConfig?.displayName || 'Unknown';
-
     return {
       id: 'send',
-      title: `Send (${networkName})`,
+      title: `Send`,
       canNavigateBack: true,
     };
   }

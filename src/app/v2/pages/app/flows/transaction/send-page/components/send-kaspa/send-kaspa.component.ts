@@ -28,9 +28,7 @@ import { UtilsHelper } from '../../../../../../../../services/utils.service';
 import { MessagePopupService } from '../../../../../../../../services/message-popup.service';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { ApprovalFlowService } from '../../../../../../../services/approval-flow.service';
-import { AssetsStoreService } from '../../../../../../../../services/assets-store.service';
 import { QrScannerService } from '../../../../../../../../services/qr-scanner.service';
-import { firstValueFrom } from 'rxjs';
 import { AddressSmartInputComponent } from '../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { Router } from '@angular/router';
 
@@ -60,7 +58,6 @@ export class SendKaspaComponent
   private utilsHelper = inject(UtilsHelper);
   private messagePopupService = inject(MessagePopupService);
   private approvalFlowService = inject(ApprovalFlowService);
-  private assetsStore = inject(AssetsStoreService);
   private qrScannerService = inject(QrScannerService);
   private router = inject(Router);
 

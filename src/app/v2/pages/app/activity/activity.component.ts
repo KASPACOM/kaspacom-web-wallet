@@ -26,10 +26,10 @@ import {
   ERC20Transaction,
 } from '../../../../services/etherium-services/erc20-transaction.service';
 import { KaspaNetworkActionsService } from '../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
-import { NetworkSelectionService } from '../../../../services/network-selection.service';
 import { TimeAgoPipe } from '../../../../pipes/time-ago.pipe';
 import { firstValueFrom, catchError, of, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { toObservable } from '@angular/core/rxjs-interop';
 
 // Types for activity items
 interface BaseActivityItem {
@@ -85,14 +85,12 @@ type ActivityItem = KaspaActivityItem | Krc20ActivityItem | Erc20ActivityItem;
 })
 export class ActivityComponent
   extends BaseActivityComponent<ActivityItem>
-  implements OnInit, OnDestroy
-{
+  implements OnInit, OnDestroy {
   private walletService = inject(WalletService);
   private kaspaApiService = inject(KaspaApiService);
   private kasplexService = inject(KasplexKrc20Service);
   private erc20TransactionService = inject(Erc20TransactionService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
-  private networkSelectionService = inject(NetworkSelectionService);
   private router = inject(Router);
   private destroy$ = new Subject<void>();
 
@@ -171,11 +169,6 @@ export class ActivityComponent
     }
   });
 
-  // Current network signal
-  currentNetwork = computed(() =>
-    this.networkSelectionService.getCurrentNetwork(),
-  );
-
   // Loading state
   isLoading = computed(
     () =>
@@ -184,7 +177,7 @@ export class ActivityComponent
 
   // Reactive tabs configuration based on current network
   tabs = computed<TabItem[]>(() => {
-    const isL2Network = this.networkSelectionService.isL2Network();
+    const isL2Network = this.walletService.isL2Display();
 
     if (isL2Network) {
       return [
@@ -203,12 +196,7 @@ export class ActivityComponent
   constructor() {
     super();
 
-    // Effect to reload activity data when network changes
-    effect(() => {
-      // This will trigger whenever currentNetwork changes
-      const network = this.currentNetwork();
-
-      // Reset all loading states and data when network changes
+    toObservable(this.walletService.getIsL2DisplaySignal()).subscribe(() => {
       this.resetActivityData();
       this.loadActivityData();
     });
@@ -278,7 +266,7 @@ export class ActivityComponent
       return;
     }
 
-    const isL2Network = this.networkSelectionService.isL2Network();
+    const isL2Network = this.walletService.isL2Display();
 
     if (isL2Network) {
       // TODO: L2 transaction history needs implementation
@@ -392,7 +380,7 @@ export class ActivityComponent
       throw new Error('No current wallet');
     }
 
-    const isL2Network = this.networkSelectionService.isL2Network();
+    const isL2Network = this.walletService.isL2Display();
     const walletAddress = isL2Network
       ? (await currentWallet.getL2WalletAddress()) || currentWallet.getAddress()
       : currentWallet.getAddress();
@@ -472,8 +460,7 @@ export class ActivityComponent
       throw new Error('No current wallet');
     }
 
-    const isL2Network = this.networkSelectionService.isL2Network();
-    const walletAddress = isL2Network
+    const walletAddress = this.walletService.isL2Display()
       ? (await currentWallet.getL2WalletAddress()) || currentWallet.getAddress()
       : currentWallet.getAddress();
 

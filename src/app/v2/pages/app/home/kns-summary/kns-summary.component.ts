@@ -2,8 +2,9 @@ import { Component, computed, inject } from '@angular/core';
 import { TitleCasePipe, UpperCasePipe, DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
-import { AssetsStoreService } from '../../../../../services/assets-store.service';
 import { KnsDomainAsset } from '../../../../../services/kns-api/dtos/kns-domain.dto';
+import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';
+import { L1_ASSET_KEYS } from '../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 
 @Component({
   selector: 'app-kns-summary',
@@ -15,12 +16,12 @@ import { KnsDomainAsset } from '../../../../../services/kns-api/dtos/kns-domain.
   },
 })
 export class KnsSummaryComponent {
-  private assetsStore = inject(AssetsStoreService);
+  private assetsManagerService = inject(AssetsManagerService);
   private router = inject(Router);
 
   // Use domains directly from assets store
-  domains = computed(() => this.assetsStore.knsAssets());
-  loading = computed(() => this.assetsStore.isAssetTypeLoading('kns'));
+  domains = computed(() => this.assetsManagerService.getAllAssetStores().l1.getAssetSignal(L1_ASSET_KEYS.kns)() || []);
+  loading = computed(() => !this.assetsManagerService.getAllAssetStores().l1.getAssetSignal(L1_ASSET_KEYS.kns)());
 
   formatDate(dateString: string): string {
     const date = new Date(dateString);

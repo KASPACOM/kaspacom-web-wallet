@@ -20,7 +20,6 @@ import { ApprovalFlowService } from '../../../../../../../services/approval-flow
 import { QrScannerService } from '../../../../../../../../services/qr-scanner.service';
 import { Router } from '@angular/router';
 import { AddressSmartInputComponent } from '../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
-import { NetworkSelectionService } from '../../../../../../../../services/network-selection.service';
 import { UtilsHelper } from '../../../../../../../../services/utils.service';
 import { KaspaNetworkActionsService } from '../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { EIP1193RequestType } from '@kaspacom/wallet-messages';
@@ -41,19 +40,14 @@ import { EIP1193RequestType } from '@kaspacom/wallet-messages';
 })
 export class SendL2KaspaComponent
   extends FlowPageBaseComponent
-  implements OnInit, OnDestroy
-{
+  implements OnInit, OnDestroy {
   private walletService = inject(WalletService);
   private walletActionService = inject(WalletActionService);
   private messagePopupService = inject(MessagePopupService);
   private approvalFlowService = inject(ApprovalFlowService);
   private qrScannerService = inject(QrScannerService);
   private router = inject(Router);
-  private networkSelectionService = inject(
-    NetworkSelectionService,
-  ) as NetworkSelectionService;
   private utilsHelper = inject(UtilsHelper);
-  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
 
   // Form data
   walletAddress: string = '';
@@ -85,17 +79,7 @@ export class SendL2KaspaComponent
       return 0;
     }
 
-    const currentNetwork = this.networkSelectionService.getCurrentNetwork();
-    if (currentNetwork === 'l1-kaspa') {
-      return 0; // Should not happen, but fallback
-    }
-
-    // For L2 networks
-    const l2State = currentWallet.getL2WalletStateSignal()();
-    if (!l2State) {
-      return 0;
-    }
-    return l2State.balanceFormatted;
+    return currentWallet.getL2WalletStateSignal()()?.balanceFormatted || 0;
   });
 
   constructor() {
@@ -227,10 +211,9 @@ export class SendL2KaspaComponent
 
   private validateAddress(): void {
     // Use network-aware address validation with proper error messages
-    const isL2Network = this.networkSelectionService.isL2Network();
     const errorMessage = this.utilsHelper.getAddressValidationErrorMessage(
       this.walletAddress,
-      isL2Network,
+      true,
     );
 
     if (this.walletAddress && !errorMessage) {

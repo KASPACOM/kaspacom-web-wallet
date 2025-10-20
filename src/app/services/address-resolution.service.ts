@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { default as Graphemer } from 'graphemer';
 import { environment } from '../../environments/environment';
 import { KASPA_NETWORKS } from '../config/consts';
-import { NetworkSelectionService } from './network-selection.service';
+import { WalletService } from './wallet.service';
 
 export interface AddressResolutionResult {
   effectiveAddress: string | null;
@@ -18,8 +18,8 @@ export interface AddressResolutionResult {
 export class AddressResolutionService {
   private readonly utils = inject(UtilsHelper);
   private readonly knsApi = inject(KnsApiService);
-  private readonly networkService = inject(NetworkSelectionService);
   private readonly graphemer = new Graphemer();
+  private readonly walletService = inject(WalletService);
 
   isKaspaAddress(input: string): boolean {
     return this.utils.isValidWalletAddress(input);
@@ -121,14 +121,13 @@ export class AddressResolutionService {
    */
   async resolve(input: string): Promise<AddressResolutionResult> {
     const trimmed = (input || '').trim();
-    const isL2Network = this.networkService.isL2Network();
 
     if (!trimmed) {
       return { effectiveAddress: null, source: 'none' };
     }
 
     // For L1 networks, handle Kaspa addresses and KNS domains
-    if (!isL2Network) {
+    if (!this.walletService.isL2Display()) {
       if (this.isKaspaAddress(trimmed)) {
         return { effectiveAddress: trimmed, source: 'direct' };
       }

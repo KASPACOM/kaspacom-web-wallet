@@ -4,7 +4,6 @@ import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
 import { WalletService } from '../../../../../services/wallet.service';
-import { NetworkSelectionService } from '../../../../../services/network-selection.service';
 import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { AppWallet } from '../../../../../classes/AppWallet';
 import { QuickActionDialogService } from '../../../../services/quick-action-dialog.service';
@@ -28,7 +27,6 @@ interface WalletGroupItem {
 })
 export class WalletSelectionPageComponent extends FlowPageBaseComponent {
   private walletService = inject(WalletService);
-  private networkSelectionService = inject(NetworkSelectionService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private quickActionDialogService = inject(QuickActionDialogService);
 
@@ -43,11 +41,6 @@ export class WalletSelectionPageComponent extends FlowPageBaseComponent {
   }
 
   wallets = signal<WalletGroupItem[]>([]);
-
-  // Current network for address/balance display
-  currentNetwork = computed(() => {
-    return this.networkSelectionService.getCurrentNetwork();
-  });
 
   constructor() {
     super();
@@ -70,16 +63,15 @@ export class WalletSelectionPageComponent extends FlowPageBaseComponent {
     const items: WalletGroupItem[] = [];
     walletGroups.forEach((group, id) => {
       const name = group[0].getName();
-      const network = this.networkSelectionService.getCurrentNetwork();
-      const address = this.getWalletAddress(group[0], network);
-      const balance = this.getWalletBalance(group[0], network);
+      const address = this.getWalletAddress(group[0]);
+      const balance = this.getWalletBalance(group[0]);
       const isSelected = currentWallet ? currentWallet.getId() === id : false;
       items.push({
         id,
         name,
         address,
         balance,
-        balanceDisplay: `${balance} ${network === 'l1-kaspa' ? 'KAS' : 'KAS'}`,
+        balanceDisplay: `${balance} ${this.walletService.getCurrentDisplayNativeTokenName()}`,
         isSelected,
         group,
       });
@@ -147,8 +139,8 @@ export class WalletSelectionPageComponent extends FlowPageBaseComponent {
     });
   }
 
-  private getWalletAddress(wallet: AppWallet, network: string): string {
-    if (network === 'l1-kaspa') {
+  private getWalletAddress(wallet: AppWallet): string {
+    if (!this.walletService.isL2Display()) {
       return wallet.getAddress();
     } else {
       // For L2 networks, get the L2 address
@@ -157,8 +149,8 @@ export class WalletSelectionPageComponent extends FlowPageBaseComponent {
     }
   }
 
-  private getWalletBalance(wallet: AppWallet, network: string): number {
-    if (network === 'l1-kaspa') {
+  private getWalletBalance(wallet: AppWallet): number {
+    if (!this.walletService.isL2Display()) {
       const balanceData = wallet.getCurrentWalletStateBalanceSignalValue();
       return balanceData
         ? this.kaspaNetworkActionsService.sompiToNumber(balanceData.mature)

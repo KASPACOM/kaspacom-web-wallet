@@ -1,9 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { BaseAssetMetadataService } from './base-asset-metadata.service';
-import { AssetsStoreService } from '../assets-store.service';
 import { Krc721ApiService } from '../krc721-api/krc721-api.service';
 import { Krc721Nft, Krc721Metadata } from '../krc721-api/dtos/krc721-nft.dto';
+import { L1_ASSET_KEYS } from '../assets-manager/assets-stores/l1-assets-store.service';
+import { AssetsManagerService } from '../assets-manager/assets-manager.service';
 
 export interface Krc721NftWithMetadata extends Krc721Nft {
   metadataLoaded?: boolean;
@@ -13,41 +14,11 @@ export interface Krc721NftWithMetadata extends Krc721Nft {
   providedIn: 'root'
 })
 export class Krc721MetadataService extends BaseAssetMetadataService<Krc721Nft, Krc721Metadata> {
-  private assetsStore = inject(AssetsStoreService);
   private krc721Service = inject(Krc721ApiService);
   
-  private allAssets: Krc721Nft[] = [];
-
-  constructor() {
-    super();
+  constructor(protected assetsManager: AssetsManagerService) {
+    super(assetsManager.getAllAssetStores().l1, L1_ASSET_KEYS.krc721);
   }
-
-  public override initialize(assets?: Krc721Nft[]): void {
-    // Use provided assets or get from store
-    this.allAssets = assets || this.assetsStore.krc721Assets();
-    
-    // Update pagination state
-    this.paginationStateSignal.update(state => ({
-      ...state,
-      totalItems: this.allAssets.length,
-      hasMore: this.allAssets.length > 0 // Reset hasMore flag based on available assets
-    }));
-
-    // Reset pagination state and load initial page
-    // This ensures stale data from previous wallet is cleared
-    this.reset();
-    
-    // Only load more if we have assets to display
-    if (this.allAssets.length > 0) {
-      this.loadMore();
-    }
-  }
-
-  protected override getAssetsFromStore(): Krc721Nft[] {
-    // Always use the latest from store if no custom assets provided
-    return this.allAssets.length > 0 ? this.allAssets : this.assetsStore.krc721Assets();
-  }
-
   protected override getAssetId(asset: Krc721Nft): string {
     return `${asset.tick}-${asset.tokenId}`;
   }
@@ -116,18 +87,10 @@ export class Krc721MetadataService extends BaseAssetMetadataService<Krc721Nft, K
   }
 
   /**
-   * Refresh data from store and reinitialize
-   */
-  public refreshFromStore(): void {
-    this.allAssets = this.assetsStore.krc721Assets();
-    this.initialize(this.allAssets);
-  }
-
-  /**
    * Filter NFTs by collection
    */
   public filterByCollection(tick: string): void {
-    const filteredAssets = this.assetsStore.krc721Assets().filter(
+    const filteredAssets = this.getAssetsFromStore().filter(
       nft => nft.tick === tick
     );
     this.initialize(filteredAssets);

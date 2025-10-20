@@ -15,7 +15,7 @@ import { DynamicQuickActionDialogOutletComponent } from './common/quick-action-d
 import { KcSnackbarComponent } from '@kaspacom/ui';
 import { OnInit } from '@angular/core';
 import { WalletService } from '../../../services/wallet.service';
-import { AssetsStoreService } from '../../../services/assets-store.service';
+import { AssetsManagerService } from '../../../services/assets-manager/assets-manager.service';
 
 @Component({
   selector: 'app-app-wrapper',
@@ -41,7 +41,7 @@ export class AppWrapperComponent implements OnInit {
   flowPagesService = inject(FlowPagesService);
   quickActionDialogService = inject(QuickActionDialogService);
   private walletService = inject(WalletService);
-  private assetsStore = inject(AssetsStoreService);
+  protected assetsManager = inject(AssetsManagerService);
 
   // Detect if any data is loading on the homepage
   isMainContentLoading = computed(() => {
@@ -53,7 +53,7 @@ export class AppWrapperComponent implements OnInit {
     }
 
     // Check if any asset type is loading (kaspa, krc20, krc721, kns)
-    const isAssetsLoading = this.assetsStore.isAnyAssetLoading();
+    const isAssetsLoading = this.assetsManager.isAnyAssetLoading();
     
     // Check if wallet balance data is loading (for UTXOs)
     const walletBalance = currentWallet.getBalanceSignal()();

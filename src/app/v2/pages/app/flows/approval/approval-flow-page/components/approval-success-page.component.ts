@@ -5,8 +5,6 @@ import { WalletActionResult, WalletActionResultType, CommitRevealActionResult, P
 import { CompletedActionOverviewService } from '../../../../../../../services/action-info-services/completed-action-overview.service';
 import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
 import { ApprovalFlowService } from '../../../../../../services/approval-flow.service';
-import { AssetsStoreService } from '../../../../../../../services/assets-store.service';
-import { Krc20MetadataService } from '../../../../../../../services/asset-metadata/krc20-metadata.service';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 
 @Component({
@@ -98,21 +96,15 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
     ])
   ]
 })
-export class ApprovalSuccessPageComponent implements OnInit {
+export class ApprovalSuccessPageComponent {
   private completedActionOverviewService = inject(CompletedActionOverviewService);
   private approvalFlowService = inject(ApprovalFlowService);
-  private assetsStore = inject(AssetsStoreService);
-  private krc20MetadataService = inject(Krc20MetadataService);
   private router = inject(Router);
 
   @Input() actionResult!: WalletActionResult;
 
   // Spoiler state
   protected showDetails = false;
-
-  ngOnInit() {
-    this.assetsStore.reloadAll(2000);
-  }
 
   actionDisplay = computed(() =>
     this.completedActionOverviewService.getActionDisplay(this.actionResult)

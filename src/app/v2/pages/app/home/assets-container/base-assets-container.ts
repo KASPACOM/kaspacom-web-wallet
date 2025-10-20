@@ -1,5 +1,5 @@
-import { computed, inject, linkedSignal, signal } from '@angular/core';
-import { NetworkSelectionService } from '../../../../../services/network-selection.service';
+import { computed, inject, linkedSignal } from '@angular/core';
+import { WalletService } from '../../../../../services/wallet.service';
 
 // Type-safe tab IDs
 export const ASSET_TAB_IDS = {
@@ -13,13 +13,13 @@ export const ASSET_TAB_IDS = {
 export type AssetTabId = (typeof ASSET_TAB_IDS)[keyof typeof ASSET_TAB_IDS];
 
 export class BaseAssetsContainerComponent {
-  private networkService = inject(NetworkSelectionService);
+  private walletService = inject(WalletService);
 
   // Network-reactive default tab selection
   private defaultTabId = computed(() =>
-    this.networkService.isL1Network()
-      ? ASSET_TAB_IDS.UTXOS
-      : ASSET_TAB_IDS.L2_ERC20,
+    this.walletService.isL2Display()
+      ? ASSET_TAB_IDS.L2_ERC20
+      : ASSET_TAB_IDS.UTXOS,
   );
 
   // Selected tab - linked to network changes for automatic default switching

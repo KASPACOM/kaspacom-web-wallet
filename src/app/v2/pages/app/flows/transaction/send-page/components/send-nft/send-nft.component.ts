@@ -20,7 +20,6 @@ import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skele
 import { INft } from '../../../../../common/interfaces/nft.interface';
 import { Krc721ApiService } from '../../../../../../../../services/krc721-api/krc721-api.service';
 import { WalletService } from '../../../../../../../../services/wallet.service';
-import { AssetsStoreService } from '../../../../../../../../services/assets-store.service';
 import { WalletActionService } from '../../../../../../../../services/wallet-action.service';
 import { Krc721WalletActionService } from '../../../../../../../../services/protocols/krc721/krc721-wallet-actions.service';
 import { MessagePopupService } from '../../../../../../../../services/message-popup.service';
@@ -32,6 +31,8 @@ import { QrScannerService } from '../../../../../../../../services/qr-scanner.se
 import { AddressSmartInputComponent } from '../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { AddressResolutionResult } from '../../../../../../../../services/address-resolution.service';
 import { Router } from '@angular/router';
+import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
+import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 
 @Component({
   selector: 'app-send-nft',
@@ -55,7 +56,6 @@ export class SendNftComponent
 {
   private walletService = inject(WalletService);
   private krc721Service = inject(Krc721ApiService);
-  private assetsStore = inject(AssetsStoreService);
   private walletActionService = inject(WalletActionService);
   private krc721WalletActionService = inject(Krc721WalletActionService);
   private messagePopupService = inject(MessagePopupService);
@@ -63,6 +63,7 @@ export class SendNftComponent
   private utilsHelper = inject(UtilsHelper);
   private qrScannerService = inject(QrScannerService);
   private router = inject(Router);
+  private assetsManagerService = inject(AssetsManagerService);
 
   nft = signal<INft | undefined>(undefined);
   loading = signal<boolean>(true);
@@ -277,7 +278,7 @@ export class SendNftComponent
         this.nft.set(nftData);
       } else if (navigationData?.tick && navigationData?.tokenId) {
         // Fallback: try to find NFT in assets store
-        const krc721Assets = this.assetsStore.krc721Assets();
+        const krc721Assets = this.assetsManagerService.getAllAssetStores().l1.getAssets(L1_ASSET_KEYS.krc721);
         const storedNft = krc721Assets.find(
           (nft) =>
             nft.tick === navigationData.tick &&

@@ -18,7 +18,6 @@ import {
   animate,
 } from '@angular/animations';
 import { WalletService } from '../../../../../services/wallet.service';
-import { NetworkSelectionService } from '../../../../../services/network-selection.service';
 import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { AppWallet } from '../../../../../classes/AppWallet';
 
@@ -88,13 +87,8 @@ export class AccountSettingsOverlayComponent implements OnInit {
   @Output() close = new EventEmitter<void>();
 
   private walletService = inject(WalletService);
-  private networkSelectionService = inject(NetworkSelectionService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
 
-  // Current network for address/balance display
-  currentNetwork = computed(() => {
-    return this.networkSelectionService.getCurrentNetwork();
-  });
 
   // Real wallet data
   wallets = signal<WalletAccount[]>([]);
@@ -188,7 +182,7 @@ export class AccountSettingsOverlayComponent implements OnInit {
     this.close.emit();
   }
 
-  async selectWallet(wallet: WalletAccount): void {
+  async selectWallet(wallet: WalletAccount): Promise<void> {
     // Update the selected state
     this.wallets.update((wallets) =>
       wallets.map((w) => ({

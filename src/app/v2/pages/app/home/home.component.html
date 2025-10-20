@@ -4,6 +4,6 @@
   <app-balance [kasBalanceInput]="kasBalance()"></app-balance>
   <app-crypto-actions></app-crypto-actions>
   
-  <app-l1-assets-container *ngIf="currentNetwork() === 'l1-kaspa'" class="full-width"></app-l1-assets-container>
-  <app-l2-assets-container *ngIf="currentNetwork() !== 'l1-kaspa'" class="full-width"></app-l2-assets-container>
+  <app-l1-assets-container *ngIf="!isL2Display()" class="full-width"></app-l1-assets-container>
+  <app-l2-assets-container *ngIf="isL2Display()" class="full-width"></app-l2-assets-container>
 </div>

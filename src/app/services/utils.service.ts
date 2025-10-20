@@ -1,7 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { KASPA_NETWORKS } from '../config/consts';
-import { NetworkSelectionService } from './network-selection.service';
 
 const WALLET_ADDRESS_VALIDATION_REGEX_MAINNET = /^kaspa:(q|p)[a-z0-9]{54,90}$/;
 const WALLET_ADDRESS_VALIDATION_REGEX_TESTNET =
@@ -79,15 +78,6 @@ export class UtilsHelper {
     return isL2Network
       ? this.isValidEthereumAddress(address)
       : this.isValidWalletAddress(address);
-  }
-
-  /**
-   * Validates address based on current network context (injects NetworkSelectionService)
-   */
-  isValidAddressForCurrentNetwork(address: string): boolean {
-    const networkService = inject(NetworkSelectionService);
-    const isL2Network = networkService.isL2Network();
-    return this.isValidAddressForNetwork(address, isL2Network);
   }
 
   /**

@@ -26,13 +26,13 @@ import { UtilsHelper } from '../../../../../../../../services/utils.service';
 import { MessagePopupService } from '../../../../../../../../services/message-popup.service';
 import { ApprovalFlowService } from '../../../../../../../services/approval-flow.service';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import { firstValueFrom } from 'rxjs';
 import { KaspaNetworkActionsService } from '../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
-import { AssetsStoreService } from '../../../../../../../../services/assets-store.service';
 import { QrScannerService } from '../../../../../../../../services/qr-scanner.service';
 import { AddressSmartInputComponent } from '../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { AddressResolutionResult } from '../../../../../../../../services/address-resolution.service';
 import { Router } from '@angular/router';
+import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
+import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 
 @Component({
   selector: 'app-send-krc20',
@@ -57,14 +57,13 @@ export class SendKrc20Component
   private walletService = inject(WalletService);
   private walletActionService = inject(WalletActionService);
   private krc20WalletActionService = inject(Krc20WalletActionService);
-  private kasplexService = inject(KasplexKrc20Service);
   private utilsHelper = inject(UtilsHelper);
   private messagePopupService = inject(MessagePopupService);
   private approvalFlowService = inject(ApprovalFlowService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
-  private assetsStore = inject(AssetsStoreService);
   private qrScannerService = inject(QrScannerService);
   private router = inject(Router);
+  private assetsManagerService = inject(AssetsManagerService);
 
   // Token data
   token = signal<IToken | undefined>(undefined);
@@ -158,7 +157,7 @@ export class SendKrc20Component
 
     if (tokenData) {
       // First try to get updated data from assets store
-      const krc20Assets = this.assetsStore.krc20Assets();
+      const krc20Assets = this.assetsManagerService.getAllAssetStores().l1.getAssets(L1_ASSET_KEYS.krc20);
       const storedToken = krc20Assets.find((t) => t.tick === tokenData.address);
 
       if (storedToken) {

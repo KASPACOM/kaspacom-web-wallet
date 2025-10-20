@@ -17,13 +17,14 @@ import {
   ITokenWithMetadata,
 } from '../../common/interfaces/token.interface';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
-import { AssetsStoreService } from '../../../../../services/assets-store.service';
 import { Krc20MetadataService } from '../../../../../services/asset-metadata/krc20-metadata.service';
 import { InfiniteScrollDirective } from '../../../../../directives/infinite-scroll.directive';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil, Observable } from 'rxjs';
 import { GetTokenListDto } from '../../../../../services/kasplex-api/dtos/token-list-info.dto';
 import { runInInjectionContext } from '@angular/core';
+import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';
+import { L1_ASSET_KEYS } from '../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 
 @Component({
   selector: 'app-wallet-summary',
@@ -37,19 +38,21 @@ import { runInInjectionContext } from '@angular/core';
 export class WalletSummaryComponent
   implements OnInit, OnDestroy, AfterViewInit
 {
-  private assetsStore = inject(AssetsStoreService);
+  private assetsManagerService = inject(AssetsManagerService);
   private krc20MetadataService = inject(Krc20MetadataService);
   private router = inject(Router);
   private elementRef = inject(ElementRef);
   private injector = inject(Injector);
   private destroy$ = new Subject<void>();
-  private krc20Assets$!: Observable<GetTokenListDto[]>;
+  private krc20Assets$!: Observable<GetTokenListDto[] | undefined>;
 
   @ViewChild(InfiniteScrollDirective) infiniteScroll!: InfiniteScrollDirective;
 
   // Show tokens immediately from assets store, enhanced with metadata when available
   tokens = computed<ITokenWithMetadata[]>(() => {
-    const krc20Assets = this.assetsStore.krc20Assets();
+    const krc20Assets = this.assetsManagerService.getAllAssetStores().l1.getAssets(
+      L1_ASSET_KEYS.krc20,
+    );
     const paginatedAssets = this.krc20MetadataService.paginatedAssets();
 
     // Create a map of metadata by tick
@@ -75,7 +78,7 @@ export class WalletSummaryComponent
     });
   });
 
-  loading = computed(() => this.assetsStore.isAssetTypeLoading('krc20'));
+  loading = computed(() => !this.assetsManagerService.getAllAssetStores().l1.getAssetSignal(L1_ASSET_KEYS.krc20)());
 
   isLoadingMore = computed(
     () =>
@@ -88,7 +91,7 @@ export class WalletSummaryComponent
   ngOnInit(): void {
     // Create observable within injection context to ensure proper signal binding
     this.krc20Assets$ = runInInjectionContext(this.injector, () =>
-      toObservable(this.assetsStore.krc20Assets),
+      toObservable(this.assetsManagerService.getAllAssetStores().l1.getAssetSignal(L1_ASSET_KEYS.krc20)),
     );
 
     // Subscribe to assets store changes and reinitialize metadata service

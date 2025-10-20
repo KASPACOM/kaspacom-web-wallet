@@ -5,9 +5,7 @@ import { WalletService } from '../../../../../services/wallet.service';
 import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { CommaFormatterPipe } from '../../../../../pipes/comma-formatter.pipe';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
-import { AssetsStoreService } from '../../../../../services/assets-store.service';
 import { KaspaPriceService } from '../../../../../services/kaspa-price.service';
-import { NetworkSelectionService } from '../../../../../services/network-selection.service';
 
 @Component({
   selector: 'app-balance',
@@ -25,7 +23,6 @@ export class BalanceComponent {
   private walletService = inject(WalletService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private kaspaPriceService = inject(KaspaPriceService);
-  private networkSelectionService = inject(NetworkSelectionService);
 
   // Calculate USD balance by multiplying kasBalance * kaspaPrice with max 3 decimal rounding
   usdBalance = computed(() => {
@@ -59,7 +56,7 @@ export class BalanceComponent {
 
   // Get the actual balance from the wallet based on network
   kasBalance = computed(() => {
-    const currentNetwork = this.networkSelectionService.getCurrentNetwork();
+    const currentNetwork = 'l1-kaspa';
 
     if (this.kasBalanceInput() !== null) {
       return this.kasBalanceInput() as number;
@@ -90,10 +87,5 @@ export class BalanceComponent {
     }
 
     return this.kaspaNetworkActionsService.sompiToNumber(balanceData.mature);
-  });
-
-  // Get network-specific display information
-  currentNetworkInfo = computed(() => {
-    return this.networkSelectionService.getCurrentNetworkConfig();
   });
 }

@@ -251,6 +251,16 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
     });
   }
 
+    onChangeWalletClicked(): void {
+    this.flowPagesService.navigateToPage({
+      id: 'wallet-selection',
+      title: 'Select wallet',
+      canNavigateBack: true,
+      showTitle: true,
+      showBackground: true,
+    });
+  }
+
   private getWalletAddress(wallet: AppWallet): string {
     if (!this.walletService.isL2Display()) {
       return wallet.getAddress();

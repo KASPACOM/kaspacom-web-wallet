@@ -11,11 +11,17 @@
       ></kc-icon>
     </div>
     <div class="header-right">
-      <kc-icon
+            <kc-icon
         class="more-options-icon"
         [iconClass]="'icon-more-options'"
         [size]="'md'"
         (click)="onWalletOptionsClick()"
+      ></kc-icon>
+            <kc-icon
+        class="update-icon"
+        [iconClass]="'icon-update'"
+        [size]="'md'"
+        (click)="onChangeWalletClicked()"
       ></kc-icon>
       <kc-icon
         class="close-icon"

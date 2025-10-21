@@ -188,7 +188,7 @@ export class ActivityComponent
       return [
         { id: 'all', label: 'All Activity' },
         { id: 'kaspa', label: 'Kaspa' },
-        { id: 'erc20', label: 'ERC20' },
+        { id: 'krc20', label: 'KRC20' },
       ];
     }
   });

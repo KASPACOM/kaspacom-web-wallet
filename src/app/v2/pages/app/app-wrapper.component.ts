@@ -43,25 +43,6 @@ export class AppWrapperComponent implements OnInit {
   private walletService = inject(WalletService);
   protected assetsManager = inject(AssetsManagerService);
 
-  // Detect if any data is loading on the homepage
-  isMainContentLoading = computed(() => {
-    const currentWallet = this.walletService.getCurrentWallet();
-    
-    // If no wallet is selected, consider it loading
-    if (!currentWallet) {
-      return true;
-    }
-
-    // Check if any asset type is loading (kaspa, krc20, krc721, kns)
-    const isAssetsLoading = this.assetsManager.isAnyAssetLoading();
-    
-    // Check if wallet balance data is loading (for UTXOs)
-    const walletBalance = currentWallet.getBalanceSignal()();
-    const isUtxosLoading = !walletBalance;
-    
-    return isAssetsLoading || isUtxosLoading;
-  });
-
   async ngOnInit(): Promise<void> {
     // Ensure wallets are loaded into memory on app shell load
     await this.walletService.loadWallets();

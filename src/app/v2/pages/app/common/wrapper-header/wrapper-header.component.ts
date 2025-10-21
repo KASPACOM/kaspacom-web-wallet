@@ -9,6 +9,7 @@ import { FlowPagesService } from '../../../../services/flow-pages.service';
 import { FlowPageId } from '../flow-page/flow-page.registry';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { WalletProfileOrbComponent } from '../../../../shared/ui/wallet-profile-orb/wallet-profile-orb.component';
+import { EthereumWalletChainManager } from '../../../../../services/etherium-services/etherium-wallet-chain.manager';
 
 @Component({
   selector: 'app-wrapper-header',
@@ -29,9 +30,23 @@ export class WrapperHeaderComponent {
   utilsHelper = inject(UtilsHelper);
   accountSettingsService = inject(AccountSettingsService);
   flowPagesService = inject(FlowPagesService);
+  ethereumWalletChainManager = inject(EthereumWalletChainManager);
 
   // Use signals for reactive updates
   currentWallet = this.walletService.getCurrentWalletSignal();
+  currentNetworkInfo = computed(() => {
+    if (this.ethereumWalletChainManager.getCurrentChainSignal()()) {
+      const envConfig = this.ethereumWalletChainManager.getChainEnvConfig(this.ethereumWalletChainManager.getCurrentChainSignal()()!);
+      const chainConfig = this.ethereumWalletChainManager.getChainConfig(this.ethereumWalletChainManager.getCurrentChainSignal()()!);
+      
+      return {
+        name: chainConfig?.chainName,
+        icon: envConfig?.icon || '🌐',
+      }
+    }
+
+    return undefined;
+  });
 
   walletName = computed(() => {
     const wallet = this.currentWallet();
@@ -63,7 +78,7 @@ export class WrapperHeaderComponent {
 
   onNetworkSelectionClick(): void {
     this.flowPagesService.openFlow({
-      id: 'l2-network-selection' as FlowPageId,
+      id: 'network-selection' as FlowPageId,
       title: 'Select Network',
       canNavigateBack: true,
       showTitle: true,

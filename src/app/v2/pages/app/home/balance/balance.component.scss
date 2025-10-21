@@ -27,3 +27,11 @@
   opacity: 0.8;
   font-weight: 500;
 }
+
+.balance-wallet-address {
+    width: 80%;
+    word-break: break-word;
+    text-align: center;
+    display: flex;
+    min-height: 40px;
+}

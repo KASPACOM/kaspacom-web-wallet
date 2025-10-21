@@ -1,4 +1,4 @@
-.l2-network-selection-modal {
+.network-selection-modal {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -9,6 +9,12 @@
     flex: 1;
     padding: 16px;
     overflow-y: auto;
+
+    .network-group-title {
+      color: var(--gray-75);
+      border-bottom: 1px solid var(--gray-25);
+      padding-bottom: 10px;
+    }
 
     .networks-list {
       display: flex;

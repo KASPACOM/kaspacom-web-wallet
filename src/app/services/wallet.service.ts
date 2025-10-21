@@ -651,9 +651,7 @@ export class WalletService {
     if (this.isL2DisplaySignal()) {
       const l2WalletAddress = this.currentWalletSignal()?.getL2WalletStateSignal()()?.address;
 
-      if (!l2WalletAddress) {
-        return l2WalletAddress;
-      }
+      return l2WalletAddress;
     }
 
     return this.currentWalletSignal()?.getAddress();
@@ -662,5 +660,5 @@ export class WalletService {
   public getCurrentDisplayWalletAddressAsString = computed(() => {
     return this.getCurrentDisplayWalletAddress() || '';
   })
-  
+
 }

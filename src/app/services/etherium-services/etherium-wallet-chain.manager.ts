@@ -33,6 +33,10 @@ export class EthereumWalletChainManager {
         return this.allChainsEnvConfigByChainId[chainId];
     }
 
+    getChainConfig(chainId: string): EIP1193ProviderChain | undefined {
+        return this.getAllChainsByChainId()[chainId];
+    }
+
 
     public getCurrentChainSignal() {
         return this.currentChain.asReadonly();

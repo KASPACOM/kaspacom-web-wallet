@@ -24,6 +24,8 @@ export class BalanceComponent {
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private kaspaPriceService = inject(KaspaPriceService);
 
+  walletAddress = this.walletService.getCurrentDisplayWalletAddressAsString;
+
   // Calculate USD balance by multiplying kasBalance * kaspaPrice with max 3 decimal rounding
   usdBalance = computed(() => {
     const kasBalance = this.kasBalance();

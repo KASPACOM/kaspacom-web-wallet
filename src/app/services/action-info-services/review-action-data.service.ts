@@ -23,6 +23,7 @@ import {
 import { Transaction } from '../../../../public/kaspa/kaspa';
 import { BaseCommunicationApp } from '../communication-service/communication-app/base-communication-app';
 import { environment } from '../../../environments/environment';
+import { formatUnits } from 'ethers';
 
 @Injectable({
   providedIn: 'root',
@@ -281,7 +282,7 @@ export class ReviewActionDataService {
         {
           fieldName: 'Value',
           fieldValue: tx.value
-            ? `${wallet.getL2Provider()!.fromBlockchainNumberToReadableNumber(tx.value)} ${wallet.getL2Provider()!.getConfig().nativeCurrency.symbol}`
+            ? `${formatUnits(tx.value, wallet.getL2Provider()!.getConfig().nativeCurrency.decimals)} ${wallet.getL2Provider()!.getConfig().nativeCurrency.symbol}`
             : `0 ${wallet.getL2Provider()!.getConfig().nativeCurrency.symbol}`,
         },
         {

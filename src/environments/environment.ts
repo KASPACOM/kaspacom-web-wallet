@@ -16,6 +16,7 @@ export const environment: Environment = {
     sdkName: 'kasplex',
     icon: '💎',
     l1TransactionPrefix: 'kaspelx',
+    erc20GraphUrl: 'https://graph-kasplex.kaspa.com/subgraphs/name/kasplex-tokens',
   }]
 };
 

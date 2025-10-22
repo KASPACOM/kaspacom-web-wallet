@@ -51,12 +51,4 @@ export class BaseEthereumProvider {
   disconnect(): void {
     this.etherProvider.destroy();
   }
-
-  fromReadableNumberToBlockchainNumber(value: number): bigint {
-    return BigInt(value) * BigInt(10 ** (this.config.nativeCurrency.decimals || 18));
-  }
-
-  fromBlockchainNumberToReadableNumber(value: bigint): number {
-    return Number(value) / (10 ** (this.config.nativeCurrency.decimals || 18));
-  }
 }

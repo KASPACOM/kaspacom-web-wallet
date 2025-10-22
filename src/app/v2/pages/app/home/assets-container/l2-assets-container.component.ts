@@ -7,24 +7,14 @@ import {
 import {
   BaseAssetsContainerComponent,
   ASSET_TAB_IDS,
-  type AssetTabId,
 } from './base-assets-container';
+import { Erc20SummaryComponent } from '../assets-lists/l2/summary/erc20-summary/erc20-summary.component';
 
 @Component({
   selector: 'app-l2-assets-container',
   standalone: true,
-  imports: [CommonModule, KcLabeledTabsComponent],
-  template: `
-    <kc-labeled-tabs
-      [tabs]="tabs"
-      [selectedTabId]="selectedTabId()"
-      (selectedTabChange)="onTabChange($event)"
-    >
-      <div *ngIf="selectedTabId() === 'l2-ERC20'">
-        TODO: Add ERC20 tokens tab
-      </div>
-    </kc-labeled-tabs>
-  `,
+  imports: [CommonModule, KcLabeledTabsComponent, Erc20SummaryComponent],
+  templateUrl: './l2-assets-container.component.html',
   styleUrl: './l2-assets-container.component.scss',
 })
 export class L2AssetsContainerComponent extends BaseAssetsContainerComponent {

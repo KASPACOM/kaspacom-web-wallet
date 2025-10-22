@@ -18,7 +18,7 @@ import { MempoolTransactionManager } from './MempoolTransactionManager';
 import { IMempoolResultEntry } from '../types/kaspa-network/mempool-result.interface';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
-import { ethers } from 'ethers';
+import { ethers, formatUnits } from 'ethers';
 import { BaseEthereumProvider } from '../services/etherium-services/base-ethereum-provider';
 import { EthereumWalletChainManager } from '../services/etherium-services/etherium-wallet-chain.manager';
 
@@ -357,12 +357,14 @@ export class AppWallet {
       );
       const balance = await this.getL2Balance();
 
+      const nativeCurrencyDecimals = this.getL2Provider()!.getConfig().nativeCurrency.decimals;
+
       this.l2WalletStateSignal.set({
         chainId,
         address: await this.getL2WalletAddress(),
         balance: balance,
         balanceFormatted:
-          this.getL2Provider()?.fromBlockchainNumberToReadableNumber(balance) ||
+          parseFloat(formatUnits(balance, nativeCurrencyDecimals)) ||
           0,
       });
     } else {

@@ -3,9 +3,9 @@ import {
   KcLabeledTabsComponent,
   TabItem,
 } from '../../../../shared/ui/kc-labeled-tabs/kc-labeled-tabs.component';
-import { WalletSummaryComponent } from '../wallet-summary/wallet-summary.component';
-import { Krc721SummaryComponent } from '../krc721-summary/krc721-summary.component';
-import { KnsSummaryComponent } from '../kns-summary/kns-summary.component';
+import { Krc20SummaryComponent } from '../assets-lists/l1/summary/krc20-summary/krc20-summary.component';
+import { Krc721SummaryComponent } from '../assets-lists/l1/summary/krc721-summary/krc721-summary.component';
+import { KnsSummaryComponent } from '../assets-lists/l1/summary/kns-summary/kns-summary.component';
 import { UtxosSummaryComponent } from '../utxos-summary/utxos-summary.component';
 import {
   BaseAssetsContainerComponent,
@@ -18,7 +18,7 @@ import {
   standalone: true,
   imports: [
     KcLabeledTabsComponent,
-    WalletSummaryComponent,
+    Krc20SummaryComponent,
     Krc721SummaryComponent,
     KnsSummaryComponent,
     UtxosSummaryComponent,

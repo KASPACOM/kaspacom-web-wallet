@@ -58,8 +58,6 @@ export class BalanceComponent {
 
   // Get the actual balance from the wallet based on network
   kasBalance = computed(() => {
-    const currentNetwork = 'l1-kaspa';
-
     if (this.kasBalanceInput() !== null) {
       return this.kasBalanceInput() as number;
     }
@@ -74,18 +72,8 @@ export class BalanceComponent {
       return 0;
     }
 
-    // For L1 Kaspa, use mature balance
-    if (currentNetwork === 'l1-kaspa') {
-      return this.kaspaNetworkActionsService.sompiToNumber(balanceData.mature);
-    }
-
-    // For L2 networks, check if there's L2 balance data
-    if (currentNetwork === 'kasplex' || currentNetwork === 'igra') {
-      const l2State = wallet.getL2WalletStateSignal()();
-      if (l2State) {
-        return l2State.balanceFormatted;
-      }
-      return 0;
+    if (this.walletService.isL2Display()) {
+      return wallet.getL2WalletStateSignal()()!.balanceFormatted;
     }
 
     return this.kaspaNetworkActionsService.sompiToNumber(balanceData.mature);

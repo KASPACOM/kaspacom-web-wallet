@@ -1,5 +1,5 @@
 <div
-  class="wallet-summary-container flex column justify-content-center align-items-center full-width gap-16"
+  class="krc20-summary-container flex column justify-content-center align-items-center full-width gap-16"
   appInfiniteScroll
   [scrollThreshold]="70"
   (scrolled)="onScrolled($event)"
@@ -15,7 +15,7 @@
     <div class="text-gray-60 p-16">No KRC20 tokens found</div>
   } @else {
     @for ( token of tokens(); track trackByToken($index, token) ) {
-      <app-asset-card class="wallet-summary-container__card full-width"
+      <app-asset-card class="krc20-summary-container__card full-width"
         [krc20]="token"
         (cardClick)="onTokenClick(token)"
       ></app-asset-card>

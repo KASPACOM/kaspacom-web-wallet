@@ -11,6 +11,7 @@ import { MessagePopupService } from './services/message-popup.service';
 import { WalletService } from './services/wallet.service';
 import { KaspaNetworkConnectionManagerService } from './services/kaspa-netwrok-services/kaspa-network-connection-manager.service';
 import { EthereumWalletChainManager } from './services/etherium-services/etherium-wallet-chain.manager';
+import { AssetsManagerService } from './services/assets-manager/assets-manager.service';
 
 @Component({
   selector: 'app-root',
@@ -27,6 +28,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   communicationService = inject(CommunicationManagerService);
   kaspaConnectionService = inject(KaspaNetworkConnectionManagerService);
   ethereumWalletChainManager = inject(EthereumWalletChainManager);
+  assetsManager = inject(AssetsManagerService);
 
   constructor(
     private readonly communicationManagerService: CommunicationManagerService, 
@@ -42,6 +44,8 @@ export class AppComponent implements OnInit, AfterViewInit {
     if (IFrameCommunicationApp.isIframe()) {
       this.communicationManagerService.addApp(new IFrameCommunicationApp());
     }
+
+    this.assetsManager.initializeWalletListenerAndStart();
   }
 
   ngAfterViewInit(): void {

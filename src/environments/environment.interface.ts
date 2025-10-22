@@ -2,6 +2,7 @@ export interface L2ConfigInterface {
   sdkName: string,
   icon: string,
   l1TransactionPrefix?: string;
+  erc20GraphUrl?: string;
 }
 
 export interface Environment {

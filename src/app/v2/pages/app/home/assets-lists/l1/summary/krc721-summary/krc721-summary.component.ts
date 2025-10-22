@@ -1,16 +1,16 @@
 import { Component, computed, inject, OnInit, OnDestroy, ViewChild, AfterViewInit, ElementRef, Injector } from '@angular/core';
 import { TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
-import { INftWithMetadata } from '../../common/interfaces/nft.interface';
-import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
-import { Krc721MetadataService } from '../../../../../services/asset-metadata/krc721-metadata.service';
-import { InfiniteScrollDirective } from '../../../../../directives/infinite-scroll.directive';
+import { INftWithMetadata } from '../../../../../common/interfaces/nft.interface';
+import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
+import { Krc721MetadataService } from '../../../../../../../../services/asset-metadata/krc721-metadata.service';
+import { InfiniteScrollDirective } from '../../../../../../../../directives/infinite-scroll.directive';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil, Observable } from 'rxjs';
-import { Krc721Nft } from '../../../../../services/krc721-api/dtos/krc721-nft.dto';
+import { Krc721Nft } from '../../../../../../../../services/krc721-api/dtos/krc721-nft.dto';
 import { runInInjectionContext } from '@angular/core';
-import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';
-import { L1_ASSET_KEYS } from '../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
+import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
+import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 
 @Component({
   selector: 'app-krc721-summary',

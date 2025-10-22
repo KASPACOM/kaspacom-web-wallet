@@ -11,31 +11,31 @@ import {
 } from '@angular/core';
 import {} from '@angular/common';
 import { Router } from '@angular/router';
-import { AssetCardComponent } from '../../../../shared/asset-card/asset-card.component';
+import { AssetCardComponent } from '../../../../../../../shared/asset-card/asset-card.component';
 import {
   IToken,
   ITokenWithMetadata,
-} from '../../common/interfaces/token.interface';
-import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
-import { Krc20MetadataService } from '../../../../../services/asset-metadata/krc20-metadata.service';
-import { InfiniteScrollDirective } from '../../../../../directives/infinite-scroll.directive';
+} from '../../../../../common/interfaces/token.interface';
+import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
+import { Krc20MetadataService } from '../../../../../../../../services/asset-metadata/krc20-metadata.service';
+import { InfiniteScrollDirective } from '../../../../../../../../directives/infinite-scroll.directive';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil, Observable } from 'rxjs';
-import { GetTokenListDto } from '../../../../../services/kasplex-api/dtos/token-list-info.dto';
+import { GetTokenListDto } from '../../../../../../../../services/kasplex-api/dtos/token-list-info.dto';
 import { runInInjectionContext } from '@angular/core';
-import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';
-import { L1_ASSET_KEYS } from '../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
+import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
+import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 
 @Component({
-  selector: 'app-wallet-summary',
+  selector: 'app-krc20-summary',
   imports: [SkeletonComponent, InfiniteScrollDirective, AssetCardComponent],
-  templateUrl: './wallet-summary.component.html',
-  styleUrl: './wallet-summary.component.scss',
+  templateUrl: './krc20-summary.component.html',
+  styleUrl: './krc20-summary.component.scss',
   host: {
     '[class.full-width]': 'true',
   },
 })
-export class WalletSummaryComponent
+export class Krc20SummaryComponent
   implements OnInit, OnDestroy, AfterViewInit
 {
   private assetsManagerService = inject(AssetsManagerService);

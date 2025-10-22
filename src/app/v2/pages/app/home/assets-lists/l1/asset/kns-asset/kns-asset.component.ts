@@ -3,15 +3,15 @@ import { CommonModule, DecimalPipe, TitleCasePipe, UpperCasePipe, DatePipe } fro
 import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
-import { BaseAssetPageComponent } from '../../common/base-asset-page/base-asset-page.component';
-import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
-import { FlowPagesService } from '../../../../services/flow-pages.service';
-import { KnsApiService } from '../../../../../services/kns-api/kns-api.service';
-import { KnsDomainAsset } from '../../../../../services/kns-api/dtos/kns-domain.dto';
-import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
-import { environment } from '../../../../../../environments/environment';
-import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';
-import { L1_ASSET_KEYS } from '../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
+import { BaseAssetPageComponent } from '../../../../../common/base-asset-page/base-asset-page.component';
+import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
+import { FlowPagesService } from '../../../../../../../services/flow-pages.service';
+import { KnsApiService } from '../../../../../../../../services/kns-api/kns-api.service';
+import { KnsDomainAsset } from '../../../../../../../../services/kns-api/dtos/kns-domain.dto';
+import { CopyButtonComponent } from '../../../../../../../shared/ui/copy-button/copy-button.component';
+import { environment } from '../../../../../../../../../environments/environment';
+import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
+import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 
 @Component({
   selector: 'app-kns-asset',

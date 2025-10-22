@@ -1,10 +1,10 @@
 import { Component, computed, inject } from '@angular/core';
 import { TitleCasePipe, UpperCasePipe, DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
-import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
-import { KnsDomainAsset } from '../../../../../services/kns-api/dtos/kns-domain.dto';
-import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';
-import { L1_ASSET_KEYS } from '../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
+import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
+import { KnsDomainAsset } from '../../../../../../../../services/kns-api/dtos/kns-domain.dto';
+import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
+import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 
 @Component({
   selector: 'app-kns-summary',

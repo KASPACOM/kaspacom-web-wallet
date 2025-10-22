@@ -85,7 +85,6 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
         this.assetsLoaderInfo[key].loading.set(true);
 
         try {
-            await new Promise(resolve => setTimeout(resolve, 5 * 1000));
             const assets = await this.runLoadAssetFunction(key);
             this.data[key].set(assets);
         } catch (e) {
@@ -131,8 +130,20 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
         return false;
     }
 
+    protected async getWalletAddress(): Promise<string> {
+        if (!this.walletService.getCurrentWallet()) {
+            throw new Error('Trying to load assets without wallet');
+        }
+
+        if (this.walletService.isL2Display()) {
+            return await this.walletService.getCurrentWallet()!.getL2WalletAddress() || '';
+        }
+
+        return this.walletService.getCurrentWallet()!.getAddress();
+    }
+
     protected async runLoadAssetFunction<K extends keyof T>(key: K): Promise<T[K][] | undefined> {
-        const walletAddress = this.walletService.getCurrentWallet()?.getAddress();
+        const walletAddress = await this.getWalletAddress();
 
         if (!walletAddress) {
             throw new Error('Trying to load assets without wallet');

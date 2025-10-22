@@ -23,6 +23,8 @@ import { AddressSmartInputComponent } from '../../../../../../../shared/ui/input
 import { UtilsHelper } from '../../../../../../../../services/utils.service';
 import { KaspaNetworkActionsService } from '../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { EIP1193RequestType } from '@kaspacom/wallet-messages';
+import { parseUnits } from 'ethers';
+import { EthereumWalletChainManager } from '../../../../../../../../services/etherium-services/etherium-wallet-chain.manager';
 
 @Component({
   selector: 'app-send-l2-kaspa',
@@ -48,6 +50,7 @@ export class SendL2KaspaComponent
   private qrScannerService = inject(QrScannerService);
   private router = inject(Router);
   private utilsHelper = inject(UtilsHelper);
+  private ethereumWalletChainManager = inject(EthereumWalletChainManager)
 
   // Form data
   walletAddress: string = '';
@@ -266,8 +269,9 @@ export class SendL2KaspaComponent
       }
 
       // Convert Kaspa amount to L2 blockchain format (e.g., 1 KAS -> appropriate wei amount)
-      const l2Amount = l2Provider.fromReadableNumberToBlockchainNumber(
-        this.kaspaAmount!,
+      const l2Amount = parseUnits(
+        String(this.kaspaAmount),
+        this.ethereumWalletChainManager.getChainConfig(this.ethereumWalletChainManager.getCurrentChainSignal()()!)?.nativeCurrency.decimals || 18,
       );
 
       // Create EIP1193 action for L2 Kaspa transaction

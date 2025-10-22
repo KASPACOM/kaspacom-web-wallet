@@ -3,17 +3,17 @@ import { CommonModule, TitleCasePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
-import { BaseAssetPageComponent, AssetDetail, AssetTransaction } from '../../common/base-asset-page/base-asset-page.component';
-import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
-import { KasplexKrc20Service } from '../../../../../services/kasplex-api/kasplex-api.service';
-import { FlowPagesService } from '../../../../services/flow-pages.service';
-import { OperationDetails } from '../../../../../services/kasplex-api/dtos/operation-details-response';
-import { environment } from '../../../../../../environments/environment';
-import { KcLabeledTabsComponent, TabItem } from '../../../../shared/ui/kc-labeled-tabs/kc-labeled-tabs.component';
-import { TokenLogoComponent } from '../../common/krc20/token-logo/token-logo.component';
-import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
-import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';
-import { L1_ASSET_KEYS } from '../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
+import { BaseAssetPageComponent, AssetDetail, AssetTransaction } from '../../../../../common/base-asset-page/base-asset-page.component';
+import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
+import { KasplexKrc20Service } from '../../../../../../../../services/kasplex-api/kasplex-api.service';
+import { FlowPagesService } from '../../../../../../../services/flow-pages.service';
+import { OperationDetails } from '../../../../../../../../services/kasplex-api/dtos/operation-details-response';
+import { environment } from '../../../../../../../../../environments/environment';
+import { KcLabeledTabsComponent, TabItem } from '../../../../../../../shared/ui/kc-labeled-tabs/kc-labeled-tabs.component';
+import { TokenLogoComponent } from '../../../../../common/krc20/token-logo/token-logo.component';
+import { KaspaNetworkActionsService } from '../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
+import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
+import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 
 interface TokenInfo {
   tick: string;

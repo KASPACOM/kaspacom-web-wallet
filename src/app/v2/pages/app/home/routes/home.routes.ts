@@ -1,13 +1,13 @@
 import { Routes } from '@angular/router';
 import { HomeComponent } from '../home.component';
 import { SearchComponent } from '../search/search.component';
-import { Krc20AssetComponent } from '../krc20-asset/krc20-asset.component';
-import { Krc721AssetComponent } from '../krc721-asset/krc721-asset.component';
-import { KnsAssetComponent } from '../kns-asset/kns-asset.component';
+import { Krc20AssetComponent } from '../assets-lists/l1/asset/krc20-asset/krc20-asset.component';
+import { KnsAssetComponent } from '../assets-lists/l1/asset/kns-asset/kns-asset.component';
 import { UtxoAssetComponent } from '../utxo-asset/utxo-asset.component';
 import { Krc20TransactionDetailsComponent } from '../krc20-transaction-details/krc20-transaction-details.component';
 import { KaspaTransactionDetailsComponent } from '../kaspa-transaction-details/kaspa-transaction-details.component';
 import { Erc20TransactionDetailsComponent } from '../erc20-transaction-details/erc20-transaction-details.component';
+import { Krc721AssetComponent } from '../assets-lists/l1/asset/krc721-asset/krc721-asset.component';
 
 export const HomeRoutes: Routes = [
   {

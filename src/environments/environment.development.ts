@@ -16,10 +16,12 @@ export const environment: Environment = {
     sdkName: 'kasplex-testnet',
     icon: '💎',
     l1TransactionPrefix: 'kaspelx',
+    erc20GraphUrl: 'https://dev-graph-kasplex.kaspa.com/subgraphs/name/kasplex-testnet-tokens',
   },
   {
     sdkName: 'kasplex',
     icon: '💎',
     l1TransactionPrefix: 'kaspelx',
+    erc20GraphUrl: 'https://graph-kasplex.kaspa.com/subgraphs/name/kasplex-tokens',
   }]
 };

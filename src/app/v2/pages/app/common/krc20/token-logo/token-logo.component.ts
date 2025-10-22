@@ -22,7 +22,7 @@ export class TokenLogoComponent {
   });
 
   getImagePlaceholder = computed(() =>
-    this.useFallback() ? './images/kaspa-logo-black.png' : '',
+    this.useFallback() ? './images/kc-all-black.png' : '',
   );
 
   constructor() {

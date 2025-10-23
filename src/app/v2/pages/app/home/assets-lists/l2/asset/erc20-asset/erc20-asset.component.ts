@@ -6,10 +6,11 @@ import { BaseAssetPageComponent, AssetDetail, AssetTransaction } from '../../../
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
 import { FlowPagesService } from '../../../../../../../services/flow-pages.service';
 import { KcLabeledTabsComponent, TabItem } from '../../../../../../../shared/ui/kc-labeled-tabs/kc-labeled-tabs.component';
-import { KaspaNetworkActionsService } from '../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { ERC20Contract } from '../../../../../../../../services/etherium-services/smart-contracts/contracts/erc20-contract';
 import { formatUnits } from 'ethers';
 import { WalletActionService } from '../../../../../../../../services/wallet-action.service';
+import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
+import { L2AssetsStoreService } from '../../../../../../../../services/assets-manager/assets-stores/l2-assets-store.service';
 
 interface Erc20TokenInfo {
   balance: number;
@@ -36,8 +37,8 @@ interface Erc20TokenInfo {
 export class Erc20AssetComponent extends BaseAssetPageComponent implements OnInit {
   protected route = inject(ActivatedRoute);
   private flowPagesService = inject(FlowPagesService);
-  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private walletActionService = inject(WalletActionService);
+  private assetsManagerService = inject(AssetsManagerService); 
 
   address: string | null = null;
 
@@ -77,24 +78,21 @@ export class Erc20AssetComponent extends BaseAssetPageComponent implements OnIni
 
       const contract = ERC20Contract.getContract(this.walletService, this.walletActionService, this.address);
 
-      const [balance, decimals, name, symbol, totalSupply] = await Promise.all([
-        contract.balanceOf((await this.walletService.getCurrentWallet()?.getL2WalletAddress())!),
-        contract.decimals(),
-        contract.name(),
-        contract.symbol(),
+      const [{balance, decimals, name, symbol}, totalSupply] = await Promise.all([
+        (this.assetsManagerService.getAllAssetStores().l2 as L2AssetsStoreService).getErc20InfoFromBlockchain(this.address),
         contract.totalSupply(),
       ])
 
       this.assetDetail.set({
         name: name,
         symbol: symbol,
-        balance: formatUnits(balance.toString(), decimals).toString(),
-        decimals: Number(decimals),
+        balance: balance!.toString(),
+        decimals: decimals,
       });
 
       this.tokenInfo.set({
-        balance: parseFloat(formatUnits(balance.toString(), decimals)),
-        decimals: Number(decimals),
+        balance: balance!,
+        decimals: decimals,
         name: name,
         symbol: symbol,
         totalSupply: parseFloat(formatUnits(totalSupply.toString(), decimals)),
@@ -128,7 +126,7 @@ export class Erc20AssetComponent extends BaseAssetPageComponent implements OnIni
 
     // Navigate directly to the send eRC20 form with token pre-selected
     this.flowPagesService.openFlow({
-      id: 'send-krc20',
+      id: 'send-erc20',
       title: `Send ${assetDetail.name}`,
       canNavigateBack: true,
       data: { token: tokenData }

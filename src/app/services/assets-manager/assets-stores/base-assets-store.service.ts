@@ -159,4 +159,28 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
         }
     }
 
+    protected updateOrAddAsset(assetKey: keyof T, asset: T[keyof T], uniqueIdProp: string = 'id', toLowerCase?: boolean): void {
+        if (!this.data[assetKey]()) {
+            throw new Error(`Asset not found for key: ${String(assetKey)}`);
+        }
+
+        const currentData = [...(this.data[assetKey]()!)];
+
+        let assetPropVal = asset[uniqueIdProp];
+        if (toLowerCase) {
+            assetPropVal = assetPropVal.toLowerCase();
+        }
+
+        for (let i = 0; i < currentData.length; i++) {
+            if (toLowerCase ? currentData[i][uniqueIdProp].toLowerCase() === assetPropVal : currentData[i][uniqueIdProp] === asset[uniqueIdProp]) {
+                currentData[i] = asset;
+                this.data[assetKey].set(currentData);
+                return;
+            }
+        }
+
+        currentData.push(asset);
+        this.data[assetKey].set(currentData);
+    }
+
 }

@@ -66,7 +66,7 @@ export abstract class BaseContract {
     methodName: string,
     ...args: ContractMethodArgs
   ): Promise<WalletActionResultWithError> {
-    return await this.doContractActionPayable(methodName, 0n, true, ...args);
+    return await this.doContractActionPayable(methodName, 0n, ...args);
   }
 
   // This function is checking if it's possible to do the payable action

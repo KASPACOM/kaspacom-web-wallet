@@ -28,7 +28,7 @@ export class ERC20Contract extends BaseContract {
     return await this.callViewMethod<ethers.BigNumberish>('balanceOf', owner);
   }
 
-  async transfer(to: string, value: string): Promise<WalletActionResultWithError> {
+  async transfer(to: string, value: bigint): Promise<WalletActionResultWithError> {
     return await this.doContractAction('transfer', to, value);
   }
 

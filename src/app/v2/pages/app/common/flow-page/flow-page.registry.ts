@@ -22,6 +22,7 @@ import { DisconnectConfirmationComponent } from '../../flows/settings/disconnect
 import { ExportKaspacomWalletFlowPageComponent } from '../../flows/export-kaspacom-wallet/export-kaspacom-wallet-flow-page.component';
 import { IFlowPageConfig } from './interfaces/flow-page.interface';
 import { NetworkSelectionModalComponent } from '../../../../shared/network-selection-modal/network-selection-modal.component';
+import { SendErc20Component } from '../../flows/transaction/send-page/components/send-asset/l2/send-erc20/send-erc20.component';
 
 export type FlowPageRegistryEntry =
   | Type<unknown>
@@ -43,6 +44,7 @@ export const FLOW_PAGE_IDS = [
   'send-kns',
   'send-l2-kaspa',
   'send-l2-erc20-list',
+  'send-erc20',
   'action-approval',
   'receive',
   'export-wallet',
@@ -70,6 +72,7 @@ export const FLOW_PAGE_REGISTRY: Record<FlowPageId, FlowPageRegistryEntry> = {
   'send-kns': SendKnsComponent,
   'send-l2-kaspa': SendL2KaspaComponent,
   'send-l2-erc20-list': SendL2Erc20ListComponent,
+  'send-erc20': SendErc20Component,
   'action-approval': ApprovalFlowPageComponent,
   receive: ReceiveFlowPageComponent,
   'export-wallet': ExportWalletComponent,

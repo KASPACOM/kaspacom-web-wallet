@@ -1,18 +1,18 @@
 import { Component, computed, inject, OnInit, OnDestroy, ViewChild, AfterViewInit, Injector } from '@angular/core';
 import { CommonModule, DecimalPipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
-import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
-import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
-import { TokenLogoComponent } from '../../../../../common/krc20/token-logo/token-logo.component';
-import { IToken, ITokenWithMetadata } from '../../../../../common/interfaces/token.interface';
-import { SkeletonComponent } from "../../../../../../../shared/ui/skeleton";
-import { Krc20MetadataService } from '../../../../../../../../services/asset-metadata/krc20-metadata.service';
-import { InfiniteScrollDirective } from '../../../../../../../../directives/infinite-scroll.directive';
+import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
+import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
+import { TokenLogoComponent } from '../../../../../../../common/krc20/token-logo/token-logo.component';
+import { IToken, ITokenWithMetadata } from '../../../../../../../common/interfaces/token.interface';
+import { SkeletonComponent } from "../../../../../../../../../shared/ui/skeleton";
+import { Krc20MetadataService } from '../../../../../../../../../../services/asset-metadata/krc20-metadata.service';
+import { InfiniteScrollDirective } from '../../../../../../../../../../directives/infinite-scroll.directive';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil, Observable } from 'rxjs';
-import { GetTokenListDto } from '../../../../../../../../services/kasplex-api/dtos/token-list-info.dto';
+import { GetTokenListDto } from '../../../../../../../../../../services/kasplex-api/dtos/token-list-info.dto';
 import { runInInjectionContext } from '@angular/core';
-import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
-import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
+import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
+import { L1_ASSET_KEYS } from '../../../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 
 @Component({
   selector: 'app-send-krc20-list',

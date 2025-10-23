@@ -1,7 +1,6 @@
 @import '../../../../../../../../../styles/design-system/colors.style.scss';
 
 .asset-page-container {
-  min-height: 100vh;
   overflow-y: auto;
 
   &.loading {
@@ -12,6 +11,8 @@
 
   .asset-header {
     .header-left {
+      padding-right: 16px;
+      
       .asset-title {
         margin: 0;
       }
@@ -126,6 +127,7 @@
             font-size: 14px;
             color: var(--gray-60);
             font-weight: 500;
+            padding-right: 20px;
           }
 
           .info-value {

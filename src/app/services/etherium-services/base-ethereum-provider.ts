@@ -44,6 +44,11 @@ export class BaseEthereumProvider {
     // throw new Error('Transaction not found after 5 attempts');
   }
 
+
+  getProvider(): ethers.JsonRpcProvider {
+    return this.etherProvider;
+  }
+
   getConfig(): EIP1193ProviderChain {
     return this.config;
   }

@@ -8,63 +8,53 @@ import {
   signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
-import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
-import {
-  KcInputComponent,
-  KcCheckboxComponent,
-  KcButtonComponent,
-  KcIconComponent,
-} from '@kaspacom/ui';
+import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
+import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
+import { KcInputComponent, KcButtonComponent } from '@kaspacom/ui';
 import { FormsModule } from '@angular/forms';
-import { TokenLogoComponent } from '../../../../../common/krc20/token-logo/token-logo.component';
-import { WalletService } from '../../../../../../../../services/wallet.service';
-import { WalletActionService } from '../../../../../../../../services/wallet-action.service';
-import {
-  KaspaNetworkActionsService,
-  MINIMAL_AMOUNT_TO_SEND,
-} from '../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
-import { UtilsHelper } from '../../../../../../../../services/utils.service';
-import { MessagePopupService } from '../../../../../../../../services/message-popup.service';
-import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import { ApprovalFlowService } from '../../../../../../../services/approval-flow.service';
-import { QrScannerService } from '../../../../../../../../services/qr-scanner.service';
-import { AddressSmartInputComponent } from '../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
+import { TokenLogoComponent } from '../../../../../../../common/krc20/token-logo/token-logo.component';
+import { WalletService } from '../../../../../../../../../../services/wallet.service';
+import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';
+import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
+import { ApprovalFlowService } from '../../../../../../../../../services/approval-flow.service';
+import { QrScannerService } from '../../../../../../../../../../services/qr-scanner.service';
 import { Router } from '@angular/router';
+import { AddressSmartInputComponent } from '../../../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
+import { UtilsHelper } from '../../../../../../../../../../services/utils.service';
+import { KaspaNetworkActionsService } from '../../../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
+import { EIP1193RequestType } from '@kaspacom/wallet-messages';
+import { parseUnits } from 'ethers';
+import { EthereumWalletChainManager } from '../../../../../../../../../../services/etherium-services/etherium-wallet-chain.manager';
 
 @Component({
-  selector: 'app-send-kaspa',
+  selector: 'app-send-l2-kaspa',
   standalone: true,
   imports: [
     CommonModule,
     KcInputComponent,
-    KcCheckboxComponent,
     KcButtonComponent,
-    KcIconComponent,
     FormsModule,
     TokenLogoComponent,
     AddressSmartInputComponent,
   ],
-  templateUrl: './send-kaspa.component.html',
-  styleUrl: './send-kaspa.component.scss',
+  templateUrl: './send-l2-kaspa.component.html',
+  styleUrl: './send-l2-kaspa.component.scss',
 })
-export class SendKaspaComponent
+export class SendL2KaspaComponent
   extends FlowPageBaseComponent
-  implements OnInit, OnDestroy
-{
+  implements OnInit, OnDestroy {
   private walletService = inject(WalletService);
   private walletActionService = inject(WalletActionService);
-  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
-  private utilsHelper = inject(UtilsHelper);
   private messagePopupService = inject(MessagePopupService);
   private approvalFlowService = inject(ApprovalFlowService);
   private qrScannerService = inject(QrScannerService);
   private router = inject(Router);
+  private utilsHelper = inject(UtilsHelper);
+  private ethereumWalletChainManager = inject(EthereumWalletChainManager)
 
   // Form data
   walletAddress: string = '';
   kaspaAmount: number | null = null;
-  replaceByFee: boolean = false;
 
   // Resolved address (from KNS) if present
   private resolvedToAddress: string | null = null;
@@ -91,9 +81,8 @@ export class SendKaspaComponent
     if (!currentWallet) {
       return 0;
     }
-    const currentBalance =
-      currentWallet.getCurrentWalletStateBalanceSignalValue()?.mature || 0n;
-    return this.kaspaNetworkActionsService.sompiToNumber(currentBalance);
+
+    return currentWallet.getL2WalletStateSignal()()?.balanceFormatted || 0;
   });
 
   constructor() {
@@ -119,11 +108,10 @@ export class SendKaspaComponent
     // React to page configuration changes
     effect(() => {
       const currentPage = this.flowPagesService.activePage();
-      if (currentPage?.id === 'send-kaspa') {
+      if (currentPage?.id === 'send-l2-kaspa') {
         // Reset form when navigating to this page
         this.walletAddress = '';
         this.kaspaAmount = null;
-        this.replaceByFee = false;
         this.addressTouched = false;
         this.amountTouched = false;
         this.resolvedToAddress = null;
@@ -144,8 +132,8 @@ export class SendKaspaComponent
 
   get config(): IFlowPageConfig {
     return {
-      id: 'send-kaspa',
-      title: 'Send Kaspa',
+      id: 'send-l2-kaspa',
+      title: 'Send Kaspa (L2)',
       canNavigateBack: true,
     };
   }
@@ -178,18 +166,9 @@ export class SendKaspaComponent
     this.validateAmount();
   }
 
-  onRbfChange(value: boolean): void {
-    this.replaceByFee = value;
-  }
-
   onMaxAmountClick(): void {
-    console.log(
-      'Max button clicked, available balance:',
-      this.availableBalance(),
-    );
     this.kaspaAmount = this.availableBalance();
     this.validateAmount();
-    console.log('Kaspa amount set to:', this.kaspaAmount);
   }
 
   onQrScanClick(): void {
@@ -197,7 +176,7 @@ export class SendKaspaComponent
       this.qrScannerService.stopScanning();
     } else {
       this.qrScannerService.startScanning({
-        scannerId: 'qr-scanner-kaspa',
+        scannerId: 'qr-scanner-l2-kaspa',
         title: 'Scan Kaspa Address',
         onSuccess: (address: string) => {
           this.walletAddress = address;
@@ -223,15 +202,6 @@ export class SendKaspaComponent
       return;
     }
 
-    const minimalAmount = this.kaspaNetworkActionsService.sompiToNumber(
-      MINIMAL_AMOUNT_TO_SEND,
-    );
-    if (this.kaspaAmount < minimalAmount) {
-      this.isAmountValid = false;
-      this.amountErrorMessage = `Amount must be at least ${minimalAmount} KAS`;
-      return;
-    }
-
     if (this.kaspaAmount > this.availableBalance()) {
       this.isAmountValid = false;
       this.amountErrorMessage = 'Insufficient balance';
@@ -243,25 +213,21 @@ export class SendKaspaComponent
   }
 
   private validateAddress(): void {
-    if (!this.walletAddress) {
-      this.isAddressValid = !this.addressTouched;
-      this.addressErrorMessage = this.addressTouched
-        ? 'Wallet address is required'
-        : '';
-      return;
-    }
+    // Use network-aware address validation with proper error messages
+    const errorMessage = this.utilsHelper.getAddressValidationErrorMessage(
+      this.walletAddress,
+      true,
+    );
 
-    if (
-      this.utilsHelper.isValidWalletAddress(this.walletAddress) ||
-      !!this.resolvedToAddress
-    ) {
+    if (this.walletAddress && !errorMessage) {
+      // Valid address
       this.isAddressValid = true;
       this.addressErrorMessage = '';
-      return;
+    } else {
+      // Invalid or empty address
+      this.isAddressValid = !this.addressTouched && !this.walletAddress;
+      this.addressErrorMessage = this.addressTouched ? errorMessage : '';
     }
-
-    this.isAddressValid = false;
-    this.addressErrorMessage = 'Invalid wallet address format';
   }
 
   async onSendClick(): Promise<void> {
@@ -289,80 +255,70 @@ export class SendKaspaComponent
     this.isLoading = true;
 
     try {
-      // Ensure wallet is ready for transactions
-      await currentWallet.waitForWalletToBeReadyForTransactions();
-
-      // Check if utxo processor manager is available
-      if (!currentWallet.getUtxoProcessorManager()) {
-        this.messagePopupService.showError(
-          'Wallet is not ready for transactions. Please wait and try again.',
-        );
+      // Get the L2 wallet address for the sender
+      const l2WalletAddress = await currentWallet.getL2WalletAddress();
+      if (!l2WalletAddress) {
+        this.messagePopupService.showError('L2 wallet not available');
         return;
       }
 
-      const amountInSompi =
-        this.kaspaNetworkActionsService.kaspaToSompiFromNumber(
-          this.kaspaAmount!,
-        );
-      const toAddress = this.resolvedToAddress || this.walletAddress;
+      const l2Provider = currentWallet.getL2Provider();
+      if (!l2Provider) {
+        this.messagePopupService.showError('L2 provider not available');
+        return;
+      }
 
-      const action = this.walletActionService.createTransferKasWalletAction(
-        toAddress,
-        amountInSompi,
-        currentWallet,
-        this.replaceByFee,
+      // Convert Kaspa amount to L2 blockchain format (e.g., 1 KAS -> appropriate wei amount)
+      const l2Amount = parseUnits(
+        String(this.kaspaAmount),
+        this.ethereumWalletChainManager.getChainConfig(this.ethereumWalletChainManager.getCurrentChainSignal()()!)?.nativeCurrency.decimals || 18,
       );
 
-      console.log(action, currentWallet, this.kaspaAmount);
+      // Create EIP1193 action for L2 Kaspa transaction
+      const l2TransactionParams = {
+        from: l2WalletAddress, // Sender address (L2 address)
+        to: this.walletAddress, // Destination address (L2 address)
+        value: l2Amount.toString(), // Amount in L2 native currency as string
+        gasLimit: '21000', // Standard gas limit for simple transfers
+      };
+
+      console.warn('l2TransactionParams', l2TransactionParams);
+      const action = this.walletActionService.createEIP1193Action({
+        method: EIP1193RequestType.SEND_TRANSACTION,
+        params: [l2TransactionParams],
+      });
+
+      // Use the existing approval flow and wallet action service
       const result =
-        await this.walletActionService.validateAndDoActionAfterApproval(
-          action,
-          false,
-        );
+        await this.walletActionService.validateAndDoActionAfterApproval(action);
 
       if (result.success) {
-        // Clear form on success
-        this.walletAddress = '';
-        this.kaspaAmount = null;
-        this.replaceByFee = false;
-        this.resolvedToAddress = null;
+        // Refresh the L2 balance after successful transaction
+        await currentWallet.refreshL2Balance();
 
-        // Only show success message and navigate if not using v2 flow
-        // v2 flow handles success display in the approval flow
-        if (!result.isUsingV2Flow) {
-          this.messagePopupService.showSuccess(
-            'Transaction sent successfully!',
-          );
-          this.navigateBack();
-        } else {
-          // For v2 flow, wait for approval flow completion
-          this.waitingForApprovalCompletion = true;
-        }
+        this.messagePopupService.showSuccess(
+          'L2 Kaspa transaction sent successfully!',
+        );
+        this.navigateBack();
       } else {
-        if (result.errorCode !== ERROR_CODES.EIP1193.USER_REJECTED) {
-          const errorMessage = result.errorCode
-            ? ERROR_CODES_MESSAGES[result.errorCode]
-            : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR];
-          this.messagePopupService.showError(errorMessage);
-        }
-
-        // Reset the waiting flag if transaction failed
-        this.waitingForApprovalCompletion = false;
+        this.messagePopupService.showError(
+          'Failed to send L2 Kaspa transaction',
+        );
       }
     } catch (error) {
-      console.error('Error sending transaction:', error);
-      this.messagePopupService.showError('Failed to send transaction');
+      console.error('Error sending L2 Kaspa transaction:', error);
+      this.messagePopupService.showError('Failed to send L2 Kaspa transaction');
     } finally {
       this.isLoading = false;
     }
   }
 
   /**
-   * Override navigateBack to navigate to homepage with UTXOs tab selected
+   * Override navigateBack to navigate to homepage
    */
   protected override navigateBack(): void {
-    // Close the flow and navigate to homepage with UTXOs tab
+    // Close the flow and navigate to homepage
     this.flowPagesService.closePage();
-    this.router.navigate(['/app/home'], { queryParams: { tab: 'utxos' } });
+    this.router.navigate(['/app/home']);
   }
 }

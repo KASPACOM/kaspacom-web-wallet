@@ -7,8 +7,8 @@ import {
   effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
-import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
+import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
+import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
 import {
   KcInputComponent,
   KcCheckboxComponent,
@@ -16,23 +16,22 @@ import {
   KcIconComponent,
 } from '@kaspacom/ui';
 import { FormsModule } from '@angular/forms';
-import { IToken } from '../../../../../common/interfaces/token.interface';
-import { TokenLogoComponent } from '../../../../../common/krc20/token-logo/token-logo.component';
-import { WalletService } from '../../../../../../../../services/wallet.service';
-import { WalletActionService } from '../../../../../../../../services/wallet-action.service';
-import { Krc20WalletActionService } from '../../../../../../../../services/protocols/krc20/krc20-wallet-actions.service';
-import { KasplexKrc20Service } from '../../../../../../../../services/kasplex-api/kasplex-api.service';
-import { UtilsHelper } from '../../../../../../../../services/utils.service';
-import { MessagePopupService } from '../../../../../../../../services/message-popup.service';
-import { ApprovalFlowService } from '../../../../../../../services/approval-flow.service';
+import { IToken } from '../../../../../../../common/interfaces/token.interface';
+import { TokenLogoComponent } from '../../../../../../../common/krc20/token-logo/token-logo.component';
+import { WalletService } from '../../../../../../../../../../services/wallet.service';
+import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';
+import { Krc20WalletActionService } from '../../../../../../../../../../services/protocols/krc20/krc20-wallet-actions.service';
+import { UtilsHelper } from '../../../../../../../../../../services/utils.service';
+import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
+import { ApprovalFlowService } from '../../../../../../../../../services/approval-flow.service';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import { KaspaNetworkActionsService } from '../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
-import { QrScannerService } from '../../../../../../../../services/qr-scanner.service';
-import { AddressSmartInputComponent } from '../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
-import { AddressResolutionResult } from '../../../../../../../../services/address-resolution.service';
+import { KaspaNetworkActionsService } from '../../../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
+import { QrScannerService } from '../../../../../../../../../../services/qr-scanner.service';
+import { AddressSmartInputComponent } from '../../../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
+import { AddressResolutionResult } from '../../../../../../../../../../services/address-resolution.service';
 import { Router } from '@angular/router';
-import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
-import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
+import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
+import { L1_ASSET_KEYS } from '../../../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 
 @Component({
   selector: 'app-send-krc20',
@@ -180,12 +179,6 @@ export class SendKrc20Component
       this.messagePopupService.showError('No token selected');
       this.navigateBack();
     }
-  }
-
-  private getNavigationData(): any {
-    // Get data from current page configuration
-    const currentPage = this.getCurrentConfig();
-    return currentPage?.data || {};
   }
 
   onWalletAddressChange(address: string): void {

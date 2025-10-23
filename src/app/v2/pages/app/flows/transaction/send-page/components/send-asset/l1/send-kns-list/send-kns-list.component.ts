@@ -1,10 +1,10 @@
 import { Component, computed, inject } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
-import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
-import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
-import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
-import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
+import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
+import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
+import { SkeletonComponent } from '../../../../../../../../../shared/ui/skeleton/skeleton.component';
+import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
+import { L1_ASSET_KEYS } from '../../../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 
 @Component({
   selector: 'app-send-kns-list',

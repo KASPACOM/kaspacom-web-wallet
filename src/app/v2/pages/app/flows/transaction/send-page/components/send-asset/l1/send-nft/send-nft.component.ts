@@ -7,8 +7,8 @@ import {
   effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FlowPageBaseComponent } from '../../../../../common/flow-page/base/flow-page-base.component';
-import { IFlowPageConfig } from '../../../../../common/flow-page/interfaces/flow-page.interface';
+import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
+import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
 import {
   KcInputComponent,
   KcCheckboxComponent,
@@ -16,23 +16,23 @@ import {
   KcIconComponent,
 } from '@kaspacom/ui';
 import { FormsModule } from '@angular/forms';
-import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
-import { INft } from '../../../../../common/interfaces/nft.interface';
-import { Krc721ApiService } from '../../../../../../../../services/krc721-api/krc721-api.service';
-import { WalletService } from '../../../../../../../../services/wallet.service';
-import { WalletActionService } from '../../../../../../../../services/wallet-action.service';
-import { Krc721WalletActionService } from '../../../../../../../../services/protocols/krc721/krc721-wallet-actions.service';
-import { MessagePopupService } from '../../../../../../../../services/message-popup.service';
-import { ApprovalFlowService } from '../../../../../../../services/approval-flow.service';
+import { SkeletonComponent } from '../../../../../../../../../shared/ui/skeleton/skeleton.component';
+import { INft } from '../../../../../../../common/interfaces/nft.interface';
+import { Krc721ApiService } from '../../../../../../../../../../services/krc721-api/krc721-api.service';
+import { WalletService } from '../../../../../../../../../../services/wallet.service';
+import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';
+import { Krc721WalletActionService } from '../../../../../../../../../../services/protocols/krc721/krc721-wallet-actions.service';
+import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
+import { ApprovalFlowService } from '../../../../../../../../../services/approval-flow.service';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { firstValueFrom } from 'rxjs';
-import { UtilsHelper } from '../../../../../../../../services/utils.service';
-import { QrScannerService } from '../../../../../../../../services/qr-scanner.service';
-import { AddressSmartInputComponent } from '../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
-import { AddressResolutionResult } from '../../../../../../../../services/address-resolution.service';
+import { UtilsHelper } from '../../../../../../../../../../services/utils.service';
+import { QrScannerService } from '../../../../../../../../../../services/qr-scanner.service';
+import { AddressSmartInputComponent } from '../../../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
+import { AddressResolutionResult } from '../../../../../../../../../../services/address-resolution.service';
 import { Router } from '@angular/router';
-import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
-import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
+import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
+import { L1_ASSET_KEYS } from '../../../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 
 @Component({
   selector: 'app-send-nft',

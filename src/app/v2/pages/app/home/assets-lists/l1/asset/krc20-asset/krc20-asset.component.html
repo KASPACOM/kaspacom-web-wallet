@@ -17,10 +17,10 @@
       @if (loading()) {
         <app-skeleton [height]="'28px'" [width]="'120px'"></app-skeleton>
       } @else if (assetDetail()) {
-        <kc-token-logo 
+        <krc20-token-logo 
           [ticker]="ticker || ''" 
           [size]="'sm'">
-        </kc-token-logo>
+        </krc20-token-logo>
         <span class="typo-title-4 text-gray-90">{{ formatBalance() }}</span>
       }
     </div>

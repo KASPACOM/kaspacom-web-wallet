@@ -1,8 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
-import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
+import {  KcIconComponent } from '@kaspacom/ui';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { KaspaApiService } from '../../../../../services/kaspa-api/kaspa-api.service';
@@ -15,8 +14,6 @@ import { WalletService } from '../../../../../services/wallet.service';
   selector: 'app-kaspa-transaction-details',
   imports: [
     CommonModule,
-    DatePipe,
-    KcButtonComponent,
     KcIconComponent,
     SkeletonComponent,
     CopyButtonComponent

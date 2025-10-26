@@ -17,7 +17,6 @@ import {
 } from '@kaspacom/ui';
 import { FormsModule } from '@angular/forms';
 import { IToken } from '../../../../../../../common/interfaces/token.interface';
-import { TokenLogoComponent } from '../../../../../../../common/krc20/token-logo/token-logo.component';
 import { WalletService } from '../../../../../../../../../../services/wallet.service';
 import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';
 import { Krc20WalletActionService } from '../../../../../../../../../../services/protocols/krc20/krc20-wallet-actions.service';
@@ -32,6 +31,7 @@ import { AddressResolutionResult } from '../../../../../../../../../../services/
 import { Router } from '@angular/router';
 import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
 import { L1_ASSET_KEYS } from '../../../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
+import { Krc20TokenLogoComponent } from '../../../../../../../home/assets-lists/l1/logo/krc20-token-logo/krc20-token-logo.component';
 
 @Component({
   selector: 'app-send-krc20',
@@ -43,7 +43,7 @@ import { L1_ASSET_KEYS } from '../../../../../../../../../../services/assets-man
     KcButtonComponent,
     KcIconComponent,
     FormsModule,
-    TokenLogoComponent,
+    Krc20TokenLogoComponent,
     AddressSmartInputComponent,
   ],
   templateUrl: './send-krc20.component.html',

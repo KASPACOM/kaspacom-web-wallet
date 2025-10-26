@@ -17,11 +17,5 @@
         (cardClick)="onTokenClick(token)"
       ></erc20-asset-card>
     }
-    
-    @if (isLoadingMore()) {
-      <div class="loading-more-container flex justify-content-center p-16 full-width">
-        <app-skeleton [height]="'75px'" [width]="'100%'" [fullRound]="false"></app-skeleton>
-      </div>
-    }
   }
 </div>

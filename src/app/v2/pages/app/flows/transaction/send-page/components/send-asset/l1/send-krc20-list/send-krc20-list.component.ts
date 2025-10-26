@@ -2,7 +2,6 @@ import { Component, computed, inject, OnInit, OnDestroy, ViewChild, AfterViewIni
 import { CommonModule, DecimalPipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
-import { TokenLogoComponent } from '../../../../../../../common/krc20/token-logo/token-logo.component';
 import { IToken, ITokenWithMetadata } from '../../../../../../../common/interfaces/token.interface';
 import { SkeletonComponent } from "../../../../../../../../../shared/ui/skeleton";
 import { Krc20MetadataService } from '../../../../../../../../../../services/asset-metadata/krc20-metadata.service';
@@ -13,11 +12,12 @@ import { GetTokenListDto } from '../../../../../../../../../../services/kasplex-
 import { runInInjectionContext } from '@angular/core';
 import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
 import { L1_ASSET_KEYS } from '../../../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
+import { Krc20TokenLogoComponent } from '../../../../../../../home/assets-lists/l1/logo/krc20-token-logo/krc20-token-logo.component';
 
 @Component({
   selector: 'app-send-krc20-list',
   standalone: true,
-  imports: [CommonModule, TokenLogoComponent, SkeletonComponent, DecimalPipe, TitleCasePipe, UpperCasePipe, InfiniteScrollDirective],
+  imports: [CommonModule, Krc20TokenLogoComponent, SkeletonComponent, DecimalPipe, TitleCasePipe, UpperCasePipe, InfiniteScrollDirective],
   templateUrl: './send-krc20-list.component.html',
   styleUrl: './send-krc20-list.component.scss'
 })

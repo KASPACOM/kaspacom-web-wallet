@@ -6,7 +6,7 @@ import {
   UpperCasePipe,
 } from '@angular/common';
 import { Erc20Token } from '@kaspacom/swap-sdk';
-import { SkeletonComponent } from '../../../../../../../../shared/ui/skeleton';
+import { Erc20TokenLogoComponent } from '../../logo/erc20-token-logo/erc20-token-logo.component';
 
 @Component({
   selector: 'erc20-asset-card',
@@ -16,13 +16,12 @@ import { SkeletonComponent } from '../../../../../../../../shared/ui/skeleton';
     DecimalPipe,
     TitleCasePipe,
     UpperCasePipe,
-    SkeletonComponent,
+    Erc20TokenLogoComponent,
   ],
   templateUrl: './erc20-asset-card.component.html',
   styleUrl: './erc20-asset-card.component.scss',
 })
 export class Erc20AssetCardComponent {
-  imageUrl = './images/kc-all-black.png';
   token = input<Erc20Token | undefined>(undefined);
 
   @Output() cardClick = new EventEmitter<void>();

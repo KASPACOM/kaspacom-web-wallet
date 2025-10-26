@@ -35,7 +35,6 @@ import { WalletService } from '../../../../../../../services/wallet.service';
     ImportSwitchComponent,
     RadioInputComponent,
     KcInputComponent,
-    KcSnackbarComponent,
     ReactiveFormsModule,
     KcIconComponent,
   ],

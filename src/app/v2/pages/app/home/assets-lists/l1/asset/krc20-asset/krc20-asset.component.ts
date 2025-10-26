@@ -10,10 +10,10 @@ import { FlowPagesService } from '../../../../../../../services/flow-pages.servi
 import { OperationDetails } from '../../../../../../../../services/kasplex-api/dtos/operation-details-response';
 import { environment } from '../../../../../../../../../environments/environment';
 import { KcLabeledTabsComponent, TabItem } from '../../../../../../../shared/ui/kc-labeled-tabs/kc-labeled-tabs.component';
-import { TokenLogoComponent } from '../../../../../common/krc20/token-logo/token-logo.component';
 import { KaspaNetworkActionsService } from '../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
 import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
+import { Krc20TokenLogoComponent } from '../../logo/krc20-token-logo/krc20-token-logo.component';
 
 interface TokenInfo {
   tick: string;
@@ -38,7 +38,7 @@ interface TokenInfo {
     KcButtonComponent,
     KcIconComponent,
     SkeletonComponent,
-    TokenLogoComponent,
+    Krc20TokenLogoComponent,
     KcLabeledTabsComponent
   ],
   templateUrl: './krc20-asset.component.html',

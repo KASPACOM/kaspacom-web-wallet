@@ -1,6 +1,6 @@
 import { Component, signal, inject, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
+import { KcIconComponent } from '@kaspacom/ui';
 import { FlowPageBaseComponent } from '../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../common/flow-page/interfaces/flow-page.interface';
 import {
@@ -23,7 +23,7 @@ interface WalletAccount {
 @Component({
   selector: 'app-wallet-management-page',
   standalone: true,
-  imports: [CommonModule, KcButtonComponent, KcIconComponent],
+  imports: [CommonModule, KcIconComponent],
   templateUrl: './wallet-management-page.component.html',
   styleUrl: './wallet-management-page.component.scss',
 })

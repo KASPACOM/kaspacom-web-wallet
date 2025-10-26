@@ -1,5 +1,3 @@
-@import '../../../../../../../../../styles/design-system/colors.style.scss';
-
 .asset-page-container {
   overflow-y: auto;
 
@@ -24,12 +22,6 @@
     .transaction-list {
       &.loading {
         opacity: 0.6;
-      }
-
-      .skeleton-loading-container {
-        .transaction-item-card {
-          // card-0 class provides the styling
-        }
       }
 
       .no-transactions {
@@ -101,11 +93,6 @@
 
   // Token Info Styles
   .token-info-content {
-    .skeleton-loading-container {
-      .info-item-card {
-        // card-0 class provides the styling
-      }
-    }
 
     .no-token-info {
       background: var(--base-2);

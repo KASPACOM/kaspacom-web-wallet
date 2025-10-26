@@ -5,25 +5,25 @@ import {
   TitleCasePipe,
   UpperCasePipe,
 } from '@angular/common';
-import { TokenLogoComponent } from '../../pages/app/common/krc20/token-logo/token-logo.component';
-import { SkeletonComponent } from '../ui/skeleton/skeleton.component';
-import { ITokenWithMetadata } from '../../pages/app/common/interfaces/token.interface';
+import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
+import { ITokenWithMetadata } from '../../../../../common/interfaces/token.interface';
+import { Krc20TokenLogoComponent } from '../../logo/krc20-token-logo/krc20-token-logo.component';
 
 @Component({
-  selector: 'app-asset-card',
+  selector: 'krc20-asset-card',
   standalone: true,
   imports: [
     CommonModule,
     DecimalPipe,
     TitleCasePipe,
     UpperCasePipe,
-    TokenLogoComponent,
+    Krc20TokenLogoComponent,
     SkeletonComponent,
   ],
-  templateUrl: './asset-card.component.html',
-  styleUrl: './asset-card.component.scss',
+  templateUrl: './krc20-asset-card.component.html',
+  styleUrl: './krc20-asset-card.component.scss',
 })
-export class AssetCardComponent {
+export class Krc20AssetCardComponent {
   krc20 = input<ITokenWithMetadata | undefined>(undefined);
 
   @Output() cardClick = new EventEmitter<void>();

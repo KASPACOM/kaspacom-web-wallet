@@ -10,13 +10,10 @@ import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/bas
 import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
 import {
   KcInputComponent,
-  KcCheckboxComponent,
   KcButtonComponent,
-  KcIconComponent,
 } from '@kaspacom/ui';
 import { FormsModule } from '@angular/forms';
-import { IToken } from '../../../../../../../common/interfaces/token.interface';
-import { TokenLogoComponent } from '../../../../../../../common/krc20/token-logo/token-logo.component';
+import { Krc20TokenLogoComponent } from '../../../../../../../home/assets-lists/l1/logo/krc20-token-logo/krc20-token-logo.component';
 import { WalletService } from '../../../../../../../../../../services/wallet.service';
 import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';
 import { UtilsHelper } from '../../../../../../../../../../services/utils.service';
@@ -26,9 +23,7 @@ import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { KaspaNetworkActionsService } from '../../../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { QrScannerService } from '../../../../../../../../../../services/qr-scanner.service';
 import { AddressSmartInputComponent } from '../../../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
-import { AddressResolutionResult } from '../../../../../../../../../../services/address-resolution.service';
 import { Router } from '@angular/router';
-import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
 import { Erc20Token } from '@kaspacom/swap-sdk';
 import { ERC20Contract } from '../../../../../../../../../../services/etherium-services/smart-contracts/contracts/erc20-contract';
 import { parseUnits } from 'ethers';
@@ -39,11 +34,9 @@ import { parseUnits } from 'ethers';
   imports: [
     CommonModule,
     KcInputComponent,
-    KcCheckboxComponent,
     KcButtonComponent,
-    KcIconComponent,
     FormsModule,
-    TokenLogoComponent,
+    Krc20TokenLogoComponent,
     AddressSmartInputComponent,
   ],
   templateUrl: './send-erc20.component.html',

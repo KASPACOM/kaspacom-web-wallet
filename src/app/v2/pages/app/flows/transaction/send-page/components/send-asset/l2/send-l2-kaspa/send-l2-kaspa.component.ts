@@ -12,7 +12,6 @@ import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/bas
 import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
 import { KcInputComponent, KcButtonComponent } from '@kaspacom/ui';
 import { FormsModule } from '@angular/forms';
-import { TokenLogoComponent } from '../../../../../../../common/krc20/token-logo/token-logo.component';
 import { WalletService } from '../../../../../../../../../../services/wallet.service';
 import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';
 import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
@@ -21,10 +20,10 @@ import { QrScannerService } from '../../../../../../../../../../services/qr-scan
 import { Router } from '@angular/router';
 import { AddressSmartInputComponent } from '../../../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { UtilsHelper } from '../../../../../../../../../../services/utils.service';
-import { KaspaNetworkActionsService } from '../../../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { EIP1193RequestType } from '@kaspacom/wallet-messages';
 import { parseUnits } from 'ethers';
 import { EthereumWalletChainManager } from '../../../../../../../../../../services/etherium-services/etherium-wallet-chain.manager';
+import { Erc20TokenLogoComponent } from '../../../../../../../home/assets-lists/l2/logo/erc20-token-logo/erc20-token-logo.component';
 
 @Component({
   selector: 'app-send-l2-kaspa',
@@ -34,7 +33,7 @@ import { EthereumWalletChainManager } from '../../../../../../../../../../servic
     KcInputComponent,
     KcButtonComponent,
     FormsModule,
-    TokenLogoComponent,
+    Erc20TokenLogoComponent,
     AddressSmartInputComponent,
   ],
   templateUrl: './send-l2-kaspa.component.html',

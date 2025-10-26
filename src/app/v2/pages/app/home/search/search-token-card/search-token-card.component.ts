@@ -2,11 +2,11 @@ import { DecimalPipe, TitleCasePipe } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 import { KcIconComponent } from '@kaspacom/ui';
 import { IToken } from '../../../common/interfaces/token.interface';
-import { TokenLogoComponent } from '../../../common/krc20/token-logo/token-logo.component';
+import { Krc20TokenLogoComponent } from '../../assets-lists/l1/logo/krc20-token-logo/krc20-token-logo.component';
 
 @Component({
   selector: 'app-search-token-card',
-  imports: [TokenLogoComponent, DecimalPipe, TitleCasePipe, KcIconComponent],
+  imports: [Krc20TokenLogoComponent, DecimalPipe, TitleCasePipe, KcIconComponent],
   templateUrl: './search-token-card.component.html',
   styleUrl: './search-token-card.component.scss',
 })

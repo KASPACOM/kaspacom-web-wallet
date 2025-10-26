@@ -1,5 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
-import { TitleCasePipe, UpperCasePipe, DatePipe } from '@angular/common';
+import { TitleCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
 import { KnsDomainAsset } from '../../../../../../../../services/kns-api/dtos/kns-domain.dto';
@@ -8,7 +8,7 @@ import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/a
 
 @Component({
   selector: 'app-kns-summary',
-  imports: [TitleCasePipe, UpperCasePipe, DatePipe, SkeletonComponent],
+  imports: [TitleCasePipe, SkeletonComponent],
   templateUrl: './kns-summary.component.html',
   styleUrl: './kns-summary.component.scss',
   host: {

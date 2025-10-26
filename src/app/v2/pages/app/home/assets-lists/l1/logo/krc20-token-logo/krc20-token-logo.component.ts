@@ -1,14 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, input, signal } from '@angular/core';
-import { ComponentSize } from '../../types/sizing.type';
+import { ComponentSize } from '../../../../../common/types/sizing.type';
 
 @Component({
-  selector: 'kc-token-logo',
+  selector: 'krc20-token-logo',
   imports: [CommonModule],
-  templateUrl: './token-logo.component.html',
-  styleUrl: './token-logo.component.scss',
+  templateUrl: './krc20-token-logo.component.html',
+  styleUrl: './krc20-token-logo.component.scss',
 })
-export class TokenLogoComponent {
+export class Krc20TokenLogoComponent {
   ticker = input.required<string>();
   size = input.required<ComponentSize>();
 

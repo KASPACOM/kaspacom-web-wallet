@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule, TitleCasePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
 import { BaseAssetPageComponent, AssetDetail, AssetTransaction } from '../../../../../common/base-asset-page/base-asset-page.component';
@@ -25,7 +25,6 @@ interface Erc20TokenInfo {
   selector: 'app-erc20-asset',
   imports: [
     CommonModule,
-    TitleCasePipe,
     KcButtonComponent,
     KcIconComponent,
     SkeletonComponent,

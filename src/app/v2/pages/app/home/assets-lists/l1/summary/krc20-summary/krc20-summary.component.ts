@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import {} from '@angular/common';
 import { Router } from '@angular/router';
-import { AssetCardComponent } from '../../../../../../../shared/asset-card/asset-card.component';
+import { Krc20AssetCardComponent } from '../../asset-card/krc20-asset-card/krc20-asset-card.component';
 import {
   IToken,
   ITokenWithMetadata,
@@ -28,7 +28,7 @@ import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/a
 
 @Component({
   selector: 'app-krc20-summary',
-  imports: [SkeletonComponent, InfiniteScrollDirective, AssetCardComponent],
+  imports: [SkeletonComponent, InfiniteScrollDirective, Krc20AssetCardComponent],
   templateUrl: './krc20-summary.component.html',
   styleUrl: './krc20-summary.component.scss',
   host: {

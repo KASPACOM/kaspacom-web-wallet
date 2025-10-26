@@ -1,7 +1,7 @@
 <div class="send-krc20-content">
   <!-- Token Info Header -->
   <div class="token-info-header card-0 flex align-items-center gap-16 p-16">
-    <kc-token-logo [ticker]="token()?.symbol || ''" [size]="'lg'"></kc-token-logo>
+    <krc20-token-logo [ticker]="token()?.symbol || ''" [size]="'lg'"></krc20-token-logo>
     <div class="flex column gap-4">
       <div class="text-gray-90 typo-text-2">{{ token()?.name | titlecase }}</div>
       <div class="text-gray-60 typo-text-1">

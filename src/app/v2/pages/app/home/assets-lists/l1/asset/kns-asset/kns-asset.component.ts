@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule, DecimalPipe, TitleCasePipe, UpperCasePipe, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
@@ -17,10 +17,6 @@ import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/a
   selector: 'app-kns-asset',
   imports: [
     CommonModule,
-    DecimalPipe,
-    TitleCasePipe,
-    UpperCasePipe,
-    DatePipe,
     KcButtonComponent,
     KcIconComponent,
     SkeletonComponent,

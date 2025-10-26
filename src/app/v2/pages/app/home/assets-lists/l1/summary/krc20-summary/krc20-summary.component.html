@@ -15,10 +15,10 @@
     <div class="text-gray-60 p-16">No KRC20 tokens found</div>
   } @else {
     @for ( token of tokens(); track trackByToken($index, token) ) {
-      <app-asset-card class="krc20-summary-container__card full-width"
+      <krc20-asset-card class="krc20-summary-container__card full-width"
         [krc20]="token"
         (cardClick)="onTokenClick(token)"
-      ></app-asset-card>
+      ></krc20-asset-card>
     }
     
     @if (isLoadingMore()) {

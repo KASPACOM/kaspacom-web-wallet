@@ -24,7 +24,7 @@
              (click)="onTokenClick(token)">
           <!-- Token info section -->
           <div class="krc20-token-card__info flex align-items-center gap-16">
-            <kc-token-logo [ticker]="token.symbol || ''" [size]="'lg'"></kc-token-logo>
+            <krc20-token-logo [ticker]="token.symbol || ''" [size]="'lg'"></krc20-token-logo>
             <div class="flex column gap-4">
               <div class="text-gray-90 typo-text-2">{{ token.name | titlecase }}</div>
               <div class="text-gray-60 typo-text-1">

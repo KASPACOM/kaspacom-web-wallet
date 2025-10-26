@@ -17,7 +17,6 @@ import {
   KcIconComponent,
 } from '@kaspacom/ui';
 import { FormsModule } from '@angular/forms';
-import { TokenLogoComponent } from '../../../../../../../common/krc20/token-logo/token-logo.component';
 import { WalletService } from '../../../../../../../../../../services/wallet.service';
 import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';
 import {
@@ -31,6 +30,7 @@ import { ApprovalFlowService } from '../../../../../../../../../services/approva
 import { QrScannerService } from '../../../../../../../../../../services/qr-scanner.service';
 import { AddressSmartInputComponent } from '../../../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { Router } from '@angular/router';
+import { Krc20TokenLogoComponent } from '../../../../../../../home/assets-lists/l1/logo/krc20-token-logo/krc20-token-logo.component';
 
 @Component({
   selector: 'app-send-kaspa',
@@ -42,7 +42,7 @@ import { Router } from '@angular/router';
     KcButtonComponent,
     KcIconComponent,
     FormsModule,
-    TokenLogoComponent,
+    Krc20TokenLogoComponent,
     AddressSmartInputComponent,
   ],
   templateUrl: './send-kaspa.component.html',

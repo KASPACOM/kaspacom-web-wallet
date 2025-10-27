@@ -119,7 +119,6 @@ export class Erc20AssetComponent extends BaseAssetPageComponent implements OnIni
       symbol: assetDetail.symbol,
       address: this.address, // Use ticker as address
       balance: parseFloat(assetDetail.balance),
-      usdPrice: 0.0,
       decimals: assetDetail.decimals
     };
 

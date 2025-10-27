@@ -88,12 +88,8 @@ export class LoginComponent {
 
         // Load wallets only once
         await this.walletService.loadWallets();
+        await this.walletService.selectCurrentWalletFromLocalStorageNullsafe();
 
-        // Don't load wallets again, just select the current wallet
-        await this.walletService.selectCurrentWallet(
-          localStorage.getItem(LOCAL_STORAGE_KEYS.CURRENT_SELECTED_WALLET) ||
-          (this.walletService.getAllWallets()()?.length ? this.walletService.getAllWallets()()![0].getIdWithAccount() : '')
-        );
         this.router.navigate(['./app/home']);
       } else {
         this.loginForm.get('password')?.setErrors({ invalidCredentials: true });

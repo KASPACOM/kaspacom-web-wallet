@@ -7,6 +7,8 @@ import { firstValueFrom } from "rxjs";
 import { KasplexKrc20Service } from "../../kasplex-api/kasplex-api.service";
 import { Krc721ApiService } from "../../krc721-api/krc721-api.service";
 import { KnsApiService } from "../../kns-api/kns-api.service";
+import { KaspaComApiService } from "../../kaspacom-api/kaspacom-api.service";
+import _ from 'lodash';
 
 export const L1_ASSET_KEYS = {
     krc20: 'krc20',
@@ -27,7 +29,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
     protected kasplexKrc20Service = inject(KasplexKrc20Service);
     protected krc721ApiService = inject(Krc721ApiService);
     protected knsApiService = inject(KnsApiService);
-    
+    protected kaspacomApiService = inject(KaspaComApiService);
 
 
     constructor() {
@@ -72,6 +74,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                             Math.pow(10, parseInt(token.dec)),
                         decimals: parseInt(token.dec),
                         opScoreMod: token.opScoreMod,
+                        priceKas: 0,
                     }),
                 );
 
@@ -81,6 +84,19 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
 
             paginationKey = response.next;
         } while (paginationKey);
+
+        try {
+            const prices = await this.kaspacomApiService.getTokensPrices(
+                allTokens.map(token => token.tick),
+            );
+
+            const pricesByTicker = _.keyBy(prices, 'tick');
+            allTokens.forEach(token => {
+                token.priceKas = pricesByTicker[token.tick]?.price || 0;
+            });
+        } catch (error) {
+            console.error('Error fetching token prices:', error);
+        }
 
         return allTokens;
     }

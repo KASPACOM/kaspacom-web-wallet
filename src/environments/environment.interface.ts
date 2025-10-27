@@ -7,7 +7,7 @@ export interface L2ConfigInterface {
 
 export interface Environment {
   isProduction: boolean;
-  backendApiBaseurl: string;
+  kaspaComApiBaseurl: string;
   kasplexApiBaseurl: string;
   kaspaApiBaseurl: string;
   krc721ApiBaseurl: string;

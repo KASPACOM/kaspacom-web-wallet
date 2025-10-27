@@ -165,7 +165,7 @@ export class SendKrc20Component
           symbol: storedToken.tick.toUpperCase(),
           address: storedToken.tick,
           balance: storedToken.balance,
-          usdPrice: 0.0,
+          priceKas: 0.0,
         });
         this.loading.set(false);
       } else {

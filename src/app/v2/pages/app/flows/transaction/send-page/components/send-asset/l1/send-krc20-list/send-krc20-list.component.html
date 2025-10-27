@@ -38,7 +38,7 @@
           <!-- USD value section -->
           <div class="krc20-token-card__usd-info flex column align-items-end">
             <div class="text-gray-90 typo-text-2">
-              ${{ token.balance * token.usdPrice | number : "1.2-2" }}
+              {{ token.balance * token.priceKas | number : "1.2-2" }} KAS
             </div>
             <div class="text-gray-60 typo-text-1">Available</div>
           </div>

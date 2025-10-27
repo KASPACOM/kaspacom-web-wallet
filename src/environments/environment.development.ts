@@ -3,7 +3,7 @@ import { Environment } from './environment.interface';
 
 export const environment: Environment = {
   isProduction: false,
-  backendApiBaseurl: 'https://dev-api.kaspiano.com',
+  kaspaComApiBaseurl: 'https://dev-api.kaspa.com',
   kasplexApiBaseurl: 'https://tn10api.kasplex.org/v1',
   kaspaApiBaseurl: 'https://api-tn10.kaspa.org',
   krc721ApiBaseurl: 'https://testnet-10.krc721.stream/api/v1/krc721/testnet-10',

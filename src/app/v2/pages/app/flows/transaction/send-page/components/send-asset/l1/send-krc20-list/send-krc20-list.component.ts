@@ -2,7 +2,7 @@ import { Component, computed, inject, OnInit, OnDestroy, ViewChild, AfterViewIni
 import { CommonModule, DecimalPipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
-import { IToken, ITokenWithMetadata } from '../../../../../../../common/interfaces/token.interface';
+import { ITokenWithMetadata } from '../../../../../../../common/interfaces/token.interface';
 import { SkeletonComponent } from "../../../../../../../../../shared/ui/skeleton";
 import { Krc20MetadataService } from '../../../../../../../../../../services/asset-metadata/krc20-metadata.service';
 import { InfiniteScrollDirective } from '../../../../../../../../../../directives/infinite-scroll.directive';
@@ -52,7 +52,7 @@ export class SendKrc20ListComponent extends FlowPageBaseComponent implements OnI
         symbol: token.tick.toUpperCase(),
         address: token.tick,
         balance: token.balance,
-        usdPrice: 0.0, // TODO: Add price data when available
+        priceKas: token.priceKas,
         isLoadingMetadata: metadataInfo?.isLoadingMetadata || false
       };
     });

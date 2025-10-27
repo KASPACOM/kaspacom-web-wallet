@@ -266,7 +266,6 @@ export class Krc20AssetComponent extends BaseAssetPageComponent implements OnIni
       symbol: assetDetail.symbol,
       address: this.ticker, // Use ticker as address
       balance: parseFloat(assetDetail.balance),
-      usdPrice: 0.0,
       decimals: assetDetail.decimals
     };
 

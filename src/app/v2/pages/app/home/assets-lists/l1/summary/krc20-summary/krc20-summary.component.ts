@@ -72,7 +72,7 @@ export class Krc20SummaryComponent
         symbol: token.tick.toUpperCase(),
         address: token.tick,
         balance: token.balance,
-        usdPrice: 0.0, // TODO: Add price data when available
+        priceKas: token.priceKas,
         isLoadingMetadata: metadataInfo?.isLoadingMetadata || false,
       };
     });

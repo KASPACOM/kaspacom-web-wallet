@@ -35,20 +35,13 @@ import { AssetsManagerService } from '../../../services/assets-manager/assets-ma
   styleUrl: './app-wrapper.component.scss',
   animations: [navAnimation],
 })
-export class AppWrapperComponent implements OnInit {
+export class AppWrapperComponent {
   private contexts = inject(ChildrenOutletContexts);
   accountSettingsService = inject(AccountSettingsService);
   flowPagesService = inject(FlowPagesService);
   quickActionDialogService = inject(QuickActionDialogService);
   private walletService = inject(WalletService);
   protected assetsManager = inject(AssetsManagerService);
-
-  async ngOnInit(): Promise<void> {
-    // Ensure wallets are loaded into memory on app shell load
-    await this.walletService.loadWallets();
-    // Restore current selection (or pick first available)
-    await this.walletService.selectCurrentWalletFromLocalStorageNullsafe();
-  }
 
   getRouteAnimationData() {
     return this.contexts.getContext('primary')?.route?.snapshot?.data?.[

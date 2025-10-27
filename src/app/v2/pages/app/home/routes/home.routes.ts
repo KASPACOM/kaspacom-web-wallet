@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import { HomeComponent } from '../home.component';
-import { SearchComponent } from '../search/search.component';
 import { Krc20AssetComponent } from '../assets-lists/l1/asset/krc20-asset/krc20-asset.component';
 import { KnsAssetComponent } from '../assets-lists/l1/asset/kns-asset/kns-asset.component';
 import { UtxoAssetComponent } from '../utxo-asset/utxo-asset.component';
@@ -14,10 +13,6 @@ export const HomeRoutes: Routes = [
   {
     path: '',
     component: HomeComponent,
-  },
-  {
-    path: 'search',
-    component: SearchComponent,
   },
   {
     path: 'asset/krc20/:ticker',

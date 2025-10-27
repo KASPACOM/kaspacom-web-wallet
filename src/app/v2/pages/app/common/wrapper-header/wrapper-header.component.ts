@@ -10,6 +10,7 @@ import { FlowPageId } from '../flow-page/flow-page.registry';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { WalletProfileOrbComponent } from '../../../../shared/ui/wallet-profile-orb/wallet-profile-orb.component';
 import { EthereumWalletChainManager } from '../../../../../services/etherium-services/etherium-wallet-chain.manager';
+import { environment } from '../../../../../../environments/environment';
 
 @Component({
   selector: 'app-wrapper-header',
@@ -92,5 +93,9 @@ export class WrapperHeaderComponent {
 
   onCopyButtonClick(event: Event): void {
     event.stopPropagation();
+  }
+
+  isDevelopmentMode(): boolean {
+    return !environment.isProduction;
   }
 }

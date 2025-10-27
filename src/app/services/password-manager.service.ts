@@ -93,6 +93,10 @@ export class PasswordManagerService {
   }
 
   async getUserData(): Promise<UserWalletsData> {
+    if (!this.password) {
+      throw new Error('Password not found');
+    }
+    
     const userData = await this.getUserDataWithPassword(this.password!);
 
     if (!userData) {

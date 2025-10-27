@@ -1,0 +1,14 @@
+<kc-labeled-tabs
+  class="full-width"
+  [tabs]="tabs"
+  [selectedTabId]="selectedTabId()"
+  (selectedTabChange)="onTabChange($event)"
+>
+  @switch (selectedTabId()) {
+    @case ('l2-ERC20') {
+      <app-erc20-summary></app-erc20-summary>
+    }
+  }
+</kc-labeled-tabs>
+
+

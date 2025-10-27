@@ -1,0 +1,62 @@
+<div class="send-l2-kaspa-content">
+  <!-- Kaspa Info Header -->
+  <div class="kaspa-info-header card-0 align-items-center gap-16 p-16">
+    <erc20-token-logo [ticker]="'KAS'" [size]="'lg'"></erc20-token-logo>
+    <div class="flex column gap-4">
+      <div class="text-gray-90 typo-text-2">Kaspa (L2)</div>
+      <div class="text-gray-60 typo-text-1">
+        Available: {{ availableBalance() | number : "1.0-4" }}&nbsp;KAS
+      </div>
+    </div>
+  </div>
+
+  <div class="send-l2-kaspa-form">
+    <!-- Wallet Address Input -->
+    <div class="form-field">
+      <app-address-smart-input
+        [label]="'Wallet Address'"
+        [placeholder]="'Enter recipient wallet address'"
+        [isFullWidth]="true"
+        [isValid]="isAddressValid"
+        [invalidReason]="addressErrorMessage"
+        [isDisabled]="isLoading"
+        [value]="walletAddress"
+        (valueChange)="onWalletAddressChange($event)"
+        (resolved)="onAddressResolved($event)"
+        (qrClick)="onQrScanClick()">
+      </app-address-smart-input>
+    </div>
+
+    <!-- Amount Input -->
+    <div class="form-field">
+      <kc-input
+        [label]="'Amount of Kaspa'"
+        [placeholder]="'0.00'"
+        [type]="'number'"
+        [min]="0"
+        [max]="availableBalance()"
+        [isFullWidth]="true"
+        [isValid]="isAmountValid"
+        [invalidReason]="amountErrorMessage"
+        [isDisabled]="isLoading"
+        [ngModel]="kaspaAmount"
+        (valueChange)="onAmountChange($event)">
+        <div (click)="!isLoading && onMaxAmountClick()" [class]="isLoading ? 'max-text disabled' : 'max-text clickable'" rightSideSlot>
+          <span>Max</span>
+        </div>
+      </kc-input>
+    </div>
+
+    <!-- Send Button -->
+    <div class="form-field">
+      <kc-button
+        [text]="isLoading ? 'Sending...' : 'Send'"
+        [variant]="'primary'"
+        [isFullWidth]="true"
+        [isLoading]="isLoading"
+        [isDisabled]="!isAddressValid || !isAmountValid || isLoading || !walletAddress || !kaspaAmount"
+        (buttonClick)="onSendClick()">
+      </kc-button>
+    </div>
+  </div>
+</div>

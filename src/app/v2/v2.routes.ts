@@ -4,8 +4,8 @@ import { DesignSystemShowcaseComponent } from '@kaspacom/ui';
 import { AuthGuard } from './guard/auth.guard';
 import { routes } from '../core/app.routes';
 import { loggedRoutes } from './pages/app/logged.routes';
-import { RecoveryImportComponent } from './pages/onboarding-page/flows/import-existing-flow/recovery/recovery-import.component';
 import { ButtonShowcaseComponent } from './pages/button-showcase/button-showcase.component';
+import { DevelopGuard } from './guard/develop.guard';
 
 export const V2TMP_ROUTES: Routes = [
   {
@@ -14,12 +14,8 @@ export const V2TMP_ROUTES: Routes = [
     component: OnboardingPageComponent,
   },
   {
-    path: 'recovery',
-    component: RecoveryImportComponent,
-  },
-  {
     path: 'ui-kit',
-    canActivate: [AuthGuard],
+    canActivate: [DevelopGuard],
     component: DesignSystemShowcaseComponent,
   },
   {

@@ -3,7 +3,7 @@ export interface IToken {
   symbol: string;
   address: string;
   balance: number;
-  usdPrice: number;
+  priceKas: number;
   decimals?: number; // Number of decimal places for the token
 }
 

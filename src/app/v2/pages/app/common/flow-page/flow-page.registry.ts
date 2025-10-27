@@ -1,13 +1,15 @@
 import { Type } from '@angular/core';
 import { WalletManagementPageComponent } from '../../flows/wallet-management/wallet-management-page/wallet-management-page.component';
 import { SendPageComponent } from '../../flows/transaction/send-page/send-page.component';
-import { SendKaspaComponent } from '../../flows/transaction/send-page/components/send-kaspa/send-kaspa.component';
-import { SendKrc20ListComponent } from '../../flows/transaction/send-page/components/send-krc20-list/send-krc20-list.component';
-import { SendKrc20Component } from '../../flows/transaction/send-page/components/send-krc20/send-krc20.component';
-import { SendNftListComponent } from '../../flows/transaction/send-page/components/send-nft-list/send-nft-list.component';
-import { SendNftComponent } from '../../flows/transaction/send-page/components/send-nft/send-nft.component';
-import { SendKnsListComponent } from '../../flows/transaction/send-page/components/send-kns-list/send-kns-list.component';
-import { SendKnsComponent } from '../../flows/transaction/send-page/components/send-kns/send-kns.component';
+import { SendKaspaComponent } from '../../flows/transaction/send-page/components/send-asset/l1/send-kaspa/send-kaspa.component';
+import { SendKrc20ListComponent } from '../../flows/transaction/send-page/components/send-asset/l1/send-krc20-list/send-krc20-list.component';
+import { SendKrc20Component } from '../../flows/transaction/send-page/components/send-asset/l1/send-krc20/send-krc20.component';
+import { SendNftListComponent } from '../../flows/transaction/send-page/components/send-asset/l1/send-nft-list/send-nft-list.component';
+import { SendNftComponent } from '../../flows/transaction/send-page/components/send-asset/l1/send-nft/send-nft.component';
+import { SendKnsListComponent } from '../../flows/transaction/send-page/components/send-asset/l1/send-kns-list/send-kns-list.component';
+import { SendKnsComponent } from '../../flows/transaction/send-page/components/send-asset/l1/send-kns/send-kns.component';
+import { SendL2KaspaComponent } from '../../flows/transaction/send-page/components/send-asset/l2/send-l2-kaspa/send-l2-kaspa.component';
+import { SendL2Erc20ListComponent } from '../../flows/transaction/send-page/components/send-asset/l2/send-l2-erc20-list/send-l2-erc20-list.component';
 import { ApprovalFlowPageComponent } from '../../flows/approval/approval-flow-page/approval-flow-page.component';
 import { ReceiveFlowPageComponent } from '../../flows/receive/receive-flow-page.component';
 import { ExportWalletComponent } from '../../flows/export-wallet/export-wallet.component';
@@ -19,6 +21,8 @@ import { SettingsMenuComponent } from '../../flows/settings/settings-menu.compon
 import { DisconnectConfirmationComponent } from '../../flows/settings/disconnect-confirmation.component';
 import { ExportKaspacomWalletFlowPageComponent } from '../../flows/export-kaspacom-wallet/export-kaspacom-wallet-flow-page.component';
 import { IFlowPageConfig } from './interfaces/flow-page.interface';
+import { NetworkSelectionModalComponent } from '../../../../shared/network-selection-modal/network-selection-modal.component';
+import { SendErc20Component } from '../../flows/transaction/send-page/components/send-asset/l2/send-erc20/send-erc20.component';
 
 export type FlowPageRegistryEntry =
   | Type<unknown>
@@ -38,6 +42,9 @@ export const FLOW_PAGE_IDS = [
   'send-nft',
   'send-kns-list',
   'send-kns',
+  'send-l2-kaspa',
+  'send-l2-erc20-list',
+  'send-erc20',
   'action-approval',
   'receive',
   'export-wallet',
@@ -47,6 +54,7 @@ export const FLOW_PAGE_IDS = [
   'send-confirmation',
   'settings-menu',
   'disconnect-confirmation',
+  'network-selection',
 ] as const;
 
 export type FlowPageId = (typeof FLOW_PAGE_IDS)[number];
@@ -62,6 +70,9 @@ export const FLOW_PAGE_REGISTRY: Record<FlowPageId, FlowPageRegistryEntry> = {
   'send-nft': SendNftComponent,
   'send-kns-list': SendKnsListComponent,
   'send-kns': SendKnsComponent,
+  'send-l2-kaspa': SendL2KaspaComponent,
+  'send-l2-erc20-list': SendL2Erc20ListComponent,
+  'send-erc20': SendErc20Component,
   'action-approval': ApprovalFlowPageComponent,
   receive: ReceiveFlowPageComponent,
   'export-wallet': ExportWalletComponent,
@@ -80,4 +91,5 @@ export const FLOW_PAGE_REGISTRY: Record<FlowPageId, FlowPageRegistryEntry> = {
   },
   'settings-menu': SettingsMenuComponent,
   'disconnect-confirmation': DisconnectConfirmationComponent,
+  'network-selection': NetworkSelectionModalComponent,
 } as const;

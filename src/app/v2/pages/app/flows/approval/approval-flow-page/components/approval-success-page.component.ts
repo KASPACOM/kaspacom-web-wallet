@@ -1,13 +1,13 @@
-import {Component, computed, inject, Input, OnInit} from '@angular/core';
+import { Component, computed, inject, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { WalletActionResult, WalletActionResultType, CommitRevealActionResult, ProtocolType } from '@kaspacom/wallet-messages';
 import { CompletedActionOverviewService } from '../../../../../../../services/action-info-services/completed-action-overview.service';
 import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
 import { ApprovalFlowService } from '../../../../../../services/approval-flow.service';
-import { AssetsStoreService } from '../../../../../../../services/assets-store.service';
-import { Krc20MetadataService } from '../../../../../../../services/asset-metadata/krc20-metadata.service';
 import { trigger, state, style, transition, animate } from '@angular/animations';
+import { WalletActionService } from '../../../../../../../services/wallet-action.service';
+import { AssetsManagerService } from '../../../../../../../services/assets-manager/assets-manager.service';
 
 @Component({
   selector: 'app-approval-success-page',
@@ -98,21 +98,17 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
     ])
   ]
 })
-export class ApprovalSuccessPageComponent implements OnInit {
+export class ApprovalSuccessPageComponent {
   private completedActionOverviewService = inject(CompletedActionOverviewService);
   private approvalFlowService = inject(ApprovalFlowService);
-  private assetsStore = inject(AssetsStoreService);
-  private krc20MetadataService = inject(Krc20MetadataService);
   private router = inject(Router);
+  private walletActionService = inject(WalletActionService);
+  private assetsManager = inject(AssetsManagerService);
 
   @Input() actionResult!: WalletActionResult;
 
   // Spoiler state
   protected showDetails = false;
-
-  ngOnInit() {
-    this.assetsStore.reloadAll(2000);
-  }
 
   actionDisplay = computed(() =>
     this.completedActionOverviewService.getActionDisplay(this.actionResult)
@@ -125,12 +121,25 @@ export class ApprovalSuccessPageComponent implements OnInit {
   onDone() {
     // Determine the appropriate tab based on the action result
     const tab = this.getTabForActionResult(this.actionResult);
-    
+
     // Navigate to homepage with the correct tab
     this.router.navigate(['/app/home'], { queryParams: { tab } });
-    
+
     // Close the approval flow
     this.approvalFlowService.closeApproval();
+
+    // Check if this was a KRC20 transaction and trigger assets update
+    this.handlePostTransactionUpdates();
+
+    // Clear the action result to dismiss the modal
+    this.walletActionService.clearActionResult();
+
+
+  }
+
+  private async handlePostTransactionUpdates(): Promise<void> {
+    console.log('handlePostTransactionUpdates');
+    await this.assetsManager.reloadAllCurrentAssetsAfterUpdate();
   }
 
   /**
@@ -141,7 +150,7 @@ export class ApprovalSuccessPageComponent implements OnInit {
       case WalletActionResultType.KasTransfer:
         // Kaspa transfer -> UTXOs tab
         return 'utxos';
-        
+
       case WalletActionResultType.CommitReveal:
         // Protocol-based actions
         const commitRevealResult = actionResult as CommitRevealActionResult;
@@ -159,7 +168,7 @@ export class ApprovalSuccessPageComponent implements OnInit {
             // Default fallback -> UTXOs tab
             return 'utxos';
         }
-        
+
       default:
         // Default fallback for any other action types -> UTXOs tab
         return 'utxos';

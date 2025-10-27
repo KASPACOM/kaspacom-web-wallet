@@ -1,25 +1,36 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../common/flow-page/interfaces/flow-page.interface';
 import { L1SendAssetsContainerComponent } from './l1-send-assets-container.component';
+import { L2SendAssetsContainerComponent } from './l2-send-assets-container.component';
+import { WalletService } from '../../../../../../services/wallet.service';
 
 @Component({
   selector: 'app-send-page',
   standalone: true,
-  imports: [CommonModule, L1SendAssetsContainerComponent],
+  imports: [
+    CommonModule,
+    L1SendAssetsContainerComponent,
+    L2SendAssetsContainerComponent,
+  ],
   templateUrl: './send-page.component.html',
   styleUrl: './send-page.component.scss',
 })
 export class SendPageComponent extends FlowPageBaseComponent {
+  private walletService = inject(WalletService);
+
+  isL2Network = computed(() => this.walletService.getIsL2DisplaySignal()());
+
   get config(): IFlowPageConfig {
     return {
       id: 'send',
-      title: 'Send',
+      title: `Send`,
       canNavigateBack: true,
     };
   }
 
+  // L1 asset card clicks
   onKaspaCardClick(): void {
     this.navigateToNextPage({
       id: 'send-kaspa',
@@ -48,6 +59,23 @@ export class SendPageComponent extends FlowPageBaseComponent {
     this.navigateToNextPage({
       id: 'send-kns-list',
       title: 'Select KNS Domain',
+      canNavigateBack: true,
+    });
+  }
+
+  // L2 asset card clicks
+  onL2KaspaCardClick(): void {
+    this.navigateToNextPage({
+      id: 'send-l2-kaspa',
+      title: 'Send Kaspa (L2)',
+      canNavigateBack: true,
+    });
+  }
+
+  onL2Erc20CardClick(): void {
+    this.navigateToNextPage({
+      id: 'send-l2-erc20-list',
+      title: 'Select ERC20 Token',
       canNavigateBack: true,
     });
   }

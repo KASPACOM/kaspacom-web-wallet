@@ -40,6 +40,7 @@ export class AuthGuard implements CanActivate {
     } catch (error) {
       isLogged = false;
     }
+    
     if (!isLogged && fullPath !== '/app/login') {
       this.router.navigate(['/app/login']);
       return false;

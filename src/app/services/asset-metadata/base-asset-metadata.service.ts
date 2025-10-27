@@ -1,5 +1,6 @@
-import { Injectable, signal, WritableSignal, computed, Signal } from '@angular/core';
+import { signal, WritableSignal, computed, Signal } from '@angular/core';
 import { BehaviorSubject, Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { BaseAssetsStoreService } from '../assets-manager/assets-stores/base-assets-store.service';
 
 export interface PaginatedAsset<T> {
   data: T;
@@ -15,9 +16,9 @@ export interface PaginationState {
   hasMore: boolean;
 }
 
-@Injectable()
 export abstract class BaseAssetMetadataService<TAsset, TMetadata> {
   // Signals for reactive state
+  protected allAssets: TAsset[] = [];
   protected paginatedAssetsSignal: WritableSignal<PaginatedAsset<TAsset>[]> = signal([]);
   protected paginationStateSignal: WritableSignal<PaginationState> = signal({
     currentPage: 0,
@@ -35,12 +36,12 @@ export abstract class BaseAssetMetadataService<TAsset, TMetadata> {
   public readonly paginatedAssets: Signal<PaginatedAsset<TAsset>[]> = this.paginatedAssetsSignal.asReadonly();
   public readonly paginationState: Signal<PaginationState> = this.paginationStateSignal.asReadonly();
   public readonly isLoading: Signal<boolean> = this.isLoadingSignal.asReadonly();
-  
+
   // Computed signals
   public readonly displayedItemsCount = computed(() => this.paginatedAssetsSignal().length);
   public readonly hasMoreItems = computed(() => this.paginationStateSignal().hasMore);
 
-  constructor() {
+  constructor(protected readonly assetsStoreService: BaseAssetsStoreService<any>, protected readonly assetStoreKey: string) {
     this.initializeScrollHandling();
   }
 
@@ -59,8 +60,26 @@ export abstract class BaseAssetMetadataService<TAsset, TMetadata> {
   /**
    * Initialize the service with assets from the store
    */
-  public abstract initialize(assets: TAsset[]): void;
+  public initialize(assets?: TAsset[]): void {
+    // Use provided assets or get from store
+    this.allAssets = assets || this.getAssetsFromStore();
 
+    // Update pagination state
+    this.paginationStateSignal.update(state => ({
+      ...state,
+      totalItems: this.allAssets.length,
+      hasMore: this.allAssets.length > 0 // Reset hasMore flag based on available assets
+    }));
+
+    // Reset pagination state and load initial page
+    // This ensures stale data from previous wallet is cleared
+    this.reset();
+
+    // Only load more if we have assets to display
+    if (this.allAssets.length > 0) {
+      this.loadMore();
+    }
+  }
   /**
    * Load metadata for a specific asset
    */
@@ -97,7 +116,7 @@ export abstract class BaseAssetMetadataService<TAsset, TMetadata> {
       const state = this.paginationStateSignal();
       const startIndex = state.currentPage * state.pageSize;
       const endIndex = startIndex + state.pageSize;
-      
+
       // Get next batch of assets
       const assets = this.getAssetsFromStore();
       const nextBatch = assets.slice(startIndex, endIndex);
@@ -116,7 +135,7 @@ export abstract class BaseAssetMetadataService<TAsset, TMetadata> {
 
       // Add to displayed items
       this.paginatedAssetsSignal.update(items => [...items, ...paginatedBatch]);
-      
+
       // Update pagination state
       this.paginationStateSignal.update(state => ({
         ...state,
@@ -139,7 +158,7 @@ export abstract class BaseAssetMetadataService<TAsset, TMetadata> {
    */
   public async loadMetadataForVisibleItems(itemElements?: HTMLElement[]): Promise<void> {
     const items = this.paginatedAssetsSignal();
-    const itemsToLoad = items.filter(item => 
+    const itemsToLoad = items.filter(item =>
       !item.metadata && !item.isLoadingMetadata && !item.metadataError
     );
 
@@ -171,7 +190,7 @@ export abstract class BaseAssetMetadataService<TAsset, TMetadata> {
   private async loadMetadataForItems(items: PaginatedAsset<TAsset>[]): Promise<void> {
     const promises = items.map(async (item) => {
       const assetId = this.getAssetId(item.data);
-      
+
       // Mark as loading
       this.updateItemMetadataState(assetId, { isLoadingMetadata: true });
 
@@ -195,9 +214,9 @@ export abstract class BaseAssetMetadataService<TAsset, TMetadata> {
   }
 
   private updateItemMetadataState(assetId: string, updates: Partial<PaginatedAsset<TAsset>>): void {
-    this.paginatedAssetsSignal.update(items => 
-      items.map(item => 
-        this.getAssetId(item.data) === assetId 
+    this.paginatedAssetsSignal.update(items =>
+      items.map(item =>
+        this.getAssetId(item.data) === assetId
           ? { ...item, ...updates }
           : item
       )
@@ -214,5 +233,15 @@ export abstract class BaseAssetMetadataService<TAsset, TMetadata> {
   /**
    * Get assets from store - to be implemented by subclasses
    */
-  protected abstract getAssetsFromStore(): TAsset[];
+  protected getAssetsFromStore(): TAsset[] {
+    return this.allAssets && this.allAssets.length > 0 ? this.allAssets : this.assetsStoreService.getAssetSignal(this.assetStoreKey)() || [];
+  }
+
+  /**
+ * Refresh data from store and reinitialize
+ */
+  public refreshFromStore(): void {
+    this.allAssets = this.assetsStoreService.getAssetSignal(this.assetStoreKey)() || [];
+    this.initialize(this.allAssets);
+  }
 } 

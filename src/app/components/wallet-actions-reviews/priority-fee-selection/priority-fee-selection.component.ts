@@ -9,13 +9,11 @@ import {
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import {
   CommonModule,
-  JsonPipe,
   NgFor,
   NgIf,
   TitleCasePipe,
 } from '@angular/common';
 import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
-import { CompletedActionReview } from '../completed-action-review/completed-action-review.component';
 import { WalletAction, WalletActionType } from '../../../types/wallet-action';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { AppWallet } from '../../../classes/AppWallet';
@@ -23,7 +21,6 @@ import { IFeeEstimate } from '../../../../../public/kaspa/kaspa';
 import { FormsModule } from '@angular/forms';
 import { Krc20OperationDataService } from '../../../services/protocols/krc20/krc20-operation-data.service';
 import { KcIconComponent, KcInputComponent } from '@kaspacom/ui';
-import { TokenLogoComponent } from '../../../v2/pages/app/common/krc20/token-logo/token-logo.component';
 
 type BucketFeeRate = {
   priorityFee: bigint;

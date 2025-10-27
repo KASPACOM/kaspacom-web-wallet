@@ -44,19 +44,16 @@ export class BaseEthereumProvider {
     // throw new Error('Transaction not found after 5 attempts');
   }
 
+
+  getProvider(): ethers.JsonRpcProvider {
+    return this.etherProvider;
+  }
+
   getConfig(): EIP1193ProviderChain {
     return this.config;
   }
 
   disconnect(): void {
     this.etherProvider.destroy();
-  }
-
-  fromReadableNumberToBlockchainNumber(value: number): bigint {
-    return BigInt(value) * BigInt(10 ** (this.config.nativeCurrency.decimals || 18));
-  }
-
-  fromBlockchainNumberToReadableNumber(value: bigint): number {
-    return Number(value) / (10 ** (this.config.nativeCurrency.decimals || 18));
   }
 }

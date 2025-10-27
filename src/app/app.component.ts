@@ -1,6 +1,5 @@
 import { AfterViewInit, Component, OnInit, Renderer2, inject } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
-import { PasswordManagerService } from './services/password-manager.service';
+import { RouterOutlet } from '@angular/router';
 import { AppHeaderComponent } from './components/app-header/app-header.component';
 import { KaspaNetworkActionsService } from './services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { NgIf } from '@angular/common';
@@ -10,12 +9,9 @@ import { CommunicationManagerService } from './services/communication-service/co
 import { MessagePopupComponent } from './components/message-popup/message-popup.component';
 import { MessagePopupService } from './services/message-popup.service';
 import { WalletService } from './services/wallet.service';
-import { RpcConnectionStatus } from './types/kaspa-network/rpc-connection-status.enum';
-import { toObservable } from '@angular/core/rxjs-interop';
 import { KaspaNetworkConnectionManagerService } from './services/kaspa-netwrok-services/kaspa-network-connection-manager.service';
 import { EthereumWalletChainManager } from './services/etherium-services/etherium-wallet-chain.manager';
-import { AssetsStoreService } from './services/assets-store.service';
-import { combineLatest } from 'rxjs';
+import { AssetsManagerService } from './services/assets-manager/assets-manager.service';
 
 @Component({
   selector: 'app-root',
@@ -32,7 +28,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   communicationService = inject(CommunicationManagerService);
   kaspaConnectionService = inject(KaspaNetworkConnectionManagerService);
   ethereumWalletChainManager = inject(EthereumWalletChainManager);
-  assetsStore = inject(AssetsStoreService);
+  assetsManager = inject(AssetsManagerService);
 
   constructor(
     private readonly communicationManagerService: CommunicationManagerService, 
@@ -41,10 +37,6 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   async ngOnInit() {
     console.log('App component initialized');
-
-    // Initialize assets store testing
-    // this.initializeAssetsStoreTesting();
-
     if (!this.isAllowedDomain()) {
       return;
     }
@@ -53,11 +45,7 @@ export class AppComponent implements OnInit, AfterViewInit {
       this.communicationManagerService.addApp(new IFrameCommunicationApp());
     }
 
-    // if (this.passwordManagerService.isUserHasSavedPassword()) {
-    //   this.router.navigate(['/login']);
-    // } else {
-    //   this.router.navigate(['/set-password']);
-    // }
+    this.assetsManager.initializeWalletListenerAndStart();
   }
 
   ngAfterViewInit(): void {

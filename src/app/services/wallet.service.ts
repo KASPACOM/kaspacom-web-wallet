@@ -1,7 +1,6 @@
 import { computed, EnvironmentInjector, Injectable, Signal, signal, WritableSignal } from '@angular/core';
 import { PasswordManagerService } from './password-manager.service';
 import { SavedWalletAccount, SavedWalletData, } from '../types/saved-wallet-data';
-import { KaspaNetworkActionsService } from './kaspa-netwrok-services/kaspa-network-actions.service';
 import { AppWallet } from '../classes/AppWallet';
 import { LOCAL_STORAGE_KEYS } from '../config/consts';
 import { AssetType, TransferableAsset } from '../types/transferable-asset';
@@ -11,6 +10,8 @@ import { UtilsHelper } from './utils.service';
 import { RpcConnectionStatus } from '../types/kaspa-network/rpc-connection-status.enum';
 import { cloneDeep } from "lodash";
 import { EthereumWalletChainManager } from './etherium-services/etherium-wallet-chain.manager';
+import { KaspaNetworkConnectionManagerService } from './kaspa-netwrok-services/kaspa-network-connection-manager.service';
+import { KaspaWalletMnemonicActionsService } from './kaspa-netwrok-services/kaspa-wallet-mnemonic-actions.service';
 
 @Injectable({
   providedIn: 'root',
@@ -23,7 +24,8 @@ export class WalletService {
 
   constructor(
     private readonly passwordManagerService: PasswordManagerService,
-    private readonly kaspaNetworkActionsService: KaspaNetworkActionsService,
+    private readonly kaspaWalletMnemonicActionsService: KaspaWalletMnemonicActionsService,
+    private readonly kaspaConnectionManagerService: KaspaNetworkConnectionManagerService,
     private readonly kasplexService: KasplexKrc20Service,
     private readonly utilsService: UtilsHelper,
     private readonly injector: EnvironmentInjector,
@@ -50,7 +52,7 @@ export class WalletService {
 
     if (!privateKey) {
       mnemonicPk =
-        await this.kaspaNetworkActionsService.getPrivateKeyFromMnemonic(
+        await this.kaspaWalletMnemonicActionsService.getPrivateKeyFromMnemonic(
           mnemonic!,
           accountData!.derivedPath,
           passphrase,
@@ -64,7 +66,7 @@ export class WalletService {
       }
     }
 
-    const isValid = this.kaspaNetworkActionsService.validatePrivateKey(
+    const isValid = this.kaspaWalletMnemonicActionsService.validatePrivateKey(
       privateKey || mnemonicPk!,
     );
 
@@ -281,14 +283,14 @@ export class WalletService {
   }
 
   generateMnemonic(wordsCount: number = 12): string {
-    return this.kaspaNetworkActionsService.generateMnemonic(wordsCount);
+    return this.kaspaWalletMnemonicActionsService.generateMnemonic(wordsCount);
   }
 
   getWalletAddressFromMnemonic(
     mnemonic: string,
     password?: string,
   ): string | null {
-    return this.kaspaNetworkActionsService.getWalletAddressFromMnemonic(
+    return this.kaspaWalletMnemonicActionsService.getWalletAddressFromMnemonic(
       mnemonic,
       password,
     );
@@ -479,7 +481,7 @@ export class WalletService {
     );
 
     if (
-      this.kaspaNetworkActionsService.getConnectionStatusSignal()() ==
+      this.kaspaConnectionManagerService.getConnectionStatusSignal()() ==
       RpcConnectionStatus.CONNECTED
     ) {
       this.getCurrentWallet()?.startListiningToWalletActions();

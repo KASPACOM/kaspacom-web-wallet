@@ -138,7 +138,6 @@ export class ApprovalSuccessPageComponent {
   }
 
   private async handlePostTransactionUpdates(): Promise<void> {
-    console.log('handlePostTransactionUpdates');
     await this.assetsManager.reloadAllCurrentAssetsAfterUpdate();
   }
 

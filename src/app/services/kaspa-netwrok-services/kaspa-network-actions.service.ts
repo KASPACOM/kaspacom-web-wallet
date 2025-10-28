@@ -7,10 +7,9 @@ import {
   PrivateKey,
   ScriptPublicKey,
   UtxoEntryReference,
-  XPrv,
 } from '../../../../public/kaspa/kaspa';
 import { Injectable, Signal } from '@angular/core';
-import { DEFAULT_DERIVED_PATH, LOCAL_STORAGE_KEYS } from '../../config/consts';
+import { LOCAL_STORAGE_KEYS } from '../../config/consts';
 import {
   CommitRevealActionResult,
   EIP1193ProviderRequestActionResult,
@@ -46,6 +45,7 @@ import { UtilsHelper } from '../utils.service';
 import { MempoolTransactionManager } from '../../classes/MempoolTransactionManager';
 import { TransactionRequest } from 'ethers';
 import { createEIP1193Response } from '../etherium-services/create-eip-1193-response';
+import { KaspaWalletMnemonicActionsService } from './kaspa-wallet-mnemonic-actions.service';
 
 const MINIMAL_TRANSACTION_MASS = 10000n;
 export const MINIMAL_AMOUNT_TO_SEND = 20000000n;
@@ -59,7 +59,8 @@ const ESTIMATED_REVEAL_ACTION = 1715n;
 export class KaspaNetworkActionsService {
   constructor(
     private readonly transactionsManager: KaspaNetworkTransactionsManagerService,
-    private readonly utils: UtilsHelper
+    private readonly utils: UtilsHelper,
+    private readonly kaspaWalletMnemonicActions: KaspaWalletMnemonicActionsService,
   ) { }
 
   async connectAndDo<T>(
@@ -90,56 +91,7 @@ export class KaspaNetworkActionsService {
   }
 
   convertPrivateKeyToAddress(privateKey: string): string {
-    return this.transactionsManager.convertPrivateKeyToAddress(privateKey);
-  }
-
-  validatePrivateKey(privateKey: string) {
-    try {
-      new PrivateKey(privateKey);
-
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  getPrivateKeyFromMnemonic(
-    mnemonicWords: string,
-    derivedPath: string = DEFAULT_DERIVED_PATH,
-    password?: string
-  ): string | null {
-    const isValid = Mnemonic.validate(mnemonicWords);
-
-    if (!isValid) {
-      return null;
-    }
-
-    const mnemonic = new Mnemonic(mnemonicWords);
-
-    const seed = mnemonic.toSeed(password);
-    const xprv = new XPrv(seed);
-
-    if (derivedPath) {
-      return xprv.derivePath(derivedPath).toPrivateKey().toString();
-    }
-
-    return xprv.privateKey;
-  }
-
-  getWalletAddressFromMnemonic(
-    mnemonic: string,
-    password?: string
-  ): string | null {
-    const privateKey = this.getPrivateKeyFromMnemonic(
-      mnemonic,
-      DEFAULT_DERIVED_PATH,
-      password
-    );
-    return privateKey ? this.convertPrivateKeyToAddress(privateKey) : null;
-  }
-
-  generateMnemonic(wordsCount: number): string {
-    return Mnemonic.random(wordsCount).phrase;
+    return this.kaspaWalletMnemonicActions.convertPrivateKeyToAddress(privateKey);
   }
 
   async initUtxoProcessorManager(

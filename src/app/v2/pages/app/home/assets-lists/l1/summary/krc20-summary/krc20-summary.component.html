@@ -14,6 +14,15 @@
   } @else if (tokens().length === 0) {
     <div class="text-gray-60 p-16">No KRC20 tokens found</div>
   } @else {
+      <div class="totals-container flex align-items-center gap-8">
+        <span class="text-gray-60 typo-text-2">
+          Total Value Kas: {{ totalValueKas() | number : "1.2-2"}} KAS
+        </span>
+
+        <span class="text-gray-60 typo-text-2">
+          Total Value USD: ${{ totalValueUsd() | number : "1.2-2" }}
+        </span>
+      </div>
     @for ( token of tokens(); track trackByToken($index, token) ) {
       <krc20-asset-card class="krc20-summary-container__card full-width"
         [krc20]="token"

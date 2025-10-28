@@ -10,21 +10,21 @@ import { PasswordManagerService } from '../../../../../services/password-manager
 import { WalletService } from '../../../../../services/wallet.service';
 
 @Component({
-  selector: 'app-disconnect-confirmation',
+  selector: 'app-delete-wallet-confirmation',
   standalone: true,
   imports: [CommonModule, KcButtonComponent, KcIconComponent],
-  templateUrl: './disconnect-confirmation.component.html',
-  styleUrl: './disconnect-confirmation.component.scss',
+  templateUrl: './delete-wallet-confirmation.component.html',
+  styleUrl: './delete-wallet-confirmation.component.scss',
 })
-export class DisconnectConfirmationComponent extends FlowPageBaseComponent {
+export class DeleteWalletConfirmationComponent extends FlowPageBaseComponent {
   private passwordManagerService = inject(PasswordManagerService);
   private walletService = inject(WalletService);
   private router = inject(Router);
 
   get config(): IFlowPageConfig {
     return {
-      id: 'disconnect-confirmation' as FlowPageId,
-      title: 'Disconnect Wallet',
+      id: 'delete-wallet-confirmation' as FlowPageId,
+      title: 'Delete Wallet',
       canNavigateBack: true,
       canClose: true,
       showTitle: true,
@@ -36,7 +36,7 @@ export class DisconnectConfirmationComponent extends FlowPageBaseComponent {
     this.flowPagesService.navigateBack();
   }
 
-  async onDisconnect(): Promise<void> {
+  async onDeleteWallet(): Promise<void> {
     try {
       // Clear all wallet data
       await this.passwordManagerService.clearAllData();
@@ -53,7 +53,7 @@ export class DisconnectConfirmationComponent extends FlowPageBaseComponent {
       // Force page reload to ensure clean state
       window.location.reload();
     } catch (error) {
-      console.error('Error during disconnect:', error);
+      console.error('Error during wallet deletion:', error);
       // Still try to navigate away even if there's an error
       this.router.navigate(['/wallet']);
       window.location.reload();

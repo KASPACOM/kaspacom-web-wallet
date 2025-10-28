@@ -1,9 +1,5 @@
 <div class="balance-container flex column p-12 gap-4 align-items-center">
 
-  <div class="balance-wallet-address flex gap-8 align-items-center typo-title-1 fade-in">
-    {{ walletAddress() }}
-  </div>
-
   <!-- Main USD Balance -->
   @if (isLoading()) {
   <app-skeleton [height]="'76px'" [width]="'300px'" [fullRound]="false"></app-skeleton>

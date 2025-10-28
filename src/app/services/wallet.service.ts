@@ -508,6 +508,12 @@ export class WalletService {
     }
   }
 
+  async logout(): Promise<void> {
+    this.passwordManagerService.clearPassword();
+    await this.deselectCurrentWallet();
+    this.isWalletLoaded = false;
+  }
+
   async getAllAvailableAssetsForCurrentWallet(): Promise<TransferableAsset[]> {
     if (!this.getCurrentWallet()) {
       return [];

@@ -78,9 +78,9 @@
   flex-shrink: 0;
 }
 
-// Disconnect item specific styles
-.disconnect-item {
-  .disconnect-title {
+// Delete wallet item specific styles
+.delete-wallet-item {
+  .delete-wallet-title {
     color: var(--error-color, #FF6B6B);
   }
 
@@ -88,5 +88,18 @@
     border-color: rgba(255, 107, 107, 0.3);
     background: rgba(255, 107, 107, 0.05);
   }
+}
+
+// Logout section
+.logout-section {
+  display: flex;
+  justify-content: center;
+  margin-top: auto;
+  padding-top: 20px;
+  width: 100%;
+}
+
+.logout-button {
+  max-width: 250px;
 }
 

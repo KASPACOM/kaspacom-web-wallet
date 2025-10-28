@@ -18,7 +18,7 @@ import { ImportExistingFlowComponent } from '../../../onboarding-page/flows/impo
 import { NewWalletFlowComponent } from '../../../onboarding-page/flows/new-wallet-flow/new-wallet-flow.component';
 import { WalletSelectionPageComponent } from '../../flows/wallet-selection/wallet-selection-page.component';
 import { SettingsMenuComponent } from '../../flows/settings/settings-menu.component';
-import { DisconnectConfirmationComponent } from '../../flows/settings/disconnect-confirmation.component';
+import { DeleteWalletConfirmationComponent } from '../../flows/settings/delete-wallet-confirmation.component';
 import { ExportKaspacomWalletFlowPageComponent } from '../../flows/export-kaspacom-wallet/export-kaspacom-wallet-flow-page.component';
 import { IFlowPageConfig } from './interfaces/flow-page.interface';
 import { NetworkSelectionModalComponent } from '../../../../shared/network-selection-modal/network-selection-modal.component';
@@ -53,7 +53,7 @@ export const FLOW_PAGE_IDS = [
   'create-wallet',
   'send-confirmation',
   'settings-menu',
-  'disconnect-confirmation',
+  'delete-wallet-confirmation',
   'network-selection',
 ] as const;
 
@@ -90,6 +90,6 @@ export const FLOW_PAGE_REGISTRY: Record<FlowPageId, FlowPageRegistryEntry> = {
     getInputs: () => ({ text: 'Send Confirmation page - Coming soon' }),
   },
   'settings-menu': SettingsMenuComponent,
-  'disconnect-confirmation': DisconnectConfirmationComponent,
+  'delete-wallet-confirmation': DeleteWalletConfirmationComponent,
   'network-selection': NetworkSelectionModalComponent,
 } as const;

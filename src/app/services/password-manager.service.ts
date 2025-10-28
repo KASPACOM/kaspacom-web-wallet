@@ -141,6 +141,10 @@ export class PasswordManagerService {
     return this.saveWalletsData(walletsData, this.password);
   }
 
+  clearPassword(): void {
+    this.password = null;
+  }
+
   async clearAllData(): Promise<void> {
     localStorage.clear();
   }

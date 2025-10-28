@@ -90,10 +90,11 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                 allTokens.map(token => token.tick),
             );
 
-            const pricesByTicker = _.keyBy(prices, 'tick');
+            const pricesByTicker = _.keyBy(prices, 'ticker');
             allTokens.forEach(token => {
                 token.priceKas = pricesByTicker[token.tick]?.price || 0;
             });
+
         } catch (error) {
             console.error('Error fetching token prices:', error);
         }

@@ -64,18 +64,16 @@ export class Krc20SummaryComponent
       });
     });
 
-    return krc20Assets.map((token) => {
-      const metadataInfo = metadataMap.get(token.tick);
-
-      return {
+    return krc20Assets
+      .map((token) => ({
         name: token.tick,
         symbol: token.tick.toUpperCase(),
         address: token.tick,
         balance: token.balance,
         priceKas: token.priceKas,
-        isLoadingMetadata: metadataInfo?.isLoadingMetadata || false,
-      };
-    });
+        isLoadingMetadata: metadataMap.get(token.tick)?.isLoadingMetadata || false,
+      }))
+      .sort((a, b) => (b.priceKas * b.balance) - (a.priceKas * a.balance));
   });
 
   loading = computed(() => !this.assetsManagerService.getAllAssetStores().l1.getAssetSignal(L1_ASSET_KEYS.krc20)());

@@ -9,7 +9,7 @@ import {
   ElementRef,
   Injector,
 } from '@angular/core';
-import {} from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { Krc20AssetCardComponent } from '../../asset-card/krc20-asset-card/krc20-asset-card.component';
 import {
@@ -25,10 +25,11 @@ import { GetTokenListDto } from '../../../../../../../../services/kasplex-api/dt
 import { runInInjectionContext } from '@angular/core';
 import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
 import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
+import { KaspaPriceService } from '../../../../../../../../services/kaspa-price.service';
 
 @Component({
   selector: 'app-krc20-summary',
-  imports: [SkeletonComponent, InfiniteScrollDirective, Krc20AssetCardComponent],
+  imports: [SkeletonComponent, InfiniteScrollDirective, Krc20AssetCardComponent, DecimalPipe],
   templateUrl: './krc20-summary.component.html',
   styleUrl: './krc20-summary.component.scss',
   host: {
@@ -40,6 +41,7 @@ export class Krc20SummaryComponent
 {
   private assetsManagerService = inject(AssetsManagerService);
   private krc20MetadataService = inject(Krc20MetadataService);
+  private kaspaPriceService = inject(KaspaPriceService);
   private router = inject(Router);
   private elementRef = inject(ElementRef);
   private injector = inject(Injector);
@@ -151,5 +153,13 @@ export class Krc20SummaryComponent
   loadVisibleMetadata(): void {
     const itemElements = this.getItemElements();
     this.krc20MetadataService.loadMetadataForVisibleItems(itemElements);
+  }
+
+  totalValueKas(): number {
+    return this.tokens().reduce((acc, token) => acc + token.priceKas * token.balance, 0);
+  }
+
+  totalValueUsd(): number {
+    return this.totalValueKas() * this.kaspaPriceService.price();
   }
 }

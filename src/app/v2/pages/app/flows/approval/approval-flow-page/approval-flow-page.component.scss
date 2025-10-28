@@ -1,6 +1,7 @@
 // Root container that ensures full height inheritance
 .approval-flow-root {
   height: 100%;
+  width: 100%;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -11,6 +12,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  width: 100%;
   color: var(--text-primary, #ffffff);
   font-family: 'Poppins', 'Roboto', sans-serif;
   padding: 16px 0;

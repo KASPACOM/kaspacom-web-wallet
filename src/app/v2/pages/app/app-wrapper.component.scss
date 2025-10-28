@@ -51,6 +51,28 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
   overflow: hidden; // Hide all overflow
 }
 
+// Iframe overlay cover - hides page content when in iframe mode
+.iframe-overlay-cover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--vampire-black);
+  z-index: 999;
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.iframe-loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: auto;
+}
+
 .wrapper {
   background-color: var(--base-1);
   border-radius: 12px;

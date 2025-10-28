@@ -11,8 +11,9 @@ import { QuickActionDialogService } from '../../services/quick-action-dialog.ser
 import { ReviewActionComponent } from '../../../components/wallet-actions-reviews/review-action/review-action.component';
 import { DynamicFlowPageOutletComponent } from './common/flow-page/dynamic-flow-page-outlet.component';
 import { DynamicQuickActionDialogOutletComponent } from './common/quick-action-dialog/dynamic-quick-action-dialog-outlet.component';
+import { IFrameCommunicationApp } from '../../../services/communication-service/communication-app/iframe-communication.service';
 
-import { KcSnackbarComponent } from '@kaspacom/ui';
+import { KcSnackbarComponent, KcSpinnerComponent } from '@kaspacom/ui';
 import { OnInit } from '@angular/core';
 import { WalletService } from '../../../services/wallet.service';
 import { AssetsManagerService } from '../../../services/assets-manager/assets-manager.service';
@@ -28,8 +29,8 @@ import { AssetsManagerService } from '../../../services/assets-manager/assets-ma
     DynamicFlowPageOutletComponent,
     DynamicQuickActionDialogOutletComponent,
     ReviewActionComponent,
-
     KcSnackbarComponent,
+    KcSpinnerComponent,
   ],
   templateUrl: './app-wrapper.component.html',
   styleUrl: './app-wrapper.component.scss',
@@ -42,6 +43,9 @@ export class AppWrapperComponent {
   quickActionDialogService = inject(QuickActionDialogService);
   private walletService = inject(WalletService);
   protected assetsManager = inject(AssetsManagerService);
+
+  // Detect if running in iframe mode
+  isIframeMode = signal(IFrameCommunicationApp.isIframe());
 
   getRouteAnimationData() {
     return this.contexts.getContext('primary')?.route?.snapshot?.data?.[

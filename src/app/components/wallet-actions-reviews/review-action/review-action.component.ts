@@ -13,6 +13,7 @@ import { ReviewActionDataService } from '../../../services/action-info-services/
 import { WalletActionService } from '../../../services/wallet-action.service';
 import { EIP1193RequestPayload, EIP1193RequestType } from '@kaspacom/wallet-messages';
 import { InputFieldType } from '../../../types/action-display.type';
+import { KcButtonComponent, KcCheckboxComponent } from '@kaspacom/ui';
 
 const TIMEOUT = 2 * 60 * 1000;
 
@@ -20,7 +21,7 @@ const TIMEOUT = 2 * 60 * 1000;
     selector: 'review-action',
     templateUrl: './review-action.component.html',
     styleUrls: ['./review-action.component.scss'],
-    imports: [NgIf, NgFor, NgClass, PriorityFeeSelectionComponent, FormsModule]
+    imports: [NgIf, NgFor, NgClass, PriorityFeeSelectionComponent, FormsModule, KcButtonComponent, KcCheckboxComponent]
 })
 export class ReviewActionComponent {
   public WalletActionType = WalletActionType;

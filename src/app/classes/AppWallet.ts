@@ -21,6 +21,7 @@ import { Subscription } from 'rxjs';
 import { ethers, formatUnits } from 'ethers';
 import { BaseEthereumProvider } from '../services/etherium-services/base-ethereum-provider';
 import { EthereumWalletChainManager } from '../services/etherium-services/etherium-wallet-chain.manager';
+import { KaspaWalletMnemonicActionsService } from '../services/kaspa-netwrok-services/kaspa-wallet-mnemonic-actions.service';
 
 export interface L2WalletState {
   chainId: number | undefined;
@@ -71,6 +72,7 @@ export class AppWallet {
     | ((v?: any) => void) = undefined;
 
   private readonly kaspaNetworkActionsService: KaspaNetworkActionsService;
+  private readonly kaspaWalletMnemonicActionsService: KaspaWalletMnemonicActionsService;
   private readonly ethereumWalletChainManager: EthereumWalletChainManager;
 
   constructor(
@@ -89,6 +91,9 @@ export class AppWallet {
     this.kaspaNetworkActionsService = this.injector.get(
       KaspaNetworkActionsService,
     );
+    this.kaspaWalletMnemonicActionsService = this.injector.get(
+      KaspaWalletMnemonicActionsService,
+    )
 
     if (!savedWalletData.privateKey && !savedWalletData.mnemonic) {
       throw new Error('Wallet must have a private key or a mnemonic');
@@ -98,7 +103,7 @@ export class AppWallet {
       this.privateKey = new PrivateKey(savedWalletData.privateKey);
     } else {
       const memonicPk =
-        this.kaspaNetworkActionsService.getPrivateKeyFromMnemonic(
+        this.kaspaWalletMnemonicActionsService.getPrivateKeyFromMnemonic(
           savedWalletData.mnemonic!,
           account!.derivedPath,
           savedWalletData.password,

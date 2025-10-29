@@ -8,16 +8,16 @@ import { WalletActionService } from '../../../wallet-action.service';
 import { WalletService } from '../../../wallet.service';
 
 export class ERC20Contract extends BaseContract {
-  static getContract(walletService: WalletService, walletActionService: WalletActionService, address: string): ERC20Contract {
-    return new ERC20Contract(walletService, walletActionService, address);
+  static getContract(address: string, walletService: WalletService, walletActionService?: WalletActionService): ERC20Contract {
+    return new ERC20Contract(address, walletService, walletActionService);
   }
 
   constructor(
-    walletService: WalletService,
-    walletActionService: WalletActionService,
     address: string,
+    walletService: WalletService,
+    walletActionService?: WalletActionService,
   ) {
-    super(walletService, walletActionService, address, ERC20ABI);
+    super(address, ERC20ABI, walletService, walletActionService);
   }
 
   async totalSupply(): Promise<ethers.BigNumberish> {

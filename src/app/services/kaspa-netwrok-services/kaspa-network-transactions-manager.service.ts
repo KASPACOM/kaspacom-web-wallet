@@ -43,6 +43,7 @@ import { CommitRevealActionTransactions } from '../../types/kaspa-network/commit
 import { MempoolTransactionManager } from '../../classes/MempoolTransactionManager';
 import { keccak256, TransactionRequest } from 'ethers';
 import { EtherService } from '../etherium-services/ether.service';
+import { KaspaWalletMnemonicActionsService } from './kaspa-wallet-mnemonic-actions.service';
 
 const MIN_TRANSACTION_FEE = 1817n;
 export const SUBMIT_REVEAL_MIN_UTXO_AMOUNT = 300000000n
@@ -73,6 +74,7 @@ export class KaspaNetworkTransactionsManagerService {
     private readonly connectionManager: KaspaNetworkConnectionManagerService,
     private readonly utils: UtilsHelper,
     private readonly etherService: EtherService,
+    private readonly kaspaWalletMnemonicActionsService: KaspaWalletMnemonicActionsService,
   ) {
   }
 
@@ -219,7 +221,7 @@ export class KaspaNetworkTransactionsManagerService {
         outputs,
         changeAddress:
           additionalOptions.changeWalletAddress ||
-          this.convertPrivateKeyToAddress(privateKey.toString()),
+          this.kaspaWalletMnemonicActionsService.convertPrivateKeyToAddress(privateKey.toString()),
         priorityFee: {
           amount: finalPriorityFee,
           source: sendAll ? FeeSource.ReceiverPays : FeeSource.SenderPays,
@@ -295,7 +297,7 @@ export class KaspaNetworkTransactionsManagerService {
         if (additionalOptions.waitForTransactionToBeConfirmed) {
           const mempoolTransactionManager = new MempoolTransactionManager(
             this.rpcService.getRpc()!,
-            additionalOptions.revealScriptAddress || this.convertPrivateKeyToAddress(privateKey.toString()),
+            additionalOptions.revealScriptAddress || this.kaspaWalletMnemonicActionsService.convertPrivateKeyToAddress(privateKey.toString()),
           );
 
           try {
@@ -381,7 +383,7 @@ export class KaspaNetworkTransactionsManagerService {
 
     if (!entry) {
       // not support to happen
-      console.log(entry, )
+      console.log(entry,)
       throw new Error(
         `Commit UTXO not found, revealTransactionId: ${commitUtxoTransactionId}, scriptAddress: ${operationScript.scriptAddress
         }, wallet address: ${wallet.getAddress()}`
@@ -474,7 +476,6 @@ export class KaspaNetworkTransactionsManagerService {
     }
 
     const l2Transaction = await this.etherService.createTransactionAndPopulate(transactionOptions, l2Wallet);
-
 
     const signedTransactionString = await this.etherService.signTransaction(l2Transaction, l2Wallet);
     const signedTransactionHash = keccak256(signedTransactionString);
@@ -607,7 +608,7 @@ export class KaspaNetworkTransactionsManagerService {
     const commitOptions: DoTransactionOptions = {
       notifyCreatedTransactions: async (transactionId) => {
         resultTransactions.commitTransactionId = transactionId;
-        await notifyUpdate({...resultTransactions});
+        await notifyUpdate({ ...resultTransactions });
       },
       waitForTransactionToBeConfirmed: true,
       ...(baseTransactionOptions || {}),
@@ -619,7 +620,7 @@ export class KaspaNetworkTransactionsManagerService {
     const revealOptions: DoTransactionOptions = {
       notifyCreatedTransactions: async (transactionId) => {
         resultTransactions.revealTransactionId = transactionId;
-        await notifyUpdate({...resultTransactions});
+        await notifyUpdate({ ...resultTransactions });
       },
       additionalProtocolPaymentAmount: minimalOperationCost,
       ...(baseTransactionOptions || {}),
@@ -965,13 +966,6 @@ export class KaspaNetworkTransactionsManagerService {
   //   // ================================================================
   //   // OTHER
   //   // ================================================================
-
-  convertPrivateKeyToAddress(privateKey: string): string {
-    return new PrivateKey(privateKey)
-      .toPublicKey()
-      .toAddress(this.rpcService.getNetwork())
-      .toString();
-  }
 
   async getEstimateFeeRates(): Promise<IFeeEstimate> {
     const fees = await this.rpcService.getRpc()!.getFeeEstimate({});

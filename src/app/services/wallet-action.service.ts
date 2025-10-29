@@ -10,7 +10,7 @@ import {
 } from '../types/wallet-action';
 import { AssetType, TransferableAsset } from '../types/transferable-asset';
 import { WalletService } from './wallet.service';
-import { EIP1193RequestPayload, EIP1193RequestType, ERROR_CODES, ERROR_CODES_MESSAGES, ProtocolType, PsktActionsEnum, WalletActionResult } from '@kaspacom/wallet-messages';
+import { EIP1193RequestPayload, EIP1193RequestType, ERROR_CODES, ERROR_CODES_MESSAGES, EthTransactionParams, ProtocolType, PsktActionsEnum, WalletActionResult } from '@kaspacom/wallet-messages';
 import { UtilsHelper } from './utils.service';
 import {
   KaspaNetworkActionsService,
@@ -246,10 +246,10 @@ export class WalletActionService {
 
     action.priorityFee = result.priorityFee || action.priorityFee;
 
-    // Add 2-second delay to allow canvas animation to show before processing
-    if (isUsingV2Flow) {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
+    // // Add 2-second delay to allow canvas animation to show before processing
+    // if (isUsingV2Flow) {
+    //   await new Promise(resolve => setTimeout(resolve, 2000));
+    // }
 
     const actionSteps = this.getActionSteps(action);
     let currentStep = 0;

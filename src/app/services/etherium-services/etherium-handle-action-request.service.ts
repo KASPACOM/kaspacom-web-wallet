@@ -53,7 +53,6 @@ export class EthereumHandleActionRequestService {
     async handleSendTransactionRequest(action: EIP1193RequestPayload<EIP1193RequestType.SEND_TRANSACTION>, wallet: AppWallet): Promise<WalletActionResultWithError> {
         const l2Wallet: ethers.Wallet = (await wallet.getL2Wallet())!;
         const l2Transaction = await this.etherService.createTransactionAndPopulate(action.params[0] as TransactionRequest, l2Wallet);
-
         const signedTransactionString = await this.etherService.signTransaction(l2Transaction, l2Wallet);
         const transactionHash = await this.etherService.sendTransactionToL2(wallet.getL2Provider()!, signedTransactionString);
 

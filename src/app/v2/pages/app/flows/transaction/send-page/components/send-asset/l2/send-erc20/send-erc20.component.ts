@@ -245,9 +245,9 @@ export class SendErc20Component
 
 
       const tokenContract = ERC20Contract.getContract(
+        this.token()!.address,
         this.walletService,
         this.walletActionService,
-        this.token()!.address
       )
 
       if (!this.tokenAmount || !this.token()?.decimals) {

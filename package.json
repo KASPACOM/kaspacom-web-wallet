@@ -30,6 +30,7 @@
     "@kaspacom/wallet-messages": "^1.0.23",
     "angularx-qrcode": "^19.0.0",
     "crypto-js": "^4.2.0",
+    "dexie": "^4.2.1",
     "ethers": "^6.13.5",
     "express": "^4.18.2",
     "graphemer": "^1.4.0",

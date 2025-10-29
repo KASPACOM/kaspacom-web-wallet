@@ -10,10 +10,11 @@ export abstract class BaseContract {
   protected contract: ethers.Contract;
 
   constructor(
-    protected walletService: WalletService,
-    protected walletActionService: WalletActionService,
     protected address: string,
     protected abi: ContractABI,
+    protected walletService: WalletService,
+    protected walletActionService?: WalletActionService,
+
   ) {
 
     const provider = this.walletService.getCurrentWallet()?.getL2Provider()?.getProvider();
@@ -87,6 +88,10 @@ export abstract class BaseContract {
           `Error encoding function data for ${methodName}: ${(err as Error).message
           }`,
         );
+      }
+
+      if (!this.walletActionService) {
+        throw new Error('WalletActionService is not set, this is readonly contract');
       }
 
       const action = this.walletActionService.createEIP1193Action({

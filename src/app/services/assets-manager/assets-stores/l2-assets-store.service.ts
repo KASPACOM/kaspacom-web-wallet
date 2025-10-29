@@ -28,7 +28,6 @@ export interface L2AssetStoreData extends BaseAssetStoreData {
 export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreData> {
     protected erc20GraphService = inject(Erc20GraphService);
     protected ethereumWalletChainManager = inject(EthereumWalletChainManager);
-    protected walletActionsService = inject(WalletActionService);
 
     protected override getLoadFunctionAssetsNames(): { [K in keyof L2AssetStoreData]: string } {
         return {
@@ -72,7 +71,7 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
     }
 
     public async getErc20InfoFromBlockchain(tokenAddress: string, skipUpdate?: boolean): Promise<Erc20Token> {
-        const contract = ERC20Contract.getContract(this.walletService, this.walletActionsService, tokenAddress);
+        const contract = ERC20Contract.getContract(tokenAddress, this.walletService);
 
 
         const [balance, decimals, name, symbol] = await Promise.all([

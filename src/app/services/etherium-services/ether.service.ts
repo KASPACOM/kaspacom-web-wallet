@@ -1,15 +1,14 @@
-import { inject, Injectable } from "@angular/core";
+import { Injectable } from "@angular/core";
 import { ethers, TransactionRequest } from "ethers";
 import { BaseEthereumProvider } from "./base-ethereum-provider";
 import { EthereumWalletChainManager } from "./etherium-wallet-chain.manager";
-import { environment } from "../../../environments/environment";
+import { L2TransactionHistoryService } from "../l2-transaction-history.service";
 
 @Injectable({
   providedIn: 'root',
 })
 export class EtherService {
-
-  constructor(protected ethereumChainService: EthereumWalletChainManager) {
+  constructor(protected ethereumChainService: EthereumWalletChainManager, protected l2TransactionHistoryService: L2TransactionHistoryService) {
   }
 
   async createTransactionAndPopulate(options: TransactionRequest, wallet: ethers.Wallet): Promise<TransactionRequest> {
@@ -34,7 +33,11 @@ export class EtherService {
   }
 
   async sendTransactionToL2(provider: BaseEthereumProvider, signedTransaction: string): Promise<string> {
-    return await provider.submitTransaction(signedTransaction);
+    const resultHash = await provider.submitTransaction(signedTransaction);
+
+    this.l2TransactionHistoryService.addTransactionAndWaitForResult(signedTransaction);
+
+    return resultHash;
   }
 
 

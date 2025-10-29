@@ -5,6 +5,7 @@ import { toObservable } from "@angular/core/rxjs-interop";
 import { Transaction } from "ethers";
 import { WalletService } from "./wallet.service";
 import { L2TransactionHistory, L2TransactionHistoryReceiptInfo } from "../db/dtos/l2-transaction-history";
+import { AssetsManagerService } from "./assets-manager/assets-manager.service";
 
 const MAX_TO_KEEP = 100;
 const AMOUNT_TO_REMOVE = 10;
@@ -16,6 +17,7 @@ export class L2TransactionHistoryService {
     protected db = inject(WalletDB);
     protected chainManager = inject(EthereumWalletChainManager);
     protected walletService = inject(WalletService);
+    protected assetsManagerService = inject(AssetsManagerService);
 
 
     protected transactionsHistorySignal = signal<L2TransactionHistory[]>([]);
@@ -73,7 +75,8 @@ export class L2TransactionHistoryService {
                 receiptInfo,
             });
             this.transactionsHistorySignal.set(this.transactionsHistorySignal().map((item) => item.id === id ? { ...item, receiptInfo } : item));
-            // this.assetsManagerService.reloadAllCurrentAssetsAfterUpdate();
+
+            this.assetsManagerService.reloadAllCurrentAssetsAfterUpdate();
         }
     }
 

@@ -128,17 +128,9 @@ export class ApprovalSuccessPageComponent {
     // Close the approval flow
     this.approvalFlowService.closeApproval();
 
-    // Check if this was a KRC20 transaction and trigger assets update
-    this.handlePostTransactionUpdates();
-
     // Clear the action result to dismiss the modal
     this.walletActionService.clearActionResult();
 
-
-  }
-
-  private async handlePostTransactionUpdates(): Promise<void> {
-    await this.assetsManager.reloadAllCurrentAssetsAfterUpdate();
   }
 
   /**

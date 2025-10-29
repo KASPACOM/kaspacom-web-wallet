@@ -36,7 +36,6 @@ interface Erc20TokenInfo {
 export class Erc20AssetComponent extends BaseAssetPageComponent implements OnInit {
   protected route = inject(ActivatedRoute);
   private flowPagesService = inject(FlowPagesService);
-  private walletActionService = inject(WalletActionService);
   private assetsManagerService = inject(AssetsManagerService); 
 
   address: string | null = null;
@@ -75,7 +74,7 @@ export class Erc20AssetComponent extends BaseAssetPageComponent implements OnIni
     try {
       this.loading.set(true);
 
-      const contract = ERC20Contract.getContract(this.walletService, this.walletActionService, this.address);
+      const contract = ERC20Contract.getContract(this.address, this.walletService);
 
       const [{balance, decimals, name, symbol}, totalSupply] = await Promise.all([
         (this.assetsManagerService.getAllAssetStores().l2 as L2AssetsStoreService).getErc20InfoFromBlockchain(this.address),

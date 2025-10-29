@@ -1,8 +1,8 @@
 import { Injectable } from "@angular/core";
 import { ethers, TransactionRequest } from "ethers";
-import { BaseEthereumProvider } from "./base-ethereum-provider";
 import { EthereumWalletChainManager } from "./etherium-wallet-chain.manager";
-import { L2TransactionHistoryService } from "../l2-transaction-history.service";
+import { L2TransactionHistoryService } from "../l2-services/l2-transaction-history.service";
+import { BaseEthereumProvider } from "./base-ethereum-provider";
 
 @Injectable({
   providedIn: 'root',

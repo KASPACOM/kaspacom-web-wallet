@@ -1,11 +1,11 @@
 import { inject, Injectable, Signal, signal } from "@angular/core";
-import { WalletDB } from "../db/wallet-db.service";
-import { EthereumWalletChainManager } from "./etherium-services/etherium-wallet-chain.manager";
 import { toObservable } from "@angular/core/rxjs-interop";
 import { Transaction } from "ethers";
-import { WalletService } from "./wallet.service";
-import { L2TransactionHistory, L2TransactionHistoryReceiptInfo } from "../db/dtos/l2-transaction-history";
-import { AssetsManagerService } from "./assets-manager/assets-manager.service";
+import { WalletDB } from "../../db/wallet-db.service";
+import { EthereumWalletChainManager } from "../etherium-services/etherium-wallet-chain.manager";
+import { AssetsManagerService } from "../assets-manager/assets-manager.service";
+import { L2TransactionHistory, L2TransactionHistoryReceiptInfo } from "../../db/dtos/l2-transaction-history";
+import { WalletService } from "../wallet.service";
 
 const MAX_TO_KEEP = 100;
 const AMOUNT_TO_REMOVE = 10;

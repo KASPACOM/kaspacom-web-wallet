@@ -77,7 +77,7 @@ export class Erc20AssetComponent extends BaseAssetPageComponent implements OnIni
       const contract = ERC20Contract.getContract(this.address, this.walletService);
 
       const [{balance, decimals, name, symbol}, totalSupply] = await Promise.all([
-        (this.assetsManagerService.getAllAssetStores().l2 as L2AssetsStoreService).getErc20InfoFromBlockchain(this.address),
+        (this.assetsManagerService.getAllAssetStores().l2 as L2AssetsStoreService).getErc20InfoFromBlockchain(this.address, true),
         contract.totalSupply(),
       ])
 

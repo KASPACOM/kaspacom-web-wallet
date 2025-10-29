@@ -136,4 +136,67 @@ export class UtilsHelper {
     }
     return `${address.slice(0, frontChars)}...${address.slice(-backChars)}`;
   }
+
+  async runJobsConcurrently<T>(
+    jobs: (() => Promise<any>)[],
+    concurrency: number,
+  ): Promise<
+    {
+      jobCompleted: boolean;
+      result?: T;
+      error?: any;
+    }[]
+  > {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    let activeJobs = 0;
+    let currentIndex = 0;
+
+    return new Promise((resolve) => {
+      const results: {
+        jobCompleted: boolean;
+        result?: T;
+        error?: any;
+      }[] = [];
+      let completed = 0;
+
+      const runNext = () => {
+        // If all jobs are completed, resolve the main promise.
+        if (completed === jobs.length) {
+          return resolve(results);
+        }
+
+        // If there are no more jobs to start, exit.
+        if (currentIndex >= jobs.length) return;
+
+        // Get the next job and increment the index.
+        const jobIndex = currentIndex++;
+        const job = jobs[jobIndex];
+
+        // Increment active jobs count.
+        activeJobs++;
+
+        // Run the job and handle completion.
+        job()
+          .then((result) => {
+            results[jobIndex] = { jobCompleted: true, result };
+          })
+          .catch((err) => {
+            results[jobIndex] = { jobCompleted: false, error: err };
+          })
+          .finally(() => {
+            // Mark as completed, decrement active jobs, and try the next job.
+            completed++;
+            activeJobs--;
+            runNext();
+          });
+      };
+
+      // Start the initial set of jobs based on concurrency limit.
+      for (let i = 0; i < concurrency; i++) {
+        runNext();
+      }
+    });
+  }
+
+
 }

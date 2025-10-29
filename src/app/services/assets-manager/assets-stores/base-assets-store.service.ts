@@ -62,11 +62,15 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
     }
 
     public reloadAllAssets() {
+        for (let key in this.loadAssetsTimeouts) {
+            this.reloadAsset(key);
+        }
+    }
+
+    public reloadAsset(key: keyof T) {
         if (this.loadAssetsTimeouts) {
-            for (let key in this.loadAssetsTimeouts) {
-                clearTimeout(this.loadAssetsTimeouts[key]);
-                this.loadAssetAndSetTimeout(key);
-            }
+            clearTimeout(this.loadAssetsTimeouts[key]);
+            this.loadAssetAndSetTimeout(key);
         }
     }
 

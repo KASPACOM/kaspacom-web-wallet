@@ -6,8 +6,18 @@
 
   padding-top: 48px;
   padding-bottom: 48px;
+
+  @include desktop {
+    width: 480px;
+  }
+
+  @include tablet {
+    width: 360px;
+  }
+
   @include mobile {
-    width: 80%;
+    width: 70%;
+    max-width: 320px;
   }
 }
 
@@ -17,9 +27,9 @@
 }
 
 .onboarding-container-card {
-  overflow: hidden;
-  // overflow-x: hidden;
-  // overflow-y: unset;
+  max-height: 70vh;
+  overflow-x: hidden;
+  overflow-y: auto;
   width: 480px;
   flex: 0 0 auto;
 
@@ -28,10 +38,16 @@
   padding: 24px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.47);
 
+  @include tablet {
+    max-height: 60vh;
+  }
+
   @include mobile {
     width: 100%;
     background: none;
     backdrop-filter: blur(4px);
+    max-height: 50vh;
+    overflow-y: auto;
   }
   @include tablet {
     width: 75%;

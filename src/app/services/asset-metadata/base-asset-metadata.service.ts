@@ -103,6 +103,55 @@ export abstract class BaseAssetMetadataService<TAsset, TMetadata> {
   }
 
   /**
+   * Update assets without resetting cached metadata
+   * Preserves metadata for existing assets, only resets pagination state
+   */
+  public updateAssets(assets: TAsset[]): void {
+    const previousPaginated = this.paginatedAssetsSignal();
+    
+    // Create a map of existing cached metadata by asset ID
+    const metadataCache = new Map<string, { metadata?: any, isLoadingMetadata?: boolean, metadataError?: string }>();
+    previousPaginated.forEach(item => {
+      const id = this.getAssetId(item.data);
+      if (item.metadata || item.isLoadingMetadata) {
+        metadataCache.set(id, {
+          metadata: item.metadata,
+          isLoadingMetadata: item.isLoadingMetadata,
+          metadataError: item.metadataError
+        });
+      }
+    });
+    
+    // Update all assets
+    this.allAssets = assets;
+    
+    // Update pagination state
+    this.paginationStateSignal.update(state => ({
+      ...state,
+      totalItems: this.allAssets.length,
+      hasMore: this.allAssets.length > state.currentPage * state.pageSize
+    }));
+    
+    // Rebuild paginated assets, preserving cached metadata
+    const currentPageSize = this.paginationStateSignal().currentPage * this.paginationStateSignal().pageSize;
+    const visibleAssets = assets.slice(0, currentPageSize);
+    
+    const rebuiltPaginated: PaginatedAsset<TAsset>[] = visibleAssets.map(asset => {
+      const id = this.getAssetId(asset);
+      const cached = metadataCache.get(id);
+      
+      return {
+        data: asset,
+        metadata: cached?.metadata,
+        isLoadingMetadata: cached?.isLoadingMetadata || false,
+        metadataError: cached?.metadataError
+      };
+    });
+    
+    this.paginatedAssetsSignal.set(rebuiltPaginated);
+  }
+
+  /**
    * Load more items with pagination
    */
   public async loadMore(): Promise<void> {

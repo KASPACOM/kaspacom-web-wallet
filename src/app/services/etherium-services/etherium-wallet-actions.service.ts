@@ -6,6 +6,7 @@ import { WalletService } from "../wallet.service";
 import { WalletActionService } from "../wallet-action.service";
 import { createEIP1193Response } from "./create-eip-1193-response";
 import { EthereumHandleActionRequestService } from "./etherium-handle-action-request.service";
+import { ethers } from "ethers";
 
 @Injectable({
     providedIn: 'root',
@@ -72,7 +73,19 @@ export class EthereumWalletActionsService {
                     return createEIP1193Response<T>(`0x${balance.toString(16)}`);
                 case EIP1193RequestType.GET_CHAIN_ID:
                     return createEIP1193Response<T>(this.ethereumWalletChainManager.getCurrentChainSignal()()!);
+                case EIP1193RequestType.GET_ESTIMATE_GAS:
+                    const transaction = request.params?.[0] as any;
+                    const wallet = await this.walletService.getCurrentWallet()?.getL2Wallet();
 
+                    if (!wallet) {
+                        return createEIP1193Response<T>(undefined, {
+                            code: ERROR_CODES.EIP1193.INTERNAL_ERROR,
+                            message: 'Failed to get wallet'
+                        });
+                    }
+
+                    const gas = await this.ethereumWalletChainManager.getCurrentWalletProvider()!.estimateGas(wallet, transaction);
+                    return createEIP1193Response<T>(ethers.toQuantity(gas));
                 default:
                     return createEIP1193Response<T>(undefined, {
                         code: ERROR_CODES.EIP1193.UNSUPPORTED_METHOD,

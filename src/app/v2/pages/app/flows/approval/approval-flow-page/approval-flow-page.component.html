@@ -73,6 +73,17 @@
         </priority-fee-selection>
       </ng-container>
 
+            <!-- Priority Fee Selection -->
+      <ng-container *ngIf="isActionHasL2PriorityFee()">
+        <l2-priority-fee-selection
+          [action]="approvalConfig()!.action"
+          [wallet]="wallet()"
+          (priorityFeeSelected)="setL2CurrentPriorityFee($event)"
+          (gasLimitSelected)="setL2GasLimit($event)">
+        >
+        </l2-priority-fee-selection>
+      </ng-container>
+
       <!-- Action Buttons - Last element that gets pushed to bottom -->
       <div class="action-buttons-section">
         <div class="action-buttons">

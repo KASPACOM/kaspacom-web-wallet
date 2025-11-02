@@ -26,7 +26,7 @@ import { BaseProtocolClassesService } from './protocols/base-protocol-classes.se
 import { Router } from '@angular/router';
 import { EthereumHandleActionRequestService } from './etherium-services/etherium-handle-action-request.service';
 import { BaseCommunicationApp } from './communication-service/communication-app/base-communication-app';
-import { ApprovalFlowService } from '../v2/services/approval-flow.service';
+import { ApprovalFlowService, ApprovalPageResultParams } from '../v2/services/approval-flow.service';
 
 const INSTANT_ACTIONS: { [key: string]: boolean } = {
   [WalletActionType.SIGN_MESSAGE]: true,
@@ -246,6 +246,24 @@ export class WalletActionService {
 
     action.priorityFee = result.priorityFee || action.priorityFee;
 
+    if (result.l2PriorityInfo && action.type === WalletActionType.EIP1193_PROVIDER_REQUEST) {
+      const actionTransaction = { ...action.data.params[0] as EthTransactionParams };
+
+      if (result.l2PriorityInfo.gasLimit) {
+        actionTransaction.gasLimit = String(result.l2PriorityInfo.gasLimit);
+      }
+
+      if (result.l2PriorityInfo.priorityFee !== undefined && result.l2PriorityInfo.baseFee) {
+        actionTransaction.maxPriorityFeePerGas = String(result.l2PriorityInfo.priorityFee);
+        actionTransaction.maxFeePerGas = String(result.l2PriorityInfo.baseFee + result.l2PriorityInfo.priorityFee);
+      }
+
+      action.data.params[0] = actionTransaction;
+      console.log('transaction', action.data.params[0]);
+
+    }
+
+
     // // Add 2-second delay to allow canvas animation to show before processing
     // if (isUsingV2Flow) {
     //   await new Promise(resolve => setTimeout(resolve, 2000));
@@ -304,11 +322,7 @@ export class WalletActionService {
     }
   }
 
-  private async showApprovalDialogToUser(action: WalletAction, isFromIframe: boolean = false): Promise<{
-    isApproved: boolean;
-    priorityFee?: bigint;
-    additionalParams?: { [parmName: string]: any };
-  }> {
+  private async showApprovalDialogToUser(action: WalletAction, isFromIframe: boolean = false): Promise<ApprovalPageResultParams> {
 
     // Use the new approval flow service for modern flow-based approvals
     if (!isFromIframe && this.isV2AppContext()) {

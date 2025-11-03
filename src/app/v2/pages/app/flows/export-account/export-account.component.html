@@ -1,0 +1,59 @@
+<div class="export-account" *ngIf="!loadError(); else errorState">
+  <div class="export-account__warning">
+    <span class="typo-text-2">
+      Keep your private key secure. Anyone with this key can control this account.
+    </span>
+  </div>
+
+  <div class="export-account__meta">
+    <div class="export-account__row">
+      <span class="export-account__label">Wallet</span>
+      <span class="export-account__value">{{ walletName() }}</span>
+    </div>
+    @if (accountName()) {
+      <div class="export-account__row">
+        <span class="export-account__label">Account</span>
+        <span class="export-account__value">{{ accountName() }}</span>
+      </div>
+    }
+    @if (derivedPath()) {
+      <div class="export-account__row">
+        <span class="export-account__label">Derived path</span>
+        <span class="export-account__value">{{ derivedPath() }}</span>
+      </div>
+    }
+  </div>
+
+  <div class="export-account__key">
+    <code>{{ privateKey() }}</code>
+  </div>
+
+  <div class="export-account__actions">
+    <kc-button
+      [text]="'Copy'"
+      [variant]="'tertiary'"
+      [suffixIcon]="'icon-copy'"
+      [isDisabled]="!privateKey()"
+      (buttonClick)="copyPrivateKey()"
+    ></kc-button>
+    <kc-button
+      [text]="'Download .txt'"
+      [variant]="'primary'"
+      [suffixIcon]="'icon-download'"
+      [isDisabled]="!privateKey()"
+      (buttonClick)="downloadPrivateKey()"
+    ></kc-button>
+  </div>
+</div>
+
+<ng-template #errorState>
+  <div class="export-account__error">
+    <span class="typo-text-2">Unable to load this account's private key.</span>
+    <kc-button
+      [text]="'Back'"
+      [variant]="'tertiary'"
+      (buttonClick)="navigateBackToPrevious()"
+    ></kc-button>
+  </div>
+</ng-template>
+

@@ -1,0 +1,66 @@
+.backup-import-container {
+  width: 100%;
+  max-width: 400px;
+}
+
+.backup-input {
+  width: 100%;
+  padding: 16px;
+  background: var(--vampire-black);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: var(--gray-90);
+  font-family: 'Poppins', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  transition: all 0.2s ease;
+
+  &::placeholder {
+    color: var(--gray-50);
+  }
+
+  &:focus {
+    border-color: rgba(111, 199, 186, 0.4);
+    background: rgba(111, 199, 186, 0.02);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.divider {
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.upload-button {
+  padding: 12px 16px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--gray-75);
+  outline: none;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(111, 199, 186, 0.4);
+    color: var(--primary);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+

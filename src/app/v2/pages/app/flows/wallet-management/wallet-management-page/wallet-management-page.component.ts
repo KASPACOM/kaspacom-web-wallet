@@ -157,6 +157,20 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
     });
   }
 
+  exportWalletAccount(walletAccount: WalletAccount): void {
+    this.navigateToNextPage({
+      id: 'export-account',
+      title: 'Export Private Key',
+      canNavigateBack: true,
+      canClose: false,
+      showTitle: true,
+      showBackground: true,
+      data: {
+        walletIdWithAccount: walletAccount.id,
+      },
+    });
+  }
+
   deleteWallet(walletAccount: WalletAccount): void {
     // Open the delete confirmation dialog
     const isWalletWithoutAccounts = !walletAccount.wallet.supportAccounts();

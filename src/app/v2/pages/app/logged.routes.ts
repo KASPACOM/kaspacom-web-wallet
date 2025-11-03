@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-import { LoginComponent } from './login/login.component';
 import { SwapComponent } from './swap/swap.component';
 import { AppWrapperComponent } from './app-wrapper.component';
 import { CollectablesComponent } from './collectables/collectables.component';
@@ -44,10 +43,5 @@ export const loggedRoutes: Routes = [
         data: { animation: 'Activity' },
       },
     ],
-  },
-  {
-    path: 'login',
-    component: LoginComponent,
-    data: { animation: 'Login' },
   },
 ];

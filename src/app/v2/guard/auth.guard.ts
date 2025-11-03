@@ -25,14 +25,17 @@ export class AuthGuard implements CanActivate {
 
     const fullPath = state.url;
 
+    const onboardingPaths = ['/onboarding', '/onboarding-v2'];
+
     if (!userData) {
-      if (fullPath === '/onboarding') {
+      if (onboardingPaths.includes(fullPath)) {
         return true;
-      } else {
-        this.router.navigate(['/onboarding']);
-        return false;
       }
+
+      this.router.navigate(['/onboarding']);
+      return false;
     }
+
     let isLogged = false;
     try {
       const user = await this.passwordManagerService.getUserData();
@@ -40,16 +43,17 @@ export class AuthGuard implements CanActivate {
     } catch (error) {
       isLogged = false;
     }
-    
-    if (!isLogged && fullPath !== '/app/login') {
-      this.router.navigate(['/app/login']);
+
+    if (!isLogged) {
+      if (onboardingPaths.includes(fullPath)) {
+        return true;
+      }
+
+      this.router.navigate(['/onboarding']);
       return false;
     }
-    if (isLogged && fullPath === '/app/login') {
-      this.router.navigate(['/app/home']);
-      return false;
-    }
-    if (isLogged && fullPath === 'onboarding') {
+
+    if (isLogged && onboardingPaths.includes(fullPath)) {
       this.router.navigate(['/app/home']);
       return false;
     }

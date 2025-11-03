@@ -62,7 +62,7 @@ export class ExportWalletComponent extends FlowPageBaseComponent {
   }
 
   copySeedToClipboard(): void {
-    const content = this.getNumberedSeedString();
+    const content = this.seedWords().join(' ');
     navigator.clipboard.writeText(content).then(
       () => {
         this.notificationService.success(

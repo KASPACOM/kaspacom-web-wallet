@@ -59,14 +59,28 @@ export class ImportExistingFlowService {
     seedPhrase: string,
     wordCount: number,
     importSwitchMethod: ImportSwitchMethod,
-    seedPassphrase: string = '',
   ) {
     this._model.set({
       ...this._model(),
       seedPhrase,
       wordCount,
       importSwitchMethod,
+    });
+    this.printState();
+  }
+
+  submitSeedPassphraseStep(seedPassphrase: string) {
+    this._model.set({
+      ...this._model(),
       seedPassphrase,
+    });
+    this.printState();
+  }
+
+  setImportSwitchMethod(method: ImportSwitchMethod) {
+    this._model.set({
+      ...this._model(),
+      importSwitchMethod: method,
     });
     this.printState();
   }

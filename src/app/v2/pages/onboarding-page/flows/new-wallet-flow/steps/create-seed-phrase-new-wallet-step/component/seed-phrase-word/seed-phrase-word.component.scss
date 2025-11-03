@@ -2,6 +2,23 @@
   padding: 12px 8px;
   border-radius: 8px;
   background-color: var(--vampire-black);
-  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  gap: 8px;
+  
+  span {
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    
+    &:first-child {
+      flex-shrink: 0;
+    }
+  }
 }

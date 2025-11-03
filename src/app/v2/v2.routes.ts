@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { OnboardingPageComponent } from './pages/onboarding-page/onboarding-page.component';
+import { OnboardingPageV2Component } from './pages/onboarding-page-v2/onboarding-page-v2.component';
 import { DesignSystemShowcaseComponent } from '@kaspacom/ui';
 import { AuthGuard } from './guard/auth.guard';
 import { routes } from '../core/app.routes';
@@ -11,7 +11,12 @@ export const V2TMP_ROUTES: Routes = [
   {
     path: 'onboarding',
     canActivate: [AuthGuard],
-    component: OnboardingPageComponent,
+    component: OnboardingPageV2Component,
+  },
+  {
+    path: 'onboarding-v2',
+    canActivate: [AuthGuard],
+    component: OnboardingPageV2Component,
   },
   {
     path: 'ui-kit',

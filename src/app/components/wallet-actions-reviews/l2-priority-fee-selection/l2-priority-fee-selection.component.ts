@@ -116,8 +116,6 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
       }
     }
 
-    console.log('calcu;ated');
-
     return formattedOptions;
   })
 
@@ -127,7 +125,6 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
 
 
   feeSelected(amount: bigint | undefined) {
-    console.log('Fee selected:', amount);
     if (amount === undefined) {
       this.priorityFeeSelected.emit(undefined);
       return;

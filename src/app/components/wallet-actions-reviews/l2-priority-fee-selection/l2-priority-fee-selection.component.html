@@ -1,4 +1,8 @@
 <div class="fee-spoiler-container" *ngIf="feeData">
+  <div class="error" *ngIf="hasGasLimitError">
+    There was an error getting the gas limit, please check the current action is valid and set the gas limit accordingly.
+  </div>
+
   <div class="fee-options-grid">
     <div class="fee-option-card" [class.selected]="selectedOption === 'low'" (click)="selectOption('low')">
       <div class="option-title">Low</div>

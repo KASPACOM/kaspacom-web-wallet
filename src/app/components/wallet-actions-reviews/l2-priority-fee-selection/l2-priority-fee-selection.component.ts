@@ -54,6 +54,7 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
 
   protected customFee = signal<number>(0);
   protected selectedOption: AvailableOption = 'normal';
+  protected hasGasLimitError = false;
 
   protected feeData:
     | undefined
@@ -169,6 +170,7 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
   }
 
   async loadPriorityFeeDataAndEmit(action: WalletAction): Promise<void> {
+    this.hasGasLimitError = false;
     const actionData: EIP1193RequestPayload<EIP1193RequestType> = action.data as EIP1193RequestPayload<EIP1193RequestType>;
     const transaction: EthTransactionParams = actionData.params[0] as EthTransactionParams;
 
@@ -179,19 +181,24 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
     }
 
 
-    let gasForTransaction = await provider.estimateGas((await this.wallet.getL2Wallet())!, {
-      from: transaction.from,
-      to: transaction.to,
-      value: transaction.value,
-      data: transaction.data,
-      nonce: transaction.nonce ? parseInt(transaction.nonce) : undefined,
-    })
+    try {
+      let gasForTransaction = await provider.estimateGas((await this.wallet.getL2Wallet())!, {
+        from: transaction.from,
+        to: transaction.to,
+        value: transaction.value,
+        data: transaction.data,
+        nonce: transaction.nonce ? parseInt(transaction.nonce) : undefined,
+      })
 
-    if (gasForTransaction !== MIN_GAS_LIMIT) {
-      gasForTransaction = gasForTransaction * 125n / 100n;
+      if (gasForTransaction !== MIN_GAS_LIMIT) {
+        gasForTransaction = gasForTransaction * 125n / 100n;
+      }
+
+      this.gasLimit.set(Number(gasForTransaction));
+    } catch (error) {
+      this.gasLimit.set(Number(MIN_GAS_LIMIT));
+      this.hasGasLimitError = true;
     }
-
-    this.gasLimit.set(Number(gasForTransaction));
 
     this.feeData = await provider.getFeeData();
     this.customFee.set(Number(this.feeData.maxPriorityFeePerGas));

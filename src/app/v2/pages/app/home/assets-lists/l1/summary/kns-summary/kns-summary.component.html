@@ -3,6 +3,7 @@
   appInfiniteScroll
   [scrollThreshold]="config.scrollThreshold"
   [scrollDebounce]="config.debounceMs"
+  [greedyLoading]="config.greedyLoading"
   (thresholdReached)="shouldLoadMore(true)"
 >
   @if (loading()) {

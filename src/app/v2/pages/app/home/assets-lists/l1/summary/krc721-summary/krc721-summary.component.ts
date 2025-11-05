@@ -1,4 +1,4 @@
-import { Component, ViewChild, computed, inject, OnInit, OnDestroy, ElementRef, DestroyRef } from '@angular/core';
+import { Component, ViewChild, computed, inject, OnInit, OnDestroy, AfterViewInit, ElementRef, DestroyRef } from '@angular/core';
 import { TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { INftWithMetadata } from '../../../../../common/interfaces/nft.interface';
@@ -18,7 +18,7 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
     '[class.full-width]': 'true',
   },
 })
-export class Krc721SummaryComponent implements OnInit, OnDestroy {
+export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
   // Services - portfolio pattern
   krc721ListService = inject(Krc721ListService);
   private krc721MetadataService = inject(Krc721MetadataService);
@@ -134,6 +134,12 @@ export class Krc721SummaryComponent implements OnInit, OnDestroy {
     // But list service persists as singleton, so we manually reset
     this.krc721ListService.reset();
     this.krc721MetadataService.reset();
+  }
+
+  ngAfterViewInit(): void {
+    if (this.config.greedyLoading) {
+      setTimeout(() => this.infiniteScrollDirective?.checkScroll(), 100);
+    }
   }
 
   onScrolled(percentage: number): void {

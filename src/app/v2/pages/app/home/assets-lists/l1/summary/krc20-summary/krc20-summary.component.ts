@@ -4,6 +4,7 @@ import {
   computed,
   inject,
   OnInit,
+  AfterViewInit,
   ElementRef,
   DestroyRef,
 } from '@angular/core';
@@ -30,7 +31,7 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
     '[class.full-width]': 'true',
   },
 })
-export class Krc20SummaryComponent implements OnInit {
+export class Krc20SummaryComponent implements OnInit, AfterViewInit {
   // Services - portfolio pattern
   krc20ListService = inject(Krc20ListService);
   private krc20MetadataService = inject(Krc20MetadataService);
@@ -145,6 +146,12 @@ export class Krc20SummaryComponent implements OnInit {
     // But list service persists as singleton, so we manually reset
     this.krc20ListService.reset();
     this.krc20MetadataService.reset();
+  }
+
+  ngAfterViewInit(): void {
+    if (this.config.greedyLoading) {
+      setTimeout(() => this.infiniteScrollDirective?.checkScroll(), 100);
+    }
   }
 
   onScrolled(percentage: number): void {

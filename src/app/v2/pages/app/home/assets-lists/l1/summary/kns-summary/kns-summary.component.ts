@@ -1,4 +1,4 @@
-import { Component, ViewChild, computed, inject, OnInit, DestroyRef } from '@angular/core';
+import { Component, ViewChild, computed, inject, OnInit, AfterViewInit, DestroyRef } from '@angular/core';
 import { TitleCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
@@ -17,7 +17,7 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
     '[class.full-width]': 'true',
   },
 })
-export class KnsSummaryComponent implements OnInit {
+export class KnsSummaryComponent implements OnInit, AfterViewInit {
   // Services - portfolio pattern
   knsListService = inject(KnsListService);
   private router = inject(Router);
@@ -82,6 +82,12 @@ export class KnsSummaryComponent implements OnInit {
     // This ensures clean state when switching tabs (component destroyed/recreated)
     // But list service persists as singleton, so we manually reset
     this.knsListService.reset();
+  }
+
+  ngAfterViewInit(): void {
+    if (this.config.greedyLoading) {
+      setTimeout(() => this.infiniteScrollDirective?.checkScroll(), 100);
+    }
   }
 
   /**

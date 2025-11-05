@@ -1,4 +1,5 @@
-import { Directive, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, NgZone } from '@angular/core';
+import { Directive, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, NgZone, PLATFORM_ID, inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { fromEvent, Subject, throttleTime, takeUntil } from 'rxjs';
 
 /**
@@ -16,6 +17,7 @@ export class InfiniteScrollDirective implements OnInit, OnDestroy {
   @Input() scrollThreshold = 70;
   @Input() scrollDebounce = 120;
   @Input() scrollContainer?: HTMLElement | Window;
+  @Input() greedyLoading = false;
   @Output() scrolled = new EventEmitter<number>(); // Emits scroll percentage
   @Output() thresholdReached = new EventEmitter<void>(); // Emits when threshold is reached
 
@@ -24,6 +26,8 @@ export class InfiniteScrollDirective implements OnInit, OnDestroy {
   private hasReachedThreshold = false; // Track if threshold was already reached
   private actualScrollContainer?: HTMLElement | Window; // The detected or provided scroll container
   private isWindowContainer = false;
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   constructor(
     private elementRef: ElementRef<HTMLElement>,
@@ -31,9 +35,18 @@ export class InfiniteScrollDirective implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
     // Find the scrollable container (provided or auto-detected)
     this.actualScrollContainer = this.scrollContainer || this.findScrollableParent();
-    this.isWindowContainer = this.actualScrollContainer instanceof Window;
+    if (!this.actualScrollContainer && typeof window !== 'undefined') {
+      console.warn('[InfiniteScroll] WARN: No scrollable parent found, falling back to window scroll listener.');
+      this.actualScrollContainer = window;
+    }
+
+    this.isWindowContainer = this.actualScrollContainer === window;
 
     if (!this.actualScrollContainer) {
       console.error('[InfiniteScroll] ERROR: No scrollable parent found. Ensure a parent element has overflow-y set to auto or scroll.');
@@ -76,9 +89,16 @@ export class InfiniteScrollDirective implements OnInit, OnDestroy {
           });
         });
     });
+
+    if (this.greedyLoading) {
+      setTimeout(() => this.checkScroll(), 100);
+    }
   }
 
   ngOnDestroy(): void {
+    if (!this.isBrowser) {
+      return;
+    }
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -88,6 +108,9 @@ export class InfiniteScrollDirective implements OnInit, OnDestroy {
    * Useful for programmatic checks (e.g., after content loads)
    */
   public checkScroll(): void {
+    if (!this.isBrowser) {
+      return;
+    }
     if (!this.actualScrollContainer) {
       console.warn('[InfiniteScroll] WARN: checkScroll() called but no scroll container found');
       return;
@@ -121,6 +144,9 @@ export class InfiniteScrollDirective implements OnInit, OnDestroy {
    * This allows the directive to load more if needed after new items are added
    */
   public resetThreshold(): void {
+    if (!this.isBrowser) {
+      return;
+    }
     if (this.actualScrollContainer) {
       const metrics = this.getScrollMetrics();
       if (!metrics) {
@@ -137,6 +163,9 @@ export class InfiniteScrollDirective implements OnInit, OnDestroy {
    * Returns the first element with overflow-y: auto or scroll.
    */
   private findScrollableParent(): HTMLElement | undefined {
+    if (!this.isBrowser) {
+      return undefined;
+    }
     let parent = this.elementRef.nativeElement.parentElement;
     let depth = 0;
     const maxDepth = 20; // Prevent infinite loops
@@ -173,7 +202,7 @@ export class InfiniteScrollDirective implements OnInit, OnDestroy {
   }
 
   private getScrollMetrics(): ScrollMetrics | undefined {
-    if (!this.actualScrollContainer) {
+    if (!this.isBrowser || !this.actualScrollContainer) {
       return undefined;
     }
 

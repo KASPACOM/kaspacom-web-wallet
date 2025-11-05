@@ -1,7 +1,8 @@
 <div
   class="kns-summary-container flex column justify-content-center align-items-center full-width gap-16"
   appInfiniteScroll
-  [scrollThreshold]="80"
+  [scrollThreshold]="config.scrollThreshold"
+  [scrollDebounce]="config.debounceMs"
   (thresholdReached)="shouldLoadMore(true)"
 >
   @if (loading()) {

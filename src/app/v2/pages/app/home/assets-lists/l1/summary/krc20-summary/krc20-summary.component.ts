@@ -1,10 +1,11 @@
 import {
   Component,
+  ViewChild,
   computed,
   inject,
   OnInit,
-  OnDestroy,
   ElementRef,
+  DestroyRef,
 } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
@@ -15,10 +16,10 @@ import {
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
 import { Krc20MetadataService } from '../../../../../../../../services/asset-metadata/krc20-metadata.service';
 import { InfiniteScrollDirective } from '../../../../../../../../directives/infinite-scroll.directive';
-import { Subject, takeUntil } from 'rxjs';
 import { Krc20ListService } from '../../../../../../../../services/assets-manager/krc20-list.service';
 import { L1_PAGINATION_CONFIG } from '../../../../../../../../services/assets-manager/interfaces/pagination-state.interface';
 import { KaspaPriceService } from '../../../../../../../../services/kaspa-price.service';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-krc20-summary',
@@ -29,22 +30,75 @@ import { KaspaPriceService } from '../../../../../../../../services/kaspa-price.
     '[class.full-width]': 'true',
   },
 })
-export class Krc20SummaryComponent
-  implements OnInit, OnDestroy
-{
+export class Krc20SummaryComponent implements OnInit {
   // Services - portfolio pattern
   krc20ListService = inject(Krc20ListService);
   private krc20MetadataService = inject(Krc20MetadataService);
   private kaspaPriceService = inject(KaspaPriceService);
   private router = inject(Router);
   private elementRef = inject(ElementRef);
-  private destroy$ = new Subject<void>();
+  private destroyRef = inject(DestroyRef);
+  private metadataInitialized = false;
+  private pendingThresholdReset = false;
+  private _infiniteScrollDirective?: InfiniteScrollDirective;
+
+  @ViewChild(InfiniteScrollDirective)
+  set infiniteScrollDirective(directive: InfiniteScrollDirective | undefined) {
+    this._infiniteScrollDirective = directive;
+
+    if (directive && this.pendingThresholdReset) {
+      directive.resetThreshold();
+      this.pendingThresholdReset = false;
+    }
+  }
+
+  get infiniteScrollDirective(): InfiniteScrollDirective | undefined {
+    return this._infiniteScrollDirective;
+  }
   
   // Configuration
-  private readonly config = L1_PAGINATION_CONFIG.krc20;
+  readonly config = L1_PAGINATION_CONFIG.krc20;
   
   // Loading skeletons - portfolio pattern with opacity cascade
-  loadingSkeletons: unknown[] = Array.from({ length: 8 }).map(() => ({}));
+  private static readonly SKELETON_COUNT = 8;
+  loadingSkeletons: unknown[] = Array.from({ length: Krc20SummaryComponent.SKELETON_COUNT }).map(() => ({}));
+
+  constructor() {
+    toObservable(this.krc20ListService.tokens)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(tokens => {
+        if (!tokens || tokens.length === 0) {
+          if (this.metadataInitialized) {
+            this.krc20MetadataService.reset();
+          }
+          this.metadataInitialized = false;
+          return;
+        }
+
+        if (!this.metadataInitialized) {
+          this.krc20MetadataService.initialize(tokens);
+          this.metadataInitialized = true;
+          return;
+        }
+
+        this.krc20MetadataService.updateAssets(tokens);
+      });
+
+    toObservable(this.krc20ListService.shouldCheckScrollPosition)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(shouldReset => {
+        if (!shouldReset) {
+          return;
+        }
+
+        if (this.infiniteScrollDirective) {
+          this.infiniteScrollDirective.resetThreshold();
+          this.pendingThresholdReset = false;
+        } else {
+          this.pendingThresholdReset = true;
+        }
+      });
+  }
 
   // Data from service - portfolio pattern
   tokens = computed<ITokenWithMetadata[]>(() => {
@@ -90,27 +144,7 @@ export class Krc20SummaryComponent
     // This ensures clean state when switching tabs (component destroyed/recreated)
     // But list service persists as singleton, so we manually reset
     this.krc20ListService.reset();
-    
-    // Initialize metadata service with token data
-    // Watch for changes in token data and update metadata service
-    const tokensEffect = computed(() => this.krc20ListService.tokens());
-    
-    // Manual subscription to computed signal changes
-    let previousTokens = tokensEffect();
-    this.krc20MetadataService.initialize(previousTokens);
-    
-    // Poll for changes (simple approach)
-    const interval = setInterval(() => {
-      const currentTokens = tokensEffect();
-      if (currentTokens !== previousTokens) {
-        previousTokens = currentTokens;
-        this.krc20MetadataService.initialize(currentTokens);
-      }
-    }, 100);
-    
-    this.destroy$.pipe(takeUntil(this.destroy$)).subscribe({
-      complete: () => clearInterval(interval)
-    });
+    this.krc20MetadataService.reset();
   }
 
   onScrolled(percentage: number): void {
@@ -128,11 +162,6 @@ export class Krc20SummaryComponent
     if (loadMore && !this.krc20ListService.isFetching() && this.hasMore()) {
       this.krc20ListService.loadMore();
     }
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 
   onTokenClick(token: ITokenWithMetadata): void {

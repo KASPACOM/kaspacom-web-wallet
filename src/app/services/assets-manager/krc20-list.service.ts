@@ -35,6 +35,12 @@ export class Krc20ListService {
   });
   
   /**
+   * Flag to indicate data grew from auto-reload merge.
+   * Components should reset scroll threshold when this fires.
+   */
+  private dataGrewFromMerge = signal<boolean>(false);
+  
+  /**
    * Computed: KRC20 token data from store
    * Flattened for component consumption
    */
@@ -42,6 +48,11 @@ export class Krc20ListService {
     return this.l1AssetsStore.getAssets(L1AssetType.KRC20) as GetTokenListDto[];
   });
   
+  /**
+   * Signal to notify components when data size increased from merge operations.
+   */
+  shouldCheckScrollPosition: Signal<boolean> = computed(() => this.dataGrewFromMerge());
+
   /**
    * Computed: Loading state
    * True when actively loading data
@@ -91,21 +102,44 @@ export class Krc20ListService {
       }
     });
     
-    // Watch for data from store and mark initial load complete
-    // Note: We DON'T reset pagination when store data changes due to auto-reload merging
-    // Auto-reload merges data and preserves pagination state
+    // Watch for data changes and detect merges vs manual loads
+    let previousLength = 0;
     effect(() => {
       const tokens = this.tokens();
       const currentState = this.paginationState();
-      
-      if (tokens && tokens.length > 0 && !currentState.initialLoadComplete) {
-        // Initial load complete
+      const currentLength = tokens?.length ?? 0;
+
+      if (currentLength > 0) {
+        if (previousLength > 0 && currentLength > previousLength && currentState.initialLoadComplete) {
+          const itemsAdded = currentLength - previousLength;
+          const isLikelyMerge = itemsAdded !== this.config.pageSize;
+
+          if (isLikelyMerge) {
+            this.dataGrewFromMerge.set(true);
+            setTimeout(() => this.dataGrewFromMerge.set(false), 100);
+          }
+
+          this.paginationState.update(state => ({
+            ...state,
+            totalLoaded: currentLength
+          }));
+        }
+
+        if (!currentState.initialLoadComplete) {
+          this.paginationState.update(state => ({
+            ...state,
+            initialLoadComplete: true,
+            isLoading: false
+          }));
+        }
+      } else if (currentLength === 0 && previousLength > 0) {
         this.paginationState.update(state => ({
           ...state,
-          initialLoadComplete: true,
-          isLoading: false
+          totalLoaded: 0
         }));
       }
+
+      previousLength = currentLength;
     });
   }
   
@@ -204,7 +238,7 @@ export class Krc20ListService {
         error: result.error
       };
     } catch (error) {
-      console.error('[KRC20ListService] ❌ Exception during loadMore:', error);
+      console.error('[KRC20ListService] Exception during loadMore:', error);
       this.paginationState.update(s => ({
         ...s,
         isLoading: false

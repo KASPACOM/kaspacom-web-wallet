@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, OnInit, OnDestroy, viewChild } from '@angular/core';
+import { Component, ViewChild, computed, effect, inject, OnInit } from '@angular/core';
 import { TitleCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
@@ -6,7 +6,6 @@ import { KnsDomainAsset } from '../../../../../../../../services/kns-api/dtos/kn
 import { KnsListService } from '../../../../../../../../services/assets-manager/kns-list.service';
 import { InfiniteScrollDirective } from '../../../../../../../../directives/infinite-scroll.directive';
 import { L1_PAGINATION_CONFIG } from '../../../../../../../../services/assets-manager/interfaces/pagination-state.interface';
-import { Subject } from 'rxjs';
 
 @Component({
   selector: 'app-kns-summary',
@@ -17,29 +16,50 @@ import { Subject } from 'rxjs';
     '[class.full-width]': 'true',
   },
 })
-export class KnsSummaryComponent implements OnInit, OnDestroy {
+export class KnsSummaryComponent implements OnInit {
   // Services - portfolio pattern
   knsListService = inject(KnsListService);
   private router = inject(Router);
-  private destroy$ = new Subject<void>();
+  private pendingThresholdReset = false;
+  private _infiniteScrollDirective?: InfiniteScrollDirective;
   
   // Configuration
-  private readonly config = L1_PAGINATION_CONFIG.kns;
+  readonly config = L1_PAGINATION_CONFIG.kns;
   
   // Loading skeletons - portfolio pattern with opacity cascade
-  loadingSkeletons: unknown[] = Array.from({ length: 6 }).map(() => ({}));
+  private static readonly SKELETON_COUNT = 6;
+  loadingSkeletons: unknown[] = Array.from({ length: KnsSummaryComponent.SKELETON_COUNT }).map(() => ({}));
   
   // Reference to infinite scroll directive
-  private infiniteScrollDirective = viewChild(InfiniteScrollDirective);
+  @ViewChild(InfiniteScrollDirective)
+  set infiniteScrollDirective(directive: InfiniteScrollDirective | undefined) {
+    this._infiniteScrollDirective = directive;
+
+    if (directive && this.pendingThresholdReset) {
+      directive.resetThreshold();
+      this.pendingThresholdReset = false;
+    }
+  }
+
+  get infiniteScrollDirective(): InfiniteScrollDirective | undefined {
+    return this._infiniteScrollDirective;
+  }
 
   constructor() {
     // Watch for data growth from auto-reload merge and reset scroll threshold
     effect(() => {
       const shouldCheck = this.knsListService.shouldCheckScrollPosition();
-      if (shouldCheck && this.infiniteScrollDirective()) {
-        this.infiniteScrollDirective()?.resetThreshold();
+      if (!shouldCheck) {
+        return;
       }
-    });
+
+      if (this.infiniteScrollDirective) {
+        this.infiniteScrollDirective.resetThreshold();
+        this.pendingThresholdReset = false;
+      } else {
+        this.pendingThresholdReset = true;
+      }
+    }, { allowSignalWrites: true });
   }
 
   // Data from service - portfolio pattern
@@ -70,11 +90,6 @@ export class KnsSummaryComponent implements OnInit, OnDestroy {
     if (loadMore && !this.knsListService.isFetching() && this.hasMore()) {
       this.knsListService.loadMore();
     }
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 
   formatDate(dateString: string): string {

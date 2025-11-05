@@ -1,16 +1,16 @@
 import { signal, WritableSignal, computed, Signal } from '@angular/core';
-import { BehaviorSubject, Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { BaseAssetsStoreService } from '../assets-manager/assets-stores/base-assets-store.service';
 
-export interface PaginatedAsset<T> {
-  data: T;
-  metadata?: any;
+export interface PaginatedAsset<TAsset, TMetadata> {
+  data: TAsset;
+  metadata?: TMetadata | null;
   isLoadingMetadata?: boolean;
   metadataError?: string;
 }
 
-export interface PaginationState {
-  currentPage: number;
+interface MetadataPaginationState {
+  visibleCount: number;
   pageSize: number;
   totalItems: number;
   hasMore: boolean;
@@ -19,9 +19,9 @@ export interface PaginationState {
 export abstract class BaseAssetMetadataService<TAsset, TMetadata> {
   // Signals for reactive state
   protected allAssets: TAsset[] = [];
-  protected paginatedAssetsSignal: WritableSignal<PaginatedAsset<TAsset>[]> = signal([]);
-  protected paginationStateSignal: WritableSignal<PaginationState> = signal({
-    currentPage: 0,
+  protected paginatedAssetsSignal: WritableSignal<PaginatedAsset<TAsset, TMetadata>[]> = signal([]);
+  protected paginationStateSignal: WritableSignal<MetadataPaginationState> = signal({
+    visibleCount: 0,
     pageSize: 20,
     totalItems: 0,
     hasMore: true
@@ -30,11 +30,10 @@ export abstract class BaseAssetMetadataService<TAsset, TMetadata> {
 
   // Subjects for scroll handling
   protected scrollSubject = new Subject<number>();
-  protected loadMoreSubject = new BehaviorSubject<boolean>(false);
 
   // Public readable signals
-  public readonly paginatedAssets: Signal<PaginatedAsset<TAsset>[]> = this.paginatedAssetsSignal.asReadonly();
-  public readonly paginationState: Signal<PaginationState> = this.paginationStateSignal.asReadonly();
+  public readonly paginatedAssets: Signal<PaginatedAsset<TAsset, TMetadata>[]> = this.paginatedAssetsSignal.asReadonly();
+  public readonly paginationState: Signal<MetadataPaginationState> = this.paginationStateSignal.asReadonly();
   public readonly isLoading: Signal<boolean> = this.isLoadingSignal.asReadonly();
 
   // Computed signals
@@ -97,7 +96,7 @@ export abstract class BaseAssetMetadataService<TAsset, TMetadata> {
     this.paginatedAssetsSignal.set([]);
     this.paginationStateSignal.update(state => ({
       ...state,
-      currentPage: 0,
+      visibleCount: 0,
       hasMore: true
     }));
   }
@@ -110,7 +109,7 @@ export abstract class BaseAssetMetadataService<TAsset, TMetadata> {
     const previousPaginated = this.paginatedAssetsSignal();
     
     // Create a map of existing cached metadata by asset ID
-    const metadataCache = new Map<string, { metadata?: any, isLoadingMetadata?: boolean, metadataError?: string }>();
+    const metadataCache = new Map<string, { metadata?: TMetadata | null; isLoadingMetadata?: boolean; metadataError?: string }>();
     previousPaginated.forEach(item => {
       const id = this.getAssetId(item.data);
       if (item.metadata || item.isLoadingMetadata) {
@@ -126,17 +125,22 @@ export abstract class BaseAssetMetadataService<TAsset, TMetadata> {
     this.allAssets = assets;
     
     // Update pagination state
-    this.paginationStateSignal.update(state => ({
-      ...state,
-      totalItems: this.allAssets.length,
-      hasMore: this.allAssets.length > state.currentPage * state.pageSize
-    }));
+    let latestVisibleCount = 0;
+    this.paginationStateSignal.update(state => {
+      const clampedVisible = Math.min(state.visibleCount, this.allAssets.length);
+      latestVisibleCount = clampedVisible;
+      return {
+        ...state,
+        visibleCount: clampedVisible,
+        totalItems: this.allAssets.length,
+        hasMore: clampedVisible < this.allAssets.length
+      };
+    });
+
+    const visibleCount = latestVisibleCount;
+    const visibleAssets = assets.slice(0, visibleCount);
     
-    // Rebuild paginated assets, preserving cached metadata
-    const currentPageSize = this.paginationStateSignal().currentPage * this.paginationStateSignal().pageSize;
-    const visibleAssets = assets.slice(0, currentPageSize);
-    
-    const rebuiltPaginated: PaginatedAsset<TAsset>[] = visibleAssets.map(asset => {
+    const rebuiltPaginated: PaginatedAsset<TAsset, TMetadata>[] = visibleAssets.map(asset => {
       const id = this.getAssetId(asset);
       const cached = metadataCache.get(id);
       
@@ -163,20 +167,25 @@ export abstract class BaseAssetMetadataService<TAsset, TMetadata> {
 
     try {
       const state = this.paginationStateSignal();
-      const startIndex = state.currentPage * state.pageSize;
-      const endIndex = startIndex + state.pageSize;
+      const startIndex = state.visibleCount;
 
       // Get next batch of assets
       const assets = this.getAssetsFromStore();
+      this.allAssets = assets;
+      const endIndex = Math.min(startIndex + state.pageSize, assets.length);
       const nextBatch = assets.slice(startIndex, endIndex);
 
       if (nextBatch.length === 0) {
-        this.paginationStateSignal.update(s => ({ ...s, hasMore: false }));
+        this.paginationStateSignal.update(s => ({
+          ...s,
+          hasMore: false,
+          visibleCount: Math.min(s.visibleCount, assets.length)
+        }));
         return;
       }
 
       // Create paginated assets without metadata
-      const paginatedBatch: PaginatedAsset<TAsset>[] = nextBatch.map(asset => ({
+      const paginatedBatch: PaginatedAsset<TAsset, TMetadata>[] = nextBatch.map(asset => ({
         data: asset,
         metadata: undefined,
         isLoadingMetadata: false
@@ -186,10 +195,11 @@ export abstract class BaseAssetMetadataService<TAsset, TMetadata> {
       this.paginatedAssetsSignal.update(items => [...items, ...paginatedBatch]);
 
       // Update pagination state
-      this.paginationStateSignal.update(state => ({
-        ...state,
-        currentPage: state.currentPage + 1,
-        hasMore: endIndex < assets.length
+      this.paginationStateSignal.update(s => ({
+        ...s,
+        visibleCount: endIndex,
+        hasMore: endIndex < assets.length,
+        totalItems: assets.length
       }));
 
       // Load metadata for visible items (defer to next tick)
@@ -236,7 +246,7 @@ export abstract class BaseAssetMetadataService<TAsset, TMetadata> {
     return indices;
   }
 
-  private async loadMetadataForItems(items: PaginatedAsset<TAsset>[]): Promise<void> {
+  private async loadMetadataForItems(items: PaginatedAsset<TAsset, TMetadata>[]): Promise<void> {
     const promises = items.map(async (item) => {
       const assetId = this.getAssetId(item.data);
 
@@ -262,7 +272,7 @@ export abstract class BaseAssetMetadataService<TAsset, TMetadata> {
     await Promise.all(promises);
   }
 
-  private updateItemMetadataState(assetId: string, updates: Partial<PaginatedAsset<TAsset>>): void {
+  private updateItemMetadataState(assetId: string, updates: Partial<PaginatedAsset<TAsset, TMetadata>>): void {
     this.paginatedAssetsSignal.update(items =>
       items.map(item =>
         this.getAssetId(item.data) === assetId

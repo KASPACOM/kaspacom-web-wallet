@@ -1,20 +1,29 @@
 import { Directive, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, NgZone } from '@angular/core';
 import { fromEvent, Subject, throttleTime, takeUntil } from 'rxjs';
 
+/**
+ * Lightweight infinite scroll directive.
+ *
+ * - Detects the nearest scrollable ancestor when no container is provided.
+ * - Supports element-based and window-based scroll contexts.
+ * - Emits `thresholdReached` once per content growth cycle and resets when height increases.
+ */
 @Directive({
   selector: '[appInfiniteScroll]',
   standalone: true
 })
 export class InfiniteScrollDirective implements OnInit, OnDestroy {
-  @Input() scrollThreshold = 70; // Percentage of scroll before triggering
-  @Input() scrollContainer?: HTMLElement; // Optional container, defaults to window
+  @Input() scrollThreshold = 70;
+  @Input() scrollDebounce = 120;
+  @Input() scrollContainer?: HTMLElement | Window;
   @Output() scrolled = new EventEmitter<number>(); // Emits scroll percentage
   @Output() thresholdReached = new EventEmitter<void>(); // Emits when threshold is reached
 
   private destroy$ = new Subject<void>();
   private lastScrollHeight = 0;
   private hasReachedThreshold = false; // Track if threshold was already reached
-  private actualScrollContainer?: HTMLElement; // The detected or provided scroll container
+  private actualScrollContainer?: HTMLElement | Window; // The detected or provided scroll container
+  private isWindowContainer = false;
 
   constructor(
     private elementRef: ElementRef<HTMLElement>,
@@ -24,34 +33,43 @@ export class InfiniteScrollDirective implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Find the scrollable container (provided or auto-detected)
     this.actualScrollContainer = this.scrollContainer || this.findScrollableParent();
-    
+    this.isWindowContainer = this.actualScrollContainer instanceof Window;
+
     if (!this.actualScrollContainer) {
-      console.error('[InfiniteScroll] ❌ ERROR: No scrollable parent found! Make sure a parent element has overflow-y: auto or scroll.');
+      console.error('[InfiniteScroll] ERROR: No scrollable parent found. Ensure a parent element has overflow-y set to auto or scroll.');
       return;
     }
-    
+
+    const debounceMs = Math.max(0, this.scrollDebounce);
+
     this.zone.runOutsideAngular(() => {
       fromEvent(this.actualScrollContainer!, 'scroll')
         .pipe(
-          throttleTime(120), // 120ms debounce to prevent excessive triggers
+          throttleTime(debounceMs),
           takeUntil(this.destroy$)
         )
         .subscribe(() => {
           this.zone.run(() => {
-            const currentHeight = this.actualScrollContainer!.scrollHeight;
-            
+            const metrics = this.getScrollMetrics();
+            if (!metrics) {
+              return;
+            }
+
+            const currentHeight = metrics.scrollHeight;
+
             if (currentHeight > this.lastScrollHeight && this.lastScrollHeight > 0) {
               // Height increased = new content was loaded, reset threshold flag for next page
               this.hasReachedThreshold = false;
             }
             this.lastScrollHeight = currentHeight;
             
-            const scrollPercentage = this.calculateScrollPercentage();
+            const scrollPercentage = this.calculateScrollPercentage(metrics);
+            const effectiveThreshold = Math.min(100, Math.max(0, this.scrollThreshold));
             
             this.scrolled.emit(scrollPercentage);
             
             // Only trigger when crossing threshold from below, not when already past it
-            if (scrollPercentage >= this.scrollThreshold && !this.hasReachedThreshold) {
+            if (scrollPercentage >= effectiveThreshold && !this.hasReachedThreshold) {
               this.hasReachedThreshold = true;
               this.thresholdReached.emit();
             }
@@ -71,21 +89,27 @@ export class InfiniteScrollDirective implements OnInit, OnDestroy {
    */
   public checkScroll(): void {
     if (!this.actualScrollContainer) {
-      console.warn('[InfiniteScroll] ⚠️ checkScroll() called but no scroll container found');
+      console.warn('[InfiniteScroll] WARN: checkScroll() called but no scroll container found');
       return;
     }
-    
-    const currentHeight = this.actualScrollContainer.scrollHeight;
-    
+
+    const metrics = this.getScrollMetrics();
+    if (!metrics) {
+      return;
+    }
+
+    const currentHeight = metrics.scrollHeight;
+
     if (currentHeight > this.lastScrollHeight && this.lastScrollHeight > 0) {
       this.hasReachedThreshold = false;
     }
     this.lastScrollHeight = currentHeight;
     
-    const scrollPercentage = this.calculateScrollPercentage();
+    const scrollPercentage = this.calculateScrollPercentage(metrics);
+    const effectiveThreshold = Math.min(100, Math.max(0, this.scrollThreshold));
     this.scrolled.emit(scrollPercentage);
     
-    if (scrollPercentage >= this.scrollThreshold && !this.hasReachedThreshold) {
+    if (scrollPercentage >= effectiveThreshold && !this.hasReachedThreshold) {
       this.hasReachedThreshold = true;
       this.thresholdReached.emit();
     }
@@ -98,7 +122,11 @@ export class InfiniteScrollDirective implements OnInit, OnDestroy {
    */
   public resetThreshold(): void {
     if (this.actualScrollContainer) {
-      const currentHeight = this.actualScrollContainer.scrollHeight;
+      const metrics = this.getScrollMetrics();
+      if (!metrics) {
+        return;
+      }
+      const currentHeight = metrics.scrollHeight;
       this.lastScrollHeight = currentHeight;
       this.hasReachedThreshold = false;
     }
@@ -116,33 +144,59 @@ export class InfiniteScrollDirective implements OnInit, OnDestroy {
     while (parent && depth < maxDepth) {
       const computed = window.getComputedStyle(parent);
       const overflowY = computed.overflowY;
-      
-      if (overflowY === 'auto' || overflowY === 'scroll') {
+
+      if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
         return parent;
       }
       
+      if (parent === document.body || parent === document.documentElement) {
+        break;
+      }
+
       parent = parent.parentElement;
       depth++;
     }
     
-    console.error(`[InfiniteScroll] ❌ No scrollable parent found after searching ${depth} levels`);
+    console.error(`[InfiniteScroll] ERROR: No scrollable parent found after searching ${depth} levels`);
     return undefined;
   }
 
-  private calculateScrollPercentage(): number {
-    if (!this.actualScrollContainer) {
-      return 0;
-    }
-    
-    const element = this.actualScrollContainer;
-    const scrollTop = element.scrollTop;
-    const scrollHeight = element.scrollHeight;
-    const clientHeight = element.clientHeight;
-    
+  private calculateScrollPercentage(metrics: ScrollMetrics): number {
+    const { scrollTop, scrollHeight, clientHeight } = metrics;
+
     if (scrollHeight - clientHeight === 0) {
       return 100;
     }
-    
-    return (scrollTop / (scrollHeight - clientHeight)) * 100;
+
+    const progress = (scrollTop / (scrollHeight - clientHeight)) * 100;
+    return Math.min(100, Math.max(0, progress));
   }
+
+  private getScrollMetrics(): ScrollMetrics | undefined {
+    if (!this.actualScrollContainer) {
+      return undefined;
+    }
+
+    if (this.isWindowContainer) {
+      const doc = document.documentElement;
+      const body = document.body;
+      const scrollTop = window.pageYOffset || doc.scrollTop || body.scrollTop || 0;
+      const scrollHeight = Math.max(doc.scrollHeight, body.scrollHeight);
+      const clientHeight = doc.clientHeight;
+      return { scrollTop, scrollHeight, clientHeight };
+    }
+
+    const element = this.actualScrollContainer as HTMLElement;
+    return {
+      scrollTop: element.scrollTop,
+      scrollHeight: element.scrollHeight,
+      clientHeight: element.clientHeight
+    };
+  }
+}
+
+interface ScrollMetrics {
+  scrollTop: number;
+  scrollHeight: number;
+  clientHeight: number;
 }

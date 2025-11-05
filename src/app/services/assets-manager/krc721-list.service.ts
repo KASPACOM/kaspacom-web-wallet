@@ -244,7 +244,7 @@ export class Krc721ListService {
         error: result.error
       };
     } catch (error) {
-      console.error('[KRC721ListService] ❌ Exception during loadMore:', error);
+      console.error('[KRC721ListService] Exception during loadMore:', error);
       this.paginationState.update(s => ({
         ...s,
         isLoading: false

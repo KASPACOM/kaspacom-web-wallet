@@ -243,7 +243,7 @@ export class KnsListService {
         error: result.error
       };
     } catch (error) {
-      console.error('[KNSListService] ❌ Exception during loadMore:', error);
+      console.error('[KNSListService] Exception during loadMore:', error);
       this.paginationState.update(s => ({
         ...s,
         isLoading: false

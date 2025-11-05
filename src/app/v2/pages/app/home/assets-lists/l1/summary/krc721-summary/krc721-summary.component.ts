@@ -1,13 +1,13 @@
-import { Component, computed, inject, OnInit, OnDestroy, ElementRef, ViewChild, effect } from '@angular/core';
+import { Component, ViewChild, computed, inject, OnInit, OnDestroy, ElementRef, DestroyRef } from '@angular/core';
 import { TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { INftWithMetadata } from '../../../../../common/interfaces/nft.interface';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
 import { Krc721MetadataService } from '../../../../../../../../services/asset-metadata/krc721-metadata.service';
 import { InfiniteScrollDirective } from '../../../../../../../../directives/infinite-scroll.directive';
-import { Subject, takeUntil } from 'rxjs';
 import { Krc721ListService } from '../../../../../../../../services/assets-manager/krc721-list.service';
 import { L1_PAGINATION_CONFIG } from '../../../../../../../../services/assets-manager/interfaces/pagination-state.interface';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-krc721-summary',
@@ -24,38 +24,84 @@ export class Krc721SummaryComponent implements OnInit, OnDestroy {
   private krc721MetadataService = inject(Krc721MetadataService);
   private router = inject(Router);
   private elementRef = inject(ElementRef);
-  private destroy$ = new Subject<void>();
+  private destroyRef = inject(DestroyRef);
+  private metadataInitialized = false;
+  private pendingThresholdReset = false;
+  private _infiniteScrollDirective?: InfiniteScrollDirective;
   
   // Reference to the infinite scroll directive
-  @ViewChild(InfiniteScrollDirective) infiniteScrollDirective?: InfiniteScrollDirective;
+  @ViewChild(InfiniteScrollDirective)
+  set infiniteScrollDirective(directive: InfiniteScrollDirective | undefined) {
+    this._infiniteScrollDirective = directive;
+
+    if (directive && this.pendingThresholdReset) {
+      directive.resetThreshold();
+      this.pendingThresholdReset = false;
+    }
+  }
+
+  get infiniteScrollDirective(): InfiniteScrollDirective | undefined {
+    return this._infiniteScrollDirective;
+  }
   
   // Configuration
-  private readonly config = L1_PAGINATION_CONFIG.krc721;
+  readonly config = L1_PAGINATION_CONFIG.krc721;
   
   // Loading skeletons - portfolio pattern with opacity cascade
-  loadingSkeletons: unknown[] = Array.from({ length: 8 }).map(() => ({}));
+  private static readonly SKELETON_COUNT = 8;
+  loadingSkeletons: unknown[] = Array.from({ length: Krc721SummaryComponent.SKELETON_COUNT }).map(() => ({}));
   
   constructor() {
-    // Watch for data growing from auto-reload merge
-    // Effect in constructor HAS injection context ✅
-    effect(() => {
-      const shouldCheck = this.krc721ListService.shouldCheckScrollPosition();
-      if (shouldCheck && this.infiniteScrollDirective) {
-        this.infiniteScrollDirective.resetThreshold();
-      }
-    });
+    toObservable(this.krc721ListService.nfts)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(nfts => {
+        if (!nfts || nfts.length === 0) {
+          if (this.metadataInitialized) {
+            this.krc721MetadataService.reset();
+          }
+          this.metadataInitialized = false;
+          return;
+        }
+
+        if (!this.metadataInitialized) {
+          this.krc721MetadataService.initialize(nfts);
+          this.metadataInitialized = true;
+          return;
+        }
+
+        this.krc721MetadataService.updateAssets(nfts);
+      });
+
+    toObservable(this.krc721ListService.shouldCheckScrollPosition)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(shouldReset => {
+        if (!shouldReset) {
+          return;
+        }
+
+        if (this.infiniteScrollDirective) {
+          this.infiniteScrollDirective.resetThreshold();
+          this.pendingThresholdReset = false;
+        } else {
+          this.pendingThresholdReset = true;
+        }
+      });
   }
 
   // Data from service - portfolio pattern
   nfts = computed<INftWithMetadata[]>(() => {
     const rawNfts = this.krc721ListService.nfts();
     const paginatedMetadata = this.krc721MetadataService.paginatedAssets();
+
+    const metadataById = new Map<string, typeof paginatedMetadata[number]>();
+    paginatedMetadata.forEach(item => {
+      const assetId = `${item.data.tick}-${item.data.tokenId}`;
+      metadataById.set(assetId, item);
+    });
     
     // Merge NFT data with metadata
     return rawNfts.map(nft => {
-      const metadataItem = paginatedMetadata.find(
-        item => item.data.tick === nft.tick && item.data.tokenId === nft.tokenId
-      );
+      const metadataItem = metadataById.get(`${nft.tick}-${nft.tokenId}`);
       
       const metadata = metadataItem?.metadata || nft.metadata;
       
@@ -87,51 +133,7 @@ export class Krc721SummaryComponent implements OnInit, OnDestroy {
     // This ensures clean state when switching tabs (component destroyed/recreated)
     // But list service persists as singleton, so we manually reset
     this.krc721ListService.reset();
-    
-    // Initialize metadata service with NFT data
-    // Watch for changes in NFT data and update metadata service
-    const nftsEffect = computed(() => this.krc721ListService.nfts());
-    
-    // Subscribe to NFT changes and reinitialize metadata service
-    // This ensures metadata stays in sync with loaded NFTs
-    this.destroy$.pipe(takeUntil(this.destroy$)).subscribe();
-    
-    // Watch nfts signal and initialize metadata
-    const subscription = {
-      next: (nfts: unknown) => {
-        this.krc721MetadataService.initialize(nfts as any);
-      }
-    };
-    
-    // Manual subscription to computed signal changes
-    let previousNfts = nftsEffect();
-    let previousLength = previousNfts?.length || 0;
-    if (previousNfts && previousNfts.length > 0) {
-      // Initial load: use initialize() to set up everything
-      this.krc721MetadataService.initialize(previousNfts);
-    }
-    
-    // Poll for changes (smart update - preserves cached metadata)
-    // Uses updateAssets() instead of initialize() to keep cached metadata for existing NFTs
-    const interval = setInterval(() => {
-      const currentNfts = nftsEffect();
-      const currentLength = currentNfts?.length || 0;
-      
-      // Check if list changed (length or reference)
-      if (currentNfts !== previousNfts) {
-        previousNfts = currentNfts;
-        previousLength = currentLength;
-        
-        if (currentNfts && currentNfts.length > 0) {
-          // Use updateAssets() to preserve cached metadata instead of initialize()
-          this.krc721MetadataService.updateAssets(currentNfts as any);
-        }
-      }
-    }, 100);
-    
-    this.destroy$.pipe(takeUntil(this.destroy$)).subscribe({
-      complete: () => clearInterval(interval)
-    });
+    this.krc721MetadataService.reset();
   }
 
   onScrolled(percentage: number): void {
@@ -152,8 +154,9 @@ export class Krc721SummaryComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+    this.metadataInitialized = false;
+    this.pendingThresholdReset = false;
+    this.krc721MetadataService.reset();
   }
 
   onNftClick(nft: INftWithMetadata): void {

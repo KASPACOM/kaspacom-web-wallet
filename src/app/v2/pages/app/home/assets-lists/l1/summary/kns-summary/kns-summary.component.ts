@@ -1,4 +1,4 @@
-import { Component, ViewChild, computed, effect, inject, OnInit } from '@angular/core';
+import { Component, ViewChild, computed, inject, OnInit, DestroyRef } from '@angular/core';
 import { TitleCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
@@ -6,6 +6,7 @@ import { KnsDomainAsset } from '../../../../../../../../services/kns-api/dtos/kn
 import { KnsListService } from '../../../../../../../../services/assets-manager/kns-list.service';
 import { InfiniteScrollDirective } from '../../../../../../../../directives/infinite-scroll.directive';
 import { L1_PAGINATION_CONFIG } from '../../../../../../../../services/assets-manager/interfaces/pagination-state.interface';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-kns-summary',
@@ -20,6 +21,7 @@ export class KnsSummaryComponent implements OnInit {
   // Services - portfolio pattern
   knsListService = inject(KnsListService);
   private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
   private pendingThresholdReset = false;
   private _infiniteScrollDirective?: InfiniteScrollDirective;
   
@@ -46,20 +48,20 @@ export class KnsSummaryComponent implements OnInit {
   }
 
   constructor() {
-    // Watch for data growth from auto-reload merge and reset scroll threshold
-    effect(() => {
-      const shouldCheck = this.knsListService.shouldCheckScrollPosition();
-      if (!shouldCheck) {
-        return;
-      }
+    toObservable(this.knsListService.shouldCheckScrollPosition)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(shouldCheck => {
+        if (!shouldCheck) {
+          return;
+        }
 
-      if (this.infiniteScrollDirective) {
-        this.infiniteScrollDirective.resetThreshold();
-        this.pendingThresholdReset = false;
-      } else {
-        this.pendingThresholdReset = true;
-      }
-    }, { allowSignalWrites: true });
+        if (this.infiniteScrollDirective) {
+          this.infiniteScrollDirective.resetThreshold();
+          this.pendingThresholdReset = false;
+        } else {
+          this.pendingThresholdReset = true;
+        }
+      });
   }
 
   // Data from service - portfolio pattern

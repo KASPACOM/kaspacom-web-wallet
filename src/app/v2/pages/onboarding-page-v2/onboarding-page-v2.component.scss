@@ -126,11 +126,12 @@
     border-radius: 32px;
     background: linear-gradient(
       160deg,
-      rgba(22, 30, 35, 0.95) 0%,
-      rgba(13, 19, 22, 0.95) 100%
+      rgba(22, 30, 35, 0.75) 0%,
+      rgba(13, 19, 22, 0.25) 100%
     );
     box-shadow: 0 40px 60px rgba(0, 0, 0, 0.55);
     overflow: hidden;
+    backdrop-filter: blur(6px);
   }
 
   &__notch {
@@ -165,6 +166,14 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+  }
+
+  &__panel-logo {
+    display: none;
+  }
+
+  &__mobile-social {
+    display: none;
   }
 
   &__restart {
@@ -384,6 +393,22 @@
     color: var(--warning-color, #FFB800);
   }
 
+  &__delete-confirmation {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: left;
+  }
+
+  &__delete-prompt {
+    margin: 0;
+    color: var(--text-secondary, #a0a0a0);
+  }
+
+  &__delete-input {
+    width: 100%;
+  }
+
   &__delete-actions {
     display: flex;
     flex-direction: column;
@@ -453,6 +478,8 @@
       padding-right: 0;
       border-radius: 0;
       box-shadow: none;
+      background: none;
+      backdrop-filter: blur(12px);
     }
 
     &__panel-header {
@@ -466,7 +493,21 @@
     }
 
     &__panel-description {
-      text-align: left;
+      text-align: center;
+    }
+
+    &__panel-logo {
+      display: block;
+      width: min(300px, 80vw);
+      height: auto;
+      margin: 16px auto 12px;
+    }
+
+    &__mobile-social {
+      display: flex;
+      justify-content: center;
+      padding: 24px 20px 16px;
+      margin-top: auto;
     }
 
     &__delete-overlay {
@@ -476,6 +517,14 @@
     &__delete-dialog {
       padding: 24px 20px;
       max-height: calc(100vh - 32px);
+    }
+
+    &__welcome-illustration {
+      width: min(320px, 80vw);
+    }
+
+    &__backdrop {
+      opacity: 0.135; // 70% lower than default 0.45
     }
   }
 }

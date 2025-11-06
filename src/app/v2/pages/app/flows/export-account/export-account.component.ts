@@ -4,6 +4,8 @@ import { KcButtonComponent, NotificationService } from '@kaspacom/ui';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
 import { WalletService } from '../../../../../services/wallet.service';
+import { FormsModule } from '@angular/forms';
+import { PasswordManagerService } from '../../../../../services/password-manager.service';
 
 interface ExportAccountFlowData {
   walletIdWithAccount?: string;
@@ -12,19 +14,24 @@ interface ExportAccountFlowData {
 @Component({
   selector: 'app-export-account',
   standalone: true,
-  imports: [CommonModule, KcButtonComponent],
+  imports: [CommonModule, KcButtonComponent, FormsModule],
   templateUrl: './export-account.component.html',
   styleUrl: './export-account.component.scss',
 })
 export class ExportAccountComponent extends FlowPageBaseComponent {
   private walletService = inject(WalletService);
   private notificationService = inject(NotificationService);
+  private passwordManagerService = inject(PasswordManagerService);
 
   walletName = signal<string>('');
   accountName = signal<string | null>(null);
   derivedPath = signal<string | null>(null);
   privateKey = signal<string>('');
   loadError = signal<boolean>(false);
+  currentStep = signal<'password' | 'export'>('password');
+  password = signal<string>('');
+  passwordError = signal<string | null>(null);
+  isVerifying = signal<boolean>(false);
 
   override get config(): IFlowPageConfig {
     return {
@@ -39,7 +46,52 @@ export class ExportAccountComponent extends FlowPageBaseComponent {
 
   override ngOnInit(): void {
     super.ngOnInit();
-    this.loadAccountData();
+  }
+
+  onPasswordInput(): void {
+    if (this.passwordError()) {
+      this.passwordError.set(null);
+    }
+  }
+
+  async onVerifyPassword(): Promise<void> {
+    const passwordValue = this.password().trim();
+
+    this.passwordError.set(null);
+    this.loadError.set(false);
+
+    if (!passwordValue) {
+      this.passwordError.set('Please enter your password');
+      return;
+    }
+
+    this.isVerifying.set(true);
+
+    try {
+      const isValid = await this.passwordManagerService.checkAndLoadPassword(
+        passwordValue,
+      );
+
+      if (!isValid) {
+        this.passwordError.set('Incorrect password. Please try again.');
+        this.password.set('');
+        return;
+      }
+
+      this.password.set('');
+      const loaded = this.loadAccountData();
+      this.currentStep.set('export');
+
+      if (!loaded) {
+        return;
+      }
+    } catch (error) {
+      console.error('Password verification error:', error);
+      this.passwordError.set('Failed to verify password');
+      return;
+    } finally {
+      this.isVerifying.set(false);
+    }
   }
 
   async copyPrivateKey(): Promise<void> {
@@ -110,14 +162,15 @@ export class ExportAccountComponent extends FlowPageBaseComponent {
     this.navigateBack();
   }
 
-  private loadAccountData(): void {
+  private loadAccountData(): boolean {
+    this.loadError.set(false);
     const config = this.getCurrentConfig();
     const data = (config?.data || {}) as ExportAccountFlowData;
     const walletIdWithAccount = data.walletIdWithAccount;
 
     if (!walletIdWithAccount) {
       this.loadError.set(true);
-      return;
+      return false;
     }
 
     const wallet = this.walletService.getWalletByIdAndAccount(
@@ -126,7 +179,7 @@ export class ExportAccountComponent extends FlowPageBaseComponent {
 
     if (!wallet) {
       this.loadError.set(true);
-      return;
+      return false;
     }
 
     this.walletName.set(wallet.getName());
@@ -138,7 +191,9 @@ export class ExportAccountComponent extends FlowPageBaseComponent {
     } catch (error) {
       console.error('Failed to resolve private key', error);
       this.loadError.set(true);
+      return false;
     }
+    return true;
   }
 
   private buildExportFileContent(privateKey: string): string {

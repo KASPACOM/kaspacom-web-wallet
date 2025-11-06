@@ -10,6 +10,20 @@
       Are you sure you want to delete the wallet <strong>{{ walletName }}</strong>?
       This will remove all accounts associated with this wallet from this device.
     </p>
+
+    <div class="delete-confirmation__instructions">
+      <span class="delete-confirmation__prompt">
+        Type <strong>{{ deleteConfirmationPhrase }}</strong> to confirm.
+      </span>
+    </div>
+
+    <kc-input
+      class="delete-confirmation__input"
+      [isFullWidth]="true"
+      [placeholder]="deleteConfirmationPhrase"
+      [ngModel]="confirmationInput"
+      (valueChange)="onConfirmationChange($event)"
+    ></kc-input>
   </div>
 
   <div slot="footer" class="button-row">
@@ -26,6 +40,7 @@
       [role]="'danger'"
       [size]="'md'"
       [isFullWidth]="true"
+      [isDisabled]="!canDelete"
       (buttonClick)="onDelete()"
     ></kc-button>
   </div>

@@ -21,6 +21,20 @@
       </div>
     </div>
 
+    <!-- Confirmation Input -->
+    <div class="confirmation-section">
+      <p class="confirmation-instructions">
+        Type <strong>{{ deleteConfirmationPhrase }}</strong> to confirm.
+      </p>
+      <kc-input
+        class="confirmation-input"
+        [placeholder]="deleteConfirmationPhrase"
+        [isFullWidth]="true"
+        [ngModel]="deleteConfirmationInput()"
+        (valueChange)="onDeleteConfirmationChange($event)"
+      ></kc-input>
+    </div>
+
     <!-- Action Buttons -->
     <div class="action-buttons">
       <kc-button
@@ -38,6 +52,7 @@
         role="danger"
         size="lg"
         [isFullWidth]="true"
+        [isDisabled]="!isDeleteConfirmationValid()"
         (buttonClick)="onDeleteWallet()"
         class="delete-wallet-button">
       </kc-button>

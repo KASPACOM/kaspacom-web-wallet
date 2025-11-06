@@ -16,6 +16,12 @@
           </div>
         </div> -->
       </div>
+      <div class="password-notice">
+        <p class="password-notice__message typo-text-3 text-medium">
+          <span class="password-notice__label text-light">Important:</span>
+          This password unlocks your wallet data. If you lose it, you will not be able to recover your wallet data. Please make sure to save it somewhere safe.
+        </p>
+      </div>
       <form [formGroup]="passwordForm" (ngSubmit)="onSubmit()">
         <div class="flex column gap-4">
           <kc-input

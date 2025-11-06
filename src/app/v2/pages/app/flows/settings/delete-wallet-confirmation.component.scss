@@ -67,6 +67,24 @@
   flex: 1;
 }
 
+.confirmation-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.confirmation-instructions {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary, #a0a0a0);
+}
+
+.confirmation-input {
+  width: 100%;
+}
+
 // Action Buttons Section
 .action-buttons {
   display: flex;

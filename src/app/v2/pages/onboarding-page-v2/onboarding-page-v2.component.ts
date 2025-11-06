@@ -9,7 +9,12 @@ import {
   inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import {
   KcButtonComponent,
@@ -21,6 +26,10 @@ import { ImportExistingFlowComponent } from '../onboarding-page/flows/import-exi
 import { NewWalletFlowComponent } from '../onboarding-page/flows/new-wallet-flow/new-wallet-flow.component';
 import { PasswordManagerService } from '../../../services/password-manager.service';
 import { WalletService } from '../../../services/wallet.service';
+import {
+  DELETE_WALLET_CONFIRMATION_PHRASE,
+  isDeleteWalletConfirmationValid,
+} from '../../shared/constants/delete-wallet.constants';
 
 type LoginPasswordType = 'password' | 'text';
 
@@ -33,6 +42,7 @@ interface PanelCopy {
   selector: 'app-onboarding-page-v2',
   imports: [
     CommonModule,
+    FormsModule,
     ReactiveFormsModule,
     RouterLink,
     KcButtonComponent,
@@ -72,6 +82,11 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
 
   showDeleteConfirmation = signal(false);
   isDeletingWallet = signal(false);
+  deleteConfirmationInput = signal('');
+  readonly deleteConfirmationPhrase = DELETE_WALLET_CONFIRMATION_PHRASE;
+  readonly isDeleteConfirmationValid = computed(() =>
+    isDeleteWalletConfirmationValid(this.deleteConfirmationInput()),
+  );
 
   private ctx!: CanvasRenderingContext2D;
   private nodes: Node[] = [];
@@ -130,6 +145,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
     if (this.isSubmitting()) {
       return;
     }
+    this.deleteConfirmationInput.set('');
     this.showDeleteConfirmation.set(true);
   }
 
@@ -137,11 +153,16 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
     if (this.isDeletingWallet()) {
       return;
     }
+    this.deleteConfirmationInput.set('');
     this.showDeleteConfirmation.set(false);
   }
 
   async confirmDeleteWallet(): Promise<void> {
     if (this.isDeletingWallet()) {
+      return;
+    }
+
+    if (!this.isDeleteConfirmationValid()) {
       return;
     }
 
@@ -165,7 +186,12 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
       this.isDeletingWallet.set(false);
       this.showDeleteConfirmation.set(false);
       this.isSubmitting.set(false);
+      this.deleteConfirmationInput.set('');
     }
+  }
+
+  onDeleteConfirmationInputChange(value: string): void {
+    this.deleteConfirmationInput.set(value ?? '');
   }
 
   getPasswordError(): string {

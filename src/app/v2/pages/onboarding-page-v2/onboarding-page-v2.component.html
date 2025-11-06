@@ -138,7 +138,7 @@
                     role="danger"
                     [isFullWidth]="true"
                     [isDisabled]="isSubmitting()"
-                    (buttonClick)="openDeleteWalletDialog()"
+                    (buttonClick)="openDeleteWalletDialog($event)"
                     [text]="'Delete Wallet'"
                   ></kc-button>
                 </div>
@@ -181,72 +181,6 @@
             }
           </div>
         </div>
-        @if (showDeleteConfirmation()) {
-          <div
-            class="onboarding-v2__delete-overlay"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="deleteWalletDialogTitle"
-          >
-            <div class="onboarding-v2__delete-dialog">
-              <div class="onboarding-v2__delete-warning">
-                <h2
-                  id="deleteWalletDialogTitle"
-                  class="typo-title-3 text-light onboarding-v2__delete-title"
-                >
-                  Are you sure you want to delete your wallet?
-                </h2>
-                <p class="typo-text-2 text-medium onboarding-v2__delete-message">
-                  You are about to delete your wallet. Please make sure you have exported your wallet or saved your wallets separately before deleting.
-                </p>
-                <div class="onboarding-v2__delete-highlight">
-                  <kc-icon
-                    iconClass="icon-info"
-                    [size]="'sm'"
-                    color="var(--warning-color, #FFB800)"
-                  ></kc-icon>
-                  <span class="typo-text-3 text-light onboarding-v2__delete-highlight-text">
-                    Without your seed phrase or backup, you will permanently lose access to your funds.
-                  </span>
-                </div>
-              </div>
-
-              <div class="onboarding-v2__delete-confirmation">
-                <p class="typo-text-3 text-medium onboarding-v2__delete-prompt">
-                  Type <strong>{{ deleteConfirmationPhrase }}</strong> to confirm.
-                </p>
-                <kc-input
-                  class="onboarding-v2__delete-input"
-                  [isFullWidth]="true"
-                  [placeholder]="deleteConfirmationPhrase"
-                  [ngModel]="deleteConfirmationInput()"
-                  [isDisabled]="isDeletingWallet()"
-                  (valueChange)="onDeleteConfirmationInputChange($event)"
-                ></kc-input>
-              </div>
-
-              <div class="onboarding-v2__delete-actions">
-                <kc-button
-                  [text]="'Cancel'"
-                  [variant]="'tertiary'"
-                  [isFullWidth]="true"
-                  (buttonClick)="closeDeleteWalletDialog()"
-                  [isDisabled]="isDeletingWallet()"
-                ></kc-button>
-
-                <kc-button
-                  [text]="'Delete Wallet'"
-                  [variant]="'secondary'"
-                  role="danger"
-                  [isFullWidth]="true"
-                  [isLoading]="isDeletingWallet()"
-                  [isDisabled]="isDeletingWallet() || !isDeleteConfirmationValid()"
-                  (buttonClick)="confirmDeleteWallet()"
-                ></kc-button>
-              </div>
-            </div>
-          </div>
-        }
         <div class="onboarding-v2__mobile-social">
           <div class="onboarding-v2__social-links">
             <a
@@ -294,5 +228,73 @@
       </div>
     </section>
   </div>
+
+  <!-- Delete Wallet Modal - Rendered at root level to avoid overflow clipping -->
+  @if (showDeleteConfirmation()) {
+    <div
+      class="onboarding-v2__delete-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="deleteWalletDialogTitle"
+    >
+      <div class="onboarding-v2__delete-dialog">
+        <div class="onboarding-v2__delete-warning">
+          <h2
+            id="deleteWalletDialogTitle"
+            class="typo-title-3 text-light onboarding-v2__delete-title"
+          >
+            Are you sure you want to delete your wallet?
+          </h2>
+          <p class="typo-text-2 text-medium onboarding-v2__delete-message">
+            You are about to delete your wallet. Please make sure you have exported your wallet or saved your wallets separately before deleting.
+          </p>
+          <div class="onboarding-v2__delete-highlight">
+            <kc-icon
+              iconClass="icon-info"
+              [size]="'sm'"
+              color="var(--warning-color, #FFB800)"
+            ></kc-icon>
+            <span class="typo-text-3 text-light onboarding-v2__delete-highlight-text">
+              Without your seed phrase or backup, you will permanently lose access to your funds.
+            </span>
+          </div>
+        </div>
+
+        <div class="onboarding-v2__delete-confirmation">
+          <p class="typo-text-3 text-medium onboarding-v2__delete-prompt">
+            Type <strong>{{ deleteConfirmationPhrase }}</strong> to confirm.
+          </p>
+          <kc-input
+            class="onboarding-v2__delete-input"
+            [isFullWidth]="true"
+            [placeholder]="deleteConfirmationPhrase"
+            [ngModel]="deleteConfirmationInput()"
+            [isDisabled]="isDeletingWallet()"
+            (valueChange)="onDeleteConfirmationInputChange($event)"
+          ></kc-input>
+        </div>
+
+        <div class="onboarding-v2__delete-actions">
+          <kc-button
+            [text]="'Cancel'"
+            [variant]="'tertiary'"
+            [isFullWidth]="true"
+            (buttonClick)="closeDeleteWalletDialog()"
+            [isDisabled]="isDeletingWallet()"
+          ></kc-button>
+
+          <kc-button
+            [text]="'Delete Wallet'"
+            [variant]="'secondary'"
+            role="danger"
+            [isFullWidth]="true"
+            [isLoading]="isDeletingWallet()"
+            [isDisabled]="isDeletingWallet() || !isDeleteConfirmationValid()"
+            (buttonClick)="confirmDeleteWallet()"
+          ></kc-button>
+        </div>
+      </div>
+    </div>
+  }
 </div>
 

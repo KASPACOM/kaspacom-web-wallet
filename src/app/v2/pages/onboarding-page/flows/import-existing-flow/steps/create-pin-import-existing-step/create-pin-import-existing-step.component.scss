@@ -4,17 +4,20 @@
 
 .password-notice {
   display: flex;
+  align-items: flex-start;
+  gap: 12px;
   width: 100%;
-  padding: 8px 12px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(255, 184, 0, 0.08);
+  border: 1px solid rgba(255, 184, 0, 0.2);
 }
 
 .password-notice__message {
   margin: 0;
   font-size: 0.85rem;
   line-height: 1.4;
+  color: var(--warning-color, #FFB800);
 }
 
 .password-notice__label {

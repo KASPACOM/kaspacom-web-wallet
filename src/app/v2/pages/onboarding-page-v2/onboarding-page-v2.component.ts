@@ -141,7 +141,11 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
     );
   }
 
-  openDeleteWalletDialog(): void {
+  openDeleteWalletDialog(event?: MouseEvent): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
     if (this.isSubmitting()) {
       return;
     }

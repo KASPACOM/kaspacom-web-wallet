@@ -65,7 +65,7 @@
         <div class="onboarding-v2__panel">
           <header class="onboarding-v2__panel-header">
             <div class="onboarding-v2__panel-heading">
-              @if (isWelcome()) {
+              @if (isWelcome() || shouldShowLogin()) {
                 <img
                   class="onboarding-v2__panel-logo"
                   src="/logo.png"

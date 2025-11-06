@@ -58,12 +58,20 @@
             <div class="wallet-item__address">{{ shortenAddress(wallet.address) }}</div>
             <div class="wallet-item__balance">{{ wallet.balanceDisplay }}</div>
           </div>
-          <kc-icon
-            class="wallet-item__trash"
-            [iconClass]="'icon-trash'"
-            [size]="'sm'"
-            (click)="deleteWallet(wallet); $event.stopPropagation()"
-          ></kc-icon>
+          <div class="wallet-item__actions">
+            <kc-icon
+              class="wallet-item__export"
+              [iconClass]="'icon-download'"
+              [size]="'sm'"
+              (click)="exportWalletAccount(wallet); $event.stopPropagation()"
+            ></kc-icon>
+            <kc-icon
+              class="wallet-item__trash"
+              [iconClass]="'icon-trash'"
+              [size]="'sm'"
+              (click)="deleteWallet(wallet); $event.stopPropagation()"
+            ></kc-icon>
+          </div>
         </div>
       }
     </div>

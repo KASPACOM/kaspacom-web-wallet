@@ -1,0 +1,125 @@
+.export-account-wrapper {
+  width: 100%;
+}
+
+.export-account__password-step {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.export-account__password-form {
+  width: 100%;
+  max-width: 360px;
+}
+
+.export-account__password-input {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--white);
+  outline: none;
+  transition: border-color 0.2s ease;
+
+  &::placeholder {
+    color: var(--gray-60);
+  }
+
+  &.error {
+    border-color: rgba(224, 66, 66, 0.8);
+  }
+}
+
+.export-account__password-error {
+  color: var(--red-10);
+}
+
+.export-account {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  &__warning {
+    padding: 20px;
+    border-radius: 16px;
+    background: rgba(224, 66, 66, 0.12);
+    border: 1px solid rgba(224, 66, 66, 0.4);
+    color: var(--red-10);
+    line-height: 1.5;
+  }
+
+  &__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gray-60);
+  }
+
+  &__value {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--white);
+    text-align: right;
+    word-break: break-word;
+  }
+
+  &__key {
+    padding: 20px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    code {
+      display: block;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Source Code Pro', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--white);
+      word-break: break-all;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 16px;
+
+    kc-button {
+      flex: 1;
+    }
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+
+      kc-button {
+        width: 100%;
+      }
+    }
+  }
+}
+
+.export-account__error {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  text-align: center;
+}
+
+

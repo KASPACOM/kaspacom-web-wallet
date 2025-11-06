@@ -1,0 +1,298 @@
+<div class="onboarding-v2">
+  <canvas #graphCanvas class="onboarding-v2__graph-canvas"></canvas>
+  <div class="onboarding-v2__backdrop onboarding-v2__backdrop--first"></div>
+  <div class="onboarding-v2__backdrop onboarding-v2__backdrop--second"></div>
+
+  <div class="onboarding-v2__content">
+    <section class="onboarding-v2__hero">
+      <img class="onboarding-v2__logo" src="/logo.png" alt="Kaspacom Wallet" />
+
+      <div class="onboarding-v2__hero-copy">
+        <h1 class="typo-title-1 text-light">The official KaspaCom wallet</h1>
+        <p class="typo-text-2 text-medium">
+          Create or connect your wallet in a few secure, phone-friendly steps.
+        </p>
+
+        <div class="onboarding-v2__social-links">
+          <a
+            href="https://github.com/KASPACOM/kaspacom-web-wallet"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="onboarding-v2__social-link"
+            aria-label="GitHub"
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"
+                fill="currentColor"
+              />
+            </svg>
+          </a>
+          <a
+            href="https://x.com/KaspaCom"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="onboarding-v2__social-link"
+            aria-label="X (Twitter)"
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+                fill="currentColor"
+              />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="onboarding-v2__device">
+      <div class="onboarding-v2__device-frame">
+        <div class="onboarding-v2__notch"></div>
+
+        <div class="onboarding-v2__panel">
+          <header class="onboarding-v2__panel-header">
+            <div class="onboarding-v2__panel-heading">
+              @if (isWelcome()) {
+                <img
+                  class="onboarding-v2__panel-logo"
+                  src="/logo.png"
+                  alt="KaspaCom Wallet logo"
+                />
+              }
+              <h2 class="typo-title-3 text-light">{{ panelCopy().title }}</h2>
+            </div>
+
+            @if (!shouldShowLogin() && !isWelcome()) {
+              <button
+                class="onboarding-v2__restart"
+                type="button"
+                (click)="resetFlow()"
+              >
+                Start over
+              </button>
+            }
+          </header>
+
+          <p class="typo-text-2 text-medium onboarding-v2__panel-description">
+            {{ panelCopy().description }}
+          </p>
+
+          <div
+            class="onboarding-v2__panel-content"
+            [class.onboarding-v2__panel-content--transitioning]="!shouldShowLogin() && isTransitioning()"
+          >
+            @if (shouldShowLogin()) {
+              <form
+                class="onboarding-v2__login-form"
+                [formGroup]="loginForm"
+                (ngSubmit)="onSubmit()"
+              >
+                <kc-input
+                  formControlName="password"
+                  [placeholder]="'Password'"
+                  [isFullWidth]="true"
+                  [type]="passwordType()"
+                  [isValid]="!isInvalid('password')"
+                  [invalidReason]="getPasswordError()"
+                  [prepadInvalidReason]="true"
+                  [isDisabled]="isSubmitting()"
+                >
+                  <div
+                    (click)="!isSubmitting() && togglePwVisibility()"
+                    [class]="isSubmitting() ? 'onboarding-v2__visibility-toggle onboarding-v2__visibility-toggle--disabled' : 'onboarding-v2__visibility-toggle clickable'"
+                    rightSideSlot
+                  >
+                    <kc-icon
+                      iconClass="{{ passwordIcon() }}"
+                      [size]="'xs'"
+                      [class]="isSubmitting() ? 'disabled-icon' : ''"
+                    ></kc-icon>
+                  </div>
+                </kc-input>
+
+                <div class="onboarding-v2__login-actions">
+                  <kc-button
+                    [isDisabled]="!loginForm.valid || isSubmitting()"
+                    (buttonClick)="loginForm.valid && onSubmit()"
+                    [isFullWidth]="true"
+                    [isLoading]="isSubmitting()"
+                    [text]="'Login'"
+                  ></kc-button>
+
+                  <kc-button
+                    class="onboarding-v2__delete-trigger"
+                    [variant]="'tertiary'"
+                    role="danger"
+                    [isFullWidth]="true"
+                    [isDisabled]="isSubmitting()"
+                    (buttonClick)="openDeleteWalletDialog()"
+                    [text]="'Delete Wallet'"
+                  ></kc-button>
+                </div>
+              </form>
+            } @else {
+              @switch (onboardingStep()) {
+                @case (OnboardingStep.WELCOME) {
+                  <div class="onboarding-v2__welcome">
+                    <div class="onboarding-v2__welcome-visual">
+                      <img
+                        src="/svgs/wallet.svg"
+                        class="onboarding-v2__welcome-illustration"
+                        alt="Wallet illustration"
+                      />
+                    </div>
+
+                    <div class="onboarding-v2__actions">
+                      <kc-button
+                        [text]="'Create new wallet'"
+                        [isFullWidth]="true"
+                        (buttonClick)="createNewWallet()"
+                      ></kc-button>
+
+                      <kc-button
+                        [text]="'Use existing wallet'"
+                        [variant]="'tertiary'"
+                        [isFullWidth]="true"
+                        (buttonClick)="startExistingWallet()"
+                      ></kc-button>
+                    </div>
+                  </div>
+                }
+                @case (OnboardingStep.IMPORT_EXISTING_WALLET) {
+                  <app-import-existing-flow class="onboarding-v2__flow"></app-import-existing-flow>
+                }
+                @case (OnboardingStep.NEW_WALLET) {
+                  <app-new-wallet-flow class="onboarding-v2__flow"></app-new-wallet-flow>
+                }
+              }
+            }
+          </div>
+        </div>
+        @if (showDeleteConfirmation()) {
+          <div
+            class="onboarding-v2__delete-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="deleteWalletDialogTitle"
+          >
+            <div class="onboarding-v2__delete-dialog">
+              <div class="onboarding-v2__delete-warning">
+                <h2
+                  id="deleteWalletDialogTitle"
+                  class="typo-title-3 text-light onboarding-v2__delete-title"
+                >
+                  Are you sure you want to delete your wallet?
+                </h2>
+                <p class="typo-text-2 text-medium onboarding-v2__delete-message">
+                  You are about to delete your wallet. Please make sure you have exported your wallet or saved your wallets separately before deleting.
+                </p>
+                <div class="onboarding-v2__delete-highlight">
+                  <kc-icon
+                    iconClass="icon-info"
+                    [size]="'sm'"
+                    color="var(--warning-color, #FFB800)"
+                  ></kc-icon>
+                  <span class="typo-text-3 text-light onboarding-v2__delete-highlight-text">
+                    Without your seed phrase or backup, you will permanently lose access to your funds.
+                  </span>
+                </div>
+              </div>
+
+              <div class="onboarding-v2__delete-confirmation">
+                <p class="typo-text-3 text-medium onboarding-v2__delete-prompt">
+                  Type <strong>{{ deleteConfirmationPhrase }}</strong> to confirm.
+                </p>
+                <kc-input
+                  class="onboarding-v2__delete-input"
+                  [isFullWidth]="true"
+                  [placeholder]="deleteConfirmationPhrase"
+                  [ngModel]="deleteConfirmationInput()"
+                  [isDisabled]="isDeletingWallet()"
+                  (valueChange)="onDeleteConfirmationInputChange($event)"
+                ></kc-input>
+              </div>
+
+              <div class="onboarding-v2__delete-actions">
+                <kc-button
+                  [text]="'Cancel'"
+                  [variant]="'tertiary'"
+                  [isFullWidth]="true"
+                  (buttonClick)="closeDeleteWalletDialog()"
+                  [isDisabled]="isDeletingWallet()"
+                ></kc-button>
+
+                <kc-button
+                  [text]="'Delete Wallet'"
+                  [variant]="'secondary'"
+                  role="danger"
+                  [isFullWidth]="true"
+                  [isLoading]="isDeletingWallet()"
+                  [isDisabled]="isDeletingWallet() || !isDeleteConfirmationValid()"
+                  (buttonClick)="confirmDeleteWallet()"
+                ></kc-button>
+              </div>
+            </div>
+          </div>
+        }
+        <div class="onboarding-v2__mobile-social">
+          <div class="onboarding-v2__social-links">
+            <a
+              href="https://github.com/KASPACOM/kaspacom-web-wallet"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="onboarding-v2__social-link"
+              aria-label="GitHub"
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"
+                  fill="currentColor"
+                />
+              </svg>
+            </a>
+            <a
+              href="https://x.com/KaspaCom"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="onboarding-v2__social-link"
+              aria-label="X (Twitter)"
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+                  fill="currentColor"
+                />
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+

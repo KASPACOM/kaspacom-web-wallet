@@ -58,12 +58,12 @@ export class SettingsMenuComponent extends FlowPageBaseComponent {
       // Close all flow pages
       this.flowPagesService.closePage();
       
-      // Navigate to the login page (auth guard will handle the rest)
-      this.router.navigate(['/app/login']);
+      // Navigate to the onboarding screen which now handles login
+      this.router.navigate(['/onboarding']);
     } catch (error) {
       console.error('Error during logout:', error);
       // Still try to navigate away even if there's an error
-      this.router.navigate(['/app/login']);
+      this.router.navigate(['/onboarding']);
     }
   }
 }

@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { ImportExistingStep } from './import-existing-step.enum';
 import { ImportExistingFlowService } from './service/import-existing-flow.service';
 import {
@@ -10,6 +10,11 @@ import { CommonModule } from '@angular/common';
 import { ImportSwitchImportExistingStepComponent } from './steps/import-switch-import-existing-step/import-switch-import-existing-step.component';
 import { CreatePinImportExistingStepComponent } from './steps/create-pin-import-existing-step/create-pin-import-existing-step.component';
 import { SuccessImportExistingStepComponent } from './steps/success-import-existing-step/success-import-existing-step.component';
+import { SeedPassphraseImportExistingStepComponent } from './steps/seed-passphrase-import-existing-step/seed-passphrase-import-existing-step.component';
+import { ImportSwitchMethod } from './steps/import-switch-import-existing-step/component/import-switch/import-switch-method.enum';
+import { SeedPhraseImportExistingStepComponent } from './steps/seed-phrase-import-existing-step/seed-phrase-import-existing-step.component';
+import { PrivateKeyImportExistingStepComponent } from './steps/private-key-import-existing-step/private-key-import-existing-step.component';
+import { BackupImportExistingStepComponent } from './steps/backup-import-existing-step/backup-import-existing-step.component';
 
 @Component({
   selector: 'app-import-existing-flow',
@@ -17,6 +22,10 @@ import { SuccessImportExistingStepComponent } from './steps/success-import-exist
     CommonModule,
     StepIndicatorComponent,
     ImportSwitchImportExistingStepComponent,
+    SeedPhraseImportExistingStepComponent,
+    SeedPassphraseImportExistingStepComponent,
+    PrivateKeyImportExistingStepComponent,
+    BackupImportExistingStepComponent,
     CreatePinImportExistingStepComponent,
     SuccessImportExistingStepComponent,
   ],
@@ -24,7 +33,7 @@ import { SuccessImportExistingStepComponent } from './steps/success-import-exist
   templateUrl: './import-existing-flow.component.html',
   styleUrl: './import-existing-flow.component.scss',
 })
-export class ImportExistingFlowComponent {
+export class ImportExistingFlowComponent implements OnInit {
   readonly ImportExistingStep = ImportExistingStep;
 
   private readonly importExistingFlowService = inject(
@@ -33,8 +42,12 @@ export class ImportExistingFlowComponent {
 
   skipPassword = input<boolean>(false);
 
-  readonly stepOrder = [
+  private readonly baseStepOrder: ImportExistingStep[] = [
     ImportExistingStep.IMPORT_SWTICH,
+    ImportExistingStep.ENTER_SEED_PHRASE,
+    ImportExistingStep.SEED_PASSPHRASE,
+    ImportExistingStep.ENTER_PRIVATE_KEY,
+    ImportExistingStep.IMPORT_BACKUP,
     ImportExistingStep.CREATE_PIN,
     ImportExistingStep.SUCCESS,
   ];
@@ -42,34 +55,85 @@ export class ImportExistingFlowComponent {
 
   importStep = signal(ImportExistingStep.IMPORT_SWTICH);
 
-  currentIndex = computed(() => this.stepOrder.indexOf(this.importStep()));
+  readonly visibleStepOrder = computed(() => {
+    const method = this.importExistingFlowService.model().importSwitchMethod;
+    const skipPassword = this.skipPassword();
+
+    return this.baseStepOrder.filter((step) => {
+      if (method === ImportSwitchMethod.SEED_PHRASE) {
+        if (
+          step === ImportExistingStep.ENTER_PRIVATE_KEY ||
+          step === ImportExistingStep.IMPORT_BACKUP
+        ) {
+          return false;
+        }
+      } else if (method === ImportSwitchMethod.PRIVATE_KEY) {
+        if (
+          step === ImportExistingStep.ENTER_SEED_PHRASE ||
+          step === ImportExistingStep.SEED_PASSPHRASE ||
+          step === ImportExistingStep.IMPORT_BACKUP
+        ) {
+          return false;
+        }
+      } else if (method === ImportSwitchMethod.BACKUP) {
+        if (
+          step === ImportExistingStep.ENTER_SEED_PHRASE ||
+          step === ImportExistingStep.SEED_PASSPHRASE ||
+          step === ImportExistingStep.ENTER_PRIVATE_KEY
+        ) {
+          return false;
+        }
+      }
+
+      if (skipPassword && step === ImportExistingStep.CREATE_PIN) {
+        return false;
+      }
+
+      return true;
+    });
+  });
+
+  readonly totalSteps = computed(() => this.visibleStepOrder().length);
+
+  currentIndex = computed(() => {
+    const index = this.visibleStepOrder().indexOf(this.importStep());
+    return index === -1 ? 0 : index;
+  });
 
   ngOnInit(): void {
     this.importExistingFlowService.init();
-
-    // If coming from Change Wallet flow, skip password step
-    if (this.skipPassword()) {
-      this.stepOrder.splice(
-        this.stepOrder.indexOf(ImportExistingStep.CREATE_PIN),
-        1,
-      );
-    }
     this.importExistingFlowService.setSkipPassword(this.skipPassword());
   }
 
   next() {
-    const currentIndex = this.stepOrder.indexOf(this.importStep());
-    if (currentIndex < this.stepOrder.length - 1) {
+    const steps = this.visibleStepOrder();
+    if (!steps.length) {
+      return;
+    }
+    const currentIndex = steps.indexOf(this.importStep());
+    if (currentIndex === -1) {
+      this.importStep.set(steps[0]);
+      return;
+    }
+    if (currentIndex < steps.length - 1) {
       this.slideDirection.set(SlideDirection.FORWARD);
-      this.importStep.set(this.stepOrder[currentIndex + 1]);
+      this.importStep.set(steps[currentIndex + 1]);
     }
   }
 
   previous() {
-    const currentIndex = this.stepOrder.indexOf(this.importStep());
+    const steps = this.visibleStepOrder();
+    if (!steps.length) {
+      return;
+    }
+    const currentIndex = steps.indexOf(this.importStep());
+    if (currentIndex === -1) {
+      this.importStep.set(steps[0]);
+      return;
+    }
     if (currentIndex > 0) {
       this.slideDirection.set(SlideDirection.BACKWARD);
-      this.importStep.set(this.stepOrder[currentIndex - 1]);
+      this.importStep.set(steps[currentIndex - 1]);
     }
   }
 }

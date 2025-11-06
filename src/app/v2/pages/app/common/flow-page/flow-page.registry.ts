@@ -13,6 +13,7 @@ import { SendL2Erc20ListComponent } from '../../flows/transaction/send-page/comp
 import { ApprovalFlowPageComponent } from '../../flows/approval/approval-flow-page/approval-flow-page.component';
 import { ReceiveFlowPageComponent } from '../../flows/receive/receive-flow-page.component';
 import { ExportWalletComponent } from '../../flows/export-wallet/export-wallet.component';
+import { ExportAccountComponent } from '../../flows/export-account/export-account.component';
 import { PlaceholderFlowPageComponent } from './placeholder-flow-page.component';
 import { ImportExistingFlowComponent } from '../../../onboarding-page/flows/import-existing-flow/import-existing-flow.component';
 import { NewWalletFlowComponent } from '../../../onboarding-page/flows/new-wallet-flow/new-wallet-flow.component';
@@ -47,6 +48,7 @@ export const FLOW_PAGE_IDS = [
   'send-erc20',
   'action-approval',
   'receive',
+  'export-account',
   'export-wallet',
   'export-kaspacom-wallet',
   'add-wallet',
@@ -75,6 +77,7 @@ export const FLOW_PAGE_REGISTRY: Record<FlowPageId, FlowPageRegistryEntry> = {
   'send-erc20': SendErc20Component,
   'action-approval': ApprovalFlowPageComponent,
   receive: ReceiveFlowPageComponent,
+  'export-account': ExportAccountComponent,
   'export-wallet': ExportWalletComponent,
   'export-kaspacom-wallet': ExportKaspacomWalletFlowPageComponent,
   'add-wallet': {

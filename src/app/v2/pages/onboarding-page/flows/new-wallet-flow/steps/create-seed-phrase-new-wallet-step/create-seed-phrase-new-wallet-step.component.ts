@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, output, signal } from '@angular/core';
+import { Component, OnInit, inject, input, output, signal } from '@angular/core';
 import {
   KcButtonComponent,
   KcSnackbarComponent,
@@ -9,9 +9,6 @@ import { SeedPhraseWordComponent } from './component/seed-phrase-word/seed-phras
 import { WalletService } from '../../../../../../../services/wallet.service';
 import { CheckboxInputComponent } from '../../../../../../shared/ui/input/checkbox/checkbox-input/checkbox-input.component';
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
-import { KcInputComponent } from '@kaspacom/ui';
-import { FormsModule } from '@angular/forms';
-import { input } from '@angular/core';
 
 @Component({
   selector: 'app-create-seed-phrase-new-wallet-step',
@@ -21,8 +18,6 @@ import { input } from '@angular/core';
     RadioInputComponent,
     SeedPhraseWordComponent,
     CheckboxInputComponent,
-    KcInputComponent,
-    FormsModule,
   ],
   templateUrl: './create-seed-phrase-new-wallet-step.component.html',
   styleUrl: './create-seed-phrase-new-wallet-step.component.scss',
@@ -44,15 +39,12 @@ export class CreateSeedPhraseNewWalletStepComponent implements OnInit {
 
   seedPhraseSaved = signal<boolean>(false);
 
-  seedPassphrase = signal<string>('');
-
   ngOnInit(): void {
     const walletState = this.newWalletFlowService.newWallet();
     if (walletState.seedPhrase !== '') {
       this.seedPhrase.set(walletState.seedPhrase.split(' '));
       this.wordCount.set(walletState.seedPhraseWordCount);
       this.seedPhraseSaved.set(walletState.seedPhraseSaved);
-      this.seedPassphrase.set(walletState.seedPassphrase);
     } else {
       this.seedPhrase.set(
         this.walletService.generateMnemonic(this.wordCount()).split(' '),
@@ -89,11 +81,6 @@ export class CreateSeedPhraseNewWalletStepComponent implements OnInit {
       this.walletService.generateMnemonic(this.wordCount()).split(' '),
     );
     this.onSeedPhraseSavedChange(false);
-  }
-
-  onSeedPassphraseChange(value: string) {
-    this.seedPassphrase.set(value);
-    this.newWalletFlowService.setSeedPassphrase(value);
   }
 
   onSeedPhraseSavedChange(event: boolean) {

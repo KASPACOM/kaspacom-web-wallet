@@ -1,60 +1,66 @@
 <kc-snackbar></kc-snackbar>
-<div class="flex column align-items-center gap-32">
-  <div class="flex column align-items-center gap-4">
-    <span class="typo-title-3 p-4">Seed Phrase</span>
-    <span class="typo-text-2 text-medium text-align-center"
-      >This seed phrase is the only way to recover your wallet.</span
-    >
-    <span class="typo-text-2 text-align-center"
-      >Do NOT share it with anyone.</span
-    >
+<div class="flex column align-items-center step-layout">
+  <div class="step-layout__content">
+    <div class="flex column align-items-center gap-32">
+      <div class="flex column align-items-center gap-4">
+        <span class="typo-title-3 p-4">Seed Phrase</span>
+        <span class="typo-text-2 text-medium text-align-center"
+          >This seed phrase is the only way to recover your wallet.</span
+        >
+        <span class="typo-text-2 text-align-center"
+          >Do NOT share it with anyone.</span
+        >
+      </div>
+      <div class="flex column align-items-center gap-24 full-width">
+        <div class="flex gap-24 justify-content-start full-width">
+          <app-radio-input
+            [value]="12"
+            [selected]="wordCount()"
+            (selectedChange)="onWordCountChange($event)"
+          >
+            <span class="typo-text-3">12 words</span>
+          </app-radio-input>
+          <app-radio-input
+            [value]="24"
+            [selected]="wordCount()"
+            (selectedChange)="onWordCountChange($event)"
+          >
+            <span class="typo-text-3">24 words</span>
+          </app-radio-input>
+        </div>
+        <div class="seed-container">
+          @for (item of seedPhrase(); track $index) {
+            <app-seed-phrase-word
+              class="seed-container__word"
+              [idx]="$index + 1"
+              [word]="item"
+            ></app-seed-phrase-word>
+          }
+        </div>
+        <div class="flex full-width justify-content-between">
+          <kc-button
+            [variant]="'tertiary'"
+            [suffixIcon]="'icon-copy'"
+            [text]="'Copy'"
+            (buttonClick)="addToClipboard()"
+          >
+            <div rightSideSlot>foo</div>
+          </kc-button>
+          <kc-button
+            [variant]="'tertiary'"
+            [suffixIcon]="'icon-update'"
+            [text]="'Renew'"
+            (buttonClick)="renewSeedPhrase()"
+          >
+            <div rightSideSlot>foo</div>
+          </kc-button>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="flex column align-items-center gap-24 full-width">
-    <div class="flex gap-24 justify-content-start full-width">
-      <app-radio-input
-        [value]="12"
-        [selected]="wordCount()"
-        (selectedChange)="onWordCountChange($event)"
-      >
-        <span class="typo-text-3">12 words</span>
-      </app-radio-input>
-      <app-radio-input
-        [value]="24"
-        [selected]="wordCount()"
-        (selectedChange)="onWordCountChange($event)"
-      >
-        <span class="typo-text-3">24 words</span>
-      </app-radio-input>
-    </div>
-    <div class="seed-container">
-      @for (item of seedPhrase(); track $index) {
-        <app-seed-phrase-word
-          class="seed-container__word"
-          [idx]="$index + 1"
-          [word]="item"
-        ></app-seed-phrase-word>
-      }
-    </div>
-    <div class="flex full-width justify-content-between">
-      <kc-button
-        [variant]="'tertiary'"
-        [suffixIcon]="'icon-copy'"
-        [text]="'Copy'"
-        (buttonClick)="addToClipboard()"
-      >
-        <div rightSideSlot>foo</div>
-      </kc-button>
-      <kc-button
-        [variant]="'tertiary'"
-        [suffixIcon]="'icon-update'"
-        [text]="'Renew'"
-        (buttonClick)="renewSeedPhrase()"
-      >
-        <div rightSideSlot>foo</div>
-      </kc-button>
-    </div>
 
-    <div class="flex justify-content-start full-width">
+  <div class="step-layout__buttons">
+    <div class="flex justify-content-start full-width pb-16">
       <app-checkbox-input
         [checked]="seedPhraseSaved()"
         (checkedChange)="onSeedPhraseSavedChange($event)"
@@ -63,42 +69,27 @@
       </app-checkbox-input>
     </div>
 
-    <div class="full-width">
-      <kc-input
-        [isFullWidth]="true"
-        [label]="'Seed passphrase (optional)'"
-        [type]="'password'"
-        [placeholder]="'Enter seed passphrase'"
-        [ngModel]="seedPassphrase()"
-        (valueChange)="onSeedPassphraseChange($event)"
-      ></kc-input>
-
-      <div class="full-width text-gray-60 typo-text-2 pt-8">
-        Adding a password provides an extra layer of security.
-      </div>
-    </div>
-  </div>
-
-  <div class="flex full-width gap-16">
-    @if (!hideBackButton()) {
+    <div class="flex full-width gap-16">
+      @if (!hideBackButton()) {
+        <div class="full-width">
+          <kc-button
+            [isFullWidth]="true"
+            [variant]="'tertiary'"
+            [text]="'Back'"
+            [isDisabled]="false"
+            (buttonClick)="previous.emit()"
+          ></kc-button>
+        </div>
+      }
       <div class="full-width">
         <kc-button
           [isFullWidth]="true"
-          [variant]="'tertiary'"
-          [text]="'Back'"
-          [isDisabled]="false"
-          (buttonClick)="previous.emit()"
+          type="submit"
+          [text]="'Continue'"
+          [isDisabled]="!seedPhraseSaved()"
+          (buttonClick)="onContinue()"
         ></kc-button>
       </div>
-    }
-    <div class="full-width">
-      <kc-button
-        [isFullWidth]="true"
-        type="submit"
-        [text]="'Continue'"
-        [isDisabled]="!seedPhraseSaved()"
-        (buttonClick)="onContinue()"
-      ></kc-button>
     </div>
   </div>
 </div>

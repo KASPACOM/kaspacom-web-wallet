@@ -22,6 +22,14 @@
         ></app-create-seed-phrase-new-wallet-step>
       </div>
     }
+    @case (NewWalletStep.SET_SEED_PASSPHRASE) {
+      <div [@stepAnimation]="slideDirection()">
+        <app-set-seed-passphrase-new-wallet-step
+          (next)="next()"
+          (previous)="previous()"
+        ></app-set-seed-passphrase-new-wallet-step>
+      </div>
+    }
     @case (NewWalletStep.VERIFY_SEED_PHRASE) {
       <div [@stepAnimation]="slideDirection()">
         <app-verify-seed-phrase-new-wallet-step

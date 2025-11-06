@@ -13,6 +13,7 @@ import {
 } from '../../shared/animation/slide.animation';
 import { CreatePasswordNewWalletStepComponent } from './steps/create-password-new-wallet-step/create-password-new-wallet-step.component';
 import { CreateSeedPhraseNewWalletStepComponent } from './steps/create-seed-phrase-new-wallet-step/create-seed-phrase-new-wallet-step.component';
+import { SetSeedPassphraseNewWalletStepComponent } from './steps/set-seed-passphrase-new-wallet-step/set-seed-passphrase-new-wallet-step.component';
 import { AddressNewWalletStepComponent } from './steps/address-new-wallet-step/address-new-wallet-step.component';
 import { SuccessNewWalletStepComponent } from './steps/success-new-wallet-step/success-new-wallet-step.component';
 import { ErrorNewWalletStepComponent } from './steps/error-new-wallet-step/error-new-wallet-step.component';
@@ -25,6 +26,7 @@ import { VerifySeedPhraseNewWalletStepComponent } from './steps/verify-seed-phra
   imports: [
     CreatePasswordNewWalletStepComponent,
     CreateSeedPhraseNewWalletStepComponent,
+    SetSeedPassphraseNewWalletStepComponent,
     VerifySeedPhraseNewWalletStepComponent,
     AddressNewWalletStepComponent,
     SuccessNewWalletStepComponent,
@@ -46,6 +48,7 @@ export class NewWalletFlowComponent implements OnInit {
     NewWalletStep.CREATE_PASSWORD,
     NewWalletStep.CREATE_SEED_PHRASE,
     NewWalletStep.VERIFY_SEED_PHRASE,
+    NewWalletStep.SET_SEED_PASSPHRASE,
     NewWalletStep.ADDRESS,
   ];
   slideDirection = signal<SlideDirection>(SlideDirection.FORWARD);

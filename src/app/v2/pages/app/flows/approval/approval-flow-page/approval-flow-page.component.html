@@ -115,7 +115,18 @@
   <div *ngSwitchCase="ApprovalFlowState.ERROR" class="error-container">
     <div class="error-content">
       <h2>Transaction Failed</h2>
-      <p>{{ approvalConfig()?.error || 'An unexpected error occurred' }}</p>
+      <p class="error-summary">
+        We were unable to complete this transaction. Review the details below and try again.
+      </p>
+      <label class="error-details-label" for="transaction-error-details">
+        Error details
+      </label>
+      <textarea
+        id="transaction-error-details"
+        class="error-details-textarea"
+        readonly
+        [value]="approvalConfig()?.error || 'No additional details were provided.'">
+      </textarea>
       <kc-button
         [text]="'Close'"
         variant="secondary"

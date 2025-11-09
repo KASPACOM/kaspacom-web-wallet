@@ -1,0 +1,29 @@
+<div class="asset-card card-0 card-hover full-width flex align-items-center justify-content-between p-16 cursor-pointer"
+  (click)="onClick()">
+  <div class="asset-card__info flex align-items-center gap-16">
+    <krc20-token-logo class="asset-card__logo" [ticker]="krc20()?.symbol || ''" [size]="'lg'"></krc20-token-logo>
+    <div class="flex column gap-4">
+      <div class="text-gray-90">{{ krc20()?.name || '' | titlecase }}</div>
+      <div class="text-gray-60 typo-text-1 asset-card__meta">
+        {{ krc20()?.balance || 0 | number : '1.0-4' }}
+        &nbsp;{{ krc20()?.symbol || '' | uppercase }}
+      </div>
+      <ng-container>
+        <div *ngIf="krc20()?.maxSupply && !krc20()?.isLoadingMetadata" class="text-gray-50 typo-text-1">
+          Supply: {{ krc20()?.maxSupply }}
+        </div>
+        <app-skeleton *ngIf="krc20()?.isLoadingMetadata" [height]="'14px'" [width]="'100px'"
+          [fullRound]="false"></app-skeleton>
+      </ng-container>
+    </div>
+  </div>
+  <div class="asset-card__usd-info flex column align-items-end">
+    <div class="text-gray-90">
+      {{ (krc20()?.balance || 0) * (krc20()?.priceKas || 0 )| number : "1.2-2" }} KAS
+    </div>
+    <div class="text-gray-60 typo-text-1 asset-card__usd-meta">${{ getPriceUsd((krc20()?.balance || 0) * (krc20()?.priceKas || 0)) | number : "1.2-2" }}</div>
+    <div *ngIf="krc20()?.holders && !krc20()?.isLoadingMetadata" class="text-gray-50 typo-text-1">
+      {{ krc20()?.holders }} holders
+    </div>
+  </div>
+</div>

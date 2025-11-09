@@ -1,0 +1,39 @@
+<div
+  class="krc20-summary-container flex column justify-content-center align-items-center full-width gap-16"
+  appInfiniteScroll
+  [scrollThreshold]="70"
+  (scrolled)="onScrolled($event)"
+  (thresholdReached)="onThresholdReached()"
+>
+  @if (loading()) {
+    <div class="skeleton-loading-container flex column gap-16 full-width">
+      @for (item of [1,2,3]; track item) {
+        <app-skeleton class="full-width" [height]="'75px'" [width]="'auto'" [fullRound]="false"></app-skeleton>
+      }
+    </div>
+  } @else if (tokens().length === 0) {
+    <div class="text-gray-60 p-16">No KRC20 tokens found</div>
+  } @else {
+      <div class="totals-container flex align-items-center gap-8">
+        <span class="text-gray-60 typo-text-2">
+          Total Value Kas: {{ totalValueKas() | number : "1.2-2"}} KAS
+        </span>
+
+        <span class="text-gray-60 typo-text-2">
+          Total Value USD: ${{ totalValueUsd() | number : "1.2-2" }}
+        </span>
+      </div>
+    @for ( token of tokens(); track trackByToken($index, token) ) {
+      <krc20-asset-card class="krc20-summary-container__card full-width"
+        [krc20]="token"
+        (cardClick)="onTokenClick(token)"
+      ></krc20-asset-card>
+    }
+    
+    @if (isLoadingMore()) {
+      <div class="loading-more-container flex justify-content-center p-16 full-width">
+        <app-skeleton [height]="'75px'" [width]="'100%'" [fullRound]="false"></app-skeleton>
+      </div>
+    }
+  }
+</div>

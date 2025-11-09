@@ -1,0 +1,57 @@
+<div class="send-krc20-list-content"
+     appInfiniteScroll
+     [scrollThreshold]="70"
+     (scrolled)="onScrolled($event)"
+     (thresholdReached)="onThresholdReached()">
+  <div class="krc20-tokens-container flex column align-items-center full-width gap-16">
+    @if (loading()) {
+      <!-- Skeleton loading states -->
+      <div class="skeleton-loading-container flex column gap-16 full-width">
+        @for (item of [1,2,3,4,5]; track item) {
+          <app-skeleton class="full-width" [height]="'75px'" [width]="'auto'" [fullRound]="false"></app-skeleton>
+        }
+      </div>
+    } @else if (tokens().length === 0) {
+      <!-- Empty state -->
+      <div class="empty-state flex column align-items-center justify-content-center gap-16 p-32">
+        <div class="text-gray-60 typo-text-2 text-center">No KRC20 tokens found</div>
+        <div class="text-gray-50 typo-text-1 text-center">You need to have KRC20 tokens in your wallet to send them.</div>
+      </div>
+    } @else {
+      <!-- Token list -->
+      @for (token of tokens(); track token.address) {
+        <div class="krc20-token-card  card-0 card-hover flex full-width align-items-center justify-content-between p-16 fade-in cursor-pointer"
+             (click)="onTokenClick(token)">
+          <!-- Token info section -->
+          <div class="krc20-token-card__info flex align-items-center gap-16">
+            <krc20-token-logo [ticker]="token.symbol || ''" [size]="'lg'"></krc20-token-logo>
+            <div class="flex column gap-4">
+              <div class="text-gray-90 typo-text-2">{{ token.name | titlecase }}</div>
+              <div class="text-gray-60 typo-text-1">
+                {{ token.balance | number : "1.0-4" }}&nbsp;{{ token.symbol | uppercase }}
+              </div>
+              @if (token.isLoadingMetadata) {
+                <app-skeleton [height]="'14px'" [width]="'80px'" [fullRound]="false"></app-skeleton>
+              }
+            </div>
+          </div>
+          <!-- USD value section -->
+          <div class="krc20-token-card__usd-info flex column align-items-end">
+            <div class="text-gray-90 typo-text-2">
+              {{ token.balance * token.priceKas | number : "1.2-2" }} KAS
+            </div>
+            <div class="text-gray-60 typo-text-1">Available</div>
+          </div>
+        </div>
+      }
+      
+      @if (isLoadingMore()) {
+        <div class="loading-more-container flex justify-content-center p-16 full-width">
+          <app-skeleton class="full-width" [height]="'75px'" [width]="'auto'" [fullRound]="false"></app-skeleton>
+        </div>
+      }
+      
+
+    }
+  </div>
+</div>

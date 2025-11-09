@@ -1,9 +1,19 @@
 <div class="screen">
+  <canvas #graphCanvas class="screen__graph-canvas"></canvas>
+  <div class="screen__backdrop screen__backdrop--first"></div>
+  <div class="screen__backdrop screen__backdrop--second"></div>
+
   <div class="wrapper">
+    <!-- Iframe overlay cover - hides page content when in iframe mode -->
+    <div class="iframe-overlay-cover" *ngIf="isIframeMode()">
+      <div class="iframe-loader">
+        <kc-spinner size="lg"></kc-spinner>
+      </div>
+    </div>
+
     <div
       [@navAnimation]="getRouteAnimationData()"
       class="wrapper__content full-width"
-      [class.no-scroll]="isMainContentLoading()"
     >
       <div class="wrapper__header">
         <app-wrapper-header></app-wrapper-header>

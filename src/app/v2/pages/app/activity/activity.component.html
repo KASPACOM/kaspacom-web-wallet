@@ -8,7 +8,7 @@
   <!-- Activity Tabs -->
   <kc-labeled-tabs
     class="full-width"
-    [tabs]="tabs"
+    [tabs]="tabs()"
     [selectedTabId]="selectedTabId()"
     (selectedTabChange)="onTabChange($event)"
   >
@@ -80,6 +80,13 @@
                       <div class="activity-address text-gray-60 typo-text-1">
                         {{ getKaspaActivitySubtitle(item) }}
                       </div>
+                    } @else if (item.type === 'erc20') {
+                      <div class="activity-type text-white typo-text-2 font-weight-medium">
+                        {{ getErc20ActivityTitle(item) }}
+                      </div>
+                      <div class="activity-address text-gray-60 typo-text-1">
+                        {{ getErc20ActivitySubtitle(item) }}
+                      </div>
                     } @else {
                       <div class="activity-type text-white typo-text-2 font-weight-medium">
                         {{ getKrc20ActivityTitle(item) }}
@@ -101,8 +108,8 @@
                             [style.color]="getActivityIconColor(item)">
                         {{ getKaspaAmountDisplay(item) }}
                       </span>
-                      <kc-icon 
-                        [iconClass]="'icon-kaspa-coin'" 
+                      <kc-icon
+                        [iconClass]="'icon-kaspa-coin'"
                         [size]="'sm'">
                       </kc-icon>
                     </div>
@@ -111,13 +118,24 @@
                         Fee: {{ getKaspaFeeDisplay(item) }}
                       </div>
                     }
+                  } @else if (item.type === 'erc20') {
+                    <div class="activity-amount flex align-items-center gap-8">
+                      <span class="typo-text-2 font-weight-medium"
+                            [style.color]="getActivityIconColor(item)">
+                        {{ getErc20AmountDisplay(item) }}
+                      </span>
+                      <kc-icon
+                        [iconClass]="'icon-tokens'"
+                        [size]="'sm'">
+                      </kc-icon>
+                    </div>
                   } @else {
                     <div class="activity-amount flex align-items-center gap-8">
                       <span class="text-white typo-text-2 font-weight-medium">
                         {{ getKrc20AmountDisplay(item) }}
                       </span>
-                      <kc-icon 
-                        [iconClass]="'icon-tokens'" 
+                      <kc-icon
+                        [iconClass]="'icon-tokens'"
                         [size]="'sm'">
                       </kc-icon>
                     </div>

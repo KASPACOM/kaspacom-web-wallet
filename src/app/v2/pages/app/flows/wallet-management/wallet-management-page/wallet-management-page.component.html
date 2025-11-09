@@ -11,11 +11,17 @@
       ></kc-icon>
     </div>
     <div class="header-right">
-      <kc-icon
+            <kc-icon
         class="more-options-icon"
         [iconClass]="'icon-more-options'"
         [size]="'md'"
         (click)="onWalletOptionsClick()"
+      ></kc-icon>
+            <kc-icon
+        class="update-icon"
+        [iconClass]="'icon-update'"
+        [size]="'md'"
+        (click)="onChangeWalletClicked()"
       ></kc-icon>
       <kc-icon
         class="close-icon"
@@ -50,14 +56,22 @@
               ></kc-icon>
             </div>
             <div class="wallet-item__address">{{ shortenAddress(wallet.address) }}</div>
-            <div class="wallet-item__balance">{{ wallet.balance }} KAS</div>
+            <div class="wallet-item__balance">{{ wallet.balanceDisplay }}</div>
           </div>
-          <kc-icon
-            class="wallet-item__trash"
-            [iconClass]="'icon-trash'"
-            [size]="'sm'"
-            (click)="deleteWallet(wallet); $event.stopPropagation()"
-          ></kc-icon>
+          <div class="wallet-item__actions">
+            <kc-icon
+              class="wallet-item__export"
+              [iconClass]="'icon-download'"
+              [size]="'sm'"
+              (click)="exportWalletAccount(wallet); $event.stopPropagation()"
+            ></kc-icon>
+            <kc-icon
+              class="wallet-item__trash"
+              [iconClass]="'icon-trash'"
+              [size]="'sm'"
+              (click)="deleteWallet(wallet); $event.stopPropagation()"
+            ></kc-icon>
+          </div>
         </div>
       }
     </div>

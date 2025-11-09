@@ -1,7 +1,6 @@
-import { EnvironmentInjector, Injectable, Signal, signal } from '@angular/core';
+import { computed, EnvironmentInjector, Injectable, Signal, signal, WritableSignal } from '@angular/core';
 import { PasswordManagerService } from './password-manager.service';
 import { SavedWalletAccount, SavedWalletData, } from '../types/saved-wallet-data';
-import { KaspaNetworkActionsService } from './kaspa-netwrok-services/kaspa-network-actions.service';
 import { AppWallet } from '../classes/AppWallet';
 import { LOCAL_STORAGE_KEYS } from '../config/consts';
 import { AssetType, TransferableAsset } from '../types/transferable-asset';
@@ -10,7 +9,9 @@ import { firstValueFrom } from 'rxjs';
 import { UtilsHelper } from './utils.service';
 import { RpcConnectionStatus } from '../types/kaspa-network/rpc-connection-status.enum';
 import { cloneDeep } from "lodash";
-import { environment } from '../../environments/environment';
+import { EthereumWalletChainManager } from './etherium-services/etherium-wallet-chain.manager';
+import { KaspaNetworkConnectionManagerService } from './kaspa-netwrok-services/kaspa-network-connection-manager.service';
+import { KaspaWalletMnemonicActionsService } from './kaspa-netwrok-services/kaspa-wallet-mnemonic-actions.service';
 
 @Injectable({
   providedIn: 'root',
@@ -18,15 +19,19 @@ import { environment } from '../../environments/environment';
 export class WalletService {
   private currentWalletSignal = signal<AppWallet | undefined>(undefined);
   private allWalletsSignal = signal<AppWallet[] | undefined>(undefined);
+  private isL2DisplaySignal: WritableSignal<boolean>;
   private isWalletLoaded = false;
 
   constructor(
     private readonly passwordManagerService: PasswordManagerService,
-    private readonly kaspaNetworkActionsService: KaspaNetworkActionsService,
+    private readonly kaspaWalletMnemonicActionsService: KaspaWalletMnemonicActionsService,
+    private readonly kaspaConnectionManagerService: KaspaNetworkConnectionManagerService,
     private readonly kasplexService: KasplexKrc20Service,
     private readonly utilsService: UtilsHelper,
     private readonly injector: EnvironmentInjector,
+    private readonly etheriumChainManager: EthereumWalletChainManager,
   ) {
+    this.isL2DisplaySignal = signal<boolean>(localStorage.getItem(LOCAL_STORAGE_KEYS.IS_L2_DISPLAY) === 'true');
   }
 
   async addWallet(
@@ -47,7 +52,7 @@ export class WalletService {
 
     if (!privateKey) {
       mnemonicPk =
-        await this.kaspaNetworkActionsService.getPrivateKeyFromMnemonic(
+        await this.kaspaWalletMnemonicActionsService.getPrivateKeyFromMnemonic(
           mnemonic!,
           accountData!.derivedPath,
           passphrase,
@@ -61,7 +66,7 @@ export class WalletService {
       }
     }
 
-    const isValid = this.kaspaNetworkActionsService.validatePrivateKey(
+    const isValid = this.kaspaWalletMnemonicActionsService.validatePrivateKey(
       privateKey || mnemonicPk!,
     );
 
@@ -278,14 +283,14 @@ export class WalletService {
   }
 
   generateMnemonic(wordsCount: number = 12): string {
-    return this.kaspaNetworkActionsService.generateMnemonic(wordsCount);
+    return this.kaspaWalletMnemonicActionsService.generateMnemonic(wordsCount);
   }
 
   getWalletAddressFromMnemonic(
     mnemonic: string,
     password?: string,
   ): string | null {
-    return this.kaspaNetworkActionsService.getWalletAddressFromMnemonic(
+    return this.kaspaWalletMnemonicActionsService.getWalletAddressFromMnemonic(
       mnemonic,
       password,
     );
@@ -476,7 +481,7 @@ export class WalletService {
     );
 
     if (
-      this.kaspaNetworkActionsService.getConnectionStatusSignal()() ==
+      this.kaspaConnectionManagerService.getConnectionStatusSignal()() ==
       RpcConnectionStatus.CONNECTED
     ) {
       this.getCurrentWallet()?.startListiningToWalletActions();
@@ -503,6 +508,12 @@ export class WalletService {
 
       this.currentWalletSignal.set(undefined);
     }
+  }
+
+  async logout(): Promise<void> {
+    this.passwordManagerService.clearPassword();
+    await this.deselectCurrentWallet();
+    this.isWalletLoaded = false;
   }
 
   async getAllAvailableAssetsForCurrentWallet(): Promise<TransferableAsset[]> {
@@ -559,14 +570,14 @@ export class WalletService {
 
     if (walletData) {
       walletData.name = newName;
-      
+
       // Update current wallet signal if this is the current wallet
       const currentWallet = this.currentWalletSignal();
       if (currentWallet && walletData.id === currentWallet.getId()) {
         currentWallet?.setName(walletData.name);
         this.currentWalletSignal.set(cloneDeep(currentWallet));
       }
-      
+
       // Update all wallet instances in allWalletsSignal
       this.allWalletsSignal.update((wallets) => {
         if (!wallets) return wallets;
@@ -621,4 +632,41 @@ export class WalletService {
       this.injector,
     );
   }
+
+
+  setL2Display(value: boolean) {
+    localStorage.setItem(LOCAL_STORAGE_KEYS.IS_L2_DISPLAY, value.toString());
+    this.isL2DisplaySignal.set(value);
+  }
+
+  isL2Display(): boolean {
+    return this.isL2DisplaySignal();
+  }
+
+  getIsL2DisplaySignal(): Signal<boolean> {
+    return this.isL2DisplaySignal.asReadonly();
+  }
+
+  getCurrentDisplayNativeTokenName(): string {
+    if (this.isL2DisplaySignal()) {
+      return this.etheriumChainManager.getCurrentWalletProvider()?.getConfig().nativeCurrency.symbol || 'KAS';
+    } else {
+      return 'KAS';
+    }
+  }
+
+  public getCurrentDisplayWalletAddress = computed(() => {
+    if (this.isL2DisplaySignal()) {
+      const l2WalletAddress = this.currentWalletSignal()?.getL2WalletStateSignal()()?.address;
+
+      return l2WalletAddress;
+    }
+
+    return this.currentWalletSignal()?.getAddress();
+  });
+
+  public getCurrentDisplayWalletAddressAsString = computed(() => {
+    return this.getCurrentDisplayWalletAddress() || '';
+  })
+
 }

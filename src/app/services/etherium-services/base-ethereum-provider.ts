@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { ethers, TransactionReceipt } from "ethers";
 import { EIP1193ProviderChain } from "@kaspacom/wallet-messages";
 import { environment } from "../../../environments/environment";
 
@@ -44,19 +44,24 @@ export class BaseEthereumProvider {
     // throw new Error('Transaction not found after 5 attempts');
   }
 
+  async getTransactionReceipt(txHash: string): Promise<TransactionReceipt | null> {
+    if (!txHash) {
+      throw new Error('Transaction hash is empty');
+    }
+    
+    return await this.etherProvider.waitForTransaction(txHash);
+  }
+
+
+  getProvider(): ethers.JsonRpcProvider {
+    return this.etherProvider;
+  }
+
   getConfig(): EIP1193ProviderChain {
     return this.config;
   }
 
   disconnect(): void {
     this.etherProvider.destroy();
-  }
-
-  fromReadableNumberToBlockchainNumber(value: number): bigint {
-    return BigInt(value) * BigInt(10 ** (this.config.nativeCurrency.decimals || 18));
-  }
-
-  fromBlockchainNumberToReadableNumber(value: bigint): number {
-    return Number(value) / (10 ** (this.config.nativeCurrency.decimals || 18));
   }
 }

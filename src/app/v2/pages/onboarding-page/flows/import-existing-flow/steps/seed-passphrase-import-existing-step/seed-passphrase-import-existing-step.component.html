@@ -1,0 +1,51 @@
+<div class="seed-passphrase-step flex column align-items-center step-layout full-width">
+  <div class="step-layout__content">
+    <div class="flex column align-items-center gap-32 full-width">
+      <div class="flex column align-items-center gap-12 text-align-center">
+        <span class="typo-title-3">Seed passphrase (optional)</span>
+        <p class="typo-text-2 text-medium">
+          Add an additional password to your recovery phrase for stronger security. Leave it empty
+          if you prefer to access the wallet with the recovery phrase alone.
+        </p>
+      </div>
+
+      <form
+        class="seed-passphrase-step__form flex column gap-16 full-width"
+        [formGroup]="passphraseForm"
+        (ngSubmit)="onSubmit()"
+      >
+        <kc-input
+          formControlName="seedPassphrase"
+          [type]="passphraseFieldType()"
+          [label]="'Seed passphrase'"
+          [placeholder]="'Enter seed passphrase (optional)'"
+          [isFullWidth]="true"
+        >
+          <div class="clickable" rightSideSlot (click)="togglePassphraseVisibility()">
+            <kc-icon [iconClass]="passphraseIcon()" [size]="'xs'"></kc-icon>
+          </div>
+        </kc-input>
+      </form>
+    </div>
+  </div>
+
+  <div class="step-layout__buttons">
+    <div class="seed-passphrase-step__actions flex column gap-12 full-width">
+      <kc-button
+        [text]="'Continue'"
+        [isFullWidth]="true"
+        [isDisabled]="isSubmitting()"
+        type="submit"
+        (buttonClick)="onSubmit()"
+      ></kc-button>
+      <kc-button
+        [text]="'Back'"
+        [variant]="'tertiary'"
+        [isFullWidth]="true"
+        type="button"
+        (buttonClick)="previous.emit()"
+      ></kc-button>
+    </div>
+  </div>
+</div>
+

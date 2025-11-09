@@ -47,7 +47,7 @@
     align-items: center;
     gap: 16px;
 
-    .more-options-icon {
+    .more-options-icon, .update-icon {
       cursor: pointer;
       transition: all 0.2s ease;
 
@@ -168,6 +168,7 @@
       visibility: visible;
     }
 
+    .wallet-item__export,
     .wallet-item__trash {
       opacity: 1;
       visibility: visible;
@@ -260,6 +261,39 @@
     margin-top: 4px;
   }
 
+  &__actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__export {
+    opacity: 0;
+    visibility: hidden;
+    background: transparent;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+
+    ::ng-deep .icon {
+      color: var(--gray-60) !important;
+    }
+
+    &:hover {
+      ::ng-deep .icon {
+        color: white !important;
+      }
+    }
+
+    @media (max-width: 768px) {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+
   &__trash {
     opacity: 0;
     visibility: hidden;
@@ -269,7 +303,6 @@
     cursor: pointer;
     transition: all 0.2s ease;
     border-radius: 8px;
-    margin-left: auto;
 
     ::ng-deep .icon {
       color: var(--red-20) !important;

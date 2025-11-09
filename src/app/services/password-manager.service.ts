@@ -93,6 +93,10 @@ export class PasswordManagerService {
   }
 
   async getUserData(): Promise<UserWalletsData> {
+    if (!this.password) {
+      throw new Error('Password not found');
+    }
+    
     const userData = await this.getUserDataWithPassword(this.password!);
 
     if (!userData) {
@@ -135,6 +139,10 @@ export class PasswordManagerService {
     }
 
     return this.saveWalletsData(walletsData, this.password);
+  }
+
+  clearPassword(): void {
+    this.password = null;
   }
 
   async clearAllData(): Promise<void> {

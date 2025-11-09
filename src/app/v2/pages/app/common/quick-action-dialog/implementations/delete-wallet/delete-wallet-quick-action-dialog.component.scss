@@ -1,6 +1,28 @@
 .delete-confirmation {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
   p {
     margin: 0;
+  }
+
+  &__instructions {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--text-secondary, #a0a0a0);
+  }
+
+  &__prompt {
+    display: block;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  &__input {
+    width: 100%;
   }
 }
 

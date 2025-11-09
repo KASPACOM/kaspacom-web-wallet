@@ -16,7 +16,7 @@ import { CommaFormatterPipe } from '../../../../../pipes/comma-formatter.pipe';
     KcIconComponent,
     CopyButtonComponent,
     SkeletonComponent,
-    CommaFormatterPipe
+    CommaFormatterPipe,
   ],
   templateUrl: './receive-flow-page.component.html',
   styleUrl: './receive-flow-page.component.scss',
@@ -30,8 +30,21 @@ export class ReceiveFlowPageComponent implements OnInit, OnDestroy {
 
   // Computed properties for reactive updates
   currentWallet = computed(() => this.walletService.getCurrentWallet());
-  walletAddress = computed(() => this.currentWallet()?.getAddress() || '');
-  walletName = computed(() => this.currentWallet()?.getDisplayName() || 'Wallet');
+
+
+  walletAddress = this.walletService.getCurrentDisplayWalletAddressAsString;
+
+  qrCodeData = computed(() => {
+    if (this.walletService.isL2Display()) {
+      return this.walletAddress();
+    } else {
+      return `ethereum:${this.walletAddress()}`;
+    }
+  });
+
+  walletName = computed(
+    () => this.currentWallet()?.getDisplayName() || 'Wallet',
+  );
 
   // Loading state
   isLoading = computed(() => !this.currentWallet());
@@ -62,11 +75,14 @@ export class ReceiveFlowPageComponent implements OnInit, OnDestroy {
 
   onShareWallet(): void {
     if (navigator.share && this.walletAddress()) {
-      navigator.share({
-        title: 'My Kaspa Wallet Address',
-        text: `Send Kaspa to: ${this.walletAddress()}`,
-        url: `kaspa:${this.walletAddress()}`
-      }).catch(err => {
+      const address = this.walletAddress();
+
+      let shareData: any = {
+        title: `My Wallet Address`,
+        text: `Send to: ${address}`,
+        url: this.qrCodeData(),
+      };
+      navigator.share(shareData).catch((err) => {
         console.log('Error sharing:', err);
         this.fallbackShare();
       });
@@ -78,7 +94,7 @@ export class ReceiveFlowPageComponent implements OnInit, OnDestroy {
   private fallbackShare(): void {
     // Fallback: copy to clipboard
     if (navigator.clipboard && this.walletAddress()) {
-      navigator.clipboard.writeText(this.walletAddress());
+      navigator.clipboard.writeText(this.walletAddress() || '');
     }
   }
 }

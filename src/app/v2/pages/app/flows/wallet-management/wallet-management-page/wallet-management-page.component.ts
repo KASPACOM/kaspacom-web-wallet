@@ -1,13 +1,13 @@
 import { Component, signal, inject, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
+import { KcIconComponent } from '@kaspacom/ui';
 import { FlowPageBaseComponent } from '../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../common/flow-page/interfaces/flow-page.interface';
 import {
   QuickActionDialogService,
-  IQuickActionDialogConfig,
 } from '../../../../../services/quick-action-dialog.service';
 import { WalletService } from '../../../../../../services/wallet.service';
+import { KaspaNetworkActionsService } from '../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { AppWallet } from '../../../../../../classes/AppWallet';
 
 interface WalletAccount {
@@ -15,6 +15,7 @@ interface WalletAccount {
   name: string;
   address: string;
   balance: number;
+  balanceDisplay: string;
   isSelected: boolean;
   wallet: AppWallet;
 }
@@ -22,13 +23,14 @@ interface WalletAccount {
 @Component({
   selector: 'app-wallet-management-page',
   standalone: true,
-  imports: [CommonModule, KcButtonComponent, KcIconComponent],
+  imports: [CommonModule, KcIconComponent],
   templateUrl: './wallet-management-page.component.html',
   styleUrl: './wallet-management-page.component.scss',
 })
 export class WalletManagementPageComponent extends FlowPageBaseComponent {
   private quickActionDialogService = inject(QuickActionDialogService);
   private walletService = inject(WalletService);
+  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
 
   get config(): IFlowPageConfig {
     return {
@@ -47,6 +49,7 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
     const wallet = this.walletService.getCurrentWallet();
     return wallet?.getName() || 'Wallet';
   });
+
 
   constructor() {
     super();
@@ -89,11 +92,15 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
     const accounts: WalletAccount[] = [];
     if (currentGroup.length > 0 && currentGroup[0].supportAccounts()) {
       currentGroup.forEach((wallet) => {
+        const address = this.getWalletAddress(wallet);
+        const balance = this.getWalletBalance(wallet);
+
         accounts.push({
           id: wallet.getIdWithAccount(),
           name: wallet.getAccountName() || wallet.getName(),
-          address: wallet.getAddress(),
-          balance: wallet.getTotalBalanceAsSignal() || 0,
+          address: address,
+          balance: balance,
+          balanceDisplay: `${balance} ${this.walletService.getCurrentDisplayNativeTokenName()}`,
           isSelected:
             currentWallet?.getIdWithAccount() === wallet.getIdWithAccount(),
           wallet: wallet,
@@ -102,11 +109,15 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
     } else if (currentGroup.length > 0) {
       // Single wallet without accounts
       const wallet = currentGroup[0];
+      const address = this.getWalletAddress(wallet);
+      const balance = this.getWalletBalance(wallet);
+
       accounts.push({
         id: wallet.getIdWithAccount(),
         name: wallet.getName(),
-        address: wallet.getAddress(),
-        balance: wallet.getTotalBalanceAsSignal() || 0,
+        address: address,
+        balance: balance,
+        balanceDisplay: `${balance} ${this.walletService.getCurrentDisplayNativeTokenName()}`,
         isSelected:
           currentWallet?.getIdWithAccount() === wallet.getIdWithAccount(),
         wallet: wallet,
@@ -142,6 +153,20 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
           await new Promise((resolve) => setTimeout(resolve, 100));
           this.loadWalletAccounts();
         },
+      },
+    });
+  }
+
+  exportWalletAccount(walletAccount: WalletAccount): void {
+    this.navigateToNextPage({
+      id: 'export-account',
+      title: 'Export Private Key',
+      canNavigateBack: true,
+      canClose: false,
+      showTitle: true,
+      showBackground: true,
+      data: {
+        walletIdWithAccount: walletAccount.id,
       },
     });
   }
@@ -238,6 +263,39 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
       isCloseable: true,
       data: {},
     });
+  }
+
+    onChangeWalletClicked(): void {
+    this.flowPagesService.navigateToPage({
+      id: 'wallet-selection',
+      title: 'Select wallet',
+      canNavigateBack: true,
+      showTitle: true,
+      showBackground: true,
+    });
+  }
+
+  private getWalletAddress(wallet: AppWallet): string {
+    if (!this.walletService.isL2Display()) {
+      return wallet.getAddress();
+    } else {
+      // For L2 networks, get the L2 address
+      const l2State = wallet.getL2WalletStateSignal()();
+      return l2State?.address || wallet.getAddress(); // fallback to L1
+    }
+  }
+
+  private getWalletBalance(wallet: AppWallet): number {
+    if (!this.walletService.isL2Display()) {
+      const balanceData = wallet.getCurrentWalletStateBalanceSignalValue();
+      return balanceData
+        ? this.kaspaNetworkActionsService.sompiToNumber(balanceData.mature)
+        : 0;
+    } else {
+      // For L2 networks, get the L2 balance
+      const l2State = wallet.getL2WalletStateSignal()();
+      return l2State ? l2State.balanceFormatted : 0;
+    }
   }
 
   shortenAddress(address: string): string {

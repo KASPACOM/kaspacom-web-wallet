@@ -5,16 +5,16 @@ import { Router } from '@angular/router';
 import { WalletActionResult } from '@kaspacom/wallet-messages';
 
 export enum ApprovalDisplayMode {
-  FLOW_PAGE = 'flow_page',     // For regular app usage - integrated flow
-  MODAL_DIALOG = 'modal_dialog', // For iframe usage - modal overlay  
-  FULL_PAGE = 'full_page'      // For legacy/route-based usage
+  FLOW_PAGE = 'flow_page', // For regular app usage - integrated flow
+  MODAL_DIALOG = 'modal_dialog', // For iframe usage - modal overlay
+  FULL_PAGE = 'full_page', // For legacy/route-based usage
 }
 
 export enum ApprovalFlowState {
-  APPROVAL = 'approval',           // Showing approval form
-  PROCESSING = 'processing',       // Loading/processing transaction
-  SUCCESS = 'success',            // Showing success page
-  ERROR = 'error'                 // Showing error page
+  APPROVAL = 'approval', // Showing approval form
+  PROCESSING = 'processing', // Loading/processing transaction
+  SUCCESS = 'success', // Showing success page
+  ERROR = 'error', // Showing error page
 }
 
 export interface ApprovalFlowConfig {
@@ -28,26 +28,42 @@ export interface ApprovalFlowConfig {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ApprovalFlowService {
   private flowPagesService = inject(FlowPagesService);
   private router = inject(Router);
-  
+
   private currentApprovalConfigSignal = signal<ApprovalFlowConfig | null>(null);
-  
+
   // Computed properties
   currentApprovalConfig = computed(() => this.currentApprovalConfigSignal());
-  isApprovalActive = computed(() => this.currentApprovalConfigSignal() !== null);
-  currentState = computed(() => this.currentApprovalConfigSignal()?.state || ApprovalFlowState.APPROVAL);
-  currentProgress = computed(() => this.currentApprovalConfigSignal()?.progress || 0);
-  
+  isApprovalActive = computed(
+    () => this.currentApprovalConfigSignal() !== null,
+  );
+  currentState = computed(
+    () =>
+      this.currentApprovalConfigSignal()?.state || ApprovalFlowState.APPROVAL,
+  );
+  currentProgress = computed(
+    () => this.currentApprovalConfigSignal()?.progress || 0,
+  );
+
   // Resolve function for the current approval
-  private currentResolve: ((result: { isApproved: boolean; priorityFee?: bigint; additionalParams?: { [key: string]: any } }) => void) | null = null;
-  
+  private currentResolve:
+    | ((result: {
+        isApproved: boolean;
+        priorityFee?: bigint;
+        additionalParams?: { [key: string]: any };
+      }) => void)
+    | null = null;
+
   // Signal to track completion events for components to listen to
-  private completionSignal = signal<{ success: boolean; result?: WalletActionResult } | null>(null);
-  
+  private completionSignal = signal<{
+    success: boolean;
+    result?: WalletActionResult;
+  } | null>(null);
+
   // Public computed for components to observe completion
   completion = computed(() => this.completionSignal());
 
@@ -55,42 +71,49 @@ export class ApprovalFlowService {
    * Shows approval dialog using the appropriate display mode
    */
   async showApproval(
-    action: WalletAction, 
-    isFromIframe: boolean = false
-  ): Promise<{ isApproved: boolean; priorityFee?: bigint; additionalParams?: { [key: string]: any } }> {
-    
+    action: WalletAction,
+    isFromIframe: boolean = false,
+  ): Promise<{
+    isApproved: boolean;
+    priorityFee?: bigint;
+    additionalParams?: { [key: string]: any };
+  }> {
     // Determine display mode based on context
     const mode = this.determineDisplayMode(isFromIframe);
-    
+
     const config: ApprovalFlowConfig = {
       mode,
       action,
       isFromIframe,
-      state: ApprovalFlowState.APPROVAL
+      state: ApprovalFlowState.APPROVAL,
     };
-    
+
     // Clear any existing approval
     if (this.currentResolve) {
       this.currentResolve({ isApproved: false });
     }
-    
+
     this.currentApprovalConfigSignal.set(config);
-    
+
     return new Promise((resolve) => {
       this.currentResolve = resolve;
       this.displayApproval(config);
     });
   }
-  
+
   /**
    * Resolves the current approval with the given result
    */
-  resolveApproval(result: { isApproved: boolean; priorityFee?: bigint; additionalParams?: { [key: string]: any } }) {
+  resolveApproval(result: {
+    isApproved: boolean;
+    priorityFee?: bigint;
+    additionalParams?: { [key: string]: any };
+  }) {
     if (this.currentResolve) {
       this.currentResolve(result);
       this.currentResolve = null;
     }
-    
+
     // Don't cleanup if approval was accepted - we'll transition to processing state
     if (!result.isApproved) {
       this.cleanupApproval();
@@ -106,10 +129,10 @@ export class ApprovalFlowService {
       const newConfig = {
         ...config,
         state: ApprovalFlowState.PROCESSING,
-        progress
+        progress,
       };
       this.currentApprovalConfigSignal.set(newConfig);
-      
+
       // Update flow page configuration to disable back navigation
       if (config.mode === ApprovalDisplayMode.FLOW_PAGE) {
         this.updateFlowPageConfig(newConfig);
@@ -129,15 +152,15 @@ export class ApprovalFlowService {
           ...config,
           state: ApprovalFlowState.SUCCESS,
           result,
-          progress: 100
+          progress: 100,
         };
         this.currentApprovalConfigSignal.set(newConfig);
-        
+
         // Update flow page configuration to disable back navigation
         if (config.mode === ApprovalDisplayMode.FLOW_PAGE) {
           this.updateFlowPageConfig(newConfig);
         }
-        
+
         // Emit completion event for components to listen to
         this.completionSignal.set({ success: true, result });
       }, 1000);
@@ -153,9 +176,9 @@ export class ApprovalFlowService {
       this.currentApprovalConfigSignal.set({
         ...config,
         state: ApprovalFlowState.ERROR,
-        error
+        error,
       });
-      
+
       // Emit completion event for components to listen to
       this.completionSignal.set({ success: false });
     }
@@ -169,7 +192,7 @@ export class ApprovalFlowService {
     if (config && config.state === ApprovalFlowState.PROCESSING) {
       this.currentApprovalConfigSignal.set({
         ...config,
-        progress
+        progress,
       });
     }
   }
@@ -182,16 +205,16 @@ export class ApprovalFlowService {
     this.completionSignal.set(null);
     this.cleanupApproval();
   }
-  
+
   private determineDisplayMode(isFromIframe: boolean): ApprovalDisplayMode {
     if (isFromIframe) {
       return ApprovalDisplayMode.MODAL_DIALOG;
     }
-    
+
     // For regular app usage, use flow pages
     return ApprovalDisplayMode.FLOW_PAGE;
   }
-  
+
   private displayApproval(config: ApprovalFlowConfig) {
     switch (config.mode) {
       case ApprovalDisplayMode.FLOW_PAGE:
@@ -206,21 +229,21 @@ export class ApprovalFlowService {
         break;
     }
   }
-  
+
   private showAsFlowPage(config: ApprovalFlowConfig) {
     this.flowPagesService.openFlow({
       id: 'action-approval',
       title: this.getApprovalTitle(config.action),
       canNavigateBack: config.state === ApprovalFlowState.APPROVAL,
       showTitle: config.state === ApprovalFlowState.APPROVAL,
-      showBackground: config.state === ApprovalFlowState.APPROVAL
+      showBackground: config.state === ApprovalFlowState.APPROVAL,
     });
   }
-  
+
   private showAsFullPage(config: ApprovalFlowConfig) {
     this.router.navigate(['/review-action']);
   }
-  
+
   /**
    * Updates the flow page configuration when approval state changes
    */
@@ -230,16 +253,16 @@ export class ApprovalFlowService {
       title: this.getApprovalTitle(config.action),
       canNavigateBack: config.state === ApprovalFlowState.APPROVAL,
       showTitle: config.state === ApprovalFlowState.APPROVAL,
-      showBackground: config.state === ApprovalFlowState.APPROVAL
+      showBackground: config.state === ApprovalFlowState.APPROVAL,
     });
   }
-  
+
   private cleanupApproval() {
     const config = this.currentApprovalConfigSignal();
     if (config) {
       this.cleanupByMode(config.mode);
     }
-    
+
     this.currentApprovalConfigSignal.set(null);
   }
 
@@ -256,7 +279,7 @@ export class ApprovalFlowService {
         break;
     }
   }
-  
+
   private getApprovalTitle(action: WalletAction): string {
     switch (action.type) {
       case WalletActionType.TRANSFER_KAS:
@@ -271,4 +294,4 @@ export class ApprovalFlowService {
         return 'Confirm Action';
     }
   }
-} 
+}

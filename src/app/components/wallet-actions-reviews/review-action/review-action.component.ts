@@ -1,13 +1,11 @@
 import { Component, computed } from '@angular/core';
-import { JsonPipe, NgClass, NgFor, NgIf } from '@angular/common';
+import { NgClass, NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   WalletAction,
   WalletActionType,
 } from '../../../types/wallet-action';
 import { WalletService } from '../../../services/wallet.service';
-import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
-import { CompletedActionReview } from '../completed-action-review/completed-action-review.component';
 import { KRC20OperationType } from '../../../types/kaspa-network/krc20-operations-data.interface';
 import { PriorityFeeSelectionComponent } from '../priority-fee-selection/priority-fee-selection.component';
 import { AppWallet } from '../../../classes/AppWallet';
@@ -15,6 +13,7 @@ import { ReviewActionDataService } from '../../../services/action-info-services/
 import { WalletActionService } from '../../../services/wallet-action.service';
 import { EIP1193RequestPayload, EIP1193RequestType } from '@kaspacom/wallet-messages';
 import { InputFieldType } from '../../../types/action-display.type';
+import { KcButtonComponent, KcCheckboxComponent } from '@kaspacom/ui';
 
 const TIMEOUT = 2 * 60 * 1000;
 
@@ -22,7 +21,7 @@ const TIMEOUT = 2 * 60 * 1000;
     selector: 'review-action',
     templateUrl: './review-action.component.html',
     styleUrls: ['./review-action.component.scss'],
-    imports: [NgIf, NgFor, NgClass, CompletedActionReview, PriorityFeeSelectionComponent, FormsModule]
+    imports: [NgIf, NgFor, NgClass, PriorityFeeSelectionComponent, FormsModule, KcButtonComponent, KcCheckboxComponent]
 })
 export class ReviewActionComponent {
   public WalletActionType = WalletActionType;

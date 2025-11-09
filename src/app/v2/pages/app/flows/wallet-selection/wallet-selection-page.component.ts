@@ -4,6 +4,7 @@ import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
 import { WalletService } from '../../../../../services/wallet.service';
+import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { AppWallet } from '../../../../../classes/AppWallet';
 import { QuickActionDialogService } from '../../../../services/quick-action-dialog.service';
 
@@ -12,6 +13,7 @@ interface WalletGroupItem {
   name: string;
   address: string;
   balance: number;
+  balanceDisplay: string;
   isSelected: boolean;
   group: AppWallet[];
 }
@@ -25,6 +27,7 @@ interface WalletGroupItem {
 })
 export class WalletSelectionPageComponent extends FlowPageBaseComponent {
   private walletService = inject(WalletService);
+  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private quickActionDialogService = inject(QuickActionDialogService);
 
   get config(): IFlowPageConfig {
@@ -60,13 +63,18 @@ export class WalletSelectionPageComponent extends FlowPageBaseComponent {
     const items: WalletGroupItem[] = [];
     walletGroups.forEach((group, id) => {
       const name = group[0].getName();
-      const address = group[0].getAddress();
-      const balance = group.reduce(
-        (sum, w) => sum + (w.getTotalBalanceAsSignal() || 0),
-        0,
-      );
+      const address = this.getWalletAddress(group[0]);
+      const balance = this.getWalletBalance(group[0]);
       const isSelected = currentWallet ? currentWallet.getId() === id : false;
-      items.push({ id, name, address, balance, isSelected, group });
+      items.push({
+        id,
+        name,
+        address,
+        balance,
+        balanceDisplay: `${balance} ${this.walletService.getCurrentDisplayNativeTokenName()}`,
+        isSelected,
+        group,
+      });
     });
 
     this.wallets.set(items);
@@ -129,6 +137,29 @@ export class WalletSelectionPageComponent extends FlowPageBaseComponent {
       title: 'Create Wallet',
       canNavigateBack: true,
     });
+  }
+
+  private getWalletAddress(wallet: AppWallet): string {
+    if (!this.walletService.isL2Display()) {
+      return wallet.getAddress();
+    } else {
+      // For L2 networks, get the L2 address
+      const l2State = wallet.getL2WalletStateSignal()();
+      return l2State?.address || wallet.getAddress(); // fallback to L1
+    }
+  }
+
+  private getWalletBalance(wallet: AppWallet): number {
+    if (!this.walletService.isL2Display()) {
+      const balanceData = wallet.getCurrentWalletStateBalanceSignalValue();
+      return balanceData
+        ? this.kaspaNetworkActionsService.sompiToNumber(balanceData.mature)
+        : 0;
+    } else {
+      // For L2 networks, get the L2 balance
+      const l2State = wallet.getL2WalletStateSignal()();
+      return l2State ? l2State.balanceFormatted : 0;
+    }
   }
 
   shortenAddress(address: string): string {

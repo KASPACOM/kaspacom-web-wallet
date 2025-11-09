@@ -1,9 +1,6 @@
 import { Routes } from '@angular/router';
-import { LoginComponent } from './login/login.component';
-import { HomeComponent } from './home/home.component';
 import { SwapComponent } from './swap/swap.component';
 import { AppWrapperComponent } from './app-wrapper.component';
-import { SearchComponent } from './home/search/search.component';
 import { CollectablesComponent } from './collectables/collectables.component';
 import { TransactionsComponent } from './transactions/transactions.component';
 import { SettingsComponent } from './settings/settings.component';
@@ -46,10 +43,5 @@ export const loggedRoutes: Routes = [
         data: { animation: 'Activity' },
       },
     ],
-  },
-  {
-    path: 'login',
-    component: LoginComponent,
-    data: { animation: 'Login' },
   },
 ];

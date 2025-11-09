@@ -1,27 +1,13 @@
 export interface L2ConfigInterface {
-  l1PayloadPrefix?: string,
-  chainId: number;
-  name: string;
-  network: string;
-  nativeCurrency: {
-    name: string;
-    symbol: string;
-    decimals: number;
-  };
-  rpcUrls: {
-    default: {
-      http: string[];
-    };
-    public: {
-      http: string[];
-    };
-  };
-  blockExplorerUrls?: string[];
+  sdkName: string,
+  icon: string,
+  l1TransactionPrefix?: string;
+  erc20GraphUrl?: string;
 }
 
 export interface Environment {
   isProduction: boolean;
-  backendApiBaseurl: string;
+  kaspaComApiBaseurl: string;
   kasplexApiBaseurl: string;
   kaspaApiBaseurl: string;
   krc721ApiBaseurl: string;
@@ -30,7 +16,5 @@ export interface Environment {
   kaspaNetwork: string;
   allowedDomains: string[];
   isL2Enabled: boolean;
-  l2Configs: {
-    kasplex: L2ConfigInterface,
-  }
+  l2Configs: L2ConfigInterface[],
 }

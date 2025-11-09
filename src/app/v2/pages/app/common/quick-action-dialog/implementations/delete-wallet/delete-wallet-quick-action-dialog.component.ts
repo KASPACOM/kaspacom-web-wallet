@@ -8,10 +8,19 @@ import {
   AfterViewInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcButtonComponent, NotificationService } from '@kaspacom/ui';
+import { FormsModule } from '@angular/forms';
+import {
+  KcButtonComponent,
+  KcInputComponent,
+  NotificationService,
+} from '@kaspacom/ui';
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
 import { AppWallet } from '../../../../../../../classes/AppWallet';
 import { WalletService } from '../../../../../../../services/wallet.service';
+import {
+  DELETE_WALLET_CONFIRMATION_PHRASE,
+  isDeleteWalletConfirmationValid,
+} from '../../../../../../shared/constants/delete-wallet.constants';
 
 interface DeleteWalletDialogData {
   walletName: string;
@@ -22,7 +31,13 @@ interface DeleteWalletDialogData {
 @Component({
   selector: 'app-delete-wallet-quick-action-dialog',
   standalone: true,
-  imports: [CommonModule, KcButtonComponent, QuickActionDialogComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    KcButtonComponent,
+    KcInputComponent,
+    QuickActionDialogComponent,
+  ],
   templateUrl: './delete-wallet-quick-action-dialog.component.html',
   styleUrl: './delete-wallet-quick-action-dialog.component.scss',
 })
@@ -37,6 +52,8 @@ export class DeleteWalletQuickActionDialogComponent implements AfterViewInit {
   private notificationService = inject(NotificationService);
 
   isDialogOpen = false;
+  confirmationInput = '';
+  readonly deleteConfirmationPhrase = DELETE_WALLET_CONFIRMATION_PHRASE;
 
   ngAfterViewInit(): void {
     setTimeout(() => {
@@ -47,6 +64,10 @@ export class DeleteWalletQuickActionDialogComponent implements AfterViewInit {
 
   get walletName(): string {
     return this.data?.walletName || '';
+  }
+
+  get canDelete(): boolean {
+    return isDeleteWalletConfirmationValid(this.confirmationInput);
   }
 
   onBackdropClick(): void {
@@ -61,8 +82,13 @@ export class DeleteWalletQuickActionDialogComponent implements AfterViewInit {
     this.closeDialog();
   }
 
+  onConfirmationChange(value: string): void {
+    this.confirmationInput = value ?? '';
+  }
+
   private closeDialog(): void {
     this.isDialogOpen = false;
+    this.confirmationInput = '';
     setTimeout(() => {
       this.close.emit();
     }, 300);
@@ -72,6 +98,14 @@ export class DeleteWalletQuickActionDialogComponent implements AfterViewInit {
     const wallet = this.data?.wallet;
     if (!wallet) {
       this.notificationService.error('Error', 'No wallet selected');
+      return;
+    }
+
+    if (!this.canDelete) {
+      this.notificationService.error(
+        'Confirmation required',
+        `Type "${this.deleteConfirmationPhrase}" to confirm deletion`,
+      );
       return;
     }
 

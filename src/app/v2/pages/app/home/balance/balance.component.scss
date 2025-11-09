@@ -12,3 +12,26 @@
     transform: translateY(0);
   }
 }
+
+.network-indicator {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.balance-amount {
+  font-weight: 600;
+}
+
+.network-name {
+  font-size: 12px;
+  opacity: 0.8;
+  font-weight: 500;
+}
+
+.balance-wallet-address {
+    width: 80%;
+    word-break: break-word;
+    text-align: center;
+    display: flex;
+    min-height: 40px;
+}

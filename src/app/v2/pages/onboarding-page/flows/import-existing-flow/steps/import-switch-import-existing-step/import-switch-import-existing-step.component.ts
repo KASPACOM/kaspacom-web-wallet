@@ -1,240 +1,40 @@
 import { CommonModule } from '@angular/common';
-import {
-  ChangeDetectorRef,
-  Component,
-  HostListener,
-  computed,
-  inject,
-  output,
-  signal,
-} from '@angular/core';
-import {
-  KcButtonComponent,
-  KcIconComponent,
-  KcInputComponent,
-  KcSnackbarComponent,
-  NotificationService,
-} from '@kaspacom/ui';
+import { Component, inject, output, signal } from '@angular/core';
+import { KcButtonComponent } from '@kaspacom/ui';
 import { ImportSwitchComponent } from './component/import-switch/import-switch.component';
 import { ImportSwitchMethod } from './component/import-switch/import-switch-method.enum';
-import { RadioInputComponent } from '../../../../../../shared/ui/input/radio/radio-input/radio-input.component';
-import {
-  FormArray,
-  FormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
-import { WalletService } from '../../../../../../../services/wallet.service';
 
 @Component({
   selector: 'app-import-switch-import-existing-step',
-  imports: [
-    CommonModule,
-    KcButtonComponent,
-    ImportSwitchComponent,
-    RadioInputComponent,
-    KcInputComponent,
-    KcSnackbarComponent,
-    ReactiveFormsModule,
-    KcIconComponent,
-  ],
+  imports: [CommonModule, KcButtonComponent, ImportSwitchComponent],
   templateUrl: './import-switch-import-existing-step.component.html',
   styleUrl: './import-switch-import-existing-step.component.scss',
 })
 export class ImportSwitchImportExistingStepComponent {
   next = output<void>();
-  previous = output<void>();
 
   ImportSwitchMethod = ImportSwitchMethod;
-
-  private readonly fb = inject(FormBuilder);
-
-  private readonly cdr = inject(ChangeDetectorRef);
 
   private readonly importExistingFlowService = inject(
     ImportExistingFlowService,
   );
 
-  private readonly notificationService = inject(NotificationService);
-
-  private readonly walletService = inject(WalletService);
-
   importMethod = signal<ImportSwitchMethod>(ImportSwitchMethod.SEED_PHRASE);
-
-  seedPhraseForm = this.fb.group({
-    words: this.fb.array([]),
-    seedPassphrase: [''],
-  });
-
-  privateKeyForm = this.fb.group({
-    privateKey: ['', [Validators.required]],
-  });
-
-  trackPhraseCount = signal<number>(1);
-
-  get words() {
-    return this.seedPhraseForm.get('words') as FormArray;
-  }
-
-  wordCount = signal<number>(12);
-
-  privateKeyFieldType = signal<'text' | 'password'>('password');
-
-  privateKeyFieldIcon = computed(() =>
-    this.privateKeyFieldType() === 'text' ? 'icon-eye-crossed' : 'icon-eye',
-  );
 
   constructor() {
     this.importMethod.set(
       this.importExistingFlowService.model().importSwitchMethod,
     );
-    this.wordCount.set(this.importExistingFlowService.model().wordCount);
-    this.privateKeyForm = this.fb.group({
-      privateKey: [
-        this.importExistingFlowService.model().privateKey,
-        [Validators.required],
-      ],
-    });
-    const initialWords = this.importExistingFlowService
-      .model()
-      .seedPhrase.split(/\s+/);
-    for (let i = 0; i < this.wordCount(); i += 1) {
-      const initialValue = i < initialWords.length ? initialWords[i] : '';
-      this.words.push(this.fb.control(initialValue, [Validators.required]));
-    }
-    this.seedPhraseForm.patchValue({
-      seedPassphrase: this.importExistingFlowService.model().seedPassphrase,
-    });
-  }
-
-  reInitSeedPhraseForm() {
-    this.trackPhraseCount.set(this.trackPhraseCount() + 1);
-    this.words.clear();
-    this.words.reset();
-    this.cdr.detectChanges();
-    for (let i = 0; i < this.wordCount(); i += 1) {
-      this.words.push(this.fb.control('', [Validators.required]));
-    }
-  }
-
-  onWordCountChange(count: number): void {
-    this.wordCount.set(count);
-    this.reInitSeedPhraseForm();
   }
 
   onImportMethodChange(method: ImportSwitchMethod): void {
     this.importMethod.set(method);
+    this.importExistingFlowService.setImportSwitchMethod(method);
   }
 
-  togglePrivateKeyVisibility(): void {
-    this.privateKeyFieldType.set(
-      this.privateKeyFieldType() === 'text' ? 'password' : 'text',
-    );
-  }
-
-  @HostListener('paste', ['$event'])
-  onPaste(event: ClipboardEvent): void {
-    if (this.importMethod() !== ImportSwitchMethod.SEED_PHRASE) {
-      return;
-    }
-    const pastedText = event.clipboardData?.getData('text');
-    if (!pastedText) {
-      return;
-    }
-    const pastedWords = pastedText.split(/\s+/);
-    let i = 0;
-    for (const pastedWord of pastedWords) {
-      if (i >= this.wordCount()) {
-        break;
-      }
-      this.words.at(i).setValue(pastedWord.trim());
-      i++;
-    }
-  }
-
-  canSubmit(): boolean {
-    if (this.importMethod() === ImportSwitchMethod.SEED_PHRASE) {
-      return this.seedPhraseForm.valid;
-    } else if (this.importMethod() === ImportSwitchMethod.PRIVATE_KEY) {
-      return this.privateKeyForm.valid;
-    }
-    return false;
-  }
-
-  private async doImportIfNeeded(): Promise<boolean> {
-    if (!this.importExistingFlowService.isSkipPassword()) {
-      return true; // handled in PIN step
-    }
-    const result =
-      await this.importExistingFlowService.finalSubmitSkipPassword();
-    if (!result.success) {
-      this.notificationService.error(
-        'Error',
-        result.error ?? 'Failed to import wallet.',
-      );
-      return false;
-    }
-    return true;
-  }
-
-  async submitSeedPhrase() {
-    let tmp = '';
-    for (let word of this.words.controls) {
-      tmp = `${tmp} ${word.value}`.trim();
-    }
-
-    const passphrase = this.seedPhraseForm.value.seedPassphrase || undefined;
-    const derivedAddr = this.walletService.getWalletAddressFromMnemonic(
-      tmp,
-      passphrase,
-    );
-    if (!derivedAddr) {
-      this.notificationService.error(
-        'Invalid seed phrase',
-        'Please enter a valid seed phrase.',
-      );
-      return;
-    }
-
-    this.importExistingFlowService.submitSeedPhraseStep(
-      tmp,
-      this.wordCount(),
-      this.importMethod(),
-      this.seedPhraseForm.value.seedPassphrase || '',
-    );
-
-    if (await this.doImportIfNeeded()) {
-      this.next.emit();
-    }
-  }
-
-  isPrivateKeyInvalid(controlName: string): boolean {
-    const control = this.privateKeyForm.get(controlName);
-    return control
-      ? control.invalid && (control.dirty || control.touched)
-      : false;
-  }
-
-  async submitPrivateKey() {
-    this.importExistingFlowService.submitPrivateKeyStep(
-      this.privateKeyForm.value.privateKey!,
-      this.importMethod(),
-    );
-
-    if (await this.doImportIfNeeded()) {
-      this.next.emit();
-    }
-  }
-
-  async handleSubmit() {
-    if (!this.canSubmit()) {
-      return;
-    }
-    if (this.importMethod() === ImportSwitchMethod.SEED_PHRASE) {
-      await this.submitSeedPhrase();
-    } else if (this.importMethod() === ImportSwitchMethod.PRIVATE_KEY) {
-      await this.submitPrivateKey();
-    }
+  onContinue(): void {
+    this.importExistingFlowService.setImportSwitchMethod(this.importMethod());
+    this.next.emit();
   }
 }

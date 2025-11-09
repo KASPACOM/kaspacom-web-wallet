@@ -1,62 +1,37 @@
-import { Component, signal, OnInit, inject } from '@angular/core';
+import { Component, signal, OnInit, inject, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BalanceComponent } from './balance/balance.component';
-import { WalletSummaryComponent } from './wallet-summary/wallet-summary.component';
 import { CryptoActionsComponent } from './crypto-actions/crypto-actions.component';
-import { KcLabeledTabsComponent, TabItem } from '../../../shared/ui/kc-labeled-tabs/kc-labeled-tabs.component';
-import { Krc721SummaryComponent } from './krc721-summary/krc721-summary.component';
-import { KnsSummaryComponent } from './kns-summary/kns-summary.component';
-import { UtxosSummaryComponent } from './utxos-summary/utxos-summary.component';
+import { L1AssetsContainerComponent } from './assets-container/l1-assets-container.component';
+import { L2AssetsContainerComponent } from './assets-container/l2-assets-container.component';
+import { WalletService } from '../../../../services/wallet.service';
+import { KaspaNetworkActionsService } from '../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 
 @Component({
   selector: 'app-home',
   imports: [
-    BalanceComponent, 
-    WalletSummaryComponent, 
+    CommonModule,
+    BalanceComponent,
     CryptoActionsComponent,
-    KcLabeledTabsComponent,
-    Krc721SummaryComponent,
-    KnsSummaryComponent,
-    UtxosSummaryComponent
+    L1AssetsContainerComponent,
+    L2AssetsContainerComponent,
   ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
 export class HomeComponent implements OnInit {
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
-  
-  selectedTabId = signal<string>('utxos');
+  private walletService = inject(WalletService);
 
-  tabs: TabItem[] = [
-    { id: 'utxos', label: 'UTXOs' },
-    { id: 'krc20', label: 'KRC20' },
-    { id: 'krc721', label: 'KRC721' },
-    { id: 'kns', label: 'KNS' }
-  ];
+  kasBalance = computed<number | null>(() => {
+    if (this.walletService.isL2Display()) {
+      return this.walletService.getCurrentWallet()?.getL2WalletStateSignal()()?.balanceFormatted || 0;
+    } else {
+      return this.walletService.getCurrentWallet()?.getTotalBalanceAsSignal() || 0;
+    }
+  });
 
-  ngOnInit() {
-    // Check for tab parameter in query params
-    this.route.queryParams.subscribe(params => {
-      const tabParam = params['tab'];
-      if (tabParam && this.isValidTab(tabParam)) {
-        this.selectedTabId.set(tabParam);
-      }
-    });
-  }
+  isL2Display = computed(() => this.walletService.getIsL2DisplaySignal()());
 
-  onTabChange(tabId: string) {
-    this.selectedTabId.set(tabId);
-    // Update URL with current tab (without navigating)
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { tab: tabId },
-      queryParamsHandling: 'merge',
-      replaceUrl: true
-    });
-  }
-
-  private isValidTab(tabId: string): boolean {
-    return this.tabs.some(tab => tab.id === tabId);
-  }
+  ngOnInit() { }
 }

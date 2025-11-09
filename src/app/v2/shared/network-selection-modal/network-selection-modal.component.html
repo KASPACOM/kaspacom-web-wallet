@@ -1,0 +1,33 @@
+<div class="network-selection-modal">
+  <div class="modal-content">
+    <h3 class="network-group-title">L1 Network</h3>
+    <div class="networks-list">
+      <div class="network-item" [class.selected]="!isCurrentNetworkL2()" (click)="setL1Network()">
+        <div class="network-icon">
+          🌐
+        </div>
+        <div class="network-info">
+          <div class="network-name">Kaspa L1</div>
+        </div>
+        <div class="network-status">
+          <kc-icon *ngIf="!isCurrentNetworkL2()" [iconClass]="'icon-check'" [size]="'sm'"></kc-icon>
+        </div>
+      </div>
+    </div>
+    <h3 class="network-group-title">L2 Networks</h3>
+    <div class="networks-list">
+      <div *ngFor="let network of networks" class="network-item" [class.selected]="isCurrentNetwork(network.chainId)"
+        (click)="setL2Network(network)">
+        <div class="network-icon">
+          {{ getNetworkIcon(network) }}
+        </div>
+        <div class="network-info">
+          <div class="network-name">{{ getNetworkName(network) }}</div>
+        </div>
+        <div class="network-status">
+          <kc-icon *ngIf="isCurrentNetwork(network.chainId)" [iconClass]="'icon-check'" [size]="'sm'"></kc-icon>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,7 +1,7 @@
 <div class="flex column gap-16 align-items-center full-width">
   <app-step-indicator
     [currentStep]="currentIndex()"
-    [maxSteps]="stepOrder.length"
+    [maxSteps]="totalSteps()"
   ></app-step-indicator>
 
   @switch (importStep()) {
@@ -9,8 +9,41 @@
       <div class="full-width" [@stepAnimation]="slideDirection()">
         <app-import-switch-import-existing-step
           (next)="next()"
-          (previous)="previous()"
         ></app-import-switch-import-existing-step>
+      </div>
+    }
+    @case (ImportExistingStep.ENTER_SEED_PHRASE) {
+      <div class="full-width" [@stepAnimation]="slideDirection()">
+        <app-seed-phrase-import-existing-step
+          (next)="next()"
+          (previous)="previous()"
+        ></app-seed-phrase-import-existing-step>
+      </div>
+    }
+    @case (ImportExistingStep.SEED_PASSPHRASE) {
+      <div class="full-width" [@stepAnimation]="slideDirection()">
+        <app-seed-passphrase-import-existing-step
+          (next)="next()"
+          (previous)="previous()"
+          [skipPassword]="skipPassword()"
+        ></app-seed-passphrase-import-existing-step>
+      </div>
+    }
+    @case (ImportExistingStep.ENTER_PRIVATE_KEY) {
+      <div class="full-width" [@stepAnimation]="slideDirection()">
+        <app-private-key-import-existing-step
+          (next)="next()"
+          (previous)="previous()"
+          [skipPassword]="skipPassword()"
+        ></app-private-key-import-existing-step>
+      </div>
+    }
+    @case (ImportExistingStep.IMPORT_BACKUP) {
+      <div class="full-width" [@stepAnimation]="slideDirection()">
+        <app-backup-import-existing-step
+          (next)="next()"
+          (previous)="previous()"
+        ></app-backup-import-existing-step>
       </div>
     }
     @case (ImportExistingStep.CREATE_PIN) {

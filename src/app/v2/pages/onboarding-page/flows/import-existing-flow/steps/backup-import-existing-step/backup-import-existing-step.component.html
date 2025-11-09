@@ -1,0 +1,54 @@
+<div class="flex column align-items-center gap-24 full-width">
+  <div class="flex column align-items-center gap-8">
+    <span class="typo-title-3">Import Backup</span>
+    <span class="typo-text-3 text-medium text-align-center">
+      Paste your backup key or upload your .key file
+    </span>
+  </div>
+
+  <div class="backup-import-container flex column gap-16 full-width">
+    <textarea
+      class="backup-input"
+      [(ngModel)]="backupData"
+      placeholder="Paste your backup key here..."
+      rows="6"
+      [disabled]="isImporting()"
+      spellcheck="false"
+      autocomplete="off"
+    ></textarea>
+
+    <div class="flex align-items-center gap-12 full-width">
+      <div class="divider"></div>
+      <span class="typo-text-3 text-medium">or</span>
+      <div class="divider"></div>
+    </div>
+
+    <button
+      class="upload-button flex align-items-center justify-content-center gap-8"
+      (click)="importFromFile()"
+      [disabled]="isImporting()"
+      type="button"
+    >
+      <kc-icon [iconClass]="'icon-upload'" [size]="'sm'"></kc-icon>
+      <span class="typo-text-2">Upload File</span>
+    </button>
+  </div>
+
+  <div class="flex gap-12 full-width">
+    <kc-button
+      [isFullWidth]="true"
+      [text]="'Back'"
+      [variant]="'tertiary'"
+      (buttonClick)="previous.emit()"
+      [isDisabled]="isImporting()"
+    ></kc-button>
+    <kc-button
+      [isFullWidth]="true"
+      [text]="isImporting() ? 'Importing...' : 'Import'"
+      [variant]="'primary'"
+      (buttonClick)="importBackup()"
+      [isDisabled]="isImporting() || !backupData.trim()"
+    ></kc-button>
+  </div>
+</div>
+

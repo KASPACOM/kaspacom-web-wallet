@@ -19,6 +19,7 @@ export interface GetTokenListDto {
   locked: number;
   decimals: number;
   opScoreMod: string;
+  priceKas: number;
 }
 
 

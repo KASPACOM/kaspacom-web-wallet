@@ -1,30 +1,27 @@
-import { AfterViewInit, Component, OnInit, Renderer2, inject } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
-import { PasswordManagerService } from './services/password-manager.service';
+import { AfterViewInit, Component, Inject, NgZone, OnDestroy, OnInit, Renderer2, inject } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 import { AppHeaderComponent } from './components/app-header/app-header.component';
 import { KaspaNetworkActionsService } from './services/kaspa-netwrok-services/kaspa-network-actions.service';
-import {  NgIf } from '@angular/common';
+import { DOCUMENT, NgIf } from '@angular/common';
 import { environment } from '../environments/environment';
 import { IFrameCommunicationApp } from './services/communication-service/communication-app/iframe-communication.service';
 import { CommunicationManagerService } from './services/communication-service/communication-manager.service';
 import { MessagePopupComponent } from './components/message-popup/message-popup.component';
 import { MessagePopupService } from './services/message-popup.service';
 import { WalletService } from './services/wallet.service';
-import { RpcConnectionStatus } from './types/kaspa-network/rpc-connection-status.enum';
-import { toObservable } from '@angular/core/rxjs-interop';
 import { KaspaNetworkConnectionManagerService } from './services/kaspa-netwrok-services/kaspa-network-connection-manager.service';
 import { EthereumWalletChainManager } from './services/etherium-services/etherium-wallet-chain.manager';
-import { AssetsStoreService } from './services/assets-store.service';
-import { combineLatest } from 'rxjs';
+import { AssetsManagerService } from './services/assets-manager/assets-manager.service';
+import { StartupBackgroundCanvasComponent } from './components/startup-background-canvas/startup-background-canvas.component';
 
 @Component({
-    selector: 'app-root',
-    imports: [RouterOutlet, AppHeaderComponent, NgIf, MessagePopupComponent],
-    templateUrl: './app.component.html',
-    styleUrl: './app.component.scss',
-    providers: [KaspaNetworkActionsService]
+  selector: 'app-root',
+  imports: [RouterOutlet, AppHeaderComponent, NgIf, MessagePopupComponent, StartupBackgroundCanvasComponent],
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.scss',
+  providers: [KaspaNetworkActionsService]
 })
-export class AppComponent implements OnInit, AfterViewInit {
+export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   title = 'kaspiano-wallet';
   rpcConnectionRejectReason = '';
   walletService = inject(WalletService);
@@ -32,21 +29,19 @@ export class AppComponent implements OnInit, AfterViewInit {
   communicationService = inject(CommunicationManagerService);
   kaspaConnectionService = inject(KaspaNetworkConnectionManagerService);
   ethereumWalletChainManager = inject(EthereumWalletChainManager);
-  assetsStore = inject(AssetsStoreService);
+  assetsManager = inject(AssetsManagerService);
+  private teardownLoader?: VoidFunction;
 
   constructor(
-    private readonly router: Router,
-    private readonly passwordManagerService: PasswordManagerService,
     private readonly communicationManagerService: CommunicationManagerService,
-    private renderer: Renderer2) {
+    private readonly renderer: Renderer2,
+    @Inject(DOCUMENT) private readonly document: Document,
+    private readonly zone: NgZone,
+  ) {
   }
 
   async ngOnInit() {
     console.log('App component initialized');
-    
-    // Initialize assets store testing
-    this.initializeAssetsStoreTesting();
-
     if (!this.isAllowedDomain()) {
       return;
     }
@@ -55,17 +50,18 @@ export class AppComponent implements OnInit, AfterViewInit {
       this.communicationManagerService.addApp(new IFrameCommunicationApp());
     }
 
-    // if (this.passwordManagerService.isUserHasSavedPassword()) {
-    //   this.router.navigate(['/login']);
-    // } else {
-    //   this.router.navigate(['/set-password']);
-    // }
+    this.assetsManager.initializeWalletListenerAndStart();
   }
 
   ngAfterViewInit(): void {
-    let loader = this.renderer.selectRootElement('#application-loader-startup');
-    if (loader.style.display != "none") loader.style.display = "none"; //hide loader
-    loader.remove();
+    this.teardownLoader = this.setupLoaderFadeOut();
+  }
+
+  ngOnDestroy(): void {
+    if (this.teardownLoader) {
+      this.teardownLoader();
+      this.teardownLoader = undefined;
+    }
   }
 
   isAllowedDomain(): boolean {
@@ -80,63 +76,51 @@ export class AppComponent implements OnInit, AfterViewInit {
     return undefined;
   }
 
-  private initializeAssetsStoreTesting(): void {
-    console.log('[AppComponent] Initializing assets store testing...');
-    
-    // Subscribe to all assets changes
-    toObservable(this.assetsStore.allAssets).subscribe((assets) => {
-      console.log('[AssetsStore Test] All assets updated:', assets);
-    });
-    
-    // Subscribe to loading states
-    toObservable(this.assetsStore.loadingStates).subscribe((states) => {
-      console.log('[AssetsStore Test] Loading states:', states);
-    });
-    
-    // Subscribe to individual asset types
-    toObservable(this.assetsStore.kaspaAssets).subscribe((kaspa) => {
-      if (kaspa) {
-        console.log('[AssetsStore Test] Kaspa balance:', {
-          totalBalance: kaspa.totalBalance.toString(),
-          utxoCount: kaspa.utxoEntries.length
-        });
+  private setupLoaderFadeOut(): VoidFunction | undefined {
+    return this.zone.runOutsideAngular(() => {
+      const loader = this.document.getElementById('application-loader-startup');
+      if (!loader) {
+        return;
       }
-    });
-    
-    toObservable(this.assetsStore.krc20Assets).subscribe((tokens) => {
-      console.log('[AssetsStore Test] KRC20 tokens count:', tokens.length);
-      if (tokens.length > 0) {
-        console.log('[AssetsStore Test] Sample KRC20 tokens:', tokens.slice(0, 5));
-      }
-    });
-    
-    toObservable(this.assetsStore.krc721Assets).subscribe((nfts) => {
-      console.log('[AssetsStore Test] KRC721 NFTs count:', nfts.length);
-      if (nfts.length > 0) {
-        console.log('[AssetsStore Test] Sample NFTs:', nfts.slice(0, 5));
-      }
-    });
-    
-    toObservable(this.assetsStore.knsAssets).subscribe((domains) => {
-      console.log('[AssetsStore Test] KNS domains count:', domains.length);
-      if (domains.length > 0) {
-        console.log('[AssetsStore Test] Sample domains:', domains.slice(0, 5));
-      }
-    });
-    
-    // Test methods after 5 seconds
-    setTimeout(() => {
-      console.log('[AssetsStore Test] Testing getter methods...');
-      console.log('[AssetsStore Test] Asset values:', this.assetsStore.getAllAssetValues());
-      console.log('[AssetsStore Test] Is any loading?', this.assetsStore.isAnyAssetLoading());
-      console.log('[AssetsStore Test] KRC20 loading?', this.assetsStore.isAssetTypeLoading('krc20'));
-      
-      // Test reload of specific asset type
-      console.log('[AssetsStore Test] Reloading KRC20 tokens...');
-      this.assetsStore.reloadKrc20().then(() => {
-        console.log('[AssetsStore Test] KRC20 reload completed');
-      });
-    }, 5000);
-  }
 
+      this.renderer.addClass(loader, 'fade-out');
+
+      const cleanupFns: VoidFunction[] = [];
+      let isFinalized = false;
+
+      const finalizeRemoval = () => {
+        if (isFinalized) {
+          return;
+        }
+        isFinalized = true;
+
+        cleanupFns.splice(0).forEach((cleanup) => cleanup());
+
+        const parent = loader.parentNode;
+        if (parent) {
+          this.renderer.removeChild(parent, loader);
+        } else if (loader instanceof HTMLElement && typeof loader.remove === 'function') {
+          loader.remove();
+        }
+      };
+
+      const transitionCleanup = this.renderer.listen(
+        loader,
+        'transitionend',
+        (event: TransitionEvent) => {
+          if (event.target === loader && event.propertyName === 'opacity') {
+            finalizeRemoval();
+          }
+        },
+      );
+      cleanupFns.push(transitionCleanup);
+
+      const timeoutId = setTimeout(finalizeRemoval, 800);
+      cleanupFns.push(() => clearTimeout(timeoutId));
+
+      return () => {
+        this.zone.runOutsideAngular(finalizeRemoval);
+      };
+    });
+  }
 }

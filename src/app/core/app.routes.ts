@@ -6,8 +6,7 @@ import { AddWalletComponent } from '../pages/add-wallet/add-wallet.component';
 import { WalletInfoComponent } from '../pages/wallet-info/wallet-info.component';
 import { ReviewActionComponent } from '../components/wallet-actions-reviews/review-action/review-action.component';
 import { ClearDataComponent } from '../pages/clear-data/clear-data.component';
-import { OnboardingPageComponent } from '../v2/pages/onboarding-page/onboarding-page.component';
-import { V2TMP_ROUTES } from '../v2/v2.routes';
+import { OnboardingPageV2Component } from '../v2/pages/onboarding-page-v2/onboarding-page-v2.component';
 
 export const routes: Routes = [
   {
@@ -15,7 +14,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        component: OnboardingPageComponent,
+        component: OnboardingPageV2Component,
       },
     ],
   },

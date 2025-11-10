@@ -6,7 +6,10 @@ import { MessagePopupService } from './message-popup.service';
 export interface QrScannerConfig {
   scannerId: string;
   title?: string;
-  onSuccess: (address: string) => void;
+  instruction?: string;
+  successMessage?: string;
+  validateAddress?: boolean;
+  onSuccess: (data: string) => void;
   onError?: (error: string) => void;
 }
 
@@ -110,7 +113,7 @@ export class QrScannerService {
       
       // Add instruction text
       const instruction = document.createElement('p');
-      instruction.textContent = 'Point camera at QR code containing wallet address';
+      instruction.textContent = config.instruction || 'Point camera at QR code containing wallet address';
       instruction.style.color = 'white';
       instruction.style.textAlign = 'center';
       instruction.style.marginBottom = '20px';
@@ -185,6 +188,15 @@ export class QrScannerService {
       return;
     }
     
+    // If validateAddress is false, pass raw data directly
+    if (this.currentConfig.validateAddress === false) {
+      this.currentConfig.onSuccess(qrText.trim());
+      const successMsg = this.currentConfig.successMessage || 'QR code scanned successfully!';
+      this.messagePopupService.showSuccess(successMsg);
+      this.stopScanning();
+      return;
+    }
+    
     // Extract wallet address from QR code (it might be just the address or a URL)
     let address = qrText.trim();
     
@@ -196,7 +208,8 @@ export class QrScannerService {
     // Validate the address
     if (this.utilsHelper.isValidWalletAddress(address)) {
       this.currentConfig.onSuccess(address);
-      this.messagePopupService.showSuccess('Wallet address scanned successfully!');
+      const successMsg = this.currentConfig.successMessage || 'Wallet address scanned successfully!';
+      this.messagePopupService.showSuccess(successMsg);
       this.stopScanning();
     } else {
       const errorMsg = 'Invalid wallet address in QR code';

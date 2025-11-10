@@ -14,3 +14,15 @@
     }
   }
 }
+
+.separator-line {
+  flex: 1;
+  height: 1px;
+  background-color: var(--color-medium-grey);
+  opacity: 0.5;
+}
+
+.separator-text {
+  color: var(--color-medium-grey);
+  white-space: nowrap;
+}

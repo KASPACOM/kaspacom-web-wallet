@@ -6,7 +6,23 @@
     >
   </div>
 
-  <div class="flex full-width">
+  <div class="flex column full-width gap-16">
+    <button
+      kcButton
+      [text]="'Scan QR Code'"
+      [prefixIcon]="'icon-qr'"
+      [fullWidth]="true"
+      [variant]="'tertiary'"
+      [size]="'m'"
+      (onClick)="onQrScanClick()"
+    ></button>
+
+    <div class="flex align-items-center gap-12 full-width">
+      <div class="separator-line"></div>
+      <span class="separator-text typo-text-3 text-medium">- OR -</span>
+      <div class="separator-line"></div>
+    </div>
+
     <app-import-switch
       class="full-width"
       [selectedMethod]="importMethod()"

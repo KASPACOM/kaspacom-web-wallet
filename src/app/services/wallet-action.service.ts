@@ -255,18 +255,37 @@ export class WalletActionService {
     let currentStep = 0;
     const currentWalletAddress = this.walletService.getCurrentWallet()!.getAddress();
 
-    const actionResult = await this.doWalletAction(action, async (data) => {
-      currentStep++;
-      const progress = Math.round((currentStep / actionSteps) * 100);
+    let actionResult: WalletActionResultWithError;
+    try {
+      actionResult = await this.doWalletAction(action, async (data) => {
+        currentStep++;
+        const progress = Math.round((currentStep / actionSteps) * 100);
+
+        if (isUsingV2Flow) {
+          // Update the new approval flow with progress
+          this.approvalFlowService.updateProgress(progress);
+        } else {
+          // Use legacy progress display
+          this.showTransactionLoaderToUser(progress, currentWalletAddress);
+        }
+      });
+    } catch (error) {
+      console.error('Error executing wallet action:', error);
 
       if (isUsingV2Flow) {
-        // Update the new approval flow with progress
-        this.approvalFlowService.updateProgress(progress);
-      } else {
-        // Use legacy progress display
-        this.showTransactionLoaderToUser(progress, currentWalletAddress);
+        const fallbackMessage = 'Transaction failed due to an unexpected error.';
+        const errorMessage =
+          error instanceof Error && error.message
+            ? error.message
+            : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR] ?? fallbackMessage;
+        this.approvalFlowService.setErrorState(errorMessage);
       }
-    });
+
+      return {
+        success: false,
+        errorCode: ERROR_CODES.GENERAL.UNKNOWN_ERROR,
+      };
+    }
 
     if (!actionResult.success) {
       if (isUsingV2Flow) {

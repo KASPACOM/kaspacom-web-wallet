@@ -1,4 +1,4 @@
-<span class="kc-button__content">
+<span class="kc-button__content" (click)="handleClick($event)">
   <kc-icon
     *ngIf="prefixIcon && !loading"
     [iconClass]="prefixIcon"

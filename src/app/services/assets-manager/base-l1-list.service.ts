@@ -1,5 +1,5 @@
-import { Signal, WritableSignal, computed, effect, inject, signal } from '@angular/core';
-import { L1AssetsStoreService } from './assets-stores/l1-assets-store.service';
+import { DestroyRef, Signal, WritableSignal, computed, effect, inject, signal } from '@angular/core';
+import { L1AssetStoreData, L1AssetsStoreService } from './assets-stores/l1-assets-store.service';
 import { WalletService } from '../wallet.service';
 import { L1AssetType } from './enums/l1-asset-type.enum';
 import {
@@ -32,6 +32,9 @@ export abstract class BaseL1ListService<TAsset> {
   readonly shouldCheckScrollPosition: Signal<boolean>;
 
   private lastWalletAddress: string | undefined;
+  private previousLength = 0;
+  private mergeFlagResetTimeout: ReturnType<typeof setTimeout> | undefined;
+  private readonly destroyRef = inject(DestroyRef);
 
   protected constructor(
     private readonly assetType: L1AssetType,
@@ -42,7 +45,6 @@ export abstract class BaseL1ListService<TAsset> {
       hasMore: true,
       isLoading: false,
       pageSize: this.config.pageSize,
-      totalLoaded: 0,
       initialLoadComplete: false,
     });
 
@@ -59,7 +61,22 @@ export abstract class BaseL1ListService<TAsset> {
     this.shouldCheckScrollPosition = computed(() => this.dataGrewFromMergeSignal());
 
     this.setupWalletWatcher();
-    this.setupDataWatcher();
+
+    const removeListener = this.l1AssetsStore.onAssetsUpdated(
+      this.assetType as keyof L1AssetStoreData,
+      (items) => this.handleItemsUpdated(items as TAsset[] | undefined),
+    );
+
+    this.destroyRef.onDestroy(() => {
+      removeListener();
+      if (this.mergeFlagResetTimeout) {
+        clearTimeout(this.mergeFlagResetTimeout);
+        this.mergeFlagResetTimeout = undefined;
+      }
+    });
+
+    this.previousLength = this.itemsSignal().length;
+    this.handleItemsUpdated(this.itemsSignal());
   }
 
   protected abstract loadMoreFromStore(): Promise<L1LoadMoreStoreResult>;
@@ -74,9 +91,14 @@ export abstract class BaseL1ListService<TAsset> {
       hasMore: true,
       isLoading: false,
       pageSize: this.config.pageSize,
-      totalLoaded: 0,
       initialLoadComplete: false,
     });
+    if (this.mergeFlagResetTimeout) {
+      clearTimeout(this.mergeFlagResetTimeout);
+      this.mergeFlagResetTimeout = undefined;
+    }
+    this.dataGrewFromMergeSignal.set(false);
+    this.previousLength = 0;
   }
 
   refetch(): void {
@@ -116,7 +138,7 @@ export abstract class BaseL1ListService<TAsset> {
       return {
         success: false,
         itemsAdded: 0,
-        totalItems: stateSnapshot.totalLoaded,
+        totalItems: this.itemsSignal().length,
         hasMore: stateSnapshot.hasMore,
         status: stateSnapshot.isLoading ? PaginationStatus.LOADING : PaginationStatus.IDLE,
       };
@@ -136,7 +158,6 @@ export abstract class BaseL1ListService<TAsset> {
           cursor: result.nextCursor,
           hasMore: result.hasMore,
           isLoading: false,
-          totalLoaded: state.totalLoaded + result.itemsAdded,
         }));
       } else {
         this.paginationStateSignal.update((state) => ({
@@ -148,7 +169,7 @@ export abstract class BaseL1ListService<TAsset> {
       return {
         success: result.success,
         itemsAdded: result.itemsAdded,
-        totalItems: this.paginationStateSignal().totalLoaded,
+        totalItems: this.itemsSignal().length,
         hasMore: result.hasMore,
         status: result.success ? PaginationStatus.SUCCESS : PaginationStatus.ERROR,
         error: result.error,
@@ -163,7 +184,7 @@ export abstract class BaseL1ListService<TAsset> {
       return {
         success: false,
         itemsAdded: 0,
-        totalItems: stateSnapshot.totalLoaded,
+        totalItems: this.itemsSignal().length,
         hasMore: stateSnapshot.hasMore,
         status: PaginationStatus.ERROR,
         error: (error as Error).message,
@@ -189,46 +210,46 @@ export abstract class BaseL1ListService<TAsset> {
     });
   }
 
-  private setupDataWatcher(): void {
-    let previousLength = 0;
+  private handleItemsUpdated(items: TAsset[] | undefined): void {
+    const currentState = this.paginationStateSignal();
+    const currentLength = items?.length ?? 0;
 
-    effect(() => {
-      const assets = this.itemsSignal();
-      const currentState = this.paginationStateSignal();
-      const currentLength = assets?.length ?? 0;
+    if (currentLength > 0 && !currentState.initialLoadComplete) {
+      this.paginationStateSignal.update((state) => ({
+        ...state,
+        initialLoadComplete: true,
+        isLoading: false,
+      }));
+    }
 
-      if (currentLength > 0) {
-        if (previousLength > 0 && currentLength > previousLength && currentState.initialLoadComplete) {
-          const itemsAdded = currentLength - previousLength;
-          const isLikelyMerge = itemsAdded !== this.config.pageSize;
+    if (
+      currentLength > this.previousLength &&
+      currentState.initialLoadComplete
+    ) {
+      const itemsAdded = currentLength - this.previousLength;
+      const isLikelyMerge = itemsAdded !== this.config.pageSize;
 
-          if (isLikelyMerge) {
-            this.dataGrewFromMergeSignal.set(true);
-            setTimeout(() => this.dataGrewFromMergeSignal.set(false), 100);
-          }
-
-          this.paginationStateSignal.update((state) => ({
-            ...state,
-            totalLoaded: currentLength,
-          }));
+      if (isLikelyMerge) {
+        this.dataGrewFromMergeSignal.set(true);
+        if (this.mergeFlagResetTimeout) {
+          clearTimeout(this.mergeFlagResetTimeout);
         }
-
-        if (!currentState.initialLoadComplete) {
-          this.paginationStateSignal.update((state) => ({
-            ...state,
-            initialLoadComplete: true,
-            isLoading: false,
-          }));
-        }
-      } else if (previousLength > 0) {
-        this.paginationStateSignal.update((state) => ({
-          ...state,
-          totalLoaded: 0,
-        }));
+        this.mergeFlagResetTimeout = setTimeout(() => {
+          this.dataGrewFromMergeSignal.set(false);
+          this.mergeFlagResetTimeout = undefined;
+        }, 100);
       }
+    }
 
-      previousLength = currentLength;
-    });
+    if (currentLength === 0 && this.previousLength > 0) {
+      if (this.mergeFlagResetTimeout) {
+        clearTimeout(this.mergeFlagResetTimeout);
+        this.mergeFlagResetTimeout = undefined;
+      }
+      this.dataGrewFromMergeSignal.set(false);
+    }
+
+    this.previousLength = currentLength;
   }
 }
 

@@ -16,9 +16,6 @@ export interface PaginationState {
   /** Number of items per page */
   pageSize: number;
   
-  /** Total number of items loaded so far */
-  totalLoaded: number;
-  
   /** Whether initial load has completed */
   initialLoadComplete: boolean;
 }

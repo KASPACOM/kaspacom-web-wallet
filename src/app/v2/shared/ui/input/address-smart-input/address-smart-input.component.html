@@ -14,7 +14,7 @@
 			@if (isResolving()) {
 				<kc-spinner [size]="'xs'"></kc-spinner>
 			} @else if (showQrButton) {
-				<div (click)="!isDisabled && qrClick.emit()" [class]="isDisabled ? 'qr-button disabled' : 'qr-button clickable'">
+				<div (click)="!isDisabled && qrClick.emit()" [class]="isDisabled ? 'qr-button disabled' : 'qr-button clickable'" kcTooltip="Scan QR code" tooltipPosition="left">
 					<kc-icon [iconClass]="'icon-qr'" [size]="'xs'" [color]="'var(--gray-60)'"></kc-icon>
 				</div>
 			}

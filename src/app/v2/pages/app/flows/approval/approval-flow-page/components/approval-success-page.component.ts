@@ -21,7 +21,7 @@ import { AssetsManagerService } from '../../../../../../../services/assets-manag
     <div class="success-container">
       <!-- Success Header -->
       <div class="success-header">
-        <h2 class="typo-title-3 success-title">Transaction Successful!</h2>
+        <h2 class="typo-title-3 success-title">{{ successTitle }}</h2>
 
         <!-- Success Icon -->
         <div class="success-icon-wrapper">
@@ -109,6 +109,19 @@ export class ApprovalSuccessPageComponent {
 
   // Spoiler state
   protected showDetails = false;
+
+  get successTitle(): string {
+    if (!this.actionResult) {
+      return 'Transaction Successful!';
+    }
+
+    switch (this.actionResult.type) {
+      case WalletActionResultType.CompoundUtxos:
+        return 'UTXOs compounded successfully!';
+      default:
+        return 'Transaction Successful!';
+    }
+  }
 
   actionDisplay = computed(() =>
     this.completedActionOverviewService.getActionDisplay(this.actionResult)

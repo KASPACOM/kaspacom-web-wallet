@@ -1,12 +1,12 @@
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcIconComponent } from '@kaspacom/ui';
+import { KcIconComponent, KcTooltipDirective } from '@kaspacom/ui';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 
 @Component({
   selector: 'app-quick-action-dialog',
   standalone: true,
-  imports: [CommonModule, KcIconComponent],
+  imports: [CommonModule, KcIconComponent, KcTooltipDirective],
   templateUrl: './quick-action-dialog.component.html',
   styleUrl: './quick-action-dialog.component.scss',
   animations: [

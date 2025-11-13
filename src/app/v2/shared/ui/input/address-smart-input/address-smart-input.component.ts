@@ -14,6 +14,7 @@ import {
   KcIconComponent,
   KcInputComponent,
   KcSpinnerComponent,
+  KcTooltipDirective,
 } from '@kaspacom/ui';
 import { CopyButtonComponent } from '../../copy-button/copy-button.component';
 import {
@@ -31,6 +32,7 @@ import {
     KcIconComponent,
     KcSpinnerComponent,
     CopyButtonComponent,
+    KcTooltipDirective,
   ],
   templateUrl: './address-smart-input.component.html',
   styleUrl: './address-smart-input.component.scss',

@@ -29,7 +29,6 @@ import { KaspaNetworkActionsService } from '../../../../services/kaspa-netwrok-s
 import { TimeAgoPipe } from '../../../../pipes/time-ago.pipe';
 import { firstValueFrom, catchError, of, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { toObservable } from '@angular/core/rxjs-interop';
 
 // Types for activity items
 interface BaseActivityItem {
@@ -162,6 +161,8 @@ export class ActivityComponent
     switch (selectedTab) {
       case 'kaspa':
         return allItems.filter((item) => item.type === 'kaspa');
+      case 'krc20':
+        return allItems.filter((item) => item.type === 'krc20');
       case 'erc20':
         return allItems.filter((item) => item.type === 'erc20');
       default:
@@ -196,10 +197,16 @@ export class ActivityComponent
   constructor() {
     super();
 
-    toObservable(this.walletService.getIsL2DisplaySignal()).subscribe(() => {
-      this.resetActivityData();
-      this.loadActivityData();
-    });
+    effect(
+      () => {
+        const wallet = this.walletService.getCurrentWalletSignal()();
+        const walletKey = wallet?.getIdWithAccount();
+        const isL2Display = this.walletService.getIsL2DisplaySignal()();
+
+        this.handleWalletOrDisplayChange(walletKey, isL2Display);
+      },
+      { allowSignalWrites: true },
+    );
   }
 
   ngOnInit() {
@@ -370,6 +377,22 @@ export class ActivityComponent
     } finally {
       this.isLoadingErc20.set(false);
     }
+  }
+
+  private handleWalletOrDisplayChange(
+    walletKey: string | undefined,
+    _isL2Display: boolean,
+  ): void {
+    this.resetActivityData();
+
+    if (!walletKey) {
+      this.isLoadingKaspa.set(false);
+      this.isLoadingKrc20.set(false);
+      this.isLoadingErc20.set(false);
+      return;
+    }
+
+    void this.loadActivityData();
   }
 
   private async transformKaspaTransaction(

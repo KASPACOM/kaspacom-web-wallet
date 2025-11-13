@@ -21,13 +21,23 @@
             <div class="wallet-item__info">
               <div class="wallet-item__name">{{ wallet.name }}</div>
               <div class="wallet-item__address">{{ shortenAddress(wallet.address) }}</div>
-              <div class="wallet-item__balance">{{ wallet.balanceDisplay }}</div>
+              <div class="wallet-item__balance">
+                @if (wallet.isLoadingBalance()) {
+                  <span class="balance-loading">Loading...</span>
+                } @else if (wallet.balance() !== undefined) {
+                  <span class="balance-amount">{{ wallet.balance() | number : '1.0-8' }} KAS</span>
+                } @else {
+                  <span class="balance-error">—</span>
+                }
+              </div>
             </div>
             <kc-icon
               class="wallet-item__delete"
               [iconClass]="'icon-delete'"
               [size]="'sm'"
               (click)="deleteWallet(wallet); $event.stopPropagation()"
+              kcTooltip="Delete wallet"
+              tooltipPosition="top"
             ></kc-icon>
           </div>
         }

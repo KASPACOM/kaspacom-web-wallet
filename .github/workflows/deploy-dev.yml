@@ -44,11 +44,15 @@ jobs:
 
     - name: Deploy to S3
       run: |
-        aws s3 sync dist/wallet-front-new/browser s3://${{ env.S3_BUCKET_NAME_DEV }}/ --delete
+        # Sync all files EXCEPT index.html
+        aws s3 sync dist/wallet-front-new/browser s3://${{ env.S3_BUCKET_NAME_DEV }}/ --delete --exclude "index.html"
+
         # Upload index.html separately with no-cache
         aws s3 cp dist/wallet-front-new/browser/index.html s3://${{ env.S3_BUCKET_NAME_DEV }}/index.html \
           --cache-control "no-cache, no-store, must-revalidate" \
           --content-type "text/html"
+
+        aws cloudfront create-invalidation --distribution-id E17A4DSJBQJRBU --paths "/*"
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

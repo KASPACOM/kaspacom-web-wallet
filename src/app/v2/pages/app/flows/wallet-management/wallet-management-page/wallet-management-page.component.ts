@@ -1,37 +1,34 @@
-import { Component, signal, inject, effect, computed } from '@angular/core';
+import { Component, signal, inject, computed, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcIconComponent } from '@kaspacom/ui';
+import { KcIconComponent, KcTooltipDirective } from '@kaspacom/ui';
 import { FlowPageBaseComponent } from '../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../common/flow-page/interfaces/flow-page.interface';
 import {
   QuickActionDialogService,
 } from '../../../../../services/quick-action-dialog.service';
 import { WalletService } from '../../../../../../services/wallet.service';
-import { KaspaNetworkActionsService } from '../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { AppWallet } from '../../../../../../classes/AppWallet';
 
 interface WalletAccount {
   id: string;
   name: string;
   address: string;
-  balance: number;
-  balanceDisplay: string;
   isSelected: boolean;
   wallet: AppWallet;
+  balance: Signal<number | undefined>;
+  isLoadingBalance: Signal<boolean>;
 }
 
 @Component({
   selector: 'app-wallet-management-page',
   standalone: true,
-  imports: [CommonModule, KcIconComponent],
+  imports: [CommonModule, KcIconComponent, KcTooltipDirective],
   templateUrl: './wallet-management-page.component.html',
   styleUrl: './wallet-management-page.component.scss',
 })
 export class WalletManagementPageComponent extends FlowPageBaseComponent {
   private quickActionDialogService = inject(QuickActionDialogService);
   private walletService = inject(WalletService);
-  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
-
   get config(): IFlowPageConfig {
     return {
       id: 'wallet-management',
@@ -65,8 +62,8 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
   }
 
   public loadWalletAccounts(): void {
-    // Get all wallets and current wallet - force fresh data by calling the signal
-    const allWallets = this.walletService.getAllWallets(true)() || [];
+    // Get all wallets and current wallet - DON'T force balance refresh here
+    const allWallets = this.walletService.getAllWallets(false)() || [];
     const currentWallet = this.walletService.getCurrentWallet();
 
     // If no current wallet, clear list
@@ -93,38 +90,55 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
     if (currentGroup.length > 0 && currentGroup[0].supportAccounts()) {
       currentGroup.forEach((wallet) => {
         const address = this.getWalletAddress(wallet);
-        const balance = this.getWalletBalance(wallet);
-
+        const isLoadingBalance = signal(true);
+        
         accounts.push({
           id: wallet.getIdWithAccount(),
           name: wallet.getAccountName() || wallet.getName(),
           address: address,
-          balance: balance,
-          balanceDisplay: `${balance} ${this.walletService.getCurrentDisplayNativeTokenName()}`,
           isSelected:
             currentWallet?.getIdWithAccount() === wallet.getIdWithAccount(),
           wallet: wallet,
+          balance: computed(() => wallet.getTotalBalanceAsSignal()),
+          isLoadingBalance: isLoadingBalance.asReadonly(),
         });
+
+        // Load balance for this wallet asynchronously
+        this.loadBalanceForWallet(wallet, isLoadingBalance);
       });
     } else if (currentGroup.length > 0) {
       // Single wallet without accounts
       const wallet = currentGroup[0];
       const address = this.getWalletAddress(wallet);
-      const balance = this.getWalletBalance(wallet);
-
+      const isLoadingBalance = signal(true);
+      
       accounts.push({
         id: wallet.getIdWithAccount(),
         name: wallet.getName(),
         address: address,
-        balance: balance,
-        balanceDisplay: `${balance} ${this.walletService.getCurrentDisplayNativeTokenName()}`,
         isSelected:
           currentWallet?.getIdWithAccount() === wallet.getIdWithAccount(),
         wallet: wallet,
+        balance: computed(() => wallet.getTotalBalanceAsSignal()),
+        isLoadingBalance: isLoadingBalance.asReadonly(),
       });
+
+      // Load balance for this wallet asynchronously
+      this.loadBalanceForWallet(wallet, isLoadingBalance);
     }
 
     this.wallets.set(accounts);
+  }
+
+  private async loadBalanceForWallet(wallet: AppWallet, loadingSignal: any): Promise<void> {
+    try {
+      // Refresh the balance for this specific wallet
+      await wallet.refreshUtxosBalance();
+    } catch (error) {
+      console.error(`Failed to load balance for wallet ${wallet.getAddress()}:`, error);
+    } finally {
+      loadingSignal.set(false);
+    }
   }
 
   async selectWallet(walletAccount: WalletAccount): Promise<void> {
@@ -282,19 +296,6 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
       // For L2 networks, get the L2 address
       const l2State = wallet.getL2WalletStateSignal()();
       return l2State?.address || wallet.getAddress(); // fallback to L1
-    }
-  }
-
-  private getWalletBalance(wallet: AppWallet): number {
-    if (!this.walletService.isL2Display()) {
-      const balanceData = wallet.getCurrentWalletStateBalanceSignalValue();
-      return balanceData
-        ? this.kaspaNetworkActionsService.sompiToNumber(balanceData.mature)
-        : 0;
-    } else {
-      // For L2 networks, get the L2 balance
-      const l2State = wallet.getL2WalletStateSignal()();
-      return l2State ? l2State.balanceFormatted : 0;
     }
   }
 

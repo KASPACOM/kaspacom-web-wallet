@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Html5Qrcode } from 'html5-qrcode';
 import { UtilsHelper } from './utils.service';
-import { MessagePopupService } from './message-popup.service';
+import { NotificationService } from '@kaspacom/ui';
 
 export interface QrScannerConfig {
   scannerId: string;
@@ -18,7 +18,7 @@ export interface QrScannerConfig {
 })
 export class QrScannerService {
   private utilsHelper = inject(UtilsHelper);
-  private messagePopupService = inject(MessagePopupService);
+  private notificationService = inject(NotificationService);
   
   private html5QrCode: Html5Qrcode | null = null;
   private isScanning = false;
@@ -155,7 +155,7 @@ export class QrScannerService {
       }
     } catch (error) {
       console.error('Failed to start QR scanning:', error);
-      this.messagePopupService.showError('Failed to access camera. Please check permissions.');
+      this.notificationService.error('Failed to access camera', 'Please check permissions.');
       this.stopScanning();
       config.onError?.('Failed to access camera');
     }
@@ -192,7 +192,7 @@ export class QrScannerService {
     if (this.currentConfig.validateAddress === false) {
       this.currentConfig.onSuccess(qrText.trim());
       const successMsg = this.currentConfig.successMessage || 'QR code scanned successfully!';
-      this.messagePopupService.showSuccess(successMsg);
+      this.notificationService.success('Success', successMsg);
       this.stopScanning();
       return;
     }
@@ -209,11 +209,11 @@ export class QrScannerService {
     if (this.utilsHelper.isValidWalletAddress(address)) {
       this.currentConfig.onSuccess(address);
       const successMsg = this.currentConfig.successMessage || 'Wallet address scanned successfully!';
-      this.messagePopupService.showSuccess(successMsg);
+      this.notificationService.success('Success', successMsg);
       this.stopScanning();
     } else {
       const errorMsg = 'Invalid wallet address in QR code';
-      this.messagePopupService.showError(errorMsg);
+      this.notificationService.error('Error', errorMsg);
       this.currentConfig.onError?.(errorMsg);
     }
   }

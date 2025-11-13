@@ -257,8 +257,21 @@
 
   &__balance {
     font-size: 14px;
-    color: var(--gray-80);
     margin-top: 4px;
+
+    .balance-loading {
+      color: var(--gray-60);
+      font-style: italic;
+    }
+
+    .balance-amount {
+      color: var(--gray-80);
+      font-weight: 500;
+    }
+
+    .balance-error {
+      color: var(--gray-40);
+    }
   }
 
   &__actions {

@@ -35,3 +35,34 @@
     display: flex;
     min-height: 40px;
 }
+
+.refresh-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  color: var(--gray-60);
+  transition: color 0.2s ease, opacity 0.2s ease;
+
+  &:hover {
+    color: var(--gray-40);
+  }
+
+  &--disabled {
+    pointer-events: none;
+    cursor: default;
+    opacity: 0.5;
+  }
+}
+
+.refresh-action__icon {
+  transition: transform 0.2s ease;
+}
+
+.refresh-action__spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

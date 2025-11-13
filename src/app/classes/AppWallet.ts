@@ -169,6 +169,12 @@ export class AppWallet {
     this.name = name;
   }
 
+  setAccountName(name: string) {
+    if (this.accountData) {
+      this.accountData.name = name;
+    }
+  }
+
   getPrivateKey(): PrivateKey {
     return this.privateKey;
   }
@@ -305,13 +311,15 @@ export class AppWallet {
     return this.balanceSignal.asReadonly();
   }
 
-  refreshUtxosBalance() {
-    this.kaspaNetworkActionsService
-      .getWalletBalanceAndUtxos(this.getAddress())
-      .then((value) => this.balanceSignal.set(value))
-      .catch(() => {
-        console.error('Failed to load balance for wallet ' + this.getAddress());
-      });
+  async refreshUtxosBalance(): Promise<void> {
+    try {
+      const value = await this.kaspaNetworkActionsService.getWalletBalanceAndUtxos(
+        this.getAddress(),
+      );
+      this.balanceSignal.set(value);
+    } catch (error) {
+      console.error('Failed to load balance for wallet ' + this.getAddress(), error);
+    }
   }
 
   // This is keeps updating

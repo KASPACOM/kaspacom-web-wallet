@@ -13,6 +13,7 @@ import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { NavIcons } from './icons/nav-icons';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { filter } from 'rxjs';
+import { KcTooltipDirective } from '@kaspacom/ui';
 
 export interface INavRoute {
   svgContent: SafeHtml;
@@ -21,7 +22,7 @@ export interface INavRoute {
 }
 @Component({
   selector: 'app-wrapper-nav',
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, KcTooltipDirective],
   templateUrl: './wrapper-nav.component.html',
   styleUrl: './wrapper-nav.component.scss',
 })

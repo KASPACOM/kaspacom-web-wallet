@@ -8,6 +8,8 @@
         [iconClass]="'icon-pencil'"
         [size]="'xs'"
         (click)="onEditWalletName()"
+        kcTooltip="Edit wallet name"
+        tooltipPosition="bottom"
       ></kc-icon>
     </div>
     <div class="header-right">
@@ -16,18 +18,24 @@
         [iconClass]="'icon-more-options'"
         [size]="'md'"
         (click)="onWalletOptionsClick()"
+        kcTooltip="Wallet options"
+        tooltipPosition="bottom"
       ></kc-icon>
             <kc-icon
         class="update-icon"
         [iconClass]="'icon-update'"
         [size]="'md'"
         (click)="onChangeWalletClicked()"
+        kcTooltip="Change wallet"
+        tooltipPosition="bottom"
       ></kc-icon>
       <kc-icon
         class="close-icon"
         [iconClass]="'icon-close'"
         [size]="'md'"
         (click)="onCloseClick()"
+        kcTooltip="Close"
+        tooltipPosition="bottom"
       ></kc-icon>
     </div>
   </div>
@@ -53,10 +61,20 @@
                 [iconClass]="'icon-pencil'"
                 [size]="'xs'"
                 (click)="editWalletAccount(wallet); $event.stopPropagation()"
+                kcTooltip="Edit account"
+                tooltipPosition="top"
               ></kc-icon>
             </div>
             <div class="wallet-item__address">{{ shortenAddress(wallet.address) }}</div>
-            <div class="wallet-item__balance">{{ wallet.balanceDisplay }}</div>
+            <div class="wallet-item__balance">
+              @if (wallet.isLoadingBalance()) {
+                <span class="balance-loading">Loading...</span>
+              } @else if (wallet.balance() !== undefined) {
+                <span class="balance-amount">{{ wallet.balance() | number : '1.0-8' }} KAS</span>
+              } @else {
+                <span class="balance-error">—</span>
+              }
+            </div>
           </div>
           <div class="wallet-item__actions">
             <kc-icon
@@ -64,12 +82,16 @@
               [iconClass]="'icon-download'"
               [size]="'sm'"
               (click)="exportWalletAccount(wallet); $event.stopPropagation()"
+              kcTooltip="Export account"
+              tooltipPosition="top"
             ></kc-icon>
             <kc-icon
               class="wallet-item__trash"
               [iconClass]="'icon-trash'"
               [size]="'sm'"
               (click)="deleteWallet(wallet); $event.stopPropagation()"
+              kcTooltip="Delete account"
+              tooltipPosition="top"
             ></kc-icon>
           </div>
         </div>
@@ -78,7 +100,7 @@
   </div>
 
   <!-- Floating Create Account Orb -->
-  <div class="floating-orb" (click)="onAddAccountClick()">
+  <div class="floating-orb" (click)="onAddAccountClick()" kcTooltip="Create account" tooltipPosition="top">
     <kc-icon
       [iconClass]="'icon-user_plus_icon'"
       [size]="'md'"

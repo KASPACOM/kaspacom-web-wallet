@@ -1,12 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcIconComponent } from '@kaspacom/ui';
+import { KcIconComponent, KcTooltipDirective } from '@kaspacom/ui';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 
 @Component({
   selector: 'app-flow-page',
   standalone: true,
-  imports: [CommonModule, KcIconComponent],
+  imports: [CommonModule, KcIconComponent, KcTooltipDirective],
   templateUrl: './flow-page.component.html',
   styleUrl: './flow-page.component.scss',
   animations: [

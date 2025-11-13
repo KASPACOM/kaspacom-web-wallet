@@ -598,6 +598,63 @@ export class WalletService {
     );
   }
 
+  async updateWalletAccountName(
+    wallet: AppWallet,
+    newName: string,
+  ): Promise<boolean> {
+    if (this.utilsService.isNullOrEmptyString(newName)) {
+      return false;
+    }
+
+    const walletsData = await this.passwordManagerService.getUserData();
+    const walletData = walletsData.wallets.find((w) => w.id === wallet.getId());
+
+    if (!walletData?.accounts?.length) {
+      return false;
+    }
+
+    const accountData = walletData.accounts.find(
+      (account) => account.derivedPath === wallet.getDerivedPath(),
+    );
+
+    if (!accountData) {
+      return false;
+    }
+
+    accountData.name = newName;
+
+    const currentWallet = this.currentWalletSignal();
+    if (
+      currentWallet &&
+      currentWallet.getIdWithAccount() === wallet.getIdWithAccount()
+    ) {
+      currentWallet.setAccountName(newName);
+      this.currentWalletSignal.set(cloneDeep(currentWallet));
+    }
+
+    this.allWalletsSignal.update((wallets) => {
+      if (!wallets) {
+        return wallets;
+      }
+
+      return wallets.map((existingWallet) => {
+        if (
+          existingWallet.getId() === wallet.getId() &&
+          existingWallet.getDerivedPath() === wallet.getDerivedPath()
+        ) {
+          existingWallet.setAccountName(newName);
+          return cloneDeep(existingWallet);
+        }
+
+        return existingWallet;
+      });
+    });
+
+    return await this.passwordManagerService.saveWalletsDataWithStoredPassword(
+      walletsData,
+    );
+  }
+
   getWalletAccountNumberFromDerivedPath(derivedPath: string): number {
     const lastAccount = derivedPath.split('/').pop();
     const accountNumber = Number(lastAccount);

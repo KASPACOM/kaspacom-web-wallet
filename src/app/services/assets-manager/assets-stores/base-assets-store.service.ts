@@ -28,7 +28,9 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
 
     protected AUTO_RELOAD_INTERVAL = 20000; // 20 seconds
 
-
+    private assetListeners: {
+        [K in keyof T]?: Set<(items: T[K][] | undefined) => void>;
+    } = {};
 
     constructor() {
         this.loadAssetsFunctionsNames = this.getLoadFunctionAssetsNames();
@@ -38,14 +40,38 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
             this.assetsLoaderInfo[key] = {
                 loading: signal(false),
             };
+            this.assetListeners[key] = new Set();
         }
     }
 
     protected abstract getLoadFunctionAssetsNames(): { [K in keyof T]: string };
 
+    onAssetsUpdated<K extends keyof T>(
+        key: K,
+        listener: (items: T[K][] | undefined) => void,
+    ): () => void {
+        if (!this.assetListeners[key]) {
+            this.assetListeners[key] = new Set();
+        }
+
+        this.assetListeners[key]!.add(listener);
+
+        return () => {
+            this.assetListeners[key]?.delete(listener);
+        };
+    }
+
+    private notifyAssetListeners<K extends keyof T>(
+        key: K,
+        items: T[K][] | undefined,
+    ): void {
+        this.assetListeners[key]?.forEach((listener) => listener(items));
+    }
+
     protected clearAllAssets(): void {
         for (let key in this.data) {
-            this.data[key].set(undefined)
+            this.data[key].set(undefined);
+            this.notifyAssetListeners(key as keyof T, undefined);
         }
     }
 
@@ -91,6 +117,7 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
         try {
             const assets = await this.runLoadAssetFunction(key);
             this.data[key].set(assets);
+            this.notifyAssetListeners(key, assets);
         } catch (e) {
             console.error(`Error loading ${key.toString()} assets`);
             console.error(e);
@@ -179,12 +206,14 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
             if (toLowerCase ? currentData[i][uniqueIdProp].toLowerCase() === assetPropVal : currentData[i][uniqueIdProp] === asset[uniqueIdProp]) {
                 currentData[i] = asset;
                 this.data[assetKey].set(currentData);
+                this.notifyAssetListeners(assetKey, currentData);
                 return;
             }
         }
 
         currentData.push(asset);
         this.data[assetKey].set(currentData);
+        this.notifyAssetListeners(assetKey, currentData);
     }
 
 }

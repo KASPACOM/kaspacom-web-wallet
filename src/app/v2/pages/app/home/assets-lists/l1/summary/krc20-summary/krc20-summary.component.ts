@@ -1,31 +1,26 @@
 import {
   Component,
+  ViewChild,
   computed,
   inject,
   OnInit,
-  OnDestroy,
-  ViewChild,
   AfterViewInit,
   ElementRef,
-  Injector,
+  DestroyRef,
 } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { Krc20AssetCardComponent } from '../../asset-card/krc20-asset-card/krc20-asset-card.component';
 import {
-  IToken,
   ITokenWithMetadata,
 } from '../../../../../common/interfaces/token.interface';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
 import { Krc20MetadataService } from '../../../../../../../../services/asset-metadata/krc20-metadata.service';
 import { InfiniteScrollDirective } from '../../../../../../../../directives/infinite-scroll.directive';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { Subject, takeUntil, Observable } from 'rxjs';
-import { GetTokenListDto } from '../../../../../../../../services/kasplex-api/dtos/token-list-info.dto';
-import { runInInjectionContext } from '@angular/core';
-import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
-import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
+import { Krc20ListService } from '../../../../../../../../services/assets-manager/krc20-list.service';
+import { L1_PAGINATION_CONFIG } from '../../../../../../../../services/assets-manager/interfaces/pagination-state.interface';
 import { KaspaPriceService } from '../../../../../../../../services/kaspa-price.service';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-krc20-summary',
@@ -36,37 +31,91 @@ import { KaspaPriceService } from '../../../../../../../../services/kaspa-price.
     '[class.full-width]': 'true',
   },
 })
-export class Krc20SummaryComponent
-  implements OnInit, OnDestroy, AfterViewInit
-{
-  private assetsManagerService = inject(AssetsManagerService);
+export class Krc20SummaryComponent implements OnInit, AfterViewInit {
+  // Services - portfolio pattern
+  krc20ListService = inject(Krc20ListService);
   private krc20MetadataService = inject(Krc20MetadataService);
   private kaspaPriceService = inject(KaspaPriceService);
   private router = inject(Router);
   private elementRef = inject(ElementRef);
-  private injector = inject(Injector);
-  private destroy$ = new Subject<void>();
-  private krc20Assets$!: Observable<GetTokenListDto[] | undefined>;
+  private destroyRef = inject(DestroyRef);
+  private metadataInitialized = false;
+  private pendingThresholdReset = false;
+  private _infiniteScrollDirective?: InfiniteScrollDirective;
 
-  @ViewChild(InfiniteScrollDirective) infiniteScroll!: InfiniteScrollDirective;
+  @ViewChild(InfiniteScrollDirective)
+  set infiniteScrollDirective(directive: InfiniteScrollDirective | undefined) {
+    this._infiniteScrollDirective = directive;
 
-  // Show tokens immediately from assets store, enhanced with metadata when available
+    if (directive && this.pendingThresholdReset) {
+      directive.resetThreshold();
+      this.pendingThresholdReset = false;
+    }
+  }
+
+  get infiniteScrollDirective(): InfiniteScrollDirective | undefined {
+    return this._infiniteScrollDirective;
+  }
+  
+  // Configuration
+  readonly config = L1_PAGINATION_CONFIG.krc20;
+  
+  // Loading skeletons - portfolio pattern with opacity cascade
+  private static readonly SKELETON_COUNT = 8;
+  loadingSkeletons: unknown[] = Array.from({ length: Krc20SummaryComponent.SKELETON_COUNT }).map(() => ({}));
+
+  constructor() {
+    toObservable(this.krc20ListService.tokens)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(tokens => {
+        if (!tokens || tokens.length === 0) {
+          if (this.metadataInitialized) {
+            this.krc20MetadataService.reset();
+          }
+          this.metadataInitialized = false;
+          return;
+        }
+
+        if (!this.metadataInitialized) {
+          this.krc20MetadataService.initialize(tokens);
+          this.metadataInitialized = true;
+          return;
+        }
+
+        this.krc20MetadataService.updateAssets(tokens);
+      });
+
+    toObservable(this.krc20ListService.shouldCheckScrollPosition)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(shouldReset => {
+        if (!shouldReset) {
+          return;
+        }
+
+        if (this.infiniteScrollDirective) {
+          this.infiniteScrollDirective.resetThreshold();
+          this.pendingThresholdReset = false;
+        } else {
+          this.pendingThresholdReset = true;
+        }
+      });
+  }
+
+  // Data from service - portfolio pattern
   tokens = computed<ITokenWithMetadata[]>(() => {
-    const krc20Assets = this.assetsManagerService.getAllAssetStores().l1.getAssets(
-      L1_ASSET_KEYS.krc20,
-    );
-    const paginatedAssets = this.krc20MetadataService.paginatedAssets();
+    const rawTokens = this.krc20ListService.tokens();
+    const paginatedMetadata = this.krc20MetadataService.paginatedAssets();
 
     // Create a map of metadata by tick
     const metadataMap = new Map();
-    paginatedAssets.forEach((item) => {
+    paginatedMetadata.forEach((item) => {
       metadataMap.set(item.data.tick, {
         metadata: item.metadata,
         isLoadingMetadata: item.isLoadingMetadata,
       });
     });
 
-    return krc20Assets
+    return rawTokens
       .map((token) => ({
         name: token.tick,
         symbol: token.tick.toUpperCase(),
@@ -78,53 +127,48 @@ export class Krc20SummaryComponent
       .sort((a, b) => (b.priceKas * b.balance) - (a.priceKas * a.balance));
   });
 
-  loading = computed(() => !this.assetsManagerService.getAllAssetStores().l1.getAssetSignal(L1_ASSET_KEYS.krc20)());
-
-  isLoadingMore = computed(
-    () =>
-      this.krc20MetadataService.isLoading() &&
-      this.krc20MetadataService.paginatedAssets().length > 0,
+  // Loading states - portfolio pattern
+  loading = computed(() => 
+    !this.krc20ListService.initialLoadComplete() ||
+    (this.tokens().length === 0 && this.krc20ListService.isLoading())
   );
 
+  isLoadingMore = computed(() => 
+    this.krc20MetadataService.isLoading() &&
+    this.krc20MetadataService.paginatedAssets().length > 0
+  );
+  
   hasMore = computed(() => this.krc20MetadataService.hasMoreItems());
 
   ngOnInit(): void {
-    // Create observable within injection context to ensure proper signal binding
-    this.krc20Assets$ = runInInjectionContext(this.injector, () =>
-      toObservable(this.assetsManagerService.getAllAssetStores().l1.getAssetSignal(L1_ASSET_KEYS.krc20)),
-    );
-
-    // Subscribe to assets store changes and reinitialize metadata service
-    // IMPORTANT: Always reinitialize, even with empty arrays, to clear stale data
-    this.krc20Assets$.pipe(takeUntil(this.destroy$)).subscribe((assets) => {
-      // Always initialize to ensure metadata service is reset on wallet changes
-      // This fixes the sync bug where old account's tokens were shown after switching accounts
-      setTimeout(() => {
-        this.krc20MetadataService.initialize(assets);
-      }, 100);
-    });
+    // Reset pagination state on component mount
+    // This ensures clean state when switching tabs (component destroyed/recreated)
+    // But list service persists as singleton, so we manually reset
+    this.krc20ListService.reset();
+    this.krc20MetadataService.reset();
   }
 
   ngAfterViewInit(): void {
-    // Check initial scroll position after view init
-    setTimeout(() => {
-      if (this.infiniteScroll) {
-        this.infiniteScroll.checkScroll();
-      }
-    }, 100);
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+    if (this.config.greedyLoading) {
+      setTimeout(() => this.infiniteScrollDirective?.checkScroll(), 100);
+    }
   }
 
   onScrolled(percentage: number): void {
+    // Track scroll for metadata loading
     this.krc20MetadataService.onScroll(percentage);
+    // Load metadata for newly visible items
+    this.loadVisibleMetadata();
   }
 
-  onThresholdReached(): void {
-    this.krc20MetadataService.loadMore();
+  /**
+   * Called when scroll threshold is reached
+   * Simple scroll-based pagination
+   */
+  shouldLoadMore(loadMore: boolean): void {
+    if (loadMore && !this.krc20ListService.isFetching() && this.hasMore()) {
+      this.krc20ListService.loadMore();
+    }
   }
 
   onTokenClick(token: ITokenWithMetadata): void {

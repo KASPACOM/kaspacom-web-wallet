@@ -1,16 +1,13 @@
-import { Component, computed, inject, OnInit, OnDestroy, ViewChild, AfterViewInit, ElementRef, Injector } from '@angular/core';
+import { Component, ViewChild, computed, inject, OnInit, OnDestroy, AfterViewInit, ElementRef, DestroyRef } from '@angular/core';
 import { TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { INftWithMetadata } from '../../../../../common/interfaces/nft.interface';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
 import { Krc721MetadataService } from '../../../../../../../../services/asset-metadata/krc721-metadata.service';
 import { InfiniteScrollDirective } from '../../../../../../../../directives/infinite-scroll.directive';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { Subject, takeUntil, Observable } from 'rxjs';
-import { Krc721Nft } from '../../../../../../../../services/krc721-api/dtos/krc721-nft.dto';
-import { runInInjectionContext } from '@angular/core';
-import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
-import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
+import { Krc721ListService } from '../../../../../../../../services/assets-manager/krc721-list.service';
+import { L1_PAGINATION_CONFIG } from '../../../../../../../../services/assets-manager/interfaces/pagination-state.interface';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-krc721-summary',
@@ -21,23 +18,93 @@ import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/a
     '[class.full-width]': 'true',
   },
 })
-export class Krc721SummaryComponent implements OnInit, OnDestroy, AfterViewInit {
+export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
+  // Services - portfolio pattern
+  krc721ListService = inject(Krc721ListService);
   private krc721MetadataService = inject(Krc721MetadataService);
   private router = inject(Router);
   private elementRef = inject(ElementRef);
-  private injector = inject(Injector);
-  private destroy$ = new Subject<void>();
-  private krc721Assets$!: Observable<Krc721Nft[] | undefined>;
-  private assetsManagerService = inject(AssetsManagerService);
+  private destroyRef = inject(DestroyRef);
+  private metadataInitialized = false;
+  private pendingThresholdReset = false;
+  private _infiniteScrollDirective?: InfiniteScrollDirective;
+  
+  // Reference to the infinite scroll directive
+  @ViewChild(InfiniteScrollDirective)
+  set infiniteScrollDirective(directive: InfiniteScrollDirective | undefined) {
+    this._infiniteScrollDirective = directive;
 
-  @ViewChild(InfiniteScrollDirective) infiniteScroll!: InfiniteScrollDirective;
+    if (directive && this.pendingThresholdReset) {
+      directive.resetThreshold();
+      this.pendingThresholdReset = false;
+    }
+  }
 
-  // Use the nfts from metadata service with pagination
+  get infiniteScrollDirective(): InfiniteScrollDirective | undefined {
+    return this._infiniteScrollDirective;
+  }
+  
+  // Configuration
+  readonly config = L1_PAGINATION_CONFIG.krc721;
+  
+  // Loading skeletons - portfolio pattern with opacity cascade
+  private static readonly SKELETON_COUNT = 8;
+  loadingSkeletons: unknown[] = Array.from({ length: Krc721SummaryComponent.SKELETON_COUNT }).map(() => ({}));
+  
+  constructor() {
+    toObservable(this.krc721ListService.nfts)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(nfts => {
+        if (!nfts || nfts.length === 0) {
+          if (this.metadataInitialized) {
+            this.krc721MetadataService.reset();
+          }
+          this.metadataInitialized = false;
+          return;
+        }
+
+        if (!this.metadataInitialized) {
+          this.krc721MetadataService.initialize(nfts);
+          this.metadataInitialized = true;
+          return;
+        }
+
+        this.krc721MetadataService.updateAssets(nfts);
+      });
+
+    toObservable(this.krc721ListService.shouldCheckScrollPosition)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(shouldReset => {
+        if (!shouldReset) {
+          return;
+        }
+
+        if (this.infiniteScrollDirective) {
+          this.infiniteScrollDirective.resetThreshold();
+          this.pendingThresholdReset = false;
+        } else {
+          this.pendingThresholdReset = true;
+        }
+      });
+  }
+
+  // Data from service - portfolio pattern
   nfts = computed<INftWithMetadata[]>(() => {
-    const paginatedAssets = this.krc721MetadataService.paginatedAssets();
-    return paginatedAssets.map(item => {
-      const nft = item.data;
-      const metadata = item.metadata || nft.metadata;
+    const rawNfts = this.krc721ListService.nfts();
+    const paginatedMetadata = this.krc721MetadataService.paginatedAssets();
+
+    const metadataById = new Map<string, typeof paginatedMetadata[number]>();
+    paginatedMetadata.forEach(item => {
+      const assetId = `${item.data.tick}-${item.data.tokenId}`;
+      metadataById.set(assetId, item);
+    });
+    
+    // Merge NFT data with metadata
+    return rawNfts.map(nft => {
+      const metadataItem = metadataById.get(`${nft.tick}-${nft.tokenId}`);
+      
+      const metadata = metadataItem?.metadata || nft.metadata;
+      
       return {
         tick: nft.tick,
         tokenId: nft.tokenId,
@@ -46,64 +113,56 @@ export class Krc721SummaryComponent implements OnInit, OnDestroy, AfterViewInit 
         description: metadata?.description,
         attributes: metadata?.attributes,
         image: metadata?.image,
-        isLoadingMetadata: item.isLoadingMetadata
+        isLoadingMetadata: metadataItem?.isLoadingMetadata || false
       };
     });
   });
   
+  // Loading states - portfolio pattern
   loading = computed(() => 
-    !this.assetsManagerService.getAllAssetStores().l1.getAssetSignal(L1_ASSET_KEYS.krc721)() || 
-    (this.krc721MetadataService.paginatedAssets().length === 0 && this.krc721MetadataService.isLoading())
+    !this.krc721ListService.initialLoadComplete() ||
+    (this.nfts().length === 0 && this.krc721ListService.isLoading())
   );
   
-  isLoadingMore = computed(() => 
-    this.krc721MetadataService.isLoading() && 
-    this.krc721MetadataService.paginatedAssets().length > 0
-  );
-
-  hasMore = computed(() => this.krc721MetadataService.hasMoreItems());
+  isLoadingMore = computed(() => this.krc721ListService.isLoading());
+  
+  hasMore = computed(() => this.krc721ListService.hasMore());
 
   ngOnInit(): void {
-    // Create observable within injection context to ensure proper signal binding
-    this.krc721Assets$ = runInInjectionContext(this.injector, () => 
-      toObservable(this.assetsManagerService.getAllAssetStores().l1.getAssetSignal(L1_ASSET_KEYS.krc721))
-    );
-    
-    // Subscribe to assets store changes and reinitialize metadata service
-    // IMPORTANT: Always reinitialize, even with empty arrays, to clear stale data
-    this.krc721Assets$.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(assets => {
-      // Always initialize to ensure metadata service is reset on wallet changes
-      // This fixes the sync bug where old account's NFTs were shown after switching accounts
-      this.krc721MetadataService.initialize(assets);
-    });
+    // Reset pagination state on component mount
+    // This ensures clean state when switching tabs (component destroyed/recreated)
+    // But list service persists as singleton, so we manually reset
+    this.krc721ListService.reset();
+    this.krc721MetadataService.reset();
   }
 
   ngAfterViewInit(): void {
-    // Check initial scroll position after view init
-    setTimeout(() => {
-      if (this.infiniteScroll) {
-        this.infiniteScroll.checkScroll();
-      }
-      // Also load metadata for initially visible items
-      this.loadVisibleMetadata();
-    }, 100);
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+    if (this.config.greedyLoading) {
+      setTimeout(() => this.infiniteScrollDirective?.checkScroll(), 100);
+    }
   }
 
   onScrolled(percentage: number): void {
+    // Track scroll for metadata loading
     this.krc721MetadataService.onScroll(percentage);
     // Load metadata for newly visible items
     this.loadVisibleMetadata();
   }
 
-  onThresholdReached(): void {
-    this.krc721MetadataService.loadMore();
+  /**
+   * Called when scroll threshold is reached
+   * Simple scroll-based pagination
+   */
+  shouldLoadMore(loadMore: boolean): void {
+    if (loadMore && !this.krc721ListService.isFetching() && this.hasMore()) {
+      this.krc721ListService.loadMore();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.metadataInitialized = false;
+    this.pendingThresholdReset = false;
+    this.krc721MetadataService.reset();
   }
 
   onNftClick(nft: INftWithMetadata): void {

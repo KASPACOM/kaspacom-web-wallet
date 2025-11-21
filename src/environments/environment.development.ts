@@ -7,6 +7,7 @@ export const environment: Environment = {
   kasplexApiBaseurl: 'https://tn10api.kasplex.org/v1',
   kaspaApiBaseurl: 'https://api-tn10.kaspa.org',
   krc721ApiBaseurl: 'https://testnet-10.krc721.stream/api/v1/krc721/testnet-10',
+  krc721CacheStreamUrl: 'https://cache.krc721.stream/krc721/testnet-10',
   knsApiBaseurl: 'https://api.knsdomains.org/tn10',
   kaspaExplorerBaseurl: 'https://explorer-tn10.kaspa.org',
   kaspaNetwork: KASPA_NETWORKS.TESTNET10,

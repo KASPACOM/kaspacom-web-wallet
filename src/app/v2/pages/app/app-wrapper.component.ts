@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, inject, signal, computed, ViewChild, ElementRef, AfterViewInit, OnDestroy, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, ChildrenOutletContexts } from '@angular/router';
 import { navAnimation } from './common/animation/nav.animation';
@@ -12,9 +12,10 @@ import { ReviewActionComponent } from '../../../components/wallet-actions-review
 import { DynamicFlowPageOutletComponent } from './common/flow-page/dynamic-flow-page-outlet.component';
 import { DynamicQuickActionDialogOutletComponent } from './common/quick-action-dialog/dynamic-quick-action-dialog-outlet.component';
 import { IFrameCommunicationApp } from '../../../services/communication-service/communication-app/iframe-communication.service';
+import { IframeAccountSelectionComponent } from './iframe-account-selection/iframe-account-selection.component';
+import { IframeAccountSelectionService } from '../../services/iframe-account-selection.service';
 
 import { KcSnackbarComponent, KcSpinnerComponent } from '@kaspacom/ui';
-import { OnInit } from '@angular/core';
 import { WalletService } from '../../../services/wallet.service';
 import { AssetsManagerService } from '../../../services/assets-manager/assets-manager.service';
 
@@ -31,12 +32,13 @@ import { AssetsManagerService } from '../../../services/assets-manager/assets-ma
     ReviewActionComponent,
     KcSnackbarComponent,
     KcSpinnerComponent,
+    IframeAccountSelectionComponent,
   ],
   templateUrl: './app-wrapper.component.html',
   styleUrl: './app-wrapper.component.scss',
   animations: [navAnimation],
 })
-export class AppWrapperComponent implements AfterViewInit, OnDestroy {
+export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('graphCanvas', { static: false })
   graphCanvas!: ElementRef<HTMLCanvasElement>;
 
@@ -46,9 +48,12 @@ export class AppWrapperComponent implements AfterViewInit, OnDestroy {
   quickActionDialogService = inject(QuickActionDialogService);
   private walletService = inject(WalletService);
   protected assetsManager = inject(AssetsManagerService);
+  iframeAccountSelectionService = inject(IframeAccountSelectionService);
+  shouldEnforceAccountSelection = signal(this.iframeAccountSelectionService.shouldEnforceAccountSelection());
 
   // Detect if running in iframe mode
   isIframeMode = signal(IFrameCommunicationApp.isIframe());
+  showIframeLoader = signal(false);
 
   private ctx!: CanvasRenderingContext2D;
   private nodes: Node[] = [];
@@ -62,6 +67,35 @@ export class AppWrapperComponent implements AfterViewInit, OnDestroy {
   private boundResizeCanvas!: () => void;
   private boundMouseMove!: (e: MouseEvent) => void;
   private boundMouseLeave!: () => void;
+
+  constructor() {
+    // Check if we need to enforce account selection overlay
+    if (this.shouldEnforceAccountSelection()) {
+      effect(() => {
+        const currentWallet = this.walletService.getCurrentWalletSignal()();
+        const isOverlayOpen = this.iframeAccountSelectionService.isOverlayOpen()();
+        
+        // If no wallet is selected and overlay is not yet open, open it
+        if (!currentWallet && !isOverlayOpen) {
+          this.iframeAccountSelectionService.openOverlay();
+        }
+        
+        // If wallet is selected and overlay is open, close it
+        if (currentWallet && isOverlayOpen) {
+          this.iframeAccountSelectionService.closeOverlay();
+        }
+      });
+    }
+  }
+
+  ngOnInit(): void {
+    // Nothing needed here for now
+  }
+
+  onAccountSelected(): void {
+    // Account was selected, close the overlay
+    this.iframeAccountSelectionService.closeOverlay();
+  }
 
   getRouteAnimationData() {
     return this.contexts.getContext('primary')?.route?.snapshot?.data?.[

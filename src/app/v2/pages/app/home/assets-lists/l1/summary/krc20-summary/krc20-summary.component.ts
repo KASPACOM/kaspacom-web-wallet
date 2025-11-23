@@ -128,10 +128,16 @@ export class Krc20SummaryComponent implements OnInit, AfterViewInit {
   });
 
   // Loading states - portfolio pattern
-  loading = computed(() => 
-    !this.krc20ListService.initialLoadComplete() ||
-    (this.tokens().length === 0 && this.krc20ListService.isLoading())
-  );
+  loading = computed(() => {
+    if (this.tokens().length > 0) {
+      return false;
+    }
+
+    return (
+      !this.krc20ListService.initialLoadComplete() ||
+      this.krc20ListService.isLoading()
+    );
+  });
 
   isLoadingMore = computed(() => 
     this.krc20MetadataService.isLoading() &&

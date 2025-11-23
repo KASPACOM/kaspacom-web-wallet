@@ -1,7 +1,17 @@
 .krc20-summary-container {
+  min-height: 100px;
+
   &__card {
     border: none;
     cursor: pointer;
+  }
+
+  &__token-info {
+    flex: 1;
+  }
+
+  &__usd-info {
+    min-width: 80px;
   }
 }
 

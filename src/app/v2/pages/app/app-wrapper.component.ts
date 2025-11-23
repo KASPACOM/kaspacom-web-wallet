@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, ViewChild, ElementRef, AfterViewInit, OnDestroy, OnInit, effect } from '@angular/core';
+import { Component, inject, signal, computed, ViewChild, ElementRef, AfterViewInit, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, ChildrenOutletContexts } from '@angular/router';
 import { navAnimation } from './common/animation/nav.animation';
@@ -55,6 +55,16 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   isIframeMode = signal(IFrameCommunicationApp.isIframe());
   showIframeLoader = signal(false);
 
+  // Computed signal to determine if account selection overlay should be shown
+  shouldShowAccountSelectionOverlay = computed(() => {
+    if (!this.shouldEnforceAccountSelection()) {
+      return false;
+    }
+    const currentWallet = this.walletService.getCurrentWalletSignal()();
+    // Show overlay when no wallet is selected
+    return !currentWallet;
+  });
+
   private ctx!: CanvasRenderingContext2D;
   private nodes: Node[] = [];
   private animationFrameId: number | null = null;
@@ -69,23 +79,7 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   private boundMouseLeave!: () => void;
 
   constructor() {
-    // Check if we need to enforce account selection overlay
-    if (this.shouldEnforceAccountSelection()) {
-      effect(() => {
-        const currentWallet = this.walletService.getCurrentWalletSignal()();
-        const isOverlayOpen = this.iframeAccountSelectionService.isOverlayOpen()();
-        
-        // If no wallet is selected and overlay is not yet open, open it
-        if (!currentWallet && !isOverlayOpen) {
-          this.iframeAccountSelectionService.openOverlay();
-        }
-        
-        // If wallet is selected and overlay is open, close it
-        if (currentWallet && isOverlayOpen) {
-          this.iframeAccountSelectionService.closeOverlay();
-        }
-      });
-    }
+    // Overlay visibility is now managed by computed signal - no effect needed
   }
 
   ngOnInit(): void {
@@ -93,8 +87,7 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onAccountSelected(): void {
-    // Account was selected, close the overlay
-    this.iframeAccountSelectionService.closeOverlay();
+    // Account was selected - overlay will automatically hide via computed signal
   }
 
   getRouteAnimationData() {

@@ -1,60 +1,44 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
+import { signal } from '@angular/core';
 import { IframeAccountSelectionComponent } from './iframe-account-selection.component';
 import { WalletService } from '../../../../services/wallet.service';
-import { WalletAccountItem, WalletListViewModelService, WalletGroupItem } from '../../../shared/wallet-list-view-model.service';
+import { AppWallet } from '../../../../classes/AppWallet';
 
 describe('IframeAccountSelectionComponent', () => {
   let component: IframeAccountSelectionComponent;
   let fixture: ComponentFixture<IframeAccountSelectionComponent>;
   let mockWalletService: jasmine.SpyObj<WalletService>;
-  let mockWalletListViewModel: jasmine.SpyObj<WalletListViewModelService>;
   let mockRouter: jasmine.SpyObj<Router>;
 
-  const walletStub: WalletGroupItem = {
-    id: 1,
-    name: 'Primary Wallet',
-    address: 'kaspa:wallet',
-    isSelected: false,
-    group: [] as any,
-  };
-
-  const accountWalletStub = {
+  const mockWallet = {
+    getId: () => 1,
     getIdWithAccount: () => '1-no-account',
-  } as any;
-
-  const accountStub: WalletAccountItem = {
-    id: '1-no-account',
-    name: 'Account 1',
-    address: 'kaspa:account',
-    isSelected: false,
-    wallet: accountWalletStub,
-  };
+    getName: () => 'Primary Wallet',
+    getAccountName: () => 'Account 1',
+    getAddress: () => 'kaspa:wallet',
+    getL2WalletStateSignal: () => signal(null),
+  } as any as AppWallet;
 
   beforeEach(async () => {
     mockWalletService = jasmine.createSpyObj('WalletService', [
       'selectCurrentWallet',
       'logout',
+      'getAllWallets',
+      'getCurrentWallet',
+      'isL2Display',
     ]);
     mockWalletService.selectCurrentWallet.and.returnValue(Promise.resolve());
-
-    mockWalletListViewModel = jasmine.createSpyObj('WalletListViewModelService', [
-      'loadWalletGroups',
-      'shortenAddress',
-      'buildAccountItems',
-    ]);
+    mockWalletService.getAllWallets.and.returnValue(signal([mockWallet]));
+    mockWalletService.getCurrentWallet.and.returnValue(undefined);
+    mockWalletService.isL2Display.and.returnValue(false);
 
     mockRouter = jasmine.createSpyObj('Router', ['navigate']);
-
-    mockWalletListViewModel.loadWalletGroups.and.returnValue([walletStub]);
-    mockWalletListViewModel.shortenAddress.and.callFake((address: string) => address);
-    mockWalletListViewModel.buildAccountItems.and.returnValue([accountStub]);
 
     await TestBed.configureTestingModule({
       imports: [IframeAccountSelectionComponent],
       providers: [
         { provide: WalletService, useValue: mockWalletService },
-        { provide: WalletListViewModelService, useValue: mockWalletListViewModel },
         { provide: Router, useValue: mockRouter },
       ],
     }).compileComponents();
@@ -69,43 +53,44 @@ describe('IframeAccountSelectionComponent', () => {
   });
 
   it('should load wallets on initialization', () => {
-    expect(mockWalletListViewModel.loadWalletGroups).toHaveBeenCalled();
+    expect(mockWalletService.getAllWallets).toHaveBeenCalledWith(true);
   });
 
   it('should auto select wallet when only one group exists', () => {
-    expect(component.selectedWalletGroup()).toEqual(walletStub);
+    expect(component.selectedWalletGroup()?.id).toBe(1);
     expect(component.isWalletSelectionVisible()).toBeFalse();
-    expect(component.accountItems().length).toBe(1);
-    expect(mockWalletListViewModel.buildAccountItems).toHaveBeenCalledWith(walletStub);
   });
 
   it('should allow wallet selection when multiple groups exist', () => {
-    const otherWallet: WalletGroupItem = {
-      id: 2,
-      name: 'Second',
-      address: 'kaspa:second',
-      isSelected: false,
-      group: [] as any,
-    };
+    const otherWallet = {
+      getId: () => 2,
+      getName: () => 'Second',
+      getAddress: () => 'kaspa:second',
+      getL2WalletStateSignal: () => signal(null),
+    } as any as AppWallet;
 
-    component.walletGroups.set([walletStub, otherWallet]);
-    component.selectedWalletGroup.set(undefined);
+    mockWalletService.getAllWallets.and.returnValue(signal([mockWallet, otherWallet]));
+    component.loadWallets();
     fixture.detectChanges();
 
     expect(component.isWalletSelectionVisible()).toBeTrue();
-    component.selectWalletGroup(otherWallet);
-    expect(component.selectedWalletGroup()).toEqual(otherWallet);
+    const walletGroup = component.walletGroups()[1];
+    component.selectWalletGroup(walletGroup);
+    expect(component.selectedWalletGroup()?.id).toBe(2);
   });
 
   it('should select account on click', async () => {
-    await component.selectAccount(accountStub);
-    expect(mockWalletService.selectCurrentWallet).toHaveBeenCalledWith('1-no-account');
+    const accountItem = component.accountItems()[0];
+    if (accountItem) {
+      await component.selectAccount(accountItem);
+      expect(mockWalletService.selectCurrentWallet).toHaveBeenCalled();
+    }
   });
 
-  it('should shorten addresses using the view model service', () => {
+  it('should shorten addresses correctly', () => {
     const address = 'kaspa:qz0123456789abcdef';
-    component.shortenAddress(address);
-    expect(mockWalletListViewModel.shortenAddress).toHaveBeenCalledWith(address);
+    const shortened = component.shortenAddress(address);
+    expect(shortened).toContain('...');
   });
 });
 

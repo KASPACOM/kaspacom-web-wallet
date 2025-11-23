@@ -5,7 +5,15 @@ import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-bas
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
 import { WalletService } from '../../../../../services/wallet.service';
 import { QuickActionDialogService } from '../../../../services/quick-action-dialog.service';
-import { WalletListViewModelService, WalletGroupItem } from '../../../../shared/wallet-list-view-model.service';
+import { AppWallet } from '../../../../../classes/AppWallet';
+
+interface WalletGroupItem {
+  id: number;
+  name: string;
+  address: string;
+  isSelected: boolean;
+  group: AppWallet[];
+}
 
 @Component({
   selector: 'app-wallet-selection-page',
@@ -17,7 +25,6 @@ import { WalletListViewModelService, WalletGroupItem } from '../../../../shared/
 export class WalletSelectionPageComponent extends FlowPageBaseComponent {
   private walletService = inject(WalletService);
   private quickActionDialogService = inject(QuickActionDialogService);
-  private walletListViewModel = inject(WalletListViewModelService);
 
   get config(): IFlowPageConfig {
     return {
@@ -37,7 +44,32 @@ export class WalletSelectionPageComponent extends FlowPageBaseComponent {
   }
 
   public loadWallets(): void {
-    const items = this.walletListViewModel.loadWalletGroups();
+    const allWallets = this.walletService.getAllWallets(true)() || [];
+    const currentWallet = this.walletService.getCurrentWallet();
+
+    const walletGroups = new Map<number, AppWallet[]>();
+    allWallets.forEach((wallet) => {
+      const id = wallet.getId();
+      if (!walletGroups.has(id)) {
+        walletGroups.set(id, []);
+      }
+      walletGroups.get(id)!.push(wallet);
+    });
+
+    const items: WalletGroupItem[] = [];
+    walletGroups.forEach((group, id) => {
+      const name = group[0].getName();
+      const address = this.getWalletAddress(group[0]);
+      const isSelected = currentWallet ? currentWallet.getId() === id : false;
+      items.push({
+        id,
+        name,
+        address,
+        isSelected,
+        group,
+      });
+    });
+
     this.wallets.set(items);
   }
 
@@ -100,7 +132,18 @@ export class WalletSelectionPageComponent extends FlowPageBaseComponent {
     });
   }
 
+  private getWalletAddress(wallet: AppWallet): string {
+    if (!this.walletService.isL2Display()) {
+      return wallet.getAddress();
+    } else {
+      // For L2 networks, get the L2 address
+      const l2State = wallet.getL2WalletStateSignal()();
+      return l2State?.address || wallet.getAddress(); // fallback to L1
+    }
+  }
+
   shortenAddress(address: string): string {
-    return this.walletListViewModel.shortenAddress(address);
+    if (!address) return '';
+    return `${address.slice(0, 10)}...${address.slice(-8)}`;
   }
 }

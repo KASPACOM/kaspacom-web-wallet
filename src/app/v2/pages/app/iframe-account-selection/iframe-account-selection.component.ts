@@ -3,11 +3,23 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
 import { WalletService } from '../../../../services/wallet.service';
-import {
-  WalletListViewModelService,
-  WalletGroupItem,
-  WalletAccountItem,
-} from '../../../shared/wallet-list-view-model.service';
+import { AppWallet } from '../../../../classes/AppWallet';
+
+interface WalletGroupItem {
+  id: number;
+  name: string;
+  address: string;
+  isSelected: boolean;
+  group: AppWallet[];
+}
+
+interface WalletAccountItem {
+  id: string;
+  name: string;
+  address: string;
+  isSelected: boolean;
+  wallet: AppWallet;
+}
 
 @Component({
   selector: 'app-iframe-account-selection',
@@ -18,7 +30,6 @@ import {
 })
 export class IframeAccountSelectionComponent {
   private walletService = inject(WalletService);
-  private walletListViewModel = inject(WalletListViewModelService);
   private router = inject(Router);
 
   @Output() accountSelected = new EventEmitter<void>();
@@ -38,7 +49,15 @@ export class IframeAccountSelectionComponent {
     if (!group) {
       return [];
     }
-    return this.walletListViewModel.buildAccountItems(group);
+    const currentWallet = this.walletService.getCurrentWallet();
+    return group.group.map((wallet) => ({
+      id: wallet.getIdWithAccount(),
+      name: wallet.getAccountName() || wallet.getName(),
+      address: this.getWalletAddress(wallet),
+      isSelected:
+        currentWallet?.getIdWithAccount() === wallet.getIdWithAccount(),
+      wallet,
+    }));
   });
 
   constructor() {
@@ -46,7 +65,32 @@ export class IframeAccountSelectionComponent {
   }
 
   public loadWallets(): void {
-    const items = this.walletListViewModel.loadWalletGroups();
+    const allWallets = this.walletService.getAllWallets(true)() || [];
+    const currentWallet = this.walletService.getCurrentWallet();
+
+    const walletGroups = new Map<number, AppWallet[]>();
+    allWallets.forEach((wallet) => {
+      const id = wallet.getId();
+      if (!walletGroups.has(id)) {
+        walletGroups.set(id, []);
+      }
+      walletGroups.get(id)!.push(wallet);
+    });
+
+    const items: WalletGroupItem[] = [];
+    walletGroups.forEach((group, id) => {
+      const name = group[0].getName();
+      const address = this.getWalletAddress(group[0]);
+      const isSelected = currentWallet ? currentWallet.getId() === id : false;
+      items.push({
+        id,
+        name,
+        address,
+        isSelected,
+        group,
+      });
+    });
+
     this.walletGroups.set(items);
 
     if (items.length === 1) {
@@ -92,8 +136,19 @@ export class IframeAccountSelectionComponent {
     }
   }
 
+  private getWalletAddress(wallet: AppWallet): string {
+    if (!this.walletService.isL2Display()) {
+      return wallet.getAddress();
+    } else {
+      // For L2 networks, get the L2 address
+      const l2State = wallet.getL2WalletStateSignal()();
+      return l2State?.address || wallet.getAddress(); // fallback to L1
+    }
+  }
+
   shortenAddress(address: string): string {
-    return this.walletListViewModel.shortenAddress(address);
+    if (!address) return '';
+    return `${address.slice(0, 10)}...${address.slice(-8)}`;
   }
 }
 

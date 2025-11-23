@@ -5,7 +5,7 @@
 
   <div class="wrapper">
     <!-- Iframe account selection overlay - shows when account needs to be selected -->
-    @if (shouldEnforceAccountSelection() && iframeAccountSelectionService.isOverlayOpen()()) {
+    @if (shouldShowAccountSelectionOverlay()) {
       <app-iframe-account-selection
         (accountSelected)="onAccountSelected()"
       ></app-iframe-account-selection>

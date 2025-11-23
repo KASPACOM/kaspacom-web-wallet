@@ -4,8 +4,15 @@
   <div class="screen__backdrop screen__backdrop--second"></div>
 
   <div class="wrapper">
-    <!-- Iframe overlay cover - hides page content when in iframe mode -->
-    <div class="iframe-overlay-cover" *ngIf="isIframeMode()">
+    <!-- Iframe account selection overlay - shows when account needs to be selected -->
+    @if (shouldShowAccountSelectionOverlay()) {
+      <app-iframe-account-selection
+        (accountSelected)="onAccountSelected()"
+      ></app-iframe-account-selection>
+    }
+    
+    <!-- Iframe loading spinner - shows during initial load -->
+    <div class="iframe-overlay-cover" *ngIf="shouldEnforceAccountSelection() && showIframeLoader()">
       <div class="iframe-loader">
         <kc-spinner size="lg"></kc-spinner>
       </div>

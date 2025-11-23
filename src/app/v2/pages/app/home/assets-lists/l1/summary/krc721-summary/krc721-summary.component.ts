@@ -119,10 +119,16 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
   });
   
   // Loading states - portfolio pattern
-  loading = computed(() => 
-    !this.krc721ListService.initialLoadComplete() ||
-    (this.nfts().length === 0 && this.krc721ListService.isLoading())
-  );
+  loading = computed(() => {
+    if (this.nfts().length > 0) {
+      return false;
+    }
+
+    return (
+      !this.krc721ListService.initialLoadComplete() ||
+      this.krc721ListService.isLoading()
+    );
+  });
   
   isLoadingMore = computed(() => this.krc721ListService.isLoading());
   

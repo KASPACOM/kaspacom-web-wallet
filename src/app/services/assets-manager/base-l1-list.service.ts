@@ -23,6 +23,7 @@ export abstract class BaseL1ListService<TAsset> {
 
   private readonly paginationStateSignal: WritableSignal<PaginationState>;
   private readonly dataGrewFromMergeSignal: WritableSignal<boolean>;
+  private readonly rawItemsSignal: Signal<TAsset[] | undefined>;
   protected readonly itemsSignal: Signal<TAsset[]>;
 
   readonly isLoading: Signal<boolean>;
@@ -50,9 +51,10 @@ export abstract class BaseL1ListService<TAsset> {
 
     this.dataGrewFromMergeSignal = signal<boolean>(false);
 
-    this.itemsSignal = computed(() =>
-      (this.l1AssetsStore.getAssets(this.assetType) as TAsset[]) || []
-    );
+    this.rawItemsSignal = this.l1AssetsStore.getAssetSignal(
+      this.assetType as keyof L1AssetStoreData,
+    ) as Signal<TAsset[] | undefined>;
+    this.itemsSignal = computed(() => this.rawItemsSignal() ?? []);
 
     this.isLoading = computed(() => this.paginationStateSignal().isLoading);
     this.hasMore = computed(() => this.paginationStateSignal().hasMore);
@@ -76,7 +78,7 @@ export abstract class BaseL1ListService<TAsset> {
     });
 
     this.previousLength = this.itemsSignal().length;
-    this.handleItemsUpdated(this.itemsSignal());
+    this.handleItemsUpdated(this.rawItemsSignal());
   }
 
   protected abstract loadMoreFromStore(): Promise<L1LoadMoreStoreResult>;
@@ -212,9 +214,10 @@ export abstract class BaseL1ListService<TAsset> {
 
   private handleItemsUpdated(items: TAsset[] | undefined): void {
     const currentState = this.paginationStateSignal();
-    const currentLength = items?.length ?? 0;
+    const hasItems = Array.isArray(items);
+    const currentLength = hasItems ? items!.length : 0;
 
-    if (currentLength > 0 && !currentState.initialLoadComplete) {
+    if (hasItems && !currentState.initialLoadComplete) {
       this.paginationStateSignal.update((state) => ({
         ...state,
         initialLoadComplete: true,

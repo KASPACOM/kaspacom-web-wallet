@@ -4,8 +4,8 @@ import { KcButtonComponent, KcIconComponent, KcTooltipDirective } from '@kaspaco
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
 import { WalletService } from '../../../../../services/wallet.service';
-import { AppWallet } from '../../../../../classes/AppWallet';
 import { QuickActionDialogService } from '../../../../services/quick-action-dialog.service';
+import { AppWallet } from '../../../../../classes/AppWallet';
 
 interface WalletGroupItem {
   id: number;

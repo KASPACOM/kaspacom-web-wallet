@@ -68,10 +68,16 @@ export class KnsSummaryComponent implements OnInit, AfterViewInit {
   domains = computed(() => this.knsListService.domains());
   
   // Loading states - portfolio pattern
-  loading = computed(() => 
-    !this.knsListService.initialLoadComplete() ||
-    (this.domains().length === 0 && this.knsListService.isLoading())
-  );
+  loading = computed(() => {
+    if (this.domains().length > 0) {
+      return false;
+    }
+
+    return (
+      !this.knsListService.initialLoadComplete() ||
+      this.knsListService.isLoading()
+    );
+  });
   
   isLoadingMore = computed(() => this.knsListService.isLoading());
   

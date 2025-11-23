@@ -142,6 +142,8 @@ export class CommunicationManagerService {
                 case WalletMessageTypeEnum.OpenWalletInfo:
                     // Clean up any ongoing approval flow before navigating
                     this.approvalFlowService.closeApproval();
+                    // Clear any pending action state from the old review-action component
+                    this.walletActionsService.clearActionResult();
                     this.router.navigate(['/wallet-info']);
                     break;
                 case WalletMessageTypeEnum.RejectWalletActionRequest:

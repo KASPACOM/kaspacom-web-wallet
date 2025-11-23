@@ -113,9 +113,9 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
     switch (this.onboardingStep()) {
       case OnboardingStep.NEW_WALLET:
         return {
-          title: 'Create a new wallet',
+          title: 'Create a New Wallet',
           description:
-            'Set your password, secure your recovery phrase, and start using Kaspacom Wallet.',
+            'Set your password, secure your recovery phrase, and start using the KaspaCom Wallet.',
         };
       case OnboardingStep.IMPORT_EXISTING_WALLET:
         return {
@@ -124,9 +124,9 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
         };
       default:
         return {
-          title: 'Welcome onboard',
+          title: 'Welcome to KaspaCom Wallet',
           description:
-            'Choose whether to start fresh or connect a wallet you already have.',
+            'Start with a new wallet or connect one you already use.',
         };
     }
   });

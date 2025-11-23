@@ -15,6 +15,7 @@ import { EthereumWalletChainManager } from '../etherium-services/etherium-wallet
 import { BaseCommunicationApp } from './communication-app/base-communication-app';
 import { environment } from '../../../environments/environment';
 import { AllowedApplicationsService } from './allowed-applications.service';
+import { ApprovalFlowService } from '../../v2/services/approval-flow.service';
 
 @Injectable({
     providedIn: 'root',
@@ -32,6 +33,7 @@ export class CommunicationManagerService {
     protected ethereumWalletActionsService: EthereumWalletActionsService = inject(EthereumWalletActionsService);
     protected ethereumWalletChainManager: EthereumWalletChainManager = inject(EthereumWalletChainManager);
     protected allowedApplicationsService: AllowedApplicationsService = inject(AllowedApplicationsService);
+    protected approvalFlowService: ApprovalFlowService = inject(ApprovalFlowService);
 
 
     protected connectedApps: BaseCommunicationApp[] = [];
@@ -138,6 +140,8 @@ export class CommunicationManagerService {
                     await this.handleWalletActionRequest(message.payload, message.uuid, app);
                     break;
                 case WalletMessageTypeEnum.OpenWalletInfo:
+                    // Clean up any ongoing approval flow before navigating
+                    this.approvalFlowService.closeApproval();
                     this.router.navigate(['/wallet-info']);
                     break;
                 case WalletMessageTypeEnum.RejectWalletActionRequest:

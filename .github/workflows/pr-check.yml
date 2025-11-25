@@ -64,22 +64,22 @@ jobs:
           path: coverage/
           retention-days: 30
 
-      - name: Comment on PR with results
-        if: always()
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const buildStatus = '${{ job.status }}';
-            const message = buildStatus === 'success' 
-              ? '✅ Build and tests passed successfully!'
-              : '❌ Build or tests failed. Please check the logs above.';
+      # - name: Comment on PR with results
+      #   if: always()
+      #   uses: actions/github-script@v6
+      #   with:
+      #     script: |
+      #       const buildStatus = '${{ job.status }}';
+      #       const message = buildStatus === 'success' 
+      #         ? '✅ Build and tests passed successfully!'
+      #         : '❌ Build or tests failed. Please check the logs above.';
             
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: message
-            });
+      #       github.rest.issues.createComment({
+      #         issue_number: context.issue.number,
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         body: message
+      #       });
 
   security-check:
     runs-on: ubuntu-latest

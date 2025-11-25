@@ -4,10 +4,7 @@
       <div class="flex column align-items-center gap-4">
         <span class="typo-title-3 p-4">Seed Passphrase</span>
         <span class="typo-text-2 text-medium text-align-center"
-          >Add an optional passphrase for extra security.</span
-        >
-        <span class="typo-text-2 text-align-center text-gray-60"
-          >This is different from your wallet password.</span
+          >Add an optional passphrase for extra security. <strong>This is different from your wallet password.</strong></span
         >
       </div>
 
@@ -15,16 +12,15 @@
         <div class="full-width">
           <kc-input
             [isFullWidth]="true"
-            [label]="'Seed passphrase (optional)'"
+            [label]="'Seed Passphrase (optional)'"
             [type]="'password'"
-            [placeholder]="'Enter seed passphrase'"
+            [placeholder]="'Enter passphrase'"
             [ngModel]="seedPassphrase()"
             (valueChange)="onSeedPassphraseChange($event)"
           ></kc-input>
 
           <div class="full-width text-gray-60 typo-text-2 pt-8">
-            Adding a passphrase provides an extra layer of security. If you set one,
-            you'll need it along with your seed phrase to recover your wallet.
+            Adding a passphrase provides an additional layer of security. If you set one, you'll need it together with your recovery phrase to restore your wallet.
           </div>
         </div>
       </div>

@@ -11,6 +11,7 @@ export interface Environment {
   kasplexApiBaseurl: string;
   kaspaApiBaseurl: string;
   krc721ApiBaseurl: string;
+  krc721CacheStreamUrl: string;
   knsApiBaseurl: string;
   kaspaExplorerBaseurl: string;
   kaspaNetwork: string;

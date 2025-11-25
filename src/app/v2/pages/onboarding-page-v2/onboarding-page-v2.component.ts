@@ -30,6 +30,7 @@ import {
   DELETE_WALLET_CONFIRMATION_PHRASE,
   isDeleteWalletConfirmationValid,
 } from '../../shared/constants/delete-wallet.constants';
+import { IframeAccountSelectionService } from '../../services/iframe-account-selection.service';
 
 type LoginPasswordType = 'password' | 'text';
 
@@ -66,6 +67,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
   private readonly walletService = inject(WalletService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
+  private readonly iframeAccountSelectionService = inject(IframeAccountSelectionService);
 
   readonly shouldShowLogin = signal(
     this.passwordManagerService.isUserHasSavedPassword(),
@@ -111,9 +113,9 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
     switch (this.onboardingStep()) {
       case OnboardingStep.NEW_WALLET:
         return {
-          title: 'Create a new wallet',
+          title: 'Create a New Wallet',
           description:
-            'Set your password, secure your recovery phrase, and start using Kaspacom Wallet.',
+            'Set your password, secure your recovery phrase, and start using the KaspaCom Wallet.',
         };
       case OnboardingStep.IMPORT_EXISTING_WALLET:
         return {
@@ -122,9 +124,9 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
         };
       default:
         return {
-          title: 'Welcome onboard',
+          title: 'Welcome to KaspaCom Wallet',
           description:
-            'Choose whether to start fresh or connect a wallet you already have.',
+            'Start with a new wallet or connect one you already use.',
         };
     }
   });
@@ -235,7 +237,20 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
       }
 
       await this.walletService.loadWallets();
-      await this.walletService.selectCurrentWalletFromLocalStorageNullsafe();
+
+      const shouldEnforceAccountSelection =
+        this.iframeAccountSelectionService.shouldEnforceAccountSelection();
+
+      if (shouldEnforceAccountSelection) {
+        // Clear any previous wallet selection to force account selection
+        await this.walletService.deselectCurrentWallet();
+        // Open the account selection overlay
+        this.iframeAccountSelectionService.openOverlay();
+      } else {
+        // Normal web mode - auto-select the previously selected wallet
+        await this.walletService.selectCurrentWalletFromLocalStorageNullsafe();
+      }
+      
       await this.router.navigate(['./app/home']);
     } catch (error) {
       console.error('Login failed', error);

@@ -1,4 +1,4 @@
-import { Component, OnInit, WritableSignal } from '@angular/core';
+import { Component, OnInit, WritableSignal, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { WalletService } from '../../services/wallet.service'; // Assume you have a service to fetch wallets
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -6,6 +6,8 @@ import { NgFor, NgIf } from '@angular/common';
 import { AppWallet } from '../../classes/AppWallet';
 import { ExportWalletsQrComponent } from '../../components/wallet-management/export-wallets-qr/export-wallets-qr.component';
 import _ from 'lodash';
+import { ApprovalFlowService } from '../../v2/services/approval-flow.service';
+import { WalletActionService } from '../../services/wallet-action.service';
 
 @Component({
     selector: 'wallet-selection',
@@ -17,6 +19,9 @@ export class WalletSelectionComponent implements OnInit {
   public Object = Object;
   walletGroups: AppWallet[][] | undefined = undefined;
   user: any = {}; // User information
+  
+  private approvalFlowService = inject(ApprovalFlowService);
+  private walletActionService = inject(WalletActionService);
 
   constructor(
     private walletService: WalletService, // Inject wallet service
@@ -37,6 +42,10 @@ export class WalletSelectionComponent implements OnInit {
 
   async selectWallet(wallet: AppWallet) {
     await this.walletService.selectCurrentWallet(wallet.getIdWithAccount());
+    // Clean up any ongoing approval flow before navigating
+    this.approvalFlowService.closeApproval();
+    // Clear any pending action state from the old review-action component
+    this.walletActionService.clearActionResult();
     // Navigate to wallet details or send funds page for a specific wallet
     this.router.navigate([`/wallet-info`]);
   }

@@ -40,9 +40,6 @@ import { KaspaNodesBackgroundComponent } from '../../../../common/components/kas
             [style.width.%]="currentProgress()">
           </div>
         </div>
-        <div class="progress-text">
-          {{ currentProgress() }}%
-        </div>
       </div>
 
     </div>

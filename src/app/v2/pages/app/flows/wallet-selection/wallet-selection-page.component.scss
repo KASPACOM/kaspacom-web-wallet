@@ -35,6 +35,7 @@
 
   &:hover {
     background: rgba(white, 0.065);
+    border: 1px solid #6FC7BA;
 
     .wallet-item__pencil {
       opacity: 1;
@@ -48,27 +49,8 @@
   }
 
   &.selected {
-    position: relative;
-    border: 1px solid transparent;
+    border: 1px solid #6FC7BA;
     background: rgba(#6fc7ba, 0.1);
-
-    &::before {
-      content: "";
-      position: absolute;
-      inset: -1px;
-      padding: 1px;
-      background: var(--gradient-1);
-      border-radius: inherit;
-      mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-      mask-composite: xor;
-      -webkit-mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      pointer-events: none;
-    }
 
     .wallet-item__icon {
       ::ng-deep .icon {

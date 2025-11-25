@@ -1,12 +1,8 @@
-/* You can add global styles to this file, and also import other style files */
-@use "@kaspacom/ui/lib/styles/index" as *;
-@use "@kaspacom/ui/assets/icons/style.css" as *;
-// @use "styles/design-system/colors.style.scss";
-// @use "styles/design-system/font.style.scss";
-// @use "styles/design-system/overlay.style.scss";
+@use "node_modules/@kaspacom/ui/lib/styles/index.scss" as *;
 @use "styles/design-system/wallet-colors.style.scss";
 @use "styles/common";
 @use "styles/responsive";
+@import "node_modules/@kaspacom/ui/assets/icons/style.css";
 
 /* CSS Custom Properties */
 :root {

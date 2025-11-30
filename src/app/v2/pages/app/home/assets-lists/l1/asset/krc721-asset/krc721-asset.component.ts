@@ -41,6 +41,10 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
 
   protected nftMetadata = signal<NftMetadata | null>(null);
   protected metadataLoading = signal<boolean>(true);
+  
+  protected rarityRank = signal<number | undefined>(undefined);
+  protected legendary = signal<boolean | undefined>(undefined);
+  protected totalSupply = signal<number | undefined>(undefined);
 
   override async ngOnInit() {
     // Get the tick and tokenId from route params
@@ -49,7 +53,9 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
       this.tokenId = params['tokenId'];
       if (this.tick && this.tokenId) {
         super.ngOnInit();
+        // Ensure we try to load metadata/rarity even if tick case doesn't match API perfectly
         this.loadNftMetadata();
+        this.loadRarityInfo();
       }
     });
   }
@@ -95,6 +101,77 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
     } finally {
       this.metadataLoading.set(false);
     }
+  }
+
+  protected async loadRarityInfo(): Promise<void> {
+    try {
+        const address = this.getCurrentWalletAddress();
+        console.log('Loading rarity info for', this.tick, this.tokenId, 'address:', address);
+        
+        // 1. Get Collection details for total supply
+        this.krc721Service.getCollectionDetails(this.tick).subscribe(response => {
+             console.log('Collection details response:', response);
+             if (response.message === 'success') {
+                 // Use max supply if totalSupply is missing, or minted if available
+                 const supply = response.result.totalSupply || response.result.max || response.result.minted;
+                 this.totalSupply.set(parseInt(supply));
+                 console.log('Total supply set to:', parseInt(supply));
+             }
+        });
+
+        // 2. Get Portfolio details for rarity rank
+        const details = await firstValueFrom(this.krc721Service.getPortfolioDetails(address, this.tick));
+        console.log('Portfolio details response:', details);
+        
+        if (details && details.length > 0) {
+            // Compare tickers case-insensitively
+            const detailItem = details.find(d => d.ticker.toUpperCase() === this.tick.toUpperCase());
+            console.log('Found detail item:', detailItem);
+            
+            if (detailItem && detailItem.tokenIds) {
+                // Handle both object and string formats
+                const token = detailItem.tokenIds.find((t: any) => {
+                    const id = (typeof t === 'object' && t.tokenId !== undefined) ? t.tokenId : t;
+                    return id.toString() === this.tokenId.toString();
+                });
+                
+                console.log('Found token:', token);
+                
+                if (token && typeof token === 'object') {
+                    console.log('Setting rarity rank:', token.rarityRank, 'legendary:', token.legendary);
+                    this.rarityRank.set(token.rarityRank);
+                    this.legendary.set(token.legendary);
+                } else {
+                    console.log('Token is not an object or not found');
+                }
+            } else {
+                console.log('No detail item or tokenIds found');
+            }
+        } else {
+            console.log('No portfolio details found');
+        }
+    } catch (e) {
+        console.error('Failed to load rarity info', e);
+    }
+  }
+
+  getRarityClass(): string {
+    const rank = this.rarityRank();
+    const isLegendary = this.legendary();
+    const supply = this.totalSupply();
+
+    if (isLegendary || (rank !== undefined && rank < 0)) {
+      return 'legendary';
+    }
+    
+    if (rank !== undefined && supply) {
+      const percentage = rank / supply;
+      if (percentage <= 0.01) return 'gold';
+      if (percentage <= 0.1) return 'silver';
+      if (percentage <= 0.3) return 'bronze';
+    }
+    
+    return 'neutral';
   }
 
   protected override async loadTransactionHistory(): Promise<void> {

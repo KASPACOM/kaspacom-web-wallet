@@ -15,6 +15,11 @@ export interface Krc721Nft {
   owner: string;
   buri?: string;
   metadata?: Krc721Metadata;
+  // Portfolio API additions
+  rarityRank?: number;
+  legendary?: boolean;
+  totalSupply?: number;
+  rawTraits?: Record<string, any>;
 }
 
 export interface Krc721NftResponse {

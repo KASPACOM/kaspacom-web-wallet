@@ -2,6 +2,7 @@ import { inject, Injectable, signal, WritableSignal } from "@angular/core";
 import { BaseAssetsStoreService, BaseAssetStoreData } from "./base-assets-store.service";
 import { GetTokenListDto, GetTokenListResponse } from "../../kasplex-api/dtos/token-list-info.dto";
 import { Krc721Nft } from "../../krc721-api/dtos/krc721-nft.dto";
+import { Krc721PortfolioItem } from "../../krc721-api/dtos/krc721-portfolio.dto";
 import { KnsDomainAsset } from "../../kns-api/dtos/kns-domain.dto";
 import { firstValueFrom } from "rxjs";
 import { KasplexKrc20Service } from "../../kasplex-api/kasplex-api.service";
@@ -48,6 +49,12 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
     private krc721NextCursor: WritableSignal<number | undefined> = signal(undefined);
     private krc721HasMore: WritableSignal<boolean> = signal(true);
     private krc721LoadedPages: WritableSignal<number> = signal(0); // Track pages loaded
+
+    // New internal state for Portfolio API
+    private krc721PortfolioSummary: Krc721PortfolioItem[] = [];
+    private krc721PortfolioIndex = 0;
+    private krc721TokenQueue: Krc721Nft[] = [];
+    private krc721CollectionCache = new Map<string, number>(); // tick -> totalSupply
     
     private readonly KRC721_PAGE_SIZE = L1_PAGINATION_CONFIG.krc721.pageSize;
     
@@ -372,88 +379,32 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
 
     /**
      * Load initial KRC721 NFTs (first page only)
-     * Smart auto-reload: Fetches as many NFTs as user has already loaded
+     * Uses new Portfolio API
      */
     protected async getKrc721Info(walletAddress: string): Promise<Krc721Nft[]> {
-        const existingData = this.data['krc721']() as Krc721Nft[] | undefined;
-        const isAutoReload = existingData !== undefined && existingData.length > 0;
-        
-        if (isAutoReload) {
-            // Smart fetch: Get as many NFTs as user has loaded (paginated)
-            const itemsToFetch = existingData.length;
-            const pagesToFetch = this.krc721LoadedPages();
-            
-            // Fetch paginated to match what user has loaded
-            const allFreshNfts: Krc721Nft[] = [];
-            let currentCursor: number | undefined = undefined;
-            
-            for (let i = 0; i < pagesToFetch; i++) {
-                const response: { message: string; result?: Krc721Nft[]; next?: number } = await firstValueFrom(
-            this.krc721ApiService.getAddressNfts(
-                walletAddress,
-                        currentCursor,
-                        this.KRC721_PAGE_SIZE,
-                        'forward'
-            ),
-        );
+        // Reset internal state for fresh load
+        this.krc721PortfolioSummary = [];
+        this.krc721PortfolioIndex = 0;
+        this.krc721TokenQueue = [];
+        this.krc721CollectionCache.clear(); 
 
-        if (response.message === 'success' && response.result) {
-                    allFreshNfts.push(...response.result);
-                    currentCursor = response.next;
-                    
-                    // If we got fewer items than page size, no more to fetch
-                    if (!response.next || response.result.length < this.KRC721_PAGE_SIZE) {
-                        break;
-                    }
-                } else {
-                    break;
-                }
-            }
-            
-            // Smart merge with deduplication
-            const { merged, newItems, removedCount } = this.mergeKrc721Data(existingData, allFreshNfts);
-            
-            // Update cursor to last item BEFORE new items (maintains pagination continuity)
-            const lastOriginalIndex = merged.length - newItems.length - 1;
-            if (lastOriginalIndex >= 0 && merged[lastOriginalIndex]) {
-                const lastNft = merged[lastOriginalIndex];
-                this.krc721NextCursor.set(`${lastNft.tick}-${lastNft.tokenId}` as any);
-            }
-            
-            // If new items found, set hasMore to true (more might exist beyond)
-            if (newItems.length > 0) {
-                this.krc721HasMore.set(true);
-            }
-            
-            return merged;
-        } else {
-            // Initial load: Reset pagination state
-            this.krc721NextCursor.set(undefined);
-            this.krc721HasMore.set(true);
-            this.krc721LoadedPages.set(1); // Track initial page
-            
-            // Load first page only
-            const response = await firstValueFrom(
-                this.krc721ApiService.getAddressNfts(
-                    walletAddress,
-                    undefined, // No offset for first page
-                    this.KRC721_PAGE_SIZE,
-                    'forward'
-                ),
-            );
-
-            if (response.message === 'success') {
-                const nfts = response.result || [];
-                
-                // Update pagination state
-                    this.krc721NextCursor.set(response.next);
-                    this.krc721HasMore.set(response.next !== undefined && nfts.length === this.KRC721_PAGE_SIZE);
-                    
-                    return nfts;
-        } else {
-            throw new Error('KRC721 API response not successful');
-            }
+        try {
+            // 1. Fetch summary
+            this.krc721PortfolioSummary = await firstValueFrom(this.krc721ApiService.getPortfolio(walletAddress));
+        } catch (e) {
+            console.error('Error fetching portfolio summary', e);
+            this.krc721PortfolioSummary = [];
         }
+
+        // 2. Fetch first batch
+        const nfts = await this.fetchNextKrc721Batch(walletAddress);
+        
+        // Update pagination
+        this.krc721NextCursor.set(this.krc721PortfolioIndex);
+        this.krc721HasMore.set(this.krc721PortfolioIndex < this.krc721PortfolioSummary.length || this.krc721TokenQueue.length > 0);
+        this.krc721LoadedPages.set(1);
+        
+        return nfts;
     }
     
     /**
@@ -612,10 +563,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
      * Called by Krc721ListService when scrolling
      */
     async loadMoreKrc721Nfts(): Promise<LoadMoreStoreResult> {
-        const cursor = this.krc721NextCursor();
-        const hasMore = this.krc721HasMore();
-        
-        if (!hasMore || cursor === undefined) {
+        if (!this.krc721HasMore()) {
             return {
                 success: false,
                 itemsAdded: 0,
@@ -626,50 +574,40 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
         
         try {
             const walletAddress = await this.getWalletAddress();
+            const newNfts = await this.fetchNextKrc721Batch(walletAddress);
             
-            const response = await firstValueFrom(
-                this.krc721ApiService.getAddressNfts(
-                    walletAddress,
-                    cursor,
-                    this.KRC721_PAGE_SIZE,
-                    'forward'
-                ),
-            );
-            
-            if (response.message === 'success') {
-                const newNfts = response.result || [];
-                
+            if (newNfts.length > 0) {
                 // Append to existing data
                 const currentNfts = this.data[L1_ASSET_KEYS.krc721]() || [];
+                // Use set to update signal
                 this.data[L1_ASSET_KEYS.krc721].set([...currentNfts, ...newNfts]);
                 
                 // Update pagination state
-                this.krc721NextCursor.set(response.next);
-                this.krc721HasMore.set(response.next !== undefined && newNfts.length === this.KRC721_PAGE_SIZE);
-                this.krc721LoadedPages.update(p => p + 1); // Track pages loaded
+                this.krc721HasMore.set(this.krc721PortfolioIndex < this.krc721PortfolioSummary.length || this.krc721TokenQueue.length > 0);
+                this.krc721NextCursor.set(this.krc721PortfolioIndex);
+                this.krc721LoadedPages.update(p => p + 1);
                 
                 return {
                     success: true,
                     itemsAdded: newNfts.length,
                     hasMore: this.krc721HasMore(),
-                    nextCursor: response.next
+                    nextCursor: this.krc721PortfolioIndex
                 };
             }
             
             return {
-                success: false,
+                success: true,
                 itemsAdded: 0,
                 hasMore: false,
-                nextCursor: undefined,
-                error: 'API response not successful'
+                nextCursor: undefined
             };
         } catch (error) {
             console.error('Error loading more KRC721 NFTs:', error);
             return {
                 success: false,
                 itemsAdded: 0,
-                hasMore: hasMore,
-                nextCursor: cursor,
+                hasMore: this.krc721HasMore(),
+                nextCursor: this.krc721PortfolioIndex,
                 error: (error as Error).message
             };
         }
@@ -828,6 +766,108 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                 error: (error as Error).message
             };
         }
+    }
+
+    /**
+     * Helper to fetch next batch of KRC721 tokens from portfolio
+     */
+    private async fetchNextKrc721Batch(walletAddress: string, targetCount = this.KRC721_PAGE_SIZE): Promise<Krc721Nft[]> {
+        const results: Krc721Nft[] = [];
+        
+        // 1. Drain queue first
+        while (this.krc721TokenQueue.length > 0 && results.length < targetCount) {
+            results.push(this.krc721TokenQueue.shift()!);
+        }
+        
+        // 2. Fetch more if needed
+        while (results.length < targetCount && this.krc721PortfolioIndex < this.krc721PortfolioSummary.length) {
+            const item = this.krc721PortfolioSummary[this.krc721PortfolioIndex];
+            this.krc721PortfolioIndex++;
+            
+            try {
+                // Fetch collection info if needed for totalSupply
+                let totalSupply = this.krc721CollectionCache.get(item.ticker);
+                if (totalSupply === undefined) {
+                    try {
+                        const collectionDetails = await firstValueFrom(this.krc721ApiService.getCollectionDetails(item.ticker));
+                        if (collectionDetails && collectionDetails.message === 'success') {
+                           // Use max supply if totalSupply is missing, or minted if available
+                           const supply = collectionDetails.result.totalSupply || collectionDetails.result.max || collectionDetails.result.minted;
+                           totalSupply = parseInt(supply);
+                           this.krc721CollectionCache.set(item.ticker, totalSupply);
+                        }
+                    } catch (e) {
+                        console.warn(`Failed to fetch collection details for ${item.ticker}`, e);
+                    }
+                }
+
+                // fetch details
+                let details;
+                try {
+                    details = await firstValueFrom(this.krc721ApiService.getPortfolioDetails(walletAddress, item.ticker));
+                } catch (e) {
+                    // ignore error
+                }
+                
+                if (details && details.length > 0) {
+                     // The details response is Array<Krc721PortfolioDetailItem>
+                     // Each item has tokenIds: Krc721PortfolioTokenDetail[]
+                     const nfts = details.flatMap((d: any) => d.tokenIds.map((t: any) => this.mapPortfolioTokenToNft(d.ticker, t, walletAddress, totalSupply)));
+                     
+                     for (const nft of nfts) {
+                        if (results.length < targetCount) {
+                            results.push(nft);
+                        } else {
+                            this.krc721TokenQueue.push(nft);
+                        }
+                    }
+                } else if (item.tokenIds && item.tokenIds.length > 0) {
+                    // Fallback to basic NFTs from summary if details missing
+                    const nfts = item.tokenIds.map(tokenId => this.mapPortfolioTokenToNft(item.ticker, tokenId, walletAddress, totalSupply));
+                    for (const nft of nfts) {
+                        if (results.length < targetCount) {
+                            results.push(nft);
+                        } else {
+                            this.krc721TokenQueue.push(nft);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error(`Error fetching portfolio details for ${item.ticker}:`, error);
+                // Continue to next ticker
+            }
+        }
+        
+        return results;
+    }
+
+    private mapPortfolioTokenToNft(ticker: string, token: any, owner: string, totalSupply?: number): Krc721Nft {
+        // Handle both object (from detail) and string (from summary/fallback) token formats
+        const tokenId = (typeof token === 'object' && token.tokenId !== undefined) ? token.tokenId.toString() : token.toString();
+        const rarityRank = (typeof token === 'object') ? token.rarityRank : undefined;
+        const legendary = (typeof token === 'object') ? token.legendary : undefined;
+        const traits = (typeof token === 'object') ? token.traits : undefined;
+
+        return {
+            tick: ticker,
+            tokenId: tokenId,
+            owner: owner,
+            rarityRank: rarityRank,
+            legendary: legendary,
+            totalSupply: totalSupply,
+            metadata: {
+                attributes: this.mapTraitsToAttributes(traits)
+            },
+            rawTraits: traits
+        };
+    }
+
+    private mapTraitsToAttributes(traits: any): any[] {
+        if (!traits) return [];
+        return Object.entries(traits).map(([key, value]) => ({
+            trait_type: key,
+            value: value as string | number
+        }));
     }
     
     /**

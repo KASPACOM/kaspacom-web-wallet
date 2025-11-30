@@ -8,7 +8,14 @@
         (click)="goBack()"
         class="cursor-pointer hover-opacity">
       </kc-icon>
-      <h1 class="asset-title text-gray-90">{{ getDisplayName() }}</h1>
+      <div class="flex column gap-4">
+        <h1 class="asset-title text-gray-90 m-0">{{ getDisplayName() }}</h1>
+        @if (rarityRank() !== undefined) {
+          <div class="rank-tag {{ getRarityClass() }}">
+            Rank #{{ rarityRank() }}
+          </div>
+        }
+      </div>
     </div>
   </div>
 

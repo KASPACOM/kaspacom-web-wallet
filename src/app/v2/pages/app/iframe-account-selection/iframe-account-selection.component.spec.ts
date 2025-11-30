@@ -1,9 +1,9 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { signal } from '@angular/core';
-import { IframeAccountSelectionComponent } from './iframe-account-selection.component';
-import { WalletService } from '../../../../services/wallet.service';
 import { AppWallet } from '../../../../classes/AppWallet';
+import { WalletService } from '../../../../services/wallet.service';
+import { IframeAccountSelectionComponent } from './iframe-account-selection.component';
 
 describe('IframeAccountSelectionComponent', () => {
   let component: IframeAccountSelectionComponent;
@@ -28,7 +28,9 @@ describe('IframeAccountSelectionComponent', () => {
       'getCurrentWallet',
       'isL2Display',
     ]);
-    mockWalletService.selectCurrentWallet.and.returnValue(Promise.resolve());
+  // selectCurrentWallet is synchronous and returns an AppWallet (or undefined)
+  // return the mockWallet so the component behaves as if selection succeeded
+  mockWalletService.selectCurrentWallet.and.returnValue(mockWallet);
     mockWalletService.getAllWallets.and.returnValue(signal([mockWallet]));
     mockWalletService.getCurrentWallet.and.returnValue(undefined);
     mockWalletService.isL2Display.and.returnValue(false);

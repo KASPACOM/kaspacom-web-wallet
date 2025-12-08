@@ -1,6 +1,10 @@
+@use "kaspacom-ui/lib/styles/index" as *;
 @use "styles/design-system/wallet-colors.style.scss";
 @use "styles/common";
 @use "styles/responsive";
+
+/* Import icon fonts from kaspacom-ui */
+@import "kaspacom-ui/assets/icons/style.css";
 
 /* CSS Custom Properties */
 :root {

@@ -23,13 +23,13 @@ body {
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
     Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
   background-color: var(--background);
-  color: var(--text-base-1);
+  color: var(--white);
   height: 100%;
 }
 
 /* Reset default anchor styling */
 a {
-  color: var(--primary-wallet);
+  color: var(--blue-10);
   text-decoration: none;
 }
 
@@ -45,40 +45,40 @@ button {
 
 /* Common classes */
 .text-primary {
-  color: var(--primary-wallet);
+  color: var(--kaspa-20);
 }
 
 .text-secondary {
-  color: var(--secondary-wallet);
+  color: var(--purple-20);
 }
 
 .text-tertiary {
-  color: var(--primary-wallet);
+  color: var(--blue-20);
 }
 
 .text-light {
-  color: var(--text-base-1);
+  color: var(--gray-95);
 }
 
 .text-medium {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--gray-75);
 }
 
 .text-dark {
-  color: var(--text-base-0);
+  color: var(--gray-45);
 }
 
 /* Border colors */
 .border-light {
-  border-color: var(--base-2);
+  border-color: var(--gray-25);
 }
 
 .border-medium {
-  border-color: var(--base-3);
+  border-color: var(--gray-40);
 }
 
 .border-dark {
-  border-color: var(--base-4);
+  border-color: var(--gray-60);
 }
 
 /* Global scrollbar styling */

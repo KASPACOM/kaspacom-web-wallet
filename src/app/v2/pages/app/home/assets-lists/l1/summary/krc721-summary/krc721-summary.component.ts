@@ -113,7 +113,10 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
         description: metadata?.description,
         attributes: metadata?.attributes,
         image: metadata?.image,
-        isLoadingMetadata: metadataItem?.isLoadingMetadata || false
+        isLoadingMetadata: metadataItem?.isLoadingMetadata || false,
+        rarityRank: nft.rarityRank,
+        legendary: nft.legendary,
+        totalSupply: nft.totalSupply
       };
     });
   });
@@ -213,5 +216,20 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
   private loadVisibleMetadata(): void {
     const itemElements = this.getItemElements();
     this.krc721MetadataService.loadMetadataForVisibleItems(itemElements);
+  }
+
+  getRarityClass(nft: INftWithMetadata): string {
+    if (nft.legendary || (nft.rarityRank !== undefined && nft.rarityRank < 0)) {
+      return 'legendary';
+    }
+    
+    if (nft.rarityRank !== undefined && nft.totalSupply) {
+      const percentage = nft.rarityRank / nft.totalSupply;
+      if (percentage <= 0.01) return 'gold';
+      if (percentage <= 0.1) return 'silver';
+      if (percentage <= 0.3) return 'bronze';
+    }
+    
+    return 'neutral';
   }
 } 

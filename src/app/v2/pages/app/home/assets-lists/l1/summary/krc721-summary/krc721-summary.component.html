@@ -73,7 +73,12 @@
           }
         </div>
       </div>
-      <div class="krc721-summary-container__attributes flex column align-items-end">
+      <div class="krc721-summary-container__attributes flex column align-items-end gap-8">
+        @if (nft.rarityRank !== undefined) {
+          <div class="rank-tag {{ getRarityClass(nft) }}">
+            Rank #{{ nft.rarityRank }}
+          </div>
+        }
         @if (nft.isLoadingMetadata) {
           <app-skeleton [height]="'16px'" [width]="'60px'" [fullRound]="false"></app-skeleton>
         } @else if (nft.attributes && nft.attributes.length > 0) {

@@ -177,4 +177,40 @@
   &:hover {
     opacity: 0.7;
   }
-} 
+}
+
+.rank-tag {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-block;
+  
+  &.legendary {
+    background: linear-gradient(180deg, #ba68c8, #6f2da8);
+    color: #fff;
+    box-shadow: 0 0 8px rgba(186,104,200,0.6);
+  }
+  
+  &.gold {
+    background: linear-gradient(180deg, #fcee1f, #d9b70b);
+    color: #111000;
+    box-shadow: 0 0 8px rgba(252,238,31,0.6);
+  }
+  
+  &.silver {
+    background: linear-gradient(180deg, #ffffff, #cdcdcd);
+    color: #000;
+  }
+  
+  &.bronze {
+    background: linear-gradient(180deg, #d07129, #75471b);
+    color: #fff;
+  }
+  
+  &.neutral {
+    background: linear-gradient(180deg, #222829, #1a1f20);
+    color: #fff;
+    box-shadow: 0 0 8px rgba(34,40,41,0.6);
+  }
+}

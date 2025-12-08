@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
+import pkg from '../../../package.json';
 import { LOCAL_STORAGE_KEYS } from '../config/consts';
-import { EncryptionService } from './encryption.service';
 import { UserWalletsData } from '../types/user-wallets-data';
-import { version } from '../../../package.json';
+import { EncryptionService } from './encryption.service';
 import { UtilsHelper } from './utils.service';
 
 @Injectable({
@@ -109,7 +109,7 @@ export class PasswordManagerService {
   getInitializedWalletsData(): UserWalletsData {
     return {
       wallets: [],
-      version,
+      version: pkg.version,
       id: crypto.randomUUID(),
     };
   }

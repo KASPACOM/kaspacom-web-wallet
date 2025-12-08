@@ -16,6 +16,7 @@ export interface Krc721Collection {
   royaltyTo?: string;
   mintFundsRecipient?: string;
   mintPrice?: string;
+  totalSupply?: string;
 }
 
 export interface Krc721CollectionResponse {

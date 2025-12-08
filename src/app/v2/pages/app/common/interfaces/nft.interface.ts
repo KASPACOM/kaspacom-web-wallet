@@ -9,6 +9,10 @@ export interface INft {
     trait_type: string;
     value: string | number;
   }>;
+  // Rarity info
+  rarityRank?: number;
+  legendary?: boolean;
+  totalSupply?: number;
 }
 
 // Extended interface for NFTs with metadata loading state

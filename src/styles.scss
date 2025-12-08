@@ -23,13 +23,13 @@ body {
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
     Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
   background-color: var(--background);
-  color: var(--white);
+  color: var(--text-base-1);
   height: 100%;
 }
 
 /* Reset default anchor styling */
 a {
-  color: var(--blue-10);
+  color: var(--primary-wallet);
   text-decoration: none;
 }
 
@@ -45,40 +45,40 @@ button {
 
 /* Common classes */
 .text-primary {
-  color: var(--kaspa-20);
+  color: var(--primary-wallet);
 }
 
 .text-secondary {
-  color: var(--purple-20);
+  color: var(--secondary-wallet);
 }
 
 .text-tertiary {
-  color: var(--blue-20);
+  color: var(--primary-wallet);
 }
 
 .text-light {
-  color: var(--gray-95);
+  color: var(--text-base-1);
 }
 
 .text-medium {
-  color: var(--gray-75);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .text-dark {
-  color: var(--gray-45);
+  color: var(--text-base-0);
 }
 
 /* Border colors */
 .border-light {
-  border-color: var(--gray-25);
+  border-color: var(--base-2);
 }
 
 .border-medium {
-  border-color: var(--gray-40);
+  border-color: var(--base-3);
 }
 
 .border-dark {
-  border-color: var(--gray-60);
+  border-color: var(--base-4);
 }
 
 /* Global scrollbar styling */
@@ -175,12 +175,19 @@ button {
   justify-content: center;
   align-items: center;
   color: var(--primary);
-  font-family: 'Poppins', 'Roboto', -apple-system, BlinkMacSystemFont,
-    'Segoe UI', sans-serif;
+  font-family:
+    "Poppins",
+    "Roboto",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
   overflow: hidden;
   opacity: 1;
   transform: translateY(0);
-  transition: opacity 0.45s ease, transform 0.45s ease;
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s ease;
 }
 
 #application-loader-startup .loader-content {
@@ -192,7 +199,9 @@ button {
   gap: 16px;
   padding: 24px;
   text-align: center;
-  transition: transform 0.45s ease, opacity 0.45s ease;
+  transition:
+    transform 0.45s ease,
+    opacity 0.45s ease;
 }
 
 #application-loader-startup.fade-out {

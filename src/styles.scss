@@ -1,8 +1,6 @@
 @use "kaspacom-ui/lib/styles/index" as *;
 @use "styles/common";
 @use "styles/responsive";
-@use "@kaspacom/ui/lib/styles/index" as *;
-@use "@kaspacom/ui/assets/icons/style.css" as *;
 
 /* Import icon fonts from kaspacom-ui */
 @import "kaspacom-ui/assets/icons/style.css";

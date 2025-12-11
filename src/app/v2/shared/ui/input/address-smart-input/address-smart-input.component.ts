@@ -15,7 +15,7 @@ import {
   KcInputComponent,
   KcSpinnerComponent,
   KcTooltipDirective,
-} from '@kaspacom/ui';
+} from 'kaspacom-ui';
 import { CopyButtonComponent } from '../../copy-button/copy-button.component';
 import {
   AddressResolutionService,

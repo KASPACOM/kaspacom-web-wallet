@@ -14,7 +14,7 @@ import {
   KcCheckboxComponent,
   KcButtonComponent,
   KcIconComponent,
-} from '@kaspacom/ui';
+} from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
 import { SkeletonComponent } from '../../../../../../../../../shared/ui/skeleton/skeleton.component';
 import { INft } from '../../../../../../../common/interfaces/nft.interface';

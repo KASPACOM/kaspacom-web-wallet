@@ -7,7 +7,7 @@ import {
   KcInputComponent,
   KcSnackbarComponent,
   NotificationService,
-} from '@kaspacom/ui';
+} from 'kaspacom-ui';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
 import { WalletService } from '../../../../../../../services/wallet.service';
 

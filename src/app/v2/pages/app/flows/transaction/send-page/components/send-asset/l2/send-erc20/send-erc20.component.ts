@@ -11,7 +11,7 @@ import { IFlowPageConfig } from '../../../../../../../common/flow-page/interface
 import {
   KcInputComponent,
   KcButtonComponent,
-} from '@kaspacom/ui';
+} from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
 import { Krc20TokenLogoComponent } from '../../../../../../../home/assets-lists/l1/logo/krc20-token-logo/krc20-token-logo.component';
 import { WalletService } from '../../../../../../../../../../services/wallet.service';

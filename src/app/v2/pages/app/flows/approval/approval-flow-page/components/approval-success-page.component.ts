@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { WalletActionResult, WalletActionResultType, CommitRevealActionResult, ProtocolType } from '@kaspacom/wallet-messages';
 import { CompletedActionOverviewService } from '../../../../../../../services/action-info-services/completed-action-overview.service';
-import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
+import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { ApprovalFlowService } from '../../../../../../services/approval-flow.service';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { WalletActionService } from '../../../../../../../services/wallet-action.service';

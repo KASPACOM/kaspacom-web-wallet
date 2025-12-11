@@ -1,10 +1,9 @@
 import { Routes } from '@angular/router';
 import { OnboardingPageV2Component } from './pages/onboarding-page-v2/onboarding-page-v2.component';
-import { DesignSystemShowcaseComponent } from '@kaspacom/ui';
+import { DesignSystemShowcaseComponent } from 'kaspacom-ui';
 import { AuthGuard } from './guard/auth.guard';
 import { routes } from '../core/app.routes';
 import { loggedRoutes } from './pages/app/logged.routes';
-import { ButtonShowcaseComponent } from './pages/button-showcase/button-showcase.component';
 import { DevelopGuard } from './guard/develop.guard';
 
 export const V2TMP_ROUTES: Routes = [
@@ -22,11 +21,6 @@ export const V2TMP_ROUTES: Routes = [
     path: 'ui-kit',
     canActivate: [DevelopGuard],
     component: DesignSystemShowcaseComponent,
-  },
-  {
-    path: 'button-showcase',
-    canActivate: [],
-    component: ButtonShowcaseComponent,
   },
   {
     path: 'app',

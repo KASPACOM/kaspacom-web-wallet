@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import {  KcIconComponent } from '@kaspacom/ui';
+import {  KcIconComponent } from 'kaspacom-ui';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { KaspaApiService } from '../../../../../services/kaspa-api/kaspa-api.service';

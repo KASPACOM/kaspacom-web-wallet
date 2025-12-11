@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
+import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
 import { FlowPagesService } from '../../../../services/flow-pages.service';

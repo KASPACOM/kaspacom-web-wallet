@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, output, signal } from '@angular/core';
-import { KcButtonComponent, NotificationService } from '@kaspacom/ui';
-import { ButtonComponent } from '../../../../../../../../../ui-kit/button/button.component';
+import { KcButtonComponent, NotificationService } from 'kaspacom-ui';
 import { ImportSwitchComponent } from './component/import-switch/import-switch.component';
 import { ImportSwitchMethod } from './component/import-switch/import-switch-method.enum';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
@@ -10,7 +9,7 @@ import { PasswordManagerService } from '../../../../../../../services/password-m
 
 @Component({
   selector: 'app-import-switch-import-existing-step',
-  imports: [CommonModule, KcButtonComponent, ButtonComponent, ImportSwitchComponent],
+  imports: [CommonModule, KcButtonComponent, ImportSwitchComponent],
   templateUrl: './import-switch-import-existing-step.component.html',
   styleUrl: './import-switch-import-existing-step.component.scss',
 })

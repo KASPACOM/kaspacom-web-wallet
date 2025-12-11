@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Html5Qrcode } from 'html5-qrcode';
 import { UtilsHelper } from './utils.service';
-import { NotificationService } from '@kaspacom/ui';
+import { NotificationService } from 'kaspacom-ui';
 
 export interface QrScannerConfig {
   scannerId: string;

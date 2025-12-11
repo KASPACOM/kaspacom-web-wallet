@@ -13,7 +13,7 @@ import {
   KcInputComponent,
   KcSnackbarComponent,
   NotificationService,
-} from '@kaspacom/ui';
+} from 'kaspacom-ui';
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 
 interface VerificationWordEntry {

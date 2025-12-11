@@ -1,7 +1,7 @@
 import { Component, computed, inject, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { QRCodeComponent } from 'angularx-qrcode';
-import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
+import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { WalletService } from '../../../../../services/wallet.service';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';

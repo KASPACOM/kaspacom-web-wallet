@@ -13,6 +13,11 @@ import { EthereumWalletChainManager } from './etherium-services/etherium-wallet-
 import { KaspaNetworkConnectionManagerService } from './kaspa-netwrok-services/kaspa-network-connection-manager.service';
 import { KaspaWalletMnemonicActionsService } from './kaspa-netwrok-services/kaspa-wallet-mnemonic-actions.service';
 
+export enum VIEW_METHOD {
+  L1 = 'l1',
+  L2 = 'l2',
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -31,7 +36,15 @@ export class WalletService {
     private readonly injector: EnvironmentInjector,
     private readonly etheriumChainManager: EthereumWalletChainManager,
   ) {
-    this.isL2DisplaySignal = signal<boolean>(localStorage.getItem(LOCAL_STORAGE_KEYS.IS_L2_DISPLAY) === 'true');
+    let isL2View = localStorage.getItem(LOCAL_STORAGE_KEYS.IS_L2_DISPLAY) === 'true';
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewTypeParam = urlParams.get('view');
+    if (viewTypeParam) {
+      isL2View = viewTypeParam === VIEW_METHOD.L2;
+    }
+
+    this.isL2DisplaySignal = signal<boolean>(isL2View);
   }
 
   async addWallet(

@@ -15,7 +15,7 @@ import { IFrameCommunicationApp } from '../../../services/communication-service/
 import { IframeAccountSelectionComponent } from './iframe-account-selection/iframe-account-selection.component';
 import { IframeAccountSelectionService } from '../../services/iframe-account-selection.service';
 
-import { KcSnackbarComponent, KcSpinnerComponent } from '@kaspacom/ui';
+import { KcSnackbarComponent, KcSpinnerComponent } from 'kaspacom-ui';
 import { WalletService } from '../../../services/wallet.service';
 import { AssetsManagerService } from '../../../services/assets-manager/assets-manager.service';
 

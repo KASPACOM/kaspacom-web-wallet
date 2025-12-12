@@ -10,7 +10,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
-import { KcInputComponent, KcButtonComponent } from '@kaspacom/ui';
+import { KcInputComponent, KcButtonComponent } from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
 import { WalletService } from '../../../../../../../../../../services/wallet.service';
 import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';

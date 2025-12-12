@@ -35,6 +35,7 @@
     "express": "^4.18.2",
     "graphemer": "^1.4.0",
     "html5-qrcode": "^2.3.8",
+    "kaspacom-ui": "^1.1.2",
     "lodash": "^4.17.21",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",

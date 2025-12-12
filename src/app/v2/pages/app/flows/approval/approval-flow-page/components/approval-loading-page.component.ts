@@ -1,7 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApprovalFlowService } from '../../../../../../services/approval-flow.service';
-import { KcIconComponent } from '@kaspacom/ui';
+import { KcIconComponent } from 'kaspacom-ui';
 import { KaspaNodesBackgroundComponent } from '../../../../common/components/kaspa-nodes-background/kaspa-nodes-background.component';
 
 @Component({

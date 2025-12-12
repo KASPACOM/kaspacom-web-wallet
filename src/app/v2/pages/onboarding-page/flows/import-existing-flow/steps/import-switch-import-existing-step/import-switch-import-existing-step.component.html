@@ -7,15 +7,13 @@
   </div>
 
   <div class="flex column full-width gap-16">
-    <button
-      kcButton
+    <kc-button
       [text]="'Scan QR Code'"
       [prefixIcon]="'icon-qr'"
-      [fullWidth]="true"
+      [isFullWidth]="true"
       [variant]="'tertiary'"
-      [size]="'m'"
-      (onClick)="onQrScanClick()"
-    ></button>
+      (buttonClick)="onQrScanClick()"
+    ></kc-button>
 
     <div class="flex align-items-center gap-12 full-width">
       <div class="separator-line"></div>

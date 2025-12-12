@@ -8,7 +8,7 @@ import {
   AfterViewInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcButtonComponent, NotificationService } from '@kaspacom/ui';
+import { KcButtonComponent, NotificationService } from 'kaspacom-ui';
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
 import { WalletService } from '../../../../../../../services/wallet.service';
 import { AppWallet } from '../../../../../../../classes/AppWallet';

@@ -1,7 +1,7 @@
 import { Component, Input, signal, OnInit, inject } from '@angular/core';
 import { CommonModule, DecimalPipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
-import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
+import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { WalletService } from '../../../../../services/wallet.service';
 

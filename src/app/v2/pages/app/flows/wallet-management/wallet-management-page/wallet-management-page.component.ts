@@ -1,6 +1,6 @@
 import { Component, signal, inject, computed, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcIconComponent, KcTooltipDirective } from '@kaspacom/ui';
+import { KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
 import { FlowPageBaseComponent } from '../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../common/flow-page/interfaces/flow-page.interface';
 import {

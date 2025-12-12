@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, inject, ChangeDetectorRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { KcInputComponent, KcButtonComponent, NotificationService } from '@kaspacom/ui';
+import { KcInputComponent, KcButtonComponent, NotificationService } from 'kaspacom-ui';
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
 import { WalletService } from '../../../../../../../services/wallet.service';
 import { AppWallet } from '../../../../../../../classes/AppWallet';

@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcIconComponent, KcTooltipDirective } from '@kaspacom/ui';
+import { KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 
 @Component({

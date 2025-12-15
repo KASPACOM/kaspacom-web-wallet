@@ -15,7 +15,7 @@ import {
   KcCheckboxComponent,
   KcButtonComponent,
   KcIconComponent,
-} from '@kaspacom/ui';
+} from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
 import { WalletService } from '../../../../../../../../../../services/wallet.service';
 import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';

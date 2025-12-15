@@ -1,7 +1,7 @@
 import { Component, inject, signal, EventEmitter, Output, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
+import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { WalletService } from '../../../../services/wallet.service';
 import { AppWallet } from '../../../../classes/AppWallet';
 

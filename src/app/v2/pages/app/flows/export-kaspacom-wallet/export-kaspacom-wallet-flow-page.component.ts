@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { QRCodeComponent } from 'angularx-qrcode';
-import { KcButtonComponent, KcIconComponent, NotificationService } from '@kaspacom/ui';
+import { KcButtonComponent, KcIconComponent, NotificationService } from 'kaspacom-ui';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
 import { PasswordManagerService } from '../../../../../services/password-manager.service';

@@ -1,6 +1,9 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ButtonComponent, ButtonSize, ButtonVariant } from '../../../../../ui-kit/button';
+import { KcButtonComponent } from 'kaspacom-ui';
+
+type ButtonSize = 's' | 'm' | 'l' | 'xl' | 'xs';
+type ButtonVariant = 'primary' | 'secondary' | 'tertiary';
 
 interface ButtonExample {
   title: string;
@@ -19,7 +22,7 @@ interface ButtonExample {
 @Component({
   selector: 'app-button-showcase',
   standalone: true,
-  imports: [CommonModule, ButtonComponent],
+  imports: [CommonModule, KcButtonComponent],
   templateUrl: './button-showcase.component.html',
   styleUrls: ['./button-showcase.component.scss']
 })

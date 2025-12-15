@@ -13,7 +13,7 @@ import {
   KcButtonComponent,
   KcInputComponent,
   NotificationService,
-} from '@kaspacom/ui';
+} from 'kaspacom-ui';
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
 import { AppWallet } from '../../../../../../../classes/AppWallet';
 import { WalletService } from '../../../../../../../services/wallet.service';

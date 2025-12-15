@@ -8,7 +8,7 @@ import {
   AfterViewInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcIconComponent } from '@kaspacom/ui';
+import { KcIconComponent } from 'kaspacom-ui';
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
 import { FlowPagesService } from '../../../../../../services/flow-pages.service';
 

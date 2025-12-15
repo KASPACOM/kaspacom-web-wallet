@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, output, signal } from '@angular/core';
-import { KcButtonComponent, KcInputComponent } from '@kaspacom/ui';
+import { KcButtonComponent, KcInputComponent } from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 

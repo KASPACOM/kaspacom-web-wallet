@@ -6,12 +6,14 @@ import {
   inject,
   ChangeDetectorRef,
   AfterViewInit,
+  computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { KcButtonComponent, NotificationService } from 'kaspacom-ui';
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
 import { WalletService } from '../../../../../../../services/wallet.service';
 import { AppWallet } from '../../../../../../../classes/AppWallet';
+import _ from 'lodash';
 
 interface DeleteAccountDialogData {
   accountName: string;
@@ -27,8 +29,7 @@ interface DeleteAccountDialogData {
   styleUrl: './delete-wallet-account-quick-action-dialog.component.scss',
 })
 export class DeleteWalletAccountQuickActionDialogComponent
-  implements AfterViewInit
-{
+  implements AfterViewInit {
   @Input() isOpen = false;
   @Input() data: DeleteAccountDialogData | undefined;
   @Output() backdropClick = new EventEmitter<void>();
@@ -40,6 +41,25 @@ export class DeleteWalletAccountQuickActionDialogComponent
 
   // Internal state for animation
   isDialogOpen = false;
+
+  isLastWalletAccount = computed(() => {
+    if (!this.walletService.getAllWallets()) {
+      return true;
+    }
+
+
+    const allWalletsByWalletId = _.groupBy(this.walletService.getAllWallets()()!, 'id');
+
+    if (Object.keys(allWalletsByWalletId).length == 1) {
+      if (!this.data) {
+        return true;
+      }
+
+      return allWalletsByWalletId[this.data?.wallet.getId()].length <= 1;
+    }
+
+    return false;
+  })
 
   ngAfterViewInit(): void {
     // Start with dialog closed, then open it to trigger animation

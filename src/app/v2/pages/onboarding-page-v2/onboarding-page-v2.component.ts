@@ -27,7 +27,7 @@ import { NewWalletFlowComponent } from '../onboarding-page/flows/new-wallet-flow
 import { PasswordManagerService } from '../../../services/password-manager.service';
 import { WalletService } from '../../../services/wallet.service';
 import {
-  DELETE_WALLET_CONFIRMATION_PHRASE,
+  DELETE_ALL_WALLET_CONFIRMATION_PHRASE,
   isDeleteWalletConfirmationValid,
 } from '../../shared/constants/delete-wallet.constants';
 import { IframeAccountSelectionService } from '../../services/iframe-account-selection.service';
@@ -85,7 +85,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
   showDeleteConfirmation = signal(false);
   isDeletingWallet = signal(false);
   deleteConfirmationInput = signal('');
-  readonly deleteConfirmationPhrase = DELETE_WALLET_CONFIRMATION_PHRASE;
+  readonly deleteConfirmationPhrase = DELETE_ALL_WALLET_CONFIRMATION_PHRASE;
   readonly isDeleteConfirmationValid = computed(() =>
     isDeleteWalletConfirmationValid(this.deleteConfirmationInput()),
   );

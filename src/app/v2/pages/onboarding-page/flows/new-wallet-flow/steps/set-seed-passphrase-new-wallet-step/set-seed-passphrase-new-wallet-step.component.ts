@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, output, signal } from '@angular/core';
-import { KcButtonComponent, KcInputComponent } from 'kaspacom-ui';
+import { KcButtonComponent, KcInputComponent, NotificationService } from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 
@@ -14,6 +14,8 @@ export class SetSeedPassphraseNewWalletStepComponent implements OnInit {
   previous = output<void>();
 
   private readonly newWalletFlowService = inject(NewWalletFlowService);
+  private readonly notificationService = inject(NotificationService);
+
 
   seedPassphrase = signal<string>('');
 
@@ -27,7 +29,16 @@ export class SetSeedPassphraseNewWalletStepComponent implements OnInit {
     this.newWalletFlowService.setSeedPassphrase(value);
   }
 
-  onContinue() {
+  async onContinue() {
+    const result = await this.newWalletFlowService.finalizeWalletCreation();
+    if (result.success) {
+      this.next.emit();
+    } else {
+      this.notificationService.error(
+        'Error',
+        result.error ?? 'Failed to create wallet.',
+      );
+    }
     this.next.emit();
   }
 

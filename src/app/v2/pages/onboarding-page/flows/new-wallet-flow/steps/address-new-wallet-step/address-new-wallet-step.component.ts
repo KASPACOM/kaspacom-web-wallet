@@ -36,11 +36,12 @@ export class AddressNewWalletStepComponent {
   private readonly flowPagesService = inject(FlowPagesService);
 
   walletAddress = computed(
-    () => this.newWalletFlowService.newWallet().walletAddress,
+    () => this.newWalletFlowService.getCurrentWalletAddress() || '',
   );
 
   displayWalletAddress = computed(() => {
     const address = this.walletAddress();
+    
     const len = 15;
     if (address.length < len) {
       return address;

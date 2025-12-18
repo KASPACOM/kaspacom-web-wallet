@@ -89,12 +89,14 @@ export class SeedPhraseImportExistingStepComponent {
   onPaste(event: ClipboardEvent): void {
     // Only handle paste events on input elements or their containers
     const target = event.target as HTMLElement;
-    const isInput = target.tagName === 'INPUT' || target.closest('input') !== null;
+    const inputElement = target.tagName === 'INPUT' 
+      ? target as HTMLInputElement 
+      : target.closest('input') as HTMLInputElement;
     
     // Check if the paste is happening within our seed phrase form
     const isInSeedPhraseForm = target.closest('.seed-phrase-step__form') !== null;
     
-    if (!isInput || !isInSeedPhraseForm) {
+    if (!inputElement || !isInSeedPhraseForm) {
       return;
     }
 
@@ -107,17 +109,79 @@ export class SeedPhraseImportExistingStepComponent {
       return;
     }
 
-    // Split the pasted text by whitespace and filter out empty strings
-    const pastedWords = pastedText.trim().split(/\s+/).filter(word => word.length > 0);
+    // Find the index of the input where paste is happening
+    // Try to get it from the input's id, or find it by traversing the DOM
+    let startIndex = -1;
     
-    // Clear all inputs first
-    for (let i = 0; i < this.wordCount(); i += 1) {
-      this.words.at(i).setValue('');
+    // If id didn't work, find the input's position by looking for the kc-input parent
+    if (startIndex === -1) {
+      const kcInputElement = inputElement.closest('kc-input');
+      if (kcInputElement) {
+        // Find all kc-input elements in the form and get the index
+        const formContainer = target.closest('.seed-phrase-step__inputs');
+        if (formContainer) {
+          const allKcInputs = Array.from(formContainer.querySelectorAll('kc-input'));
+          startIndex = allKcInputs.indexOf(kcInputElement);
+        }
+      }
+    }
+    
+    // Fallback: try to find by formControlName attribute on parent
+    if (startIndex === -1) {
+      const formControlElement = inputElement.closest('[formControlName]');
+      if (formControlElement) {
+        const formControlName = formControlElement.getAttribute('formControlName');
+        if (formControlName) {
+          const nameIndex = parseInt(formControlName, 10);
+          if (!isNaN(nameIndex) && nameIndex >= 0 && nameIndex < this.wordCount()) {
+            startIndex = nameIndex;
+          }
+        }
+      }
     }
 
-    // Fill inputs with pasted words
-    for (let i = 0; i < pastedWords.length && i < this.wordCount(); i += 1) {
-      this.words.at(i).setValue(pastedWords[i].trim());
+    if (startIndex === -1 || startIndex < 0 || startIndex >= this.wordCount()) {
+      return;
+    }
+
+    // Split the pasted text by whitespace and filter out empty strings
+    const pastedWords = pastedText.trim().split(/\s+/).filter(word => word.length > 0);
+  
+
+    // Fill inputs starting from the paste location
+    let lastFilledIndex = startIndex - 1;
+    for (let i = 0; i < pastedWords.length; i += 1) {
+      const targetIndex = startIndex + i;
+      if (targetIndex < this.wordCount()) {
+        this.words.at(targetIndex).setValue(pastedWords[i].trim());
+        lastFilledIndex = targetIndex;
+      }
+    }
+
+    // Focus on the next empty input after paste, or the next one after the last filled
+    const nextIndex = lastFilledIndex + 1;
+    if (nextIndex < this.wordCount()) {
+      // Store the form container reference before setTimeout
+      const formContainer = target.closest('.seed-phrase-step__inputs') as HTMLElement;
+      
+      // Use setTimeout to ensure the DOM is updated before focusing
+      setTimeout(() => {
+        if (!formContainer) {
+          return;
+        }
+
+        // Get all kc-input elements in order
+        const allKcInputs = Array.from(formContainer.querySelectorAll('kc-input')) as HTMLElement[];
+        if (allKcInputs[nextIndex]) {
+          // Find the actual input element inside the kc-input component
+          const nextInput = allKcInputs[nextIndex].querySelector('input') as HTMLInputElement;
+          if (nextInput) {
+            nextInput.focus();
+            // Also try to select the text if any
+            nextInput.select();
+          }
+        }
+      }, 0);
     }
   }
 

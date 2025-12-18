@@ -40,6 +40,7 @@ export class ExportWalletComponent extends FlowPageBaseComponent {
 
   override async ngOnInit(): Promise<void> {
     super.ngOnInit();
+    this.hasMnemonic.set(this.walletService.getCurrentWallet()?.isHasMnemonic() ?? false);
   }
 
   onPasswordInput(): void {

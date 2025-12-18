@@ -33,6 +33,7 @@ export interface L2WalletState {
 export class AppWallet {
   private id: number;
   private name: string;
+  private hasMnemonic: boolean;
   private accountData: SavedWalletAccount | undefined;
   private privateKey: PrivateKey;
   private version: number | undefined = undefined;
@@ -84,6 +85,7 @@ export class AppWallet {
     this.id = savedWalletData.id;
     this.name = savedWalletData.name;
     this.accountData = account;
+    this.hasMnemonic = !!savedWalletData.mnemonic;
     this.version = savedWalletData.version;
     this.ethereumWalletChainManager = this.injector.get(
       EthereumWalletChainManager,
@@ -418,5 +420,9 @@ export class AppWallet {
       .getWalletBalance(l2Address);
 
     return balance;
+  }
+
+  isHasMnemonic(): boolean {
+    return this.hasMnemonic;
   }
 }

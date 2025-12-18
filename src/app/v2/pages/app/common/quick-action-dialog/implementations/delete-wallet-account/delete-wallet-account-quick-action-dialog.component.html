@@ -7,9 +7,12 @@
 >
   <!-- Content slot for confirmation message -->
   <div slot="content" class="delete-confirmation">
-    <p>
+    <p *ngIf="!isLastWalletAccount()">
       Are you sure you want to delete the account <strong>{{ accountName }}</strong>?
       This action cannot be undone and you will lose access to this account permanently.
+    </p>
+    <p *ngIf="isLastWalletAccount()">
+      You can't delete the last wallet. You can remove only all wallets info from the settings menu.
     </p>
   </div>
   
@@ -28,6 +31,7 @@
       [role]="'danger'"
       [size]="'md'"
       [isFullWidth]="true"
+      [isDisabled]="isLastWalletAccount()"
       (buttonClick)="onDelete()"
     ></kc-button>
   </div>

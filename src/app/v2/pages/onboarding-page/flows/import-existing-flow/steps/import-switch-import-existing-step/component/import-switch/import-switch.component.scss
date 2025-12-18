@@ -9,6 +9,14 @@
   gap: 4px;
   isolation: isolate;
 
+
+  &.only-two-options {
+
+    .import-switch__slider {
+      width: calc(50% - 2.666px);
+    }
+  }
+
   &__track {
     position: absolute;
     top: 4px;

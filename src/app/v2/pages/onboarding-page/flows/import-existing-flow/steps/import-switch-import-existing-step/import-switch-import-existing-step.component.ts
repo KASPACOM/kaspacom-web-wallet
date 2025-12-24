@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, output, signal } from '@angular/core';
+import { Component, computed, inject, output, signal } from '@angular/core';
 import { KcButtonComponent, NotificationService } from 'kaspacom-ui';
 import { ImportSwitchComponent } from './component/import-switch/import-switch.component';
 import { ImportSwitchMethod } from './component/import-switch/import-switch-method.enum';
@@ -26,6 +26,7 @@ export class ImportSwitchImportExistingStepComponent {
   private readonly notificationService = inject(NotificationService);
 
   importMethod = signal<ImportSwitchMethod>(ImportSwitchMethod.SEED_PHRASE);
+  userHasWallets = computed(() => this.passwordManagerService.isUserHasSavedPassword());
 
   constructor() {
     this.importMethod.set(

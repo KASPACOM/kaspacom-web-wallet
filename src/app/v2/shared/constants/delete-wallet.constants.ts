@@ -1,6 +1,7 @@
-export const DELETE_WALLET_CONFIRMATION_PHRASE = 'DELETE MY DATA';
+export const DELETE_ALL_WALLET_CONFIRMATION_PHRASE = 'DELETE MY DATA';
+
 
 export function isDeleteWalletConfirmationValid(value: string): boolean {
-  return value.trim().toUpperCase() === DELETE_WALLET_CONFIRMATION_PHRASE;
+  return value.trim().toUpperCase() === DELETE_ALL_WALLET_CONFIRMATION_PHRASE;
 }
 

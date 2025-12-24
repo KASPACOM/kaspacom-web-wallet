@@ -1,4 +1,4 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { ImportSwitchMethod } from './import-switch-method.enum';
 import { CommonModule } from '@angular/common';
 
@@ -12,6 +12,7 @@ export class ImportSwitchComponent {
   ImportSwitchMethod = ImportSwitchMethod;
 
   selectedMethod = input.required<ImportSwitchMethod>();
+  showImportFromFile = input<boolean>(false);
 
   methodChanged = output<ImportSwitchMethod>();
 }

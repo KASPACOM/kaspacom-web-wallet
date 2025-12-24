@@ -4,6 +4,7 @@ import { WalletService } from '../../../../../../services/wallet.service';
 import { DEFAULT_DERIVED_PATH } from '../../../../../../config/consts';
 import { UtilsHelper } from '../../../../../../services/utils.service';
 import { PasswordManagerService } from '../../../../../../services/password-manager.service';
+import { environment } from '../../../../../../../environments/environment';
 
 export interface IWalletCreationResult {
   success: boolean;
@@ -27,7 +28,6 @@ export class NewWalletFlowService {
     seedPhrase: '',
     seedPassphrase: '',
     seedPhraseSaved: false,
-    walletAddress: '',
   });
 
   get newWallet() {
@@ -35,7 +35,9 @@ export class NewWalletFlowService {
   }
 
   printState() {
-    console.log('New Wallet State:', this._newWallet());
+    if (!environment.isProduction) {
+      console.log('New Wallet State:', this._newWallet());
+    }
   }
 
   initNewWallet() {
@@ -46,7 +48,6 @@ export class NewWalletFlowService {
       seedPhrase: '',
       seedPassphrase: '',
       seedPhraseSaved: false,
-      walletAddress: '',
     });
   }
 
@@ -72,7 +73,6 @@ export class NewWalletFlowService {
       ...this._newWallet(),
       seedPhrase,
       seedPhraseWordCount,
-      walletAddress,
     });
     this.printState();
   }
@@ -132,7 +132,6 @@ export class NewWalletFlowService {
       ...this._newWallet(),
       seedPhrase,
       seedPhraseWordCount,
-      walletAddress,
     });
     this.printState();
     // Only set a new saved password if there is no user data yet.
@@ -151,5 +150,13 @@ export class NewWalletFlowService {
   submitSeedPhraseSaved(seedPhraseSaved: boolean) {
     this._newWallet.set({ ...this._newWallet(), seedPhraseSaved });
     this.printState();
+  }
+
+
+  getCurrentWalletAddress() {
+    return this.walletService.getWalletAddressFromMnemonic(
+      this._newWallet().seedPhrase,
+      this._newWallet().seedPassphrase,
+    );
   }
 }

@@ -12,7 +12,6 @@ import {
   KcButtonComponent,
   KcInputComponent,
   KcSnackbarComponent,
-  NotificationService,
 } from 'kaspacom-ui';
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 
@@ -39,7 +38,6 @@ export class VerifySeedPhraseNewWalletStepComponent implements OnInit {
   previous = output<void>();
 
   private readonly newWalletFlowService = inject(NewWalletFlowService);
-  private readonly notificationService = inject(NotificationService);
 
   seedWords = computed(() =>
     (this.newWalletFlowService.newWallet().seedPhrase || '')
@@ -91,14 +89,7 @@ export class VerifySeedPhraseNewWalletStepComponent implements OnInit {
     if (!this.isVerified()) {
       return;
     }
-    const result = await this.newWalletFlowService.finalizeWalletCreation();
-    if (result.success) {
-      this.next.emit();
-    } else {
-      this.notificationService.error(
-        'Error',
-        result.error ?? 'Failed to create wallet.',
-      );
-    }
+
+    this.next.emit();
   }
 }

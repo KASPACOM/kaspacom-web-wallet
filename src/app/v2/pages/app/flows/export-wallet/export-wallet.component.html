@@ -1,5 +1,5 @@
 <div class="export-wallet">
-	@if (currentStep() === 'password') {
+	@if (currentStep() === 'password' && hasMnemonic()) {
 		<div class="export-wallet__password-step flex column align-items-center gap-24 full-width">
 			<div class="flex column align-items-center gap-8 text-align-center">
 				<span class="typo-title-3">Confirm Password</span>
@@ -34,7 +34,7 @@
 		<div class="export-wallet__content flex column align-items-center gap-24 full-width">
 			<div class="flex column align-items-center gap-4">
 				<span class="typo-title-3 p-4">Seed Phrase</span>
-				<span class="typo-text-2 text-medium text-align-center">This seed phrase is the only way to recover your wallet. Do NOT share it with anyone.</span>
+				<span class="typo-text-2 text-medium text-align-center" *ngIf="hasMnemonic()">This seed phrase is the only way to recover your wallet. Do NOT share it with anyone.</span>
 			</div>
 			<div class="seed-container" *ngIf="hasMnemonic(); else noMnemonic">
 				@for (item of seedWords(); track $index) {

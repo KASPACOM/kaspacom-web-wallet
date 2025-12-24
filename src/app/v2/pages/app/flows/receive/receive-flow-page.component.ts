@@ -36,9 +36,9 @@ export class ReceiveFlowPageComponent implements OnInit, OnDestroy {
 
   qrCodeData = computed(() => {
     if (this.walletService.isL2Display()) {
-      return this.walletAddress();
-    } else {
       return `ethereum:${this.walletAddress()}`;
+    } else {
+      return this.walletAddress();
     }
   });
 

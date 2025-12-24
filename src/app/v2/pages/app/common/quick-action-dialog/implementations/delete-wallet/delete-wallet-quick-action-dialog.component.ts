@@ -6,6 +6,7 @@ import {
   inject,
   ChangeDetectorRef,
   AfterViewInit,
+  computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -17,10 +18,7 @@ import {
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
 import { AppWallet } from '../../../../../../../classes/AppWallet';
 import { WalletService } from '../../../../../../../services/wallet.service';
-import {
-  DELETE_WALLET_CONFIRMATION_PHRASE,
-  isDeleteWalletConfirmationValid,
-} from '../../../../../../shared/constants/delete-wallet.constants';
+import _ from 'lodash';
 
 interface DeleteWalletDialogData {
   walletName: string;
@@ -52,8 +50,16 @@ export class DeleteWalletQuickActionDialogComponent implements AfterViewInit {
   private notificationService = inject(NotificationService);
 
   isDialogOpen = false;
-  confirmationInput = '';
-  readonly deleteConfirmationPhrase = DELETE_WALLET_CONFIRMATION_PHRASE;
+
+  isLastWallet = computed(() => {
+    if (!this.walletService.getAllWallets()) {
+      return true;
+    }
+
+    const allWalletsByWalletId = _.keyBy(this.walletService.getAllWallets()()!, 'id');
+
+    return Object.values(allWalletsByWalletId).length < 2;
+  })
 
   ngAfterViewInit(): void {
     setTimeout(() => {
@@ -66,9 +72,7 @@ export class DeleteWalletQuickActionDialogComponent implements AfterViewInit {
     return this.data?.walletName || '';
   }
 
-  get canDelete(): boolean {
-    return isDeleteWalletConfirmationValid(this.confirmationInput);
-  }
+
 
   onBackdropClick(): void {
     this.closeDialog();
@@ -82,13 +86,8 @@ export class DeleteWalletQuickActionDialogComponent implements AfterViewInit {
     this.closeDialog();
   }
 
-  onConfirmationChange(value: string): void {
-    this.confirmationInput = value ?? '';
-  }
-
   private closeDialog(): void {
     this.isDialogOpen = false;
-    this.confirmationInput = '';
     setTimeout(() => {
       this.close.emit();
     }, 300);
@@ -98,14 +97,6 @@ export class DeleteWalletQuickActionDialogComponent implements AfterViewInit {
     const wallet = this.data?.wallet;
     if (!wallet) {
       this.notificationService.error('Error', 'No wallet selected');
-      return;
-    }
-
-    if (!this.canDelete) {
-      this.notificationService.error(
-        'Confirmation required',
-        `Type "${this.deleteConfirmationPhrase}" to confirm deletion`,
-      );
       return;
     }
 

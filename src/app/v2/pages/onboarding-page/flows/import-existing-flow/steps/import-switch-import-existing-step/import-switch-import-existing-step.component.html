@@ -8,6 +8,7 @@
 
   <div class="flex column full-width gap-16">
     <kc-button
+      *ngIf="!userHasWallets()"
       [text]="'Scan QR Code'"
       [prefixIcon]="'icon-qr'"
       [isFullWidth]="true"
@@ -15,7 +16,7 @@
       (buttonClick)="onQrScanClick()"
     ></kc-button>
 
-    <div class="flex align-items-center gap-12 full-width">
+    <div class="flex align-items-center gap-12 full-width"  *ngIf="!userHasWallets()">
       <div class="separator-line"></div>
       <span class="separator-text typo-text-3 text-medium">- OR -</span>
       <div class="separator-line"></div>
@@ -24,6 +25,7 @@
     <app-import-switch
       class="full-width"
       [selectedMethod]="importMethod()"
+      [showImportFromFile]="!userHasWallets()"
       (methodChanged)="onImportMethodChange($event)"
     ></app-import-switch>
   </div>

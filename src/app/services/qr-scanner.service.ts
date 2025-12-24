@@ -156,9 +156,11 @@ export class QrScannerService {
             this.handleQrCodeDetected(decodedText);
           },
           (errorMessage: string) => {
-            // Ignore scanning errors, they're normal during scanning
-            console.error('QR scan error:', errorMessage);
-            throw errorMessage;
+            if (errorMessage != "QR code parse error, error = NotFoundException: No MultiFormat Readers were able to detect the code.") {
+              // Ignore scanning errors, they're normal during scanning
+              console.error('QR scan error:', errorMessage);
+              throw errorMessage;
+            }
           }
         );
       } else {

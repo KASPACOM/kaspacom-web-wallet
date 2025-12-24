@@ -11,18 +11,27 @@ export const environment: Environment = {
   knsApiBaseurl: 'https://api.knsdomains.org/tn10',
   kaspaExplorerBaseurl: 'https://explorer-tn10.kaspa.org',
   kaspaNetwork: KASPA_NETWORKS.TESTNET10,
-  allowedDomains: ['localhost', 'dev-wallet.kaspa.com', 'local.kaspa.com'],
+  allowedDomains: [
+    'localhost',
+    '127.0.0.1',
+    'dev-wallet.kaspa.com',
+    'local.kaspa.com',
+  ],
   isL2Enabled: true,
-  l2Configs: [{
-    sdkName: 'kasplex-testnet',
-    icon: '💎',
-    l1TransactionPrefix: 'kaspelx',
-    erc20GraphUrl: 'https://dev-graph-kasplex.kaspa.com/subgraphs/name/kasplex-testnet-tokens',
-  },
-  {
-    sdkName: 'kasplex',
-    icon: '💎',
-    l1TransactionPrefix: 'kaspelx',
-    erc20GraphUrl: 'https://graph-kasplex.kaspa.com/subgraphs/name/kasplex-tokens',
-  }]
+  l2Configs: [
+    {
+      sdkName: 'kasplex-testnet',
+      icon: '💎',
+      l1TransactionPrefix: 'kaspelx',
+      erc20GraphUrl:
+        'https://dev-graph-kasplex.kaspa.com/subgraphs/name/kasplex-testnet-tokens',
+    },
+    {
+      sdkName: 'kasplex',
+      icon: '💎',
+      l1TransactionPrefix: 'kaspelx',
+      erc20GraphUrl:
+        'https://graph-kasplex.kaspa.com/subgraphs/name/kasplex-tokens',
+    },
+  ],
 };

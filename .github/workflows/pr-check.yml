@@ -40,6 +40,8 @@ jobs:
       - name: Build application
         run: npm run build
         continue-on-error: false
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
       - name: Run unit tests
         run: npm test -- --watch=false --browsers=ChromeHeadless

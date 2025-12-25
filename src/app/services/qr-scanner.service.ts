@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Html5Qrcode } from 'html5-qrcode';
 import { UtilsHelper } from './utils.service';
 import { NotificationService } from 'kaspacom-ui';
+import { WalletService } from './wallet.service';
 
 export interface QrScannerConfig {
   scannerId: string;
@@ -25,6 +26,7 @@ export class QrScannerService {
   private html5QrCode: Html5Qrcode | null = null;
   private isScanning = false;
   private currentConfig: QrScannerConfig | null = null;
+  private walletService: WalletService = inject(WalletService);
 
 
   async startScanning(config: QrScannerConfig): Promise<void> {
@@ -132,7 +134,7 @@ export class QrScannerService {
       // Initialize HTML5-QRCode scanner
       this.html5QrCode = new Html5Qrcode(scannerContainer.id);
 
-      const insideBoxSize = Math.max(MIN_QR_BOX_SIZE- 10, boxSize * 0.6);
+      const insideBoxSize = Math.max(MIN_QR_BOX_SIZE - 10, boxSize * 0.6);
 
       const qrConfig = {
         fps: 10,
@@ -154,9 +156,11 @@ export class QrScannerService {
             this.handleQrCodeDetected(decodedText);
           },
           (errorMessage: string) => {
-            // Ignore scanning errors, they're normal during scanning
-            console.error('QR scan error:', errorMessage);
-            throw errorMessage;
+            if (errorMessage != "QR code parse error, error = NotFoundException: No MultiFormat Readers were able to detect the code.") {
+              // Ignore scanning errors, they're normal during scanning
+              console.error('QR scan error:', errorMessage);
+              throw errorMessage;
+            }
           }
         );
       } else {
@@ -210,7 +214,9 @@ export class QrScannerService {
 
 
     // Extract wallet address from QR code (it might be just the address or a URL)
-    if (!this.utilsHelper.isValidWalletAddress(qrInfo)) {
+    const isValdAddress = this.walletService.isL2Display() ? this.utilsHelper.isValidEthereumAddress(qrInfo) : this.utilsHelper.isValidWalletAddress(qrInfo);
+
+    if (!isValdAddress) {
       const errorMsg = 'Invalid wallet address in QR code';
       this.notificationService.error('Error', errorMsg);
       this.currentConfig.onError?.(errorMsg);
@@ -223,6 +229,7 @@ export class QrScannerService {
     this.currentConfig.onSuccess(qrInfo);
     const successMsg = this.currentConfig.successMessage || 'Wallet address scanned successfully!';
     this.notificationService.success('Success', successMsg);
+    this.stopScanning();
   }
 
   isCurrentlyScanning(): boolean {

@@ -23,6 +23,8 @@ jobs:
 
     - name: Build Angular app
       run: npm run build:dev
+      env:
+        SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
     - name: Install AWS CLI
       run: |

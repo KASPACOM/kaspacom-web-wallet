@@ -6,6 +6,7 @@ import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.int
 import { WalletService } from '../../../../../services/wallet.service';
 import { QuickActionDialogService } from '../../../../services/quick-action-dialog.service';
 import { AppWallet } from '../../../../../classes/AppWallet';
+import { ShortenAddressPipe } from '../../../../../pipes/shorten-address.pipe';
 
 interface WalletGroupItem {
   id: number;
@@ -18,7 +19,7 @@ interface WalletGroupItem {
 @Component({
   selector: 'app-wallet-selection-page',
   standalone: true,
-  imports: [CommonModule, KcButtonComponent, KcIconComponent, KcTooltipDirective],
+  imports: [CommonModule, KcButtonComponent, KcIconComponent, KcTooltipDirective, ShortenAddressPipe],
   templateUrl: './wallet-selection-page.component.html',
   styleUrl: './wallet-selection-page.component.scss',
 })
@@ -140,10 +141,5 @@ export class WalletSelectionPageComponent extends FlowPageBaseComponent {
       const l2State = wallet.getL2WalletStateSignal()();
       return l2State?.address || wallet.getAddress(); // fallback to L1
     }
-  }
-
-  shortenAddress(address: string): string {
-    if (!address) return '';
-    return `${address.slice(0, 10)}...${address.slice(-8)}`;
   }
 }

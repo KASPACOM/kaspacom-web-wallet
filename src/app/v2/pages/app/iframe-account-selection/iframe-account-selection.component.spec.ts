@@ -88,11 +88,5 @@ describe('IframeAccountSelectionComponent', () => {
       expect(mockWalletService.selectCurrentWallet).toHaveBeenCalled();
     }
   });
-
-  it('should shorten addresses correctly', () => {
-    const address = 'kaspa:qz0123456789abcdef';
-    const shortened = component.shortenAddress(address);
-    expect(shortened).toContain('...');
-  });
 });
 

@@ -128,8 +128,8 @@ export class UtilsHelper {
 
   shortenAddress(
     address: string,
-    frontChars: number = 15,
-    backChars: number = 4,
+    frontChars: number = 10,
+    backChars: number = 8,
   ): string {
     if (!address || address.length <= frontChars + backChars) {
       return address;

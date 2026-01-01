@@ -132,7 +132,13 @@ export class QrScannerService {
       document.body.appendChild(scannerElement);
 
       // Initialize HTML5-QRCode scanner
-      this.html5QrCode = new Html5Qrcode(scannerContainer.id);
+      this.html5QrCode = new Html5Qrcode(scannerContainer.id, {
+        verbose: false,
+        useBarCodeDetectorIfSupported: true,
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true,
+        }
+      });
 
       const insideBoxSize = Math.max(MIN_QR_BOX_SIZE - 10, boxSize * 0.6);
 

@@ -100,7 +100,7 @@ export class KaspaTransactionDetailsComponent implements OnInit {
 
   protected shortenAddress(address: string): string {
     if (!address) return '';
-    return `${address.slice(0, 20)}...${address.slice(-8)}`;
+    return `${address.slice(0, 10)}...${address.slice(-8)}`;
   }
 
   protected getTransactionStatus(transaction: FullTransactionResponseItem): string {

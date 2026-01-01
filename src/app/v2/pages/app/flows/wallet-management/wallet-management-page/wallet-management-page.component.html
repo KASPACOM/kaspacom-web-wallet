@@ -2,15 +2,20 @@
   <!-- Custom Header -->
   <div class="custom-header">
     <div class="header-left">
-      <span class="wallet-name">{{ currentWalletName() }}</span>
-      <kc-icon
-        class="pencil-icon"
-        [iconClass]="'icon-pencil'"
-        [size]="'xs'"
-        (click)="onEditWalletName()"
-        kcTooltip="Edit wallet name"
-        tooltipPosition="bottom"
-      ></kc-icon>
+      <div class="header-content">
+        <span class="wallet-label">Wallet</span>
+        <div class="wallet-name-container">
+          <span class="wallet-name">{{ currentWalletName() }}</span>
+          <kc-icon
+            class="pencil-icon"
+            [iconClass]="'icon-pencil'"
+            [size]="'xs'"
+            (click)="onEditWalletName()"
+            kcTooltip="Edit wallet name"
+            tooltipPosition="bottom"
+          ></kc-icon>
+        </div>
+      </div>
     </div>
     <div class="header-right">
             <kc-icon
@@ -40,6 +45,9 @@
     </div>
   </div>
 
+  <!-- Accounts Section Title -->
+  <div class="section-title">Accounts</div>
+
   <div class="wallets-container">
     <div class="wallets-list">
       @for (wallet of wallets(); track wallet.id) {
@@ -65,7 +73,7 @@
                 tooltipPosition="top"
               ></kc-icon>
             </div>
-            <div class="wallet-item__address">{{ shortenAddress(wallet.address) }}</div>
+            <div class="wallet-item__address">{{ wallet.address | shortenAddress }}</div>
             <div class="wallet-item__balance">
               @if (wallet.isLoadingBalance()) {
                 <span class="balance-loading">Loading...</span>

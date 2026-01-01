@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { WalletService } from '../../../../services/wallet.service';
 import { AppWallet } from '../../../../classes/AppWallet';
+import { ShortenAddressPipe } from '../../../../pipes/shorten-address.pipe';
 
 interface WalletGroupItem {
   id: number;
@@ -24,7 +25,7 @@ interface WalletAccountItem {
 @Component({
   selector: 'app-iframe-account-selection',
   standalone: true,
-  imports: [CommonModule, KcButtonComponent, KcIconComponent],
+  imports: [CommonModule, KcButtonComponent, KcIconComponent, ShortenAddressPipe],
   templateUrl: './iframe-account-selection.component.html',
   styleUrl: './iframe-account-selection.component.scss',
 })
@@ -144,11 +145,6 @@ export class IframeAccountSelectionComponent {
       const l2State = wallet.getL2WalletStateSignal()();
       return l2State?.address || wallet.getAddress(); // fallback to L1
     }
-  }
-
-  shortenAddress(address: string): string {
-    if (!address) return '';
-    return `${address.slice(0, 10)}...${address.slice(-8)}`;
   }
 }
 

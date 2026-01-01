@@ -52,7 +52,7 @@
               <div class="wallet-item__info">
                 <div class="wallet-item__name">{{ item.name }}</div>
                 <div class="wallet-item__address">
-                  {{ shortenAddress(item.address) }}
+                  {{ item.address | shortenAddress }}
                 </div>
               </div>
               <div class="wallet-item__chevron">
@@ -84,7 +84,7 @@
               <div class="account-item__info">
                 <div class="account-item__name">{{ account.name }}</div>
                 <div class="account-item__address">
-                  {{ shortenAddress(account.address) }}
+                  {{ account.address | shortenAddress }}
                 </div>
               </div>
               <div class="account-item__status" *ngIf="account.isSelected">

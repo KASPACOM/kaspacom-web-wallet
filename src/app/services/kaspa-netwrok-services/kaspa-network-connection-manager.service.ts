@@ -2,7 +2,7 @@ import { Injectable, Signal, signal, WritableSignal } from '@angular/core';
 import { RpcService } from './rpc.service';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
 
-const CONNECTION_TIMEOUT = 20 * 1000;
+const CONNECTION_TIMEOUT = 10 * 1000;
 const SERVER_INFO_TIMEOUT = 5 * 1000;
 
 @Injectable({
@@ -24,7 +24,7 @@ export class KaspaNetworkConnectionManagerService {
       this.connectionMadeReject = reject;
     });
     this.connectionPromise.catch((err) =>
-      console.error('Failed initializing connection', err)
+      console.error('Failed initializing connection', err),
     );
   }
 
@@ -46,7 +46,7 @@ export class KaspaNetworkConnectionManagerService {
         this.connectionMadeReject!();
         reachedTimeout = true;
       },
-      CONNECTION_TIMEOUT
+      CONNECTION_TIMEOUT,
     );
 
     try {
@@ -82,7 +82,6 @@ export class KaspaNetworkConnectionManagerService {
     } catch (err) {
       console.error('Failed connecting RPC', err);
       this.waitForConnection().catch((err) => console.error(err));
-
 
       if (!reachedTimeout) {
         this.connectionMadeReject!('Failed connecting to RPC');
@@ -148,7 +147,7 @@ export class KaspaNetworkConnectionManagerService {
       this.setSignalStatusIfChanged(
         this.rpcService.getRpc()!.isConnected
           ? RpcConnectionStatus.CONNECTED
-          : RpcConnectionStatus.DISCONNECTED
+          : RpcConnectionStatus.DISCONNECTED,
       );
     } catch (err) {
       console.log('catch connectionPromise');

@@ -17,8 +17,28 @@
 
   .header-left {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    gap: 4px;
+
+    .header-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .wallet-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--gray-60);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .wallet-name-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
     .wallet-name {
       font-size: 18px;
@@ -84,6 +104,16 @@
   justify-content: center;
   gap: 12px;
   padding: 8px 16px 0 16px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-70);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 0 4px;
+  margin-bottom: -12px; // Reduce gap between title and first account
 }
 
 .wallets-container {

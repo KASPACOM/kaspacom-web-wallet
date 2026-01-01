@@ -13,10 +13,13 @@ export const environment: Environment = {
   kaspaNetwork: KASPA_NETWORKS.MAINNET,
   allowedDomains: ['wallet.kaspa.com'],
   isL2Enabled: false,
-  l2Configs: [{
-    sdkName: 'kasplex',
-    icon: '💎',
-    l1TransactionPrefix: 'kaspelx',
-    erc20GraphUrl: 'https://graph-kasplex.kaspa.com/subgraphs/name/kasplex-tokens',
-  }]
+  l2Configs: [
+    {
+      sdkName: 'kasplex',
+      icon: '💎',
+      l1TransactionPrefix: 'kaspelx',
+      erc20GraphUrl:
+        'https://graph-kasplex.kaspa.com/subgraphs/name/kasplex-tokens',
+    },
+  ],
 };

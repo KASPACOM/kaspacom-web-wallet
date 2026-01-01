@@ -10,7 +10,7 @@ export class ShortenAddressPipe implements PipeTransform {
    * @param address The full address to shorten
    * @param frontChars Number of characters to show at the start (default: 10)
    * @param backChars Number of characters to show at the end (default: 8)
-   * @returns Shortened address in format: "kaspatest:...xwpd4mc5"
+   * @returns Shortened address in format, e.g. "kaspatest:...d4mc5"
    */
   transform(
     address: string | null | undefined,

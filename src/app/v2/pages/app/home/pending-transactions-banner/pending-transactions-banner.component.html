@@ -1,0 +1,74 @@
+@if (hasPendingTransactions()) {
+  <div class="pending-banner-container full-width">
+    <div class="pending-banner" (click)="toggleExpanded()">
+      <div class="pending-banner__header">
+        <div class="pending-banner__left">
+          <kc-spinner [size]="'sm'"></kc-spinner>
+          <div class="pending-banner__info">
+            <span class="pending-banner__title">{{ totalPendingCount() }} Pending Transaction{{ totalPendingCount() > 1 ? 's' : '' }}</span>
+            <span class="pending-banner__subtitle">Wait for confirmation before making new transactions</span>
+          </div>
+        </div>
+        <kc-icon
+          [iconClass]="isExpanded() ? 'icon-arrow-up' : 'icon-arrow-down'"
+          [size]="'sm'"
+          class="pending-banner__chevron"
+        ></kc-icon>
+      </div>
+    </div>
+
+    @if (isExpanded()) {
+      <div class="pending-details">
+        @if (sendingCount() > 0) {
+          <div class="pending-section">
+            <div class="pending-section__header">
+              <kc-icon [iconClass]="'icon-arrow-up'" [size]="'xs'"></kc-icon>
+              <span class="pending-section__title">Sending ({{ sendingCount() }})</span>
+            </div>
+            <div class="pending-transactions">
+              @for (tx of mempoolData()!.sending; track $index) {
+                <div class="pending-transaction">
+                  <div class="pending-transaction__info">
+                    <span class="pending-transaction__id">{{ formatTransactionId(getTransactionId(tx)) }}</span>
+                    <span class="pending-transaction__type">Outgoing</span>
+                  </div>
+                  <div class="pending-transaction__amount sending">
+                    -{{ formatAmount(getTransactionAmount(tx)) }} KAS
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        @if (receivingCount() > 0) {
+          <div class="pending-section">
+            <div class="pending-section__header">
+              <kc-icon [iconClass]="'icon-arrow-down'" [size]="'xs'"></kc-icon>
+              <span class="pending-section__title">Receiving ({{ receivingCount() }})</span>
+            </div>
+            <div class="pending-transactions">
+              @for (tx of mempoolData()!.receiving; track $index) {
+                <div class="pending-transaction">
+                  <div class="pending-transaction__info">
+                    <span class="pending-transaction__id">{{ formatTransactionId(getTransactionId(tx)) }}</span>
+                    <span class="pending-transaction__type">Incoming</span>
+                  </div>
+                  <div class="pending-transaction__amount receiving">
+                    +{{ formatAmount(getTransactionAmount(tx)) }} KAS
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="pending-footer">
+          <kc-icon [iconClass]="'icon-info'" [size]="'xs'"></kc-icon>
+          <span class="pending-footer__text">Transactions will be confirmed within a few seconds</span>
+        </div>
+      </div>
+    }
+  </div>
+}
+

@@ -2,6 +2,7 @@
   class="home-container flex full-width full-height column align-items-center gap-16 p-8"
 >
   <app-balance [kasBalanceInput]="kasBalance()"></app-balance>
+  <app-pending-transactions-banner></app-pending-transactions-banner>
   <app-crypto-actions></app-crypto-actions>
   
   <app-l1-assets-container *ngIf="!isL2Display()" class="full-width"></app-l1-assets-container>

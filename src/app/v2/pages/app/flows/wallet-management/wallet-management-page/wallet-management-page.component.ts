@@ -1,6 +1,10 @@
 import { Component, signal, inject, computed, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
+import {
+  KcIconComponent,
+  KcTooltipDirective,
+  KcSpinnerComponent,
+} from 'kaspacom-ui';
 import { FlowPageBaseComponent } from '../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../common/flow-page/interfaces/flow-page.interface';
 import { QuickActionDialogService } from '../../../../../services/quick-action-dialog.service';
@@ -16,6 +20,9 @@ interface WalletAccount {
   wallet: AppWallet;
   balance: Signal<number | undefined>;
   isLoadingBalance: Signal<boolean>;
+  hasPendingTransactions: Signal<boolean>;
+  pendingTransactionCount: Signal<number>;
+  isExpanded: boolean;
 }
 
 @Component({
@@ -25,6 +32,7 @@ interface WalletAccount {
     CommonModule,
     KcIconComponent,
     KcTooltipDirective,
+    KcSpinnerComponent,
     ShortenAddressPipe,
   ],
   templateUrl: './wallet-management-page.component.html',
@@ -104,6 +112,20 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
           wallet: wallet,
           balance: computed(() => wallet.getTotalBalanceAsSignal()),
           isLoadingBalance: isLoadingBalance.asReadonly(),
+          hasPendingTransactions: computed(() => {
+            const mempoolData = wallet.getMempoolTransactionsSignalValue();
+            return mempoolData
+              ? mempoolData.sending.length > 0 ||
+                  mempoolData.receiving.length > 0
+              : false;
+          }),
+          pendingTransactionCount: computed(() => {
+            const mempoolData = wallet.getMempoolTransactionsSignalValue();
+            return mempoolData
+              ? mempoolData.sending.length + mempoolData.receiving.length
+              : 0;
+          }),
+          isExpanded: false,
         });
 
         // Load balance for this wallet asynchronously
@@ -124,6 +146,19 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
         wallet: wallet,
         balance: computed(() => wallet.getTotalBalanceAsSignal()),
         isLoadingBalance: isLoadingBalance.asReadonly(),
+        hasPendingTransactions: computed(() => {
+          const mempoolData = wallet.getMempoolTransactionsSignalValue();
+          return mempoolData
+            ? mempoolData.sending.length > 0 || mempoolData.receiving.length > 0
+            : false;
+        }),
+        pendingTransactionCount: computed(() => {
+          const mempoolData = wallet.getMempoolTransactionsSignalValue();
+          return mempoolData
+            ? mempoolData.sending.length + mempoolData.receiving.length
+            : 0;
+        }),
+        isExpanded: false,
       });
 
       // Load balance for this wallet asynchronously
@@ -296,6 +331,15 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
       showTitle: true,
       showBackground: true,
     });
+  }
+
+  togglePendingTransactions(walletAccount: WalletAccount, event: Event): void {
+    event.stopPropagation();
+    const currentWallets = this.wallets();
+    const updatedWallets = currentWallets.map((w) =>
+      w.id === walletAccount.id ? { ...w, isExpanded: !w.isExpanded } : w,
+    );
+    this.wallets.set(updatedWallets);
   }
 
   private getWalletAddress(wallet: AppWallet): string {

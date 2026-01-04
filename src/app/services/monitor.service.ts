@@ -30,7 +30,6 @@ export class MonitorService {
 
     track(event: string, properties?: any) {
         if (this.analytics) {
-            console.log('TRACING', event, this.normalizeProperties(properties));
             this.analytics.track(event, this.normalizeProperties(properties));
         }
     }

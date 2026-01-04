@@ -29,6 +29,7 @@
     "@kaspacom/swap-sdk": "^1.1.19",
     "@kaspacom/ui": "^1.0.51",
     "@kaspacom/wallet-messages": "^1.0.23",
+    "@segment/analytics-next": "1.81.1",
     "@sentry/angular": "^10.31.0",
     "@sentry/cli": "^2.58.4",
     "angularx-qrcode": "^19.0.0",

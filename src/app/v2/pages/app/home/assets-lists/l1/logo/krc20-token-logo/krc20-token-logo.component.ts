@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, input, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { ComponentSize } from '../../../../../common/types/sizing.type';
+import { environment } from '../../../../../../../../../environments/environment';
+import { KaspaComApiService } from '../../../../../../../../services/kaspacom-api/kaspacom-api.service';
 
 @Component({
   selector: 'krc20-token-logo',
@@ -9,17 +11,14 @@ import { ComponentSize } from '../../../../../common/types/sizing.type';
   styleUrl: './krc20-token-logo.component.scss',
 })
 export class Krc20TokenLogoComponent {
+  protected kaspaComApiService = inject(KaspaComApiService);
+
   ticker = input.required<string>();
   size = input.required<ComponentSize>();
+  imageURL: string = '';
 
   isLoading = signal(true);
   useFallback = signal(false);
-
-  imageURL = computed(() => {
-    const ticker = this.ticker();
-    if (!ticker) return '';
-    return `https://krc20-assets.kas.fyi/icons/${ticker.toUpperCase()}.jpg`;
-  });
 
   getImagePlaceholder = computed(() =>
     this.useFallback() ? './images/kc-all-black.png' : '',
@@ -31,7 +30,7 @@ export class Krc20TokenLogoComponent {
     });
   }
 
-  loadImage() {
+  async loadImage() {
     const img = new Image();
     img.onload = () => {
       this.isLoading.set(false);
@@ -40,6 +39,24 @@ export class Krc20TokenLogoComponent {
       this.isLoading.set(false);
       this.useFallback.set(true);
     };
-    img.src = this.imageURL();
+    const image = await this.getImageUrl();
+    img.src = image;
+    this.imageURL = image;
+  }
+
+  async getImageUrl() {
+    const ticker = this.ticker();
+    if (!ticker) return '';
+
+
+    try {
+      const result = await this.kaspaComApiService.getTokensLogosUrl(ticker);
+      if (result?.[0]?.logo) {
+        return result[0].logo;
+      }
+    } catch (e) {
+    }
+
+    return '';
   }
 }

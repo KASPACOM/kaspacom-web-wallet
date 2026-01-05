@@ -1,13 +1,16 @@
 import { Component, signal, inject, computed, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
+import {
+  KcIconComponent,
+  KcTooltipDirective,
+  KcSpinnerComponent,
+} from 'kaspacom-ui';
 import { FlowPageBaseComponent } from '../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../common/flow-page/interfaces/flow-page.interface';
-import {
-  QuickActionDialogService,
-} from '../../../../../services/quick-action-dialog.service';
+import { QuickActionDialogService } from '../../../../../services/quick-action-dialog.service';
 import { WalletService } from '../../../../../../services/wallet.service';
 import { AppWallet } from '../../../../../../classes/AppWallet';
+import { ShortenAddressPipe } from '../../../../../../pipes/shorten-address.pipe';
 
 interface WalletAccount {
   id: string;
@@ -17,12 +20,21 @@ interface WalletAccount {
   wallet: AppWallet;
   balance: Signal<number | undefined>;
   isLoadingBalance: Signal<boolean>;
+  hasPendingTransactions: Signal<boolean>;
+  pendingTransactionCount: Signal<number>;
+  isExpanded: boolean;
 }
 
 @Component({
   selector: 'app-wallet-management-page',
   standalone: true,
-  imports: [CommonModule, KcIconComponent, KcTooltipDirective],
+  imports: [
+    CommonModule,
+    KcIconComponent,
+    KcTooltipDirective,
+    KcSpinnerComponent,
+    ShortenAddressPipe,
+  ],
   templateUrl: './wallet-management-page.component.html',
   styleUrl: './wallet-management-page.component.scss',
 })
@@ -46,7 +58,6 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
     const wallet = this.walletService.getCurrentWallet();
     return wallet?.getName() || 'Wallet';
   });
-
 
   constructor() {
     super();
@@ -91,7 +102,7 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
       currentGroup.forEach((wallet) => {
         const address = this.getWalletAddress(wallet);
         const isLoadingBalance = signal(true);
-        
+
         accounts.push({
           id: wallet.getIdWithAccount(),
           name: wallet.getAccountName() || wallet.getName(),
@@ -101,6 +112,20 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
           wallet: wallet,
           balance: computed(() => wallet.getTotalBalanceAsSignal()),
           isLoadingBalance: isLoadingBalance.asReadonly(),
+          hasPendingTransactions: computed(() => {
+            const mempoolData = wallet.getMempoolTransactionsSignalValue();
+            return mempoolData
+              ? mempoolData.sending.length > 0 ||
+                  mempoolData.receiving.length > 0
+              : false;
+          }),
+          pendingTransactionCount: computed(() => {
+            const mempoolData = wallet.getMempoolTransactionsSignalValue();
+            return mempoolData
+              ? mempoolData.sending.length + mempoolData.receiving.length
+              : 0;
+          }),
+          isExpanded: false,
         });
 
         // Load balance for this wallet asynchronously
@@ -111,7 +136,7 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
       const wallet = currentGroup[0];
       const address = this.getWalletAddress(wallet);
       const isLoadingBalance = signal(true);
-      
+
       accounts.push({
         id: wallet.getIdWithAccount(),
         name: wallet.getName(),
@@ -121,6 +146,19 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
         wallet: wallet,
         balance: computed(() => wallet.getTotalBalanceAsSignal()),
         isLoadingBalance: isLoadingBalance.asReadonly(),
+        hasPendingTransactions: computed(() => {
+          const mempoolData = wallet.getMempoolTransactionsSignalValue();
+          return mempoolData
+            ? mempoolData.sending.length > 0 || mempoolData.receiving.length > 0
+            : false;
+        }),
+        pendingTransactionCount: computed(() => {
+          const mempoolData = wallet.getMempoolTransactionsSignalValue();
+          return mempoolData
+            ? mempoolData.sending.length + mempoolData.receiving.length
+            : 0;
+        }),
+        isExpanded: false,
       });
 
       // Load balance for this wallet asynchronously
@@ -130,12 +168,18 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
     this.wallets.set(accounts);
   }
 
-  private async loadBalanceForWallet(wallet: AppWallet, loadingSignal: any): Promise<void> {
+  private async loadBalanceForWallet(
+    wallet: AppWallet,
+    loadingSignal: any,
+  ): Promise<void> {
     try {
       // Refresh the balance for this specific wallet
       await wallet.refreshUtxosBalance();
     } catch (error) {
-      console.error(`Failed to load balance for wallet ${wallet.getAddress()}:`, error);
+      console.error(
+        `Failed to load balance for wallet ${wallet.getAddress()}:`,
+        error,
+      );
     } finally {
       loadingSignal.set(false);
     }
@@ -279,7 +323,7 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
     });
   }
 
-    onChangeWalletClicked(): void {
+  onChangeWalletClicked(): void {
     this.flowPagesService.navigateToPage({
       id: 'wallet-selection',
       title: 'Select wallet',
@@ -287,6 +331,15 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
       showTitle: true,
       showBackground: true,
     });
+  }
+
+  togglePendingTransactions(walletAccount: WalletAccount, event: Event): void {
+    event.stopPropagation();
+    const currentWallets = this.wallets();
+    const updatedWallets = currentWallets.map((w) =>
+      w.id === walletAccount.id ? { ...w, isExpanded: !w.isExpanded } : w,
+    );
+    this.wallets.set(updatedWallets);
   }
 
   private getWalletAddress(wallet: AppWallet): string {
@@ -297,10 +350,5 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
       const l2State = wallet.getL2WalletStateSignal()();
       return l2State?.address || wallet.getAddress(); // fallback to L1
     }
-  }
-
-  shortenAddress(address: string): string {
-    if (!address) return '';
-    return `${address.slice(0, 10)}...${address.slice(-8)}`;
   }
 }

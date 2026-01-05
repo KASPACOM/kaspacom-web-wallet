@@ -191,8 +191,8 @@ export class AppWallet {
     return this.balanceSignal() === undefined
       ? undefined
       : this.kaspaNetworkActionsService.sompiToNumber(
-          this.balanceSignal()!.totalBalance,
-        );
+        this.balanceSignal()!.totalBalance,
+      );
   }
 
   async startListiningToWalletActions() {
@@ -352,10 +352,8 @@ export class AppWallet {
   }
 
   async getL2WalletAddress(): Promise<string | undefined> {
-    return await this.ethereumWalletChainManager
-      .getCurrentWalletProvider()
-      ?.getChainWallet(this.getPrivateKey().toString())
-      .getAddress();
+    const wallet = new ethers.Wallet(this.getPrivateKey().toString());
+    return wallet.address;
   }
 
   private async updateL2WalletState() {

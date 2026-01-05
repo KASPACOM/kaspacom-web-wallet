@@ -121,6 +121,8 @@ export class ImportExistingFlowService {
           this._model().privateKey.trim(),
           undefined,
           undefined,
+          undefined, 
+          false,
         );
         importResult = { success: tmp.sucess, error: tmp.error };
       } else {
@@ -155,6 +157,10 @@ export class ImportExistingFlowService {
         const tmp = await this.walletService.addWallet(
           'Saved Wallet ' + walletCount,
           this._model().privateKey.trim(),
+          undefined,
+          undefined,
+          undefined,
+          false,
         );
         importResult = { success: tmp.sucess, error: tmp.error };
       } else {

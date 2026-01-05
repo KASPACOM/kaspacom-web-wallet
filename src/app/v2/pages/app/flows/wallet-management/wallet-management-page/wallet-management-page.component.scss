@@ -17,8 +17,28 @@
 
   .header-left {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    gap: 4px;
+
+    .header-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .wallet-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--gray-60);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .wallet-name-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
     .wallet-name {
       font-size: 18px;
@@ -86,6 +106,16 @@
   padding: 8px 16px 0 16px;
 }
 
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-70);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 0 4px;
+  margin-bottom: -12px; // Reduce gap between title and first account
+}
+
 .wallets-container {
   flex: 1;
   overflow-y: auto;
@@ -115,6 +145,12 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.wallet-item-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .floating-orb {
@@ -258,6 +294,9 @@
   &__balance {
     font-size: 14px;
     margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 
     .balance-loading {
       color: var(--gray-60);
@@ -271,6 +310,36 @@
 
     .balance-error {
       color: var(--gray-40);
+    }
+
+    .pending-indicator {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      background: rgba(255, 165, 0, 0.1);
+      border: 1px solid rgba(255, 165, 0, 0.3);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background: rgba(255, 165, 0, 0.15);
+        border-color: rgba(255, 165, 0, 0.4);
+      }
+
+      .pending-count {
+        font-size: 12px;
+        font-weight: 600;
+        color: #FFA500;
+        line-height: 1;
+      }
+
+      ::ng-deep .spinner {
+        color: #FFA500;
+        width: 12px !important;
+        height: 12px !important;
+      }
     }
   }
 
@@ -332,5 +401,55 @@
       opacity: 1;
       visibility: visible;
     }
+  }
+}
+
+.pending-details {
+  background: rgba(255, 165, 0, 0.05);
+  border: 1px solid rgba(255, 165, 0, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: slideDown 0.2s ease-out;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 165, 0, 0.2);
+  }
+
+  &__title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #FFA500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .pending-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    &__title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--gray-80);
+    }
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

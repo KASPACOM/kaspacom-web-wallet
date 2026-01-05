@@ -94,6 +94,7 @@ export class NewWalletFlowService {
         DEFAULT_DERIVED_PATH,
         `# ${accountNumber}`,
         newWallet.seedPassphrase,
+        true,
       );
       walletAdditionResult = { success: tmp.sucess, error: tmp.error };
     } catch (error) {

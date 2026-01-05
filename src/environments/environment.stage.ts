@@ -18,5 +18,6 @@ export const environment: Environment = {
     icon: '💎',
     l1TransactionPrefix: 'kaspelx',
     erc20GraphUrl: 'https://graph-kasplex.kaspa.com/subgraphs/name/kasplex-tokens',
-  }]
+  }],
+  segmentKey: 'a2Kx82H0p5djHvyPAFYwOHeqqIsFbmqd',
 };

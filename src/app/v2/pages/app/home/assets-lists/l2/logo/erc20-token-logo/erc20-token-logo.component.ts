@@ -16,15 +16,9 @@ export class Erc20TokenLogoComponent {
   useFallback = signal(false);
 
   imageURL = computed(() => {
-    const ticker = this.ticker();
-
-    if (ticker == 'KAS') {
-      return 'https://krc20-assets.kas.fyi/icons/KAS.jpg';
-    }
+    // const ticker = this.ticker();
     
     return './images/kc-all-black.png';
-    // if (!ticker) return '';
-    // return `https://krc20-assets.kas.fyi/icons/${ticker.toUpperCase()}.jpg`;
   });
 
   getImagePlaceholder = computed(() =>

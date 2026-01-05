@@ -31,6 +31,8 @@ import {
   isDeleteWalletConfirmationValid,
 } from '../../shared/constants/delete-wallet.constants';
 import { IframeAccountSelectionService } from '../../services/iframe-account-selection.service';
+import { MonitorService } from '../../../services/monitor.service';
+import { IFrameCommunicationApp } from '../../../services/communication-service/communication-app/iframe-communication.service';
 
 type LoginPasswordType = 'password' | 'text';
 
@@ -68,6 +70,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   private readonly iframeAccountSelectionService = inject(IframeAccountSelectionService);
+  private readonly monitorService = inject(MonitorService);
 
   readonly shouldShowLogin = signal(
     this.passwordManagerService.isUserHasSavedPassword(),
@@ -250,6 +253,10 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
         // Normal web mode - auto-select the previously selected wallet
         await this.walletService.selectCurrentWalletFromLocalStorageNullsafe();
       }
+
+      this.monitorService.track('User Logged In', {
+        isIframe: IFrameCommunicationApp.isIframe(),
+      })
       
       await this.router.navigate(['./app/home']);
     } catch (error) {

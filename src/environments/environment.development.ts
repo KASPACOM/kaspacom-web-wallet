@@ -34,4 +34,5 @@ export const environment: Environment = {
         'https://graph-kasplex.kaspa.com/subgraphs/name/kasplex-tokens',
     },
   ],
+  segmentKey: 'a2Kx82H0p5djHvyPAFYwOHeqqIsFbmqd',
 };

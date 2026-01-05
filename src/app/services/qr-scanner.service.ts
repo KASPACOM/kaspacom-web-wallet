@@ -201,8 +201,6 @@ export class QrScannerService {
   }
 
   private handleQrCodeDetected(qrText: string): void {
-    console.log('QR Code detected:', qrText);
-
     if (!this.currentConfig) {
       return;
     }

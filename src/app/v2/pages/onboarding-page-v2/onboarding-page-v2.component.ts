@@ -20,6 +20,7 @@ import {
   KcButtonComponent,
   KcIconComponent,
   KcInputComponent,
+  KcSnackbarComponent,
 } from 'kaspacom-ui';
 import { OnboardingStep } from '../onboarding-page/onboarding-step.enum';
 import { ImportExistingFlowComponent } from '../onboarding-page/flows/import-existing-flow/import-existing-flow.component';
@@ -53,6 +54,7 @@ interface PanelCopy {
     KcInputComponent,
     ImportExistingFlowComponent,
     NewWalletFlowComponent,
+    KcSnackbarComponent,
   ],
   templateUrl: './onboarding-page-v2.component.html',
   styleUrl: './onboarding-page-v2.component.scss',

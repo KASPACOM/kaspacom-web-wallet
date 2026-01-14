@@ -63,15 +63,10 @@ export class DeleteWalletConfirmationComponent extends FlowPageBaseComponent {
       // Close all flow pages
       this.flowPagesService.closePage();
       
-      // Navigate to the main route for login/create
-      this.router.navigate(['/wallet']);
-      
       // Force page reload to ensure clean state
       window.location.reload();
     } catch (error) {
       console.error('Error during wallet deletion:', error);
-      // Still try to navigate away even if there's an error
-      this.router.navigate(['/wallet']);
       window.location.reload();
     }
   }

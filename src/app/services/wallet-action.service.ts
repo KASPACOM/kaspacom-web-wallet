@@ -369,10 +369,6 @@ export class WalletActionService {
       this.currentProgressSignal.set(undefined);
     });
 
-    if (isFromIframe) {
-      this.router.navigate(['/review-action']);
-    }
-
     return await promise.then(data => {
       this.actionToApprove.set(undefined);
 

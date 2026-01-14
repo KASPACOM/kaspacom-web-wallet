@@ -105,7 +105,7 @@ const loadingTimeout = setTimeout(() => {
     });
     showLoadingError(
       'Application is taking longer than expected to load',
-      'Timeout: Application failed to initialize within 15 seconds. This may be due to slow network connection or browser compatibility issues.',
+      `Timeout: Application failed to initialize within ${APPLICATION_INIT_TIMEOUT / 1000} seconds. This may be due to slow network connection or browser compatibility issues.`,
     );
   }
 }, APPLICATION_INIT_TIMEOUT);

@@ -4,6 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton';
+import { NftRankTagComponent } from './components/nft-rank-tag/nft-rank-tag.component';
 import { BaseAssetPageComponent } from '../../../../../common/base-asset-page/base-asset-page.component';
 import { Krc721ApiService } from '../../../../../../../../services/krc721-api/krc721-api.service';
 import { FlowPagesService } from '../../../../../../../services/flow-pages.service';
@@ -22,11 +23,13 @@ interface NftMetadata {
 
 @Component({
   selector: 'app-krc721-asset',
+  standalone: true,
   imports: [
     CommonModule,
     KcButtonComponent,
     KcIconComponent,
-    SkeletonComponent
+    SkeletonComponent,
+    NftRankTagComponent
   ],
   templateUrl: './krc721-asset.component.html',
   styleUrl: './krc721-asset.component.scss'
@@ -41,7 +44,7 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
 
   protected nftMetadata = signal<NftMetadata | null>(null);
   protected metadataLoading = signal<boolean>(true);
-  
+
   protected rarityRank = signal<number | undefined>(undefined);
   protected legendary = signal<boolean | undefined>(undefined);
   protected totalSupply = signal<number | undefined>(undefined);
@@ -105,74 +108,57 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
 
   protected async loadRarityInfo(): Promise<void> {
     try {
-        const address = this.getCurrentWalletAddress();
-        console.log('Loading rarity info for', this.tick, this.tokenId, 'address:', address);
-        
-        // 1. Get Collection details for total supply
-        this.krc721Service.getCollectionDetails(this.tick).subscribe(response => {
-             console.log('Collection details response:', response);
-             if (response.message === 'success') {
-                 // Use max supply if totalSupply is missing, or minted if available
-                 const supply = response.result.totalSupply || response.result.max || response.result.minted;
-                 this.totalSupply.set(parseInt(supply));
-                 console.log('Total supply set to:', parseInt(supply));
-             }
-        });
+      const address = this.getCurrentWalletAddress();
+      console.log('Loading rarity info for', this.tick, this.tokenId, 'address:', address);
 
-        // 2. Get Portfolio details for rarity rank
-        const details = await firstValueFrom(this.krc721Service.getPortfolioDetails(address, this.tick));
-        console.log('Portfolio details response:', details);
-        
-        if (details && details.length > 0) {
-            // Compare tickers case-insensitively
-            const detailItem = details.find(d => d.ticker.toUpperCase() === this.tick.toUpperCase());
-            console.log('Found detail item:', detailItem);
-            
-            if (detailItem && detailItem.tokenIds) {
-                // Handle both object and string formats
-                const token = detailItem.tokenIds.find((t: any) => {
-                    const id = (typeof t === 'object' && t.tokenId !== undefined) ? t.tokenId : t;
-                    return id.toString() === this.tokenId.toString();
-                });
-                
-                console.log('Found token:', token);
-                
-                if (token && typeof token === 'object') {
-                    console.log('Setting rarity rank:', token.rarityRank, 'legendary:', token.legendary);
-                    this.rarityRank.set(token.rarityRank);
-                    this.legendary.set(token.legendary);
-                } else {
-                    console.log('Token is not an object or not found');
-                }
-            } else {
-                console.log('No detail item or tokenIds found');
-            }
-        } else {
-            console.log('No portfolio details found');
+      // 1. Get Collection details for total supply
+      this.krc721Service.getCollectionDetails(this.tick).subscribe(response => {
+        console.log('Collection details response:', response);
+        if (response.message === 'success') {
+          // Use max supply if totalSupply is missing, or minted if available
+          const supply = response.result.totalSupply || response.result.max || response.result.minted;
+          this.totalSupply.set(parseInt(supply));
+          console.log('Total supply set to:', parseInt(supply));
         }
+      });
+
+      // 2. Get Portfolio details for rarity rank
+      const details = await firstValueFrom(this.krc721Service.getPortfolioDetails(address, this.tick));
+      console.log('Portfolio details response:', details);
+
+      if (details && details.length > 0) {
+        // Compare tickers case-insensitively
+        const detailItem = details.find(d => d.ticker.toUpperCase() === this.tick.toUpperCase());
+        console.log('Found detail item:', detailItem);
+
+        if (detailItem && detailItem.tokenIds) {
+          // Handle both object and string formats
+          const token = detailItem.tokenIds.find((t: any) => {
+            const id = (typeof t === 'object' && t.tokenId !== undefined) ? t.tokenId : t;
+            return id.toString() === this.tokenId.toString();
+          });
+
+          console.log('Found token:', token);
+
+          if (token && typeof token === 'object') {
+            console.log('Setting rarity rank:', token.rarityRank, 'legendary:', token.legendary);
+            this.rarityRank.set(token.rarityRank);
+            this.legendary.set(token.legendary);
+          } else {
+            console.log('Token is not an object or not found');
+          }
+        } else {
+          console.log('No detail item or tokenIds found');
+        }
+      } else {
+        console.log('No portfolio details found');
+      }
     } catch (e) {
-        console.error('Failed to load rarity info', e);
+      console.error('Failed to load rarity info', e);
     }
   }
 
-  getRarityClass(): string {
-    const rank = this.rarityRank();
-    const isLegendary = this.legendary();
-    const supply = this.totalSupply();
 
-    if (isLegendary || (rank !== undefined && rank < 0)) {
-      return 'legendary';
-    }
-    
-    if (rank !== undefined && supply) {
-      const percentage = rank / supply;
-      if (percentage <= 0.01) return 'gold';
-      if (percentage <= 0.1) return 'silver';
-      if (percentage <= 0.3) return 'bronze';
-    }
-    
-    return 'neutral';
-  }
 
   protected override async loadTransactionHistory(): Promise<void> {
     // For now, we'll skip transaction history for NFTs
@@ -247,7 +233,7 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
   }
 
   // Helper method to get attributes
-  getAttributes(): Array<{trait_type: string; value: string | number}> {
+  getAttributes(): Array<{ trait_type: string; value: string | number }> {
     const metadata = this.nftMetadata();
     return metadata?.attributes || [];
   }

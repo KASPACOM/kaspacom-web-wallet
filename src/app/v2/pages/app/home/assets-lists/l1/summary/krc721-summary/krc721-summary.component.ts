@@ -8,10 +8,12 @@ import { InfiniteScrollDirective } from '../../../../../../../../directives/infi
 import { Krc721ListService } from '../../../../../../../../services/assets-manager/krc721-list.service';
 import { L1_PAGINATION_CONFIG } from '../../../../../../../../services/assets-manager/interfaces/pagination-state.interface';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { NftRankTagComponent } from '../../asset/krc721-asset/components/nft-rank-tag/nft-rank-tag.component';
 
 @Component({
   selector: 'app-krc721-summary',
-  imports: [TitleCasePipe, UpperCasePipe, SkeletonComponent, InfiniteScrollDirective],
+  standalone: true,
+  imports: [TitleCasePipe, UpperCasePipe, SkeletonComponent, InfiniteScrollDirective, NftRankTagComponent],
   templateUrl: './krc721-summary.component.html',
   styleUrl: './krc721-summary.component.scss',
   host: {
@@ -28,7 +30,7 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
   private metadataInitialized = false;
   private pendingThresholdReset = false;
   private _infiniteScrollDirective?: InfiniteScrollDirective;
-  
+
   // Reference to the infinite scroll directive
   @ViewChild(InfiniteScrollDirective)
   set infiniteScrollDirective(directive: InfiniteScrollDirective | undefined) {
@@ -43,14 +45,14 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
   get infiniteScrollDirective(): InfiniteScrollDirective | undefined {
     return this._infiniteScrollDirective;
   }
-  
+
   // Configuration
   readonly config = L1_PAGINATION_CONFIG.krc721;
-  
+
   // Loading skeletons - portfolio pattern with opacity cascade
   private static readonly SKELETON_COUNT = 8;
   loadingSkeletons: unknown[] = Array.from({ length: Krc721SummaryComponent.SKELETON_COUNT }).map(() => ({}));
-  
+
   constructor() {
     toObservable(this.krc721ListService.nfts)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -98,13 +100,13 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
       const assetId = `${item.data.tick}-${item.data.tokenId}`;
       metadataById.set(assetId, item);
     });
-    
+
     // Merge NFT data with metadata
     return rawNfts.map(nft => {
       const metadataItem = metadataById.get(`${nft.tick}-${nft.tokenId}`);
-      
+
       const metadata = metadataItem?.metadata || nft.metadata;
-      
+
       return {
         tick: nft.tick,
         tokenId: nft.tokenId,
@@ -120,7 +122,7 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
       };
     });
   });
-  
+
   // Loading states - portfolio pattern
   loading = computed(() => {
     if (this.nfts().length > 0) {
@@ -132,9 +134,9 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
       this.krc721ListService.isLoading()
     );
   });
-  
+
   isLoadingMore = computed(() => this.krc721ListService.isLoading());
-  
+
   hasMore = computed(() => this.krc721ListService.hasMore());
 
   ngOnInit(): void {
@@ -218,18 +220,5 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
     this.krc721MetadataService.loadMetadataForVisibleItems(itemElements);
   }
 
-  getRarityClass(nft: INftWithMetadata): string {
-    if (nft.legendary || (nft.rarityRank !== undefined && nft.rarityRank < 0)) {
-      return 'legendary';
-    }
-    
-    if (nft.rarityRank !== undefined && nft.totalSupply) {
-      const percentage = nft.rarityRank / nft.totalSupply;
-      if (percentage <= 0.01) return 'gold';
-      if (percentage <= 0.1) return 'silver';
-      if (percentage <= 0.3) return 'bronze';
-    }
-    
-    return 'neutral';
-  }
-} 
+
+}

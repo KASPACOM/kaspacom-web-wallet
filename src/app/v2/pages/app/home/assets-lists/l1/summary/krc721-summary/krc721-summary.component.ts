@@ -1,4 +1,4 @@
-import { Component, ViewChild, computed, inject, OnInit, OnDestroy, AfterViewInit, ElementRef, DestroyRef } from '@angular/core';
+import { Component, ViewChild, computed, inject, OnInit, OnDestroy, AfterViewInit, ElementRef, DestroyRef, signal } from '@angular/core';
 import { TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { INftWithMetadata } from '../../../../../common/interfaces/nft.interface';
@@ -90,8 +90,11 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
       });
   }
 
+  selectedTicker = signal<string>('');
+
   // Data from service - portfolio pattern
   nfts = computed<INftWithMetadata[]>(() => {
+    // The service now handles filtering, so we just take nfts()
     const rawNfts = this.krc721ListService.nfts();
     const paginatedMetadata = this.krc721MetadataService.paginatedAssets();
 
@@ -121,6 +124,11 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
         totalSupply: nft.totalSupply
       };
     });
+  });
+
+  uniqueTickers = computed(() => {
+    const tickers = this.krc721ListService.getAvailableTickers()();
+    return [...tickers].sort();
   });
 
   // Loading states - portfolio pattern
@@ -202,6 +210,15 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
     if (target) {
       target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjMzMzIiByeD0iOCIvPgo8c3ZnIHg9IjEyIiB5PSIxMiIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzY2NiIgc3Ryb2tlLXdpZHRoPSIyIj4KPHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjE4IiBoZWlnaHQ9IjE4IiByeD0iMiIgcnk9IjIiLz4KPGNpcmNsZSBjeD0iOC41IiBjeT0iOC41IiByPSIxLjUiLz4KPGR5bGluZSB4MT0iMjEiIHkxPSIxNSIgeDI9IjEyIiB5Mj0iNiIvPgo8L3N2Zz4KPC9zdmc+';
     }
+  }
+
+  /**
+   * Filter handling
+   */
+  onTickerChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.selectedTicker.set(target.value);
+    this.krc721ListService.setFilter(target.value);
   }
 
   /**

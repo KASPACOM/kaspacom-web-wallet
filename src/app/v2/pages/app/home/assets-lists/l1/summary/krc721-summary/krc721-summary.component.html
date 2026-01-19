@@ -1,6 +1,24 @@
 <div class="krc721-summary-container flex column justify-content-center align-items-center full-width gap-16"
   appInfiniteScroll [scrollThreshold]="config.scrollThreshold" [scrollDebounce]="config.debounceMs"
   [greedyLoading]="config.greedyLoading" (scrolled)="onScrolled($event)" (thresholdReached)="shouldLoadMore(true)">
+
+  <div class="full-width flex justify-content-start px-16">
+    <div class="custom-select-wrapper">
+      <select class="custom-select" (change)="onTickerChange($event)">
+        <option value="" [selected]="selectedTicker() === ''">Filter by Ticker</option>
+        @for (tick of uniqueTickers(); track tick) {
+        <option [value]="tick" [selected]="selectedTicker() === tick">{{tick | uppercase}}</option>
+        }
+      </select>
+      <div class="custom-arrow">
+        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </div>
+    </div>
+  </div>
+
   @if (loading()) {
   <div class="skeleton-loading-container flex column gap-16 full-width">
     @for (skeleton of loadingSkeletons; track i; let i = $index) {

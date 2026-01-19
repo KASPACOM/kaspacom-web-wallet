@@ -55,22 +55,25 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
     private krc721PortfolioIndex = 0;
     private krc721TokenQueue: Krc721Nft[] = [];
     private krc721CollectionCache = new Map<string, number>(); // tick -> totalSupply
-    
+
+    // Public signal for available tickers (derived from portfolio summary)
+    readonly krc721AvailableTickers = signal<string[]>([]);
+
     private readonly KRC721_PAGE_SIZE = L1_PAGINATION_CONFIG.krc721.pageSize;
-    
+
     // Pagination state for KNS (page-based)
     private knsCurrentPage: WritableSignal<number> = signal(1);
     private knsTotalPages: WritableSignal<number> = signal(1);
     private knsHasMore: WritableSignal<boolean> = signal(true);
     private knsLoadedPages: WritableSignal<number> = signal(0); // Track pages loaded
-    
+
     private readonly KNS_PAGE_SIZE = L1_PAGINATION_CONFIG.kns.pageSize;
-    
+
     // Pagination state for KRC20 (cursor-based)
     private krc20NextCursor: WritableSignal<string | null | undefined> = signal(undefined);
     private krc20HasMore: WritableSignal<boolean> = signal(true);
     private krc20LoadedPages: WritableSignal<number> = signal(0); // Track pages loaded
-    
+
     private readonly KRC20_PAGE_SIZE = L1_PAGINATION_CONFIG.krc20.pageSize;
 
     constructor() {
@@ -92,12 +95,12 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
     protected async getKrc20Info(walletAddress: string): Promise<GetTokenListDto[]> {
         const existingData = this.data['krc20']() as GetTokenListDto[] | undefined;
         const isAutoReload = existingData !== undefined && existingData.length > 0;
-        
+
         if (isAutoReload) {
             // Smart fetch: Get as many items as user has loaded (doesn't fetch ALL tokens)
             const itemsToFetch = existingData.length;
             const pagesToFetch = this.krc20LoadedPages();
-            
+
             // KRC20 API returns all tokens in one call, so we just fetch once
             const response: GetTokenListResponse = await firstValueFrom(
                 this.kasplexKrc20Service.getWalletTokenList(
@@ -106,7 +109,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                     null,
                 ),
             );
-            
+
             if (response.result && response.result.length > 0) {
                 const freshTokens: GetTokenListDto[] = response.result.map(
                     (token) => ({
@@ -118,7 +121,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                         priceKas: 0,
                     }),
                 );
-                
+
                 // Fetch prices for all tokens
                 try {
                     const prices = await this.kaspacomApiService.getTokensPrices(
@@ -131,22 +134,22 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                 } catch (error) {
                     console.error('Error fetching token prices during auto-reload:', error);
                 }
-                
+
                 // Smart merge with deduplication
                 const { merged, newItems, removedCount } = this.mergeKrc20Data(existingData, freshTokens);
-                
+
                 // Update cursor to last item BEFORE new items (maintains pagination continuity)
                 const lastOriginalIndex = merged.length - newItems.length - 1;
                 if (lastOriginalIndex >= 0 && merged[lastOriginalIndex]) {
                     // KRC20 uses tick as cursor
                     this.krc20NextCursor.set(merged[lastOriginalIndex].tick);
                 }
-                
+
                 // If new items found, set hasMore to true (more might exist beyond)
                 if (newItems.length > 0) {
                     this.krc20HasMore.set(true);
                 }
-                
+
                 return merged;
             } else {
                 return existingData;
@@ -156,7 +159,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
             this.krc20NextCursor.set(undefined);
             this.krc20HasMore.set(true);
             this.krc20LoadedPages.set(1); // Track initial page
-            
+
             // Load first page only
             const response: GetTokenListResponse = await firstValueFrom(
                 this.kasplexKrc20Service.getWalletTokenList(
@@ -206,7 +209,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
             return [];
         }
     }
-    
+
     /**
      * Merge existing KRC20 data with fresh data from auto-reload
      * Strategy: Update existing items ONLY if changed, add NEW items at BOTTOM, remove deleted ones
@@ -214,35 +217,35 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
      * Returns: { merged, newItems, removedCount }
      */
     private mergeKrc20Data(
-        existing: GetTokenListDto[], 
+        existing: GetTokenListDto[],
         fresh: GetTokenListDto[]
     ): { merged: GetTokenListDto[], newItems: GetTokenListDto[], removedCount: number } {
-        
+
         // Build maps for O(1) lookup (case-insensitive for ticks)
         const existingMap = new Map<string, GetTokenListDto>();
         existing.forEach(token => {
             existingMap.set(token.tick.toLowerCase(), token);
         });
-        
+
         const freshMap = new Map<string, GetTokenListDto>();
         fresh.forEach(token => {
             freshMap.set(token.tick.toLowerCase(), token);
         });
-        
+
         // Step 1: Update existing tokens (preserve order AND object references when possible)
         const updated: GetTokenListDto[] = [];
         let removedCount = 0;
-        
+
         for (const token of existing) {
             const key = token.tick.toLowerCase();
-            
+
             if (freshMap.has(key)) {
                 const freshToken = freshMap.get(key)!;
-                
+
                 // CRITICAL: Only replace object if balance/price actually changed
                 // This prevents unnecessary re-renders
                 const hasChanged = this.hasKrc20TokenChanged(token, freshToken);
-                
+
                 if (hasChanged) {
                     // Data changed - use fresh object
                     updated.push(freshToken);
@@ -250,23 +253,23 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                     // Data identical - KEEP existing object (prevents re-render flicker)
                     updated.push(token);
                 }
-                
+
                 freshMap.delete(key); // Mark as processed
             } else {
                 // No longer owned - token was sent/sold
                 removedCount++;
             }
         }
-        
+
         // Step 2: Identify NEW tokens (in fresh but not in existing)
         const newItems: GetTokenListDto[] = Array.from(freshMap.values());
-        
+
         // Step 3: Append new tokens to BOTTOM (non-disruptive to user)
         const merged = [...updated, ...newItems];
-        
+
         return { merged, newItems, removedCount };
     }
-    
+
     /**
      * Check if KRC20 token data has actually changed
      * Used to avoid replacing objects unnecessarily (which would trigger re-renders)
@@ -275,14 +278,14 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
         // Compare key properties that matter for display
         // Use small epsilon for price comparison (floating point precision)
         const PRICE_EPSILON = 0.000001;
-        
+
         return existing.tick !== fresh.tick ||
-               Math.abs(existing.balance - fresh.balance) > PRICE_EPSILON ||
-               Math.abs(existing.locked - fresh.locked) > PRICE_EPSILON ||
-               Math.abs(existing.priceKas - fresh.priceKas) > PRICE_EPSILON ||
-               existing.decimals !== fresh.decimals;
+            Math.abs(existing.balance - fresh.balance) > PRICE_EPSILON ||
+            Math.abs(existing.locked - fresh.locked) > PRICE_EPSILON ||
+            Math.abs(existing.priceKas - fresh.priceKas) > PRICE_EPSILON ||
+            existing.decimals !== fresh.decimals;
     }
-    
+
     /**
      * Load more KRC20 tokens (next page)
      * Called by Krc20ListService when scrolling
@@ -290,7 +293,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
     async loadMoreKrc20Tokens(): Promise<LoadMoreStoreResult> {
         const cursor = this.krc20NextCursor();
         const hasMore = this.krc20HasMore();
-        
+
         if (!hasMore || !cursor) {
             return {
                 success: false,
@@ -299,10 +302,10 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                 nextCursor: undefined
             };
         }
-        
+
         try {
             const walletAddress = await this.getWalletAddress();
-            
+
             const response: GetTokenListResponse = await firstValueFrom(
                 this.kasplexKrc20Service.getWalletTokenList(
                     walletAddress,
@@ -310,7 +313,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                     'next',
                 ),
             );
-            
+
             if (response.result && response.result.length > 0) {
                 const newTokens: GetTokenListDto[] = response.result.map(
                     (token) => ({
@@ -326,30 +329,30 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                         priceKas: 0,
                     }),
                 );
-                
-                // Fetch prices for new batch
-        try {
-            const prices = await this.kaspacomApiService.getTokensPrices(
-                        newTokens.map(token => token.tick),
-            );
 
-            const pricesByTicker = _.keyBy(prices, 'ticker');
+                // Fetch prices for new batch
+                try {
+                    const prices = await this.kaspacomApiService.getTokensPrices(
+                        newTokens.map(token => token.tick),
+                    );
+
+                    const pricesByTicker = _.keyBy(prices, 'ticker');
                     newTokens.forEach(token => {
-                token.priceKas = pricesByTicker[token.tick]?.price || 0;
-            });
-        } catch (error) {
-            console.error('Error fetching token prices:', error);
-        }
+                        token.priceKas = pricesByTicker[token.tick]?.price || 0;
+                    });
+                } catch (error) {
+                    console.error('Error fetching token prices:', error);
+                }
 
                 // Append to existing data
                 const currentTokens = this.data[L1_ASSET_KEYS.krc20]() || [];
                 this.data[L1_ASSET_KEYS.krc20].set([...currentTokens, ...newTokens]);
-                
+
                 // Update pagination state
                 this.krc20NextCursor.set(response.next);
                 this.krc20HasMore.set(!!response.next);
                 this.krc20LoadedPages.update(p => p + 1); // Track pages loaded
-                
+
                 return {
                     success: true,
                     itemsAdded: newTokens.length,
@@ -357,7 +360,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                     nextCursor: response.next ?? undefined
                 };
             }
-            
+
             return {
                 success: false,
                 itemsAdded: 0,
@@ -386,27 +389,31 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
         this.krc721PortfolioSummary = [];
         this.krc721PortfolioIndex = 0;
         this.krc721TokenQueue = [];
-        this.krc721CollectionCache.clear(); 
+        this.krc721CollectionCache.clear();
 
         try {
             // 1. Fetch summary
             this.krc721PortfolioSummary = await firstValueFrom(this.krc721ApiService.getPortfolio(walletAddress));
+
+            // Update available tickers
+            this.krc721AvailableTickers.set(this.krc721PortfolioSummary.map(item => item.ticker));
         } catch (e) {
             console.error('Error fetching portfolio summary', e);
             this.krc721PortfolioSummary = [];
+            this.krc721AvailableTickers.set([]);
         }
 
         // 2. Fetch first batch
         const nfts = await this.fetchNextKrc721Batch(walletAddress);
-        
+
         // Update pagination
         this.krc721NextCursor.set(this.krc721PortfolioIndex);
         this.krc721HasMore.set(this.krc721PortfolioIndex < this.krc721PortfolioSummary.length || this.krc721TokenQueue.length > 0);
         this.krc721LoadedPages.set(1);
-        
+
         return nfts;
     }
-    
+
     /**
      * Merge existing KRC721 data with fresh data from auto-reload
      * Strategy: Update existing items ONLY if changed, add NEW items at BOTTOM, remove deleted ones
@@ -414,37 +421,37 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
      * Returns: { merged, newItems, removedCount }
      */
     private mergeKrc721Data(
-        existing: Krc721Nft[], 
+        existing: Krc721Nft[],
         fresh: Krc721Nft[]
     ): { merged: Krc721Nft[], newItems: Krc721Nft[], removedCount: number } {
-        
+
         // Build maps for O(1) lookup
         const existingMap = new Map<string, Krc721Nft>();
         existing.forEach(nft => {
             const id = `${nft.tick}_${nft.tokenId}`;
             existingMap.set(id, nft);
         });
-        
+
         const freshMap = new Map<string, Krc721Nft>();
         fresh.forEach(nft => {
             const id = `${nft.tick}_${nft.tokenId}`;
             freshMap.set(id, nft);
         });
-        
+
         // Step 1: Update existing NFTs (preserve order AND object references when possible)
         const updated: Krc721Nft[] = [];
         let removedCount = 0;
-        
+
         for (const nft of existing) {
             const id = `${nft.tick}_${nft.tokenId}`;
-            
+
             if (freshMap.has(id)) {
                 const freshNft = freshMap.get(id)!;
-                
+
                 // CRITICAL: Only replace object if data actually changed
                 // This prevents metadata service from re-fetching unchanged NFTs
                 const hasChanged = this.hasKrc721NftChanged(nft, freshNft);
-                
+
                 if (hasChanged) {
                     // Data changed - use fresh object
                     updated.push(freshNft);
@@ -452,23 +459,23 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                     // Data identical - KEEP existing object (preserves metadata cache)
                     updated.push(nft);
                 }
-                
+
                 freshMap.delete(id); // Mark as processed
             } else {
                 // No longer owned - NFT was sent/sold
                 removedCount++;
             }
         }
-        
+
         // Step 2: Identify NEW NFTs (in fresh but not in existing)
         const newItems: Krc721Nft[] = Array.from(freshMap.values());
-        
+
         // Step 3: Append new NFTs to BOTTOM (non-disruptive to user)
         const merged = [...updated, ...newItems];
-        
+
         return { merged, newItems, removedCount };
     }
-    
+
     /**
      * Check if KRC721 NFT data has actually changed
      * Used to avoid replacing objects unnecessarily (which would trigger metadata re-fetch)
@@ -478,12 +485,12 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
         // For NFTs, these rarely change unless transferred or metadata updated
         // Available properties: tick, tokenId, owner, buri?, metadata?
         return existing.tick !== fresh.tick ||
-               existing.tokenId !== fresh.tokenId ||
-               existing.owner !== fresh.owner ||
-               existing.buri !== fresh.buri ||
-               JSON.stringify(existing.metadata) !== JSON.stringify(fresh.metadata);
+            existing.tokenId !== fresh.tokenId ||
+            existing.owner !== fresh.owner ||
+            existing.buri !== fresh.buri ||
+            JSON.stringify(existing.metadata) !== JSON.stringify(fresh.metadata);
     }
-    
+
     /**
      * Merge KNS domain data intelligently
      * - Preserves existing object references if data hasn't changed (avoids re-renders)
@@ -491,34 +498,34 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
      * - Adds new domains to the bottom
      */
     private mergeKnsData(
-        existing: KnsDomainAsset[], 
+        existing: KnsDomainAsset[],
         fresh: KnsDomainAsset[]
     ): { merged: KnsDomainAsset[], newItems: KnsDomainAsset[], removedCount: number } {
-        
+
         // Use Map for efficient lookup by domain ID
         const existingMap = new Map<string, KnsDomainAsset>();
         existing.forEach(domain => {
             existingMap.set(domain.id, domain);
         });
-        
+
         const freshMap = new Map<string, KnsDomainAsset>();
         fresh.forEach(domain => {
             freshMap.set(domain.id, domain);
         });
-        
+
         // Build updated list: iterate existing, update if in fresh
         const updated: KnsDomainAsset[] = [];
         let removedCount = 0;
-        
+
         for (const domain of existing) {
             const id = domain.id;
-            
+
             if (freshMap.has(id)) {
                 const freshDomain = freshMap.get(id)!;
-                
+
                 // Check if data actually changed
                 const hasChanged = this.hasKnsDomainChanged(domain, freshDomain);
-                
+
                 if (hasChanged) {
                     // Data changed, use fresh object
                     updated.push(freshDomain);
@@ -526,7 +533,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                     // No change, keep existing object (preserves references)
                     updated.push(domain);
                 }
-                
+
                 // Remove from fresh map to track new items
                 freshMap.delete(id);
             } else {
@@ -534,16 +541,16 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                 removedCount++;
             }
         }
-        
+
         // Remaining items in freshMap are NEW domains
         const newItems: KnsDomainAsset[] = Array.from(freshMap.values());
-        
+
         // Add new items to BOTTOM of list
         const merged = [...updated, ...newItems];
-        
+
         return { merged, newItems, removedCount };
     }
-    
+
     /**
      * Check if KNS domain data has actually changed
      * Used to avoid replacing objects unnecessarily (which would trigger re-renders)
@@ -552,12 +559,12 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
         // Compare key properties that matter for display
         // For domains, these rarely change unless transferred or status updated
         return existing.id !== fresh.id ||
-               existing.assetId !== fresh.assetId ||
-               existing.owner !== fresh.owner ||
-               existing.status !== fresh.status ||
-               existing.isVerifiedDomain !== fresh.isVerifiedDomain;
+            existing.assetId !== fresh.assetId ||
+            existing.owner !== fresh.owner ||
+            existing.status !== fresh.status ||
+            existing.isVerifiedDomain !== fresh.isVerifiedDomain;
     }
-    
+
     /**
      * Load more KRC721 NFTs (next page)
      * Called by Krc721ListService when scrolling
@@ -571,22 +578,22 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                 nextCursor: undefined
             };
         }
-        
+
         try {
             const walletAddress = await this.getWalletAddress();
             const newNfts = await this.fetchNextKrc721Batch(walletAddress);
-            
+
             if (newNfts.length > 0) {
                 // Append to existing data
                 const currentNfts = this.data[L1_ASSET_KEYS.krc721]() || [];
                 // Use set to update signal
                 this.data[L1_ASSET_KEYS.krc721].set([...currentNfts, ...newNfts]);
-                
+
                 // Update pagination state
                 this.krc721HasMore.set(this.krc721PortfolioIndex < this.krc721PortfolioSummary.length || this.krc721TokenQueue.length > 0);
                 this.krc721NextCursor.set(this.krc721PortfolioIndex);
                 this.krc721LoadedPages.update(p => p + 1);
-                
+
                 return {
                     success: true,
                     itemsAdded: newNfts.length,
@@ -594,7 +601,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                     nextCursor: this.krc721PortfolioIndex
                 };
             }
-            
+
             return {
                 success: true,
                 itemsAdded: 0,
@@ -620,15 +627,15 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
     protected async getKnsInfo(walletAddress: string): Promise<KnsDomainAsset[]> {
         const existingData = this.data['kns']() as KnsDomainAsset[] | undefined;
         const isAutoReload = existingData !== undefined && existingData.length > 0;
-        
+
         if (isAutoReload) {
             // Smart fetch: Get as many pages as user has loaded
             const pagesToFetch = this.knsLoadedPages();
-            
+
             // Fetch all loaded pages
             const allFreshDomains: KnsDomainAsset[] = [];
             let lastPagination: any = null;
-            
+
             for (let page = 1; page <= pagesToFetch; page++) {
                 const response = await firstValueFrom(
                     this.knsApiService.fetchAssetsByOwner(
@@ -637,11 +644,11 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                         this.KNS_PAGE_SIZE
                     )
                 );
-                
+
                 if (response.data) {
                     allFreshDomains.push(...(response.data.assets || []));
                     lastPagination = response.data.pagination;
-                    
+
                     // If we got fewer items than expected, no more pages
                     if (page >= response.data.pagination.totalPages) {
                         break;
@@ -650,21 +657,21 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                     break;
                 }
             }
-            
+
             // Smart merge with deduplication
             const { merged, newItems, removedCount } = this.mergeKnsData(existingData, allFreshDomains);
-            
+
             // Update pagination state based on last response
             if (lastPagination) {
                 this.knsCurrentPage.set(lastPagination.currentPage);
                 this.knsTotalPages.set(lastPagination.totalPages);
             }
-            
+
             // If new items found, set hasMore to true (more might exist beyond)
             if (newItems.length > 0) {
                 this.knsHasMore.set(true);
             }
-            
+
             return merged;
         } else {
             // Initial load: Load first page only
@@ -672,7 +679,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
             this.knsTotalPages.set(1);
             this.knsHasMore.set(true);
             this.knsLoadedPages.set(1);
-            
+
             const response = await firstValueFrom(
                 this.knsApiService.fetchAssetsByOwner(
                     walletAddress,
@@ -684,19 +691,19 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
             if (response.data) {
                 const domains = response.data.assets || [];
                 const pagination = response.data.pagination;
-                
+
                 // Update pagination state
                 this.knsCurrentPage.set(pagination.currentPage);
                 this.knsTotalPages.set(pagination.totalPages);
                 this.knsHasMore.set(pagination.currentPage < pagination.totalPages);
-                
+
                 return domains;
             }
-            
+
             return [];
         }
     }
-    
+
     /**
      * Load more KNS domains (next page)
      * Called by KnsListService when scrolling
@@ -705,7 +712,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
         const currentPage = this.knsCurrentPage();
         const totalPages = this.knsTotalPages();
         const hasMore = this.knsHasMore();
-        
+
         if (!hasMore || currentPage >= totalPages) {
             return {
                 success: false,
@@ -714,33 +721,33 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                 nextCursor: undefined
             };
         }
-        
+
         try {
             const walletAddress = await this.getWalletAddress();
             const nextPage = currentPage + 1;
-            
+
             const response = await firstValueFrom(
                 this.knsApiService.fetchAssetsByOwner(
-            walletAddress,
+                    walletAddress,
                     nextPage,
                     this.KNS_PAGE_SIZE
                 )
             );
-            
+
             if (response.data) {
                 const newDomains = response.data.assets || [];
                 const pagination = response.data.pagination;
-                
+
                 // Append to existing data
                 const currentDomains = this.data[L1_ASSET_KEYS.kns]() || [];
                 this.data[L1_ASSET_KEYS.kns].set([...currentDomains, ...newDomains]);
-                
+
                 // Update pagination state
                 this.knsCurrentPage.set(pagination.currentPage);
                 this.knsTotalPages.set(pagination.totalPages);
                 this.knsHasMore.set(pagination.currentPage < pagination.totalPages);
                 this.knsLoadedPages.update(p => p + 1); // Track pages loaded
-                
+
                 return {
                     success: true,
                     itemsAdded: newDomains.length,
@@ -748,7 +755,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                     nextCursor: this.knsHasMore() ? pagination.currentPage : undefined
                 };
             }
-            
+
             return {
                 success: false,
                 itemsAdded: 0,
@@ -773,17 +780,17 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
      */
     private async fetchNextKrc721Batch(walletAddress: string, targetCount = this.KRC721_PAGE_SIZE): Promise<Krc721Nft[]> {
         const results: Krc721Nft[] = [];
-        
+
         // 1. Drain queue first
         while (this.krc721TokenQueue.length > 0 && results.length < targetCount) {
             results.push(this.krc721TokenQueue.shift()!);
         }
-        
+
         // 2. Fetch more if needed
         while (results.length < targetCount && this.krc721PortfolioIndex < this.krc721PortfolioSummary.length) {
             const item = this.krc721PortfolioSummary[this.krc721PortfolioIndex];
             this.krc721PortfolioIndex++;
-            
+
             try {
                 // Fetch collection info if needed for totalSupply
                 let totalSupply = this.krc721CollectionCache.get(item.ticker);
@@ -791,10 +798,10 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                     try {
                         const collectionDetails = await firstValueFrom(this.krc721ApiService.getCollectionDetails(item.ticker));
                         if (collectionDetails && collectionDetails.message === 'success') {
-                           // Use max supply if totalSupply is missing, or minted if available
-                           const supply = collectionDetails.result.totalSupply || collectionDetails.result.max || collectionDetails.result.minted;
-                           totalSupply = parseInt(supply);
-                           this.krc721CollectionCache.set(item.ticker, totalSupply);
+                            // Use max supply if totalSupply is missing, or minted if available
+                            const supply = collectionDetails.result.totalSupply || collectionDetails.result.max || collectionDetails.result.minted;
+                            totalSupply = parseInt(supply);
+                            this.krc721CollectionCache.set(item.ticker, totalSupply);
                         }
                     } catch (e) {
                         console.warn(`Failed to fetch collection details for ${item.ticker}`, e);
@@ -808,13 +815,13 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                 } catch (e) {
                     // ignore error
                 }
-                
+
                 if (details && details.length > 0) {
-                     // The details response is Array<Krc721PortfolioDetailItem>
-                     // Each item has tokenIds: Krc721PortfolioTokenDetail[]
-                     const nfts = details.flatMap((d: any) => d.tokenIds.map((t: any) => this.mapPortfolioTokenToNft(d.ticker, t, walletAddress, totalSupply)));
-                     
-                     for (const nft of nfts) {
+                    // The details response is Array<Krc721PortfolioDetailItem>
+                    // Each item has tokenIds: Krc721PortfolioTokenDetail[]
+                    const nfts = details.flatMap((d: any) => d.tokenIds.map((t: any) => this.mapPortfolioTokenToNft(d.ticker, t, walletAddress, totalSupply)));
+
+                    for (const nft of nfts) {
                         if (results.length < targetCount) {
                             results.push(nft);
                         } else {
@@ -837,7 +844,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                 // Continue to next ticker
             }
         }
-        
+
         return results;
     }
 
@@ -869,7 +876,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
             value: value as string | number
         }));
     }
-    
+
     /**
      * Override clearAllAssets to also reset pagination states
      */

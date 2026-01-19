@@ -1,4 +1,4 @@
-import { Component, ViewChild, computed, inject, OnInit, OnDestroy, AfterViewInit, ElementRef, DestroyRef } from '@angular/core';
+import { Component, ViewChild, computed, inject, OnInit, OnDestroy, AfterViewInit, ElementRef, DestroyRef, signal } from '@angular/core';
 import { TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { INftWithMetadata } from '../../../../../common/interfaces/nft.interface';
@@ -8,10 +8,12 @@ import { InfiniteScrollDirective } from '../../../../../../../../directives/infi
 import { Krc721ListService } from '../../../../../../../../services/assets-manager/krc721-list.service';
 import { L1_PAGINATION_CONFIG } from '../../../../../../../../services/assets-manager/interfaces/pagination-state.interface';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { NftRankTagComponent } from '../../asset/krc721-asset/components/nft-rank-tag/nft-rank-tag.component';
 
 @Component({
   selector: 'app-krc721-summary',
-  imports: [TitleCasePipe, UpperCasePipe, SkeletonComponent, InfiniteScrollDirective],
+  standalone: true,
+  imports: [TitleCasePipe, UpperCasePipe, SkeletonComponent, InfiniteScrollDirective, NftRankTagComponent],
   templateUrl: './krc721-summary.component.html',
   styleUrl: './krc721-summary.component.scss',
   host: {
@@ -28,7 +30,7 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
   private metadataInitialized = false;
   private pendingThresholdReset = false;
   private _infiniteScrollDirective?: InfiniteScrollDirective;
-  
+
   // Reference to the infinite scroll directive
   @ViewChild(InfiniteScrollDirective)
   set infiniteScrollDirective(directive: InfiniteScrollDirective | undefined) {
@@ -43,14 +45,14 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
   get infiniteScrollDirective(): InfiniteScrollDirective | undefined {
     return this._infiniteScrollDirective;
   }
-  
+
   // Configuration
   readonly config = L1_PAGINATION_CONFIG.krc721;
-  
+
   // Loading skeletons - portfolio pattern with opacity cascade
   private static readonly SKELETON_COUNT = 8;
   loadingSkeletons: unknown[] = Array.from({ length: Krc721SummaryComponent.SKELETON_COUNT }).map(() => ({}));
-  
+
   constructor() {
     toObservable(this.krc721ListService.nfts)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -88,8 +90,14 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
       });
   }
 
+  selectedTicker = signal<string>('');
+
+  // Cache to preserve object identity and prevent screen flicker
+  private nftCache = new Map<string, { raw: any, metadata: any, result: INftWithMetadata }>();
+
   // Data from service - portfolio pattern
   nfts = computed<INftWithMetadata[]>(() => {
+    // The service now handles filtering, so we just take nfts()
     const rawNfts = this.krc721ListService.nfts();
     const paginatedMetadata = this.krc721MetadataService.paginatedAssets();
 
@@ -98,14 +106,27 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
       const assetId = `${item.data.tick}-${item.data.tokenId}`;
       metadataById.set(assetId, item);
     });
-    
-    // Merge NFT data with metadata
-    return rawNfts.map(nft => {
-      const metadataItem = metadataById.get(`${nft.tick}-${nft.tokenId}`);
-      
+
+    const newCache = new Map<string, { raw: any, metadata: any, result: INftWithMetadata }>();
+
+    // Merge NFT data with metadata with memoization
+    const result = rawNfts.map(nft => {
+      const id = `${nft.tick}-${nft.tokenId}`;
+      const metadataItem = metadataById.get(id);
       const metadata = metadataItem?.metadata || nft.metadata;
-      
-      return {
+
+      // Check cache
+      const cached = this.nftCache.get(id);
+
+      // If we have a cached version and the underlying data hasn't changed, reuse it
+      // We check reference equality for 'nft' (raw) and 'metadata'
+      if (cached && cached.raw === nft && cached.metadata === metadata) {
+        newCache.set(id, cached);
+        return cached.result;
+      }
+
+      // Create new object
+      const newResult: INftWithMetadata = {
         tick: nft.tick,
         tokenId: nft.tokenId,
         owner: nft.owner,
@@ -118,9 +139,26 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
         legendary: nft.legendary,
         totalSupply: nft.totalSupply
       };
+
+      // Cache it
+      const cacheEntry = { raw: nft, metadata, result: newResult };
+      newCache.set(id, cacheEntry);
+      this.nftCache.set(id, cacheEntry); // Update main cache for next iteration lookups
+
+      return newResult;
     });
+
+    // Prune main cache (keep only what's currently in list to avoid memory leaks)
+    this.nftCache = newCache;
+
+    return result;
   });
-  
+
+  uniqueTickers = computed(() => {
+    const tickers = this.krc721ListService.getAvailableTickers()();
+    return [...tickers].sort();
+  });
+
   // Loading states - portfolio pattern
   loading = computed(() => {
     if (this.nfts().length > 0) {
@@ -132,9 +170,9 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
       this.krc721ListService.isLoading()
     );
   });
-  
+
   isLoadingMore = computed(() => this.krc721ListService.isLoading());
-  
+
   hasMore = computed(() => this.krc721ListService.hasMore());
 
   ngOnInit(): void {
@@ -203,6 +241,15 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   /**
+   * Filter handling
+   */
+  onTickerChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.selectedTicker.set(target.value);
+    this.krc721ListService.setFilter(target.value);
+  }
+
+  /**
    * Get item elements for viewport detection
    */
   private getItemElements(): HTMLElement[] {
@@ -218,18 +265,5 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
     this.krc721MetadataService.loadMetadataForVisibleItems(itemElements);
   }
 
-  getRarityClass(nft: INftWithMetadata): string {
-    if (nft.legendary || (nft.rarityRank !== undefined && nft.rarityRank < 0)) {
-      return 'legendary';
-    }
-    
-    if (nft.rarityRank !== undefined && nft.totalSupply) {
-      const percentage = nft.rarityRank / nft.totalSupply;
-      if (percentage <= 0.01) return 'gold';
-      if (percentage <= 0.1) return 'silver';
-      if (percentage <= 0.3) return 'bronze';
-    }
-    
-    return 'neutral';
-  }
-} 
+
+}

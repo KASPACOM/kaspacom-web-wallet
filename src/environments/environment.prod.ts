@@ -4,6 +4,7 @@ import { Environment } from './environment.interface';
 export const environment: Environment = {
   isProduction: true,
   kaspaComApiBaseurl: 'https://api.kaspa.com',
+  kaspaComDefiApiBaseurl: 'https://api-defi.kaspa.com',
   kasplexApiBaseurl: 'https://api.kasplex.org/v1',
   kaspaApiBaseurl: 'https://api.kaspa.org',
   krc721ApiBaseurl: 'https://mainnet.krc721.stream/api/v1/krc721/mainnet',
@@ -18,8 +19,7 @@ export const environment: Environment = {
       sdkName: 'kasplex',
       icon: '💎',
       l1TransactionPrefix: 'kaspelx',
-      erc20GraphUrl:
-        'https://graph-kasplex.kaspa.com/subgraphs/name/kasplex-tokens',
+      kaspaComApiNetworkName: 'kasplex',
     },
   ],
   segmentKey: 'VjcBOF7puALWzPyE19iNkCLseTTDfVga',

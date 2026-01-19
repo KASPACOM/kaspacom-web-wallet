@@ -92,6 +92,9 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
 
   selectedTicker = signal<string>('');
 
+  // Cache to preserve object identity and prevent screen flicker
+  private nftCache = new Map<string, { raw: any, metadata: any, result: INftWithMetadata }>();
+
   // Data from service - portfolio pattern
   nfts = computed<INftWithMetadata[]>(() => {
     // The service now handles filtering, so we just take nfts()
@@ -104,13 +107,26 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
       metadataById.set(assetId, item);
     });
 
-    // Merge NFT data with metadata
-    return rawNfts.map(nft => {
-      const metadataItem = metadataById.get(`${nft.tick}-${nft.tokenId}`);
+    const newCache = new Map<string, { raw: any, metadata: any, result: INftWithMetadata }>();
 
+    // Merge NFT data with metadata with memoization
+    const result = rawNfts.map(nft => {
+      const id = `${nft.tick}-${nft.tokenId}`;
+      const metadataItem = metadataById.get(id);
       const metadata = metadataItem?.metadata || nft.metadata;
 
-      return {
+      // Check cache
+      const cached = this.nftCache.get(id);
+
+      // If we have a cached version and the underlying data hasn't changed, reuse it
+      // We check reference equality for 'nft' (raw) and 'metadata'
+      if (cached && cached.raw === nft && cached.metadata === metadata) {
+        newCache.set(id, cached);
+        return cached.result;
+      }
+
+      // Create new object
+      const newResult: INftWithMetadata = {
         tick: nft.tick,
         tokenId: nft.tokenId,
         owner: nft.owner,
@@ -123,7 +139,19 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
         legendary: nft.legendary,
         totalSupply: nft.totalSupply
       };
+
+      // Cache it
+      const cacheEntry = { raw: nft, metadata, result: newResult };
+      newCache.set(id, cacheEntry);
+      this.nftCache.set(id, cacheEntry); // Update main cache for next iteration lookups
+
+      return newResult;
     });
+
+    // Prune main cache (keep only what's currently in list to avoid memory leaks)
+    this.nftCache = newCache;
+
+    return result;
   });
 
   uniqueTickers = computed(() => {

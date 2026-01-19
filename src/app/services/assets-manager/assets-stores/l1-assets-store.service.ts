@@ -385,11 +385,8 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
      * Uses new Portfolio API
      */
     protected async getKrc721Info(walletAddress: string): Promise<Krc721Nft[]> {
-        // Reset internal state for fresh load
-        this.krc721PortfolioSummary = [];
-        this.krc721PortfolioIndex = 0;
-        this.krc721TokenQueue = [];
-        this.krc721CollectionCache.clear();
+        const existingData = this.data[L1_ASSET_KEYS.krc721]() as Krc721Nft[] | undefined || [];
+        const isAutoReload = existingData.length > 0;
 
         try {
             // 1. Fetch summary
@@ -399,9 +396,25 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
             this.krc721AvailableTickers.set(this.krc721PortfolioSummary.map(item => item.ticker));
         } catch (e) {
             console.error('Error fetching portfolio summary', e);
-            this.krc721PortfolioSummary = [];
+            if (!isAutoReload) {
+                this.krc721PortfolioSummary = [];
+            }
             this.krc721AvailableTickers.set([]);
         }
+
+        if (isAutoReload) {
+            return existingData;
+        }
+
+        // Initial fetch logic
+        return this.fetchInitialKrc721Data(walletAddress);
+    }
+
+    private async fetchInitialKrc721Data(walletAddress: string): Promise<Krc721Nft[]> {
+        // Reset internal state for fresh load
+        this.krc721PortfolioIndex = 0;
+        this.krc721TokenQueue = [];
+        this.krc721CollectionCache.clear();
 
         // 2. Fetch first batch
         const nfts = await this.fetchNextKrc721Batch(walletAddress);

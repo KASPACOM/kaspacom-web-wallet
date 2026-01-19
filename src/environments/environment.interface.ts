@@ -2,12 +2,13 @@ export interface L2ConfigInterface {
   sdkName: string,
   icon: string,
   l1TransactionPrefix?: string;
-  erc20GraphUrl?: string;
+  kaspaComApiNetworkName: string;
 }
 
 export interface Environment {
   isProduction: boolean;
   kaspaComApiBaseurl: string;
+  kaspaComDefiApiBaseurl: string;
   kasplexApiBaseurl: string;
   kaspaApiBaseurl: string;
   krc721ApiBaseurl: string;

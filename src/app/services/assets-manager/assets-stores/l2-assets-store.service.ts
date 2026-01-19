@@ -2,13 +2,13 @@ import { inject, Injectable } from "@angular/core";
 import { BaseAssetsStoreService, BaseAssetStoreData } from "./base-assets-store.service";
 import { Erc20Token } from "@kaspacom/swap-sdk";
 import _ from "lodash";
-import { Erc20GraphService } from "../../erc20-graph.service";
 import { EthereumWalletChainManager } from "../../etherium-services/etherium-wallet-chain.manager";
 import { L2WalletState } from "../../../classes/AppWallet";
 import { ERC20Contract } from "../../etherium-services/smart-contracts/contracts/erc20-contract";
-import { formatUnits } from "ethers";
+import { ethers, formatUnits } from "ethers";
 import { L2LocalERC20Tokens } from "../../l2-services/l2-local-erc20-tokens";
 import { UtilsHelper } from "../../utils.service";
+import { KaspaComDefiApiService } from "../../kaspacom-api/kaspacom-defi-api.service";
 
 export const L2_ASSET_KEYS = {
     l2State: 'l2State',
@@ -28,10 +28,10 @@ const CONCURRENT_JOBS_NUMBER = 5;
     providedIn: 'root',
 })
 export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreData> {
-    protected erc20GraphService = inject(Erc20GraphService);
     protected ethereumWalletChainManager = inject(EthereumWalletChainManager);
     protected l2LocalERC20Tokens = inject(L2LocalERC20Tokens);
     protected utilsHelper = inject(UtilsHelper);
+    protected kaspacomDefiApi = inject(KaspaComDefiApiService);
 
     protected override getLoadFunctionAssetsNames(): { [K in keyof L2AssetStoreData]: string } {
         return {
@@ -61,8 +61,16 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
 
     protected async getErc20TokensFromGraph(walletAddress: string): Promise<Erc20Token[]> {
         if (!this.ethereumWalletChainManager.getCurrentChainSignal()()) return [];
-        if (!this.ethereumWalletChainManager.getChainEnvConfig(this.ethereumWalletChainManager.getCurrentChainSignal()()!)?.erc20GraphUrl) return [];
-        return await this.erc20GraphService.getBalances(walletAddress, this.ethereumWalletChainManager.getCurrentChainSignal()()!);
+
+        const tokens = await this.kaspacomDefiApi.getWalletTokensBalances(walletAddress);
+
+        return tokens.map((token) => ({
+            address: token.id,
+            decimals: Number(token.decimals),
+            name: token.name,
+            symbol: token.symbol,
+            balance: Number(ethers.formatUnits(token.value, token.decimals)),
+        }));
     }
 
     protected async getErc20TokensFromSavedTokens(walletAddress: string): Promise<Erc20Token[]> {

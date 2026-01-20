@@ -68,7 +68,6 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
 
     routePath = computed(() => {
         const route = this.controllerState()?.tradeInfo?.route;
-        console.log('tradeInfo', this.controllerState());
         if (!route) return '';
         return route.path.map((t: any) => t.symbol).join(' → ');
     })
@@ -177,7 +176,6 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
             const ctrl = createKaspaComSwapController({
                 networkConfig: config.sdkName,
                 onChange: async (state) => {
-                    console.log('Swap State:', state);
                     this.controllerState.set(state);
 
                     if (state.error) {
@@ -191,7 +189,6 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
 
             await ctrl.connectWallet({
                 request: async (request: { method: string, params?: Array<any> | Record<string, any> }) => {
-                    console.log('sending request', request);
                     const result = await this.ethereumWalletActionsService.handleRequest(request as EIP1193RequestPayload<any>, undefined, true);
 
 

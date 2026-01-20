@@ -18,7 +18,7 @@ export class KaspaComDefiApiService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     params?: Record<string, any>,
   ): HttpParams {
-    const network = this.ethereumWalletChainManager.getChainEnvConfig(this.ethereumWalletChainManager.getCurrentChainSignal()()!)?.kaspaComApiNetworkName;
+    const network = this.ethereumWalletChainManager.getChainConfig(this.ethereumWalletChainManager.getCurrentChainSignal()()!)?.defiApiNetworkName;
     return this.buildHttpParams({ ...params, network });
   }
 

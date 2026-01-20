@@ -23,14 +23,12 @@ export const environment: Environment = {
     {
       sdkName: 'kasplex-testnet',
       icon: '💎',
-      l1TransactionPrefix: 'kaspelx',
-      kaspaComApiNetworkName: 'kaspelx',
+      l1TransactionPrefix: 'kasplex',
     },
     {
       sdkName: 'igra-testnet',
       icon: '💎',
-      l1TransactionPrefix: 'kaspelx',
-      kaspaComApiNetworkName: 'igra',
+      l1TransactionPrefix: 'kasplex',
     },
   ],
   segmentKey: 'a2Kx82H0p5djHvyPAFYwOHeqqIsFbmqd',

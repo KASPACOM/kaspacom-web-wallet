@@ -132,10 +132,10 @@ export class EthereumWalletActionsService {
             return [];
         }
 
-        const allAccounts = await Promise.all(wallets.map(async (wallet: AppWallet) => (await wallet.getL2WalletAddress())!));
+        const allAccounts = wallets.map(wallet => wallet.getL2WalletAddress());
 
         // put current wallet address first
-        const currentWalletAddress = await this.walletService.getCurrentWallet()!.getL2WalletAddress();
+        const currentWalletAddress = this.walletService.getCurrentWallet()!.getL2WalletAddress();
         const currentWalletIndex = allAccounts.findIndex(account => account === currentWalletAddress);
         if (currentWalletAddress && currentWalletIndex !== -1) {
             allAccounts.splice(currentWalletIndex, 1);

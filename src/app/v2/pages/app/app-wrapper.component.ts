@@ -52,7 +52,6 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   shouldEnforceAccountSelection = signal(this.iframeAccountSelectionService.shouldEnforceAccountSelection());
 
   // Detect if running in iframe mode
-  isIframeMode = signal(IFrameCommunicationApp.isIframe());
   showIframeLoader = signal(false);
 
   // Computed signal to determine if account selection overlay should be shown

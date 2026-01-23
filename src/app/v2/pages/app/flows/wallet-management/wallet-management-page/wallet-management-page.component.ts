@@ -343,12 +343,6 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
   }
 
   private getWalletAddress(wallet: AppWallet): string {
-    if (!this.walletService.isL2Display()) {
-      return wallet.getAddress();
-    } else {
-      // For L2 networks, get the L2 address
-      const l2State = wallet.getL2WalletStateSignal()();
-      return l2State?.address || wallet.getAddress(); // fallback to L1
-    }
+    return this.walletService.isL2Display() ? wallet.getL2WalletAddress() : wallet.getAddress();
   }
 }

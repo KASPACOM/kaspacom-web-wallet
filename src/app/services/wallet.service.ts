@@ -134,7 +134,7 @@ export class WalletService {
 
     this.monitorService.track('Wallet Added', {
       walletAddressL1: wallet?.getAddress(),
-      walletAddressL2: await wallet?.getL2WalletAddress(),
+      walletAddressL2: wallet?.getL2WalletAddress(),
       isNew: isNewWallet,
     });
 
@@ -213,7 +213,7 @@ export class WalletService {
 
     this.monitorService.track('Wallet Account Added', {
       walletAddressL1: newAccount?.getAddress(),
-      walletAddressL2: await newAccount?.getL2WalletAddress(),
+      walletAddressL2: newAccount?.getL2WalletAddress(),
     });
 
     return {
@@ -753,13 +753,7 @@ export class WalletService {
   }
 
   public getCurrentDisplayWalletAddress = computed(() => {
-    if (this.isL2DisplaySignal()) {
-      const l2WalletAddress = this.currentWalletSignal()?.getL2WalletStateSignal()()?.address;
-
-      return l2WalletAddress;
-    }
-
-    return this.currentWalletSignal()?.getAddress();
+    return this.isL2DisplaySignal() ? this.currentWalletSignal()?.getL2WalletAddress() : this.currentWalletSignal()?.getAddress();
   });
 
   public getCurrentDisplayWalletAddressAsString = computed(() => {

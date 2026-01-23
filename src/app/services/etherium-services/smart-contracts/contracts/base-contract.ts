@@ -97,7 +97,7 @@ export abstract class BaseContract {
       const action = this.walletActionService.createEIP1193Action({
         method: EIP1193RequestType.SEND_TRANSACTION,
         params: [{
-          from: (await this.walletService.getCurrentWallet()!.getL2WalletAddress())!,
+          from: this.walletService.getCurrentWallet()!.getL2WalletAddress()!,
           to: this.getAddress(),
           data: contractFunctionData,
           value: String(value || '0'),

@@ -304,7 +304,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
         }
 
         try {
-            const walletAddress = await this.getWalletAddress();
+            const walletAddress = this.getWalletAddress();
 
             const response: GetTokenListResponse = await firstValueFrom(
                 this.kasplexKrc20Service.getWalletTokenList(
@@ -593,7 +593,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
         }
 
         try {
-            const walletAddress = await this.getWalletAddress();
+            const walletAddress = this.getWalletAddress();
             const newNfts = await this.fetchNextKrc721Batch(walletAddress);
 
             if (newNfts.length > 0) {
@@ -736,7 +736,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
         }
 
         try {
-            const walletAddress = await this.getWalletAddress();
+            const walletAddress = this.getWalletAddress();
             const nextPage = currentPage + 1;
 
             const response = await firstValueFrom(

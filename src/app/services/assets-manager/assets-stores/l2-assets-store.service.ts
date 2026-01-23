@@ -106,7 +106,7 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
 
 
         const [balance, decimals, name, symbol] = await Promise.all([
-            contract.balanceOf((await this.walletService.getCurrentWallet()?.getL2WalletAddress())!),
+            contract.balanceOf(this.walletService.getCurrentWallet()?.getL2WalletAddress()!),
             contract.decimals(),
             contract.name(),
             contract.symbol(),

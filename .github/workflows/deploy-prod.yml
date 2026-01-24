@@ -47,10 +47,11 @@ jobs:
     - name: Deploy to S3
       run: |
         # Sync all files EXCEPT index.html
-        aws s3 sync dist/wallet-front-new/browser s3://${{ env.S3_BUCKET_NAME }}/ --exclude "index.html"
+        aws s3 sync dist/wallet-front-new/browser s3://${{ env.S3_BUCKET_NAME }}/ --delete 
 
         # Upload index.html separately with no-cache
         aws s3 cp dist/wallet-front-new/browser/index.html s3://${{ env.S3_BUCKET_NAME }}/index.html \
+          --metadata-directive REPLACE \
           --cache-control "no-cache, no-store, must-revalidate" \
           --content-type "text/html"
 

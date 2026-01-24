@@ -46,12 +46,11 @@ jobs:
 
     - name: Deploy to S3
       run: |
-        # 1. Upload new chunks (Do NOT use --delete)
-        # This adds new files but keeps old ones active for current users
-        aws s3 sync dist/wallet-front-new/browser s3://${{ env.S3_BUCKET_NAME_DEV }}/ --exclude "index.html"
+        aws s3 sync dist/wallet-front-new/browser s3://${{ env.S3_BUCKET_NAME_DEV }}/ --delete 
 
         # 2. Upload index.html with strict cache headers
         aws s3 cp dist/wallet-front-new/browser/index.html s3://${{ env.S3_BUCKET_NAME_DEV }}/index.html \
+          --metadata-directive REPLACE \
           --cache-control "no-cache, no-store, must-revalidate" \
           --content-type "text/html"
 

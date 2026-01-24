@@ -49,6 +49,7 @@ jobs:
 
         # Upload index.html separately with no-cache
         aws s3 cp dist/wallet-front-new/browser/index.html s3://${{ env.S3_BUCKET_NAME }}/index.html \
+          --metadata-directive REPLACE \
           --cache-control "no-cache, no-store, must-revalidate" \
           --content-type "text/html"
 

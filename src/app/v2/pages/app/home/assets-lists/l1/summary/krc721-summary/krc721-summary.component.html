@@ -1,111 +1,118 @@
-<div
-  class="krc721-summary-container flex column justify-content-center align-items-center full-width gap-16"
-  appInfiniteScroll
-  [scrollThreshold]="config.scrollThreshold"
-  [scrollDebounce]="config.debounceMs"
-  [greedyLoading]="config.greedyLoading"
-  (scrolled)="onScrolled($event)"
-  (thresholdReached)="shouldLoadMore(true)"
->
+<div class="krc721-summary-container flex column justify-content-center align-items-center full-width gap-16"
+  appInfiniteScroll [scrollThreshold]="config.scrollThreshold" [scrollDebounce]="config.debounceMs"
+  [greedyLoading]="config.greedyLoading" (scrolled)="onScrolled($event)" (thresholdReached)="shouldLoadMore(true)">
+
+  <div class="full-width flex justify-content-start px-16">
+    <div class="custom-select-wrapper">
+      <select class="custom-select" (change)="onTickerChange($event)">
+        <option value="" [selected]="selectedTicker() === ''">Filter by Ticker</option>
+        @for (tick of uniqueTickers(); track tick) {
+        <option [value]="tick" [selected]="selectedTicker() === tick">{{tick | uppercase}}</option>
+        }
+      </select>
+      <div class="custom-arrow">
+        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </div>
+    </div>
+  </div>
+
   @if (loading()) {
-    <div class="skeleton-loading-container flex column gap-16 full-width">
-      @for (skeleton of loadingSkeletons; track i; let i = $index) {
-        <div class="krc721-summary-container__card card-0 flex full-width align-items-center justify-content-between p-16"
-             [style.opacity]="1 - (i * 0.15)">
-          <div class="krc721-summary-container__nft-info flex align-items-center gap-16">
-            <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false"></app-skeleton>
-            <div class="flex column gap-4">
-              <app-skeleton [height]="'20px'" [width]="'120px'" [fullRound]="false"></app-skeleton>
-              <app-skeleton [height]="'16px'" [width]="'80px'" [fullRound]="false"></app-skeleton>
-            </div>
-          </div>
-          <div class="krc721-summary-container__attributes">
-            <app-skeleton [height]="'16px'" [width]="'60px'" [fullRound]="false"></app-skeleton>
-          </div>
+  <div class="skeleton-loading-container flex column gap-16 full-width">
+    @for (skeleton of loadingSkeletons; track i; let i = $index) {
+    <div class="krc721-summary-container__card card-0 flex full-width align-items-center justify-content-between p-16"
+      [style.opacity]="1 - (i * 0.15)">
+      <div class="krc721-summary-container__nft-info flex align-items-center gap-16">
+        <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false"></app-skeleton>
+        <div class="flex column gap-4">
+          <app-skeleton [height]="'20px'" [width]="'120px'" [fullRound]="false"></app-skeleton>
+          <app-skeleton [height]="'16px'" [width]="'80px'" [fullRound]="false"></app-skeleton>
         </div>
+      </div>
+      <div class="krc721-summary-container__attributes">
+        <app-skeleton [height]="'16px'" [width]="'60px'" [fullRound]="false"></app-skeleton>
+      </div>
+    </div>
+    }
+  </div>
+  } @else if (nfts().length === 0) {
+  <div class="empty-state flex column align-items-center gap-16 p-32">
+    <div class="text-gray-60 typo-text-2 text-center">No KRC721 NFTs found</div>
+    <div class="text-gray-50 typo-text-1 text-center">NFTs will appear here when available</div>
+  </div>
+  } @else {
+  @for ( nft of nfts(); track trackByNft($index, nft) ) {
+  <div
+    class="krc721-summary-container__card card-0 card-hover flex full-width align-items-start justify-content-between p-16 fade-in cursor-pointer"
+    (click)="onNftClick(nft)">
+    <div class="krc721-summary-container__nft-info flex align-items-center gap-16">
+      <div class="krc721-summary-container__image-container">
+        @if (nft.isLoadingMetadata) {
+        <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false"></app-skeleton>
+        } @else if (getImageUrl(nft)) {
+        <img [src]="getImageUrl(nft)" [alt]="getDisplayName(nft)" class="krc721-summary-container__image"
+          (error)="onImageError($event)">
+        } @else {
+        <div class="krc721-summary-container__placeholder flex align-items-center justify-content-center">
+          <span class="text-gray-60 typo-text-1">NFT</span>
+        </div>
+        }
+      </div>
+      <div class="flex column gap-4">
+        @if (nft.isLoadingMetadata) {
+        <app-skeleton [height]="'20px'" [width]="'120px'" [fullRound]="false"></app-skeleton>
+        <app-skeleton [height]="'16px'" [width]="'80px'" [fullRound]="false"></app-skeleton>
+        } @else {
+        <div class="text-gray-90 flex align-items-center gap-8">
+          {{ getDisplayName(nft) | titlecase }}
+          @if (nft.rarityRank !== undefined) {
+          <app-nft-rank-tag [rarityRank]="nft.rarityRank" [totalSupply]="nft.totalSupply ?? 0"
+            [isLegendary]="nft.legendary ?? false" [size]="'sm'">
+          </app-nft-rank-tag>
+          }
+        </div>
+        <div class="text-gray-60 typo-text-1">
+          {{ nft.tick | uppercase }} #{{ nft.tokenId }}
+        </div>
+        @if (nft.description) {
+        <div class="text-gray-50 typo-text-1 description">
+          {{ nft.description }}
+        </div>
+        }
+        }
+      </div>
+    </div>
+    <div class="krc721-summary-container__attributes flex column align-items-end gap-8">
+
+      @if (nft.isLoadingMetadata) {
+      <app-skeleton [height]="'16px'" [width]="'60px'" [fullRound]="false"></app-skeleton>
+      } @else if (nft.attributes && nft.attributes.length > 0) {
+      <div class="text-gray-90 typo-text-1">
+        {{ nft.attributes.length }} traits
+      </div>
+      } @else {
+      <div class="text-gray-60 typo-text-1">No traits</div>
       }
     </div>
-  } @else if (nfts().length === 0) {
-    <div class="empty-state flex column align-items-center gap-16 p-32">
-      <div class="text-gray-60 typo-text-2 text-center">No KRC721 NFTs found</div>
-      <div class="text-gray-50 typo-text-1 text-center">NFTs will appear here when available</div>
-    </div>
-  } @else {
-    @for ( nft of nfts(); track trackByNft($index, nft) ) {
-    <div
-      class="krc721-summary-container__card card-0 card-hover flex full-width align-items-center justify-content-between p-16 fade-in cursor-pointer"
-      (click)="onNftClick(nft)"
-    >
-      <div
-        class="krc721-summary-container__nft-info flex align-items-center gap-16"
-      >
-        <div class="krc721-summary-container__image-container">
-          @if (nft.isLoadingMetadata) {
-            <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false"></app-skeleton>
-          } @else if (getImageUrl(nft)) {
-            <img 
-              [src]="getImageUrl(nft)" 
-              [alt]="getDisplayName(nft)"
-              class="krc721-summary-container__image"
-              (error)="onImageError($event)">
-          } @else {
-            <div
-              class="krc721-summary-container__placeholder flex align-items-center justify-content-center"
-            >
-              <span class="text-gray-60 typo-text-1">NFT</span>
-            </div>
-          }
-        </div>
-        <div class="flex column gap-4">
-          @if (nft.isLoadingMetadata) {
-            <app-skeleton [height]="'20px'" [width]="'120px'" [fullRound]="false"></app-skeleton>
-            <app-skeleton [height]="'16px'" [width]="'80px'" [fullRound]="false"></app-skeleton>
-          } @else {
-            <div class="text-gray-90">{{ getDisplayName(nft) | titlecase }}</div>
-            <div class="text-gray-60 typo-text-1">
-              {{ nft.tick | uppercase }} #{{ nft.tokenId }}
-            </div>
-            @if (nft.description) {
-              <div class="text-gray-50 typo-text-1 description">
-                {{ nft.description }}
-              </div>
-            }
-          }
-        </div>
-      </div>
-      <div class="krc721-summary-container__attributes flex column align-items-end gap-8">
-        @if (nft.rarityRank !== undefined) {
-          <div class="rank-tag {{ getRarityClass(nft) }}">
-            Rank #{{ nft.rarityRank }}
-          </div>
-        }
-        @if (nft.isLoadingMetadata) {
-          <app-skeleton [height]="'16px'" [width]="'60px'" [fullRound]="false"></app-skeleton>
-        } @else if (nft.attributes && nft.attributes.length > 0) {
-          <div class="text-gray-90 typo-text-1">
-            {{ nft.attributes.length }} traits
-          </div>
-        } @else {
-          <div class="text-gray-60 typo-text-1">No traits</div>
-        }
-      </div>
-    </div>
-    }
-    
-    <!-- Loading more indicator - portfolio pattern -->
-    @if (isLoadingMore() && nfts().length > 0) {
-      <div class="loading-more-container flex justify-content-center p-16 full-width">
-        <div class="krc721-summary-container__card card-0 flex full-width align-items-center justify-content-between p-16"
-             [style.opacity]="0.7">
-          <div class="krc721-summary-container__nft-info flex align-items-center gap-16">
-            <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false"></app-skeleton>
-            <div class="flex column gap-4">
-              <app-skeleton [height]="'20px'" [width]="'120px'" [fullRound]="false"></app-skeleton>
-              <app-skeleton [height]="'16px'" [width]="'80px'" [fullRound]="false"></app-skeleton>
-            </div>
-          </div>
-        </div>
-      </div>
-    }
+  </div>
   }
-</div> 
+
+  <!-- Loading more indicator - portfolio pattern -->
+  @if (isLoadingMore() && nfts().length > 0) {
+  <div class="loading-more-container flex justify-content-center p-16 full-width">
+    <div class="krc721-summary-container__card card-0 flex full-width align-items-center justify-content-between p-16"
+      [style.opacity]="0.7">
+      <div class="krc721-summary-container__nft-info flex align-items-center gap-16">
+        <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false"></app-skeleton>
+        <div class="flex column gap-4">
+          <app-skeleton [height]="'20px'" [width]="'120px'" [fullRound]="false"></app-skeleton>
+          <app-skeleton [height]="'16px'" [width]="'80px'" [fullRound]="false"></app-skeleton>
+        </div>
+      </div>
+    </div>
+  </div>
+  }
+  }
+</div>

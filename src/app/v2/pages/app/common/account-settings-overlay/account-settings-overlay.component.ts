@@ -20,6 +20,7 @@ import {
 } from '@angular/animations';
 import { WalletService } from '../../../../../services/wallet.service';
 import { AppWallet } from '../../../../../classes/AppWallet';
+import { ShortenAddressPipe } from '../../../../../pipes/shorten-address.pipe';
 
 interface WalletAccount {
   id: string;
@@ -34,7 +35,7 @@ interface WalletAccount {
 @Component({
   selector: 'app-account-settings-overlay',
   standalone: true,
-  imports: [CommonModule, KcButtonComponent, KcIconComponent, KcTooltipDirective],
+  imports: [CommonModule, KcButtonComponent, KcIconComponent, KcTooltipDirective, ShortenAddressPipe],
   templateUrl: './account-settings-overlay.component.html',
   styleUrl: './account-settings-overlay.component.scss',
   animations: [
@@ -168,13 +169,7 @@ export class AccountSettingsOverlayComponent implements OnInit {
   }
 
   private getWalletAddress(wallet: AppWallet): string {
-    if (!this.walletService.isL2Display()) {
-      return wallet.getAddress();
-    } else {
-      // For L2 networks, get the L2 address
-      const l2State = wallet.getL2WalletStateSignal()();
-      return l2State?.address || wallet.getAddress(); // fallback to L1
-    }
+    return this.walletService.isL2Display() ? wallet.getL2WalletAddress() : wallet.getAddress();
   }
 
   onClose(): void {
@@ -207,10 +202,5 @@ export class AccountSettingsOverlayComponent implements OnInit {
   createWallet(): void {
     // Logic for creating wallet
     console.log('Create wallet clicked');
-  }
-
-  shortenAddress(address: string): string {
-    if (!address) return '';
-    return `${address.slice(0, 10)}...${address.slice(-8)}`;
   }
 }

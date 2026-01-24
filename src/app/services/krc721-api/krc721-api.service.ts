@@ -278,7 +278,8 @@ export class Krc721ApiService {
 
   // Load NFT metadata from cache
   getNftMetadata(tick: string, tokenId: string): Observable<any> {
-    const metadataUrl = `https://cache.krc721.stream/krc721/testnet-10/metadata/${tick}/${tokenId}`;
+
+    const metadataUrl = `${environment.krc721CacheStreamUrl}/metadata/${tick}/${tokenId}`;
     
     return this.httpClient
       .get<any>(metadataUrl)

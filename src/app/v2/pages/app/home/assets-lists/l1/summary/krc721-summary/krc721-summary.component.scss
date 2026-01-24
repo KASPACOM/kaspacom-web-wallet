@@ -2,7 +2,7 @@
   &__card {
     border-radius: 12px;
     transition: all 0.2s ease;
-    
+
     &:hover {
       background-color: var(--bg-hover);
     }
@@ -27,7 +27,7 @@
     height: 100%;
     background-color: var(--bg-secondary);
   }
-  
+
   &__attributes {
     min-width: 80px;
   }
@@ -47,32 +47,88 @@
   border-radius: 4px;
   font-size: 12px;
   font-weight: 500;
-  
+
   &.legendary {
     background: linear-gradient(180deg, #ba68c8, #6f2da8);
     color: #fff;
-    box-shadow: 0 0 8px rgba(186,104,200,0.6);
+    box-shadow: 0 0 8px rgba(186, 104, 200, 0.6);
   }
-  
+
   &.gold {
     background: linear-gradient(180deg, #fcee1f, #d9b70b);
     color: #111000;
-    box-shadow: 0 0 8px rgba(252,238,31,0.6);
+    box-shadow: 0 0 8px rgba(252, 238, 31, 0.6);
   }
-  
+
   &.silver {
     background: linear-gradient(180deg, #ffffff, #cdcdcd);
     color: #000;
   }
-  
+
   &.bronze {
     background: linear-gradient(180deg, #d07129, #75471b);
     color: #fff;
   }
-  
+
   &.neutral {
     background: linear-gradient(180deg, #222829, #1a1f20);
     color: #fff;
-    box-shadow: 0 0 8px rgba(34,40,41,0.6);
+    box-shadow: 0 0 8px rgba(34, 40, 41, 0.6);
   }
+}
+
+.custom-select-wrapper {
+  position: relative;
+  display: inline-block;
+  min-width: 180px;
+}
+
+.custom-select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  background-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 10px 40px 10px 16px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+  font-family: inherit;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(255, 255, 255, 0.02);
+  }
+
+  &:focus {
+    border-color: #70c7ba;
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  option {
+    background-color: #1e1e1e;
+    color: #fff;
+    padding: 12px;
+  }
+}
+
+.custom-arrow {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.custom-select:hover+.custom-arrow {
+  color: #fff;
 }

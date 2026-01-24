@@ -34,14 +34,6 @@ export class ReceiveFlowPageComponent implements OnInit, OnDestroy {
 
   walletAddress = this.walletService.getCurrentDisplayWalletAddressAsString;
 
-  qrCodeData = computed(() => {
-    if (this.walletService.isL2Display()) {
-      return `ethereum:${this.walletAddress()}`;
-    } else {
-      return this.walletAddress();
-    }
-  });
-
   walletName = computed(
     () => this.currentWallet()?.getDisplayName() || 'Wallet',
   );
@@ -70,31 +62,6 @@ export class ReceiveFlowPageComponent implements OnInit, OnDestroy {
       this.qrCodeSize = 240;
     } else {
       this.qrCodeSize = 280;
-    }
-  }
-
-  onShareWallet(): void {
-    if (navigator.share && this.walletAddress()) {
-      const address = this.walletAddress();
-
-      let shareData: any = {
-        title: `My Wallet Address`,
-        text: `Send to: ${address}`,
-        url: this.qrCodeData(),
-      };
-      navigator.share(shareData).catch((err) => {
-        console.log('Error sharing:', err);
-        this.fallbackShare();
-      });
-    } else {
-      this.fallbackShare();
-    }
-  }
-
-  private fallbackShare(): void {
-    // Fallback: copy to clipboard
-    if (navigator.clipboard && this.walletAddress()) {
-      navigator.clipboard.writeText(this.walletAddress() || '');
     }
   }
 }

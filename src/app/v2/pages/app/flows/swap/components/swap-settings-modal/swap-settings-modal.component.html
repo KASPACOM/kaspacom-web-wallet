@@ -1,0 +1,13 @@
+@if (open) {
+<kc-base-modal title="Settings" [showCloseButton]="true" [autoWidth]="false" (close)="onClose()">
+    <div class="settings-content">
+        <kc-input label="Slippage tolerance (%)" type="number" [isFullWidth]="true" placeholder="0.5"
+            (valueChange)="onMaxSlippageChange($event)"></kc-input>
+
+        <kc-input label="Transaction deadline (minutes)" type="number" [isFullWidth]="true" placeholder="20"
+            (valueChange)="onSwapDeadlineChange($event)"></kc-input>
+
+        <kc-button text="Save" variant="primary" [isFullWidth]="true" (buttonClick)="onSave()"></kc-button>
+    </div>
+</kc-base-modal>
+}

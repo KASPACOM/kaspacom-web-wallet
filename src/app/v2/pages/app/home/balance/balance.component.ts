@@ -1,9 +1,14 @@
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { KcIconComponent, KcSpinnerComponent, KcTooltipDirective } from 'kaspacom-ui';
+import {
+  KcIconComponent,
+  KcSpinnerComponent,
+  KcTooltipDirective,
+} from 'kaspacom-ui';
 import { WalletService } from '../../../../../services/wallet.service';
 import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { CommaFormatterPipe } from '../../../../../pipes/comma-formatter.pipe';
+import { ShortenAddressPipe } from '../../../../../pipes/shorten-address.pipe';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { KaspaPriceService } from '../../../../../services/kaspa-price.service';
 import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';
@@ -13,6 +18,7 @@ import { AssetsManagerService } from '../../../../../services/assets-manager/ass
   imports: [
     DecimalPipe,
     CommaFormatterPipe,
+    ShortenAddressPipe,
     KcIconComponent,
     KcSpinnerComponent,
     KcTooltipDirective,

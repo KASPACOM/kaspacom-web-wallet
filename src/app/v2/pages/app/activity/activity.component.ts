@@ -405,7 +405,7 @@ export class ActivityComponent
 
     const isL2Network = this.walletService.isL2Display();
     const walletAddress = isL2Network
-      ? (await currentWallet.getL2WalletAddress()) || currentWallet.getAddress()
+      ? currentWallet.getL2WalletAddress() || currentWallet.getAddress()
       : currentWallet.getAddress();
 
     // Calculate input and output amounts for this wallet
@@ -484,7 +484,7 @@ export class ActivityComponent
     }
 
     const walletAddress = this.walletService.isL2Display()
-      ? (await currentWallet.getL2WalletAddress()) || currentWallet.getAddress()
+      ? currentWallet.getL2WalletAddress() || currentWallet.getAddress()
       : currentWallet.getAddress();
 
     let status: 'accepted' | 'pending' | 'rejected' = 'pending';
@@ -550,7 +550,7 @@ export class ActivityComponent
 
   shortenAddress(address: string): string {
     if (!address) return '';
-    return `${address.slice(0, 8)}...${address.slice(-6)}`;
+    return `${address.slice(0, 10)}...${address.slice(-8)}`;
   }
 
   getOperationTitle(

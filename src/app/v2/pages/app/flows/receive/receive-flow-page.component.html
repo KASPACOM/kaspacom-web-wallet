@@ -13,7 +13,7 @@
     <div class="qr-section flex column align-items-center gap-24">
       <div class="qr-container">
         <qrcode
-          [qrdata]="qrCodeData()"
+          [qrdata]="walletAddress()"
           [width]="qrCodeSize"
           [errorCorrectionLevel]="'M'"
           [elementType]="'canvas'"

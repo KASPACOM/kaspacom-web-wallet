@@ -196,6 +196,8 @@ export class SeedPhraseImportExistingStepComponent {
       mnemonic = `${mnemonic} ${word.value}`.trim();
     }
 
+    mnemonic = mnemonic.toLowerCase();
+
     const derivedAddr = this.walletService.getWalletAddressFromMnemonic(
       mnemonic,
     );

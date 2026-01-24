@@ -186,6 +186,6 @@ export class AddressSmartInputComponent implements OnChanges {
 
   protected shortenAddress(address: string): string {
     if (!address) return '';
-    return `${address.slice(0, 8)}...${address.slice(-6)}`;
+    return `${address.slice(0, 10)}...${address.slice(-8)}`;
   }
 }

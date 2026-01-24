@@ -1,0 +1,83 @@
+<div class="swap-flow-container flex column full-height p-16 gap-16">
+    <!-- Content -->
+    <div class="swap-card flex column gap-12">
+        <!-- Settings Header -->
+        <div class="flex justify-content-end">
+            <kc-button variant="tertiary" size="sm" (buttonClick)="settingsOpen.set(true)">
+                <kc-icon [iconClass]="'icon-settings'" [size]="'sm'"></kc-icon>
+            </kc-button>
+        </div>
+
+        <!-- FROM -->
+        <div class="token-input-container p-12 rounded bg-surface-2">
+            <div class="flex justify-content-between align-items-center mb-8">
+                <span class="text-gray-60 typo-text-2">From</span>
+                <span class="text-gray-60 typo-text-2" *ngIf="fromToken()">
+                    Balance: {{ fromToken()?.balance | commaFormatter }}
+                </span>
+            </div>
+            <div class="flex gap-8 align-items-center">
+                <kc-input class="flex-1" placeholder="0.0" type="number" [ngModel]="fromAmountInput()"
+                    (valueChange)="onFromAmountChange($event)" [isFullWidth]="true">
+                </kc-input>
+                <kc-button [text]="fromToken()?.symbol || 'Select'" variant="secondary" size="md"
+                    (buttonClick)="openTokenModal('from')">
+                    <img *ngIf="fromToken()?.logoURI" [src]="fromToken()?.logoURI" class="token-logo-sm mr-2" />
+                </kc-button>
+            </div>
+        </div>
+
+        <!-- Switch -->
+        <div class="flex justify-content-center z-index-1" style="margin-top: -20px; margin-bottom: -15px;">
+            <kc-button variant="tertiary" size="sm" (buttonClick)="switchTokens()">
+                <kc-icon iconClass="icon-refresh"></kc-icon>
+            </kc-button>
+        </div>
+
+        <!-- TO -->
+        <div class="token-input-container p-12 rounded bg-surface-2">
+            <div class="flex justify-content-between align-items-center mb-8">
+                <span class="text-gray-60 typo-text-2">To</span>
+                <span class="text-gray-60 typo-text-2" *ngIf="toToken()">
+                    Balance: {{ toToken()?.balance | commaFormatter }}
+                </span>
+            </div>
+            <div class="flex gap-8 align-items-center">
+                <kc-input class="flex-1" placeholder="0.0" type="number" [ngModel]="toAmountInput()"
+                    (valueChange)="onToAmountChange($event)" [isFullWidth]="true">
+                </kc-input>
+                <kc-button [text]="toToken()?.symbol || 'Select'" variant="secondary" size="md"
+                    (buttonClick)="openTokenModal('to')">
+                </kc-button>
+            </div>
+            <!-- Min Received -->
+            <div class="mt-8 flex justify-content-end" *ngIf="!currentIsOutput() && minReceived()">
+                <span class="text-gray-60 typo-text-3">Min received: {{ minReceived() }} {{ toToken()?.symbol }}</span>
+            </div>
+        </div>
+
+        <!-- Info -->
+        <div class="info-container p-12 flex column gap-4" *ngIf="controllerState()?.tradeInfo?.route">
+            <div class="flex justify-content-between gap-2">
+                <span class="text-gray-60 font-12">Route</span>
+                <span class="text-right font-12">{{ routePath() }}</span>
+            </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="mt-8">
+            <kc-button [text]="swapText()" [variant]="'primary'" [isFullWidth]="true" [isDisabled]="isSwapDisabled()"
+                (buttonClick)="executeSwap()">
+            </kc-button>
+        </div>
+    </div>
+
+    <app-token-selector-modal [open]="!!tokenModalOpen()" [tokens]="allTokens()" [isLoading]="loadingTokens()"
+        [excludedToken]="tokenModalOpen() === 'from' ? toToken() : fromToken()" (close)="tokenModalOpen.set(null)"
+        (selectToken)="onTokenSelect($event)">
+    </app-token-selector-modal>
+
+    <app-swap-settings-modal [open]="settingsOpen()" [initialSettings]="currentSettings()"
+        (close)="settingsOpen.set(false)" (save)="onSettingsSave($event)">
+    </app-swap-settings-modal>
+</div>

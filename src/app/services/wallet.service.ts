@@ -12,6 +12,7 @@ import { cloneDeep } from "lodash";
 import { EthereumWalletChainManager } from './etherium-services/etherium-wallet-chain.manager';
 import { KaspaNetworkConnectionManagerService } from './kaspa-netwrok-services/kaspa-network-connection-manager.service';
 import { KaspaWalletMnemonicActionsService } from './kaspa-netwrok-services/kaspa-wallet-mnemonic-actions.service';
+import { MonitorService } from './monitor.service';
 
 export enum VIEW_METHOD {
   L1 = 'l1',
@@ -35,6 +36,7 @@ export class WalletService {
     private readonly utilsService: UtilsHelper,
     private readonly injector: EnvironmentInjector,
     private readonly etheriumChainManager: EthereumWalletChainManager,
+    private readonly monitorService: MonitorService,
   ) {
     let isL2View = localStorage.getItem(LOCAL_STORAGE_KEYS.IS_L2_DISPLAY) === 'true';
 
@@ -53,6 +55,7 @@ export class WalletService {
     mnemonic?: string,
     passphrase?: string,
     accountData?: SavedWalletAccount,
+    isNewWallet?: boolean,
   ): Promise<{ sucess: boolean; error?: string }> {
     if (!privateKey && !(mnemonic && accountData)) {
       return {
@@ -109,7 +112,8 @@ export class WalletService {
 
     const id =
       Math.max(...currentWalletsData.wallets.map((wallet) => wallet.id), 0) + 1;
-    const result = await this.saveWalletData({
+
+    const walletData = {
       id,
       name,
       privateKey,
@@ -117,6 +121,21 @@ export class WalletService {
       password: passphrase,
       version: 1,
       accounts: accountData ? [accountData] : undefined,
+    }
+
+    const result = await this.saveWalletData(walletData);
+
+    const wallet = this.createAppWalletFromSavedWalletData(
+      walletData,
+      true,
+      walletData.accounts?.[0],
+    );
+
+
+    this.monitorService.track('Wallet Added', {
+      walletAddressL1: wallet?.getAddress(),
+      walletAddressL2: wallet?.getL2WalletAddress(),
+      isNew: isNewWallet,
     });
 
     if (result) {
@@ -132,11 +151,12 @@ export class WalletService {
     derivedPath: string,
     accountName: string,
     passphrase?: string,
+    isNewWallet?: boolean,
   ): Promise<{ sucess: boolean; error?: string }> {
     return await this.addWallet(name, undefined, mnemonic, passphrase, {
       name: accountName,
       derivedPath: derivedPath,
-    });
+    }, isNewWallet);
   }
 
   async addWalletAccount(
@@ -180,14 +200,21 @@ export class WalletService {
       };
     }
 
+    const newAccount = this.createAppWalletFromSavedWalletData(
+      walletData,
+      true,
+      walletAccountData,
+    );
+
     this.allWalletsSignal.update((oldValue) => [
       ...(oldValue || []),
-      this.createAppWalletFromSavedWalletData(
-        walletData,
-        true,
-        walletAccountData,
-      ),
+      newAccount,
     ]);
+
+    this.monitorService.track('Wallet Account Added', {
+      walletAddressL1: newAccount?.getAddress(),
+      walletAddressL2: newAccount?.getL2WalletAddress(),
+    });
 
     return {
       success: true,
@@ -726,13 +753,7 @@ export class WalletService {
   }
 
   public getCurrentDisplayWalletAddress = computed(() => {
-    if (this.isL2DisplaySignal()) {
-      const l2WalletAddress = this.currentWalletSignal()?.getL2WalletStateSignal()()?.address;
-
-      return l2WalletAddress;
-    }
-
-    return this.currentWalletSignal()?.getAddress();
+    return this.isL2DisplaySignal() ? this.currentWalletSignal()?.getL2WalletAddress() : this.currentWalletSignal()?.getAddress();
   });
 
   public getCurrentDisplayWalletAddressAsString = computed(() => {

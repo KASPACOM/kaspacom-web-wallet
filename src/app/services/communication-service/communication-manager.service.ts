@@ -144,7 +144,7 @@ export class CommunicationManagerService {
                     this.approvalFlowService.closeApproval();
                     // Clear any pending action state from the old review-action component
                     this.walletActionsService.clearActionResult();
-                    this.router.navigate(['/wallet-info']);
+                    this.router.navigate(['/app/home']);
                     break;
                 case WalletMessageTypeEnum.RejectWalletActionRequest:
                     this.walletActionsService.resolveCurrentWaitingForApproveAction(false);

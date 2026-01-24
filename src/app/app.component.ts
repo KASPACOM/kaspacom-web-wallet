@@ -1,4 +1,13 @@
-import { AfterViewInit, Component, Inject, NgZone, OnDestroy, OnInit, Renderer2, inject } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  Inject,
+  NgZone,
+  OnDestroy,
+  OnInit,
+  Renderer2,
+  inject,
+} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { AppHeaderComponent } from './components/app-header/app-header.component';
 import { KaspaNetworkActionsService } from './services/kaspa-netwrok-services/kaspa-network-actions.service';
@@ -16,10 +25,16 @@ import { StartupBackgroundCanvasComponent } from './components/startup-backgroun
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, AppHeaderComponent, NgIf, MessagePopupComponent, StartupBackgroundCanvasComponent],
+  imports: [
+    RouterOutlet,
+    AppHeaderComponent,
+    NgIf,
+    MessagePopupComponent,
+    StartupBackgroundCanvasComponent,
+  ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
-  providers: [KaspaNetworkActionsService]
+  providers: [KaspaNetworkActionsService],
 })
 export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   title = 'kaspiano-wallet';
@@ -37,8 +52,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     private readonly renderer: Renderer2,
     @Inject(DOCUMENT) private readonly document: Document,
     private readonly zone: NgZone,
-  ) {
-  }
+  ) {}
 
   async ngOnInit() {
     console.log('App component initialized');
@@ -76,6 +90,10 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     return undefined;
   }
 
+  getCurrentHostname(): string {
+    return window.location.hostname;
+  }
+
   private setupLoaderFadeOut(): VoidFunction | undefined {
     return this.zone.runOutsideAngular(() => {
       const loader = this.document.getElementById('application-loader-startup');
@@ -99,7 +117,10 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         const parent = loader.parentNode;
         if (parent) {
           this.renderer.removeChild(parent, loader);
-        } else if (loader instanceof HTMLElement && typeof loader.remove === 'function') {
+        } else if (
+          loader instanceof HTMLElement &&
+          typeof loader.remove === 'function'
+        ) {
           loader.remove();
         }
       };

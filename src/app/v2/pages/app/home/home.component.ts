@@ -5,6 +5,7 @@ import { BalanceComponent } from './balance/balance.component';
 import { CryptoActionsComponent } from './crypto-actions/crypto-actions.component';
 import { L1AssetsContainerComponent } from './assets-container/l1-assets-container.component';
 import { L2AssetsContainerComponent } from './assets-container/l2-assets-container.component';
+import { PendingTransactionsBannerComponent } from './pending-transactions-banner/pending-transactions-banner.component';
 import { WalletService } from '../../../../services/wallet.service';
 import { KaspaNetworkActionsService } from '../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 
@@ -16,6 +17,7 @@ import { KaspaNetworkActionsService } from '../../../../services/kaspa-netwrok-s
     CryptoActionsComponent,
     L1AssetsContainerComponent,
     L2AssetsContainerComponent,
+    PendingTransactionsBannerComponent,
   ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',

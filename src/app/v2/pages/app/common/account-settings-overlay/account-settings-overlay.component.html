@@ -20,7 +20,7 @@
           >
             <div class="wallet-item__info">
               <div class="wallet-item__name">{{ wallet.name }}</div>
-              <div class="wallet-item__address">{{ shortenAddress(wallet.address) }}</div>
+              <div class="wallet-item__address">{{ wallet.address | shortenAddress }}</div>
               <div class="wallet-item__balance">
                 @if (wallet.isLoadingBalance()) {
                   <span class="balance-loading">Loading...</span>

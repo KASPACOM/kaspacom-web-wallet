@@ -1,11 +1,12 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcButtonComponent, KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent, KcTooltipDirective, KcSpinnerComponent } from 'kaspacom-ui';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
 import { WalletService } from '../../../../../services/wallet.service';
 import { QuickActionDialogService } from '../../../../services/quick-action-dialog.service';
 import { AppWallet } from '../../../../../classes/AppWallet';
+import { ShortenAddressPipe } from '../../../../../pipes/shorten-address.pipe';
 
 interface WalletGroupItem {
   id: number;
@@ -13,12 +14,15 @@ interface WalletGroupItem {
   address: string;
   isSelected: boolean;
   group: AppWallet[];
+  hasPendingTransactions: Signal<boolean>;
+  pendingTransactionCount: Signal<number>;
+  isExpanded: boolean;
 }
 
 @Component({
   selector: 'app-wallet-selection-page',
   standalone: true,
-  imports: [CommonModule, KcButtonComponent, KcIconComponent, KcTooltipDirective],
+  imports: [CommonModule, KcButtonComponent, KcIconComponent, KcTooltipDirective, KcSpinnerComponent, ShortenAddressPipe],
   templateUrl: './wallet-selection-page.component.html',
   styleUrl: './wallet-selection-page.component.scss',
 })
@@ -61,12 +65,35 @@ export class WalletSelectionPageComponent extends FlowPageBaseComponent {
       const name = group[0].getName();
       const address = this.getWalletAddress(group[0]);
       const isSelected = currentWallet ? currentWallet.getId() === id : false;
+      
+      // Check if any wallet in the group has pending transactions
+      const hasPendingTransactions = computed(() => {
+        return group.some((wallet) => {
+          const mempoolData = wallet.getMempoolTransactionsSignalValue();
+          return mempoolData
+            ? mempoolData.sending.length > 0 || mempoolData.receiving.length > 0
+            : false;
+        });
+      });
+
+      const pendingTransactionCount = computed(() => {
+        return group.reduce((total, wallet) => {
+          const mempoolData = wallet.getMempoolTransactionsSignalValue();
+          return mempoolData
+            ? total + mempoolData.sending.length + mempoolData.receiving.length
+            : total;
+        }, 0);
+      });
+
       items.push({
         id,
         name,
         address,
         isSelected,
         group,
+        hasPendingTransactions,
+        pendingTransactionCount,
+        isExpanded: false,
       });
     });
 
@@ -132,18 +159,16 @@ export class WalletSelectionPageComponent extends FlowPageBaseComponent {
     });
   }
 
-  private getWalletAddress(wallet: AppWallet): string {
-    if (!this.walletService.isL2Display()) {
-      return wallet.getAddress();
-    } else {
-      // For L2 networks, get the L2 address
-      const l2State = wallet.getL2WalletStateSignal()();
-      return l2State?.address || wallet.getAddress(); // fallback to L1
-    }
+  togglePendingTransactions(item: WalletGroupItem, event: Event): void {
+    event.stopPropagation();
+    const currentWallets = this.wallets();
+    const updatedWallets = currentWallets.map((w) =>
+      w.id === item.id ? { ...w, isExpanded: !w.isExpanded } : w
+    );
+    this.wallets.set(updatedWallets);
   }
 
-  shortenAddress(address: string): string {
-    if (!address) return '';
-    return `${address.slice(0, 10)}...${address.slice(-8)}`;
+  private getWalletAddress(wallet: AppWallet): string {
+    return this.walletService.isL2Display() ? wallet.getL2WalletAddress() : wallet.getAddress();
   }
 }

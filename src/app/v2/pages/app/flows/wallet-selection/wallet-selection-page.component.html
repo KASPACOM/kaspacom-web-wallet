@@ -2,38 +2,82 @@
   <div class="wallets-container">
     <div class="wallets-list">
       @for (item of wallets(); track item.id) {
-        <div
-          class="wallet-item"
-          [class.selected]="item.isSelected"
-          (click)="selectWallet(item)"
-        >
-          <kc-icon
-            class="wallet-item__icon"
-            [iconClass]="item.isSelected ? 'icon-user' : 'icon-user-12px'"
-            [size]="'md'"
-          ></kc-icon>
-          <div class="wallet-item__info">
-            <div class="wallet-item__name-container">
-              <div class="wallet-item__name">{{ item.name }}</div>
-              <kc-icon
-                class="wallet-item__pencil"
-                [iconClass]="'icon-pencil'"
-                [size]="'xs'"
-                (click)="editWallet(item); $event.stopPropagation()"
-                kcTooltip="Edit wallet"
-                tooltipPosition="top"
-              ></kc-icon>
+        <div class="wallet-item-wrapper">
+          <div
+            class="wallet-item"
+            [class.selected]="item.isSelected"
+            [class.has-pending]="item.hasPendingTransactions()"
+            (click)="selectWallet(item)"
+          >
+            <kc-icon
+              class="wallet-item__icon"
+              [iconClass]="item.isSelected ? 'icon-user' : 'icon-user-12px'"
+              [size]="'md'"
+            ></kc-icon>
+            <div class="wallet-item__info">
+              <div class="wallet-item__name-container">
+                <div class="wallet-item__name">{{ item.name }}</div>
+                <kc-icon
+                  class="wallet-item__pencil"
+                  [iconClass]="'icon-pencil'"
+                  [size]="'xs'"
+                  (click)="editWallet(item); $event.stopPropagation()"
+                  kcTooltip="Edit wallet"
+                  tooltipPosition="top"
+                ></kc-icon>
+              </div>
+              <div class="wallet-item__address">{{ item.address | shortenAddress }}</div>
+              @if (item.hasPendingTransactions()) {
+                <div class="wallet-item__pending">
+                  <div 
+                    class="pending-indicator"
+                    (click)="togglePendingTransactions(item, $event)"
+                    [kcTooltip]="item.pendingTransactionCount() + ' pending transaction(s)'"
+                    tooltipPosition="top"
+                  >
+                    <kc-spinner [size]="'xs'"></kc-spinner>
+                    <span class="pending-count">{{ item.pendingTransactionCount() }}</span>
+                  </div>
+                </div>
+              }
             </div>
-            <div class="wallet-item__address">{{ shortenAddress(item.address) }}</div>
+            <kc-icon
+              class="wallet-item__trash"
+              [iconClass]="'icon-trash'"
+              [size]="'sm'"
+              (click)="deleteWallet(item); $event.stopPropagation()"
+              kcTooltip="Delete wallet"
+              tooltipPosition="top"
+            ></kc-icon>
           </div>
-          <kc-icon
-            class="wallet-item__trash"
-            [iconClass]="'icon-trash'"
-            [size]="'sm'"
-            (click)="deleteWallet(item); $event.stopPropagation()"
-            kcTooltip="Delete wallet"
-            tooltipPosition="top"
-          ></kc-icon>
+          @if (item.isExpanded && item.hasPendingTransactions()) {
+            <div class="pending-details">
+              <div class="pending-details__header">
+                <span class="pending-details__title">Pending Transactions</span>
+              </div>
+              @for (wallet of item.group; track wallet.getIdWithAccount()) {
+                @if ((wallet.getMempoolTransactionsSignalValue()?.sending?.length ?? 0) > 0 || (wallet.getMempoolTransactionsSignalValue()?.receiving?.length ?? 0) > 0) {
+                  <div class="pending-wallet">
+                    <div class="pending-wallet__name">{{ wallet.getAccountName() || wallet.getName() }}</div>
+                    @if ((wallet.getMempoolTransactionsSignalValue()?.sending?.length ?? 0) > 0) {
+                      <div class="pending-section">
+                        <div class="pending-section__title">
+                          Sending ({{ wallet.getMempoolTransactionsSignalValue()!.sending.length }})
+                        </div>
+                      </div>
+                    }
+                    @if ((wallet.getMempoolTransactionsSignalValue()?.receiving?.length ?? 0) > 0) {
+                      <div class="pending-section">
+                        <div class="pending-section__title">
+                          Receiving ({{ wallet.getMempoolTransactionsSignalValue()!.receiving.length }})
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              }
+            </div>
+          }
         </div>
       }
     </div>

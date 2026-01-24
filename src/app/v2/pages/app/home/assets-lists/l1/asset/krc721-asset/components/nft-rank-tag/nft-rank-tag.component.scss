@@ -1,0 +1,70 @@
+.tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-weight: 700;
+    white-space: nowrap;
+    line-height: normal;
+
+    /* Default size (sm) fallback if no class matches, though inputs default to sm */
+    padding: 2px 6px;
+    font-size: 11px;
+}
+
+.xs {
+    padding: 2px 6px;
+    font-size: 10px;
+}
+
+.sm {
+    padding: 2px 6px;
+    font-size: 11px;
+}
+
+.md {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.lg {
+    padding: 6px 12px;
+    font-size: 14px;
+}
+
+.neutral {
+    background: linear-gradient(180deg, #222829 0%, #1a1f20 100%);
+    color: white !important;
+    box-shadow: 0 0 8px 0 rgba(34, 40, 41, 0.6);
+}
+
+.legendary {
+    background: linear-gradient(180deg,
+            rgba(186, 104, 200, 1) 0%,
+            rgba(111, 45, 168, 1) 100%);
+    color: white !important;
+    box-shadow: 0 0 8px 0 rgba(186, 104, 200, 0.6);
+}
+
+.gold {
+    background: linear-gradient(180deg,
+            rgba(252, 238, 31, 1) 0%,
+            rgba(217, 183, 11, 1) 100%);
+    color: #111000 !important;
+    box-shadow: 0 0 8px 0 rgba(252, 238, 31, 0.6);
+}
+
+.silver {
+    background: linear-gradient(180deg,
+            rgba(255, 255, 255, 1) 0%,
+            rgba(205, 205, 205, 1) 100%);
+    color: black !important;
+}
+
+.bronze {
+    background: linear-gradient(180deg,
+            rgba(208, 113, 41, 1) 0%,
+            rgba(117, 71, 27, 1) 100%);
+    /* Usage of color: white for bronze to ensure contrast on dark orange/brown */
+    color: white !important;
+}

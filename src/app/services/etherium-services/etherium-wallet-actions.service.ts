@@ -19,7 +19,7 @@ export class EthereumWalletActionsService {
         private readonly walletActionsService: WalletActionService,
     ) { }
 
-    async handleRequest<T extends EIP1193RequestType>(request: EIP1193RequestPayload<T>, onActionApproval: undefined | (() => Promise<void>) = undefined): Promise<EIP1193ProviderResponse<T>> {
+    async handleRequest<T extends EIP1193RequestType>(request: EIP1193RequestPayload<T>, onActionApproval: undefined | (() => Promise<void>) = undefined, notFromIframe: boolean = false): Promise<EIP1193ProviderResponse<T>> {
 
         try {
             if (!this.ethereumWalletChainManager.getCurrentChainSignal()()) {
@@ -29,7 +29,7 @@ export class EthereumWalletActionsService {
             if (this.ethereumHandleActionRequestService.isActionSupported(request.method) || this.ethereumHandleActionRequestService.isKasAction(request.method)) {
                 const walletResponse = await this.walletActionsService.validateAndDoActionAfterApproval(
                     this.walletActionsService.createEIP1193Action(request),
-                    true,
+                    !notFromIframe,
                     async () => { await onActionApproval?.() },
                 )
 
@@ -38,6 +38,7 @@ export class EthereumWalletActionsService {
 
             switch (request.method) {
                 case EIP1193RequestType.REQUEST_ACCOUNTS:
+                case EIP1193RequestType.GET_ACCOUNTS:
                     // Return the current wallet address
                     const allAccounts = await this.getAllAccountsAndOrderThem();
 
@@ -72,6 +73,64 @@ export class EthereumWalletActionsService {
                     return createEIP1193Response<T>(`0x${balance.toString(16)}`);
                 case EIP1193RequestType.GET_CHAIN_ID:
                     return createEIP1193Response<T>(this.ethereumWalletChainManager.getCurrentChainSignal()()!);
+                case EIP1193RequestType.ETH_CALL:
+                    const transaction = request.params?.[0];
+                    const blockTag = request.params?.[1] as string | undefined;
+
+                    if (!transaction) {
+                        return createEIP1193Response<T>(undefined, {
+                            code: ERROR_CODES.EIP1193.INVALID_PARAMETERS,
+                            message: 'Transaction object is required'
+                        });
+                    }
+
+                    const callResult = await this.ethereumWalletChainManager.getCurrentWalletProvider()!.ethCall(transaction, blockTag);
+                    return createEIP1193Response<T>(callResult);
+
+                case EIP1193RequestType.GET_BLOCK_NUMBER:
+                    const blockNumber = await this.ethereumWalletChainManager.getCurrentWalletProvider()!.ethBlockNumber();
+                    return createEIP1193Response<T>(blockNumber);
+
+                case EIP1193RequestType.GET_ESTIMATE_GAS:
+                    const gasTransaction = request.params?.[0];
+
+                    if (!gasTransaction) {
+                        return createEIP1193Response<T>(undefined, {
+                            code: ERROR_CODES.EIP1193.INVALID_PARAMETERS,
+                            message: 'Transaction object is required'
+                        });
+                    }
+
+                    const gasResult = await this.ethereumWalletChainManager.getCurrentWalletProvider()!.estimateGas(gasTransaction);
+                    return createEIP1193Response<T>(gasResult);
+
+                case EIP1193RequestType.GET_TRANSACTION_BY_HASH:
+                    const txHash = request.params?.[0] as string;
+
+                    if (!txHash) {
+                        return createEIP1193Response<T>(undefined, {
+                            code: ERROR_CODES.EIP1193.INVALID_PARAMETERS,
+                            message: 'Transaction hash is required'
+                        });
+                    }
+
+                    const tx = await this.ethereumWalletChainManager.getCurrentWalletProvider()!.ethGetTransactionByHash(txHash);
+                    return createEIP1193Response<T>(tx);
+
+                case EIP1193RequestType.GET_TRANSACTION_RECEIPT:
+                    const receiptTxHash = request.params?.[0] as string;
+
+                    if (!receiptTxHash) {
+                        return createEIP1193Response<T>(undefined, {
+                            code: ERROR_CODES.EIP1193.INVALID_PARAMETERS,
+                            message: 'Transaction hash is required'
+                        });
+                    }
+
+                    const receipt = await this.ethereumWalletChainManager.getCurrentWalletProvider()!.ethGetTransactionReceipt(receiptTxHash);
+                    return createEIP1193Response<T>(receipt);
+
+
 
                 default:
                     return createEIP1193Response<T>(undefined, {

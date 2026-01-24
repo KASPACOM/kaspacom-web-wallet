@@ -2,7 +2,6 @@ export interface L2ConfigInterface {
   sdkName: string,
   icon: string,
   l1TransactionPrefix?: string;
-  kaspaComApiNetworkName: string;
 }
 
 export interface Environment {

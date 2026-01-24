@@ -1,0 +1,35 @@
+@if (open) {
+<kc-base-modal title="Select a token" [showCloseButton]="true" [autoWidth]="false" (close)="onClose()">
+  <div class="token-selector-content">
+    <kc-input placeholder="Search name, symbol, or address" type="text" [isFullWidth]="true" prefixIcon="pi pi-search"
+      (valueChange)="onSearchChange($event)"></kc-input>
+
+    <div class="token-list">
+      @if (isLoading) {
+      <div class="flex justify-content-center p-24">
+        <span class="text-gray-60">Loading tokens...</span>
+      </div>
+      } @else {
+      @for (token of filteredTokens(); track token.address) {
+      <button class="token-item" (click)="onTokenSelect(token)">
+        <div class="token-info">
+          @if (token.logoURI) {
+          <img [src]="token.logoURI" [alt]="token.symbol" class="token-logo" />
+          } @else {
+          <div class="token-logo-placeholder"></div>
+          }
+          <div class="token-details">
+            <span class="token-symbol">{{ token.symbol }}</span>
+            <span class="token-name">{{ token.name }}</span>
+          </div>
+        </div>
+        <span class="token-address">{{ token.address }}</span>
+      </button>
+      } @empty {
+      <div class="no-tokens">No tokens found</div>
+      }
+      }
+    </div>
+  </div>
+</kc-base-modal>
+}

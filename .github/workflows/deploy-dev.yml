@@ -44,8 +44,9 @@ jobs:
 
     - name: Deploy to S3
       run: |
-        # Sync all files EXCEPT index.html
-        aws s3 sync dist/wallet-front-new/browser s3://${{ env.S3_BUCKET_NAME_DEV }}/ --delete --exclude "index.html"
+        # 1. Upload new chunks (Do NOT use --delete)
+        # This adds new files but keeps old ones active for current users
+        aws s3 sync dist/wallet-front-new/browser s3://${{ env.S3_BUCKET_NAME_DEV }}/ --delete 
 
         # Upload index.html separately with no-cache
         aws s3 cp dist/wallet-front-new/browser/index.html s3://${{ env.S3_BUCKET_NAME_DEV }}/index.html \

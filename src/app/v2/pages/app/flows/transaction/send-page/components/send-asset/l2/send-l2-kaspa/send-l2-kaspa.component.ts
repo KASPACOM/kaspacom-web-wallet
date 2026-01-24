@@ -255,7 +255,7 @@ export class SendL2KaspaComponent
 
     try {
       // Get the L2 wallet address for the sender
-      const l2WalletAddress = await currentWallet.getL2WalletAddress();
+      const l2WalletAddress = currentWallet.getL2WalletAddress();
       if (!l2WalletAddress) {
         this.messagePopupService.showError('L2 wallet not available');
         return;

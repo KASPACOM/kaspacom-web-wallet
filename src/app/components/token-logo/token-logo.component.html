@@ -1,0 +1,10 @@
+<div
+  class="token-logo-wrapper flex overflow-hidden {{ size() }} skeleton"
+  [class.is-loading]="isLoading()"
+>
+  <div
+    [ngStyle]="{
+      'background-image': 'url(' + (imageURL() | async) + ')',
+    }"
+  ></div>
+</div>

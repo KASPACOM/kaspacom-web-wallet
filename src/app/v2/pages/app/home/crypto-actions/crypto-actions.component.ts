@@ -36,7 +36,7 @@ export class CryptoActionsComponent {
     if (this.walletService.getIsL2DisplaySignal()()) {
       baseActions.push({
         title: 'swap',
-        iconClass: 'icon-refresh',
+        iconClass: 'icon-switch-vertical-01',
         iconColor: '',
         action: () => this.openSwapPage(),
       });
@@ -49,7 +49,7 @@ export class CryptoActionsComponent {
     this.flowPagesService.openFlow({
       id: 'receive',
       title: 'Receive',
-      canNavigateBack: true
+      canNavigateBack: true,
     });
   }
 
@@ -57,7 +57,7 @@ export class CryptoActionsComponent {
     this.flowPagesService.openFlow({
       id: 'send',
       title: 'Send',
-      canNavigateBack: true
+      canNavigateBack: true,
     });
   }
 
@@ -65,9 +65,7 @@ export class CryptoActionsComponent {
     this.flowPagesService.openFlow({
       id: 'swap',
       title: 'Swap',
-      canNavigateBack: true
+      canNavigateBack: true,
     });
   }
-
-
 }

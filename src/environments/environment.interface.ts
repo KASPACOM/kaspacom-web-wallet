@@ -1,6 +1,6 @@
 export interface L2ConfigInterface {
-  sdkName: string,
-  icon: string,
+  sdkName: string;
+  icon: string;
   l1TransactionPrefix?: string;
 }
 
@@ -15,8 +15,10 @@ export interface Environment {
   knsApiBaseurl: string;
   kaspaExplorerBaseurl: string;
   kaspaNetwork: string;
+  defiApiBaseurl: string;
+  logosUrl: string;
   allowedDomains: string[];
   isL2Enabled: boolean;
-  l2Configs: L2ConfigInterface[],
-  segmentKey?: string,
+  l2Configs: L2ConfigInterface[];
+  segmentKey?: string;
 }

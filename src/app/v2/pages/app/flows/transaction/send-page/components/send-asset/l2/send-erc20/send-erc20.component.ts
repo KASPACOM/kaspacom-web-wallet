@@ -1,17 +1,8 @@
-import {
-  Component,
-  inject,
-  OnDestroy,
-  signal,
-  effect,
-} from '@angular/core';
+import { Component, inject, OnDestroy, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
-import {
-  KcInputComponent,
-  KcButtonComponent,
-} from 'kaspacom-ui';
+import { KcInputComponent, KcButtonComponent } from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
 import { Krc20TokenLogoComponent } from '../../../../../../../home/assets-lists/l1/logo/krc20-token-logo/krc20-token-logo.component';
 import { WalletService } from '../../../../../../../../../../services/wallet.service';
@@ -20,7 +11,6 @@ import { UtilsHelper } from '../../../../../../../../../../services/utils.servic
 import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
 import { ApprovalFlowService } from '../../../../../../../../../services/approval-flow.service';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import { KaspaNetworkActionsService } from '../../../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { QrScannerService } from '../../../../../../../../../../services/qr-scanner.service';
 import { AddressSmartInputComponent } from '../../../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { Router } from '@angular/router';
@@ -44,13 +34,13 @@ import { parseUnits } from 'ethers';
 })
 export class SendErc20Component
   extends FlowPageBaseComponent
-  implements OnDestroy {
+  implements OnDestroy
+{
   private walletService = inject(WalletService);
   private walletActionService = inject(WalletActionService);
   private utilsHelper = inject(UtilsHelper);
   private messagePopupService = inject(MessagePopupService);
   private approvalFlowService = inject(ApprovalFlowService);
-  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private qrScannerService = inject(QrScannerService);
   private router = inject(Router);
 
@@ -122,12 +112,13 @@ export class SendErc20Component
   }
 
   get isFormValid(): boolean {
+    const amount = this.tokenAmount;
     return (
       this.isAddressValid &&
       this.isAmountValid &&
       !!this.walletAddress &&
       !!this.tokenAmount &&
-      this.tokenAmount > 0 &&
+      (amount || 0) > 0 &&
       !this.isLoading
     );
   }
@@ -155,18 +146,13 @@ export class SendErc20Component
   }
 
   onAmountChange(amount: any): void {
-    this.tokenAmount = amount || null;
+    this.tokenAmount = amount?.toString() || '';
     this.validateAmount();
   }
 
   onMaxAmountClick(): void {
-    console.log(
-      'Max button clicked, available balance:',
-      this.availableBalance,
-    );
     this.tokenAmount = this.availableBalance;
     this.validateAmount();
-    console.log('Token amount set to:', this.tokenAmount);
   }
 
   onQrScanClick(): void {
@@ -194,8 +180,7 @@ export class SendErc20Component
       return;
     }
 
-    if (
-      this.utilsHelper.isValidEthereumAddress(this.walletAddress)) {
+    if (this.utilsHelper.isValidEthereumAddress(this.walletAddress)) {
       this.isAddressValid = true;
       this.addressErrorMessage = '';
       return;
@@ -206,13 +191,16 @@ export class SendErc20Component
   }
 
   private validateAmount(): void {
-    if (!this.tokenAmount || this.tokenAmount <= 0) {
+    const amount = this.tokenAmount;
+    const balance = this.availableBalance;
+
+    if (!this.tokenAmount || (amount || 0) <= 0) {
       this.isAmountValid = false;
       this.amountErrorMessage = 'Amount must be greater than 0';
       return;
     }
 
-    if (this.tokenAmount > this.availableBalance) {
+    if ((amount || 0) > balance) {
       this.isAmountValid = false;
       this.amountErrorMessage = 'Insufficient balance';
       return;
@@ -236,26 +224,23 @@ export class SendErc20Component
     this.isLoading = true;
 
     try {
-      // Convert token amount to BigInt using kaspaToSompiFromNumber (same as working sendAsset function)
-      const amountInSompi =
-        this.kaspaNetworkActionsService.kaspaToSompiFromNumber(
-          this.tokenAmount!,
-        );
       const toAddress = this.walletAddress;
-
 
       const tokenContract = ERC20Contract.getContract(
         this.token()!.address,
         this.walletService,
         this.walletActionService,
-      )
+      );
 
       if (!this.tokenAmount || !this.token()?.decimals) {
         throw new Error('Invalid token amount or decimals');
       }
 
       // Create KRC20 transfer action
-      const result = await tokenContract.transfer(toAddress, parseUnits(this.tokenAmount!.toString(), this.token()!.decimals));
+      const result = await tokenContract.transfer(
+        toAddress,
+        parseUnits(this.tokenAmount!.toString(), this.token()!.decimals),
+      );
 
       console.log(
         'ERC20 Transfer Action:',

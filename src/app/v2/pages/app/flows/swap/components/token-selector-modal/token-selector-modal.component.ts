@@ -1,16 +1,21 @@
-import { Component, EventEmitter, Input, Output, computed, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, Output, computed, inject, signal } from '@angular/core';
+import { CommonModule, SlicePipe } from '@angular/common';
 import { KcBaseModalComponent, KcInputComponent } from '@kaspacom/ui';
+import { MessagePopupService } from '../../../../../../../services/message-popup.service';
 import type { Erc20Token } from '@kaspacom/swap-sdk';
+import { CommaFormatterPipe } from '../../../../../../../pipes/comma-formatter.pipe';
+import { TokenLogoComponent } from '../../../../../../../components/token-logo/token-logo.component';
 
 @Component({
     selector: 'app-token-selector-modal',
     standalone: true,
-    imports: [CommonModule, KcBaseModalComponent, KcInputComponent],
+    imports: [CommonModule, KcBaseModalComponent, KcInputComponent, SlicePipe, CommaFormatterPipe, TokenLogoComponent],
     templateUrl: './token-selector-modal.component.html',
     styleUrl: './token-selector-modal.component.scss'
 })
 export class TokenSelectorModalComponent {
+    private messagePopupService = inject(MessagePopupService);
+
     @Input() open = false;
     @Input() isLoading = false;
     @Input() tokens: Erc20Token[] = [];
@@ -47,5 +52,11 @@ export class TokenSelectorModalComponent {
 
     onClose() {
         this.close.emit();
+    }
+
+    copyAddress(event: Event, address: string) {
+        event.stopPropagation();
+        navigator.clipboard.writeText(address);
+        this.messagePopupService.showSuccess('Address copied to clipboard');
     }
 }

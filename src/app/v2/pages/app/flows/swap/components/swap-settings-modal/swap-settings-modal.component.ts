@@ -1,43 +1,83 @@
-import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, computed, inject, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { KcBaseModalComponent, KcInputComponent, KcButtonComponent } from '@kaspacom/ui';
+import { FormErrorMessageComponent } from '../../../../../../shared/components/form-error/form-error.component';
 import type { SwapSettings } from '@kaspacom/swap-sdk';
 
 @Component({
     selector: 'app-swap-settings-modal',
     standalone: true,
-    imports: [CommonModule, KcBaseModalComponent, KcInputComponent, KcButtonComponent],
+    imports: [CommonModule, ReactiveFormsModule, KcBaseModalComponent, KcInputComponent, KcButtonComponent, FormErrorMessageComponent],
     templateUrl: './swap-settings-modal.component.html',
     styleUrl: './swap-settings-modal.component.scss'
 })
-export class SwapSettingsModalComponent {
+export class SwapSettingsModalComponent implements OnChanges {
+    private fb = inject(FormBuilder);
+
     @Input() open = false;
-    @Input() set initialSettings(value: Partial<SwapSettings> | undefined) {
-        if (value) {
-            this.maxSlippage.set(value.maxSlippage || '0.5');
-            this.swapDeadline.set(value.swapDeadline || 20);
-        }
-    }
+    @Input() initialSettings: Partial<SwapSettings> | undefined;
     @Output() close = new EventEmitter<void>();
     @Output() save = new EventEmitter<SwapSettings>();
 
-    maxSlippage = signal<string>('0.5');
-    swapDeadline = signal<number>(20);
+    settingsForm: FormGroup;
 
-    onMaxSlippageChange(value: string) {
-        this.maxSlippage.set(value);
+    selectedSlippage = computed(() => {
+        const slippage = parseFloat(this.settingsForm?.get('maxSlippage')?.value || '');
+        if (isNaN(slippage)) return null;
+
+        const tolerance = 0.001;
+        if (Math.abs(slippage - 0.1) < tolerance) return 0.1;
+        if (Math.abs(slippage - 0.5) < tolerance) return 0.5;
+        if (Math.abs(slippage - 1.5) < tolerance) return 1.5;
+
+        return null;
+    });
+
+    constructor() {
+        this.settingsForm = this.createForm('0.5', '20');
     }
 
-    onSwapDeadlineChange(value: string) {
-        const numValue = Math.max(0, Math.round(parseFloat(value || '0')));
-        this.swapDeadline.set(numValue);
+    ngOnChanges(changes: SimpleChanges) {
+        if (changes['initialSettings'] || changes['open']) {
+            if (this.open && this.initialSettings) {
+                const maxSlippageValue = this.initialSettings.maxSlippage || '0.5';
+                const swapDeadlineValue = String(this.initialSettings.swapDeadline || 20);
+                this.settingsForm = this.createForm(maxSlippageValue, swapDeadlineValue);
+            }
+        }
+    }
+
+    private createForm(maxSlippage: string, swapDeadline: string): FormGroup {
+        return this.fb.group({
+            maxSlippage: [
+                maxSlippage,
+                [
+                    Validators.required,
+                    Validators.min(0.01),
+                    Validators.max(50),
+                    Validators.pattern(/^\d*\.?\d+$/),
+                ],
+            ],
+            swapDeadline: [
+                swapDeadline,
+                [Validators.required, Validators.min(1), Validators.max(4320)],
+            ],
+        });
+    }
+
+    onSlippageClick(value: number) {
+        this.settingsForm.get('maxSlippage')?.setValue(value.toString());
+        this.settingsForm.get('maxSlippage')?.markAsTouched();
     }
 
     onSave() {
-        this.save.emit({
-            maxSlippage: this.maxSlippage(),
-            swapDeadline: this.swapDeadline()
-        });
+        if (this.settingsForm.valid) {
+            this.save.emit({
+                maxSlippage: this.settingsForm.get('maxSlippage')?.value,
+                swapDeadline: parseInt(this.settingsForm.get('swapDeadline')?.value, 10)
+            });
+        }
     }
 
     onClose() {

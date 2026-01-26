@@ -351,7 +351,7 @@ export class AppWallet {
     await this.utxoProcessorManagerPendingUtxoPromise;
   }
 
-  async getL2WalletAddress(): Promise<string | undefined> {
+  getL2WalletAddress(): string {
     const wallet = new ethers.Wallet(this.getPrivateKey().toString());
     return wallet.address;
   }
@@ -407,7 +407,7 @@ export class AppWallet {
   }
 
   private async getL2Balance(): Promise<bigint> {
-    const l2Address = await this.getL2WalletAddress();
+    const l2Address = this.getL2WalletAddress();
 
     if (!l2Address) {
       return 0n;

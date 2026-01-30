@@ -1,12 +1,12 @@
-import { Component, EventEmitter, Output, input } from '@angular/core';
 import {
   CommonModule,
   DecimalPipe,
   TitleCasePipe,
   UpperCasePipe,
 } from '@angular/common';
+import { Component, EventEmitter, Output, input } from '@angular/core';
 import { Erc20Token } from '@kaspacom/swap-sdk';
-import { Erc20TokenLogoComponent } from '../../logo/erc20-token-logo/erc20-token-logo.component';
+import { TokenLogoComponent } from '../../../../../../../../components/token-logo/token-logo.component';
 
 @Component({
   selector: 'erc20-asset-card',
@@ -16,7 +16,7 @@ import { Erc20TokenLogoComponent } from '../../logo/erc20-token-logo/erc20-token
     DecimalPipe,
     TitleCasePipe,
     UpperCasePipe,
-    Erc20TokenLogoComponent,
+    TokenLogoComponent,
   ],
   templateUrl: './erc20-asset-card.component.html',
   styleUrl: './erc20-asset-card.component.scss',
@@ -29,6 +29,4 @@ export class Erc20AssetCardComponent {
   onClick(): void {
     this.cardClick.emit();
   }
-
-  
 }

@@ -20,8 +20,8 @@
           </div>
         </div>
         <div class="token-balance-info">
-          @if (token.rawBalance) {
-          <span class="token-balance">{{ token.rawBalance | commaFormatter }}</span>
+          @if (token.balance) {
+          <span class="token-balance">{{ token.balance | commaFormatter }}</span>
           }
           <span class="token-address" (click)="copyAddress($event, token.address)" title="Click to copy address">{{ token.address | slice:0:6 }}...{{ token.address | slice:-4 }}</span>
         </div>

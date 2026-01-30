@@ -2,7 +2,7 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { WalletAction, WalletActionType } from '../../types/wallet-action';
 import { FlowPagesService } from './flow-pages.service';
 import { Router } from '@angular/router';
-import { WalletActionResult } from '@kaspacom/wallet-messages';
+import { WalletActionResult, EIP1193RequestPayload, EIP1193RequestType } from '@kaspacom/wallet-messages';
 
 export enum ApprovalDisplayMode {
   FLOW_PAGE = 'flow_page', // For regular app usage - integrated flow
@@ -290,6 +290,22 @@ export class ApprovalFlowService {
         return 'Sign Message';
       case WalletActionType.SIGN_PSKT_TRANSACTION:
         return 'Sign Transaction';
+      case WalletActionType.EIP1193_PROVIDER_REQUEST:
+        const eipData = action.data as EIP1193RequestPayload<EIP1193RequestType>;
+        switch (eipData.method) {
+          case EIP1193RequestType.SEND_TRANSACTION:
+          case EIP1193RequestType.KAS_SEND_TRANSACTION:
+            return 'Send Transaction';
+          case EIP1193RequestType.WALLET_ADD_ETHEREUM_CHAIN:
+            return 'Add Network';
+          case EIP1193RequestType.WALLET_SWITCH_ETHEREUM_CHAIN:
+            return 'Switch Network';
+          case EIP1193RequestType.SIGN_TYPED_DATA:
+          case EIP1193RequestType.SIGN_TYPED_DATA_V4:
+            return 'Sign Message';
+          default:
+            return 'L2 Action';
+        }
       default:
         return 'Confirm Action';
     }

@@ -12,6 +12,8 @@ import { InputFieldType } from '../../../../../../types/action-display.type';
 import { EIP1193RequestPayload, EIP1193RequestType } from '@kaspacom/wallet-messages';
 import { ApprovalSuccessPageComponent } from './components/approval-success-page.component';
 import { ApprovalLoadingPageComponent } from './components/approval-loading-page.component';
+import { SwapApprovalComponent } from './components/swap-approval.component';
+import { SwapContextService } from '../../../../../services/swap-context.service';
 
 @Component({
   selector: 'app-approval-flow-page',
@@ -22,7 +24,8 @@ import { ApprovalLoadingPageComponent } from './components/approval-loading-page
     KcIconComponent,
     PriorityFeeSelectionComponent,
     ApprovalSuccessPageComponent,
-    ApprovalLoadingPageComponent
+    ApprovalLoadingPageComponent,
+    SwapApprovalComponent,
   ],
   templateUrl: './approval-flow-page.component.html',
   styleUrl: './approval-flow-page.component.scss'
@@ -31,6 +34,7 @@ export class ApprovalFlowPageComponent {
   public approvalFlowService = inject(ApprovalFlowService);
   private walletService = inject(WalletService);
   private reviewActionDataService = inject(ReviewActionDataService);
+  private swapContextService = inject(SwapContextService);
 
   // Expose enums for template
   WalletActionType = WalletActionType;
@@ -41,6 +45,10 @@ export class ApprovalFlowPageComponent {
   approvalConfig = computed(() => this.approvalFlowService.currentApprovalConfig());
   wallet = computed(() => this.walletService.getCurrentWallet()!);
   currentState = computed(() => this.approvalFlowService.currentState());
+
+  // Swap context detection
+  swapContext = computed(() => this.swapContextService.getSwapContext());
+  isSwapTransaction = computed(() => this.swapContextService.hasSwapContext());
 
   actionDisplay = computed(() => {
     const config = this.approvalConfig();

@@ -1,22 +1,22 @@
-import { Component, inject, OnDestroy, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
-import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
-import { KcInputComponent, KcButtonComponent } from 'kaspacom-ui';
+import { Component, effect, inject, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Krc20TokenLogoComponent } from '../../../../../../../home/assets-lists/l1/logo/krc20-token-logo/krc20-token-logo.component';
-import { WalletService } from '../../../../../../../../../../services/wallet.service';
-import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';
-import { UtilsHelper } from '../../../../../../../../../../services/utils.service';
-import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
-import { ApprovalFlowService } from '../../../../../../../../../services/approval-flow.service';
-import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import { QrScannerService } from '../../../../../../../../../../services/qr-scanner.service';
-import { AddressSmartInputComponent } from '../../../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { Router } from '@angular/router';
 import { Erc20Token } from '@kaspacom/swap-sdk';
-import { ERC20Contract } from '../../../../../../../../../../services/etherium-services/smart-contracts/contracts/erc20-contract';
+import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { parseUnits } from 'ethers';
+import { KcButtonComponent, KcInputComponent } from 'kaspacom-ui';
+import { TokenLogoComponent } from '../../../../../../../../../../components/token-logo/token-logo.component';
+import { ERC20Contract } from '../../../../../../../../../../services/etherium-services/smart-contracts/contracts/erc20-contract';
+import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
+import { QrScannerService } from '../../../../../../../../../../services/qr-scanner.service';
+import { UtilsHelper } from '../../../../../../../../../../services/utils.service';
+import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';
+import { WalletService } from '../../../../../../../../../../services/wallet.service';
+import { ApprovalFlowService } from '../../../../../../../../../services/approval-flow.service';
+import { AddressSmartInputComponent } from '../../../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
+import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
+import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
 
 @Component({
   selector: 'app-send-erc20',
@@ -26,7 +26,7 @@ import { parseUnits } from 'ethers';
     KcInputComponent,
     KcButtonComponent,
     FormsModule,
-    Krc20TokenLogoComponent,
+    TokenLogoComponent,
     AddressSmartInputComponent,
   ],
   templateUrl: './send-erc20.component.html',

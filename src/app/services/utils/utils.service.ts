@@ -118,7 +118,6 @@ export class UtilsService {
     const localUrl = this.availableLocalTokensLogos.has(ticker.toUpperCase())
       ? `./images/tokens-logos/${ticker.toUpperCase()}.png`
       : '';
-
     const test = (url: string) =>
       new Promise<string>((res) => {
         if (!url) return res('');
@@ -128,6 +127,8 @@ export class UtilsService {
         img.src = url;
       });
 
+    console.log(localUrl, 'local');
+
     return (
       test(localUrl)
         //.then((r) => r || test(logoUrl)) //backend
@@ -136,6 +137,7 @@ export class UtilsService {
         .then((r) => r || test(defaultUrl)) //default logo for metamask
         .then((r) => r || fallbackUrl) // fallback logo
         .then((finalUrl) => {
+          console.log(finalUrl, 'finalUrl', localUrl, address, ticker);
           if (finalUrl !== fallbackUrl) {
             this.imageUrlCache.set(cacheKey, {
               url: finalUrl,

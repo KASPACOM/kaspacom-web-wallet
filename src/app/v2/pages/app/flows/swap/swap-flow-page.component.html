@@ -26,7 +26,7 @@
                 <div class="token-input-header">
                     <span class="token-input-label">Sell</span>
                     <span class="token-balance" *ngIf="fromToken()" [class.error-text]="isInsufficientBalance()">
-                        Balance: {{ fromToken()?.rawBalance | commaFormatter }}
+                        Balance: {{ fromToken()?.balance | commaFormatter }}
                     </span>
                 </div>
                 <div class="token-input-row">
@@ -63,7 +63,7 @@
                 <div class="token-input-header">
                     <span class="token-input-label">Buy</span>
                     <span class="token-balance" *ngIf="toToken()">
-                        Balance: {{ toToken()?.rawBalance | commaFormatter }}
+                        Balance: {{ toToken()?.balance | commaFormatter }}
                     </span>
                 </div>
                 <div class="token-input-row">

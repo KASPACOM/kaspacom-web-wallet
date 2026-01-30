@@ -1,42 +1,43 @@
+import { CommonModule } from '@angular/common';
 import {
   Component,
-  OnInit,
-  OnDestroy,
-  inject,
-  signal,
   computed,
   effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import {
-  KcButtonComponent,
-  KcInputComponent,
-  KcIconComponent,
-  NotificationService,
-} from '@kaspacom/ui';
+import type {
+  Erc20Token,
+  SwapSdkController,
+  SwapSettings,
+} from '@kaspacom/swap-sdk';
 import {
   createKaspaComSwapController,
   DEFAULT_SWAP_SETTINGS,
   LoaderStatuses,
   NETWORKS,
 } from '@kaspacom/swap-sdk';
-import type {
-  SwapSdkController,
-  Erc20Token,
-  SwapControllerOutput,
-  SwapSettings,
-} from '@kaspacom/swap-sdk';
-import { WalletService } from '../../../../../services/wallet.service';
-import { EthereumWalletChainManager } from '../../../../../services/etherium-services/etherium-wallet-chain.manager';
-import { TokenSelectorModalComponent } from './components/token-selector-modal/token-selector-modal.component';
-import { SwapSettingsModalComponent } from './components/swap-settings-modal/swap-settings-modal.component';
+import {
+  KcButtonComponent,
+  KcIconComponent,
+  NotificationService,
+} from 'kaspacom-ui';
+import { EIP1193RequestPayload } from '@kaspacom/wallet-messages';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { CommaFormatterPipe } from '../../../../../pipes/comma-formatter.pipe';
-import { EthereumWalletActionsService } from '../../../../../services/etherium-services/etherium-wallet-actions.service';
-import { EIP1193RequestPayload } from '@kaspacom/wallet-messages';
 import { TokenLogoComponent } from '../../../../../components/token-logo/token-logo.component';
+import { CommaFormatterPipe } from '../../../../../pipes/comma-formatter.pipe';
+import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';
+import { L2_ASSET_KEYS } from '../../../../../services/assets-manager/assets-stores/l2-assets-store.service';
+import { EthereumWalletActionsService } from '../../../../../services/etherium-services/etherium-wallet-actions.service';
+import { EthereumWalletChainManager } from '../../../../../services/etherium-services/etherium-wallet-chain.manager';
+import { WalletService } from '../../../../../services/wallet.service';
+import { SwapContextService } from '../../../../services/swap-context.service';
+import { SwapSettingsModalComponent } from './components/swap-settings-modal/swap-settings-modal.component';
+import { TokenSelectorModalComponent } from './components/token-selector-modal/token-selector-modal.component';
 
 @Component({
   selector: 'app-swap-flow-page',
@@ -45,7 +46,6 @@ import { TokenLogoComponent } from '../../../../../components/token-logo/token-l
     CommonModule,
     FormsModule,
     KcButtonComponent,
-    KcInputComponent,
     KcIconComponent,
     TokenSelectorModalComponent,
     SwapSettingsModalComponent,
@@ -64,6 +64,8 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
   private chainManager = inject(EthereumWalletChainManager);
   private notificationService = inject(NotificationService);
   private ethereumWalletActionsService = inject(EthereumWalletActionsService);
+  private swapContextService = inject(SwapContextService);
+  private assetsManagerService = inject(AssetsManagerService);
 
   // State
   controller = signal<SwapSdkController | null>(null);
@@ -119,12 +121,12 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
 
   selectedPercentage = computed(() => {
     const token = this.fromToken();
-    if (!token?.rawBalance) return null;
+    if (!token?.balance) return null;
 
-    const balance = parseFloat(token.rawBalance);
+    const balance = token.balance;
     const amount = parseFloat(this.fromAmountInput());
 
-    if (isNaN(balance) || isNaN(amount) || balance === 0) return null;
+    if (isNaN(amount) || balance === 0) return null;
 
     const percentage = (amount / balance) * 100;
 
@@ -312,12 +314,36 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
         const nativeToken = NETWORKS[config.sdkName]?.nativeToken;
         if (nativeToken) {
           tokens.unshift(nativeToken);
-        } else {
-          console.warn('No native token found for sdkName:', config.sdkName);
         }
-        this.allTokens.set(tokens);
 
-        if (tokens.length > 0) this.fromToken.set(tokens[0]);
+        // Get tokens with balances from assets manager
+        const erc20WithBalances: Erc20Token[] = this.assetsManagerService
+          .getAllAssetStores()
+          .l2.getAssets(L2_ASSET_KEYS.erc20);
+
+        // Create a map of balances by address (lowercase for case-insensitive matching)
+        const balanceMap = new Map<string, number>();
+        for (const token of erc20WithBalances) {
+          balanceMap.set(token.address.toLowerCase(), token.balance || 0);
+        }
+
+        // Get native token (KAS) balance from wallet L2 state
+        const nativeBalance =
+          currentWallet.getL2WalletStateSignal()()?.balanceFormatted || 0;
+        // Native token address is 0x0000...0000
+        const nativeTokenAddress = '0x0000000000000000000000000000000000000000';
+        balanceMap.set(nativeTokenAddress.toLowerCase(), nativeBalance);
+
+        // Merge SDK tokens with balances
+        const tokensWithBalances = tokens.map((token) => ({
+          ...token,
+          balance: balanceMap.get(token.address.toLowerCase()) ?? 0,
+        }));
+
+        this.allTokens.set(tokensWithBalances);
+
+        if (tokensWithBalances.length > 0)
+          this.fromToken.set(tokensWithBalances[0]);
       } finally {
         this.loadingTokens.set(false);
       }
@@ -427,6 +453,84 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
     const ctrl = this.controller();
     if (!ctrl) return;
 
+    const fromToken = this.fromToken();
+    const toToken = this.toToken();
+    if (!fromToken || !toToken) return;
+
+    // Store swap context before triggering SDK swap
+    const currentChainId = this.chainManager.getCurrentChainSignal()();
+    const chainConfig = currentChainId
+      ? this.chainManager.getChainConfig(currentChainId)
+      : null;
+
+    // Get price impact and gas estimate from controller state
+    const state = this.controllerState();
+    // Price impact may be a Percent/Fraction object with toFixed/toSignificant methods
+    const priceImpactValue = state?.tradeInfo?.priceImpact;
+    let priceImpact = '0';
+    if (priceImpactValue !== null && priceImpactValue !== undefined) {
+      if (typeof priceImpactValue === 'number') {
+        priceImpact = priceImpactValue.toFixed(2);
+      } else if (typeof priceImpactValue === 'string') {
+        priceImpact = priceImpactValue;
+      } else if (typeof priceImpactValue.toSignificant === 'function') {
+        // Uniswap SDK Percent type has toSignificant
+        try {
+          priceImpact = priceImpactValue.toSignificant(2);
+        } catch {
+          priceImpact = '0';
+        }
+      } else if (typeof priceImpactValue.toFixed === 'function') {
+        try {
+          priceImpact = priceImpactValue.toFixed(2);
+        } catch {
+          priceImpact = '0';
+        }
+      } else if (
+        priceImpactValue.numerator !== undefined &&
+        priceImpactValue.denominator !== undefined
+      ) {
+        // Fraction-like object
+        const num = Number(priceImpactValue.numerator);
+        const denom = Number(priceImpactValue.denominator);
+        if (denom !== 0 && !isNaN(num) && !isNaN(denom)) {
+          priceImpact = ((num / denom) * 100).toFixed(2);
+        }
+      } else if (typeof priceImpactValue === 'object') {
+        // Last resort: check for common property names
+        const possibleValues = [
+          priceImpactValue.value,
+          priceImpactValue.percent,
+          priceImpactValue.percentage,
+          priceImpactValue.impact,
+        ];
+        for (const val of possibleValues) {
+          if (typeof val === 'number') {
+            priceImpact = val.toFixed(2);
+            break;
+          } else if (typeof val === 'string' && !isNaN(parseFloat(val))) {
+            priceImpact = val;
+            break;
+          }
+        }
+      }
+    }
+    const estimatedGas = state?.tradeInfo?.gasEstimate?.toString() || '0';
+
+    // Store swap context and get unique ID for this swap operation
+    const swapContextId = this.swapContextService.setSwapContext({
+      fromToken,
+      toToken,
+      fromAmount: this.fromAmountInput(),
+      toAmount: this.toAmountInput(),
+      minReceived: this.minReceived() || '',
+      route: this.routePath(),
+      settings: this.currentSettings(),
+      networkName: chainConfig?.chainName || 'Unknown Network',
+      priceImpact,
+      estimatedGas,
+    });
+
     try {
       const tx = await ctrl.swap();
       if (tx) {
@@ -444,6 +548,10 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
         'Swap Failed',
         err?.message || 'Unknown error',
       );
+    } finally {
+      // Clear swap context only if this swap's context is still active
+      // This prevents a stale swap from clearing a newer swap's context
+      this.swapContextService.clearSwapContext(swapContextId);
     }
   }
 }

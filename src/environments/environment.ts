@@ -3,6 +3,8 @@ import { Environment } from './environment.interface';
 
 export const environment: Environment = {
   isProduction: true,
+  consentScriptUrl: 'https://dev.kaspa.com/js/modules/kaspa-consent.min.js',
+  consentCssUrl: 'https://dev.kaspa.com/css/consent.min.css',
   kaspaComApiBaseurl: 'https://api.kaspa.com',
   kaspaComDefiApiBaseurl: 'https://api-defi.kaspa.com',
   kasplexApiBaseurl: 'https://api.kasplex.org/v1',

@@ -6,6 +6,11 @@ export interface L2ConfigInterface {
 
 export interface Environment {
   isProduction: boolean;
+  segmentKey?: string;
+  clarityKey?: string;
+  addressableKey?: string;
+  consentScriptUrl?: string;
+  consentCssUrl?: string;
   kaspaComApiBaseurl: string;
   kaspaComDefiApiBaseurl: string;
   kasplexApiBaseurl: string;

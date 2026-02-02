@@ -23,5 +23,4 @@ export interface Environment {
   allowedDomains: string[];
   isL2Enabled: boolean;
   l2Configs: L2ConfigInterface[],
-  segmentKey?: string,
 }

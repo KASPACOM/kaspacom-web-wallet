@@ -2,7 +2,6 @@ export interface L2ConfigInterface {
   sdkName: string,
   icon: string,
   l1TransactionPrefix?: string;
-  erc20GraphUrl?: string;
 }
 
 export interface Environment {
@@ -13,6 +12,7 @@ export interface Environment {
   consentScriptUrl?: string;
   consentCssUrl?: string;
   kaspaComApiBaseurl: string;
+  kaspaComDefiApiBaseurl: string;
   kasplexApiBaseurl: string;
   kaspaApiBaseurl: string;
   krc721ApiBaseurl: string;
@@ -23,4 +23,5 @@ export interface Environment {
   allowedDomains: string[];
   isL2Enabled: boolean;
   l2Configs: L2ConfigInterface[],
+  segmentKey?: string,
 }

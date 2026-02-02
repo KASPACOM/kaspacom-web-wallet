@@ -4,6 +4,8 @@ import { AppComponent } from './app/app.component';
 import * as kaspa from '../public/kaspa/kaspa';
 import * as Sentry from '@sentry/angular';
 
+const APPLICATION_INIT_TIMEOUT = 30000;
+
 Sentry.init({
   dsn: 'https://5d158ddfd93e605cbd494bf92522964a@o4510546501959680.ingest.us.sentry.io/4510550518595584',
   environment:
@@ -88,12 +90,12 @@ if (!checkStorageAvailability()) {
 const loadingTimeout = setTimeout(() => {
   const loader = document.getElementById('application-loader-startup');
   if (loader && !loader.classList.contains('fade-out')) {
-    const error = new Error('Application initialization timeout (15s)');
+    const error = new Error(`Application initialization timeout (${APPLICATION_INIT_TIMEOUT / 1000}s)`);
     Sentry.captureException(error, {
       tags: { error_type: 'initialization_timeout' },
       contexts: {
         timing: {
-          timeout_duration: 15000,
+          timeout_duration: APPLICATION_INIT_TIMEOUT,
         },
         browser: {
           userAgent: navigator.userAgent,
@@ -103,10 +105,10 @@ const loadingTimeout = setTimeout(() => {
     });
     showLoadingError(
       'Application is taking longer than expected to load',
-      'Timeout: Application failed to initialize within 15 seconds. This may be due to slow network connection or browser compatibility issues.',
+      `Timeout: Application failed to initialize within ${APPLICATION_INIT_TIMEOUT / 1000} seconds. This may be due to slow network connection or browser compatibility issues.`,
     );
   }
-}, 15000);
+}, APPLICATION_INIT_TIMEOUT);
 
 // Load WASM and bootstrap application with proper error handling
 kaspa

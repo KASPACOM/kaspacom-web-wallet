@@ -405,7 +405,7 @@ export class ActivityComponent
 
     const isL2Network = this.walletService.isL2Display();
     const walletAddress = isL2Network
-      ? (await currentWallet.getL2WalletAddress()) || currentWallet.getAddress()
+      ? currentWallet.getL2WalletAddress() || currentWallet.getAddress()
       : currentWallet.getAddress();
 
     // Calculate input and output amounts for this wallet
@@ -484,7 +484,7 @@ export class ActivityComponent
     }
 
     const walletAddress = this.walletService.isL2Display()
-      ? (await currentWallet.getL2WalletAddress()) || currentWallet.getAddress()
+      ? currentWallet.getL2WalletAddress() || currentWallet.getAddress()
       : currentWallet.getAddress();
 
     let status: 'accepted' | 'pending' | 'rejected' = 'pending';

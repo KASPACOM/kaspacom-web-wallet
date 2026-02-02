@@ -44,11 +44,31 @@ export class BaseEthereumProvider {
     // throw new Error('Transaction not found after 5 attempts');
   }
 
+  async ethCall(transaction: any, blockTag: string = 'latest'): Promise<string> {
+    return await this.etherProvider.send('eth_call', [transaction, blockTag]);
+  }
+
+  async ethBlockNumber(): Promise<string> {
+    return await this.etherProvider.send('eth_blockNumber', []);
+  }
+
+  async estimateGas(transaction: any): Promise<string> {
+    return await this.etherProvider.send('eth_estimateGas', [transaction]);
+  }
+
+  async ethGetTransactionByHash(txHash: string): Promise<any> {
+    return await this.etherProvider.send('eth_getTransactionByHash', [txHash]);
+  }
+
+  async ethGetTransactionReceipt(txHash: string): Promise<any> {
+    return await this.etherProvider.send('eth_getTransactionReceipt', [txHash]);
+  }
+
   async getTransactionReceipt(txHash: string): Promise<TransactionReceipt | null> {
     if (!txHash) {
       throw new Error('Transaction hash is empty');
     }
-    
+
     return await this.etherProvider.waitForTransaction(txHash);
   }
 

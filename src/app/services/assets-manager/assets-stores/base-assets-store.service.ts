@@ -161,20 +161,20 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
         return false;
     }
 
-    protected async getWalletAddress(): Promise<string> {
+    protected getWalletAddress(): string {
         if (!this.walletService.getCurrentWallet()) {
             throw new Error('Trying to load assets without wallet');
         }
 
         if (this.walletService.isL2Display()) {
-            return await this.walletService.getCurrentWallet()!.getL2WalletAddress() || '';
+            return this.walletService.getCurrentWallet()!.getL2WalletAddress() || '';
         }
 
         return this.walletService.getCurrentWallet()!.getAddress();
     }
 
     protected async runLoadAssetFunction<K extends keyof T>(key: K): Promise<T[K][] | undefined> {
-        const walletAddress = await this.getWalletAddress();
+        const walletAddress = this.getWalletAddress();
 
         if (!walletAddress) {
             throw new Error('Trying to load assets without wallet');

@@ -6,6 +6,7 @@ export const environment: Environment = {
   consentScriptUrl: 'https://dev.kaspa.com/js/modules/kaspa-consent.min.js',
   consentCssUrl: 'https://dev.kaspa.com/css/consent.min.css',
   kaspaComApiBaseurl: 'https://dev-api.kaspa.com',
+  kaspaComDefiApiBaseurl: 'https://dev-api-defi.kaspa.com',
   kasplexApiBaseurl: 'https://tn10api.kasplex.org/v1',
   kaspaApiBaseurl: 'https://api-tn10.kaspa.org',
   krc721ApiBaseurl: 'https://testnet-10.krc721.stream/api/v1/krc721/testnet-10',
@@ -24,16 +25,13 @@ export const environment: Environment = {
     {
       sdkName: 'kasplex-testnet',
       icon: '💎',
-      l1TransactionPrefix: 'kaspelx',
-      erc20GraphUrl:
-        'https://dev-graph-kasplex.kaspa.com/subgraphs/name/kasplex-testnet-tokens',
+      l1TransactionPrefix: 'kasplex',
     },
     {
-      sdkName: 'kasplex',
+      sdkName: 'igra-testnet',
       icon: '💎',
-      l1TransactionPrefix: 'kaspelx',
-      erc20GraphUrl:
-        'https://graph-kasplex.kaspa.com/subgraphs/name/kasplex-tokens',
+      l1TransactionPrefix: 'kasplex',
     },
   ],
+  segmentKey: 'a2Kx82H0p5djHvyPAFYwOHeqqIsFbmqd',
 };

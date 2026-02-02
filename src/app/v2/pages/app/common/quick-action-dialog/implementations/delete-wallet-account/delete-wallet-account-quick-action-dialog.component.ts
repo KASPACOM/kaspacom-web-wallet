@@ -47,18 +47,14 @@ export class DeleteWalletAccountQuickActionDialogComponent
       return true;
     }
 
+    if (!this.data) {
+      return true;
+    }
 
     const allWalletsByWalletId = _.groupBy(this.walletService.getAllWallets()()!, 'id');
 
-    if (Object.keys(allWalletsByWalletId).length == 1) {
-      if (!this.data) {
-        return true;
-      }
 
-      return allWalletsByWalletId[this.data?.wallet.getId()].length <= 1;
-    }
-
-    return false;
+    return allWalletsByWalletId[this.data?.wallet.getId()].length <= 1;
   })
 
   ngAfterViewInit(): void {

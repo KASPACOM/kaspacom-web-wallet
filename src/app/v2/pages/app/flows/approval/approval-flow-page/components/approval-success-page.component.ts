@@ -7,7 +7,6 @@ import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { ApprovalFlowService } from '../../../../../../services/approval-flow.service';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { WalletActionService } from '../../../../../../../services/wallet-action.service';
-import { AssetsManagerService } from '../../../../../../../services/assets-manager/assets-manager.service';
 
 @Component({
   selector: 'app-approval-success-page',
@@ -103,7 +102,6 @@ export class ApprovalSuccessPageComponent {
   private approvalFlowService = inject(ApprovalFlowService);
   private router = inject(Router);
   private walletActionService = inject(WalletActionService);
-  private assetsManager = inject(AssetsManagerService);
 
   @Input() actionResult!: WalletActionResult;
 

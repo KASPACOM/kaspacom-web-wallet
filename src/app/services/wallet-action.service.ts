@@ -27,6 +27,7 @@ import { Router } from '@angular/router';
 import { EthereumHandleActionRequestService } from './etherium-services/etherium-handle-action-request.service';
 import { BaseCommunicationApp } from './communication-service/communication-app/base-communication-app';
 import { ApprovalFlowService } from '../v2/services/approval-flow.service';
+import { MonitorService } from './monitor.service';
 
 const INSTANT_ACTIONS: { [key: string]: boolean } = {
   [WalletActionType.SIGN_MESSAGE]: true,
@@ -61,6 +62,7 @@ export class WalletActionService {
     private readonly router: Router,
     private readonly ethereumHandleActionRequestService: EthereumHandleActionRequestService,
     private readonly approvalFlowService: ApprovalFlowService,
+    private readonly monitorService: MonitorService,
   ) {
 
     this.actionsListByWallet.set({});
@@ -272,6 +274,11 @@ export class WalletActionService {
     } catch (error) {
       console.error('Error executing wallet action:', error);
 
+      this.monitorService.track('Transaction Failed', {
+        action,
+        error: error,
+      })
+
       if (isUsingV2Flow) {
         const fallbackMessage = 'Transaction failed due to an unexpected error.';
         const errorMessage =
@@ -281,6 +288,8 @@ export class WalletActionService {
         this.approvalFlowService.setErrorState(errorMessage);
       }
 
+
+
       return {
         success: false,
         errorCode: ERROR_CODES.GENERAL.UNKNOWN_ERROR,
@@ -288,6 +297,12 @@ export class WalletActionService {
     }
 
     if (!actionResult.success) {
+
+      this.monitorService.track('Transaction Failed', {
+        action,
+        actionResult,
+      })
+
       if (isUsingV2Flow) {
         const errorMessage = actionResult.errorCode
           ? ERROR_CODES_MESSAGES[actionResult.errorCode]
@@ -304,6 +319,11 @@ export class WalletActionService {
       // Use legacy success display
       await this.showTransactionResultToUser(actionResult.result!, currentWalletAddress);
     }
+
+    this.monitorService.track('Transaction Success', {
+      action,
+      actionResult,
+    })
 
     return { ...actionResult, isUsingV2Flow };
   }
@@ -348,10 +368,6 @@ export class WalletActionService {
       })
       this.currentProgressSignal.set(undefined);
     });
-
-    if (isFromIframe) {
-      this.router.navigate(['/review-action']);
-    }
 
     return await promise.then(data => {
       this.actionToApprove.set(undefined);

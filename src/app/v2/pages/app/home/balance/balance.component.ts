@@ -1,4 +1,4 @@
-import { DecimalPipe } from '@angular/common';
+import { CommonModule, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, input, signal } from '@angular/core';
 import {
   KcIconComponent,
@@ -10,12 +10,15 @@ import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwro
 import { CommaFormatterPipe } from '../../../../../pipes/comma-formatter.pipe';
 import { ShortenAddressPipe } from '../../../../../pipes/shorten-address.pipe';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
+import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { KaspaPriceService } from '../../../../../services/kaspa-price.service';
 import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';
 
 @Component({
   selector: 'app-balance',
+  standalone: true,
   imports: [
+    CommonModule,
     DecimalPipe,
     CommaFormatterPipe,
     ShortenAddressPipe,
@@ -23,6 +26,7 @@ import { AssetsManagerService } from '../../../../../services/assets-manager/ass
     KcSpinnerComponent,
     KcTooltipDirective,
     SkeletonComponent,
+    CopyButtonComponent,
   ],
   templateUrl: './balance.component.html',
   styleUrl: './balance.component.scss',

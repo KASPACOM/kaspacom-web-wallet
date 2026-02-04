@@ -111,6 +111,7 @@ export class EthereumWalletChainManager {
             nativeCurrency: NETWORKS[config.sdkName].nativeToken,
             rpcUrls: [NETWORKS[config.sdkName].rpcUrl],
             blockExplorerUrls: NETWORKS[config.sdkName].blockExplorerUrl ? [NETWORKS[config.sdkName].blockExplorerUrl!] : [],
+            defiApiNetworkName: NETWORKS[config.sdkName].defiApiNetworkName,
         })).concat(JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS) || '[]'));
 
         this.allChainsByChainId = allChains.reduce((acc, chain) => {

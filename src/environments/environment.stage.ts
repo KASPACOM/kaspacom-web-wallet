@@ -18,8 +18,7 @@ export const environment: Environment = {
     {
       sdkName: 'kasplex',
       icon: '💎',
-      l1TransactionPrefix: 'kaspelx',
-      kaspaComApiNetworkName: 'kasplex',
+      l1TransactionPrefix: 'kasplex',
     },
   ],
   segmentKey: 'a2Kx82H0p5djHvyPAFYwOHeqqIsFbmqd',

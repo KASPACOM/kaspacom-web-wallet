@@ -20,7 +20,7 @@ export class MonitorService {
             Object.keys(obj).forEach(key => {
                 if (typeof obj[key] === 'bigint') {
                     obj[key] = Number(obj[key]);
-                } else if (typeof obj[key] === 'object') {
+                } else if (typeof obj[key] === 'object' && obj[key] !== null && obj[key] !== undefined) {
                     obj[key] = this.normalizeProperties(obj[key]);
                 }
             });
@@ -30,7 +30,11 @@ export class MonitorService {
 
     track(event: string, properties?: any) {
         if (this.analytics) {
-            this.analytics.track(event, this.normalizeProperties(properties));
+            try {
+                this.analytics.track(event, this.normalizeProperties(properties));
+            } catch (error) {
+                console.error('Error tracking event:', event, properties, error);
+            }
         }
     }
 }

@@ -2,11 +2,15 @@ export interface L2ConfigInterface {
   sdkName: string,
   icon: string,
   l1TransactionPrefix?: string;
-  kaspaComApiNetworkName: string;
 }
 
 export interface Environment {
   isProduction: boolean;
+  segmentKey?: string;
+  clarityKey?: string;
+  addressableKey?: string;
+  consentScriptUrl?: string;
+  consentCssUrl?: string;
   kaspaComApiBaseurl: string;
   kaspaComDefiApiBaseurl: string;
   kasplexApiBaseurl: string;
@@ -19,5 +23,4 @@ export interface Environment {
   allowedDomains: string[];
   isL2Enabled: boolean;
   l2Configs: L2ConfigInterface[],
-  segmentKey?: string,
 }

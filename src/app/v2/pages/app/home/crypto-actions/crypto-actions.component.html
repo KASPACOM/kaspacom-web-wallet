@@ -1,17 +1,11 @@
 <div class="crypto-actions-container flex gap-8 full-width">
-  @for( action of actions; track action.title){
-  <div
-    class="crypto-actions-container__card card-0 card-hover flex column align-items-center justify-content-center"
-    (click)="action.action()"
-  >
-    <kc-icon
-      [iconClass]="action.iconClass"
-      [size]="'lg'"
-      [color]="'var(--primary)'"
-    ></kc-icon>
+  @for( action of actions(); track action.title){
+  <div class="crypto-actions-container__card card-0 card-hover flex column align-items-center justify-content-center"
+    (click)="action.action()">
+    <kc-icon [iconClass]="action.iconClass" [size]="'lg'" [color]="'var(--primary)'"></kc-icon>
     <span class="crypto-actions-container__title typo-text-1">{{
       action.title | titlecase
-    }}</span>
+      }}</span>
   </div>
   }
 </div>

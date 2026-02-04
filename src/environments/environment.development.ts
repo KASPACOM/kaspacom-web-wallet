@@ -3,6 +3,8 @@ import { Environment } from './environment.interface';
 
 export const environment: Environment = {
   isProduction: false,
+  consentScriptUrl: 'https://dev.kaspa.com/js/modules/kaspa-consent.min.js',
+  consentCssUrl: 'https://dev.kaspa.com/css/consent.min.css',
   kaspaComApiBaseurl: 'https://dev-api.kaspa.com',
   kaspaComDefiApiBaseurl: 'https://dev-api-defi.kaspa.com',
   kasplexApiBaseurl: 'https://tn10api.kasplex.org/v1',
@@ -23,14 +25,12 @@ export const environment: Environment = {
     {
       sdkName: 'kasplex-testnet',
       icon: '💎',
-      l1TransactionPrefix: 'kaspelx',
-      kaspaComApiNetworkName: 'kaspelx',
+      l1TransactionPrefix: 'kasplex',
     },
     {
       sdkName: 'igra-testnet',
       icon: '💎',
-      l1TransactionPrefix: 'kaspelx',
-      kaspaComApiNetworkName: 'igra',
+      l1TransactionPrefix: 'kasplex',
     },
   ],
   segmentKey: 'a2Kx82H0p5djHvyPAFYwOHeqqIsFbmqd',

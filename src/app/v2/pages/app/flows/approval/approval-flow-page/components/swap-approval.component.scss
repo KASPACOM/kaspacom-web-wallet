@@ -72,6 +72,7 @@
   background: rgba(255, 255, 255, 0.02);
   border-radius: 12px;
   border: 1px solid var(--gray-10);
+  flex-wrap: wrap;
 
   &.sell {
     margin-bottom: 8px;
@@ -199,6 +200,7 @@
 
   .token-row {
     padding: 12px;
+    display: flex;
   }
 
   .token-amount .amount-value {

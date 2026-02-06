@@ -60,7 +60,12 @@
 
   &.sell-box,
   &.buy-box {
-    min-height: 120px;
+    min-height: 150px;
+  }
+
+  &.buy-box {
+    // Fixed height to prevent layout shift when min-received appears
+    padding-top: 20px; // Extra padding to prevent overlap with switch button
   }
 
   &:hover {
@@ -72,11 +77,11 @@
   }
 
   &.error {
-    border-color: var(--error, #E04242);
+    border-color: var(--error, #e04242);
 
     &:hover,
     &:focus-within {
-      border-color: var(--error, #E04242);
+      border-color: var(--error, #e04242);
     }
   }
 }
@@ -102,7 +107,7 @@
   gap: 8px;
 
   &.error-text {
-    color: var(--error, #E04242);
+    color: var(--error, #e04242);
   }
 }
 
@@ -160,7 +165,7 @@
   }
 
   &.error {
-    color: var(--error, #E04242);
+    color: var(--error, #e04242);
   }
 
   // Hide number input spinners
@@ -230,7 +235,7 @@
 // Switch Button
 .switch-btn-container {
   position: absolute;
-  top: 50%;
+  top: 50%; // Adjusted for asymmetric box heights
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 2;

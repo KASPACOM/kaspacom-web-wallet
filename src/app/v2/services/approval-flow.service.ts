@@ -231,13 +231,21 @@ export class ApprovalFlowService {
   }
 
   private showAsFlowPage(config: ApprovalFlowConfig) {
-    this.flowPagesService.openFlow({
-      id: 'action-approval',
+    const pageConfig = {
+      id: 'action-approval' as const,
       title: this.getApprovalTitle(config.action),
       canNavigateBack: config.state === ApprovalFlowState.APPROVAL,
       showTitle: config.state === ApprovalFlowState.APPROVAL,
       showBackground: config.state === ApprovalFlowState.APPROVAL,
-    });
+    };
+
+    // If a flow page is already open, add approval on top of the stack
+    // Otherwise, start a new flow
+    if (this.flowPagesService.isAnyPageOpen()) {
+      this.flowPagesService.navigateToPage(pageConfig);
+    } else {
+      this.flowPagesService.openFlow(pageConfig);
+    }
   }
 
   private showAsFullPage(config: ApprovalFlowConfig) {
@@ -269,7 +277,9 @@ export class ApprovalFlowService {
   private cleanupByMode(mode: ApprovalDisplayMode) {
     switch (mode) {
       case ApprovalDisplayMode.FLOW_PAGE:
-        this.flowPagesService.closePage();
+        // Use navigateBack() to return to the previous page in the stack
+        // instead of closePage() which clears the entire stack
+        this.flowPagesService.navigateBack();
         break;
       case ApprovalDisplayMode.MODAL_DIALOG:
         // Modal cleanup handled by review-action component

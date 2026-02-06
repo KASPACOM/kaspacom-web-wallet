@@ -5,12 +5,14 @@ import { LfgTokenResponse } from '../../types/lfg-token.model';
 import { Observable } from 'rxjs';
 import { TokenLogoResponse } from '../../types/token-response.model';
 import { RpcService } from '../kaspa-netwrok-services/rpc.service';
+import { EthereumWalletChainManager } from '../etherium-services/etherium-wallet-chain.manager';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ImageService {
   private readonly http = inject(HttpClient);
+  private readonly ethereumWalletChainManager = inject(EthereumWalletChainManager);
 
   private readonly EXPLORER_CONTROLLER = 'explorer';
   private readonly DEX_CONTROLLER = 'dex';
@@ -52,8 +54,9 @@ export class ImageService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     params?: Record<string, any>,
   ): HttpParams {
-    //const network = this.rpcService.getNetwork();
-    const network = 'kasplex'; //Change that to dynamic network recognition
+    const config = this.ethereumWalletChainManager.getChainConfig(this.ethereumWalletChainManager.getCurrentChainSignal()()!);
+    const network = config?.defiApiNetworkName || config?.chainName;
+
     return this.buildHttpParams({ ...params, network });
   }
 

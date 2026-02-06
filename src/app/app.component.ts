@@ -22,6 +22,7 @@ import { KaspaNetworkConnectionManagerService } from './services/kaspa-netwrok-s
 import { EthereumWalletChainManager } from './services/etherium-services/etherium-wallet-chain.manager';
 import { AssetsManagerService } from './services/assets-manager/assets-manager.service';
 import { StartupBackgroundCanvasComponent } from './components/startup-background-canvas/startup-background-canvas.component';
+import { ConsentService } from './services/consent.service';
 
 @Component({
   selector: 'app-root',
@@ -45,6 +46,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   kaspaConnectionService = inject(KaspaNetworkConnectionManagerService);
   ethereumWalletChainManager = inject(EthereumWalletChainManager);
   assetsManager = inject(AssetsManagerService);
+  consentService = inject(ConsentService);
   private teardownLoader?: VoidFunction;
 
   constructor(

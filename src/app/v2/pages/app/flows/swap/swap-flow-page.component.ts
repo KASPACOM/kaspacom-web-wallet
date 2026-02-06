@@ -13,6 +13,7 @@ import type {
   Erc20Token,
   SwapSdkController,
   SwapSettings,
+  SwapControllerOutput,
 } from '@kaspacom/swap-sdk';
 import {
   createKaspaComSwapController,
@@ -69,7 +70,7 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
 
   // State
   controller = signal<SwapSdkController | null>(null);
-  controllerState = signal<any>(null); // Using any to avoid type issues with library
+  controllerState = signal<SwapControllerOutput | null>(null);
 
   // Inputs
   fromToken = signal<Erc20Token | null>(null);
@@ -175,9 +176,9 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
     const state = this.controllerState();
     return (
       !state ||
-      (state.loader && state.loader !== '') ||
+      !!state.loader ||
       !state.computed?.amountOut ||
-      !!state.errors?.insufficientBalance ||
+      !!state.error ||
       !this.fromAmountInput() ||
       parseFloat(this.fromAmountInput()) <= 0 ||
       this.isFromAmountInvalid() ||
@@ -222,8 +223,7 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
         if (!state) return;
 
         // If state is loading, don't update
-        const loader = state.loader;
-        if (loader && loader !== '') return;
+        if (state.loader) return;
 
         const computed = state.computed;
         if (!computed) return;
@@ -466,7 +466,7 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
     // Get price impact and gas estimate from controller state
     const state = this.controllerState();
     // Price impact may be a Percent/Fraction object with toFixed/toSignificant methods
-    const priceImpactValue = state?.tradeInfo?.priceImpact;
+    const priceImpactValue = state?.tradeInfo?.priceImpact as any;
     let priceImpact = '0';
     if (priceImpactValue !== null && priceImpactValue !== undefined) {
       if (typeof priceImpactValue === 'number') {
@@ -496,26 +496,10 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
         if (denom !== 0 && !isNaN(num) && !isNaN(denom)) {
           priceImpact = ((num / denom) * 100).toFixed(2);
         }
-      } else if (typeof priceImpactValue === 'object') {
-        // Last resort: check for common property names
-        const possibleValues = [
-          priceImpactValue.value,
-          priceImpactValue.percent,
-          priceImpactValue.percentage,
-          priceImpactValue.impact,
-        ];
-        for (const val of possibleValues) {
-          if (typeof val === 'number') {
-            priceImpact = val.toFixed(2);
-            break;
-          } else if (typeof val === 'string' && !isNaN(parseFloat(val))) {
-            priceImpact = val;
-            break;
-          }
-        }
       }
     }
-    const estimatedGas = state?.tradeInfo?.gasEstimate?.toString() || '0';
+    const estimatedGas =
+      (state?.tradeInfo as any)?.gasEstimate?.toString() || '0';
 
     // Store swap context and get unique ID for this swap operation
     const swapContextId = this.swapContextService.setSwapContext({

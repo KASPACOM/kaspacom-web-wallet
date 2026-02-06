@@ -1,3 +1,9 @@
+// Swap component layout variables
+$swap-input-box-min-height: 150px; // Height to accommodate input + min-received row
+$swap-input-box-padding: 16px;
+$swap-buy-box-padding-top: 20px; // Extra padding to prevent switch button overlap
+$swap-input-row-height: 45px;
+
 .swap-flow-container {
   height: 100%;
   width: 100%;
@@ -47,25 +53,24 @@
   gap: 4px;
 }
 .token-input-row {
-  min-height: 45px;
-  max-height: 45px;
+  min-height: $swap-input-row-height;
+  max-height: $swap-input-row-height;
 }
 // Token Input Box
 .token-input-box {
   background-color: var(--bg-secondary);
   border-radius: 20px;
-  padding: 16px;
+  padding: $swap-input-box-padding;
   border: 1px solid transparent;
   transition: border-color 0.2s ease;
 
   &.sell-box,
   &.buy-box {
-    min-height: 150px;
+    min-height: $swap-input-box-min-height;
   }
 
   &.buy-box {
-    // Fixed height to prevent layout shift when min-received appears
-    padding-top: 20px; // Extra padding to prevent overlap with switch button
+    padding-top: $swap-buy-box-padding-top;
   }
 
   &:hover {

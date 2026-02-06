@@ -4,6 +4,7 @@ import { TitleCasePipe } from '@angular/common';
 import { ICryptoAction } from '../../common/interfaces/crypto-actions.interface';
 import { FlowPagesService } from '../../../../services/flow-pages.service';
 import { WalletService } from '../../../../../services/wallet.service';
+import { environment } from '../../../../../../environments/environment';
 @Component({
   selector: 'app-crypto-actions',
   imports: [KcIconComponent, TitleCasePipe],
@@ -33,7 +34,11 @@ export class CryptoActionsComponent {
       },
     ];
 
-    if (this.walletService.getIsL2DisplaySignal()()) {
+    // Swap is only available in L2 mode and non-production environments
+    if (
+      this.walletService.getIsL2DisplaySignal()() &&
+      !environment.isProduction
+    ) {
       baseActions.push({
         title: 'swap',
         iconClass: 'icon-switch-vertical-01',

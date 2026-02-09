@@ -6,6 +6,8 @@ import { WalletService } from "../wallet.service";
 import { WalletActionService } from "../wallet-action.service";
 import { createEIP1193Response } from "./create-eip-1193-response";
 import { EthereumHandleActionRequestService } from "./etherium-handle-action-request.service";
+import { AllowedApplicationsService } from "../communication-service/allowed-applications.service";
+import { WALLET_APP_ID } from "../../config/consts";
 
 @Injectable({
     providedIn: 'root',
@@ -17,9 +19,10 @@ export class EthereumWalletActionsService {
         private readonly ethereumHandleActionRequestService: EthereumHandleActionRequestService,
         private readonly walletService: WalletService,
         private readonly walletActionsService: WalletActionService,
+        private readonly allowedApplicationsService: AllowedApplicationsService
     ) { }
 
-    async handleRequest<T extends EIP1193RequestType>(request: EIP1193RequestPayload<T>, onActionApproval: undefined | (() => Promise<void>) = undefined, notFromIframe: boolean = false): Promise<EIP1193ProviderResponse<T>> {
+    async handleRequest<T extends EIP1193RequestType>(request: EIP1193RequestPayload<T>, onActionApproval: undefined | (() => Promise<void>) = undefined, notFromIframe: boolean = false, appId?: string): Promise<EIP1193ProviderResponse<T>> {
 
         try {
             if (!this.ethereumWalletChainManager.getCurrentChainSignal()()) {
@@ -40,7 +43,7 @@ export class EthereumWalletActionsService {
                 case EIP1193RequestType.REQUEST_ACCOUNTS:
                 case EIP1193RequestType.GET_ACCOUNTS:
                     // Return the current wallet address
-                    const allAccounts = await this.getAllAccountsAndOrderThem();
+                    const allAccounts = await this.getAllApprovedAccountsAndOrderThem(appId);
 
                     return createEIP1193Response<T>(allAccounts);
                 case EIP1193RequestType.GET_BALANCE:
@@ -146,7 +149,7 @@ export class EthereumWalletActionsService {
         }
     }
 
-    async getEventData(event: EIP1193ProviderEventEnum, data?: unknown): Promise<EIP1193KaspaComWalletProviderEvent> {
+    async getEventData(event: EIP1193ProviderEventEnum, data?: unknown, appId?: string): Promise<EIP1193KaspaComWalletProviderEvent> {
         switch (event) {
             case EIP1193ProviderEventEnum.CONNECT:
                 return {
@@ -168,7 +171,7 @@ export class EthereumWalletActionsService {
             case EIP1193ProviderEventEnum.ACCOUNTS_CHANGED: {
                 return {
                     type: EIP1193ProviderEventEnum.ACCOUNTS_CHANGED,
-                    data: await this.getAllAccountsAndOrderThem()
+                    data: await this.getAllApprovedAccountsAndOrderThem(appId!)
                 };
             }
             case EIP1193ProviderEventEnum.MESSAGE:
@@ -184,14 +187,24 @@ export class EthereumWalletActionsService {
         }
     }
 
-    private async getAllAccountsAndOrderThem(): Promise<string[]> {
+    private async getAllApprovedAccountsAndOrderThem(appId?: string): Promise<string[]> {
         const wallets: AppWallet[] | undefined = this.walletService.getAllWallets()();
 
-        if (!wallets || wallets.length === 0) {
+        if (!wallets || wallets.length === 0 || !appId || appId.trim().length == 0) {
             return [];
         }
 
-        const allAccounts = wallets.map(wallet => wallet.getL2WalletAddress());
+
+        // Filter wallets to only include those used by allowed applications
+        const filteredWallets = (appId == WALLET_APP_ID) ? wallets : wallets.filter(wallet => {
+            return this.allowedApplicationsService.isAllowedApplication(appId, wallet.getIdWithAccount());
+        });
+
+        if (filteredWallets.length === 0) {
+            return [];
+        }
+
+        const allAccounts = filteredWallets.map(wallet => wallet.getL2WalletAddress());
 
         // put current wallet address first
         const currentWalletAddress = this.walletService.getCurrentWallet()!.getL2WalletAddress();

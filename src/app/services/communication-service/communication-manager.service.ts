@@ -76,14 +76,14 @@ export class CommunicationManagerService {
         this.sendDisconnectionMessageToApp(app)
             .catch(error => console.error('Failed to send disconnect message to app ' + app.getApplicationId(), error))
             .finally(
-            () => {
-                try {
-                    app.disconnect();
-                } catch (err) {
-                    console.error('Failed to disconnect app ' + app.getApplicationId())
+                () => {
+                    try {
+                        app.disconnect();
+                    } catch (err) {
+                        console.error('Failed to disconnect app ' + app.getApplicationId())
+                    }
                 }
-            }
-        );
+            );
 
         const allowedAppIndex = this.allowedApps.indexOf(app);
         const connectedAppIndex = this.connectedApps.indexOf(app);
@@ -256,7 +256,7 @@ export class CommunicationManagerService {
                 }
             } else if (actionData.action == WalletActionTypeEnum.EIP1193ProviderRequest) {
 
-                const eipResult = await this.ethereumWalletActionsService.handleRequest(actionData.data, async () => { await this.notifyActionAccepted(actionData, uuid); });
+                const eipResult = await this.ethereumWalletActionsService.handleRequest(actionData.data, async () => { await this.notifyActionAccepted(actionData, uuid); }, false, app?.getApplicationId());
 
                 result = {
                     success: true,
@@ -381,7 +381,7 @@ export class CommunicationManagerService {
         if (!environment.isL2Enabled) {
             return;
         }
-        const eventData = await this.ethereumWalletActionsService.getEventData(event);
+        const eventData = await this.ethereumWalletActionsService.getEventData(event, undefined, specificApp?.getApplicationId());
 
         await this.sendMessageToConnectedApps({
             type: WalletMessageTypeEnum.EIP1193Event,

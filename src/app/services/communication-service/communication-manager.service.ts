@@ -137,7 +137,7 @@ export class CommunicationManagerService {
         if (message?.type) {
             switch (message.type) {
                 case WalletMessageTypeEnum.WalletActionRequest:
-                    await this.handleWalletActionRequest(message.payload, message.uuid, app);
+                    await this.handleWalletActionRequest(message.payload, message.uuid, app, message.displayIframeApproval);
                     break;
                 case WalletMessageTypeEnum.OpenWalletInfo:
                     // Clean up any ongoing approval flow before navigating
@@ -233,6 +233,7 @@ export class CommunicationManagerService {
         actionData: WalletActionRequestPayloadInterface,
         uuid?: string,
         app?: BaseCommunicationApp,
+        displayIframeApproval?: boolean,
     ) {
         let result: WalletActionResultWithError = {
             success: false,
@@ -256,7 +257,7 @@ export class CommunicationManagerService {
                 }
             } else if (actionData.action == WalletActionTypeEnum.EIP1193ProviderRequest) {
 
-                const eipResult = await this.ethereumWalletActionsService.handleRequest(actionData.data, async () => { await this.notifyActionAccepted(actionData, uuid); }, false, app?.getApplicationId());
+                const eipResult = await this.ethereumWalletActionsService.handleRequest(actionData.data, async () => { await this.notifyActionAccepted(actionData, uuid); }, !displayIframeApproval, app?.getApplicationId());
 
                 result = {
                     success: true,
@@ -273,7 +274,7 @@ export class CommunicationManagerService {
                 if (action) {
                     result = await this.walletActionsService.validateAndDoActionAfterApproval(
                         action,
-                        true,
+                        displayIframeApproval,
                         async () => { await this.notifyActionAccepted(actionData, uuid); },
                     );
                 }

@@ -11,7 +11,6 @@ import { QuickActionDialogService } from '../../services/quick-action-dialog.ser
 import { ReviewActionComponent } from '../../../components/wallet-actions-reviews/review-action/review-action.component';
 import { DynamicFlowPageOutletComponent } from './common/flow-page/dynamic-flow-page-outlet.component';
 import { DynamicQuickActionDialogOutletComponent } from './common/quick-action-dialog/dynamic-quick-action-dialog-outlet.component';
-import { IFrameCommunicationApp } from '../../../services/communication-service/communication-app/iframe-communication.service';
 import { IframeAccountSelectionComponent } from './iframe-account-selection/iframe-account-selection.component';
 import { IframeAccountSelectionService } from '../../services/iframe-account-selection.service';
 

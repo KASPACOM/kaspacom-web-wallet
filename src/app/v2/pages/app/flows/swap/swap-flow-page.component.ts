@@ -13,6 +13,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { CommaFormatterPipe } from '../../../../../pipes/comma-formatter.pipe';
 import { EthereumWalletActionsService } from '../../../../../services/etherium-services/etherium-wallet-actions.service';
 import { EIP1193RequestPayload } from '@kaspacom/wallet-messages';
+import { WALLET_APP_ID } from '../../../../../config/consts';
 
 @Component({
     selector: 'app-swap-flow-page',
@@ -189,7 +190,7 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
 
             await ctrl.connectWallet({
                 request: async (request: { method: string, params?: Array<any> | Record<string, any> }) => {
-                    const result = await this.ethereumWalletActionsService.handleRequest(request as EIP1193RequestPayload<any>, undefined, true);
+                    const result = await this.ethereumWalletActionsService.handleRequest(request as EIP1193RequestPayload<any>, undefined, true, WALLET_APP_ID);
 
 
                     if (result.error) {

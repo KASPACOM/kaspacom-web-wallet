@@ -3,9 +3,9 @@ import { LOCAL_STORAGE_KEYS } from "../../config/consts";
 
 @Injectable({
     providedIn: 'root',
-  })
-  export class AllowedApplicationsService {
-    private allowedAppLocations: {[appId: string]: string[]};
+})
+export class AllowedApplicationsService {
+    private allowedAppLocations: { [appId: string]: string[] };
 
     constructor() {
         const allowedApplications = localStorage.getItem(LOCAL_STORAGE_KEYS.ALLOWED_APPLICATIONS);
@@ -37,5 +37,4 @@ import { LOCAL_STORAGE_KEYS } from "../../config/consts";
     saveToLocalStorage() {
         localStorage.setItem(LOCAL_STORAGE_KEYS.ALLOWED_APPLICATIONS, JSON.stringify(this.allowedAppLocations));
     }
-  }
-  
+}

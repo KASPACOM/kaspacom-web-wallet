@@ -1,23 +1,18 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { formatUnits } from 'ethers';
 import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
-import {
-  BaseAssetPageComponent,
-  AssetDetail,
-  AssetTransaction,
-} from '../../../../../common/base-asset-page/base-asset-page.component';
-import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
+import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
+import { L2AssetsStoreService } from '../../../../../../../../services/assets-manager/assets-stores/l2-assets-store.service';
+import { ERC20Contract } from '../../../../../../../../services/etherium-services/smart-contracts/contracts/erc20-contract';
 import { FlowPagesService } from '../../../../../../../services/flow-pages.service';
 import {
   KcLabeledTabsComponent,
   TabItem,
 } from '../../../../../../../shared/ui/kc-labeled-tabs/kc-labeled-tabs.component';
-import { ERC20Contract } from '../../../../../../../../services/etherium-services/smart-contracts/contracts/erc20-contract';
-import { formatUnits } from 'ethers';
-import { WalletActionService } from '../../../../../../../../services/wallet-action.service';
-import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
-import { L2AssetsStoreService } from '../../../../../../../../services/assets-manager/assets-stores/l2-assets-store.service';
+import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
+import { BaseAssetPageComponent } from '../../../../../common/base-asset-page/base-asset-page.component';
 
 interface Erc20TokenInfo {
   balance: number;

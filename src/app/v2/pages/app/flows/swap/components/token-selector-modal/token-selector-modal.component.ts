@@ -73,9 +73,13 @@ export class TokenSelectorModalComponent {
     this.close.emit();
   }
 
-  copyAddress(event: Event, address: string) {
+  async copyAddress(event: Event, address: string) {
     event.stopPropagation();
-    navigator.clipboard.writeText(address);
-    this.messagePopupService.showSuccess('Address copied to clipboard');
+    try {
+      await navigator.clipboard.writeText(address);
+      this.messagePopupService.showSuccess('Address copied to clipboard');
+    } catch {
+      this.messagePopupService.showError('Failed to copy address');
+    }
   }
 }

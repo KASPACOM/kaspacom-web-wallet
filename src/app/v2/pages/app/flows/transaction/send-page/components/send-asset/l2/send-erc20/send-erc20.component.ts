@@ -146,7 +146,8 @@ export class SendErc20Component
   }
 
   onAmountChange(amount: any): void {
-    this.tokenAmount = amount?.toString() || '';
+    const parsed = Number(amount);
+    this.tokenAmount = Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
     this.validateAmount();
   }
 
@@ -191,16 +192,16 @@ export class SendErc20Component
   }
 
   private validateAmount(): void {
-    const amount = this.tokenAmount;
+    const parsed = Number(this.tokenAmount);
     const balance = this.availableBalance;
 
-    if (!this.tokenAmount || (amount || 0) <= 0) {
+    if (!this.tokenAmount || !Number.isFinite(parsed) || parsed <= 0) {
       this.isAmountValid = false;
       this.amountErrorMessage = 'Amount must be greater than 0';
       return;
     }
 
-    if ((amount || 0) > balance) {
+    if (parsed > balance) {
       this.isAmountValid = false;
       this.amountErrorMessage = 'Insufficient balance';
       return;

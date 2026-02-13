@@ -13,7 +13,6 @@ export class UtilsService {
   private readonly imageService = inject(ImageService);
   private readonly lfgTokensCacheService = inject(LfgTokensCacheService);
   private readonly logosUrl = inject(LOGOS_URL);
-  //private readonly defiBackendApiService = inject(DefiBackendApiService);
   private readonly imageUrlCache = new Map<
     string,
     { url: string; timestamp: number }
@@ -127,22 +126,20 @@ export class UtilsService {
         img.src = url;
       });
 
-    return (
-      test(localUrl)
-        //.then((r) => r || test(logoUrl)) //backend
-        .then((r) => r || test(lfgTokenUrl))
-        .then((r) => r || test(addressUrl)) //s3
-        .then((r) => r || test(defaultUrl)) //default logo for metamask
-        .then((r) => r || fallbackUrl) // fallback logo
-        .then((finalUrl) => {
-          if (finalUrl !== fallbackUrl) {
-            this.imageUrlCache.set(cacheKey, {
-              url: finalUrl,
-              timestamp: Date.now(),
-            });
-          }
-          return finalUrl;
-        })
-    );
+    return test(localUrl)
+      .then((r) => r || test(logoUrl)) //backend
+      .then((r) => r || test(lfgTokenUrl))
+      .then((r) => r || test(addressUrl)) //s3
+      .then((r) => r || test(defaultUrl)) //default logo for metamask
+      .then((r) => r || fallbackUrl) // fallback logo
+      .then((finalUrl) => {
+        if (finalUrl !== fallbackUrl) {
+          this.imageUrlCache.set(cacheKey, {
+            url: finalUrl,
+            timestamp: Date.now(),
+          });
+        }
+        return finalUrl;
+      });
   }
 }

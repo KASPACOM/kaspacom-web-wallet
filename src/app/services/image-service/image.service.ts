@@ -4,7 +4,6 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { LfgTokenResponse } from '../../types/lfg-token.model';
 import { Observable } from 'rxjs';
 import { TokenLogoResponse } from '../../types/token-response.model';
-import { RpcService } from '../kaspa-netwrok-services/rpc.service';
 import { EthereumWalletChainManager } from '../etherium-services/etherium-wallet-chain.manager';
 
 @Injectable({
@@ -12,7 +11,9 @@ import { EthereumWalletChainManager } from '../etherium-services/etherium-wallet
 })
 export class ImageService {
   private readonly http = inject(HttpClient);
-  private readonly ethereumWalletChainManager = inject(EthereumWalletChainManager);
+  private readonly ethereumWalletChainManager = inject(
+    EthereumWalletChainManager,
+  );
 
   private readonly EXPLORER_CONTROLLER = 'explorer';
   private readonly DEX_CONTROLLER = 'dex';
@@ -54,7 +55,11 @@ export class ImageService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     params?: Record<string, any>,
   ): HttpParams {
-    const config = this.ethereumWalletChainManager.getChainConfig(this.ethereumWalletChainManager.getCurrentChainSignal()()!);
+    const currentChain =
+      this.ethereumWalletChainManager.getCurrentChainSignal()();
+    const config = currentChain
+      ? this.ethereumWalletChainManager.getChainConfig(currentChain)
+      : undefined;
     const network = config?.defiApiNetworkName || config?.chainName;
 
     return this.buildHttpParams({ ...params, network });

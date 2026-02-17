@@ -20,7 +20,6 @@ export interface Environment {
   knsApiBaseurl: string;
   kaspaExplorerBaseurl: string;
   kaspaNetwork: string;
-  defiApiBaseurl: string;
   logosUrl: string;
   allowedDomains: string[];
   isL2Enabled: boolean;

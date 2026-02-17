@@ -1,15 +1,21 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import {
   KcButtonComponent,
   KcIconComponent,
   KcInputComponent,
-  KcSnackbarComponent,
   NotificationService,
 } from 'kaspacom-ui';
-import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
 import { WalletService } from '../../../../../../../services/wallet.service';
+import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
 
 @Component({
   selector: 'app-seed-passphrase-import-existing-step',
@@ -19,7 +25,6 @@ import { WalletService } from '../../../../../../../services/wallet.service';
     KcButtonComponent,
     KcInputComponent,
     KcIconComponent,
-    KcSnackbarComponent,
   ],
   templateUrl: './seed-passphrase-import-existing-step.component.html',
   styleUrl: './seed-passphrase-import-existing-step.component.scss',
@@ -31,14 +36,14 @@ export class SeedPassphraseImportExistingStepComponent {
   skipPassword = input<boolean>(false);
 
   private readonly fb = inject(FormBuilder);
-  private readonly importExistingFlowService = inject(ImportExistingFlowService);
+  private readonly importExistingFlowService = inject(
+    ImportExistingFlowService,
+  );
   private readonly walletService = inject(WalletService);
   private readonly notificationService = inject(NotificationService);
 
   passphraseForm = this.fb.group({
-    seedPassphrase: [
-      this.importExistingFlowService.model().seedPassphrase,
-    ],
+    seedPassphrase: [this.importExistingFlowService.model().seedPassphrase],
   });
 
   isSubmitting = signal(false);
@@ -61,8 +66,7 @@ export class SeedPassphraseImportExistingStepComponent {
       return;
     }
 
-    const passphrase =
-      this.passphraseForm.value.seedPassphrase?.trim() ?? '';
+    const passphrase = this.passphraseForm.value.seedPassphrase?.trim() ?? '';
 
     if (
       this.importExistingFlowService.model().seedPhrase &&
@@ -82,7 +86,8 @@ export class SeedPassphraseImportExistingStepComponent {
 
     if (this.skipPassword()) {
       this.isSubmitting.set(true);
-      const result = await this.importExistingFlowService.finalSubmitSkipPassword();
+      const result =
+        await this.importExistingFlowService.finalSubmitSkipPassword();
       this.isSubmitting.set(false);
 
       if (!result.success) {
@@ -97,4 +102,3 @@ export class SeedPassphraseImportExistingStepComponent {
     this.next.emit();
   }
 }
-

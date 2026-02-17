@@ -32,7 +32,7 @@ export const appConfig: ApplicationConfig = {
     },
     {
       provide: DEFI_API_BASE_URL,
-      useValue: environment.defiApiBaseurl,
+      useValue: environment.kaspaComDefiApiBaseurl,
     },
     {
       provide: LOGOS_URL,

@@ -16,7 +16,6 @@ export const environment: Environment = {
   knsApiBaseurl: 'https://api.knsdomains.org/mainnet',
   kaspaExplorerBaseurl: 'https://explorer.kaspa.org',
   kaspaNetwork: KASPA_NETWORKS.MAINNET,
-  defiApiBaseurl: 'https://api-defi.kaspa.com',
   logosUrl: 'https://erc20-logo.s3.us-east-1.amazonaws.com/',
   allowedDomains: ['wallet.kaspa.com'],
   isL2Enabled: false,

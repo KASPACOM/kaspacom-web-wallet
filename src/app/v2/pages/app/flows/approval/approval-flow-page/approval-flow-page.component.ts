@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { KcButtonComponent } from 'kaspacom-ui';
@@ -30,7 +30,7 @@ import { SwapContextService } from '../../../../../services/swap-context.service
   templateUrl: './approval-flow-page.component.html',
   styleUrl: './approval-flow-page.component.scss'
 })
-export class ApprovalFlowPageComponent {
+export class ApprovalFlowPageComponent implements OnDestroy {
   public approvalFlowService = inject(ApprovalFlowService);
   private walletService = inject(WalletService);
   private reviewActionDataService = inject(ReviewActionDataService);
@@ -109,6 +109,12 @@ export class ApprovalFlowPageComponent {
     this.approvalFlowService.resolveApproval({
       isApproved: false
     });
+  }
+
+  ngOnDestroy() {
+    // If the component is destroyed while approval is still pending
+    // (e.g. user navigated back), reject the pending approval cleanly
+    this.approvalFlowService.rejectIfPending();
   }
 
   setCurrentPriorityFee(priorityFee: bigint | undefined) {

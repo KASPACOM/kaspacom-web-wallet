@@ -206,6 +206,19 @@ export class ApprovalFlowService {
     this.cleanupApproval();
   }
 
+  /**
+   * Rejects and cleans up a pending approval without triggering navigation.
+   * Used when the approval page is destroyed externally (e.g. user navigated back).
+   */
+  rejectIfPending() {
+    if (this.currentResolve) {
+      this.currentResolve({ isApproved: false });
+      this.currentResolve = null;
+    }
+    this.currentApprovalConfigSignal.set(null);
+    this.completionSignal.set(null);
+  }
+
   private determineDisplayMode(isFromIframe: boolean): ApprovalDisplayMode {
     if (isFromIframe) {
       return ApprovalDisplayMode.MODAL_DIALOG;

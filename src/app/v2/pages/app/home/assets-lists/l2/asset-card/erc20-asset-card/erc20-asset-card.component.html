@@ -8,7 +8,7 @@
       [size]="'lg'"
     ></kc-token-logo>
   <div class="flex column gap-4">
-      <div class="text-gray-90">{{ token()?.name || '' | titlecase }}</div>
+      <div class="text-gray-90">{{ token()?.name || '' }}</div>
       <div class="text-gray-60 typo-text-1 asset-card__meta">
         {{ token()?.balance || 0 | number : '1.0-4' }}
         &nbsp;{{ token()?.symbol || '' | uppercase }}

@@ -87,6 +87,8 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
 
   // Internal State
   currentIsOutput = signal(false);
+  private isExecutingSwap = false;
+  private balanceUpdateUnsubscribe: (() => void) | null = null;
 
   // Data
   allTokens = signal<Erc20Token[]>([]);
@@ -248,6 +250,7 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.amountSub.unsubscribe();
+    this.balanceUpdateUnsubscribe?.();
     this.controller()?.disconnectWallet();
     this.controller()?.destroy();
   }
@@ -277,7 +280,10 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
 
           if (state.error) {
             console.error('Swap State Error:', state.error);
-            this.notificationService.error('Error', state.error);
+            // Don't show notification for swap execution errors (handled by executeSwap)
+            if (!this.isExecutingSwap) {
+              this.notificationService.error('Error', state.error);
+            }
           }
         },
         refreshPairsInterval: 20000,
@@ -296,6 +302,11 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
           );
 
           if (result.error) {
+            if (result.error.code === 4001) {
+              const err: any = new Error('User rejected');
+              err.code = 4001;
+              throw err;
+            }
             console.error(result.error);
             this.notificationService.error('Swap Error', result.error.message);
             throw result;
@@ -515,6 +526,7 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
       estimatedGas,
     });
 
+    this.isExecutingSwap = true;
     try {
       const tx = await ctrl.swap();
       if (tx) {
@@ -525,17 +537,92 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
         this.fromAmountInput.set('');
         this.toAmountInput.set('');
         this.updateControllerAmount('0', false);
+        this.waitForConfirmationAndRefresh(tx);
       }
     } catch (err: any) {
-      if (err?.code === 4001 || err?.info?.error?.code === 4001) return;
+      if (err?.code === 4001 || err?.info?.error?.code === 4001) {
+        this.notificationService.error('Swap Error', 'User rejected');
+        return;
+      }
       this.notificationService.error(
         'Swap Failed',
         err?.message || 'Unknown error',
       );
     } finally {
+      this.isExecutingSwap = false;
       // Clear swap context only if this swap's context is still active
       // This prevents a stale swap from clearing a newer swap's context
       this.swapContextService.clearSwapContext(swapContextId);
+    }
+  }
+
+  private async waitForConfirmationAndRefresh(txHash: string): Promise<void> {
+    try {
+      const provider = this.chainManager.getCurrentWalletProvider();
+      if (!provider) return;
+
+      // Wait for the transaction to be mined
+      await provider.getTransactionReceipt(txHash);
+
+      // Refresh native L2 balance
+      await this.walletService.getCurrentWallet()?.refreshL2Balance();
+
+      // Listen for ERC20 balance update and refresh local swap tokens
+      this.balanceUpdateUnsubscribe?.();
+      const l2Store = this.assetsManagerService.getAllAssetStores().l2;
+      this.balanceUpdateUnsubscribe = l2Store.onAssetsUpdated(
+        L2_ASSET_KEYS.erc20,
+        () => {
+          this.refreshLocalTokenBalances();
+          this.balanceUpdateUnsubscribe?.();
+          this.balanceUpdateUnsubscribe = null;
+        },
+      );
+
+      // Trigger reload of all assets (fires the listener above when done)
+      this.assetsManagerService.reloadAllCurrentAssetsAfterUpdate();
+    } catch (err) {
+      console.error('Error refreshing balances after swap:', err);
+    }
+  }
+
+  private refreshLocalTokenBalances(): void {
+    const erc20WithBalances: Erc20Token[] = this.assetsManagerService
+      .getAllAssetStores()
+      .l2.getAssets(L2_ASSET_KEYS.erc20);
+
+    const balanceMap = new Map<string, number>();
+    for (const token of erc20WithBalances) {
+      balanceMap.set(token.address.toLowerCase(), token.balance || 0);
+    }
+
+    const nativeBalance =
+      this.walletService.getCurrentWallet()?.getL2WalletStateSignal()()
+        ?.balanceFormatted || 0;
+    const nativeTokenAddress = '0x0000000000000000000000000000000000000000';
+    balanceMap.set(nativeTokenAddress.toLowerCase(), nativeBalance);
+
+    this.allTokens.set(
+      this.allTokens().map((token) => ({
+        ...token,
+        balance: balanceMap.get(token.address.toLowerCase()) ?? token.balance ?? 0,
+      })),
+    );
+
+    const from = this.fromToken();
+    if (from) {
+      const newBalance = balanceMap.get(from.address.toLowerCase());
+      if (newBalance !== undefined) {
+        this.fromToken.set({ ...from, balance: newBalance });
+      }
+    }
+
+    const to = this.toToken();
+    if (to) {
+      const newBalance = balanceMap.get(to.address.toLowerCase());
+      if (newBalance !== undefined) {
+        this.toToken.set({ ...to, balance: newBalance });
+      }
     }
   }
 }

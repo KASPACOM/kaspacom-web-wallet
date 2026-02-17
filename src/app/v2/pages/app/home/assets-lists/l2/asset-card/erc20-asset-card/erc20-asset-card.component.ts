@@ -1,9 +1,4 @@
-import {
-  CommonModule,
-  DecimalPipe,
-  TitleCasePipe,
-  UpperCasePipe,
-} from '@angular/common';
+import { CommonModule, DecimalPipe, UpperCasePipe } from '@angular/common';
 import { Component, EventEmitter, Output, input } from '@angular/core';
 import { Erc20Token } from '@kaspacom/swap-sdk';
 import { TokenLogoComponent } from '../../../../../../../../components/token-logo/token-logo.component';
@@ -11,13 +6,7 @@ import { TokenLogoComponent } from '../../../../../../../../components/token-log
 @Component({
   selector: 'erc20-asset-card',
   standalone: true,
-  imports: [
-    CommonModule,
-    DecimalPipe,
-    TitleCasePipe,
-    UpperCasePipe,
-    TokenLogoComponent,
-  ],
+  imports: [CommonModule, DecimalPipe, UpperCasePipe, TokenLogoComponent],
   templateUrl: './erc20-asset-card.component.html',
   styleUrl: './erc20-asset-card.component.scss',
 })

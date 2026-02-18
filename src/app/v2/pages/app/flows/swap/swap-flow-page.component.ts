@@ -605,7 +605,8 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
     this.allTokens.set(
       this.allTokens().map((token) => ({
         ...token,
-        balance: balanceMap.get(token.address.toLowerCase()) ?? token.balance ?? 0,
+        balance:
+          balanceMap.get(token.address.toLowerCase()) ?? token.balance ?? 0,
       })),
     );
 

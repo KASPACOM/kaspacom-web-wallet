@@ -6,6 +6,7 @@ import { TransactionsComponent } from './transactions/transactions.component';
 import { SettingsComponent } from './settings/settings.component';
 import { ActivityComponent } from './activity/activity.component';
 import { HomeRoutes } from './home/routes/home.routes';
+import { ContractsPageComponent } from './flows/contracts/contracts-page.component';
 
 export const loggedRoutes: Routes = [
   {
@@ -37,6 +38,11 @@ export const loggedRoutes: Routes = [
         path: 'activity',
         component: ActivityComponent,
         data: { animation: 'Activity' },
+      },
+      {
+        path: 'contracts',
+        component: ContractsPageComponent,
+        data: { animation: 'Contracts' },
       },
     ],
   },

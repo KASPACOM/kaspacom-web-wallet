@@ -63,6 +63,7 @@ const PRESET_NETWORKS: KaspaNetworkConfig[] = [
 
 const STORAGE_KEY_SELECTED = 'kaspacom_selected_network';
 const STORAGE_KEY_CUSTOM = 'kaspacom_custom_networks';
+const STORAGE_KEY_OVERRIDES = 'kaspacom_network_overrides';
 
 @Injectable({
   providedIn: 'root',
@@ -70,10 +71,12 @@ const STORAGE_KEY_CUSTOM = 'kaspacom_custom_networks';
 export class NetworkConfigService {
   private activeNetworkSignal: WritableSignal<KaspaNetworkConfig>;
   private customNetworks: KaspaNetworkConfig[] = [];
+  private presetOverrides: Record<string, Partial<KaspaNetworkConfig>> = {};
 
   constructor() {
-    // Load custom networks from localStorage
+    // Load custom networks and preset overrides from localStorage
     this.loadCustomNetworks();
+    this.loadPresetOverrides();
 
     // Load selected network from localStorage, or use environment default
     const savedNetworkId = localStorage.getItem(STORAGE_KEY_SELECTED);
@@ -120,9 +123,11 @@ export class NetworkConfigService {
   getAllNetworks(): KaspaNetworkConfig[] {
     if (environment.isProduction) {
       // Only mainnet in production
-      return PRESET_NETWORKS.filter(n => n.id === 'mainnet');
+      const mainnet = this.applyPresetOverride(PRESET_NETWORKS.find(n => n.id === 'mainnet')!);
+      return [mainnet];
     }
-    return [...PRESET_NETWORKS, ...this.customNetworks];
+    const presets = PRESET_NETWORKS.map(preset => this.applyPresetOverride(preset));
+    return [...presets, ...this.customNetworks];
   }
 
   /**
@@ -130,9 +135,10 @@ export class NetworkConfigService {
    */
   getPresetNetworks(): KaspaNetworkConfig[] {
     if (environment.isProduction) {
-      return PRESET_NETWORKS.filter(n => n.id === 'mainnet');
+      const mainnet = this.applyPresetOverride(PRESET_NETWORKS.find(n => n.id === 'mainnet')!);
+      return [mainnet];
     }
-    return PRESET_NETWORKS;
+    return PRESET_NETWORKS.map(preset => this.applyPresetOverride(preset));
   }
 
   /**
@@ -158,6 +164,17 @@ export class NetworkConfigService {
   addCustomNetwork(config: KaspaNetworkConfig): void {
     if (environment.isProduction) {
       throw new Error('Custom networks are only available in development mode');
+    }
+
+    // Validate URLs
+    if (!this.isValidUrl(config.wrpcUrl)) {
+      throw new Error('Invalid WRPC URL');
+    }
+    if (!this.isValidUrl(config.kaspaApiBaseurl)) {
+      throw new Error('Invalid Kaspa API URL');
+    }
+    if (!this.isValidUrl(config.kaspaExplorerBaseurl)) {
+      throw new Error('Invalid Kaspa Explorer URL');
     }
 
     // Ensure it's marked as custom
@@ -208,17 +225,34 @@ export class NetworkConfigService {
     delete partial.id;
     delete partial.isCustom;
 
-    // Update the network
-    Object.assign(network, partial);
+    // Validate URLs if provided
+    if (partial.wrpcUrl !== undefined && !this.isValidUrl(partial.wrpcUrl)) {
+      throw new Error('Invalid WRPC URL');
+    }
+    if (partial.kaspaApiBaseurl !== undefined && !this.isValidUrl(partial.kaspaApiBaseurl)) {
+      throw new Error('Invalid Kaspa API URL');
+    }
+    if (partial.kaspaExplorerBaseurl !== undefined && !this.isValidUrl(partial.kaspaExplorerBaseurl)) {
+      throw new Error('Invalid Kaspa Explorer URL');
+    }
 
-    // If it's a custom network, save to localStorage
-    if (network.isCustom) {
+    if (!network.isCustom) {
+      // Store override separately for preset networks, don't mutate the preset
+      if (!this.presetOverrides[id]) {
+        this.presetOverrides[id] = {};
+      }
+      Object.assign(this.presetOverrides[id], partial);
+      this.savePresetOverrides();
+    } else {
+      // For custom networks, update directly
+      Object.assign(network, partial);
       this.saveCustomNetworks();
     }
 
-    // If this is the active network, update the signal
+    // If this is the active network, update the signal with merged config
     if (this.activeNetworkSignal().id === id) {
-      this.activeNetworkSignal.set({ ...network });
+      const updatedNetwork = this.findNetworkById(id)!;
+      this.activeNetworkSignal.set({ ...updatedNetwork });
     }
   }
 
@@ -228,6 +262,36 @@ export class NetworkConfigService {
   getApiUrl(key: keyof KaspaNetworkConfig): string {
     const value = this.activeNetworkSignal()[key];
     return typeof value === 'string' ? value : '';
+  }
+
+  /**
+   * Validate URL format (hostname or full URL with protocol)
+   */
+  private isValidUrl(url: string): boolean {
+    if (!url || url.trim() === '') {
+      return true; // empty = use resolver, OK
+    }
+    
+    const trimmed = url.trim();
+    
+    // Allow plain hostnames (no protocol)
+    const hostnamePattern = /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
+    
+    // Allow proper URLs with protocol
+    const urlPattern = /^(wss?|https?):\/\/[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*(:[0-9]+)?(\/.*)?$/;
+    
+    return hostnamePattern.test(trimmed) || urlPattern.test(trimmed);
+  }
+
+  /**
+   * Apply preset overrides to a preset network config
+   */
+  private applyPresetOverride(preset: KaspaNetworkConfig): KaspaNetworkConfig {
+    const override = this.presetOverrides[preset.id];
+    if (!override) {
+      return { ...preset };
+    }
+    return { ...preset, ...override };
   }
 
   private findNetworkById(id: string): KaspaNetworkConfig | undefined {
@@ -256,5 +320,21 @@ export class NetworkConfigService {
       return;
     }
     localStorage.setItem(STORAGE_KEY_CUSTOM, JSON.stringify(this.customNetworks));
+  }
+
+  private loadPresetOverrides(): void {
+    const stored = localStorage.getItem(STORAGE_KEY_OVERRIDES);
+    if (stored) {
+      try {
+        this.presetOverrides = JSON.parse(stored);
+      } catch (e) {
+        console.error('Failed to parse preset overrides from localStorage:', e);
+        this.presetOverrides = {};
+      }
+    }
+  }
+
+  private savePresetOverrides(): void {
+    localStorage.setItem(STORAGE_KEY_OVERRIDES, JSON.stringify(this.presetOverrides));
   }
 }

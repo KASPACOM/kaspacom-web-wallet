@@ -7,6 +7,8 @@ import { EthereumWalletChainManager } from '../../../../services/etherium-servic
 import { EIP1193ProviderChain } from '@kaspacom/wallet-messages';
 import { environment } from '../../../../../environments/environment';
 
+const STORAGE_KEY_L2_RPC_OVERRIDES = 'kaspacom_l2_rpc_overrides';
+
 @Component({
   selector: 'app-settings',
   imports: [CommonModule, FormsModule, KcButtonComponent, KcIconComponent],
@@ -30,9 +32,20 @@ export class SettingsComponent {
   protected readonly customWrpcUrl = signal('');
 
   // L2 Network state
-  protected readonly l2Networks = computed<EIP1193ProviderChain[]>(() => 
-    Object.values(this.ethereumWalletChainManager.getAllChainsByChainId()) as EIP1193ProviderChain[]
-  );
+  private l2RpcOverrides: Record<string, string> = {};
+  
+  protected readonly l2Networks = computed<EIP1193ProviderChain[]>(() => {
+    const chains = Object.values(this.ethereumWalletChainManager.getAllChainsByChainId()) as EIP1193ProviderChain[];
+    // Apply any saved L2 RPC overrides
+    return chains.map(chain => {
+      const override = this.l2RpcOverrides[chain.chainId];
+      if (override) {
+        return { ...chain, rpcUrls: [override] };
+      }
+      return chain;
+    });
+  });
+  
   protected readonly showEditL2Rpc = signal<string | null>(null);
   protected readonly editL2RpcUrl = signal('');
 
@@ -50,6 +63,49 @@ export class SettingsComponent {
     krc721CacheStreamUrl: '',
     knsApiBaseurl: '',
   });
+
+  // Confirmation modal state
+  protected readonly networkToRemove = signal<string | null>(null);
+
+  constructor() {
+    // Load L2 RPC overrides on init
+    this.loadL2RpcOverrides();
+  }
+
+  // URL validation
+  private isValidUrl(url: string): boolean {
+    if (!url || url.trim() === '') {
+      return true; // empty = use resolver, OK
+    }
+    
+    const trimmed = url.trim();
+    
+    // Allow plain hostnames (no protocol)
+    const hostnamePattern = /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
+    
+    // Allow proper URLs with protocol
+    const urlPattern = /^(wss?|https?):\/\/[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*(:[0-9]+)?(\/.*)?$/;
+    
+    return hostnamePattern.test(trimmed) || urlPattern.test(trimmed);
+  }
+
+  // L2 RPC persistence methods
+  private loadL2RpcOverrides(): void {
+    const stored = localStorage.getItem(STORAGE_KEY_L2_RPC_OVERRIDES);
+    if (stored) {
+      try {
+        this.l2RpcOverrides = JSON.parse(stored);
+      } catch (e) {
+        console.error('Failed to parse L2 RPC overrides from localStorage:', e);
+        this.l2RpcOverrides = {};
+      }
+    }
+  }
+
+  private saveL2RpcOverride(chainId: string, rpcUrl: string): void {
+    this.l2RpcOverrides[chainId] = rpcUrl;
+    localStorage.setItem(STORAGE_KEY_L2_RPC_OVERRIDES, JSON.stringify(this.l2RpcOverrides));
+  }
 
   // Custom network form update methods
   updateCustomFormField(field: string, value: string): void {
@@ -89,6 +145,13 @@ export class SettingsComponent {
 
   saveCustomWrpc(): void {
     const url = this.customWrpcUrl();
+    
+    // Validate URL
+    if (!this.isValidUrl(url)) {
+      this.notificationService.error('Invalid URL', 'Please enter a valid hostname or URL');
+      return;
+    }
+    
     const useResolver = url === '';
     
     try {
@@ -133,6 +196,20 @@ export class SettingsComponent {
       return;
     }
 
+    // Validate URLs
+    if (!this.isValidUrl(form.wrpcUrl)) {
+      this.notificationService.error('Invalid URL', 'WRPC URL is not valid');
+      return;
+    }
+    if (!this.isValidUrl(form.kaspaApiBaseurl)) {
+      this.notificationService.error('Invalid URL', 'Kaspa API URL is not valid');
+      return;
+    }
+    if (!this.isValidUrl(form.kaspaExplorerBaseurl)) {
+      this.notificationService.error('Invalid URL', 'Kaspa Explorer URL is not valid');
+      return;
+    }
+
     try {
       const config: KaspaNetworkConfig = {
         ...form,
@@ -153,17 +230,27 @@ export class SettingsComponent {
   }
 
   removeCustomNetwork(networkId: string): void {
-    if (!confirm('Are you sure you want to remove this custom network?')) {
-      return;
-    }
+    // Set the network to remove, triggering confirmation modal
+    this.networkToRemove.set(networkId);
+  }
+
+  confirmRemoveCustomNetwork(): void {
+    const id = this.networkToRemove();
+    if (!id) return;
 
     try {
-      this.networkConfigService.removeCustomNetwork(networkId);
+      this.networkConfigService.removeCustomNetwork(id);
       this.notificationService.success('Network removed', 'Custom network removed successfully');
+      this.networkToRemove.set(null);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       this.notificationService.error('Network removal failed', `Failed to remove network: ${errorMessage}`);
+      this.networkToRemove.set(null);
     }
+  }
+
+  cancelRemoveCustomNetwork(): void {
+    this.networkToRemove.set(null);
   }
 
   // L2 Network Methods
@@ -189,14 +276,18 @@ export class SettingsComponent {
       return;
     }
 
+    // Validate URL
+    if (!this.isValidUrl(newRpcUrl)) {
+      this.notificationService.error('Invalid URL', 'Please enter a valid RPC URL');
+      return;
+    }
+
     try {
-      // Update the network config
-      const network = this.l2Networks().find(n => n.chainId === chainId);
-      if (network) {
-        network.rpcUrls = [newRpcUrl];
-        this.notificationService.success('RPC updated', 'L2 RPC URL updated successfully');
-        this.showEditL2Rpc.set(null);
-      }
+      // Save the override to localStorage
+      this.saveL2RpcOverride(chainId, newRpcUrl);
+      
+      this.notificationService.success('RPC updated', 'L2 RPC URL updated successfully');
+      this.showEditL2Rpc.set(null);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       this.notificationService.error('RPC update failed', `Failed to update RPC: ${errorMessage}`);

@@ -1,173 +1,430 @@
 <div class="contracts-container flex column full-width full-height p-24 gap-32">
+  <!-- Header -->
   <div class="contracts-header flex column gap-8">
     <h1 class="text-white typo-title-1">Contracts</h1>
-    <p class="text-gray-75 typo-text-1">Deploy and interact with Kaspa covenants</p>
+    <p class="text-gray-75 typo-text-1">Deploy and interact with SilverScript covenants</p>
   </div>
 
-  <!-- Deploy Panel -->
-  <div class="panel flex column gap-20 p-24 rounded-lg">
-    <div class="panel-header flex align-items-center justify-content-between">
-      <h2 class="text-white typo-title-3">Deploy Contract</h2>
-    </div>
-
-    <div class="form-group flex column gap-8">
-      <label class="text-gray-60 typo-text-1">Compiled Contract JSON</label>
-      <textarea
-        class="contract-input p-12 rounded-lg text-white typo-text-2"
-        rows="8"
-        placeholder="Paste compiled contract JSON from kascov"
-        [(ngModel)]="deployContractJson"
-        [disabled]="isDeploying()">
-      </textarea>
-    </div>
-
-    <div class="form-group flex column gap-8">
-      <label class="text-gray-60 typo-text-1">Amount (KAS)</label>
-      <input
-        type="number"
-        class="form-input p-12 rounded-lg text-white typo-text-2"
-        placeholder="Amount to lock"
-        [(ngModel)]="deployAmount"
-        [disabled]="isDeploying()"
-        step="0.00000001"
-        min="0" />
-    </div>
-
-    @if (deployError()) {
-      <div class="error-message p-12 rounded-lg text-red typo-text-2">
-        {{ deployError() }}
-      </div>
-    }
-
-    @if (deployResult()) {
-      <div class="result-panel flex column gap-12 p-16 rounded-lg">
-        <div class="result-row flex column gap-4">
-          <span class="text-gray-60 typo-text-1">Contract Address</span>
-          <div class="flex align-items-center gap-8">
-            <span class="text-white typo-text-2 text-truncate">{{ deployResult()!.address }}</span>
-            <app-copy-button [value]="deployResult()!.address" [size]="'sm'"></app-copy-button>
-          </div>
-        </div>
-        <div class="result-row flex column gap-4">
-          <span class="text-gray-60 typo-text-1">Transaction ID</span>
-          <div class="flex align-items-center gap-8">
-            <span class="text-white typo-text-2 text-truncate">{{ deployResult()!.txid }}</span>
-            <app-copy-button [value]="deployResult()!.txid" [size]="'sm'"></app-copy-button>
-          </div>
-        </div>
-      </div>
-    }
-
-    <kc-button
-      [text]="isDeploying() ? 'Deploying...' : 'Deploy Contract'"
-      [isDisabled]="isDeploying() || !deployContractJson || !deployAmount"
-      [isFullWidth]="true"
-      (buttonClick)="deployContract()">
-    </kc-button>
+  <!-- Tabs -->
+  <div class="tabs flex gap-8">
+    <button
+      class="tab-button p-12 rounded-lg typo-text-2"
+      [class.active]="activeTab() === 'deploy'"
+      (click)="switchTab('deploy')">
+      Deploy
+    </button>
+    <button
+      class="tab-button p-12 rounded-lg typo-text-2"
+      [class.active]="activeTab() === 'my-contracts'"
+      (click)="switchTab('my-contracts')">
+      My Contracts
+    </button>
+    <button
+      class="tab-button p-12 rounded-lg typo-text-2"
+      [class.active]="activeTab() === 'interact'"
+      (click)="switchTab('interact')">
+      Interact
+    </button>
   </div>
 
-  <!-- Interact Panel -->
-  <div class="panel flex column gap-20 p-24 rounded-lg">
-    <div class="panel-header flex align-items-center justify-content-between">
-      <h2 class="text-white typo-title-3">Interact with Contract</h2>
-    </div>
+  <!-- Tab 1: Deploy -->
+  @if (activeTab() === 'deploy') {
+    <div class="panel flex column gap-20 p-24 rounded-lg">
+      <!-- Account selector -->
+      <div class="form-group flex column gap-8">
+        <label class="text-gray-60 typo-text-1">Select Account</label>
+        <select
+          class="form-input p-12 rounded-lg text-white typo-text-2"
+          [(ngModel)]="selectedAccountId"
+          [disabled]="isDeploying()">
+          <option value="">-- Select Account --</option>
+          @for (wallet of allWallets(); track wallet.getIdWithAccount()) {
+            <option [value]="wallet.getIdWithAccount()">
+              {{ wallet.getDisplayName() }} ({{ truncate(wallet.getAddress(), 20) }})
+            </option>
+          }
+        </select>
+      </div>
 
-    <div class="form-group flex column gap-8">
-      <label class="text-gray-60 typo-text-1">Compiled Contract JSON</label>
-      <textarea
-        class="contract-input p-12 rounded-lg text-white typo-text-2"
-        rows="8"
-        placeholder="Paste compiled contract JSON"
-        [(ngModel)]="interactContractJson"
-        [disabled]="isInteracting()">
-      </textarea>
-    </div>
+      <!-- Show selected pubkey -->
+      @if (selectedPubkey()) {
+        <div class="pubkey-display p-12 rounded-lg flex column gap-4">
+          <span class="text-gray-60 typo-text-1">Account Public Key (x-only)</span>
+          <div class="flex align-items-center gap-8">
+            <span class="text-white typo-text-2 text-mono">{{ truncate(selectedPubkey(), 24) }}</span>
+            <app-copy-button [value]="selectedPubkey()" [size]="'sm'"></app-copy-button>
+          </div>
+        </div>
+      }
 
-    <div class="form-group flex column gap-8">
-      <label class="text-gray-60 typo-text-1">Outpoint (txid:vout)</label>
-      <input
-        type="text"
-        class="form-input p-12 rounded-lg text-white typo-text-2"
-        placeholder="e.g. abc123...xyz:0"
-        [(ngModel)]="interactOutpoint"
-        [disabled]="isInteracting()" />
-    </div>
+      <!-- Contract JSON input -->
+      <div class="form-group flex column gap-8">
+        <label class="text-gray-60 typo-text-1">Compiled Contract JSON</label>
+        <textarea
+          class="contract-input p-12 rounded-lg text-white typo-text-2"
+          rows="8"
+          placeholder="Paste compiled contract JSON from kascov"
+          [(ngModel)]="deployContractJson"
+          [disabled]="isDeploying()">
+        </textarea>
+      </div>
 
-    <div class="form-group flex column gap-8">
-      <label class="text-gray-60 typo-text-1">Input Amount (sompi)</label>
-      <input
-        type="text"
-        class="form-input p-12 rounded-lg text-white typo-text-2"
-        placeholder="Amount locked in the UTXO (in sompi)"
-        [(ngModel)]="interactInputAmount"
-        [disabled]="isInteracting()" />
-    </div>
+      <!-- Contract summary -->
+      @if (parsedDeployContract()) {
+        <div class="contract-summary p-16 rounded-lg flex column gap-12">
+          <h3 class="text-white typo-text-1 fw-bold">Contract Summary</h3>
+          <div class="flex column gap-8">
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-1">Name</span>
+              <span class="text-white typo-text-2">{{ parsedDeployContract()!.contract_name || 'Unnamed' }}</span>
+            </div>
+            
+            @if (deployConstructorParams().length > 0) {
+              <div class="flex column gap-4">
+                <span class="text-gray-60 typo-text-1">Constructor Parameters</span>
+                @for (param of deployConstructorParams(); track param.name) {
+                  <div class="param-item p-8 rounded">
+                    <span class="text-white typo-text-2">{{ param.name }}</span>
+                    <span class="text-gray-60 typo-text-2 ml-8">({{ param.type_ref.base }})</span>
+                    @if (param.type_ref.base === 'pubkey') {
+                      <span class="text-green ml-8 typo-text-2">🔑</span>
+                    }
+                  </div>
+                }
+              </div>
+            }
 
-    <div class="form-group flex column gap-8">
-      <label class="text-gray-60 typo-text-1">Entrypoint Function</label>
-      <select
-        class="form-input p-12 rounded-lg text-white typo-text-2"
-        [(ngModel)]="selectedFunction"
-        [disabled]="isInteracting() || availableFunctions().length === 0">
-        <option value="">-- Select Function --</option>
-        @for (fn of availableFunctions(); track fn.name) {
-          <option [value]="fn.name">{{ fn.name }}</option>
-        }
-      </select>
-      @if (availableFunctions().length === 0 && interactContractJson) {
-        <span class="text-gray-60 typo-text-1">No entrypoint functions found in contract</span>
+            @if (deployEntrypointFunctions().length > 0) {
+              <div class="flex column gap-4">
+                <span class="text-gray-60 typo-text-1">Entrypoint Functions</span>
+                @for (fn of deployEntrypointFunctions(); track fn.name) {
+                  <div class="param-item p-8 rounded">
+                    <span class="text-white typo-text-2">{{ fn.name }}()</span>
+                    @if (fn.params.length > 0) {
+                      <span class="text-gray-60 typo-text-2 ml-8">
+                        params: {{ getParamTypes(fn.params) }}
+                      </span>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Amount input -->
+      <div class="form-group flex column gap-8">
+        <label class="text-gray-60 typo-text-1">Amount (KAS)</label>
+        <input
+          type="number"
+          class="form-input p-12 rounded-lg text-white typo-text-2"
+          placeholder="Amount to lock"
+          [(ngModel)]="deployAmount"
+          [disabled]="isDeploying()"
+          step="0.00000001"
+          min="0" />
+      </div>
+
+      <!-- Error message -->
+      @if (deployError()) {
+        <div class="error-message p-12 rounded-lg text-red typo-text-2">
+          {{ deployError() }}
+        </div>
+      }
+
+      <!-- Success result -->
+      @if (deployResult()) {
+        <div class="result-panel flex column gap-12 p-16 rounded-lg">
+          <h3 class="text-white typo-text-1 fw-bold">✅ Contract Deployed!</h3>
+          <div class="result-row flex column gap-4">
+            <span class="text-gray-60 typo-text-1">Contract Address</span>
+            <div class="flex align-items-center gap-8">
+              <span class="text-white typo-text-2 text-truncate">{{ deployResult()!.address }}</span>
+              <app-copy-button [value]="deployResult()!.address" [size]="'sm'"></app-copy-button>
+            </div>
+          </div>
+          <div class="result-row flex column gap-4">
+            <span class="text-gray-60 typo-text-1">Transaction ID</span>
+            <div class="flex align-items-center gap-8">
+              <a [href]="getExplorerLink(deployResult()!.txid)" target="_blank" class="text-blue typo-text-2 text-truncate">
+                {{ deployResult()!.txid }}
+              </a>
+              <app-copy-button [value]="deployResult()!.txid" [size]="'sm'"></app-copy-button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Deploy button -->
+      <kc-button
+        [text]="isDeploying() ? 'Deploying...' : 'Deploy Contract'"
+        [isDisabled]="isDeploying() || !selectedAccountId || !deployContractJson || !deployAmount"
+        [isFullWidth]="true"
+        (buttonClick)="deployContract()">
+      </kc-button>
+    </div>
+  }
+
+  <!-- Tab 2: My Contracts -->
+  @if (activeTab() === 'my-contracts') {
+    <div class="contracts-list flex column gap-16">
+      @if (registryContracts().length === 0) {
+        <div class="empty-state p-32 rounded-lg text-center">
+          <p class="text-gray-60 typo-text-1">No contracts deployed yet on {{ network() }}</p>
+        </div>
+      }
+
+      @for (contract of registryContracts(); track contract.id) {
+        <div class="contract-card p-20 rounded-lg flex column gap-16">
+          <!-- Contract header -->
+          <div class="flex justify-content-between align-items-start">
+            <div class="flex column gap-4">
+              <h3 class="text-white typo-title-3">{{ contract.contractName }}</h3>
+              <span class="text-gray-60 typo-text-2">
+                Deployed by {{ contract.deployedBy.accountName }}
+              </span>
+            </div>
+            @if (canCallFunction(contract, contract.accessRoles[0]?.functionName || '')) {
+              <div class="status-badge active p-8 rounded">
+                <span class="typo-text-2">Can Interact</span>
+              </div>
+            } @else {
+              <div class="status-badge inactive p-8 rounded">
+                <span class="typo-text-2">View Only</span>
+              </div>
+            }
+          </div>
+
+          <!-- Contract details -->
+          <div class="flex column gap-12">
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-1">Contract Address</span>
+              <div class="flex align-items-center gap-8">
+                <span class="text-white typo-text-2 text-mono">{{ truncate(contract.contractAddress, 30) }}</span>
+                <app-copy-button [value]="contract.contractAddress" [size]="'sm'"></app-copy-button>
+              </div>
+            </div>
+
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-1">Deploy Transaction</span>
+              <div class="flex align-items-center gap-8">
+                <a [href]="getExplorerLink(contract.deployTxid)" target="_blank" class="text-blue typo-text-2">
+                  {{ truncate(contract.deployTxid, 30) }}
+                </a>
+                <app-copy-button [value]="contract.deployTxid" [size]="'sm'"></app-copy-button>
+              </div>
+            </div>
+
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-1">Amount Locked</span>
+              <span class="text-white typo-text-2">{{ formatSompiToKas(contract.amountSompi) }} KAS</span>
+            </div>
+
+            <!-- Access roles -->
+            <div class="flex column gap-8">
+              <span class="text-gray-60 typo-text-1">Access Rules</span>
+              @for (role of contract.accessRoles; track role.functionName) {
+                <div class="access-role p-12 rounded flex column gap-4">
+                  <div class="flex align-items-center gap-8">
+                    <span class="text-white typo-text-2 fw-bold">{{ role.functionName }}</span>
+                    @if (canCallFunction(contract, role.functionName)) {
+                      <span class="text-green typo-text-2">✓ You can call this</span>
+                    }
+                  </div>
+                  <span class="text-gray-60 typo-text-2">{{ role.description }}</span>
+                  @if (role.params.length > 0) {
+                    <div class="flex gap-8 flex-wrap">
+                      @for (param of role.params; track param.name) {
+                        <span class="param-tag p-4 rounded typo-text-2">
+                          {{ param.name }}: {{ param.type }}
+                        </span>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Quick interact button -->
+          <kc-button
+            [text]="'Interact with Contract'"
+            [isFullWidth]="true"
+            (buttonClick)="selectedContractId = contract.id; selectContractFromRegistry(); switchTab('interact')">
+          </kc-button>
+        </div>
       }
     </div>
+  }
 
-    <div class="form-group flex column gap-8">
-      <label class="text-gray-60 typo-text-1">Output Address</label>
-      <input
-        type="text"
-        class="form-input p-12 rounded-lg text-white typo-text-2"
-        placeholder="Kaspa address to send funds to"
-        [(ngModel)]="interactOutputAddress"
-        [disabled]="isInteracting()" />
-    </div>
-
-    <div class="form-group flex column gap-8">
-      <label class="text-gray-60 typo-text-1">Output Amount (KAS)</label>
-      <input
-        type="number"
-        class="form-input p-12 rounded-lg text-white typo-text-2"
-        placeholder="Amount to send"
-        [(ngModel)]="interactOutputAmount"
-        [disabled]="isInteracting()"
-        step="0.00000001"
-        min="0" />
-    </div>
-
-    @if (interactError()) {
-      <div class="error-message p-12 rounded-lg text-red typo-text-2">
-        {{ interactError() }}
+  <!-- Tab 3: Interact -->
+  @if (activeTab() === 'interact') {
+    <div class="panel flex column gap-20 p-24 rounded-lg">
+      <!-- Contract selector from registry -->
+      <div class="form-group flex column gap-8">
+        <label class="text-gray-60 typo-text-1">Select Contract (or paste JSON manually below)</label>
+        <select
+          class="form-input p-12 rounded-lg text-white typo-text-2"
+          [(ngModel)]="selectedContractId"
+          (ngModelChange)="selectContractFromRegistry()"
+          [disabled]="isInteracting()">
+          <option value="">-- Select from Registry or Paste Manually --</option>
+          @for (contract of registryContracts(); track contract.id) {
+            <option [value]="contract.id">
+              {{ contract.contractName }} ({{ truncate(contract.contractAddress, 20) }})
+            </option>
+          }
+        </select>
       </div>
-    }
 
-    @if (interactResult()) {
-      <div class="result-panel flex column gap-12 p-16 rounded-lg">
-        <div class="result-row flex column gap-4">
-          <span class="text-gray-60 typo-text-1">Function Called</span>
-          <span class="text-white typo-text-2">{{ interactResult()!.functionName }}</span>
+      <!-- Manual contract JSON -->
+      <div class="form-group flex column gap-8">
+        <label class="text-gray-60 typo-text-1">Compiled Contract JSON</label>
+        <textarea
+          class="contract-input p-12 rounded-lg text-white typo-text-2"
+          rows="6"
+          placeholder="Paste compiled contract JSON (or select from registry above)"
+          [(ngModel)]="interactContractJson"
+          [disabled]="isInteracting()">
+        </textarea>
+      </div>
+
+      <!-- Contract summary -->
+      @if (parsedInteractContract()) {
+        <div class="contract-summary p-16 rounded-lg flex column gap-12">
+          <h3 class="text-white typo-text-1 fw-bold">Contract: {{ parsedInteractContract()!.contract_name || 'Unnamed' }}</h3>
+          @if (currentWallet()) {
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-1">Your Account</span>
+              <div class="flex column gap-4">
+                <span class="text-white typo-text-2">{{ currentWallet()!.getDisplayName() }}</span>
+                <div class="flex align-items-center gap-8">
+                  <span class="text-gray-60 typo-text-2 text-mono">
+                    Pubkey: {{ truncate(currentWallet()!.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString(), 24) }}
+                  </span>
+                  <app-copy-button [value]="currentWallet()!.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString()" [size]="'sm'"></app-copy-button>
+                </div>
+              </div>
+            </div>
+          }
         </div>
-        <div class="result-row flex column gap-4">
-          <span class="text-gray-60 typo-text-1">Transaction ID</span>
-          <div class="flex align-items-center gap-8">
-            <span class="text-white typo-text-2 text-truncate">{{ interactResult()!.txid }}</span>
-            <app-copy-button [value]="interactResult()!.txid" [size]="'sm'"></app-copy-button>
+      }
+
+      <!-- Outpoint -->
+      <div class="flex gap-12">
+        <div class="form-group flex column gap-8 flex-1">
+          <label class="text-gray-60 typo-text-1">Outpoint TXID</label>
+          <input
+            type="text"
+            class="form-input p-12 rounded-lg text-white typo-text-2"
+            placeholder="Transaction ID"
+            [(ngModel)]="interactOutpointTxid"
+            [disabled]="isInteracting()" />
+        </div>
+        <div class="form-group flex column gap-8" style="width: 100px;">
+          <label class="text-gray-60 typo-text-1">Vout</label>
+          <input
+            type="number"
+            class="form-input p-12 rounded-lg text-white typo-text-2"
+            placeholder="0"
+            [(ngModel)]="interactOutpointVout"
+            [disabled]="isInteracting()"
+            min="0"
+            step="1" />
+        </div>
+      </div>
+
+      <!-- Input amount -->
+      <div class="form-group flex column gap-8">
+        <label class="text-gray-60 typo-text-1">Input Amount (sompi)</label>
+        <input
+          type="text"
+          class="form-input p-12 rounded-lg text-white typo-text-2"
+          placeholder="Amount locked in the UTXO (in sompi)"
+          [(ngModel)]="interactInputAmount"
+          [disabled]="isInteracting()" />
+      </div>
+
+      <!-- Function selector -->
+      <div class="form-group flex column gap-8">
+        <label class="text-gray-60 typo-text-1">Entrypoint Function</label>
+        <select
+          class="form-input p-12 rounded-lg text-white typo-text-2"
+          [(ngModel)]="selectedFunction"
+          [disabled]="isInteracting() || availableFunctions().length === 0">
+          <option value="">-- Select Function --</option>
+          @for (fn of availableFunctions(); track fn.name) {
+            <option [value]="fn.name">
+              {{ fn.name }}
+              @if (fn.inputs.length > 0) {
+                ({{ getAbiInputTypes(fn.inputs) }})
+              }
+            </option>
+          }
+        </select>
+        @if (availableFunctions().length === 0 && interactContractJson) {
+          <span class="text-gray-60 typo-text-1">No entrypoint functions found in contract</span>
+        }
+      </div>
+
+      <!-- Output address and amount -->
+      <div class="form-group flex column gap-8">
+        <label class="text-gray-60 typo-text-1">Output Address</label>
+        <input
+          type="text"
+          class="form-input p-12 rounded-lg text-white typo-text-2"
+          placeholder="Kaspa address to send funds to"
+          [(ngModel)]="interactOutputAddress"
+          [disabled]="isInteracting()" />
+      </div>
+
+      <div class="form-group flex column gap-8">
+        <label class="text-gray-60 typo-text-1">Output Amount (KAS)</label>
+        <input
+          type="number"
+          class="form-input p-12 rounded-lg text-white typo-text-2"
+          placeholder="Amount to send"
+          [(ngModel)]="interactOutputAmount"
+          [disabled]="isInteracting()"
+          step="0.00000001"
+          min="0" />
+      </div>
+
+      <!-- Error message -->
+      @if (interactError()) {
+        <div class="error-message p-12 rounded-lg text-red typo-text-2">
+          {{ interactError() }}
+        </div>
+      }
+
+      <!-- Success result -->
+      @if (interactResult()) {
+        <div class="result-panel flex column gap-12 p-16 rounded-lg">
+          <h3 class="text-white typo-text-1 fw-bold">✅ Contract Executed!</h3>
+          <div class="result-row flex column gap-4">
+            <span class="text-gray-60 typo-text-1">Function Called</span>
+            <span class="text-white typo-text-2">{{ interactResult()!.functionName }}</span>
+          </div>
+          <div class="result-row flex column gap-4">
+            <span class="text-gray-60 typo-text-1">Transaction ID</span>
+            <div class="flex align-items-center gap-8">
+              <a [href]="getExplorerLink(interactResult()!.txid)" target="_blank" class="text-blue typo-text-2 text-truncate">
+                {{ interactResult()!.txid }}
+              </a>
+              <app-copy-button [value]="interactResult()!.txid" [size]="'sm'"></app-copy-button>
+            </div>
           </div>
         </div>
-      </div>
-    }
+      }
 
-    <kc-button
-      [text]="isInteracting() ? 'Executing...' : 'Execute Contract'"
-      [isDisabled]="isInteracting() || !interactContractJson || !interactOutpoint || !selectedFunction"
-      [isFullWidth]="true"
-      (buttonClick)="interactContract()">
-    </kc-button>
-  </div>
+      <!-- Execute button -->
+      <kc-button
+        [text]="isInteracting() ? 'Executing...' : 'Execute Contract'"
+        [isDisabled]="isInteracting() || !interactContractJson || !interactOutpointTxid || !selectedFunction"
+        [isFullWidth]="true"
+        (buttonClick)="interactContract()">
+      </kc-button>
+    </div>
+  }
 </div>

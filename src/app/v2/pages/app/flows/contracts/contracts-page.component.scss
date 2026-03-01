@@ -1,14 +1,51 @@
 .contracts-container {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   overflow-y: auto;
 }
 
-.panel {
+// Tabs
+.tabs {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+}
+
+.tab-button {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  &.active {
+    background: rgba(70, 130, 255, 0.2);
+    border-color: rgba(70, 130, 255, 0.5);
+    color: #fff;
+  }
+}
+
+// Panels and cards
+.panel,
+.contract-card {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.contract-card {
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+}
+
+// Form inputs
 .contract-input,
 .form-input {
   background: rgba(0, 0, 0, 0.3);
@@ -17,7 +54,7 @@
   font-family: 'Courier New', monospace;
   
   &:focus {
-    border-color: rgba(255, 255, 255, 0.3);
+    border-color: rgba(70, 130, 255, 0.5);
   }
   
   &:disabled {
@@ -29,25 +66,7 @@
 .contract-input {
   resize: vertical;
   min-height: 120px;
-}
-
-.error-message {
-  background: rgba(255, 59, 48, 0.1);
-  border: 1px solid rgba(255, 59, 48, 0.3);
-}
-
-.result-panel {
-  background: rgba(52, 199, 89, 0.1);
-  border: 1px solid rgba(52, 199, 89, 0.3);
-}
-
-.result-row {
-  .text-truncate {
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+  font-size: 13px;
 }
 
 select.form-input {
@@ -57,4 +76,105 @@ select.form-input {
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 36px;
+}
+
+// Status badges
+.status-badge {
+  &.active {
+    background: rgba(52, 199, 89, 0.2);
+    border: 1px solid rgba(52, 199, 89, 0.4);
+    color: #34c759;
+  }
+
+  &.inactive {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.6);
+  }
+}
+
+// Messages
+.error-message {
+  background: rgba(255, 59, 48, 0.1);
+  border: 1px solid rgba(255, 59, 48, 0.3);
+  color: #ff3b30;
+}
+
+.result-panel {
+  background: rgba(52, 199, 89, 0.1);
+  border: 1px solid rgba(52, 199, 89, 0.3);
+}
+
+// Contract summary
+.contract-summary {
+  background: rgba(70, 130, 255, 0.1);
+  border: 1px solid rgba(70, 130, 255, 0.2);
+}
+
+.param-item {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+// Access roles
+.access-role {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.param-tag {
+  background: rgba(70, 130, 255, 0.2);
+  border: 1px solid rgba(70, 130, 255, 0.3);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+}
+
+// Pubkey display
+.pubkey-display {
+  background: rgba(255, 204, 0, 0.1);
+  border: 1px solid rgba(255, 204, 0, 0.2);
+}
+
+// Empty state
+.empty-state {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+// Utilities
+.text-mono {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+}
+
+.text-truncate {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-red {
+  color: #ff3b30;
+}
+
+.text-green {
+  color: #34c759;
+}
+
+.text-blue {
+  color: #4682ff;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.fw-bold {
+  font-weight: 600;
+}
+
+.flex-1 {
+  flex: 1;
 }

@@ -45,6 +45,11 @@ export class WrapperNavComponent implements AfterViewInit, OnDestroy {
       alt: 'History',
       link: '/app/activity',
     },
+    {
+      svgContent: this.domSanitizer.bypassSecurityTrustHtml(NavIcons.contracts),
+      alt: 'Contracts',
+      link: '/app/contracts',
+    },
   ]);
   activeRoute = signal<INavRoute | undefined>(undefined);
   activeRouteIdx = computed(() => {

@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { RpcService } from '../kaspa-netwrok-services/rpc.service';
+import { NetworkConfigService } from '../network-config.service';
 import { getCovenantAddress, deployContract, spendContract } from './covenant-sdk/covenant';
 import { CompiledContract, CovenantOutpoint, SpendOutput, DeployResult, SpendResult } from './covenant-sdk/types';
 
@@ -7,28 +8,24 @@ import { CompiledContract, CovenantOutpoint, SpendOutput, DeployResult, SpendRes
   providedIn: 'root',
 })
 export class CovenantService {
-  // Default wRPC URLs for different networks
-  // Using hostname-only format to match RpcService (TN12 requires explicit ws:// (no TLS))
-  private readonly DEFAULT_RPC_URLS: Record<string, string> = {
-    'mainnet': 'wrpc.kaspa.org',
-    'testnet-10': 'testnet-10.kaspa.org',
-    'testnet-12': 'ws://tn12-node.kaspa.com:17210',
-  };
 
   constructor(
     private readonly rpcService: RpcService,
+    private readonly networkConfigService: NetworkConfigService,
   ) {}
 
   /**
    * Get the wRPC URL for the current network
    */
   private getRpcUrl(): string {
-    const network = this.rpcService.getNetwork();
-    const url = this.DEFAULT_RPC_URLS[network];
-    if (!url) {
-      throw new Error(`No default RPC URL configured for network: ${network}`);
+    const config = this.networkConfigService.getActiveNetwork();
+    
+    // If using resolver, return empty (the SDK will use resolver)
+    if (config.useResolver) {
+      return '';
     }
-    return url;
+    
+    return config.wrpcUrl;
   }
 
   /**

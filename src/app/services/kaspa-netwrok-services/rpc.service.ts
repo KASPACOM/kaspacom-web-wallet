@@ -1,17 +1,21 @@
-import { Injectable } from '@angular/core';
+import { Injectable, effect } from '@angular/core';
 import { Encoding, Resolver, RpcClient } from '../../../../public/kaspa/kaspa';
-import { environment } from '../../../environments/environment';
+import { NetworkConfigService } from '../network-config.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class RpcService {
   private RPC?: RpcClient;
-  private network: string;
 
-  constructor() {
-    this.network = environment.kaspaNetwork;
+  constructor(private networkConfigService: NetworkConfigService) {
     this.refreshRpc();
+
+    // Re-connect RPC when network changes
+    effect(() => {
+      this.networkConfigService.getActiveNetworkSignal()();
+      this.refreshRpc();
+    });
   }
 
   getRpc() {
@@ -19,17 +23,25 @@ export class RpcService {
   }
 
   refreshRpc() {
-    this.RPC = new RpcClient({
-      url: 'ws://tn12-node.kaspa.com:17210',
-      // resolver: new Resolver(),
+    const networkConfig = this.networkConfigService.getActiveNetwork();
+    
+    const rpcOptions: any = {
       encoding: Encoding.Borsh,
-      networkId: this.network,
-    });
+      networkId: networkConfig.networkId,
+    };
+
+    if (networkConfig.useResolver) {
+      rpcOptions.resolver = new Resolver();
+    } else {
+      rpcOptions.url = networkConfig.wrpcUrl;
+    }
+
+    this.RPC = new RpcClient(rpcOptions);
 
     return this.getRpc();
   }
 
   getNetwork() {
-    return this.network;
+    return this.networkConfigService.getActiveNetwork().networkId;
   }
 }

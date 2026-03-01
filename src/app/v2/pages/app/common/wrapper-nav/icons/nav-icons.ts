@@ -58,6 +58,19 @@ export class NavIcons {
 </svg>
   `;
 
+  static readonly contracts = `
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Document outline -->
+  <path d="M12 10C12 9.44772 12.4477 9 13 9H22L29 16V29C29 29.5523 28.5523 30 28 30H13C12.4477 30 12 29.5523 12 29V10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Folded corner -->
+  <path d="M22 9V15C22 15.5523 22.4477 16 23 16H29" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Code lines -->
+  <line x1="16" y1="19" x2="25" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <line x1="16" y1="23" x2="22" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <line x1="16" y1="27" x2="24" y2="27" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+</svg>
+  `;
+
   static readonly chevronUp = `
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M18 15L12 9L6 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>

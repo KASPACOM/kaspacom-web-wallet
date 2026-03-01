@@ -1,1 +1,218 @@
-<p>settings works!</p>
+<div class="settings-container">
+  <h2 class="settings-title">Settings</h2>
+
+  <!-- Kaspa Network Section -->
+  <section class="settings-section">
+    <h3 class="section-title">Kaspa Network</h3>
+    
+    <!-- Network selector - only shown in dev -->
+    <div class="setting-item" *ngIf="canSwitchNetworks()">
+      <label class="setting-label">Active Network</label>
+      <select 
+        class="network-select" 
+        [value]="activeNetwork().id" 
+        (change)="onNetworkChange($event)">
+        <option *ngFor="let network of allNetworks()" [value]="network.id">
+          {{ network.name }}{{ network.isCustom ? ' (Custom)' : '' }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Production: just show the current network name -->
+    <div class="setting-item" *ngIf="!canSwitchNetworks()">
+      <label class="setting-label">Network</label>
+      <div class="network-display">{{ activeNetwork().name }}</div>
+    </div>
+
+    <div class="setting-item">
+      <label class="setting-label">WRPC Connection</label>
+      <div class="wrpc-display">
+        <span class="wrpc-value">{{ getWrpcDisplay() }}</span>
+        <kc-button 
+          [variant]="'secondary'" 
+          [size]="'sm'" 
+          (click)="openCustomizeWrpc()">
+          Customize
+        </kc-button>
+      </div>
+    </div>
+
+    <!-- Dev-only actions -->
+    <div class="setting-actions" *ngIf="canSwitchNetworks()">
+      <kc-button 
+        [variant]="'primary'" 
+        [size]="'md'" 
+        (click)="openAddCustomNetwork()">
+        + Add Custom Network
+      </kc-button>
+      
+      <div *ngIf="activeNetwork().isCustom" class="custom-network-actions">
+        <kc-button 
+          [variant]="'danger'" 
+          [size]="'sm'" 
+          (click)="removeCustomNetwork(activeNetwork().id)">
+          Remove Current Network
+        </kc-button>
+      </div>
+    </div>
+  </section>
+
+  <!-- L2 Networks Section - full access in both dev and prod -->
+  <section class="settings-section">
+    <h3 class="section-title">EVM / L2 Networks</h3>
+    
+    <div class="l2-networks-list">
+      <div *ngFor="let network of l2Networks()" class="l2-network-item">
+        <div class="l2-network-icon">{{ getL2Icon(network) }}</div>
+        <div class="l2-network-info">
+          <div class="l2-network-name">{{ network.chainName }}</div>
+          <div class="l2-network-chain-id">Chain ID: {{ network.chainId }}</div>
+          <div class="l2-network-rpc">RPC: {{ network.rpcUrls[0] }}</div>
+        </div>
+        <kc-button 
+          [variant]="'secondary'" 
+          [size]="'sm'" 
+          (click)="openEditL2Rpc(network.chainId)">
+          Edit RPC
+        </kc-button>
+      </div>
+    </div>
+
+    <div class="setting-actions">
+      <p class="setting-info">
+        You can add custom EVM-compatible chains and configure RPC endpoints for L2 networks.
+      </p>
+    </div>
+  </section>
+
+  <!-- Customize WRPC Modal -->
+  <div *ngIf="showCustomizeWrpc()" class="modal-overlay" (click)="cancelCustomizeWrpc()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h3 class="modal-title">Customize WRPC URL</h3>
+      <p class="modal-description">
+        Leave empty to use Auto (Resolver). Enter a hostname like "tn12-node.kaspa.com" for a custom node.
+      </p>
+      
+      <div class="form-group">
+        <label class="form-label">WRPC URL</label>
+        <input 
+          type="text" 
+          class="form-input" 
+          placeholder="tn12-node.kaspa.com or leave empty for Auto"
+          [value]="customWrpcUrl()"
+          (input)="customWrpcUrl.set($any($event.target).value)" />
+      </div>
+
+      <div class="modal-actions">
+        <kc-button [variant]="'secondary'" (click)="cancelCustomizeWrpc()">
+          Cancel
+        </kc-button>
+        <kc-button [variant]="'primary'" (click)="saveCustomWrpc()">
+          Save
+        </kc-button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Custom Network Modal (dev only) -->
+  <div *ngIf="showAddCustomNetwork()" class="modal-overlay" (click)="cancelAddCustomNetwork()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <h3 class="modal-title">Add Custom Network</h3>
+      
+      <div class="form-group">
+        <label class="form-label">Network ID *</label>
+        <input 
+          type="text" 
+          class="form-input" 
+          placeholder="e.g. testnet-13"
+          [value]="customNetworkForm().id"
+          (input)="customNetworkForm.update(f => ({ ...f, id: $any($event.target).value }))" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Display Name *</label>
+        <input 
+          type="text" 
+          class="form-input" 
+          placeholder="e.g. Testnet 13"
+          [value]="customNetworkForm().name"
+          (input)="customNetworkForm.update(f => ({ ...f, name: $any($event.target).value }))" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">WASM SDK Network ID *</label>
+        <input 
+          type="text" 
+          class="form-input" 
+          placeholder="e.g. testnet-13"
+          [value]="customNetworkForm().networkId"
+          (input)="customNetworkForm.update(f => ({ ...f, networkId: $any($event.target).value }))" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">WRPC URL (leave empty for Resolver)</label>
+        <input 
+          type="text" 
+          class="form-input" 
+          placeholder="e.g. tn13-node.kaspa.com"
+          [value]="customNetworkForm().wrpcUrl"
+          (input)="customNetworkForm.update(f => ({ ...f, wrpcUrl: $any($event.target).value }))" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Kaspa API Base URL</label>
+        <input 
+          type="text" 
+          class="form-input" 
+          placeholder="e.g. https://api-tn13.kaspa.org"
+          [value]="customNetworkForm().kaspaApiBaseurl"
+          (input)="customNetworkForm.update(f => ({ ...f, kaspaApiBaseurl: $any($event.target).value }))" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Kaspa Explorer Base URL</label>
+        <input 
+          type="text" 
+          class="form-input" 
+          placeholder="e.g. https://explorer-tn13.kaspa.org"
+          [value]="customNetworkForm().kaspaExplorerBaseurl"
+          (input)="customNetworkForm.update(f => ({ ...f, kaspaExplorerBaseurl: $any($event.target).value }))" />
+      </div>
+
+      <div class="modal-actions">
+        <kc-button [variant]="'secondary'" (click)="cancelAddCustomNetwork()">
+          Cancel
+        </kc-button>
+        <kc-button [variant]="'primary'" (click)="saveCustomNetwork()">
+          Add Network
+        </kc-button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit L2 RPC Modal -->
+  <div *ngIf="showEditL2Rpc()" class="modal-overlay" (click)="cancelEditL2Rpc()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h3 class="modal-title">Edit L2 RPC URL</h3>
+      
+      <div class="form-group">
+        <label class="form-label">RPC URL</label>
+        <input 
+          type="text" 
+          class="form-input" 
+          placeholder="https://..."
+          [value]="editL2RpcUrl()"
+          (input)="editL2RpcUrl.set($any($event.target).value)" />
+      </div>
+
+      <div class="modal-actions">
+        <kc-button [variant]="'secondary'" (click)="cancelEditL2Rpc()">
+          Cancel
+        </kc-button>
+        <kc-button [variant]="'primary'" (click)="saveL2Rpc()">
+          Save
+        </kc-button>
+      </div>
+    </div>
+  </div>
+</div>

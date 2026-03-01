@@ -11,7 +11,7 @@ export class CovenantService {
   private readonly DEFAULT_RPC_URLS: Record<string, string> = {
     'mainnet': 'wss://wrpc.kaspa.org',
     'testnet-10': 'wss://testnet-10.kaspa.org:17110',
-    'testnet-12': 'wss://testnet-12.kaspa.org:17110',
+    'testnet-12': 'wss://tn12-node.kaspa.com:17210',
   };
 
   constructor(

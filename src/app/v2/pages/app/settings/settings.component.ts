@@ -2,10 +2,10 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { KcButtonComponent, KcIconComponent, NotificationService } from 'kaspacom-ui';
-import { NetworkConfigService, KaspaNetworkConfig } from '../../../services/network-config.service';
-import { EthereumWalletChainManager } from '../../../services/etherium-services/etherium-wallet-chain.manager';
+import { NetworkConfigService, KaspaNetworkConfig } from '../../../../services/network-config.service';
+import { EthereumWalletChainManager } from '../../../../services/etherium-services/etherium-wallet-chain.manager';
 import { EIP1193ProviderChain } from '@kaspacom/wallet-messages';
-import { environment } from '../../../../environments/environment';
+import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-settings',
@@ -14,28 +14,30 @@ import { environment } from '../../../../environments/environment';
   styleUrl: './settings.component.scss'
 })
 export class SettingsComponent {
-  private networkConfigService = inject(NetworkConfigService);
-  private ethereumWalletChainManager = inject(EthereumWalletChainManager);
-  private notificationService = inject(NotificationService);
+  private readonly networkConfigService: NetworkConfigService = inject(NetworkConfigService);
+  private readonly ethereumWalletChainManager: EthereumWalletChainManager = inject(EthereumWalletChainManager);
+  private readonly notificationService: NotificationService = inject(NotificationService);
 
   // Environment flags
-  protected isProduction = environment.isProduction;
-  protected canSwitchNetworks = computed(() => this.networkConfigService.isNetworkSwitchingAllowed());
+  protected readonly isProduction = environment.isProduction;
+  protected readonly canSwitchNetworks = computed(() => this.networkConfigService.isNetworkSwitchingAllowed());
 
   // Kaspa Network state
-  protected activeNetwork = computed(() => this.networkConfigService.getActiveNetworkSignal()());
-  protected allNetworks = computed(() => this.networkConfigService.getAllNetworks());
-  protected showCustomizeWrpc = signal(false);
-  protected showAddCustomNetwork = signal(false);
-  protected customWrpcUrl = signal('');
+  protected readonly activeNetwork = computed(() => this.networkConfigService.getActiveNetworkSignal()());
+  protected readonly allNetworks = computed(() => this.networkConfigService.getAllNetworks());
+  protected readonly showCustomizeWrpc = signal(false);
+  protected readonly showAddCustomNetwork = signal(false);
+  protected readonly customWrpcUrl = signal('');
 
   // L2 Network state
-  protected l2Networks = computed(() => Object.values(this.ethereumWalletChainManager.getAllChainsByChainId()));
-  protected showEditL2Rpc = signal<string | null>(null);
-  protected editL2RpcUrl = signal('');
+  protected readonly l2Networks = computed<EIP1193ProviderChain[]>(() => 
+    Object.values(this.ethereumWalletChainManager.getAllChainsByChainId()) as EIP1193ProviderChain[]
+  );
+  protected readonly showEditL2Rpc = signal<string | null>(null);
+  protected readonly editL2RpcUrl = signal('');
 
   // Custom network form
-  protected customNetworkForm = signal({
+  protected readonly customNetworkForm = signal({
     id: '',
     name: '',
     networkId: '',
@@ -49,17 +51,27 @@ export class SettingsComponent {
     knsApiBaseurl: '',
   });
 
+  // Custom network form update methods
+  updateCustomFormField(field: string, value: string): void {
+    const current = this.customNetworkForm();
+    this.customNetworkForm.set({ ...current, [field]: value });
+  }
+
   // Kaspa Network Methods
+  switchToNetwork(networkId: string): void {
+    try {
+      this.networkConfigService.setActiveNetwork(networkId);
+      this.notificationService.success('Network switched', `Switched to ${this.activeNetwork().name}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.notificationService.error('Network switch failed', `Failed to switch network: ${errorMessage}`);
+    }
+  }
+
   onNetworkChange(event: Event): void {
     const select = event.target as HTMLSelectElement;
     const networkId = select.value;
-    
-    try {
-      this.networkConfigService.setActiveNetwork(networkId);
-      this.notificationService.success(`Switched to ${this.activeNetwork().name}`);
-    } catch (error) {
-      this.notificationService.error(`Failed to switch network: ${error}`);
-    }
+    this.switchToNetwork(networkId);
   }
 
   getWrpcDisplay(): string {
@@ -84,10 +96,11 @@ export class SettingsComponent {
         wrpcUrl: url,
         useResolver,
       });
-      this.notificationService.success('WRPC configuration updated');
+      this.notificationService.success('WRPC updated', 'WRPC configuration updated successfully');
       this.showCustomizeWrpc.set(false);
-    } catch (error) {
-      this.notificationService.error(`Failed to update WRPC: ${error}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.notificationService.error('WRPC update failed', `Failed to update WRPC: ${errorMessage}`);
     }
   }
 
@@ -116,7 +129,7 @@ export class SettingsComponent {
     const form = this.customNetworkForm();
     
     if (!form.id || !form.name || !form.networkId) {
-      this.notificationService.error('Please fill in required fields (ID, Name, Network ID)');
+      this.notificationService.error('Missing fields', 'Please fill in required fields (ID, Name, Network ID)');
       return;
     }
 
@@ -127,10 +140,11 @@ export class SettingsComponent {
       };
       
       this.networkConfigService.addCustomNetwork(config);
-      this.notificationService.success(`Added custom network: ${form.name}`);
+      this.notificationService.success('Network added', `Added custom network: ${form.name}`);
       this.showAddCustomNetwork.set(false);
-    } catch (error) {
-      this.notificationService.error(`Failed to add network: ${error}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.notificationService.error('Network add failed', `Failed to add network: ${errorMessage}`);
     }
   }
 
@@ -145,9 +159,10 @@ export class SettingsComponent {
 
     try {
       this.networkConfigService.removeCustomNetwork(networkId);
-      this.notificationService.success('Custom network removed');
-    } catch (error) {
-      this.notificationService.error(`Failed to remove network: ${error}`);
+      this.notificationService.success('Network removed', 'Custom network removed successfully');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.notificationService.error('Network removal failed', `Failed to remove network: ${errorMessage}`);
     }
   }
 
@@ -170,7 +185,7 @@ export class SettingsComponent {
 
     const newRpcUrl = this.editL2RpcUrl();
     if (!newRpcUrl) {
-      this.notificationService.error('RPC URL cannot be empty');
+      this.notificationService.error('Invalid RPC URL', 'RPC URL cannot be empty');
       return;
     }
 
@@ -179,11 +194,12 @@ export class SettingsComponent {
       const network = this.l2Networks().find(n => n.chainId === chainId);
       if (network) {
         network.rpcUrls = [newRpcUrl];
-        this.notificationService.success('L2 RPC URL updated');
+        this.notificationService.success('RPC updated', 'L2 RPC URL updated successfully');
         this.showEditL2Rpc.set(null);
       }
-    } catch (error) {
-      this.notificationService.error(`Failed to update RPC: ${error}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.notificationService.error('RPC update failed', `Failed to update RPC: ${errorMessage}`);
     }
   }
 

@@ -1,161 +1,99 @@
 .settings-container {
-  padding: 24px;
   max-width: 800px;
   margin: 0 auto;
-  color: #fff;
 }
 
-.settings-title {
-  font-size: 28px;
-  font-weight: 600;
-  margin-bottom: 32px;
-  color: #fff;
+.settings-header {
+  margin-bottom: 1rem;
 }
 
 .settings-section {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 2rem;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+// Panel styling to match wallet
+.panel {
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.section-title {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 20px;
-  color: #fff;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 12px;
+// Network cards
+.network-card {
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
 }
 
-.setting-item {
-  margin-bottom: 20px;
-}
-
-.setting-label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 8px;
-}
-
-.network-select {
-  width: 100%;
-  padding: 12px 16px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: #fff;
-  font-size: 16px;
+.network-option-card {
   cursor: pointer;
-  transition: all 0.2s;
-
+  transition: all 0.2s ease;
+  
   &:hover {
-    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
   }
-
-  &:focus {
-    outline: none;
-    border-color: #70c7ba;
-    box-shadow: 0 0 0 3px rgba(112, 199, 186, 0.1);
-  }
-
-  option {
-    background: #1a1a1a;
-    color: #fff;
+  
+  &.active {
+    border-color: rgba(112, 199, 240, 0.5);
+    background: rgba(112, 199, 240, 0.1);
   }
 }
 
-.wrpc-display {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+// Status indicator
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  
+  &.active {
+    background: #70c7f0;
+    box-shadow: 0 0 8px rgba(112, 199, 240, 0.6);
+  }
 }
 
-.wrpc-value {
-  flex: 1;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.9);
-  font-family: monospace;
-}
-
-.setting-actions {
-  margin-top: 24px;
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.custom-network-actions {
-  margin-top: 12px;
-}
-
-// L2 Networks
-.l2-networks-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.l2-network-item {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  transition: all 0.2s;
-
+// L2 Network cards
+.l2-network-card {
+  transition: all 0.2s ease;
+  
   &:hover {
-    background: rgba(0, 0, 0, 0.4);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
   }
 }
 
 .l2-network-icon {
-  font-size: 32px;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
+  font-size: 2rem;
+  line-height: 1;
 }
 
-.l2-network-info {
-  flex: 1;
+.text-mono {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.875rem;
 }
 
-.l2-network-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: #fff;
-  margin-bottom: 4px;
+// Form inputs
+.form-input {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  outline: none;
+  transition: all 0.2s ease;
+  
+  &:focus {
+    border-color: rgba(112, 199, 240, 0.5);
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+  }
 }
 
-.l2-network-chain-id {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
-  margin-bottom: 4px;
-}
-
-.l2-network-rpc {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
-  font-family: monospace;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-// Modal styles
+// Modal
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -167,94 +105,24 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
 }
 
 .modal-content {
-  background: #1a1a1a;
-  border-radius: 16px;
-  padding: 24px;
+  width: 90%;
   max-width: 500px;
-  width: 100%;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-
+  max-height: 90vh;
+  overflow-y: auto;
+  
   &.modal-large {
     max-width: 600px;
   }
 }
 
-.modal-title {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: #fff;
-}
-
-.modal-description {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 20px;
-  line-height: 1.5;
-}
-
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 6px;
-}
-
-.form-input {
-  width: 100%;
-  padding: 12px 16px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: #fff;
-  font-size: 14px;
-  transition: all 0.2s;
-
-  &::placeholder {
-    color: rgba(255, 255, 255, 0.4);
-  }
-
-  &:hover {
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-
-  &:focus {
-    outline: none;
-    border-color: #70c7ba;
-    box-shadow: 0 0 0 3px rgba(112, 199, 186, 0.1);
-  }
-}
-
 .modal-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  margin-top: 24px;
+  margin-top: 1rem;
 }
 
-.network-display {
-  padding: 12px 16px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.setting-info {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
-  line-height: 1.5;
-  margin: 0;
+// Utility classes
+.fw-bold {
+  font-weight: 600;
 }

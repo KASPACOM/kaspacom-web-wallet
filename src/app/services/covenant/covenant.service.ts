@@ -8,6 +8,11 @@ import { CompiledContract, CovenantOutpoint, SpendOutput, DeployResult, SpendRes
   providedIn: 'root',
 })
 export class CovenantService {
+  private readonly FALLBACK_RPC_URLS: Record<string, string> = {
+    'mainnet': '',  // empty = use Resolver
+    'testnet-10': '',
+    'testnet-12': 'tn12-node.kaspa.com',
+  };
 
   constructor(
     private readonly rpcService: RpcService,
@@ -18,14 +23,15 @@ export class CovenantService {
    * Get the wRPC URL for the current network
    */
   private getRpcUrl(): string {
-    const config = this.networkConfigService.getActiveNetwork();
+    // Try dynamic config first
+    try {
+      const activeNetwork = this.networkConfigService.getActiveNetwork();
+      if (activeNetwork.wrpcUrl) return activeNetwork.wrpcUrl;
+    } catch {}
     
-    // If using resolver, return empty (the SDK will use resolver)
-    if (config.useResolver) {
-      return '';
-    }
-    
-    return config.wrpcUrl;
+    // Fallback to hardcoded
+    const network = this.rpcService.getNetwork();
+    return this.FALLBACK_RPC_URLS[network] || '';
   }
 
   /**

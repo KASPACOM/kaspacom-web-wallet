@@ -20,7 +20,8 @@ export class RpcService {
 
   refreshRpc() {
     this.RPC = new RpcClient({
-      resolver: new Resolver(),
+      url: 'tn12-node.kaspa.com',
+      // resolver: new Resolver(),
       encoding: Encoding.Borsh,
       networkId: this.network,
     });

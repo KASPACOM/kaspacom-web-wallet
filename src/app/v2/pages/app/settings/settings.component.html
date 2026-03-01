@@ -246,4 +246,28 @@
       </div>
     </div>
   }
+
+  <!-- Remove Network Confirmation Modal -->
+  @if (networkToRemove()) {
+    <div class="modal-overlay" (click)="cancelRemoveCustomNetwork()">
+      <div class="modal-content panel p-24 rounded-lg flex column gap-20" (click)="$event.stopPropagation()">
+        <h3 class="text-white typo-title-3">Remove Custom Network</h3>
+        <p class="text-gray-60 typo-text-1">
+          Are you sure you want to remove this custom network? This action cannot be undone.
+        </p>
+        <div class="modal-actions flex gap-12">
+          <kc-button 
+            [text]="'Cancel'" 
+            [isFullWidth]="true"
+            (buttonClick)="cancelRemoveCustomNetwork()">
+          </kc-button>
+          <kc-button 
+            [text]="'Remove'" 
+            [isFullWidth]="true"
+            (buttonClick)="confirmRemoveCustomNetwork()">
+          </kc-button>
+        </div>
+      </div>
+    </div>
+  }
 </div>

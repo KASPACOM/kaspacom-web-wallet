@@ -23,6 +23,19 @@ export class RpcService {
   }
 
   refreshRpc() {
+    // Disconnect old client before creating a new one
+    if (this.RPC) {
+      try {
+        const disconnectResult = this.RPC.disconnect();
+        // Handle both sync and async disconnect
+        if (disconnectResult && typeof disconnectResult.catch === 'function') {
+          disconnectResult.catch(() => {});
+        }
+      } catch (e) {
+        // Ignore disconnect errors
+      }
+    }
+    
     const networkConfig = this.networkConfigService.getActiveNetwork();
     
     const rpcOptions: any = {

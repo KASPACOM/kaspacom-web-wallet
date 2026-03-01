@@ -30,27 +30,27 @@ export class ContractsPageComponent {
   // Current wallet
   currentWallet = computed(() => this.walletService.getCurrentWallet());
 
-  // Deploy form
-  deployContractJson = signal('');
-  deployAmount = signal('');
+  // Deploy form - plain properties for ngModel two-way binding
+  deployContractJson = '';
+  deployAmount = '';
   deployResult = signal<{ address: string; txid: string } | null>(null);
   deployError = signal<string | null>(null);
   isDeploying = signal(false);
 
-  // Interact form
-  interactContractJson = signal('');
-  interactOutpoint = signal('');
-  interactInputAmount = signal('');
-  interactOutputAddress = signal('');
-  interactOutputAmount = signal('');
-  selectedFunction = signal('');
+  // Interact form - plain properties for ngModel two-way binding
+  interactContractJson = '';
+  interactOutpoint = '';
+  interactInputAmount = '';
+  interactOutputAddress = '';
+  interactOutputAmount = '';
+  selectedFunction = '';
   interactResult = signal<{ txid: string; functionName: string } | null>(null);
   interactError = signal<string | null>(null);
   isInteracting = signal(false);
 
   // Computed available functions from the contract JSON
   availableFunctions = computed(() => {
-    const json = this.interactContractJson();
+    const json = this.interactContractJson;
     if (!json) return [];
 
     try {
@@ -76,8 +76,8 @@ export class ContractsPageComponent {
       return;
     }
 
-    const contractJson = this.deployContractJson();
-    const amountKas = parseFloat(this.deployAmount());
+    const contractJson = this.deployContractJson;
+    const amountKas = parseFloat(this.deployAmount);
 
     if (!contractJson) {
       this.deployError.set('Contract JSON is required');
@@ -122,12 +122,12 @@ export class ContractsPageComponent {
       return;
     }
 
-    const contractJson = this.interactContractJson();
-    const outpointStr = this.interactOutpoint();
-    const inputAmountSompi = this.interactInputAmount();
-    const functionName = this.selectedFunction();
-    const outputAddress = this.interactOutputAddress();
-    const outputAmountKas = parseFloat(this.interactOutputAmount());
+    const contractJson = this.interactContractJson;
+    const outpointStr = this.interactOutpoint;
+    const inputAmountSompi = this.interactInputAmount;
+    const functionName = this.selectedFunction;
+    const outputAddress = this.interactOutputAddress;
+    const outputAmountKas = parseFloat(this.interactOutputAmount);
 
     if (!contractJson) {
       this.interactError.set('Contract JSON is required');
@@ -228,6 +228,6 @@ export class ContractsPageComponent {
       ],
       without_selector: false,
     };
-    this.deployContractJson.set(JSON.stringify(example, null, 2));
+    this.deployContractJson = JSON.stringify(example, null, 2);
   }
 }

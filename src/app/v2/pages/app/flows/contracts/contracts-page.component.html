@@ -60,7 +60,7 @@
 
     <kc-button
       [text]="isDeploying() ? 'Deploying...' : 'Deploy Contract'"
-      [isDisabled]="isDeploying() || !deployContractJson() || !deployAmount()"
+      [isDisabled]="isDeploying() || !deployContractJson || !deployAmount"
       [isFullWidth]="true"
       (buttonClick)="deployContract()">
     </kc-button>
@@ -114,7 +114,7 @@
           <option [value]="fn.name">{{ fn.name }}</option>
         }
       </select>
-      @if (availableFunctions().length === 0 && interactContractJson()) {
+      @if (availableFunctions().length === 0 && interactContractJson) {
         <span class="text-gray-60 typo-text-1">No entrypoint functions found in contract</span>
       }
     </div>
@@ -165,7 +165,7 @@
 
     <kc-button
       [text]="isInteracting() ? 'Executing...' : 'Execute Contract'"
-      [isDisabled]="isInteracting() || !interactContractJson() || !interactOutpoint() || !selectedFunction()"
+      [isDisabled]="isInteracting() || !interactContractJson || !interactOutpoint || !selectedFunction"
       [isFullWidth]="true"
       (buttonClick)="interactContract()">
     </kc-button>

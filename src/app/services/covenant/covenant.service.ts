@@ -8,11 +8,11 @@ import { CompiledContract, CovenantOutpoint, SpendOutput, DeployResult, SpendRes
 })
 export class CovenantService {
   // Default wRPC URLs for different networks
-  // Using hostname-only format to match RpcService (RpcClient auto-detects protocol)
+  // Using hostname-only format to match RpcService (TN12 requires explicit ws:// (no TLS))
   private readonly DEFAULT_RPC_URLS: Record<string, string> = {
     'mainnet': 'wrpc.kaspa.org',
     'testnet-10': 'testnet-10.kaspa.org',
-    'testnet-12': 'tn12-node.kaspa.com',
+    'testnet-12': 'ws://tn12-node.kaspa.com:17210',
   };
 
   constructor(

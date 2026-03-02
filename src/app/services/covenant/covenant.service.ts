@@ -11,7 +11,7 @@ export class CovenantService {
   private readonly FALLBACK_RPC_URLS: Record<string, string> = {
     'mainnet': '',  // empty = use Resolver
     'testnet-10': '',
-    'testnet-12': 'tn12-node.kaspa.com',
+    'testnet-12': 'ws://tn12-node.kaspa.com:17210',
   };
 
   constructor(

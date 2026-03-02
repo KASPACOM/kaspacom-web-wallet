@@ -49,7 +49,7 @@ const PRESET_NETWORKS: KaspaNetworkConfig[] = [
     id: 'testnet-12',
     name: 'Testnet 12',
     networkId: 'testnet-12',
-    wrpcUrl: 'tn12-node.kaspa.com',
+    wrpcUrl: 'ws://tn12-node.kaspa.com:17210',
     useResolver: false,
     kaspaApiBaseurl: 'https://api-tn12.kaspa.org',
     kaspaExplorerBaseurl: 'https://tn12.kaspa.stream',

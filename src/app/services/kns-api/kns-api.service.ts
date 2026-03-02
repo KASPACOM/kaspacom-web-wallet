@@ -1,7 +1,7 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, of, map } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { NetworkConfigService } from '../network-config.service';
 import {
   KnsDomainAsset,
   KnsDomainsResponse,
@@ -16,7 +16,9 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class KnsApiService {
-  private baseUrl = environment.knsApiBaseurl;
+  private networkConfigService = inject(NetworkConfigService);
+
+  private get baseUrl() { return this.networkConfigService.getActiveNetwork().knsApiBaseurl; }
 
   constructor(private readonly httpClient: HttpClient) {}
 

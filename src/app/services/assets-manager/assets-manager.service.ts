@@ -7,6 +7,7 @@ import { AppWallet } from "../../classes/AppWallet";
 import { L1AssetsStoreService } from "./assets-stores/l1-assets-store.service";
 import { L2AssetsStoreService } from "./assets-stores/l2-assets-store.service";
 import { EthereumWalletChainManager } from "../etherium-services/etherium-wallet-chain.manager";
+import { NetworkConfigService } from "../network-config.service";
 
 @Injectable({
     providedIn: 'root',
@@ -17,6 +18,7 @@ export class AssetsManagerService {
     private l1AssetsStore = inject(L1AssetsStoreService);
     private l2AssetsStore = inject(L2AssetsStoreService);
     private ethereumWalletChainManager = inject(EthereumWalletChainManager);
+    private networkConfigService = inject(NetworkConfigService);
 
     // Props
     private currentWallet: AppWallet | undefined;
@@ -36,6 +38,8 @@ export class AssetsManagerService {
         toObservable(this.walletService.getCurrentWalletSignal()).subscribe(
             this.onWalletChanged.bind(this));
         toObservable(this.ethereumWalletChainManager.getCurrentChainSignal()).subscribe(
+            this.reloadAllAssets.bind(this));
+        toObservable(this.networkConfigService.getActiveNetworkSignal()).subscribe(
             this.reloadAllAssets.bind(this));
     }
 

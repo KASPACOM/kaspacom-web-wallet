@@ -8,6 +8,7 @@ import { FlowPagesService } from '../../../../services/flow-pages.service';
 import { FlowPageId } from '../flow-page/flow-page.registry';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { WalletProfileOrbComponent } from '../../../../shared/ui/wallet-profile-orb/wallet-profile-orb.component';
+import { NetworkConfigService } from '../../../../../services/network-config.service';
 import { EthereumWalletChainManager } from '../../../../../services/etherium-services/etherium-wallet-chain.manager';
 import { environment } from '../../../../../../environments/environment';
 
@@ -31,6 +32,7 @@ export class WrapperHeaderComponent {
   accountSettingsService = inject(AccountSettingsService);
   flowPagesService = inject(FlowPagesService);
   ethereumWalletChainManager = inject(EthereumWalletChainManager);
+  private networkConfigService = inject(NetworkConfigService);
 
   // Use signals for reactive updates
   currentWallet = this.walletService.getCurrentWalletSignal();
@@ -46,6 +48,16 @@ export class WrapperHeaderComponent {
     }
 
     return undefined;
+  });
+
+  l1NetworkName = computed(() => {
+    const network = this.networkConfigService.getActiveNetworkSignal()();
+    const nameMap: Record<string, string> = {
+      'mainnet': 'Kaspa L1',
+      'testnet-10': 'Kaspa TN10',
+      'testnet-12': 'Kaspa TN12',
+    };
+    return nameMap[network.id] || network.name;
   });
 
   walletName = computed(() => {

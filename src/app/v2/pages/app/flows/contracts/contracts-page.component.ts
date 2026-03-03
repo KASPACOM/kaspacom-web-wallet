@@ -1,6 +1,8 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { WalletService } from '../../../../../services/wallet.service';
 import { CovenantService } from '../../../../../services/covenant/covenant.service';
@@ -8,8 +10,10 @@ import { RpcService } from '../../../../../services/kaspa-netwrok-services/rpc.s
 import { ContractRegistryService, ContractRegistryEntry } from '../../../../../services/covenant/contract-registry.service';
 import { CompiledContract, CovenantOutpoint, SpendOutput } from '../../../../../services/covenant/covenant-sdk/types';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
+import { CONTRACT_TEMPLATES, ContractTemplate, TemplateField } from '../../../../services/covenant/contract-templates';
+import { CtorArg, TemplatePatcherService } from '../../../../services/covenant/template-patcher.service';
 
-type TabName = 'deploy' | 'my-contracts' | 'interact';
+type TabName = 'deploy' | 'my-contracts' | 'interact' | 'templates';
 
 @Component({
   selector: 'app-contracts-page',
@@ -32,6 +36,8 @@ export class ContractsPageComponent {
   private covenantService = inject(CovenantService);
   private rpcService = inject(RpcService);
   private registryService = inject(ContractRegistryService);
+  private templatePatcher = inject(TemplatePatcherService);
+  private http = inject(HttpClient);
 
   // Current active tab
   activeTab = signal<TabName>('deploy');
@@ -91,6 +97,12 @@ export class ContractsPageComponent {
 
   // Contract registry (my contracts tab)
   registryContracts = signal<ContractRegistryEntry[]>([]);
+
+  contractTemplates = CONTRACT_TEMPLATES;
+  activeTemplate = signal<ContractTemplate | null>(null);
+  templateFormValues: { [paramName: string]: string } = {};
+  generatedContractJson = signal<string | null>(null);
+  templateError = signal<string | null>(null);
 
   // Interact form - plain properties for ngModel
   selectedContractId = '';
@@ -153,6 +165,45 @@ export class ContractsPageComponent {
     if (tab === 'my-contracts') {
       this.loadContracts();
     }
+  }
+
+  selectTemplate(template: ContractTemplate) {
+    this.activeTemplate.set(template);
+    this.templateFormValues = {};
+    this.generatedContractJson.set(null);
+    this.templateError.set(null);
+  }
+
+  async generateContract() {
+    const template = this.activeTemplate();
+    if (!template) {
+      this.templateError.set('Please select a template');
+      return;
+    }
+
+    this.templateError.set(null);
+    this.generatedContractJson.set(null);
+
+    try {
+      const newArgs = template.fields.map((field) => this.fieldToCtorArg(field, this.templateFormValues[field.paramName]));
+      const compiled = await firstValueFrom(this.http.get<any>(template.assetPath));
+      const descriptor = this.templatePatcher.extractPatchDescriptor(compiled, template.placeholderArgs);
+      const patched = this.templatePatcher.applyPatch(compiled, descriptor, newArgs);
+      this.generatedContractJson.set(JSON.stringify(patched, null, 2));
+    } catch (error: any) {
+      this.templateError.set(error?.message || 'Failed to generate contract from template');
+    }
+  }
+
+  useGeneratedContract() {
+    const generated = this.generatedContractJson();
+    if (!generated) {
+      this.templateError.set('Generate a contract before deploying it');
+      return;
+    }
+
+    this.deployContractJson = generated;
+    this.activeTab.set('deploy');
   }
 
   /**
@@ -439,5 +490,71 @@ export class ContractsPageComponent {
    */
   formatSompiToKas(sompi: string): string {
     return (BigInt(sompi) / BigInt(1e8)).toString();
+  }
+
+  private fieldToCtorArg(field: TemplateField, rawValue: string | undefined): CtorArg {
+    const value = (rawValue || '').trim();
+    if (!value) {
+      throw new Error(`${field.label} is required`);
+    }
+
+    switch (field.type) {
+      case 'address':
+        return this.bytesArg(this.templatePatcher.kaspaAddressToPubkeyBytes(value));
+      case 'hash32':
+        return this.bytesArg(this.parseHash32(value, field.label));
+      case 'int_days':
+        return this.intArg(this.parseWholeNumber(value, field.label) * 86400);
+      case 'int_count':
+        return this.intArg(this.parseWholeNumber(value, field.label));
+      case 'int_timestamp':
+        return this.intArg(this.parseDateToUnixSeconds(value, field.label));
+      default:
+        throw new Error(`Unsupported template field type: ${(field as { type: string }).type}`);
+    }
+  }
+
+  private parseHash32(value: string, label: string): number[] {
+    const normalized = value.replace(/^0x/i, '').toLowerCase();
+    if (!/^[0-9a-f]{64}$/.test(normalized)) {
+      throw new Error(`${label} must be a 32-byte hex string`);
+    }
+
+    const bytes: number[] = [];
+    for (let index = 0; index < normalized.length; index += 2) {
+      bytes.push(Number.parseInt(normalized.slice(index, index + 2), 16));
+    }
+    return bytes;
+  }
+
+  private parseWholeNumber(value: string, label: string): number {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < 0) {
+      throw new Error(`${label} must be a non-negative whole number`);
+    }
+    return parsed;
+  }
+
+  private parseDateToUnixSeconds(value: string, label: string): number {
+    const timestampMs = new Date(value).getTime();
+    if (!Number.isFinite(timestampMs)) {
+      throw new Error(`${label} must be a valid date`);
+    }
+
+    return Math.floor(timestampMs / 1000);
+  }
+
+  private bytesArg(bytes: number[]): CtorArg {
+    return {
+      kind: 'array',
+      data: bytes.map((byte) => ({ kind: 'byte' as const, data: byte })),
+    };
+  }
+
+  private intArg(value: number): CtorArg {
+    return {
+      kind: 'int',
+      data: value,
+    };
   }
 }

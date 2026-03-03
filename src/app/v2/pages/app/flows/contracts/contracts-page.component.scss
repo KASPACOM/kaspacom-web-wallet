@@ -31,12 +31,14 @@
 
 // Panels and cards
 .panel,
-.contract-card {
+.contract-card,
+.template-card {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.contract-card {
+.contract-card,
+.template-card {
   transition: all 0.2s;
 
   &:hover {
@@ -177,4 +179,35 @@ select.form-input {
 
 .flex-1 {
   flex: 1;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.template-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(70, 130, 255, 0.12);
+  border: 1px solid rgba(70, 130, 255, 0.25);
+  font-size: 24px;
+}
+
+.back-button {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .template-grid {
+    grid-template-columns: 1fr;
+  }
 }

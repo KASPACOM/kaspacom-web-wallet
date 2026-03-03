@@ -1,0 +1,436 @@
+{
+  "contract_name": "DeadManSwitch",
+  "script": [
+    8,
+    128,
+    81,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    118,
+    0,
+    156,
+    99,
+    117,
+    81,
+    121,
+    32,
+    170,
+    171,
+    172,
+    173,
+    174,
+    175,
+    176,
+    177,
+    178,
+    179,
+    180,
+    181,
+    182,
+    183,
+    184,
+    185,
+    186,
+    187,
+    188,
+    189,
+    190,
+    191,
+    192,
+    193,
+    194,
+    195,
+    196,
+    197,
+    198,
+    199,
+    200,
+    201,
+    172,
+    105,
+    0,
+    194,
+    185,
+    190,
+    2,
+    232,
+    3,
+    148,
+    162,
+    105,
+    0,
+    121,
+    88,
+    205,
+    88,
+    124,
+    126,
+    185,
+    118,
+    201,
+    118,
+    2,
+    158,
+    0,
+    148,
+    89,
+    147,
+    124,
+    188,
+    126,
+    170,
+    2,
+    0,
+    0,
+    1,
+    170,
+    126,
+    1,
+    32,
+    126,
+    124,
+    126,
+    1,
+    135,
+    126,
+    0,
+    195,
+    135,
+    105,
+    117,
+    117,
+    81,
+    103,
+    118,
+    81,
+    156,
+    99,
+    117,
+    81,
+    121,
+    32,
+    187,
+    188,
+    189,
+    190,
+    191,
+    192,
+    193,
+    194,
+    195,
+    196,
+    197,
+    198,
+    199,
+    200,
+    201,
+    202,
+    203,
+    204,
+    205,
+    206,
+    207,
+    208,
+    209,
+    210,
+    211,
+    212,
+    213,
+    214,
+    215,
+    216,
+    217,
+    218,
+    172,
+    105,
+    0,
+    121,
+    177,
+    117,
+    117,
+    81,
+    103,
+    117,
+    0,
+    105,
+    104,
+    104
+  ],
+  "ast": {
+    "name": "DeadManSwitch",
+    "params": [
+      {
+        "type_ref": {
+          "base": "pubkey"
+        },
+        "name": "owner",
+        "span": "pubkey owner",
+        "type_span": "pubkey ",
+        "name_span": "owner"
+      },
+      {
+        "type_ref": {
+          "base": "pubkey"
+        },
+        "name": "heir",
+        "span": "pubkey heir",
+        "type_span": "pubkey ",
+        "name_span": "heir"
+      },
+      {
+        "type_ref": {
+          "base": "int"
+        },
+        "name": "initInactivityPeriod",
+        "span": "int initInactivityPeriod",
+        "type_span": "int ",
+        "name_span": "initInactivityPeriod"
+      }
+    ],
+    "fields": [
+      {
+        "type_ref": {
+          "base": "int"
+        },
+        "name": "inactivityPeriod",
+        "expr": {
+          "kind": "identifier",
+          "data": "initInactivityPeriod",
+          "span": "initInactivityPeriod"
+        },
+        "span": "int inactivityPeriod = initInactivityPeriod;",
+        "type_span": "int ",
+        "name_span": "inactivityPeriod"
+      }
+    ],
+    "constants": [],
+    "functions": [
+      {
+        "name": "keepAlive",
+        "params": [
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "s",
+            "span": "sig s",
+            "type_span": "sig ",
+            "name_span": "s"
+          }
+        ],
+        "entrypoint": true,
+        "return_types": [],
+        "body": [
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "s",
+                      "span": "s"
+                    },
+                    {
+                      "kind": "identifier",
+                      "data": "owner",
+                      "span": "owner"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(s, owner)"
+              },
+              "message": null,
+              "span": "require(checkSig(s, owner));",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "ge",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_value",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".value"
+                    },
+                    "span": "tx.outputs[0].value"
+                  },
+                  "right": {
+                    "kind": "binary",
+                    "data": {
+                      "op": "sub",
+                      "left": {
+                        "kind": "introspection",
+                        "data": {
+                          "kind": "input_value",
+                          "index": {
+                            "kind": "nullary",
+                            "data": "active_input_index",
+                            "span": "this.activeInputIndex"
+                          },
+                          "field_span": ".value"
+                        },
+                        "span": "tx.inputs[this.activeInputIndex].value"
+                      },
+                      "right": {
+                        "kind": "int",
+                        "data": 1000,
+                        "span": "1000"
+                      }
+                    },
+                    "span": "tx.inputs[this.activeInputIndex].value - 1000"
+                  }
+                },
+                "span": "tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - 1000"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - 1000);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "function_call",
+            "data": {
+              "name": "validateOutputState",
+              "args": [
+                {
+                  "kind": "int",
+                  "data": 0,
+                  "span": "0"
+                },
+                {
+                  "kind": "state_object",
+                  "data": [
+                    {
+                      "name": "inactivityPeriod",
+                      "expr": {
+                        "kind": "identifier",
+                        "data": "inactivityPeriod",
+                        "span": "inactivityPeriod"
+                      },
+                      "span": "inactivityPeriod: inactivityPeriod ",
+                      "name_span": "inactivityPeriod"
+                    }
+                  ],
+                  "span": "{ inactivityPeriod: inactivityPeriod }"
+                }
+              ],
+              "span": "validateOutputState(0, { inactivityPeriod: inactivityPeriod });",
+              "name_span": "validateOutputState"
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function keepAlive(sig s) {\n        require(checkSig(s, owner));\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - 1000);\n        validateOutputState(0, { inactivityPeriod: inactivityPeriod });\n    }",
+        "name_span": "keepAlive",
+        "body_span": "require(checkSig(s, owner));\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - 1000);\n        validateOutputState(0, { inactivityPeriod: inactivityPeriod });"
+      },
+      {
+        "name": "claim",
+        "params": [
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "s",
+            "span": "sig s",
+            "type_span": "sig ",
+            "name_span": "s"
+          }
+        ],
+        "entrypoint": true,
+        "return_types": [],
+        "body": [
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "s",
+                      "span": "s"
+                    },
+                    {
+                      "kind": "identifier",
+                      "data": "heir",
+                      "span": "heir"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(s, heir)"
+              },
+              "message": null,
+              "span": "require(checkSig(s, heir));",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "time_op",
+            "data": {
+              "tx_var": "this_age",
+              "expr": {
+                "kind": "identifier",
+                "data": "inactivityPeriod",
+                "span": "inactivityPeriod"
+              },
+              "message": null,
+              "span": "require(this.age >= inactivityPeriod);",
+              "tx_var_span": "this.age",
+              "message_span": null
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function claim(sig s) {\n        require(checkSig(s, heir));\n        require(this.age >= inactivityPeriod);\n    }",
+        "name_span": "claim",
+        "body_span": "require(checkSig(s, heir));\n        require(this.age >= inactivityPeriod);"
+      }
+    ],
+    "span": "contract DeadManSwitch(pubkey owner, pubkey heir, int initInactivityPeriod) {\n    int inactivityPeriod = initInactivityPeriod;\n    \n    entrypoint function keepAlive(sig s) {\n        require(checkSig(s, owner));\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - 1000);\n        validateOutputState(0, { inactivityPeriod: inactivityPeriod });\n    }\n    \n    entrypoint function claim(sig s) {\n        require(checkSig(s, heir));\n        require(this.age >= inactivityPeriod);\n    }\n}",
+    "name_span": "DeadManSwitch"
+  },
+  "abi": [
+    {
+      "name": "keepAlive",
+      "inputs": [
+        {
+          "name": "s",
+          "type_name": "sig"
+        }
+      ]
+    },
+    {
+      "name": "claim",
+      "inputs": [
+        {
+          "name": "s",
+          "type_name": "sig"
+        }
+      ]
+    }
+  ],
+  "without_selector": false
+}

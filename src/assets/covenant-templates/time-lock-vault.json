@@ -1,0 +1,279 @@
+{
+  "contract_name": "TimeLockVault",
+  "script": [
+    118,
+    0,
+    156,
+    99,
+    117,
+    0,
+    121,
+    32,
+    170,
+    171,
+    172,
+    173,
+    174,
+    175,
+    176,
+    177,
+    178,
+    179,
+    180,
+    181,
+    182,
+    183,
+    184,
+    185,
+    186,
+    187,
+    188,
+    189,
+    190,
+    191,
+    192,
+    193,
+    194,
+    195,
+    196,
+    197,
+    198,
+    199,
+    200,
+    201,
+    172,
+    105,
+    117,
+    81,
+    103,
+    118,
+    81,
+    156,
+    99,
+    117,
+    0,
+    121,
+    32,
+    187,
+    186,
+    185,
+    184,
+    183,
+    182,
+    181,
+    180,
+    179,
+    178,
+    177,
+    176,
+    175,
+    174,
+    173,
+    172,
+    171,
+    170,
+    169,
+    168,
+    167,
+    166,
+    165,
+    164,
+    163,
+    162,
+    161,
+    160,
+    159,
+    158,
+    157,
+    156,
+    172,
+    105,
+    4,
+    0,
+    202,
+    154,
+    59,
+    176,
+    117,
+    81,
+    103,
+    117,
+    0,
+    105,
+    104,
+    104
+  ],
+  "ast": {
+    "name": "TimeLockVault",
+    "params": [
+      {
+        "type_ref": {
+          "base": "pubkey"
+        },
+        "name": "owner",
+        "span": "pubkey owner",
+        "type_span": "pubkey ",
+        "name_span": "owner"
+      },
+      {
+        "type_ref": {
+          "base": "pubkey"
+        },
+        "name": "recovery",
+        "span": "pubkey recovery",
+        "type_span": "pubkey ",
+        "name_span": "recovery"
+      },
+      {
+        "type_ref": {
+          "base": "int"
+        },
+        "name": "timeout",
+        "span": "int timeout",
+        "type_span": "int ",
+        "name_span": "timeout"
+      }
+    ],
+    "constants": [],
+    "functions": [
+      {
+        "name": "spend",
+        "params": [
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "s",
+            "span": "sig s",
+            "type_span": "sig ",
+            "name_span": "s"
+          }
+        ],
+        "entrypoint": true,
+        "return_types": [],
+        "body": [
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "s",
+                      "span": "s"
+                    },
+                    {
+                      "kind": "identifier",
+                      "data": "owner",
+                      "span": "owner"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(s, owner)"
+              },
+              "message": null,
+              "span": "require(checkSig(s, owner));",
+              "message_span": null
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function spend(sig s) {\n        // Owner can spend anytime with valid signature\n        require(checkSig(s, owner));\n    }",
+        "name_span": "spend",
+        "body_span": "require(checkSig(s, owner));"
+      },
+      {
+        "name": "recover",
+        "params": [
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "s",
+            "span": "sig s",
+            "type_span": "sig ",
+            "name_span": "s"
+          }
+        ],
+        "entrypoint": true,
+        "return_types": [],
+        "body": [
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "s",
+                      "span": "s"
+                    },
+                    {
+                      "kind": "identifier",
+                      "data": "recovery",
+                      "span": "recovery"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(s, recovery)"
+              },
+              "message": null,
+              "span": "require(checkSig(s, recovery));",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "time_op",
+            "data": {
+              "tx_var": "tx_time",
+              "expr": {
+                "kind": "identifier",
+                "data": "timeout",
+                "span": "timeout"
+              },
+              "message": null,
+              "span": "require(tx.time >= timeout);",
+              "tx_var_span": "tx.time",
+              "message_span": null
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function recover(sig s) {\n        // Recovery can spend only after timeout\n        require(checkSig(s, recovery));\n        require(tx.time >= timeout);\n    }",
+        "name_span": "recover",
+        "body_span": "require(checkSig(s, recovery));\n        require(tx.time >= timeout);"
+      }
+    ],
+    "span": "contract TimeLockVault(\n    pubkey owner,\n    pubkey recovery,\n    int timeout\n) {\n    entrypoint function spend(sig s) {\n        // Owner can spend anytime with valid signature\n        require(checkSig(s, owner));\n    }\n\n    entrypoint function recover(sig s) {\n        // Recovery can spend only after timeout\n        require(checkSig(s, recovery));\n        require(tx.time >= timeout);\n    }\n}",
+    "name_span": "TimeLockVault"
+  },
+  "abi": [
+    {
+      "name": "spend",
+      "inputs": [
+        {
+          "name": "s",
+          "type_name": "sig"
+        }
+      ]
+    },
+    {
+      "name": "recover",
+      "inputs": [
+        {
+          "name": "s",
+          "type_name": "sig"
+        }
+      ]
+    }
+  ],
+  "without_selector": false
+}

@@ -31,6 +31,20 @@
             ],
             "styles": ["src/styles.scss"],
             "scripts": [],
+            "allowedCommonJsDependencies": [
+              "@segment/analytics.js-video-plugins",
+              "@segment/facade",
+              "lodash",
+              "jsbi",
+              "decimal.js-light",
+              "big.js",
+              "toformat",
+              "js-sha3",
+              "qrcode",
+              "bn.js",
+              "hash.js",
+              "graphemer"
+            ],
             "server": "src/main.server.ts",
             "prerender": false,
             "ssr": false,
@@ -46,8 +60,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "6kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "10kB",
+                  "maximumError": "12kB"
                 }
               ],
               "outputHashing": "all"

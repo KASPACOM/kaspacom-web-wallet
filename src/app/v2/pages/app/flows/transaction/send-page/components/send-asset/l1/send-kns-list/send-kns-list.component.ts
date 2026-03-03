@@ -1,5 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
 import { SkeletonComponent } from '../../../../../../../../../shared/ui/skeleton/skeleton.component';
@@ -9,7 +9,7 @@ import { L1_ASSET_KEYS } from '../../../../../../../../../../services/assets-man
 @Component({
   selector: 'app-send-kns-list',
   standalone: true,
-  imports: [CommonModule, SkeletonComponent, DatePipe],
+  imports: [CommonModule, SkeletonComponent],
   templateUrl: './send-kns-list.component.html',
   styleUrl: './send-kns-list.component.scss'
 })

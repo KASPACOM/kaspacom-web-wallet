@@ -566,11 +566,15 @@ export async function spendContract(
     });
 
     const signatureHex = createInputSignature(unsignedTx, 0, privateKey, SighashType.All);
-    console.log('[CovenantSDK] signatureHex type:', typeof signatureHex, 'value:', String(signatureHex).substring(0, 20) + '...');
-    // createInputSignature returns HexString — normalize to plain string
+    // createInputSignature returns: [length_prefix(1)] + [schnorr_sig(64)] + [sighash_type(1)] = 66 bytes
+    // The contract expects just [schnorr_sig(64)] + [sighash_type(1)] = 65 bytes (no length prefix)
     const sigHexStr = String(signatureHex);
-    const signature = hexToBytes(sigHexStr);
-    console.log('[CovenantSDK] signature bytes:', signature.length, '(expected 65)');
+    let signature = hexToBytes(sigHexStr);
+    if (signature.length === 66 && signature[0] === 65) {
+      // Strip the length prefix byte — 65 means "65 bytes of sig+sighash follow"
+      signature = signature.slice(1);
+    }
+    console.log('[CovenantSDK] signature bytes:', signature.length);
     const functionArgs = resolveSpendFunctionArgs(compiled, functionName, signature, privateKey);
     const sigPrefix = buildSigScript(compiled, functionName, functionArgs);
 

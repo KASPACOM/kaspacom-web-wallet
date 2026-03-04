@@ -147,7 +147,11 @@ function buildSigScript(
 }
 
 async function getAddressUtxos(rpc: RpcClient, address: string): Promise<UtxoEntryReference[]> {
-  const utxos = await rpc.getUtxosByAddresses([address]);
+  const utxoPromise = rpc.getUtxosByAddresses([address]);
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('UTXO query timed out after 20 seconds — RPC may not be connected')), 20000)
+  );
+  const utxos = await Promise.race([utxoPromise, timeoutPromise]);
   return utxos.entries;
 }
 
@@ -202,19 +206,36 @@ export async function deployContract(
   network: string,
   existingRpc?: RpcClient,
 ): Promise<DeployResult> {
+  console.log('[CovenantSDK] deployContract start', { network, rpcUrl: rpcUrl || '(using existing)', hasExistingRpc: !!existingRpc });
   const privateKey = new PrivateKey(privateKeyHex);
   const senderAddress = privateKey.toAddress(network).toString();
   const contractAddress = getCovenantAddress(compiled, network);
+  console.log('[CovenantSDK] senderAddress:', senderAddress, 'contractAddress:', contractAddress);
+
   const ownRpc = !existingRpc;
   const rpc = existingRpc || connectRpc(rpcUrl, network);
 
   try {
-    if (ownRpc) await rpc.connect();
+    if (ownRpc) {
+      console.log('[CovenantSDK] Connecting new RPC client...');
+      const connectPromise = rpc.connect();
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('RPC connection timed out after 15 seconds')), 15000)
+      );
+      await Promise.race([connectPromise, timeoutPromise]);
+      console.log('[CovenantSDK] RPC connected');
+    } else {
+      console.log('[CovenantSDK] Using existing RPC, isConnected:', rpc.isConnected);
+    }
+
+    console.log('[CovenantSDK] Fetching UTXOs for', senderAddress);
     const entries = await getAddressUtxos(rpc, senderAddress);
+    console.log('[CovenantSDK] Found', entries.length, 'UTXOs');
     if (entries.length === 0) {
       throw new Error(`No spendable UTXOs found for ${senderAddress}`);
     }
 
+    console.log('[CovenantSDK] Creating transactions...');
     const created = await createTransactions({
       entries,
       outputs: [{ address: contractAddress, amount: amountSompi }],
@@ -223,12 +244,17 @@ export async function deployContract(
       networkId: network,
     } as never);
 
+    console.log('[CovenantSDK] Transactions created:', created.transactions.length, 'tx(s)');
     let finalTxId = created.summary.finalTransactionId;
     let finalTransaction = created.transactions[created.transactions.length - 1]?.transaction;
 
-    for (const pending of created.transactions) {
+    for (let i = 0; i < created.transactions.length; i++) {
+      const pending = created.transactions[i];
+      console.log(`[CovenantSDK] Signing tx ${i + 1}/${created.transactions.length}...`);
       pending.sign([privateKey]);
+      console.log(`[CovenantSDK] Submitting tx ${i + 1}...`);
       finalTxId = await pending.submit(rpc);
+      console.log(`[CovenantSDK] Submitted tx ${i + 1}:`, finalTxId);
       finalTransaction = pending.transaction;
     }
 

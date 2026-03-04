@@ -52,14 +52,25 @@ export class CovenantService {
   ): Promise<DeployResult> {
     const network = this.rpcService.getNetwork();
     const existingRpc = this.rpcService.getRpc();
+    const rpcUrl = this.getRpcUrl();
 
-    // Use the existing wallet RPC connection if already connected
-    if (existingRpc?.isConnected) {
-      return deployContract(compiled, amountSompi, '', privateKeyHex, network, existingRpc);
+    console.log('[CovenantService] deploy', {
+      network,
+      hasExistingRpc: !!existingRpc,
+      isConnected: existingRpc?.isConnected,
+      rpcUrl,
+    });
+
+    // Always try existing RPC first (even if isConnected is uncertain)
+    if (existingRpc) {
+      try {
+        return await deployContract(compiled, amountSompi, '', privateKeyHex, network, existingRpc);
+      } catch (err: any) {
+        console.warn('[CovenantService] Deploy with existing RPC failed, trying new connection:', err?.message);
+      }
     }
 
-    // Fallback: create a new connection
-    const rpcUrl = this.getRpcUrl();
+    // Fallback: create a new connection with the RPC URL
     return deployContract(compiled, amountSompi, rpcUrl, privateKeyHex, network);
   }
 
@@ -77,11 +88,16 @@ export class CovenantService {
     const network = this.rpcService.getNetwork();
     const existingRpc = this.rpcService.getRpc();
 
-    if (existingRpc?.isConnected) {
-      return spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, '', privateKeyHex, network, existingRpc);
+    const rpcUrl = this.getRpcUrl();
+
+    if (existingRpc) {
+      try {
+        return await spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, '', privateKeyHex, network, existingRpc);
+      } catch (err: any) {
+        console.warn('[CovenantService] Spend with existing RPC failed, trying new connection:', err?.message);
+      }
     }
 
-    const rpcUrl = this.getRpcUrl();
     return spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, rpcUrl, privateKeyHex, network);
   }
 

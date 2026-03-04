@@ -17,6 +17,8 @@ export class KaspaNetworkConnectionManagerService {
   private connectionStatusSignal: WritableSignal<RpcConnectionStatus> =
     signal<RpcConnectionStatus>(RpcConnectionStatus.DISCONNECTED);
   private hasConnectedOnce = false;
+  /** Incremented on every forceReconnect — stale handleConnection calls check this to bail out */
+  private connectionGeneration = 0;
 
   constructor(
     private readonly rpcService: RpcService,
@@ -50,6 +52,7 @@ export class KaspaNetworkConnectionManagerService {
   }
 
   private async handleConnection() {
+    const myGeneration = this.connectionGeneration;
     console.log('Trying to connect to RPC...');
 
     let reachedTimeout = false;
@@ -66,15 +69,29 @@ export class KaspaNetworkConnectionManagerService {
 
     try {
       const currentRpc = await this.rpcService.refreshRpc();
+
+      // Bail out if a newer forceReconnect happened while we were refreshing
+      if (myGeneration !== this.connectionGeneration) {
+        clearTimeout(timeoutForConnection);
+        return;
+      }
+
       currentRpc!.addEventListener('disconnect', () => {
         console.log('disconnected from RPC');
-        if (this.rpcService.getRpc() == currentRpc) {
+        // Only react if this is still the active RPC client AND not superseded
+        if (this.rpcService.getRpc() == currentRpc && myGeneration === this.connectionGeneration) {
           console.log('current connection reset');
           this.setSignalStatusIfChanged(RpcConnectionStatus.DISCONNECTED);
           this.waitForConnection();
         }
       });
       await currentRpc!.connect();
+
+      // Bail out if superseded
+      if (myGeneration !== this.connectionGeneration) {
+        try { await currentRpc!.disconnect(); } catch {}
+        return;
+      }
 
       if (reachedTimeout) {
         console.error('Rpc connection reached time out');
@@ -96,7 +113,11 @@ export class KaspaNetworkConnectionManagerService {
       }
     } catch (err) {
       console.error('Failed connecting RPC', err);
-      this.waitForConnection().catch((err) => console.error(err));
+
+      // Only retry if this connection attempt hasn't been superseded
+      if (myGeneration === this.connectionGeneration) {
+        this.waitForConnection().catch((err) => console.error(err));
+      }
 
       if (!reachedTimeout) {
         this.connectionMadeReject!('Failed connecting to RPC');
@@ -120,6 +141,9 @@ export class KaspaNetworkConnectionManagerService {
    * re-tracks addresses on the new network and the balance refreshes.
    */
   public async forceReconnect(): Promise<void> {
+    // Bump generation to cancel any in-flight handleConnection
+    this.connectionGeneration++;
+
     // Disconnect the current RPC client (if any)
     try {
       const currentRpc = this.rpcService.getRpc();

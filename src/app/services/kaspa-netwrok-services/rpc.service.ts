@@ -7,15 +7,11 @@ import { NetworkConfigService } from '../network-config.service';
 })
 export class RpcService {
   private RPC?: RpcClient;
+  /** Track which network the current RPC client was created for */
+  private currentNetworkId?: string;
 
   constructor(private networkConfigService: NetworkConfigService) {
     this.refreshRpc();
-
-    // Re-connect RPC when network changes
-    effect(() => {
-      this.networkConfigService.getActiveNetworkSignal()();
-      this.refreshRpc();
-    });
   }
 
   getRpc() {
@@ -23,6 +19,13 @@ export class RpcService {
   }
 
   refreshRpc() {
+    const networkConfig = this.networkConfigService.getActiveNetwork();
+
+    // Skip if we already have a client for this network
+    if (this.RPC && this.currentNetworkId === networkConfig.networkId) {
+      return this.getRpc();
+    }
+
     // Disconnect old client before creating a new one
     if (this.RPC) {
       try {
@@ -36,8 +39,6 @@ export class RpcService {
       }
     }
     
-    const networkConfig = this.networkConfigService.getActiveNetwork();
-    
     const rpcOptions: any = {
       encoding: Encoding.Borsh,
       networkId: networkConfig.networkId,
@@ -50,6 +51,7 @@ export class RpcService {
     }
 
     this.RPC = new RpcClient(rpcOptions);
+    this.currentNetworkId = networkConfig.networkId;
 
     return this.getRpc();
   }

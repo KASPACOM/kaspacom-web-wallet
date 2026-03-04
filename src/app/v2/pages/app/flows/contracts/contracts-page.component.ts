@@ -492,8 +492,8 @@ export class ContractsPageComponent {
     return (BigInt(sompi) / BigInt(1e8)).toString();
   }
 
-  private fieldToCtorArg(field: TemplateField, rawValue: string | undefined): CtorArg {
-    const value = (rawValue || '').trim();
+  private fieldToCtorArg(field: TemplateField, rawValue: string | number | undefined): CtorArg {
+    const value = String(rawValue ?? '').trim();
     if (!value) {
       throw new Error(`${field.label} is required`);
     }

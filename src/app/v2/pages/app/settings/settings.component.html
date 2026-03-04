@@ -1,1 +1,273 @@
-<p>settings works!</p>
+<div class="settings-container flex column full-width p-24 gap-32">
+  <!-- Header -->
+  <div class="settings-header flex column gap-8">
+    <h1 class="text-white typo-title-1">Settings</h1>
+    <p class="text-gray-75 typo-text-1">Configure network connections and preferences</p>
+  </div>
+
+  <!-- Kaspa Network Section -->
+  <section class="settings-section flex column gap-20">
+    <h2 class="text-white typo-title-3">Kaspa Network</h2>
+    
+    <!-- Current Network Card -->
+    <div class="network-card panel p-20 rounded-lg flex column gap-16">
+      <div class="flex justify-content-between align-items-center">
+        <div class="flex column gap-4">
+          <span class="text-gray-60 typo-text-1">Active Network</span>
+          <span class="text-white typo-text-2 fw-bold">{{ activeNetwork().name }}</span>
+        </div>
+        <div class="network-status">
+          <span class="status-indicator active"></span>
+        </div>
+      </div>
+
+      <div class="flex column gap-4">
+        <span class="text-gray-60 typo-text-1">WRPC Connection</span>
+        <div class="flex justify-content-between align-items-center">
+          <span class="text-white typo-text-2">{{ getWrpcDisplay() }}</span>
+          <kc-button 
+            [text]="'Customize'" 
+            [isFullWidth]="false"
+            (buttonClick)="openCustomizeWrpc()">
+          </kc-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Network Selector Cards (dev only) -->
+    @if (canSwitchNetworks()) {
+      <div class="flex column gap-12">
+        <span class="text-gray-60 typo-text-1">Available Networks</span>
+        <div class="networks-grid flex column gap-12">
+          @for (network of allNetworks(); track network.id) {
+            <div 
+              class="network-option-card panel p-16 rounded-lg flex justify-content-between align-items-center"
+              [class.active]="activeNetwork().id === network.id"
+              (click)="switchToNetwork(network.id)">
+              <div class="flex column gap-4">
+                <span class="text-white typo-text-2">{{ network.name }}</span>
+                @if (network.isCustom) {
+                  <span class="text-gray-60 typo-text-1">(Custom)</span>
+                }
+              </div>
+              @if (activeNetwork().id === network.id) {
+                <span class="status-indicator active"></span>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <kc-button 
+        [text]="'+ Add Custom Network'" 
+        [isFullWidth]="true"
+        (buttonClick)="openAddCustomNetwork()">
+      </kc-button>
+
+      @if (activeNetwork().isCustom) {
+        <kc-button 
+          [text]="'Remove Current Network'" 
+          [isFullWidth]="true"
+          (buttonClick)="removeCustomNetwork(activeNetwork().id)">
+        </kc-button>
+      }
+    }
+  </section>
+
+  <!-- EVM / L2 Networks Section -->
+  <section class="settings-section flex column gap-20">
+    <h2 class="text-white typo-title-3">EVM / L2 Networks</h2>
+    <p class="text-gray-60 typo-text-1">Configure custom RPC endpoints for L2 networks</p>
+    
+    <div class="l2-networks-grid flex column gap-12">
+      @for (network of l2Networks(); track network.chainId) {
+        <div class="l2-network-card panel p-16 rounded-lg flex justify-content-between align-items-center gap-16">
+          <div class="l2-network-icon text-white typo-title-3">{{ getL2Icon(network) }}</div>
+          <div class="l2-network-info flex column gap-4 full-width">
+            <span class="text-white typo-text-2 fw-bold">{{ network.chainName }}</span>
+            <span class="text-gray-60 typo-text-1">Chain ID: {{ network.chainId }}</span>
+            <span class="text-gray-75 typo-text-1 text-mono">{{ network.rpcUrls[0] }}</span>
+          </div>
+          <kc-button 
+            [text]="'Edit RPC'" 
+            [isFullWidth]="false"
+            (buttonClick)="openEditL2Rpc(network.chainId)">
+          </kc-button>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Customize WRPC Modal -->
+  @if (showCustomizeWrpc()) {
+    <div class="modal-overlay" (click)="cancelCustomizeWrpc()">
+      <div class="modal-content panel p-24 rounded-lg flex column gap-20" (click)="$event.stopPropagation()">
+        <h3 class="text-white typo-title-3">Customize WRPC URL</h3>
+        <p class="text-gray-60 typo-text-1">
+          Leave empty to use Auto (Resolver). Enter a hostname like "tn12-node.kaspa.com" for a custom node.
+        </p>
+        
+        <div class="form-group flex column gap-8">
+          <label class="text-gray-60 typo-text-1">WRPC URL</label>
+          <input 
+            type="text" 
+            class="form-input p-12 rounded-lg text-white typo-text-2" 
+            placeholder="tn12-node.kaspa.com or leave empty for Auto"
+            [value]="customWrpcUrl()"
+            (input)="customWrpcUrl.set($any($event.target).value)" />
+        </div>
+
+        <div class="modal-actions flex gap-12">
+          <kc-button 
+            [text]="'Cancel'" 
+            [isFullWidth]="true"
+            (buttonClick)="cancelCustomizeWrpc()">
+          </kc-button>
+          <kc-button 
+            [text]="'Save'" 
+            [isFullWidth]="true"
+            (buttonClick)="saveCustomWrpc()">
+          </kc-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Add Custom Network Modal (dev only) -->
+  @if (showAddCustomNetwork()) {
+    <div class="modal-overlay" (click)="cancelAddCustomNetwork()">
+      <div class="modal-content modal-large panel p-24 rounded-lg flex column gap-20" (click)="$event.stopPropagation()">
+        <h3 class="text-white typo-title-3">Add Custom Network</h3>
+        
+        <div class="form-group flex column gap-8">
+          <label class="text-gray-60 typo-text-1">Network ID *</label>
+          <input 
+            type="text" 
+            class="form-input p-12 rounded-lg text-white typo-text-2" 
+            placeholder="e.g. testnet-13"
+            [value]="customNetworkForm().id"
+            (input)="updateCustomFormField('id', $any($event.target).value)" />
+        </div>
+
+        <div class="form-group flex column gap-8">
+          <label class="text-gray-60 typo-text-1">Display Name *</label>
+          <input 
+            type="text" 
+            class="form-input p-12 rounded-lg text-white typo-text-2" 
+            placeholder="e.g. Testnet 13"
+            [value]="customNetworkForm().name"
+            (input)="updateCustomFormField('name', $any($event.target).value)" />
+        </div>
+
+        <div class="form-group flex column gap-8">
+          <label class="text-gray-60 typo-text-1">WASM SDK Network ID *</label>
+          <input 
+            type="text" 
+            class="form-input p-12 rounded-lg text-white typo-text-2" 
+            placeholder="e.g. testnet-13"
+            [value]="customNetworkForm().networkId"
+            (input)="updateCustomFormField('networkId', $any($event.target).value)" />
+        </div>
+
+        <div class="form-group flex column gap-8">
+          <label class="text-gray-60 typo-text-1">WRPC URL (leave empty for Resolver)</label>
+          <input 
+            type="text" 
+            class="form-input p-12 rounded-lg text-white typo-text-2" 
+            placeholder="e.g. tn13-node.kaspa.com"
+            [value]="customNetworkForm().wrpcUrl"
+            (input)="updateCustomFormField('wrpcUrl', $any($event.target).value)" />
+        </div>
+
+        <div class="form-group flex column gap-8">
+          <label class="text-gray-60 typo-text-1">Kaspa API Base URL</label>
+          <input 
+            type="text" 
+            class="form-input p-12 rounded-lg text-white typo-text-2" 
+            placeholder="e.g. https://api-tn13.kaspa.org"
+            [value]="customNetworkForm().kaspaApiBaseurl"
+            (input)="updateCustomFormField('kaspaApiBaseurl', $any($event.target).value)" />
+        </div>
+
+        <div class="form-group flex column gap-8">
+          <label class="text-gray-60 typo-text-1">Kaspa Explorer Base URL</label>
+          <input 
+            type="text" 
+            class="form-input p-12 rounded-lg text-white typo-text-2" 
+            placeholder="e.g. https://explorer-tn13.kaspa.org"
+            [value]="customNetworkForm().kaspaExplorerBaseurl"
+            (input)="updateCustomFormField('kaspaExplorerBaseurl', $any($event.target).value)" />
+        </div>
+
+        <div class="modal-actions flex gap-12">
+          <kc-button 
+            [text]="'Cancel'" 
+            [isFullWidth]="true"
+            (buttonClick)="cancelAddCustomNetwork()">
+          </kc-button>
+          <kc-button 
+            [text]="'Add Network'" 
+            [isFullWidth]="true"
+            (buttonClick)="saveCustomNetwork()">
+          </kc-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Edit L2 RPC Modal -->
+  @if (showEditL2Rpc()) {
+    <div class="modal-overlay" (click)="cancelEditL2Rpc()">
+      <div class="modal-content panel p-24 rounded-lg flex column gap-20" (click)="$event.stopPropagation()">
+        <h3 class="text-white typo-title-3">Edit L2 RPC URL</h3>
+        
+        <div class="form-group flex column gap-8">
+          <label class="text-gray-60 typo-text-1">RPC URL</label>
+          <input 
+            type="text" 
+            class="form-input p-12 rounded-lg text-white typo-text-2" 
+            placeholder="https://..."
+            [value]="editL2RpcUrl()"
+            (input)="editL2RpcUrl.set($any($event.target).value)" />
+        </div>
+
+        <div class="modal-actions flex gap-12">
+          <kc-button 
+            [text]="'Cancel'" 
+            [isFullWidth]="true"
+            (buttonClick)="cancelEditL2Rpc()">
+          </kc-button>
+          <kc-button 
+            [text]="'Save'" 
+            [isFullWidth]="true"
+            (buttonClick)="saveL2Rpc()">
+          </kc-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Remove Network Confirmation Modal -->
+  @if (networkToRemove()) {
+    <div class="modal-overlay" (click)="cancelRemoveCustomNetwork()">
+      <div class="modal-content panel p-24 rounded-lg flex column gap-20" (click)="$event.stopPropagation()">
+        <h3 class="text-white typo-title-3">Remove Custom Network</h3>
+        <p class="text-gray-60 typo-text-1">
+          Are you sure you want to remove this custom network? This action cannot be undone.
+        </p>
+        <div class="modal-actions flex gap-12">
+          <kc-button 
+            [text]="'Cancel'" 
+            [isFullWidth]="true"
+            (buttonClick)="cancelRemoveCustomNetwork()">
+          </kc-button>
+          <kc-button 
+            [text]="'Remove'" 
+            [isFullWidth]="true"
+            (buttonClick)="confirmRemoveCustomNetwork()">
+          </kc-button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

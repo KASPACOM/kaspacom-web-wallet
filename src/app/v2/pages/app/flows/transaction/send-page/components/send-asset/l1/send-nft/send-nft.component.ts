@@ -33,7 +33,7 @@ import { AddressResolutionResult } from '../../../../../../../../../../services/
 import { Router } from '@angular/router';
 import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
 import { L1_ASSET_KEYS } from '../../../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
-import { environment } from '../../../../../../../../../../../environments/environment';
+import { NetworkConfigService } from '../../../../../../../../../../services/network-config.service';
 
 @Component({
   selector: 'app-send-nft',
@@ -65,6 +65,7 @@ export class SendNftComponent
   private qrScannerService = inject(QrScannerService);
   private router = inject(Router);
   private assetsManagerService = inject(AssetsManagerService);
+  private networkConfigService = inject(NetworkConfigService);
 
   nft = signal<INft | undefined>(undefined);
   loading = signal<boolean>(true);
@@ -414,12 +415,13 @@ export class SendNftComponent
   }
 
   private buildCachedImageUrl(tick?: string, tokenId?: string): string {
-    if (!tick || !tokenId || !environment.krc721CacheStreamUrl) {
+    const cacheStreamUrl = this.networkConfigService.getActiveNetwork().krc721CacheStreamUrl;
+    if (!tick || !tokenId || !cacheStreamUrl) {
       return '';
     }
 
     const normalizedTick = encodeURIComponent(tick.toUpperCase());
     const normalizedTokenId = encodeURIComponent(tokenId);
-    return `${environment.krc721CacheStreamUrl}/optimized/${normalizedTick}/${normalizedTokenId}`;
+    return `${cacheStreamUrl}/optimized/${normalizedTick}/${normalizedTokenId}`;
   }
 }

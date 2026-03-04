@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { catchError, firstValueFrom, map, Observable, of } from 'rxjs';
 import { GetTokenWalletInfoDto, GetTokenWalletInfoResponse } from './dtos/get-token-wallet-info-response.dto';
@@ -6,14 +6,16 @@ import {
   GetTokenInfoResponse,
   GetTokenListResponse,
 } from './dtos/token-list-info.dto';
-import { environment } from '../../../environments/environment';
 import { ListingInfoResponse } from './dtos/listing-info-response.dto';
 import { OperationDetailsResponse } from './dtos/operation-details-response';
 import { GetWalletOperationsResponse } from './dtos/get-wallet-operations-response.dto';
+import { NetworkConfigService } from '../network-config.service';
 
 @Injectable({ providedIn: 'root' })
 export class KasplexKrc20Service {
-  baseurl = environment.kasplexApiBaseurl;
+  private networkConfigService = inject(NetworkConfigService);
+
+  get baseurl() { return this.networkConfigService.getActiveNetwork().kasplexApiBaseurl; }
 
   constructor(private readonly httpClient: HttpClient) {}
 

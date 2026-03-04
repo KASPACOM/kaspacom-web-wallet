@@ -9,6 +9,7 @@ import { KasplexKrc20Service } from "../../kasplex-api/kasplex-api.service";
 import { Krc721ApiService } from "../../krc721-api/krc721-api.service";
 import { KnsApiService } from "../../kns-api/kns-api.service";
 import { KaspaComApiService } from "../../kaspacom-api/kaspacom-api.service";
+import { NetworkConfigService } from "../../network-config.service";
 import { L1AssetType } from "../enums/l1-asset-type.enum";
 import { L1_PAGINATION_CONFIG } from "../interfaces/pagination-state.interface";
 import _ from 'lodash';
@@ -44,6 +45,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
     protected krc721ApiService = inject(Krc721ApiService);
     protected knsApiService = inject(KnsApiService);
     protected kaspacomApiService = inject(KaspaComApiService);
+    private networkConfigService = inject(NetworkConfigService);
 
     // Pagination state for KRC721
     private krc721NextCursor: WritableSignal<number | undefined> = signal(undefined);
@@ -93,6 +95,8 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
      * Smart auto-reload: Fetches as many items as user has already loaded
      */
     protected async getKrc20Info(walletAddress: string): Promise<GetTokenListDto[]> {
+        if (!this.networkConfigService.getActiveNetwork().kasplexApiBaseurl) return [];
+
         const existingData = this.data['krc20']() as GetTokenListDto[] | undefined;
         const isAutoReload = existingData !== undefined && existingData.length > 0;
 
@@ -385,6 +389,8 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
      * Uses new Portfolio API
      */
     protected async getKrc721Info(walletAddress: string): Promise<Krc721Nft[]> {
+        if (!this.networkConfigService.getActiveNetwork().krc721ApiBaseurl) return [];
+
         const existingData = this.data[L1_ASSET_KEYS.krc721]() as Krc721Nft[] | undefined || [];
         const isAutoReload = existingData.length > 0;
 
@@ -638,6 +644,8 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
      * Smart auto-reload: Fetches as many domains as user has already loaded
      */
     protected async getKnsInfo(walletAddress: string): Promise<KnsDomainAsset[]> {
+        if (!this.networkConfigService.getActiveNetwork().knsApiBaseurl) return [];
+
         const existingData = this.data['kns']() as KnsDomainAsset[] | undefined;
         const isAutoReload = existingData !== undefined && existingData.length > 0;
 

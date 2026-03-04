@@ -25,6 +25,12 @@
       (click)="switchTab('interact')">
       Interact
     </button>
+    <button
+      class="tab-button p-12 rounded-lg typo-text-2"
+      [class.active]="activeTab() === 'templates'"
+      (click)="switchTab('templates')">
+      Templates
+    </button>
   </div>
 
   <!-- Tab 1: Deploy -->
@@ -425,6 +431,136 @@
         [isFullWidth]="true"
         (buttonClick)="interactContract()">
       </kc-button>
+    </div>
+  }
+
+  <!-- Tab 4: Templates -->
+  @if (activeTab() === 'templates') {
+    <div class="panel flex column gap-20 p-24 rounded-lg">
+      @if (!activeTemplate()) {
+        <div class="flex column gap-8">
+          <h3 class="text-white typo-text-1 fw-bold">Contract Templates</h3>
+          <p class="text-gray-60 typo-text-2">
+            Pick a pre-built covenant, fill in a human-friendly form, and generate deploy-ready compiled JSON.
+          </p>
+        </div>
+
+        <div class="template-list flex column gap-12">
+          @for (template of contractTemplates; track template.id) {
+            <div class="template-card-compact p-16 rounded-lg flex align-items-center gap-12" (click)="selectTemplate(template)">
+              <div class="template-icon-compact">{{ template.icon }}</div>
+              <div class="flex column gap-4 flex-1">
+                <h4 class="text-white typo-text-1 fw-bold">{{ template.name }}</h4>
+                <p class="text-gray-60 typo-text-2 template-description">{{ template.description }}</p>
+              </div>
+              <svg class="template-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="flex justify-content-between align-items-center gap-12 flex-wrap">
+          <div class="flex align-items-center gap-12">
+            <button class="back-button p-8 rounded typo-text-2" (click)="activeTemplate.set(null); generatedContractJson.set(null); templateError.set(null)">
+              ← Back
+            </button>
+            <div class="flex column gap-4">
+              <h3 class="text-white typo-title-3">{{ activeTemplate()!.icon }} {{ activeTemplate()!.name }}</h3>
+              <p class="text-gray-60 typo-text-2">{{ activeTemplate()!.description }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex column gap-16">
+          @for (field of activeTemplate()!.fields; track field.paramName) {
+            <div class="form-group flex column gap-8">
+              <label class="text-gray-60 typo-text-1" [title]="field.description">{{ field.label }}</label>
+
+              @if (field.type === 'address' || field.type === 'hash32') {
+                <input
+                  type="text"
+                  class="form-input p-12 rounded-lg text-white typo-text-2"
+                  [name]="field.paramName"
+                  [placeholder]="field.placeholder"
+                  [title]="field.description"
+                  [(ngModel)]="templateFormValues[field.paramName]" />
+              }
+
+              @if (field.type === 'int_days' || field.type === 'int_count') {
+                <input
+                  type="number"
+                  class="form-input p-12 rounded-lg text-white typo-text-2"
+                  [name]="field.paramName"
+                  [placeholder]="field.placeholder"
+                  [title]="field.description"
+                  min="0"
+                  step="1"
+                  [(ngModel)]="templateFormValues[field.paramName]" />
+              }
+
+              @if (field.type === 'int_timestamp') {
+                <input
+                  type="number"
+                  class="form-input p-12 rounded-lg text-white typo-text-2"
+                  [name]="field.paramName"
+                  [placeholder]="field.placeholder"
+                  [title]="field.description"
+                  min="0"
+                  step="1"
+                  [(ngModel)]="templateFormValues[field.paramName]" />
+              }
+
+              <span class="text-gray-60 typo-text-2">{{ field.description }}</span>
+              @if (field.helpUrl) {
+                <a [href]="field.helpUrl" target="_blank" class="text-blue typo-text-2" style="font-size: 12px;">
+                  🔗 Convert date to timestamp →
+                </a>
+              }
+            </div>
+          }
+        </div>
+
+        @if (templateError()) {
+          <div class="error-message p-12 rounded-lg text-red typo-text-2">
+            {{ templateError() }}
+          </div>
+        }
+
+        <kc-button
+          [text]="'Generate Contract'"
+          [isFullWidth]="true"
+          (buttonClick)="generateContract()">
+        </kc-button>
+
+        @if (generatedContractJson()) {
+          <div class="result-panel flex column gap-12 p-16 rounded-lg">
+            <h3 class="text-white typo-text-1 fw-bold">✅ Contract JSON Ready</h3>
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-1">Template</span>
+              <span class="text-white typo-text-2">{{ activeTemplate()!.name }}</span>
+            </div>
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-1">Details</span>
+              <span class="text-white typo-text-2">Compiled JSON has been patched and is ready for the existing deploy flow.</span>
+            </div>
+            <div class="form-group flex column gap-8">
+              <label class="text-gray-60 typo-text-1">Generated JSON Preview</label>
+              <textarea
+                class="contract-input p-12 rounded-lg text-white typo-text-2"
+                rows="8"
+                [ngModel]="generatedContractJson()"
+                readonly>
+              </textarea>
+            </div>
+            <kc-button
+              [text]="'Deploy This Contract'"
+              [isFullWidth]="true"
+              (buttonClick)="useGeneratedContract()">
+            </kc-button>
+          </div>
+        }
+      }
     </div>
   }
 </div>

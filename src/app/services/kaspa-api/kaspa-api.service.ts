@@ -1,12 +1,14 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, map, Observable, of } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import { FullTransactionResponse } from './dtos/full-transaction-response.dto';
+import { NetworkConfigService } from '../network-config.service';
 
 @Injectable({ providedIn: 'root' })
 export class KaspaApiService {
-  baseurl = environment.kaspaApiBaseurl;
+  private networkConfigService = inject(NetworkConfigService);
+
+  get baseurl() { return this.networkConfigService.getActiveNetwork().kaspaApiBaseurl; }
 
   constructor(private readonly httpClient: HttpClient) {}
 

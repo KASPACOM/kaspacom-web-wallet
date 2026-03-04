@@ -1,0 +1,128 @@
+.settings-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.settings-header {
+  margin-bottom: 1rem;
+}
+
+.settings-section {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 2rem;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+// Panel styling to match wallet
+.panel {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+// Network cards
+.network-card {
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.network-option-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  
+  &.active {
+    border-color: rgba(112, 199, 240, 0.5);
+    background: rgba(112, 199, 240, 0.1);
+  }
+}
+
+// Status indicator
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  
+  &.active {
+    background: #70c7f0;
+    box-shadow: 0 0 8px rgba(112, 199, 240, 0.6);
+  }
+}
+
+// L2 Network cards
+.l2-network-card {
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.l2-network-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.text-mono {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.875rem;
+}
+
+// Form inputs
+.form-input {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  outline: none;
+  transition: all 0.2s ease;
+  
+  &:focus {
+    border-color: rgba(112, 199, 240, 0.5);
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+  }
+}
+
+// Modal
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  
+  &.modal-large {
+    max-width: 600px;
+  }
+}
+
+.modal-actions {
+  margin-top: 1rem;
+}
+
+// Utility classes
+.fw-bold {
+  font-weight: 600;
+}

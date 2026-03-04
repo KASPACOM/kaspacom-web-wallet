@@ -2,17 +2,17 @@
   <div class="modal-content">
     <h3 class="network-group-title">L1 Network</h3>
     <div class="networks-list">
-      <div class="network-item" [class.selected]="!isCurrentNetworkL2()" (click)="setL1Network()">
-        <div class="network-icon">
-          🌐
+      @for (l1 of l1Networks(); track l1.id) {
+        <div class="network-item" [class.selected]="!isCurrentNetworkL2() && isCurrentL1(l1.id)" (click)="setL1Network(l1.id)">
+          <div class="network-icon">🌐</div>
+          <div class="network-info">
+            <div class="network-name">{{ l1.name }}</div>
+          </div>
+          <div class="network-status">
+            <kc-icon *ngIf="!isCurrentNetworkL2() && isCurrentL1(l1.id)" [iconClass]="'icon-check'" [size]="'sm'"></kc-icon>
+          </div>
         </div>
-        <div class="network-info">
-          <div class="network-name">Kaspa L1</div>
-        </div>
-        <div class="network-status">
-          <kc-icon *ngIf="!isCurrentNetworkL2()" [iconClass]="'icon-check'" [size]="'sm'"></kc-icon>
-        </div>
-      </div>
+      }
     </div>
     <h3 class="network-group-title">L2 Networks</h3>
     <div class="networks-list">

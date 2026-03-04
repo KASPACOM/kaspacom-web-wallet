@@ -1,0 +1,600 @@
+{
+  "contract_name": "MultiSigVault",
+  "script": [
+    118,
+    0,
+    156,
+    99,
+    117,
+    81,
+    121,
+    32,
+    204,
+    205,
+    206,
+    207,
+    208,
+    209,
+    210,
+    211,
+    212,
+    213,
+    214,
+    215,
+    216,
+    217,
+    218,
+    219,
+    220,
+    221,
+    222,
+    223,
+    224,
+    225,
+    226,
+    227,
+    228,
+    229,
+    230,
+    231,
+    232,
+    233,
+    234,
+    235,
+    172,
+    105,
+    0,
+    121,
+    32,
+    221,
+    222,
+    223,
+    224,
+    225,
+    226,
+    227,
+    228,
+    229,
+    230,
+    231,
+    232,
+    233,
+    234,
+    235,
+    236,
+    237,
+    238,
+    239,
+    240,
+    241,
+    242,
+    243,
+    244,
+    245,
+    246,
+    247,
+    248,
+    249,
+    250,
+    251,
+    252,
+    172,
+    105,
+    117,
+    117,
+    81,
+    103,
+    118,
+    81,
+    156,
+    99,
+    117,
+    81,
+    121,
+    32,
+    204,
+    205,
+    206,
+    207,
+    208,
+    209,
+    210,
+    211,
+    212,
+    213,
+    214,
+    215,
+    216,
+    217,
+    218,
+    219,
+    220,
+    221,
+    222,
+    223,
+    224,
+    225,
+    226,
+    227,
+    228,
+    229,
+    230,
+    231,
+    232,
+    233,
+    234,
+    235,
+    172,
+    105,
+    0,
+    121,
+    32,
+    238,
+    239,
+    240,
+    241,
+    242,
+    243,
+    244,
+    245,
+    246,
+    247,
+    248,
+    249,
+    250,
+    251,
+    252,
+    253,
+    254,
+    255,
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    172,
+    105,
+    117,
+    117,
+    81,
+    103,
+    118,
+    82,
+    156,
+    99,
+    117,
+    81,
+    121,
+    32,
+    221,
+    222,
+    223,
+    224,
+    225,
+    226,
+    227,
+    228,
+    229,
+    230,
+    231,
+    232,
+    233,
+    234,
+    235,
+    236,
+    237,
+    238,
+    239,
+    240,
+    241,
+    242,
+    243,
+    244,
+    245,
+    246,
+    247,
+    248,
+    249,
+    250,
+    251,
+    252,
+    172,
+    105,
+    0,
+    121,
+    32,
+    238,
+    239,
+    240,
+    241,
+    242,
+    243,
+    244,
+    245,
+    246,
+    247,
+    248,
+    249,
+    250,
+    251,
+    252,
+    253,
+    254,
+    255,
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    172,
+    105,
+    117,
+    117,
+    81,
+    103,
+    117,
+    0,
+    105,
+    104,
+    104,
+    104
+  ],
+  "ast": {
+    "name": "MultiSigVault",
+    "params": [
+      {
+        "type_ref": {
+          "base": "pubkey"
+        },
+        "name": "key1",
+        "span": "pubkey key1",
+        "type_span": "pubkey ",
+        "name_span": "key1"
+      },
+      {
+        "type_ref": {
+          "base": "pubkey"
+        },
+        "name": "key2",
+        "span": "pubkey key2",
+        "type_span": "pubkey ",
+        "name_span": "key2"
+      },
+      {
+        "type_ref": {
+          "base": "pubkey"
+        },
+        "name": "key3",
+        "span": "pubkey key3",
+        "type_span": "pubkey ",
+        "name_span": "key3"
+      }
+    ],
+    "constants": [],
+    "functions": [
+      {
+        "name": "spend12",
+        "params": [
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "s1",
+            "span": "sig s1",
+            "type_span": "sig ",
+            "name_span": "s1"
+          },
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "s2",
+            "span": "sig s2",
+            "type_span": "sig ",
+            "name_span": "s2"
+          }
+        ],
+        "entrypoint": true,
+        "return_types": [],
+        "body": [
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "s1",
+                      "span": "s1"
+                    },
+                    {
+                      "kind": "identifier",
+                      "data": "key1",
+                      "span": "key1"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(s1, key1)"
+              },
+              "message": null,
+              "span": "require(checkSig(s1, key1));",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "s2",
+                      "span": "s2"
+                    },
+                    {
+                      "kind": "identifier",
+                      "data": "key2",
+                      "span": "key2"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(s2, key2)"
+              },
+              "message": null,
+              "span": "require(checkSig(s2, key2));",
+              "message_span": null
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function spend12(sig s1, sig s2) {\n        require(checkSig(s1, key1));\n        require(checkSig(s2, key2));\n    }",
+        "name_span": "spend12",
+        "body_span": "require(checkSig(s1, key1));\n        require(checkSig(s2, key2));"
+      },
+      {
+        "name": "spend13",
+        "params": [
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "s1",
+            "span": "sig s1",
+            "type_span": "sig ",
+            "name_span": "s1"
+          },
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "s3",
+            "span": "sig s3",
+            "type_span": "sig ",
+            "name_span": "s3"
+          }
+        ],
+        "entrypoint": true,
+        "return_types": [],
+        "body": [
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "s1",
+                      "span": "s1"
+                    },
+                    {
+                      "kind": "identifier",
+                      "data": "key1",
+                      "span": "key1"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(s1, key1)"
+              },
+              "message": null,
+              "span": "require(checkSig(s1, key1));",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "s3",
+                      "span": "s3"
+                    },
+                    {
+                      "kind": "identifier",
+                      "data": "key3",
+                      "span": "key3"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(s3, key3)"
+              },
+              "message": null,
+              "span": "require(checkSig(s3, key3));",
+              "message_span": null
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function spend13(sig s1, sig s3) {\n        require(checkSig(s1, key1));\n        require(checkSig(s3, key3));\n    }",
+        "name_span": "spend13",
+        "body_span": "require(checkSig(s1, key1));\n        require(checkSig(s3, key3));"
+      },
+      {
+        "name": "spend23",
+        "params": [
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "s2",
+            "span": "sig s2",
+            "type_span": "sig ",
+            "name_span": "s2"
+          },
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "s3",
+            "span": "sig s3",
+            "type_span": "sig ",
+            "name_span": "s3"
+          }
+        ],
+        "entrypoint": true,
+        "return_types": [],
+        "body": [
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "s2",
+                      "span": "s2"
+                    },
+                    {
+                      "kind": "identifier",
+                      "data": "key2",
+                      "span": "key2"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(s2, key2)"
+              },
+              "message": null,
+              "span": "require(checkSig(s2, key2));",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "s3",
+                      "span": "s3"
+                    },
+                    {
+                      "kind": "identifier",
+                      "data": "key3",
+                      "span": "key3"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(s3, key3)"
+              },
+              "message": null,
+              "span": "require(checkSig(s3, key3));",
+              "message_span": null
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function spend23(sig s2, sig s3) {\n        require(checkSig(s2, key2));\n        require(checkSig(s3, key3));\n    }",
+        "name_span": "spend23",
+        "body_span": "require(checkSig(s2, key2));\n        require(checkSig(s3, key3));"
+      }
+    ],
+    "span": "contract MultiSigVault(pubkey key1, pubkey key2, pubkey key3) {\n    // Key1 + Key2 sign\n    entrypoint function spend12(sig s1, sig s2) {\n        require(checkSig(s1, key1));\n        require(checkSig(s2, key2));\n    }\n\n    // Key1 + Key3 sign\n    entrypoint function spend13(sig s1, sig s3) {\n        require(checkSig(s1, key1));\n        require(checkSig(s3, key3));\n    }\n\n    // Key2 + Key3 sign\n    entrypoint function spend23(sig s2, sig s3) {\n        require(checkSig(s2, key2));\n        require(checkSig(s3, key3));\n    }\n}",
+    "name_span": "MultiSigVault"
+  },
+  "abi": [
+    {
+      "name": "spend12",
+      "inputs": [
+        {
+          "name": "s1",
+          "type_name": "sig"
+        },
+        {
+          "name": "s2",
+          "type_name": "sig"
+        }
+      ]
+    },
+    {
+      "name": "spend13",
+      "inputs": [
+        {
+          "name": "s1",
+          "type_name": "sig"
+        },
+        {
+          "name": "s3",
+          "type_name": "sig"
+        }
+      ]
+    },
+    {
+      "name": "spend23",
+      "inputs": [
+        {
+          "name": "s2",
+          "type_name": "sig"
+        },
+        {
+          "name": "s3",
+          "type_name": "sig"
+        }
+      ]
+    }
+  ],
+  "without_selector": false
+}

@@ -1,7 +1,8 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, of, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { NetworkConfigService } from '../network-config.service';
 import { 
   Krc721Collection, 
   Krc721CollectionResponse, 
@@ -22,7 +23,9 @@ import { Krc721PortfolioDetailResponse, Krc721PortfolioResponse } from './dtos/k
 
 @Injectable({ providedIn: 'root' })
 export class Krc721ApiService {
-  private baseUrl = environment.krc721ApiBaseurl;
+  private networkConfigService = inject(NetworkConfigService);
+
+  private get baseUrl() { return this.networkConfigService.getActiveNetwork().krc721ApiBaseurl; }
   private kaspaComBaseUrl = environment.kaspaComApiBaseurl;
 
   constructor(private readonly httpClient: HttpClient) {}
@@ -279,7 +282,11 @@ export class Krc721ApiService {
   // Load NFT metadata from cache
   getNftMetadata(tick: string, tokenId: string): Observable<any> {
 
-    const metadataUrl = `${environment.krc721CacheStreamUrl}/metadata/${tick}/${tokenId}`;
+    const cacheStreamUrl = this.networkConfigService.getActiveNetwork().krc721CacheStreamUrl;
+    if (!cacheStreamUrl) {
+      return of(null);
+    }
+    const metadataUrl = `${cacheStreamUrl}/metadata/${tick}/${tokenId}`;
     
     return this.httpClient
       .get<any>(metadataUrl)

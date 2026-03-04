@@ -1,16 +1,16 @@
-import { Injectable } from '@angular/core';
+import { Injectable, effect } from '@angular/core';
 import { Encoding, Resolver, RpcClient } from '../../../../public/kaspa/kaspa';
-import { environment } from '../../../environments/environment';
+import { NetworkConfigService } from '../network-config.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class RpcService {
   private RPC?: RpcClient;
-  private network: string;
+  /** Track which network the current RPC client was created for */
+  private currentNetworkId?: string;
 
-  constructor() {
-    this.network = environment.kaspaNetwork;
+  constructor(private networkConfigService: NetworkConfigService) {
     this.refreshRpc();
   }
 
@@ -19,17 +19,44 @@ export class RpcService {
   }
 
   refreshRpc() {
-    this.RPC = new RpcClient({
-      url: 'ws://tn12-node.kaspa.com:17210',
-      // resolver: new Resolver(),
+    const networkConfig = this.networkConfigService.getActiveNetwork();
+
+    // Skip if we already have a client for this network
+    if (this.RPC && this.currentNetworkId === networkConfig.networkId) {
+      return this.getRpc();
+    }
+
+    // Disconnect old client before creating a new one
+    if (this.RPC) {
+      try {
+        const disconnectResult = this.RPC.disconnect();
+        // Handle both sync and async disconnect
+        if (disconnectResult && typeof disconnectResult.catch === 'function') {
+          disconnectResult.catch(() => {});
+        }
+      } catch (e) {
+        // Ignore disconnect errors
+      }
+    }
+    
+    const rpcOptions: any = {
       encoding: Encoding.Borsh,
-      networkId: this.network,
-    });
+      networkId: networkConfig.networkId,
+    };
+
+    if (networkConfig.useResolver) {
+      rpcOptions.resolver = new Resolver();
+    } else {
+      rpcOptions.url = networkConfig.wrpcUrl;
+    }
+
+    this.RPC = new RpcClient(rpcOptions);
+    this.currentNetworkId = networkConfig.networkId;
 
     return this.getRpc();
   }
 
   getNetwork() {
-    return this.network;
+    return this.networkConfigService.getActiveNetwork().networkId;
   }
 }

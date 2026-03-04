@@ -6,9 +6,9 @@ import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.compo
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { KaspaApiService } from '../../../../../services/kaspa-api/kaspa-api.service';
 import { FullTransactionResponseItem } from '../../../../../services/kaspa-api/dtos/full-transaction-response.dto';
-import { environment } from '../../../../../../environments/environment';
 import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { WalletService } from '../../../../../services/wallet.service';
+import { NetworkConfigService } from '../../../../../services/network-config.service';
 
 @Component({
   selector: 'app-kaspa-transaction-details',
@@ -27,6 +27,7 @@ export class KaspaTransactionDetailsComponent implements OnInit {
   private kaspaApiService = inject(KaspaApiService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private walletService = inject(WalletService);
+  private networkConfigService = inject(NetworkConfigService);
 
   protected transactionId: string | null = null;
   protected transactionDetails = signal<FullTransactionResponseItem | null>(null);
@@ -110,7 +111,7 @@ export class KaspaTransactionDetailsComponent implements OnInit {
   protected openTransactionInExplorer(): void {
     const transaction = this.transactionDetails();
     if (transaction) {
-      const explorerUrl = `${environment.kaspaExplorerBaseurl}/txs/${transaction.transaction_id}`;
+      const explorerUrl = `${this.networkConfigService.getActiveNetwork().kaspaExplorerBaseurl}/txs/${transaction.transaction_id}`;
       window.open(explorerUrl, '_blank');
     }
   }

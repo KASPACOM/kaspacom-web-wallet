@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { RpcService } from '../kaspa-netwrok-services/rpc.service';
+import { NetworkConfigService } from '../network-config.service';
 import { getCovenantAddress, deployContract, spendContract } from './covenant-sdk/covenant';
 import { CompiledContract, CovenantOutpoint, SpendOutput, DeployResult, SpendResult } from './covenant-sdk/types';
 
@@ -7,28 +8,30 @@ import { CompiledContract, CovenantOutpoint, SpendOutput, DeployResult, SpendRes
   providedIn: 'root',
 })
 export class CovenantService {
-  // Default wRPC URLs for different networks
-  // Using hostname-only format to match RpcService (TN12 requires explicit ws:// (no TLS))
-  private readonly DEFAULT_RPC_URLS: Record<string, string> = {
-    'mainnet': 'wrpc.kaspa.org',
-    'testnet-10': 'testnet-10.kaspa.org',
+  private readonly FALLBACK_RPC_URLS: Record<string, string> = {
+    'mainnet': '',  // empty = use Resolver
+    'testnet-10': '',
     'testnet-12': 'ws://tn12-node.kaspa.com:17210',
   };
 
   constructor(
     private readonly rpcService: RpcService,
+    private readonly networkConfigService: NetworkConfigService,
   ) {}
 
   /**
    * Get the wRPC URL for the current network
    */
   private getRpcUrl(): string {
+    // Try dynamic config first
+    try {
+      const activeNetwork = this.networkConfigService.getActiveNetwork();
+      if (activeNetwork.wrpcUrl) return activeNetwork.wrpcUrl;
+    } catch {}
+    
+    // Fallback to hardcoded
     const network = this.rpcService.getNetwork();
-    const url = this.DEFAULT_RPC_URLS[network];
-    if (!url) {
-      throw new Error(`No default RPC URL configured for network: ${network}`);
-    }
-    return url;
+    return this.FALLBACK_RPC_URLS[network] || '';
   }
 
   /**
@@ -48,8 +51,15 @@ export class CovenantService {
     privateKeyHex: string,
   ): Promise<DeployResult> {
     const network = this.rpcService.getNetwork();
-    const rpcUrl = this.getRpcUrl();
+    const existingRpc = this.rpcService.getRpc();
 
+    // Use the existing wallet RPC connection if already connected
+    if (existingRpc?.isConnected) {
+      return deployContract(compiled, amountSompi, '', privateKeyHex, network, existingRpc);
+    }
+
+    // Fallback: create a new connection
+    const rpcUrl = this.getRpcUrl();
     return deployContract(compiled, amountSompi, rpcUrl, privateKeyHex, network);
   }
 
@@ -65,8 +75,13 @@ export class CovenantService {
     privateKeyHex: string,
   ): Promise<SpendResult> {
     const network = this.rpcService.getNetwork();
-    const rpcUrl = this.getRpcUrl();
+    const existingRpc = this.rpcService.getRpc();
 
+    if (existingRpc?.isConnected) {
+      return spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, '', privateKeyHex, network, existingRpc);
+    }
+
+    const rpcUrl = this.getRpcUrl();
     return spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, rpcUrl, privateKeyHex, network);
   }
 

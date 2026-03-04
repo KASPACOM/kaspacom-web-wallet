@@ -8,8 +8,8 @@ import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skele
 import { KasplexKrc20Service } from '../../../../../../../../services/kasplex-api/kasplex-api.service';
 import { FlowPagesService } from '../../../../../../../services/flow-pages.service';
 import { OperationDetails } from '../../../../../../../../services/kasplex-api/dtos/operation-details-response';
-import { environment } from '../../../../../../../../../environments/environment';
 import { KcLabeledTabsComponent, TabItem } from '../../../../../../../shared/ui/kc-labeled-tabs/kc-labeled-tabs.component';
+import { NetworkConfigService } from '../../../../../../../../services/network-config.service';
 import { KaspaNetworkActionsService } from '../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
 import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
@@ -50,6 +50,7 @@ export class Krc20AssetComponent extends BaseAssetPageComponent implements OnIni
   private flowPagesService = inject(FlowPagesService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private assetsManagerService = inject(AssetsManagerService);
+  private networkConfigService = inject(NetworkConfigService);
 
   ticker: string | null = null;
 
@@ -321,7 +322,7 @@ export class Krc20AssetComponent extends BaseAssetPageComponent implements OnIni
 
     if (!transaction.id) return;
 
-    const explorerUrl = `${environment.kaspaExplorerBaseurl}/txs/${transaction.id}`;
+    const explorerUrl = `${this.networkConfigService.getActiveNetwork().kaspaExplorerBaseurl}/txs/${transaction.id}`;
     window.open(explorerUrl, '_blank');
   }
 }

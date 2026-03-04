@@ -688,10 +688,15 @@ export class ContractsPageComponent {
   }
 
   private parseDateToUnixSeconds(value: string, label: string): number {
-    // Accept raw Unix timestamp in seconds (number)
+    // Accept raw Unix timestamp in seconds
+    // NOTE: Kaspa's LOCK_TIME_THRESHOLD = 500,000,000,000.
+    // Values < 500B are treated as DAA scores by consensus, NOT as time.
+    // Unix seconds (~1.7B) fall below this threshold.
+    // For proper time-based locking, SilverScript contracts should use
+    // millisecond timestamps (>= 500B) and be compiled with appropriate
+    // placeholder sizes. Current templates use seconds for simplicity.
     const asNumber = Number(value);
     if (Number.isFinite(asNumber) && asNumber > 0 && Number.isInteger(asNumber)) {
-      // If it looks like a reasonable Unix timestamp (after year 2000), use directly
       if (asNumber > 946684800) {
         return asNumber;
       }

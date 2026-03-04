@@ -555,14 +555,15 @@ export async function spendContract(
       return baseOutput;
     });
 
-    // Set lockTime to current time in milliseconds.
+    // Determine if this function uses a timelock by checking for time_op in AST body.
     // Kaspa's LOCK_TIME_THRESHOLD = 500,000,000,000:
     //   values < 500B → DAA score, values >= 500B → Unix milliseconds
-    // Using Date.now() (ms) ensures it's in the Unix-time space and satisfies
-    // any contract timelock that has already expired (e.g. recover after timeout).
-    // For functions without timelocks, locktime is ignored by the script.
-    const lockTime = BigInt(Date.now());
-    console.log('[CovenantSDK] lockTime:', lockTime.toString(), '(Unix ms)');
+    // For functions WITH timelocks: set lockTime to current time in ms (>= 500B = Unix ms space)
+    // For functions WITHOUT timelocks: set lockTime to 0 (no consensus locktime check)
+    const astFunction = compiled.ast?.functions?.find((f: any) => f.name === functionName);
+    const hasTimelock = astFunction?.body?.some((node: any) => node.kind === 'time_op') ?? false;
+    const lockTime = hasTimelock ? BigInt(Date.now()) : 0n;
+    console.log('[CovenantSDK] lockTime:', lockTime.toString(), hasTimelock ? '(Unix ms — function has timelock)' : '(no timelock)');
 
     const unsignedTx = new Transaction({
       version: 0,

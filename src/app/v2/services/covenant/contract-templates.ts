@@ -53,10 +53,10 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
       },
       {
         paramName: 'timeout',
-        label: 'Unlock Timestamp (Unix seconds)',
+        label: 'Unlock Timestamp',
         type: 'int_timestamp',
         placeholder: '1735689600',
-        description: 'Unix timestamp in seconds when the recovery address can spend. Use the link below to convert a date to a timestamp.',
+        description: 'Unix timestamp in seconds. ⚠️ Time-based locking uses DAA scores on Kaspa — the "recover" function may not work as expected with calendar dates. The "spend" function (owner withdrawal) works anytime.',
         helpUrl: 'https://www.epochconverter.com/',
       },
     ],

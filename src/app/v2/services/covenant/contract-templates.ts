@@ -56,14 +56,14 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
         label: 'Unlock Timestamp',
         type: 'int_timestamp',
         placeholder: '1735689600',
-        description: 'Unix timestamp in seconds. ⚠️ Time-based locking uses DAA scores on Kaspa — the "recover" function may not work as expected with calendar dates. The "spend" function (owner withdrawal) works anytime.',
+        description: 'Unix timestamp in seconds. Automatically converted to milliseconds for Kaspa consensus compatibility.',
         helpUrl: 'https://www.epochconverter.com/',
       },
     ],
     placeholderArgs: [
       byteArrayArg([170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201]),
       byteArrayArg([187, 186, 185, 184, 183, 182, 181, 180, 179, 178, 177, 176, 175, 174, 173, 172, 171, 170, 169, 168, 167, 166, 165, 164, 163, 162, 161, 160, 159, 158, 157, 156]),
-      intArg(1000000000),
+      intArg(1000000000000),
     ],
   },
   {
@@ -131,10 +131,10 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
       },
       {
         paramName: 'expiry',
-        label: 'Refund Expiry Timestamp (Unix seconds)',
+        label: 'Refund Expiry Timestamp',
         type: 'int_timestamp',
         placeholder: '1735689600',
-        description: 'Unix timestamp in seconds. After this time, the buyer can claim a refund if the seller hasn\'t delivered. Use the link below to convert a date.',
+        description: 'Unix timestamp in seconds. Automatically converted to milliseconds for Kaspa consensus.',
         helpUrl: 'https://www.epochconverter.com/',
       },
     ],
@@ -142,7 +142,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
       byteArrayArg([170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201]),
       byteArrayArg([187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218]),
       byteArrayArg([204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235]),
-      intArg(1000000000),
+      intArg(1000000000000),
     ],
   },
   {

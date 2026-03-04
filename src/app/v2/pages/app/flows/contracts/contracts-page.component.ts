@@ -660,7 +660,7 @@ export class ContractsPageComponent {
       case 'int_count':
         return this.intArg(this.parseWholeNumber(value, field.label));
       case 'int_timestamp':
-        return this.intArg(this.parseDateToUnixSeconds(value, field.label));
+        return this.intArg(this.parseDateToUnixMs(value, field.label));
       default:
         throw new Error(`Unsupported template field type: ${(field as { type: string }).type}`);
     }
@@ -687,28 +687,29 @@ export class ContractsPageComponent {
     return parsed;
   }
 
-  private parseDateToUnixSeconds(value: string, label: string): number {
-    // Accept raw Unix timestamp in seconds
-    // NOTE: Kaspa's LOCK_TIME_THRESHOLD = 500,000,000,000.
-    // Values < 500B are treated as DAA scores by consensus, NOT as time.
-    // Unix seconds (~1.7B) fall below this threshold.
-    // For proper time-based locking, SilverScript contracts should use
-    // millisecond timestamps (>= 500B) and be compiled with appropriate
-    // placeholder sizes. Current templates use seconds for simplicity.
+  private parseDateToUnixMs(value: string, label: string): number {
+    // Kaspa LOCK_TIME_THRESHOLD = 500,000,000,000:
+    //   values < 500B → DAA score, values >= 500B → Unix milliseconds
+    // We convert user input (seconds) to milliseconds to stay above the threshold.
     const asNumber = Number(value);
-    if (Number.isFinite(asNumber) && asNumber > 0 && Number.isInteger(asNumber)) {
+    if (Number.isFinite(asNumber) && asNumber > 0) {
+      if (asNumber >= 500_000_000_000) {
+        // Already in milliseconds
+        return Math.floor(asNumber);
+      }
       if (asNumber > 946684800) {
-        return asNumber;
+        // Unix seconds → convert to milliseconds
+        return Math.floor(asNumber * 1000);
       }
     }
 
     // Fallback: try parsing as date string
     const timestampMs = new Date(value).getTime();
     if (!Number.isFinite(timestampMs)) {
-      throw new Error(`${label} must be a valid Unix timestamp in seconds. Use epochconverter.com to convert a date.`);
+      throw new Error(`${label} must be a valid Unix timestamp in seconds (e.g. from epochconverter.com).`);
     }
 
-    return Math.floor(timestampMs / 1000);
+    return timestampMs;
   }
 
   private bytesArg(bytes: number[]): CtorArg {

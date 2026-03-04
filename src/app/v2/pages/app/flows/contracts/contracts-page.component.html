@@ -501,14 +501,22 @@
 
               @if (field.type === 'int_timestamp') {
                 <input
-                  type="date"
+                  type="number"
                   class="form-input p-12 rounded-lg text-white typo-text-2"
                   [name]="field.paramName"
+                  [placeholder]="field.placeholder"
                   [title]="field.description"
+                  min="0"
+                  step="1"
                   [(ngModel)]="templateFormValues[field.paramName]" />
               }
 
               <span class="text-gray-60 typo-text-2">{{ field.description }}</span>
+              @if (field.helpUrl) {
+                <a [href]="field.helpUrl" target="_blank" class="text-blue typo-text-2" style="font-size: 12px;">
+                  🔗 Convert date to timestamp →
+                </a>
+              }
             </div>
           }
         </div>

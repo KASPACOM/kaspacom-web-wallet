@@ -16,6 +16,7 @@ export interface TemplateField {
   type: 'address' | 'int_days' | 'int_timestamp' | 'int_count' | 'hash32';
   placeholder: string;
   description: string;
+  helpUrl?: string;
 }
 
 const byteArrayArg = (bytes: number[]): CtorArg => ({
@@ -52,10 +53,11 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
       },
       {
         paramName: 'timeout',
-        label: 'Unlock Date',
+        label: 'Unlock Timestamp (Unix seconds)',
         type: 'int_timestamp',
-        placeholder: 'Pick a date',
-        description: 'Converted to a Unix timestamp in seconds for the compiled placeholder size.',
+        placeholder: '1735689600',
+        description: 'Unix timestamp in seconds when the recovery address can spend. Use the link below to convert a date to a timestamp.',
+        helpUrl: 'https://www.epochconverter.com/',
       },
     ],
     placeholderArgs: [
@@ -122,17 +124,18 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
       },
       {
         paramName: 'arbiterHash',
-        label: 'Arbiter Hash',
+        label: 'Arbiter Public Key Hash',
         type: 'hash32',
         placeholder: '0x...',
-        description: '32-byte arbiter hash, typically blake2b of the arbiter pubkey.',
+        description: 'The blake2b-256 hash of the arbiter\'s public key (32 bytes hex). The arbiter is the trusted third party who can resolve disputes and release funds to either buyer or seller.',
       },
       {
         paramName: 'expiry',
-        label: 'Refund Expiry Date',
+        label: 'Refund Expiry Timestamp (Unix seconds)',
         type: 'int_timestamp',
-        placeholder: 'Pick a date',
-        description: 'Converted to a Unix timestamp in seconds for the compiled placeholder size.',
+        placeholder: '1735689600',
+        description: 'Unix timestamp in seconds. After this time, the buyer can claim a refund if the seller hasn\'t delivered. Use the link below to convert a date.',
+        helpUrl: 'https://www.epochconverter.com/',
       },
     ],
     placeholderArgs: [
@@ -145,7 +148,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
   {
     id: 'dead-mans-switch',
     name: "Dead Man's Switch",
-    description: 'Heir can claim if owner is inactive for the specified period. Owner must call keepAlive periodically.',
+    description: 'Inheritance contract. Owner calls keepAlive periodically to prove they\'re active. If owner stops calling keepAlive for the inactivity period, the heir can claim all funds.',
     icon: '⏳',
     assetPath: 'assets/covenant-templates/dead-mans-switch.json',
     fields: [
@@ -154,21 +157,21 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
         label: 'Owner Address',
         type: 'address',
         placeholder: 'kaspatest:q...',
-        description: 'Address that can call keepAlive and reclaim funds.',
+        description: 'The owner must call keepAlive at least once per inactivity period to keep funds locked. Can also reclaim funds anytime.',
       },
       {
         paramName: 'heir',
         label: 'Heir Address',
         type: 'address',
         placeholder: 'kaspatest:q...',
-        description: 'Address that can inherit after the inactivity window.',
+        description: 'If the owner fails to call keepAlive within the inactivity period, the heir can claim all funds. Think of this as your inheritance beneficiary.',
       },
       {
         paramName: 'initInactivityPeriod',
         label: 'Inactivity Period (days)',
         type: 'int_days',
         placeholder: '30',
-        description: 'Converted to seconds and written into the fixed-size state field placeholder.',
+        description: 'How many days the owner can be inactive before the heir can claim. For example: 30 days means the owner must call keepAlive at least once every 30 days.',
       },
     ],
     placeholderArgs: [

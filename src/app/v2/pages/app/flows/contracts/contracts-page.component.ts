@@ -536,9 +536,19 @@ export class ContractsPageComponent {
   }
 
   private parseDateToUnixSeconds(value: string, label: string): number {
+    // Accept raw Unix timestamp in seconds (number)
+    const asNumber = Number(value);
+    if (Number.isFinite(asNumber) && asNumber > 0 && Number.isInteger(asNumber)) {
+      // If it looks like a reasonable Unix timestamp (after year 2000), use directly
+      if (asNumber > 946684800) {
+        return asNumber;
+      }
+    }
+
+    // Fallback: try parsing as date string
     const timestampMs = new Date(value).getTime();
     if (!Number.isFinite(timestampMs)) {
-      throw new Error(`${label} must be a valid date`);
+      throw new Error(`${label} must be a valid Unix timestamp in seconds. Use epochconverter.com to convert a date.`);
     }
 
     return Math.floor(timestampMs / 1000);

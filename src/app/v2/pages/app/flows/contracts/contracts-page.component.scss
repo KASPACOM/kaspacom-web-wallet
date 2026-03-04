@@ -265,6 +265,22 @@ select.form-input {
   }
 }
 
+// Lookup result
+.lookup-result {
+  background: rgba(111, 199, 186, 0.06);
+  border: 1px solid rgba(111, 199, 186, 0.2);
+}
+
+.utxo-row {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: border-color 0.2s;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+}
+
 // Responsive - mobile first
 @media (max-width: 375px) {
   .template-card-compact {

@@ -146,6 +146,18 @@ export class ContractsPageComponent {
   // Current network
   network = computed(() => this.rpcService.getNetwork());
 
+  // --- Contract Lookup (My Contracts tab) ---
+  lookupAddress = '';
+  lookupLoading = signal(false);
+  lookupError = signal<string | null>(null);
+  lookupResult = signal<{
+    address: string;
+    balanceSompi: string;
+    utxoCount: number;
+    utxos: Array<{ txid: string; vout: number; amount: string }>;
+    scriptPublicKey?: string;
+  } | null>(null);
+
   constructor() {
     // Initialize with current wallet if available
     const current = this.currentWallet();
@@ -471,6 +483,77 @@ export class ContractsPageComponent {
     // Parse contract to get constructor param values (need to check the actual baked-in values)
     // For now, we'll check if deployed by current account as a simple heuristic
     return contract.deployedBy.pubkey === currentPubkey;
+  }
+
+  /**
+   * Look up a contract address on-chain — fetch its UTXOs and balance
+   */
+  async lookupContract() {
+    const address = this.lookupAddress.trim();
+    if (!address) return;
+
+    this.lookupLoading.set(true);
+    this.lookupError.set(null);
+    this.lookupResult.set(null);
+
+    try {
+      const rpc = this.rpcService.getRpc();
+      if (!rpc) {
+        throw new Error('RPC not available — wallet may not be connected');
+      }
+
+      console.log('[Lookup] Querying UTXOs for', address);
+      const utxoResponse = await rpc.getUtxosByAddresses([address]);
+      const entries = utxoResponse.entries || [];
+
+      let totalSompi = BigInt(0);
+      const utxos: Array<{ txid: string; vout: number; amount: string }> = [];
+
+      for (const entry of entries) {
+        const amount = entry.amount;
+        totalSompi += amount;
+        utxos.push({
+          txid: entry.outpoint?.transactionId || '',
+          vout: Number(entry.outpoint?.index ?? 0),
+          amount: amount.toString(),
+        });
+      }
+
+      this.lookupResult.set({
+        address,
+        balanceSompi: totalSompi.toString(),
+        utxoCount: utxos.length,
+        utxos,
+      });
+
+      console.log('[Lookup] Found', utxos.length, 'UTXOs, total:', totalSompi.toString(), 'sompi');
+    } catch (err: any) {
+      console.error('[Lookup] Failed:', err);
+      this.lookupError.set(err?.message || 'Failed to query contract address');
+    } finally {
+      this.lookupLoading.set(false);
+    }
+  }
+
+  /**
+   * Import a looked-up contract into the registry (with compiled JSON)
+   */
+  importLookupContract() {
+    const result = this.lookupResult();
+    if (!result || result.utxos.length === 0) return;
+
+    // Switch to interact tab with the first UTXO pre-filled
+    this.interactOutpointTxid = result.utxos[0].txid;
+    this.interactOutpointVout = String(result.utxos[0].vout);
+    this.interactInputAmount = result.utxos[0].amount;
+    this.switchTab('interact');
+  }
+
+  /**
+   * Get explorer link for address
+   */
+  getExplorerAddressLink(address: string): string {
+    return `https://tn12.kaspa.stream/addresses/${address}`;
   }
 
   /**

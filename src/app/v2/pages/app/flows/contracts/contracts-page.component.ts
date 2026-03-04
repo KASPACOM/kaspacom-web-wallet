@@ -307,9 +307,11 @@ export class ContractsPageComponent {
 
     try {
       this.isDeploying.set(true);
+      console.log('[Deploy] Starting deployment...');
 
       const compiled = this.covenantService.parseCompiledContract(contractJson);
       const amountSompi = BigInt(Math.floor(amountKas * 1e8));
+      console.log('[Deploy] Contract:', compiled.contract_name, 'Amount:', amountSompi.toString(), 'sompi');
       const privateKey = wallet.getPrivateKey().toString();
 
       const result = await this.covenantService.deploy(compiled, amountSompi, privateKey);
@@ -343,6 +345,7 @@ export class ContractsPageComponent {
         txid: result.txid,
       });
     } catch (error: any) {
+      console.error('[Deploy] Failed:', error);
       this.deployError.set(error?.message || 'Failed to deploy contract');
     } finally {
       this.isDeploying.set(false);

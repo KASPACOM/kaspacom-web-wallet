@@ -200,14 +200,16 @@ export async function deployContract(
   rpcUrl: string,
   privateKeyHex: string,
   network: string,
+  existingRpc?: RpcClient,
 ): Promise<DeployResult> {
   const privateKey = new PrivateKey(privateKeyHex);
   const senderAddress = privateKey.toAddress(network).toString();
   const contractAddress = getCovenantAddress(compiled, network);
-  const rpc = connectRpc(rpcUrl, network);
+  const ownRpc = !existingRpc;
+  const rpc = existingRpc || connectRpc(rpcUrl, network);
 
   try {
-    await rpc.connect();
+    if (ownRpc) await rpc.connect();
     const entries = await getAddressUtxos(rpc, senderAddress);
     if (entries.length === 0) {
       throw new Error(`No spendable UTXOs found for ${senderAddress}`);
@@ -248,7 +250,7 @@ export async function deployContract(
       },
     };
   } finally {
-    await rpc.disconnect().catch(() => undefined);
+    if (ownRpc) await rpc.disconnect().catch(() => undefined);
   }
 }
 
@@ -271,13 +273,15 @@ export async function spendContract(
   rpcUrl: string,
   privateKeyHex: string,
   network: string,
+  existingRpc?: RpcClient,
 ): Promise<SpendResult> {
   const privateKey = new PrivateKey(privateKeyHex);
   const covenantAddress = getCovenantAddress(compiled, network);
-  const rpc = connectRpc(rpcUrl, network);
+  const ownRpc = !existingRpc;
+  const rpc = existingRpc || connectRpc(rpcUrl, network);
 
   try {
-    await rpc.connect();
+    if (ownRpc) await rpc.connect();
     const utxos = await getAddressUtxos(rpc, covenantAddress);
     const entry = utxos.find(
       (candidate) =>
@@ -337,6 +341,6 @@ export async function spendContract(
       functionName,
     };
   } finally {
-    await rpc.disconnect().catch(() => undefined);
+    if (ownRpc) await rpc.disconnect().catch(() => undefined);
   }
 }

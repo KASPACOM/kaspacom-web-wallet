@@ -51,8 +51,15 @@ export class CovenantService {
     privateKeyHex: string,
   ): Promise<DeployResult> {
     const network = this.rpcService.getNetwork();
-    const rpcUrl = this.getRpcUrl();
+    const existingRpc = this.rpcService.getRpc();
 
+    // Use the existing wallet RPC connection if already connected
+    if (existingRpc?.isConnected) {
+      return deployContract(compiled, amountSompi, '', privateKeyHex, network, existingRpc);
+    }
+
+    // Fallback: create a new connection
+    const rpcUrl = this.getRpcUrl();
     return deployContract(compiled, amountSompi, rpcUrl, privateKeyHex, network);
   }
 
@@ -68,8 +75,13 @@ export class CovenantService {
     privateKeyHex: string,
   ): Promise<SpendResult> {
     const network = this.rpcService.getNetwork();
-    const rpcUrl = this.getRpcUrl();
+    const existingRpc = this.rpcService.getRpc();
 
+    if (existingRpc?.isConnected) {
+      return spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, '', privateKeyHex, network, existingRpc);
+    }
+
+    const rpcUrl = this.getRpcUrl();
     return spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, rpcUrl, privateKeyHex, network);
   }
 

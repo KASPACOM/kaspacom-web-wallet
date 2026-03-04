@@ -59,9 +59,20 @@ export interface DeployResult {
   txid: string;
   contractAddress: string;
   outpoint: CovenantOutpoint;
+  /** Genesis covenant ID (hex) — available when CovenantBinding is attached */
+  covenantId?: string;
 }
 
 export interface SpendResult {
   txid: string;
   functionName: string;
+  /** Covenant ID (hex) — present for continuation spends */
+  covenantId?: string;
+}
+
+export interface CovenantUtxoInfo {
+  outpoint: CovenantOutpoint;
+  amount: bigint;
+  covenantId?: string;
+  blockDaaScore: bigint;
 }

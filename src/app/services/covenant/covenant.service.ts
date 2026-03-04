@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { RpcService } from '../kaspa-netwrok-services/rpc.service';
 import { NetworkConfigService } from '../network-config.service';
-import { getCovenantAddress, deployContract, spendContract } from './covenant-sdk/covenant';
-import { CompiledContract, CovenantOutpoint, SpendOutput, DeployResult, SpendResult } from './covenant-sdk/types';
+import { getCovenantAddress, deployContract, spendContract, getCovenantUtxos, computeCovenantId } from './covenant-sdk/covenant';
+import { CompiledContract, CovenantOutpoint, CovenantUtxoInfo, SpendOutput, DeployResult, SpendResult } from './covenant-sdk/types';
 
 @Injectable({
   providedIn: 'root',
@@ -99,6 +99,25 @@ export class CovenantService {
     }
 
     return spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, rpcUrl, privateKeyHex, network);
+  }
+
+  /**
+   * Query UTXOs for a deployed covenant, including covenantId metadata
+   */
+  async queryCovenantUtxos(compiled: CompiledContract): Promise<CovenantUtxoInfo[]> {
+    const network = this.rpcService.getNetwork();
+    const existingRpc = this.rpcService.getRpc();
+    const rpcUrl = this.getRpcUrl();
+
+    if (existingRpc) {
+      try {
+        return await getCovenantUtxos(compiled, '', network, existingRpc);
+      } catch (err: any) {
+        console.warn('[CovenantService] queryCovenantUtxos with existing RPC failed:', err?.message);
+      }
+    }
+
+    return getCovenantUtxos(compiled, rpcUrl, network);
   }
 
   /**

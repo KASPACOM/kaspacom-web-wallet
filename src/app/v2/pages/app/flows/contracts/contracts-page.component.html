@@ -445,30 +445,17 @@
           </p>
         </div>
 
-        <div class="template-grid">
+        <div class="template-list flex column gap-12">
           @for (template of contractTemplates; track template.id) {
-            <div class="template-card p-20 rounded-lg flex column gap-16">
-              <div class="flex align-items-start gap-12">
-                <div class="template-icon">{{ template.icon }}</div>
-                <div class="flex column gap-8 flex-1">
-                  <h3 class="text-white typo-title-3">{{ template.name }}</h3>
-                  <p class="text-gray-60 typo-text-2">{{ template.description }}</p>
-                </div>
+            <div class="template-card-compact p-16 rounded-lg flex align-items-center gap-12" (click)="selectTemplate(template)">
+              <div class="template-icon-compact">{{ template.icon }}</div>
+              <div class="flex column gap-4 flex-1">
+                <h4 class="text-white typo-text-1 fw-bold">{{ template.name }}</h4>
+                <p class="text-gray-60 typo-text-2 template-description">{{ template.description }}</p>
               </div>
-
-              <div class="flex gap-8 flex-wrap">
-                @for (field of template.fields; track field.paramName) {
-                  <span class="param-tag p-4 rounded typo-text-2">
-                    {{ field.label }}
-                  </span>
-                }
-              </div>
-
-              <kc-button
-                [text]="'Use Template'"
-                [isFullWidth]="true"
-                (buttonClick)="selectTemplate(template)">
-              </kc-button>
+              <svg class="template-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
             </div>
           }
         </div>

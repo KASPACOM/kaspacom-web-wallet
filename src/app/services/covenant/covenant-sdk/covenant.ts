@@ -566,7 +566,11 @@ export async function spendContract(
     });
 
     const signatureHex = createInputSignature(unsignedTx, 0, privateKey, SighashType.All);
-    const signature = hexToBytes(signatureHex);
+    console.log('[CovenantSDK] signatureHex type:', typeof signatureHex, 'value:', String(signatureHex).substring(0, 20) + '...');
+    // createInputSignature returns HexString — normalize to plain string
+    const sigHexStr = String(signatureHex);
+    const signature = hexToBytes(sigHexStr);
+    console.log('[CovenantSDK] signature bytes:', signature.length, '(expected 65)');
     const functionArgs = resolveSpendFunctionArgs(compiled, functionName, signature, privateKey);
     const sigPrefix = buildSigScript(compiled, functionName, functionArgs);
 

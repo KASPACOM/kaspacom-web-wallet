@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
 import { WalletService } from '../../../../../services/wallet.service';
 import { CovenantService } from '../../../../../services/covenant/covenant.service';
 import { RpcService } from '../../../../../services/kaspa-netwrok-services/rpc.service';
@@ -22,6 +22,7 @@ type TabName = 'deploy' | 'my-contracts' | 'interact' | 'templates';
     FormsModule,
     KcButtonComponent,
     KcIconComponent,
+    KcTooltipDirective,
     CopyButtonComponent,
   ],
   templateUrl: './contracts-page.component.html',
@@ -652,5 +653,84 @@ export class ContractsPageComponent {
       kind: 'int',
       data: value,
     };
+  }
+
+  // ─── Interact Tab Helpers ──────────────────────────────────────────
+
+  /**
+   * Computed input amount in KAS for display
+   */
+  interactInputAmountKas = computed(() => {
+    const sompi = this.interactInputAmount;
+    if (!sompi) return '0';
+    try {
+      const kas = Number(BigInt(sompi)) / 1e8;
+      return kas.toFixed(8).replace(/\.?0+$/, '');
+    } catch {
+      return '0';
+    }
+  });
+
+  /**
+   * Select an entrypoint function
+   */
+  selectFunction(name: string) {
+    this.selectedFunction = name;
+  }
+
+  /**
+   * Get human-readable label for a function
+   */
+  getFunctionLabel(name: string): string {
+    const labels: Record<string, string> = {
+      'spend': '💰 Withdraw',
+      'recover': '🔐 Recovery Withdraw',
+      'claim': '📥 Claim',
+      'release': '🔓 Release',
+      'refund': '↩️ Refund',
+      'increment': '➕ Increment',
+      'keepAlive': '♻️ Keep Alive',
+      'execute': '⚡ Execute',
+    };
+    return labels[name] || name;
+  }
+
+  /**
+   * Get human-readable description for a function
+   */
+  getFunctionDescription(name: string): string {
+    const contract = this.parsedInteractContract();
+    const contractName = contract?.contract_name || '';
+
+    const descriptions: Record<string, string> = {
+      'spend': 'Withdraw funds using the owner key. Available immediately — no timelock.',
+      'recover': 'Emergency withdrawal using the recovery key. Only available after the timelock expires.',
+      'claim': 'Claim the funds locked in this contract to your address.',
+      'release': 'Release the locked funds to the designated recipient.',
+      'refund': 'Return the locked funds to the original sender.',
+      'increment': 'Increment the on-chain counter state by 1.',
+      'keepAlive': 'Reset the dead man\'s switch timer. Must be called before timeout to prevent recovery.',
+      'execute': 'Execute this contract\'s logic.',
+    };
+
+    return descriptions[name] || `Call the "${name}" function on this contract.`;
+  }
+
+  /**
+   * Fill output amount with max (input amount minus estimated fee)
+   */
+  fillMaxOutputAmount() {
+    const sompi = this.interactInputAmount;
+    if (!sompi) return;
+    try {
+      const inputSompi = BigInt(sompi);
+      // Reserve 0.01 KAS (1,000,000 sompi) for transaction fee
+      const feeSompi = BigInt(1_000_000);
+      const outputSompi = inputSompi > feeSompi ? inputSompi - feeSompi : 0n;
+      const outputKas = Number(outputSompi) / 1e8;
+      this.interactOutputAmount = outputKas.toFixed(8).replace(/\.?0+$/, '');
+    } catch {
+      // Invalid amount
+    }
   }
 }

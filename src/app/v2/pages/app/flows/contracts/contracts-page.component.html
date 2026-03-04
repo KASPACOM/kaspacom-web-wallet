@@ -359,13 +359,13 @@
     <div class="panel flex column gap-20 p-24 rounded-lg">
       <!-- Contract selector from registry -->
       <div class="form-group flex column gap-8">
-        <label class="text-gray-60 typo-text-1">Select Contract (or paste JSON manually below)</label>
+        <label class="text-gray-60 typo-text-1">Select Contract</label>
         <select
           class="form-input p-12 rounded-lg text-white typo-text-2"
           [(ngModel)]="selectedContractId"
           (ngModelChange)="selectContractFromRegistry()"
           [disabled]="isInteracting()">
-          <option value="">-- Select from Registry or Paste Manually --</option>
+          <option value="">-- Select a deployed contract --</option>
           @for (contract of registryContracts(); track contract.id) {
             <option [value]="contract.id">
               {{ contract.contractName }} ({{ truncate(contract.contractAddress, 20) }})
@@ -374,118 +374,125 @@
         </select>
       </div>
 
-      <!-- Manual contract JSON -->
-      <div class="form-group flex column gap-8">
-        <label class="text-gray-60 typo-text-1">Compiled Contract JSON</label>
-        <textarea
-          class="contract-input p-12 rounded-lg text-white typo-text-2"
-          rows="6"
-          placeholder="Paste compiled contract JSON (or select from registry above)"
-          [(ngModel)]="interactContractJson"
-          [disabled]="isInteracting()">
-        </textarea>
-      </div>
+      <!-- Advanced: Manual contract JSON (collapsed by default) -->
+      <details class="advanced-section">
+        <summary class="text-gray-60 typo-text-2 cursor-pointer" kcTooltip="Paste raw compiled JSON to interact with unregistered contracts" tooltipPosition="top">
+          ⚙️ Advanced: Paste Contract JSON
+        </summary>
+        <div class="form-group flex column gap-8 mt-8">
+          <textarea
+            class="contract-input p-12 rounded-lg text-white typo-text-2"
+            rows="4"
+            placeholder="Paste compiled contract JSON here"
+            [(ngModel)]="interactContractJson"
+            [disabled]="isInteracting()">
+          </textarea>
+        </div>
+      </details>
 
-      <!-- Contract summary -->
+      <!-- Contract info card -->
       @if (parsedInteractContract()) {
         <div class="contract-summary p-16 rounded-lg flex column gap-12">
-          <h3 class="text-white typo-text-1 fw-bold">Contract: {{ parsedInteractContract()!.contract_name || 'Unnamed' }}</h3>
-          @if (currentWallet()) {
+          <h3 class="text-white typo-text-1 fw-bold">{{ parsedInteractContract()!.contract_name || 'Contract' }}</h3>
+
+          <!-- UTXO Details (read-only) -->
+          <div class="flex column gap-8">
+            <div class="flex align-items-center gap-4">
+              <span class="text-gray-60 typo-text-2">Locked Amount</span>
+              <kc-icon [iconClass]="'icon-info'" [size]="'xs'" kcTooltip="Total KAS locked in this covenant UTXO" tooltipPosition="top"></kc-icon>
+            </div>
+            <span class="text-white typo-text-1 fw-bold">{{ interactInputAmountKas() }} KAS</span>
+          </div>
+
+          @if (interactOutpointTxid) {
             <div class="flex column gap-4">
-              <span class="text-gray-60 typo-text-1">Your Account</span>
-              <div class="flex column gap-4">
-                <span class="text-white typo-text-2">{{ currentWallet()!.getDisplayName() }}</span>
-                <div class="flex align-items-center gap-8">
-                  <span class="text-gray-60 typo-text-2 text-mono">
-                    Pubkey: {{ truncate(currentWallet()!.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString(), 24) }}
-                  </span>
-                  <app-copy-button [value]="currentWallet()!.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString()" [size]="'sm'"></app-copy-button>
-                </div>
+              <span class="text-gray-60 typo-text-2">Transaction</span>
+              <div class="flex align-items-center gap-8">
+                <a [href]="getExplorerLink(interactOutpointTxid)" target="_blank" class="text-blue typo-text-2 text-truncate">
+                  {{ truncate(interactOutpointTxid, 24) }}
+                </a>
+                <app-copy-button [value]="interactOutpointTxid" [size]="'sm'"></app-copy-button>
               </div>
             </div>
           }
-        </div>
-      }
 
-      <!-- Outpoint -->
-      <div class="flex gap-12">
-        <div class="form-group flex column gap-8 flex-1">
-          <label class="text-gray-60 typo-text-1">Outpoint TXID</label>
+          @if (currentWallet()) {
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-2">Your Account</span>
+              <span class="text-white typo-text-2">{{ currentWallet()!.getDisplayName() }}</span>
+            </div>
+          }
+        </div>
+
+        <!-- Action Selection -->
+        <div class="form-group flex column gap-8">
+          <div class="flex align-items-center gap-4">
+            <label class="text-gray-60 typo-text-1">Action</label>
+            <kc-icon [iconClass]="'icon-info'" [size]="'xs'" kcTooltip="Choose how to interact with this contract. Each action has different requirements (e.g. owner key, timelock expiry)." tooltipPosition="top"></kc-icon>
+          </div>
+
+          <!-- Function buttons instead of dropdown -->
+          <div class="flex gap-8 flex-wrap">
+            @for (fn of availableFunctions(); track fn.name) {
+              <kc-button
+                [text]="getFunctionLabel(fn.name)"
+                [isDisabled]="isInteracting()"
+                [class.active-function]="selectedFunction === fn.name"
+                [style]="selectedFunction === fn.name ? 'opacity: 1' : 'opacity: 0.6'"
+                (buttonClick)="selectFunction(fn.name)">
+              </kc-button>
+            }
+          </div>
+
+          @if (selectedFunction) {
+            <div class="p-12 rounded-lg" style="background: rgba(111, 199, 186, 0.08); border: 1px solid rgba(111, 199, 186, 0.2);">
+              <span class="text-gray-75 typo-text-2">{{ getFunctionDescription(selectedFunction) }}</span>
+            </div>
+          }
+
+          @if (availableFunctions().length === 0 && interactContractJson) {
+            <span class="text-gray-60 typo-text-2">No callable functions found in this contract</span>
+          }
+        </div>
+
+        <!-- Output address -->
+        <div class="form-group flex column gap-8">
+          <div class="flex align-items-center gap-4">
+            <label class="text-gray-60 typo-text-1">Send To</label>
+            <kc-icon [iconClass]="'icon-info'" [size]="'xs'" kcTooltip="The Kaspa address where funds will be sent when you withdraw" tooltipPosition="top"></kc-icon>
+          </div>
           <input
             type="text"
             class="form-input p-12 rounded-lg text-white typo-text-2"
-            placeholder="Transaction ID"
-            [(ngModel)]="interactOutpointTxid"
+            placeholder="Kaspa address (defaults to your wallet)"
+            [(ngModel)]="interactOutputAddress"
             [disabled]="isInteracting()" />
         </div>
-        <div class="form-group flex column gap-8" style="width: 100px;">
-          <label class="text-gray-60 typo-text-1">Vout</label>
+
+        <!-- Output amount -->
+        <div class="form-group flex column gap-8">
+          <div class="flex justify-content-between align-items-center">
+            <div class="flex align-items-center gap-4">
+              <label class="text-gray-60 typo-text-1">Withdraw Amount (KAS)</label>
+              <kc-icon [iconClass]="'icon-info'" [size]="'xs'" kcTooltip="Amount to withdraw. A small fee (~0.01 KAS) is deducted for the transaction. Use 'Max' to withdraw everything." tooltipPosition="top"></kc-icon>
+            </div>
+            <span
+              class="text-blue typo-text-2 cursor-pointer"
+              (click)="fillMaxOutputAmount()"
+              kcTooltip="Withdraw full balance minus transaction fee" tooltipPosition="left">
+              Max
+            </span>
+          </div>
           <input
             type="number"
             class="form-input p-12 rounded-lg text-white typo-text-2"
-            placeholder="0"
-            [(ngModel)]="interactOutpointVout"
+            placeholder="Amount in KAS"
+            [(ngModel)]="interactOutputAmount"
             [disabled]="isInteracting()"
-            min="0"
-            step="1" />
+            step="0.01"
+            min="0" />
         </div>
-      </div>
-
-      <!-- Input amount -->
-      <div class="form-group flex column gap-8">
-        <label class="text-gray-60 typo-text-1">Input Amount (sompi)</label>
-        <input
-          type="text"
-          class="form-input p-12 rounded-lg text-white typo-text-2"
-          placeholder="Amount locked in the UTXO (in sompi)"
-          [(ngModel)]="interactInputAmount"
-          [disabled]="isInteracting()" />
-      </div>
-
-      <!-- Function selector -->
-      <div class="form-group flex column gap-8">
-        <label class="text-gray-60 typo-text-1">Entrypoint Function</label>
-        <select
-          class="form-input p-12 rounded-lg text-white typo-text-2"
-          [(ngModel)]="selectedFunction"
-          [disabled]="isInteracting() || availableFunctions().length === 0">
-          <option value="">-- Select Function --</option>
-          @for (fn of availableFunctions(); track fn.name) {
-            <option [value]="fn.name">
-              {{ fn.name }}
-              @if (fn.inputs.length > 0) {
-                ({{ getAbiInputTypes(fn.inputs) }})
-              }
-            </option>
-          }
-        </select>
-        @if (availableFunctions().length === 0 && interactContractJson) {
-          <span class="text-gray-60 typo-text-1">No entrypoint functions found in contract</span>
-        }
-      </div>
-
-      <!-- Output address and amount -->
-      <div class="form-group flex column gap-8">
-        <label class="text-gray-60 typo-text-1">Output Address</label>
-        <input
-          type="text"
-          class="form-input p-12 rounded-lg text-white typo-text-2"
-          placeholder="Kaspa address to send funds to"
-          [(ngModel)]="interactOutputAddress"
-          [disabled]="isInteracting()" />
-      </div>
-
-      <div class="form-group flex column gap-8">
-        <label class="text-gray-60 typo-text-1">Output Amount (KAS)</label>
-        <input
-          type="number"
-          class="form-input p-12 rounded-lg text-white typo-text-2"
-          placeholder="Amount to send"
-          [(ngModel)]="interactOutputAmount"
-          [disabled]="isInteracting()"
-          step="0.00000001"
-          min="0" />
-      </div>
+      }
 
       <!-- Error message -->
       @if (interactError()) {
@@ -497,13 +504,13 @@
       <!-- Success result -->
       @if (interactResult()) {
         <div class="result-panel flex column gap-12 p-16 rounded-lg">
-          <h3 class="text-white typo-text-1 fw-bold">✅ Contract Executed!</h3>
+          <h3 class="text-white typo-text-1 fw-bold">✅ Transaction Sent!</h3>
           <div class="result-row flex column gap-4">
-            <span class="text-gray-60 typo-text-1">Function Called</span>
-            <span class="text-white typo-text-2">{{ interactResult()!.functionName }}</span>
+            <span class="text-gray-60 typo-text-1">Action</span>
+            <span class="text-white typo-text-2">{{ getFunctionLabel(interactResult()!.functionName) }}</span>
           </div>
           <div class="result-row flex column gap-4">
-            <span class="text-gray-60 typo-text-1">Transaction ID</span>
+            <span class="text-gray-60 typo-text-1">Transaction</span>
             <div class="flex align-items-center gap-8">
               <a [href]="getExplorerLink(interactResult()!.txid)" target="_blank" class="text-blue typo-text-2 text-truncate">
                 {{ interactResult()!.txid }}
@@ -515,12 +522,14 @@
       }
 
       <!-- Execute button -->
-      <kc-button
-        [text]="isInteracting() ? 'Executing...' : 'Execute Contract'"
-        [isDisabled]="isInteracting() || !interactContractJson || !interactOutpointTxid || !selectedFunction"
-        [isFullWidth]="true"
-        (buttonClick)="interactContract()">
-      </kc-button>
+      @if (parsedInteractContract()) {
+        <kc-button
+          [text]="isInteracting() ? 'Processing...' : (selectedFunction ? getFunctionLabel(selectedFunction) : 'Select an action')"
+          [isDisabled]="isInteracting() || !interactContractJson || !interactOutpointTxid || !selectedFunction"
+          [isFullWidth]="true"
+          (buttonClick)="interactContract()">
+        </kc-button>
+      }
     </div>
   }
 

@@ -555,9 +555,18 @@ export async function spendContract(
       return baseOutput;
     });
 
+    // Set lockTime to current time in milliseconds.
+    // Kaspa's LOCK_TIME_THRESHOLD = 500,000,000,000:
+    //   values < 500B → DAA score, values >= 500B → Unix milliseconds
+    // Using Date.now() (ms) ensures it's in the Unix-time space and satisfies
+    // any contract timelock that has already expired (e.g. recover after timeout).
+    // For functions without timelocks, locktime is ignored by the script.
+    const lockTime = BigInt(Date.now());
+    console.log('[CovenantSDK] lockTime:', lockTime.toString(), '(Unix ms)');
+
     const unsignedTx = new Transaction({
       version: 0,
-      lockTime: 0n,
+      lockTime,
       inputs: txInputs,
       outputs: txOutputs,
       subnetworkId: SUBNETWORK_ID_NATIVE,

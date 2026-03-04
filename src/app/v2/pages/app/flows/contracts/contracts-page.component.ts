@@ -7,7 +7,7 @@ import { KcButtonComponent, KcIconComponent, KcTooltipDirective } from 'kaspacom
 import { WalletService } from '../../../../../services/wallet.service';
 import { CovenantService } from '../../../../../services/covenant/covenant.service';
 import { RpcService } from '../../../../../services/kaspa-netwrok-services/rpc.service';
-import { ContractRegistryService, ContractRegistryEntry } from '../../../../../services/covenant/contract-registry.service';
+import { ContractRegistryService, ContractRegistryEntry, ContractStatus } from '../../../../../services/covenant/contract-registry.service';
 import { CompiledContract, CovenantOutpoint, SpendOutput } from '../../../../../services/covenant/covenant-sdk/types';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { CONTRACT_TEMPLATES, ContractTemplate, TemplateField } from '../../../../services/covenant/contract-templates';
@@ -220,13 +220,68 @@ export class ContractsPageComponent {
   }
 
   /**
-   * Load contracts from registry
+   * Load contracts from registry and check on-chain status
    */
-  loadContracts() {
+  async loadContracts() {
     const allContracts = this.registryService.getAllContracts();
     const currentNetwork = this.network();
     const filtered = allContracts.filter((c) => c.network === currentNetwork);
     this.registryContracts.set(filtered);
+
+    // Check on-chain status for each contract
+    await this.refreshContractStatuses(filtered);
+  }
+
+  /**
+   * Check on-chain UTXO status for contracts
+   */
+  async refreshContractStatuses(contracts: ContractRegistryEntry[]) {
+    const rpc = this.rpcService.getRpc();
+    if (!rpc) return;
+
+    // Batch by unique addresses
+    const addressMap = new Map<string, ContractRegistryEntry[]>();
+    for (const c of contracts) {
+      const list = addressMap.get(c.contractAddress) || [];
+      list.push(c);
+      addressMap.set(c.contractAddress, list);
+    }
+
+    for (const [address, entries] of addressMap) {
+      try {
+        const utxoResponse = await rpc.getUtxosByAddresses([address]);
+        const utxos = utxoResponse.entries || [];
+
+        for (const entry of entries) {
+          const found = utxos.find(
+            (u: any) => u.outpoint?.transactionId === entry.outpoint.txid && Number(u.outpoint?.index ?? -1) === entry.outpoint.vout
+          );
+
+          const newStatus: ContractStatus = found ? 'active' : 'spent';
+          if (entry.status !== newStatus) {
+            this.registryService.updateContract(entry.id, {
+              status: newStatus,
+              lastChecked: Date.now(),
+              amountSompi: found ? found.amount.toString() : entry.amountSompi,
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('[Contracts] Status check failed for', address, err);
+      }
+    }
+
+    // Reload with updated statuses
+    const updated = this.registryService.getAllContracts().filter((c) => c.network === this.network());
+    this.registryContracts.set(updated);
+  }
+
+  /**
+   * Delete a contract from registry
+   */
+  deleteContract(id: string) {
+    this.registryService.deleteContract(id);
+    this.loadContracts();
   }
 
   /**
@@ -459,6 +514,16 @@ export class ContractsPageComponent {
         txid: result.txid,
         functionName: result.functionName,
       });
+
+      // Mark contract as spent in registry
+      if (this.selectedContractId) {
+        this.registryService.updateContract(this.selectedContractId, {
+          status: 'spent',
+          spendTxid: result.txid,
+          lastChecked: Date.now(),
+        });
+        this.loadContracts();
+      }
     } catch (error: any) {
       this.interactError.set(error?.message || 'Failed to execute contract');
     } finally {

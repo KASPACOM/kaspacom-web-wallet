@@ -272,83 +272,71 @@
       }
 
       @for (contract of registryContracts(); track contract.id) {
-        <div class="contract-card p-20 rounded-lg flex column gap-16">
+        <div class="contract-card p-20 rounded-lg flex column gap-16" [style.opacity]="contract.status === 'spent' ? '0.5' : '1'">
           <!-- Contract header -->
           <div class="flex justify-content-between align-items-start">
             <div class="flex column gap-4">
               <h3 class="text-white typo-title-3">{{ contract.contractName }}</h3>
               <span class="text-gray-60 typo-text-2">
-                Deployed by {{ contract.deployedBy.accountName }}
+                {{ formatSompiToKas(contract.amountSompi) }} KAS
               </span>
             </div>
-            @if (canCallFunction(contract, contract.accessRoles[0]?.functionName || '')) {
-              <div class="status-badge active p-8 rounded">
-                <span class="typo-text-2">Can Interact</span>
-              </div>
-            } @else {
-              <div class="status-badge inactive p-8 rounded">
-                <span class="typo-text-2">View Only</span>
-              </div>
-            }
-          </div>
-
-          <!-- Contract details -->
-          <div class="flex column gap-12">
-            <div class="flex column gap-4">
-              <span class="text-gray-60 typo-text-1">Contract Address</span>
-              <div class="flex align-items-center gap-8">
-                <span class="text-white typo-text-2 text-mono">{{ truncate(contract.contractAddress, 30) }}</span>
-                <app-copy-button [value]="contract.contractAddress" [size]="'sm'"></app-copy-button>
-              </div>
-            </div>
-
-            <div class="flex column gap-4">
-              <span class="text-gray-60 typo-text-1">Deploy Transaction</span>
-              <div class="flex align-items-center gap-8">
-                <a [href]="getExplorerLink(contract.deployTxid)" target="_blank" class="text-blue typo-text-2">
-                  {{ truncate(contract.deployTxid, 30) }}
-                </a>
-                <app-copy-button [value]="contract.deployTxid" [size]="'sm'"></app-copy-button>
-              </div>
-            </div>
-
-            <div class="flex column gap-4">
-              <span class="text-gray-60 typo-text-1">Amount Locked</span>
-              <span class="text-white typo-text-2">{{ formatSompiToKas(contract.amountSompi) }} KAS</span>
-            </div>
-
-            <!-- Access roles -->
-            <div class="flex column gap-8">
-              <span class="text-gray-60 typo-text-1">Access Rules</span>
-              @for (role of contract.accessRoles; track role.functionName) {
-                <div class="access-role p-12 rounded flex column gap-4">
-                  <div class="flex align-items-center gap-8">
-                    <span class="text-white typo-text-2 fw-bold">{{ role.functionName }}</span>
-                    @if (canCallFunction(contract, role.functionName)) {
-                      <span class="text-green typo-text-2">✓ You can call this</span>
-                    }
-                  </div>
-                  <span class="text-gray-60 typo-text-2">{{ role.description }}</span>
-                  @if (role.params.length > 0) {
-                    <div class="flex gap-8 flex-wrap">
-                      @for (param of role.params; track param.name) {
-                        <span class="param-tag p-4 rounded typo-text-2">
-                          {{ param.name }}: {{ param.type }}
-                        </span>
-                      }
-                    </div>
-                  }
+            <div class="flex align-items-center gap-8">
+              @if (contract.status === 'spent') {
+                <div class="status-badge inactive p-8 rounded" kcTooltip="This contract has been spent — funds withdrawn" tooltipPosition="left">
+                  <span class="typo-text-2">Spent</span>
+                </div>
+              } @else {
+                <div class="status-badge active p-8 rounded">
+                  <span class="typo-text-2">Active</span>
                 </div>
               }
+              <span class="text-gray-60 typo-text-2 cursor-pointer" (click)="deleteContract(contract.id)" kcTooltip="Remove from list" tooltipPosition="left">✕</span>
             </div>
           </div>
 
-          <!-- Quick interact button -->
-          <kc-button
-            [text]="'Interact with Contract'"
-            [isFullWidth]="true"
-            (buttonClick)="selectedContractId = contract.id; selectContractFromRegistry(); switchTab('interact')">
-          </kc-button>
+          <!-- Contract address -->
+          <div class="flex column gap-4">
+            <span class="text-gray-60 typo-text-2">Contract Address</span>
+            <div class="flex align-items-center gap-8">
+              <a [href]="getExplorerAddressLink(contract.contractAddress)" target="_blank" class="text-blue typo-text-2">
+                {{ truncate(contract.contractAddress, 30) }}
+              </a>
+              <app-copy-button [value]="contract.contractAddress" [size]="'sm'"></app-copy-button>
+            </div>
+          </div>
+
+          <!-- Deploy TX -->
+          <div class="flex column gap-4">
+            <span class="text-gray-60 typo-text-2">Deploy TX</span>
+            <div class="flex align-items-center gap-8">
+              <a [href]="getExplorerLink(contract.deployTxid)" target="_blank" class="text-blue typo-text-2">
+                {{ truncate(contract.deployTxid, 20) }}
+              </a>
+              <app-copy-button [value]="contract.deployTxid" [size]="'sm'"></app-copy-button>
+            </div>
+          </div>
+
+          @if (contract.spendTxid) {
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-2">Spend TX</span>
+              <div class="flex align-items-center gap-8">
+                <a [href]="getExplorerLink(contract.spendTxid)" target="_blank" class="text-blue typo-text-2">
+                  {{ truncate(contract.spendTxid, 20) }}
+                </a>
+                <app-copy-button [value]="contract.spendTxid" [size]="'sm'"></app-copy-button>
+              </div>
+            </div>
+          }
+
+          <!-- Interact button (only for active contracts) -->
+          @if (contract.status !== 'spent') {
+            <kc-button
+              [text]="'💰 Withdraw'"
+              [isFullWidth]="true"
+              (buttonClick)="selectedContractId = contract.id; selectContractFromRegistry(); switchTab('interact')">
+            </kc-button>
+          }
         </div>
       }
     </div>

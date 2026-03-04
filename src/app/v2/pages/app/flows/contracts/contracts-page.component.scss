@@ -1,5 +1,10 @@
+:host {
+  width: 100%;
+}
+
 .contracts-container {
-  max-width: 900px;
+  max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
   overflow-y: auto;
 }
@@ -281,6 +286,33 @@ select.form-input {
   }
 }
 
+// Advanced section (collapsed by default)
+.advanced-section {
+  summary {
+    user-select: none;
+    padding: 8px 0;
+    
+    &:hover {
+      color: var(--kaspa-20);
+    }
+  }
+  
+  .mt-8 {
+    margin-top: 8px;
+  }
+}
+
+// Active function button highlight
+.active-function {
+  border-color: var(--kaspa-20) !important;
+  background: rgba(111, 199, 186, 0.15) !important;
+}
+
+// Cursor pointer utility
+.cursor-pointer {
+  cursor: pointer;
+}
+
 // Responsive - mobile first
 @media (max-width: 375px) {
   .template-card-compact {
@@ -293,5 +325,18 @@ select.form-input {
     height: 36px;
     min-width: 36px;
     font-size: 18px;
+  }
+}
+
+// Desktop — wider layout for contracts
+@media (min-width: 768px) {
+  .contracts-container {
+    padding: 0 24px;
+  }
+  
+  .contracts-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 }

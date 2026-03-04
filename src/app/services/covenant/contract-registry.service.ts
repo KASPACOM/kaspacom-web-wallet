@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
 
+export type ContractStatus = 'active' | 'spent' | 'unknown';
+
 export interface ContractRegistryEntry {
   id: string; // uuid
   contractName: string;
@@ -11,6 +13,9 @@ export interface ContractRegistryEntry {
   deployedBy: { address: string; pubkey: string; accountName: string };
   deployedAt: number; // timestamp
   network: string;
+  status?: ContractStatus; // on-chain status
+  lastChecked?: number; // timestamp of last status check
+  spendTxid?: string; // TX that spent this contract
   // Parsed access info
   accessRoles: Array<{
     functionName: string;

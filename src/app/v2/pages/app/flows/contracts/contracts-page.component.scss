@@ -44,7 +44,8 @@
   border: 1px solid var(--border-secondary);
   box-sizing: border-box;
   min-width: 0; // prevent flex overflow
-  overflow: hidden;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .contract-card,

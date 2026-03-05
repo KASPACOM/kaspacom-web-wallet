@@ -1,7 +1,8 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { KcButtonComponent, KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
 import { blake2b } from '@noble/hashes/blake2b';
@@ -33,13 +34,14 @@ type TabName = 'deploy' | 'my-contracts' | 'interact' | 'templates';
     '[class.full-height]': 'true',
   },
 })
-export class ContractsPageComponent {
+export class ContractsPageComponent implements OnInit {
   private walletService = inject(WalletService);
   private covenantService = inject(CovenantService);
   private rpcService = inject(RpcService);
   private registryService = inject(ContractRegistryService);
   private templatePatcher = inject(TemplatePatcherService);
   private http = inject(HttpClient);
+  private route = inject(ActivatedRoute);
 
   // Current active tab
   activeTab = signal<TabName>('deploy');
@@ -172,27 +174,44 @@ export class ContractsPageComponent {
 
     // Load contracts from registry
     this.loadContracts();
+  }
 
-    // Check for shared contract in URL hash
-    this.checkImportFromUrl();
+  ngOnInit() {
+    // Check for shared contract import via query param or hash fragment
+    // Query param: ?contract=<base64>  |  Hash: #contract=<base64>
+    this.route.queryParams.subscribe((params) => {
+      if (params['contract']) {
+        this.importFromEncoded(params['contract']);
+      }
+    });
+    this.route.fragment.subscribe((fragment) => {
+      if (fragment && fragment.startsWith('contract=')) {
+        this.importFromEncoded(fragment.substring('contract='.length));
+      }
+    });
+
+    // Fallback: check raw window.location.hash (some Angular configs don't expose fragments)
+    setTimeout(() => {
+      const hash = window.location.hash;
+      if (hash.startsWith('#contract=') && !this.interactContractJson) {
+        this.importFromEncoded(hash.substring('#contract='.length));
+      }
+    }, 500);
   }
 
   /**
-   * Check URL for shared contract data and auto-import
-   * Format: #contract=<base64url-encoded JSON>
+   * Import a shared contract from base64url-encoded data
    */
-  private checkImportFromUrl() {
+  private importFromEncoded(encoded: string) {
     try {
-      const hash = window.location.hash;
-      const prefix = '#contract=';
-      if (!hash.startsWith(prefix)) return;
-
-      const encoded = hash.substring(prefix.length);
-      const json = decodeURIComponent(atob(encoded.replace(/-/g, '+').replace(/_/g, '/')));
+      const padded = encoded.replace(/-/g, '+').replace(/_/g, '/');
+      const json = decodeURIComponent(escape(atob(padded)));
       const parsed = JSON.parse(json);
 
-      // Validate it has required fields
-      if (!parsed.compiledJson || !parsed.address) return;
+      if (!parsed.compiledJson) {
+        console.warn('[Contracts] Shared contract missing compiledJson');
+        return;
+      }
 
       // Auto-fill the interact tab
       this.interactContractJson = parsed.compiledJson;
@@ -202,12 +221,11 @@ export class ContractsPageComponent {
       this.interactOutputAddress = this.currentWallet()?.getAddress() || '';
       this.activeTab.set('interact');
 
-      // Clean the URL hash
-      history.replaceState(null, '', window.location.pathname + window.location.search);
-
-      console.log('[Contracts] Auto-imported shared contract:', parsed.address);
+      // Clean the URL
+      history.replaceState(null, '', window.location.pathname);
+      console.log('[Contracts] Auto-imported shared contract:', parsed.address || parsed.name);
     } catch (e) {
-      console.warn('[Contracts] Failed to parse shared contract from URL:', e);
+      console.warn('[Contracts] Failed to parse shared contract:', e);
     }
   }
 
@@ -224,8 +242,8 @@ export class ContractsPageComponent {
       name: contract.contractName,
     };
     const json = JSON.stringify(shareData);
-    const encoded = btoa(json).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    const url = `${window.location.origin}${window.location.pathname}#contract=${encoded}`;
+    const encoded = btoa(unescape(encodeURIComponent(json))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const url = `${window.location.origin}/app/contracts?contract=${encoded}`;
 
     navigator.clipboard.writeText(url).then(
       () => alert('Share link copied to clipboard! Send it to the other wallet.'),

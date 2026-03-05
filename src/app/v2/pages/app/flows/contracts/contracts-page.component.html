@@ -564,7 +564,7 @@
             <div class="form-group flex column gap-8">
               <label class="text-gray-60 typo-text-1" [title]="field.description">{{ field.label }}</label>
 
-              @if (field.type === 'address' || field.type === 'hash32') {
+              @if (field.type === 'address') {
                 <input
                   type="text"
                   class="form-input p-12 rounded-lg text-white typo-text-2"
@@ -572,6 +572,30 @@
                   [placeholder]="field.placeholder"
                   [title]="field.description"
                   [(ngModel)]="templateFormValues[field.paramName]" />
+              }
+
+              @if (field.type === 'hash32') {
+                <div class="flex column gap-4">
+                  <input
+                    type="text"
+                    class="form-input p-12 rounded-lg text-white typo-text-2"
+                    [name]="field.paramName"
+                    placeholder="Paste Kaspa address or pubkey hex — auto-hashes, or paste hash directly"
+                    [title]="field.description"
+                    [(ngModel)]="templateFormValues[field.paramName]"
+                    (ngModelChange)="onHash32Input(field.paramName, $event)" />
+                  @if (templateFormValues[field.paramName + '_isAutoHashed']) {
+                    <span class="text-green typo-text-2">✓ blake2b-256 hash computed automatically</span>
+                  }
+                  @if (!templateFormValues[field.paramName + '_isAutoHashed'] && templateFormValues[field.paramName]?.length === 64) {
+                    <div class="flex gap-8 align-items-center">
+                      <span class="text-gray-60 typo-text-2">Is this a pubkey?</span>
+                      <span class="text-blue typo-text-2 cursor-pointer" (click)="computeBlake2bHash(field.paramName)">
+                        Click to compute blake2b hash →
+                      </span>
+                    </div>
+                  }
+                </div>
               }
 
               @if (field.type === 'int_days' || field.type === 'int_count') {

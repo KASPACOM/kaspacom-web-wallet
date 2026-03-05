@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { KcButtonComponent, KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
+import { blake2b } from '@noble/hashes/blake2b';
 import { WalletService } from '../../../../../services/wallet.service';
 import { CovenantService } from '../../../../../services/covenant/covenant.service';
 import { RpcService } from '../../../../../services/kaspa-netwrok-services/rpc.service';
@@ -803,5 +804,55 @@ export class ContractsPageComponent {
     } catch {
       // Invalid amount
     }
+  }
+
+  /**
+   * Handle hash32 field input — if user pastes a 32-byte pubkey (64 hex chars),
+   * auto-compute blake2b-256 hash and replace the field value.
+   * If user pastes a 64-char hex string that looks like it could already be a hash,
+   * we keep it as-is (could be either pubkey or hash — user decides).
+   */
+  onHash32Input(paramName: string, value: string) {
+    const normalized = (value || '').trim().replace(/^0x/i, '');
+    this.templateFormValues[paramName + '_isAutoHashed'] = '';
+
+    // If user pastes a pubkey (64 hex chars = 32 bytes), compute blake2b-256 hash
+    // Check if it's a valid hex string first
+    if (/^[0-9a-fA-F]{64}$/.test(normalized)) {
+      // It's 32 bytes — could be a pubkey or already a hash.
+      // We provide a "compute hash" option rather than auto-replacing.
+      return;
+    }
+
+    // If user pastes a Kaspa address, extract pubkey and hash it
+    if (normalized.startsWith('kaspa') || normalized.startsWith('kaspatest')) {
+      try {
+        const pubkeyBytes = this.templatePatcher.kaspaAddressToPubkeyBytes(value.trim());
+        const pubkeyUint8 = Uint8Array.from(pubkeyBytes);
+        const hash = blake2b(pubkeyUint8, { dkLen: 32 });
+        const hashHex = Array.from(hash).map(b => b.toString(16).padStart(2, '0')).join('');
+        this.templateFormValues[paramName] = hashHex;
+        this.templateFormValues[paramName + '_isAutoHashed'] = 'true';
+      } catch {
+        // Invalid address — let validation catch it
+      }
+    }
+  }
+
+  /**
+   * Compute blake2b-256 hash of a hex value and update the field
+   */
+  computeBlake2bHash(paramName: string) {
+    const value = (this.templateFormValues[paramName] || '').trim().replace(/^0x/i, '');
+    if (!/^[0-9a-fA-F]{64}$/.test(value)) return;
+
+    const bytes = new Uint8Array(32);
+    for (let i = 0; i < 64; i += 2) {
+      bytes[i / 2] = Number.parseInt(value.slice(i, i + 2), 16);
+    }
+    const hash = blake2b(bytes, { dkLen: 32 });
+    const hashHex = Array.from(hash).map(b => b.toString(16).padStart(2, '0')).join('');
+    this.templateFormValues[paramName] = hashHex;
+    this.templateFormValues[paramName + '_isAutoHashed'] = 'true';
   }
 }

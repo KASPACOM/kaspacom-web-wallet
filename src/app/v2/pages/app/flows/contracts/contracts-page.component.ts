@@ -172,6 +172,68 @@ export class ContractsPageComponent {
 
     // Load contracts from registry
     this.loadContracts();
+
+    // Check for shared contract in URL hash
+    this.checkImportFromUrl();
+  }
+
+  /**
+   * Check URL for shared contract data and auto-import
+   * Format: #contract=<base64url-encoded JSON>
+   */
+  private checkImportFromUrl() {
+    try {
+      const hash = window.location.hash;
+      const prefix = '#contract=';
+      if (!hash.startsWith(prefix)) return;
+
+      const encoded = hash.substring(prefix.length);
+      const json = decodeURIComponent(atob(encoded.replace(/-/g, '+').replace(/_/g, '/')));
+      const parsed = JSON.parse(json);
+
+      // Validate it has required fields
+      if (!parsed.compiledJson || !parsed.address) return;
+
+      // Auto-fill the interact tab
+      this.interactContractJson = parsed.compiledJson;
+      if (parsed.txid) this.interactOutpointTxid = parsed.txid;
+      if (parsed.vout !== undefined) this.interactOutpointVout = String(parsed.vout);
+      if (parsed.amount) this.interactInputAmount = parsed.amount;
+      this.interactOutputAddress = this.currentWallet()?.getAddress() || '';
+      this.activeTab.set('interact');
+
+      // Clean the URL hash
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+
+      console.log('[Contracts] Auto-imported shared contract:', parsed.address);
+    } catch (e) {
+      console.warn('[Contracts] Failed to parse shared contract from URL:', e);
+    }
+  }
+
+  /**
+   * Generate a shareable link for a contract
+   */
+  shareContract(contract: ContractRegistryEntry) {
+    const shareData = {
+      compiledJson: contract.compiledJson,
+      address: contract.contractAddress,
+      txid: contract.outpoint.txid,
+      vout: contract.outpoint.vout,
+      amount: contract.amountSompi,
+      name: contract.contractName,
+    };
+    const json = JSON.stringify(shareData);
+    const encoded = btoa(json).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const url = `${window.location.origin}${window.location.pathname}#contract=${encoded}`;
+
+    navigator.clipboard.writeText(url).then(
+      () => alert('Share link copied to clipboard! Send it to the other wallet.'),
+      () => {
+        // Fallback: show the link
+        prompt('Copy this share link:', url);
+      }
+    );
   }
 
   /**

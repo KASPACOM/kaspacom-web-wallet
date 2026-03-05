@@ -339,14 +339,21 @@
             </div>
           }
 
-          <!-- Interact button (only for active contracts) -->
-          @if (contract.status !== 'spent') {
+          <!-- Action buttons -->
+          <div class="flex gap-8">
+            @if (contract.status !== 'spent') {
+              <kc-button
+                [text]="'💰 Withdraw'"
+                [isFullWidth]="true"
+                (buttonClick)="selectedContractId = contract.id; selectContractFromRegistry(); switchTab('interact')">
+              </kc-button>
+            }
             <kc-button
-              [text]="'💰 Withdraw'"
-              [isFullWidth]="true"
-              (buttonClick)="selectedContractId = contract.id; selectContractFromRegistry(); switchTab('interact')">
+              [text]="'🔗 Share'"
+              [isFullWidth]="contract.status === 'spent'"
+              (buttonClick)="shareContract(contract)">
             </kc-button>
-          }
+          </div>
         </div>
       }
     </div>

@@ -522,12 +522,16 @@ export async function spendContract(
       }
     }
 
+    // Count sig ops from the ABI — multi-sig functions have > 1 checkSig
+    const abiEntry = getAbiEntry(compiled, functionName);
+    const sigOpCount = abiEntry.inputs.filter((inp: any) => inp.type_name === 'sig').length || 1;
+
     const txInputs: ITransactionInput[] = [
       {
         previousOutpoint: entry.outpoint,
         utxo: entry,
         sequence: 0n,
-        sigOpCount: 1,
+        sigOpCount,
       },
     ];
 
@@ -559,12 +563,34 @@ export async function spendContract(
     // Determine if this function uses a timelock by checking for time_op in AST body.
     // Kaspa's LOCK_TIME_THRESHOLD = 500,000,000,000:
     //   values < 500B → DAA score, values >= 500B → Unix milliseconds
-    // For functions WITH timelocks: set lockTime to current time in ms (>= 500B = Unix ms space)
+    // For functions WITH timelocks: use the node's pastMedianTime as lockTime.
+    //   CRITICAL: Date.now() may be ahead of the node's virtual pastMedianTime.
+    //   Kaspa consensus rejects TX if lockTime >= pastMedianTime ("not finalized").
+    //   So we query pastMedianTime from the node and use it directly.
     // For functions WITHOUT timelocks: set lockTime to 0 (no consensus locktime check)
+    // Determine lockTime based on AST time_op nodes:
+    //   tx_var === 'tx_time' (tx.time) → needs lockTime set to Unix ms
+    //   tx_var === 'this_age' (this.age) → DAA block count, does NOT need lockTime
     const astFunction = compiled.ast?.functions?.find((f: any) => f.name === functionName);
-    const hasTimelock = astFunction?.body?.some((node: any) => node.kind === 'time_op') ?? false;
-    const lockTime = hasTimelock ? BigInt(Date.now()) : 0n;
-    console.log('[CovenantSDK] lockTime:', lockTime.toString(), hasTimelock ? '(Unix ms — function has timelock)' : '(no timelock)');
+    const needsLockTime = astFunction?.body?.some(
+      (node: any) => node.kind === 'time_op' && node.data?.tx_var === 'tx_time'
+    ) ?? false;
+    let lockTime = 0n;
+    if (needsLockTime) {
+      try {
+        const dagInfo = await rpc.getBlockDagInfo();
+        // CRITICAL: Kaspa consensus check is STRICTLY LESS THAN (tx.lock_time < pastMedianTime).
+        // Using pastMedianTime directly would fail since equal is NOT less than.
+        // Subtract 1 to ensure the TX is accepted.
+        lockTime = BigInt(dagInfo.pastMedianTime) - 1n;
+        console.log('[CovenantSDK] lockTime from pastMedianTime - 1:', lockTime.toString());
+      } catch {
+        // Fallback: use Date.now() - 10s buffer (less reliable)
+        lockTime = BigInt(Date.now() - 10_000);
+        console.warn('[CovenantSDK] lockTime fallback (Date.now - 10s):', lockTime.toString());
+      }
+    }
+    console.log('[CovenantSDK] lockTime:', lockTime.toString(), needsLockTime ? '(Unix ms — tx.time lock)' : '(no lockTime needed)');
 
     const unsignedTx = new Transaction({
       version: 0,
@@ -707,10 +733,20 @@ export async function buildPartialSpend(
     const sigParams = abiEntry.inputs.filter(inp => inp.type_name === 'sig');
     const sigOpCount = sigParams.length;
 
-    // Detect timelock
+    // Detect timelock: only tx.time needs lockTime, this.age does not
     const astFn = compiled.ast?.functions?.find(f => f.name === functionName);
-    const hasTimelock = astFn?.body?.some(n => n.kind === 'time_op') ?? false;
-    const lockTime = hasTimelock ? BigInt(Date.now()) : 0n;
+    const needsLockTime = astFn?.body?.some(
+      (n: any) => n.kind === 'time_op' && n.data?.tx_var === 'tx_time'
+    ) ?? false;
+    let lockTime = 0n;
+    if (needsLockTime) {
+      try {
+        const dagInfo = await rpc.getBlockDagInfo();
+        lockTime = BigInt(dagInfo.pastMedianTime) - 1n;
+      } catch {
+        lockTime = BigInt(Date.now() - 10_000);
+      }
+    }
 
     // Build unsigned TX
     const txInputs: ITransactionInput[] = [{

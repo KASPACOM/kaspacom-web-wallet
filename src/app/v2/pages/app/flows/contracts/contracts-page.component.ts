@@ -656,12 +656,16 @@ export class ContractsPageComponent {
         return this.bytesArg(this.templatePatcher.kaspaAddressToPubkeyBytes(value));
       case 'hash32':
         return this.bytesArg(this.parseHash32(value, field.label));
-      case 'int_days':
+      case 'int_days': {
         // this.age in SilverScript = DAA score difference (virtual blue score)
         // On mainnet (1 BPS): DAA ≈ 1/sec → 86,400/day (days * 86400 is correct)
-        // On TN12 (10 BPS): DAA ≈ 0.56/sec → ~48,384/day (days * 86400 ≈ 1.8x too long)
-        // Use 86400 as it's correct for mainnet; acceptable approximation for testnet
-        return this.intArg(this.parseWholeNumber(value, field.label) * 86400);
+        // Max ~194 days (3-byte encoding limit: 16,777,215 / 86400 ≈ 194)
+        const days = this.parseWholeNumber(value, field.label);
+        if (days > 194) {
+          throw new Error(`${field.label}: maximum is 194 days (template encoding limit)`);
+        }
+        return this.intArg(days * 86400);
+      }
       case 'int_count':
         return this.intArg(this.parseWholeNumber(value, field.label));
       case 'int_timestamp':

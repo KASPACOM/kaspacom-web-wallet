@@ -425,7 +425,10 @@ export class ContractsPageComponent {
    * Select a contract from registry for interaction
    */
   selectContractFromRegistry() {
-    const contract = this.selectedContract();
+    // Look up directly from registry — don't use the computed signal
+    // because selectedContractId is a plain property (ngModel), not a signal,
+    // so the computed may be stale when this fires.
+    const contract = this.registryContracts().find((c) => c.id === this.selectedContractId);
     if (contract) {
       this.interactContractJson = contract.compiledJson;
       this.interactOutpointTxid = contract.outpoint.txid;

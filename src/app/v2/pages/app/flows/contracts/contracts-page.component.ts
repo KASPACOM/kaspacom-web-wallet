@@ -177,8 +177,16 @@ export class ContractsPageComponent implements OnInit {
   }
 
   ngOnInit() {
-    // Check for shared contract import via query param or hash fragment
-    // Query param: ?contract=<base64>  |  Hash: #contract=<base64>
+    // Check for pending contract import from localStorage
+    // (Saved in main.ts before Angular bootstrap, survives login redirect)
+    const pending = localStorage.getItem('kaspacom_pending_contract_import');
+    if (pending) {
+      localStorage.removeItem('kaspacom_pending_contract_import');
+      this.importFromEncoded(pending);
+      return;
+    }
+
+    // Also check live URL query params / fragments (in case already logged in)
     this.route.queryParams.subscribe((params) => {
       if (params['contract']) {
         this.importFromEncoded(params['contract']);
@@ -189,14 +197,6 @@ export class ContractsPageComponent implements OnInit {
         this.importFromEncoded(fragment.substring('contract='.length));
       }
     });
-
-    // Fallback: check raw window.location.hash (some Angular configs don't expose fragments)
-    setTimeout(() => {
-      const hash = window.location.hash;
-      if (hash.startsWith('#contract=') && !this.interactContractJson) {
-        this.importFromEncoded(hash.substring('#contract='.length));
-      }
-    }, 500);
   }
 
   /**

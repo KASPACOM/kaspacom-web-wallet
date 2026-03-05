@@ -110,6 +110,22 @@ const loadingTimeout = setTimeout(() => {
   }
 }, APPLICATION_INIT_TIMEOUT);
 
+// Intercept shared contract link BEFORE Angular routing (survives login redirect)
+(() => {
+  const params = new URLSearchParams(window.location.search);
+  const contractData = params.get('contract');
+  if (contractData) {
+    localStorage.setItem('kaspacom_pending_contract_import', contractData);
+    // Clean URL so it doesn't interfere with Angular routing
+    history.replaceState(null, '', window.location.pathname);
+  }
+  // Also check hash fragment variant
+  if (window.location.hash.startsWith('#contract=')) {
+    localStorage.setItem('kaspacom_pending_contract_import', window.location.hash.substring('#contract='.length));
+    history.replaceState(null, '', window.location.pathname);
+  }
+})();
+
 // Load WASM and bootstrap application with proper error handling
 kaspa
   .default({ module_or_path: './kaspa/kaspa_bg.wasm' })

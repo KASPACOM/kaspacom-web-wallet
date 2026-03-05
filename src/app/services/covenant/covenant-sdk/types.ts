@@ -76,3 +76,28 @@ export interface CovenantUtxoInfo {
   covenantId?: string;
   blockDaaScore: bigint;
 }
+
+// ── Two-Phase Signing (Multi-Party Contracts) ──
+
+export interface PartiallySignedSpend {
+  /** Compiled contract JSON (for reconstructing the TX) */
+  compiledJson: string;
+  /** Function being called */
+  functionName: string;
+  /** Network identifier */
+  network: string;
+  /** Covenant outpoint being spent */
+  outpoint: CovenantOutpoint;
+  /** Input amount in sompi */
+  inputAmountSompi: string;
+  /** Output addresses and amounts */
+  outputs: Array<{ address: string; amountSompi: string }>;
+  /** Collected signatures so far (hex, 65 bytes each) */
+  signatures: Array<{ paramName: string; signatureHex: string }>;
+  /** Which sig params still need signing */
+  pendingParams: string[];
+  /** Transaction lockTime used */
+  lockTime: string;
+  /** sigOpCount for the function */
+  sigOpCount: number;
+}

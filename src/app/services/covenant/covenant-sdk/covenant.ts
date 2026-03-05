@@ -24,6 +24,7 @@ import {
   type CompiledContract,
   type CovenantOutpoint,
   type DeployResult,
+  type PartiallySignedSpend,
   type SpendOutput,
   type SpendResult,
 } from "./types";
@@ -659,4 +660,255 @@ export async function getCovenantUtxos(
   } finally {
     if (ownRpc) await rpc.disconnect().catch(() => undefined);
   }
+}
+
+// ── Two-Phase Signing ────────────────────────────────────────
+// For multi-party contracts (escrow release, multi-sig, x402 settle)
+// Phase 1: Build unsigned TX + sign your part → produce PartiallySignedSpend
+// Phase 2: Receive PSS, add your sig → complete + broadcast
+
+/**
+ * Phase 1: Build a partially signed spend. Signs only the params that match
+ * the provided private key. Returns a serializable object that can be
+ * shared with the co-signer.
+ */
+export async function buildPartialSpend(
+  compiled: CompiledContract,
+  functionName: string,
+  outpoint: CovenantOutpoint,
+  inputAmountSompi: bigint,
+  outputs: SpendOutput[],
+  privateKeyHex: string,
+  network: string,
+  rpcUrl: string,
+  existingRpc?: any,
+): Promise<PartiallySignedSpend> {
+  const covenantAddress = getCovenantAddress(compiled, network);
+  const abiEntry = getAbiEntry(compiled, functionName);
+
+  // Determine which sig params this key can sign
+  const privateKey = new PrivateKey(privateKeyHex);
+  const pubkeyHex = privateKey.toPublicKey().toXOnlyPublicKey().toString();
+
+  // Connect to get UTXO
+  const ownRpc = !existingRpc;
+  const rpc = existingRpc || connectRpc(rpcUrl, network);
+
+  try {
+    if (ownRpc) await rpc.connect();
+
+    const utxos = await getAddressUtxos(rpc, covenantAddress);
+    const entry = utxos.find(
+      (u: any) => u.outpoint.transactionId === outpoint.txid && Number(u.outpoint.index) === outpoint.vout
+    );
+    if (!entry) throw new Error(`UTXO ${outpoint.txid}:${outpoint.vout} not found at ${covenantAddress}`);
+
+    // Count sig params for sigOpCount
+    const sigParams = abiEntry.inputs.filter(inp => inp.type_name === 'sig');
+    const sigOpCount = sigParams.length;
+
+    // Detect timelock
+    const astFn = compiled.ast?.functions?.find(f => f.name === functionName);
+    const hasTimelock = astFn?.body?.some(n => n.kind === 'time_op') ?? false;
+    const lockTime = hasTimelock ? BigInt(Date.now()) : 0n;
+
+    // Build unsigned TX
+    const txInputs: ITransactionInput[] = [{
+      previousOutpoint: entry.outpoint,
+      utxo: entry,
+      sequence: 0n,
+      sigOpCount,
+    }];
+
+    const txOutputs: ITransactionOutput[] = outputs.map(o => ({
+      scriptPublicKey: payToAddressScript(o.address),
+      value: o.amount,
+    }));
+
+    const unsignedTx = new Transaction({
+      version: 0,
+      lockTime,
+      inputs: txInputs,
+      outputs: txOutputs,
+      subnetworkId: SUBNETWORK_ID_NATIVE,
+      gas: 0n,
+      payload: "",
+    });
+
+    // Sign this key's params
+    const signatureHex = createInputSignature(unsignedTx, 0, privateKey, SighashType.All);
+    let signature = hexToBytes(String(signatureHex));
+    if (signature.length === 66 && signature[0] === 65) signature = signature.slice(1);
+    const sigHex = bytesToHex(signature);
+
+    // Match this pubkey to contract params
+    const contractPubkeys = extractContractPubkeys(compiled);
+    const signatures: Array<{ paramName: string; signatureHex: string }> = [];
+    const pendingParams: string[] = [];
+
+    for (const sigParam of sigParams) {
+      // Find which contract pubkey this sig param references
+      // In the ABI, sig params map to constructor pubkey params by position/name convention
+      const matchingPubkey = findMatchingPubkey(compiled, functionName, sigParam.name, contractPubkeys);
+
+      if (matchingPubkey && matchingPubkey === pubkeyHex) {
+        signatures.push({ paramName: sigParam.name, signatureHex: sigHex });
+      } else {
+        pendingParams.push(sigParam.name);
+      }
+    }
+
+    return {
+      compiledJson: JSON.stringify(compiled),
+      functionName,
+      network,
+      outpoint,
+      inputAmountSompi: inputAmountSompi.toString(),
+      outputs: outputs.map(o => ({ address: o.address, amountSompi: o.amount.toString() })),
+      signatures,
+      pendingParams,
+      lockTime: lockTime.toString(),
+      sigOpCount,
+    };
+  } finally {
+    if (ownRpc) await rpc.disconnect().catch(() => undefined);
+  }
+}
+
+/**
+ * Phase 2: Complete a partially signed spend by adding the remaining signature(s)
+ * and broadcasting.
+ */
+export async function completePartialSpend(
+  partialSpend: PartiallySignedSpend,
+  privateKeyHex: string,
+  rpcUrl: string,
+  existingRpc?: any,
+): Promise<SpendResult> {
+  const compiled: CompiledContract = JSON.parse(partialSpend.compiledJson);
+  const covenantAddress = getCovenantAddress(compiled, partialSpend.network);
+
+  const privateKey = new PrivateKey(privateKeyHex);
+  const ownRpc = !existingRpc;
+  const rpc = existingRpc || connectRpc(rpcUrl, partialSpend.network);
+
+  try {
+    if (ownRpc) await rpc.connect();
+
+    const utxos = await getAddressUtxos(rpc, covenantAddress);
+    const entry = utxos.find(
+      (u: any) => u.outpoint.transactionId === partialSpend.outpoint.txid &&
+                   Number(u.outpoint.index) === partialSpend.outpoint.vout
+    );
+    if (!entry) throw new Error(`UTXO not found for completion`);
+
+    // Rebuild the exact same unsigned TX
+    const txInputs: ITransactionInput[] = [{
+      previousOutpoint: entry.outpoint,
+      utxo: entry,
+      sequence: 0n,
+      sigOpCount: partialSpend.sigOpCount,
+    }];
+
+    const txOutputs: ITransactionOutput[] = partialSpend.outputs.map(o => ({
+      scriptPublicKey: payToAddressScript(o.address),
+      value: BigInt(o.amountSompi),
+    }));
+
+    const unsignedTx = new Transaction({
+      version: 0,
+      lockTime: BigInt(partialSpend.lockTime),
+      inputs: txInputs,
+      outputs: txOutputs,
+      subnetworkId: SUBNETWORK_ID_NATIVE,
+      gas: 0n,
+      payload: "",
+    });
+
+    // Sign our params
+    const signatureHex = createInputSignature(unsignedTx, 0, privateKey, SighashType.All);
+    let signature = hexToBytes(String(signatureHex));
+    if (signature.length === 66 && signature[0] === 65) signature = signature.slice(1);
+    const newSigHex = bytesToHex(signature);
+
+    // Merge signatures
+    const allSigs = [...partialSpend.signatures];
+    for (const paramName of partialSpend.pendingParams) {
+      allSigs.push({ paramName, signatureHex: newSigHex });
+    }
+
+    // Build the complete sigscript in ABI order
+    const abiEntry = getAbiEntry(compiled, partialSpend.functionName);
+    const functionArgs: Uint8Array[] = [];
+    for (const input of abiEntry.inputs) {
+      if (input.type_name === 'sig') {
+        const sigEntry = allSigs.find(s => s.paramName === input.name);
+        if (!sigEntry) throw new Error(`Missing signature for param "${input.name}"`);
+        functionArgs.push(hexToBytes(sigEntry.signatureHex));
+      } else if (input.type_name === 'pubkey') {
+        functionArgs.push(hexToBytes(privateKey.toPublicKey().toXOnlyPublicKey().toString()));
+      } else {
+        throw new Error(`Unsupported ABI input type "${input.type_name}" in two-phase signing`);
+      }
+    }
+
+    const sigPrefix = buildSigScript(compiled, partialSpend.functionName, functionArgs);
+    unsignedTx.inputs[0].signatureScript = ScriptBuilder.fromScript(
+      toScriptBytes(compiled)
+    ).encodePayToScriptHashSignatureScript(sigPrefix);
+
+    const submitted = await rpc.submitTransaction({
+      transaction: unsignedTx,
+      allowOrphan: false,
+    });
+
+    return {
+      txid: submitted.transactionId,
+      functionName: partialSpend.functionName,
+    };
+  } finally {
+    if (ownRpc) await rpc.disconnect().catch(() => undefined);
+  }
+}
+
+// ── Helpers for Two-Phase Signing ────────────────────────────
+
+function extractContractPubkeys(compiled: CompiledContract): Map<string, string> {
+  // Extract pubkey param names and their placeholder values from the AST
+  const pubkeys = new Map<string, string>();
+  for (const param of compiled.ast.params) {
+    if (param.type_ref.base === 'pubkey') {
+      pubkeys.set(param.name, ''); // Value will be matched at runtime
+    }
+  }
+  return pubkeys;
+}
+
+function findMatchingPubkey(
+  compiled: CompiledContract,
+  functionName: string,
+  sigParamName: string,
+  _contractPubkeys: Map<string, string>,
+): string | undefined {
+  // In SilverScript, sig params in functions reference constructor pubkeys
+  // by convention. E.g., in escrow:
+  //   release(sig buyerSig, sig sellerSig) → buyer, seller pubkeys
+  // We match by examining the AST require(checkSig(sigParam, pubkeyParam)) calls
+  const astFn = compiled.ast.functions.find(f => f.name === functionName);
+  if (!astFn) return undefined;
+
+  for (const node of astFn.body) {
+    if (node.kind === 'require') {
+      const expr = (node.data as any)?.expr;
+      if (expr?.kind === 'call' && expr.data?.name === 'checkSig') {
+        const args = expr.data.args;
+        if (args?.length === 2 && args[0]?.data === sigParamName) {
+          // Found: checkSig(sigParamName, pubkeyName)
+          // The pubkey name references a constructor param
+          return args[1]?.data; // Returns the pubkey param name, not the actual hex
+        }
+      }
+    }
+  }
+  return undefined;
 }

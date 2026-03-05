@@ -169,7 +169,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
       {
         paramName: 'expiry',
         label: 'Initial Expiry (Unix timestamp)',
-        type: 'date',
+        type: 'int_timestamp',
         placeholder: '1735689600',
         description: 'When the heir can first claim if owner is inactive. Enter as Unix timestamp (seconds) — will be auto-converted to milliseconds. The owner can extend this by calling keepAlive.',
       },

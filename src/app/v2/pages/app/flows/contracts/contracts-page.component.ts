@@ -113,6 +113,9 @@ export class ContractsPageComponent {
   interactOutpointVout = '';
   interactInputAmount = '';
   interactOutputAddress = '';
+
+  // Lookup form
+  lookupContractJson = '';
   interactOutputAmount = '';
   selectedFunction = '';
   interactResult = signal<{ txid: string; functionName: string } | null>(null);
@@ -611,11 +614,14 @@ export class ContractsPageComponent {
   importLookupContract() {
     const result = this.lookupResult();
     if (!result || result.utxos.length === 0) return;
+    if (!this.lookupContractJson) return;
 
-    // Switch to interact tab with the first UTXO pre-filled
+    // Switch to interact tab with UTXO + contract JSON pre-filled
+    this.interactContractJson = this.lookupContractJson;
     this.interactOutpointTxid = result.utxos[0].txid;
     this.interactOutpointVout = String(result.utxos[0].vout);
     this.interactInputAmount = result.utxos[0].amount;
+    this.interactOutputAddress = this.currentWallet()?.getAddress() || '';
     this.switchTab('interact');
   }
 

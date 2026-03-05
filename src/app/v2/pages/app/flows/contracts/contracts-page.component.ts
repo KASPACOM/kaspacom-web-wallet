@@ -657,6 +657,10 @@ export class ContractsPageComponent {
       case 'hash32':
         return this.bytesArg(this.parseHash32(value, field.label));
       case 'int_days':
+        // this.age in SilverScript = DAA score difference (virtual blue score)
+        // On mainnet (1 BPS): DAA ≈ 1/sec → 86,400/day (days * 86400 is correct)
+        // On TN12 (10 BPS): DAA ≈ 0.56/sec → ~48,384/day (days * 86400 ≈ 1.8x too long)
+        // Use 86400 as it's correct for mainnet; acceptable approximation for testnet
         return this.intArg(this.parseWholeNumber(value, field.label) * 86400);
       case 'int_count':
         return this.intArg(this.parseWholeNumber(value, field.label));

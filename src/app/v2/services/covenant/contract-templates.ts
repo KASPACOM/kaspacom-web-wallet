@@ -171,7 +171,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
         label: 'Inactivity Period (days)',
         type: 'int_days',
         placeholder: '30',
-        description: 'How many days the owner can be inactive before the heir can claim. For example: 30 days means the owner must call keepAlive at least once every 30 days.',
+        description: 'How many days the owner can be inactive before the heir can claim. Uses DAA block score — accurate on mainnet (~1 block/sec), approximate on testnet (~1.8x longer).',
       },
     ],
     placeholderArgs: [

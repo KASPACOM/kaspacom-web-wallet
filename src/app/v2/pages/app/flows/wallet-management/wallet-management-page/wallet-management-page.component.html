@@ -75,7 +75,16 @@
                   tooltipPosition="top"
                 ></kc-icon>
               </div>
-              <div class="wallet-item__address">{{ wallet.address | shortenAddress }}</div>
+              <div class="wallet-item__address">
+                {{ wallet.address | shortenAddress }}
+                <app-copy-button
+                  [value]="wallet.address"
+                  [size]="'xs'"
+                  (click)="$event.stopPropagation()"
+                  kcTooltip="Copy address"
+                  tooltipPosition="top"
+                ></app-copy-button>
+              </div>
               <div class="wallet-item__balance">
                 @if (wallet.isLoadingBalance()) {
                   <span class="balance-loading">Loading...</span>

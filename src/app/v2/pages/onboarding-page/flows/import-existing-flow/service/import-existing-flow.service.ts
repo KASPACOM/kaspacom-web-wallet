@@ -19,6 +19,16 @@ export interface IWalletImportResult {
   error?: string;
 }
 
+const INIT_INFO = {
+  importSwitchMethod: ImportSwitchMethod.SEED_PHRASE,
+  wordCount: 12,
+  seedPhrase: '',
+  seedPassphrase: '',
+  privateKey: '',
+  password: '',
+  confirmPassword: '',
+};
+
 @Injectable({
   providedIn: 'root',
 })
@@ -27,15 +37,7 @@ export class ImportExistingFlowService {
 
   private passwordManagerService = inject(PasswordManagerService);
 
-  private _model = signal<IImportExistingWallet>({
-    importSwitchMethod: ImportSwitchMethod.SEED_PHRASE,
-    wordCount: 12,
-    seedPhrase: '',
-    seedPassphrase: '',
-    privateKey: '',
-    password: '',
-    confirmPassword: '',
-  });
+  private _model = signal<IImportExistingWallet>({ ...INIT_INFO });
 
   private _skipPassword = false;
 
@@ -51,9 +53,13 @@ export class ImportExistingFlowService {
     return this._model;
   }
 
-  init() {}
+  init() {
+    this._model.set({
+      ...INIT_INFO
+    });
+  }
 
-  printState() {}
+  printState() { }
 
   submitSeedPhraseStep(
     seedPhrase: string,
@@ -121,7 +127,7 @@ export class ImportExistingFlowService {
           this._model().privateKey.trim(),
           undefined,
           undefined,
-          undefined, 
+          undefined,
           false,
         );
         importResult = { success: tmp.sucess, error: tmp.error };

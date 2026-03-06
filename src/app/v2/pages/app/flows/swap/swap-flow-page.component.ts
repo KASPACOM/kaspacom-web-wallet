@@ -39,6 +39,7 @@ import { WalletService } from '../../../../../services/wallet.service';
 import { SwapContextService } from '../../../../services/swap-context.service';
 import { SwapSettingsModalComponent } from './components/swap-settings-modal/swap-settings-modal.component';
 import { TokenSelectorModalComponent } from './components/token-selector-modal/token-selector-modal.component';
+import { WALLET_APP_ID } from '../../../../../config/consts';
 
 @Component({
   selector: 'app-swap-flow-page',
@@ -299,6 +300,7 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
             request as EIP1193RequestPayload<any>,
             undefined,
             true,
+            WALLET_APP_ID,
           );
 
           if (result.error) {

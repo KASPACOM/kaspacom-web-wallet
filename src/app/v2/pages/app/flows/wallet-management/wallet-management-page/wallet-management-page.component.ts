@@ -52,6 +52,10 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
   }
   // Convert wallet accounts to our interface
   wallets = signal<WalletAccount[]>([]);
+  canAddMoreAccounts = computed(() => {
+    return this.wallets().length > 0 ? this.wallets()[0].wallet.supportAccounts() && this.wallets()[0].wallet.isHasMnemonic() : false;
+  });
+
 
   // Get current wallet name for header
   currentWalletName = computed(() => {
@@ -116,7 +120,7 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
             const mempoolData = wallet.getMempoolTransactionsSignalValue();
             return mempoolData
               ? mempoolData.sending.length > 0 ||
-                  mempoolData.receiving.length > 0
+              mempoolData.receiving.length > 0
               : false;
           }),
           pendingTransactionCount: computed(() => {

@@ -6,42 +6,18 @@
         <span class="wallet-label">Wallet</span>
         <div class="wallet-name-container">
           <span class="wallet-name">{{ currentWalletName() }}</span>
-          <kc-icon
-            class="pencil-icon"
-            [iconClass]="'icon-pencil'"
-            [size]="'xs'"
-            (click)="onEditWalletName()"
-            kcTooltip="Edit wallet name"
-            tooltipPosition="bottom"
-          ></kc-icon>
+          <kc-icon class="pencil-icon" [iconClass]="'icon-pencil'" [size]="'xs'" (click)="onEditWalletName()"
+            kcTooltip="Edit wallet name" tooltipPosition="bottom"></kc-icon>
         </div>
       </div>
     </div>
     <div class="header-right">
-            <kc-icon
-        class="more-options-icon"
-        [iconClass]="'icon-more-options'"
-        [size]="'md'"
-        (click)="onWalletOptionsClick()"
-        kcTooltip="Wallet options"
-        tooltipPosition="bottom"
-      ></kc-icon>
-            <kc-icon
-        class="update-icon"
-        [iconClass]="'icon-update'"
-        [size]="'md'"
-        (click)="onChangeWalletClicked()"
-        kcTooltip="Change wallet"
-        tooltipPosition="bottom"
-      ></kc-icon>
-      <kc-icon
-        class="close-icon"
-        [iconClass]="'icon-close'"
-        [size]="'md'"
-        (click)="onCloseClick()"
-        kcTooltip="Close"
-        tooltipPosition="bottom"
-      ></kc-icon>
+      <kc-icon class="more-options-icon" [iconClass]="'icon-more-options'" [size]="'md'"
+        (click)="onWalletOptionsClick()" kcTooltip="Wallet options" tooltipPosition="bottom"></kc-icon>
+      <kc-icon class="update-icon" [iconClass]="'icon-update'" [size]="'md'" (click)="onChangeWalletClicked()"
+        kcTooltip="Change wallet" tooltipPosition="bottom"></kc-icon>
+      <kc-icon class="close-icon" [iconClass]="'icon-close'" [size]="'md'" (click)="onCloseClick()" kcTooltip="Close"
+        tooltipPosition="bottom"></kc-icon>
     </div>
   </div>
 
@@ -51,102 +27,75 @@
   <div class="wallets-container">
     <div class="wallets-list">
       @for (wallet of wallets(); track wallet.id) {
-        <div class="wallet-item-wrapper">
-          <div
-            class="wallet-item"
-            [class.selected]="wallet.isSelected"
-            [class.has-pending]="wallet.hasPendingTransactions()"
-            (click)="selectWallet(wallet)"
-          >
-            <kc-icon
-              class="wallet-item__icon"
-              [iconClass]="wallet.isSelected ? 'icon-user' : 'icon-user-12px'"
-              [size]="'md'"
-            ></kc-icon>
-            <div class="wallet-item__info">
-              <div class="wallet-item__name-container">
-                <div class="wallet-item__name">{{ wallet.name }}</div>
-                <kc-icon
-                  class="wallet-item__pencil"
-                  [iconClass]="'icon-pencil'"
-                  [size]="'xs'"
-                  (click)="editWalletAccount(wallet); $event.stopPropagation()"
-                  kcTooltip="Edit account"
-                  tooltipPosition="top"
-                ></kc-icon>
-              </div>
-              <div class="wallet-item__address">{{ wallet.address | shortenAddress }}</div>
-              <div class="wallet-item__balance">
-                @if (wallet.isLoadingBalance()) {
-                  <span class="balance-loading">Loading...</span>
-                } @else if (wallet.balance() !== undefined) {
-                  <span class="balance-amount">{{ wallet.balance() | number : '1.0-8' }} KAS</span>
-                } @else {
-                  <span class="balance-error">—</span>
-                }
-                @if (wallet.hasPendingTransactions()) {
-                  <div 
-                    class="pending-indicator"
-                    (click)="togglePendingTransactions(wallet, $event)"
-                    [kcTooltip]="wallet.pendingTransactionCount() + ' pending transaction(s)'"
-                    tooltipPosition="top"
-                  >
-                    <kc-spinner [size]="'xs'"></kc-spinner>
-                    <span class="pending-count">{{ wallet.pendingTransactionCount() }}</span>
-                  </div>
-                }
-              </div>
+      <div class="wallet-item-wrapper">
+        <div class="wallet-item" [class.selected]="wallet.isSelected"
+          [class.has-pending]="wallet.hasPendingTransactions()" (click)="selectWallet(wallet)">
+          <kc-icon class="wallet-item__icon" [iconClass]="wallet.isSelected ? 'icon-user' : 'icon-user-12px'"
+            [size]="'md'"></kc-icon>
+          <div class="wallet-item__info">
+            <div class="wallet-item__name-container">
+              <div class="wallet-item__name">{{ wallet.name }}</div>
+              <kc-icon class="wallet-item__pencil" [iconClass]="'icon-pencil'" [size]="'xs'"
+                (click)="editWalletAccount(wallet); $event.stopPropagation()" kcTooltip="Edit account"
+                tooltipPosition="top"></kc-icon>
             </div>
-            <div class="wallet-item__actions">
-              <kc-icon
-                class="wallet-item__export"
-                [iconClass]="'icon-download'"
-                [size]="'sm'"
-                (click)="exportWalletAccount(wallet); $event.stopPropagation()"
-                kcTooltip="Export account"
-                tooltipPosition="top"
-              ></kc-icon>
-              <kc-icon
-                class="wallet-item__trash"
-                [iconClass]="'icon-trash'"
-                [size]="'sm'"
-                (click)="deleteWallet(wallet); $event.stopPropagation()"
-                kcTooltip="Delete account"
-                tooltipPosition="top"
-              ></kc-icon>
+            <div class="wallet-item__address">{{ wallet.address | shortenAddress }}</div>
+            <div class="wallet-item__balance">
+              @if (wallet.isLoadingBalance()) {
+              <span class="balance-loading">Loading...</span>
+              } @else if (wallet.balance() !== undefined) {
+              <span class="balance-amount">{{ wallet.balance() | number : '1.0-8' }} KAS</span>
+              } @else {
+              <span class="balance-error">—</span>
+              }
+              @if (wallet.hasPendingTransactions()) {
+              <div class="pending-indicator" (click)="togglePendingTransactions(wallet, $event)"
+                [kcTooltip]="wallet.pendingTransactionCount() + ' pending transaction(s)'" tooltipPosition="top">
+                <kc-spinner [size]="'xs'"></kc-spinner>
+                <span class="pending-count">{{ wallet.pendingTransactionCount() }}</span>
+              </div>
+              }
             </div>
           </div>
-          @if (wallet.isExpanded && wallet.hasPendingTransactions()) {
-            <div class="pending-details">
-              <div class="pending-details__header">
-                <span class="pending-details__title">Pending Transactions</span>
-              </div>
-              @if ((wallet.wallet.getMempoolTransactionsSignalValue()?.sending?.length ?? 0) > 0) {
-                <div class="pending-section">
-                  <div class="pending-section__title">
-                    Sending ({{ wallet.wallet.getMempoolTransactionsSignalValue()!.sending.length }})
-                  </div>
-                </div>
-              }
-              @if ((wallet.wallet.getMempoolTransactionsSignalValue()?.receiving?.length ?? 0) > 0) {
-                <div class="pending-section">
-                  <div class="pending-section__title">
-                    Receiving ({{ wallet.wallet.getMempoolTransactionsSignalValue()!.receiving.length }})
-                  </div>
-                </div>
-              }
+          <div class="wallet-item__actions">
+            <kc-icon class="wallet-item__export" [iconClass]="'icon-download'" [size]="'sm'"
+              (click)="exportWalletAccount(wallet); $event.stopPropagation()" kcTooltip="Export private key"
+              tooltipPosition="top"></kc-icon>
+            <kc-icon class="wallet-item__trash" [iconClass]="'icon-trash'" [size]="'sm'"
+              (click)="deleteWallet(wallet); $event.stopPropagation()" kcTooltip="Delete account"
+              tooltipPosition="top"></kc-icon>
+          </div>
+        </div>
+        @if (wallet.isExpanded && wallet.hasPendingTransactions()) {
+        <div class="pending-details">
+          <div class="pending-details__header">
+            <span class="pending-details__title">Pending Transactions</span>
+          </div>
+          @if ((wallet.wallet.getMempoolTransactionsSignalValue()?.sending?.length ?? 0) > 0) {
+          <div class="pending-section">
+            <div class="pending-section__title">
+              Sending ({{ wallet.wallet.getMempoolTransactionsSignalValue()!.sending.length }})
             </div>
+          </div>
+          }
+          @if ((wallet.wallet.getMempoolTransactionsSignalValue()?.receiving?.length ?? 0) > 0) {
+          <div class="pending-section">
+            <div class="pending-section__title">
+              Receiving ({{ wallet.wallet.getMempoolTransactionsSignalValue()!.receiving.length }})
+            </div>
+          </div>
           }
         </div>
+        }
+      </div>
       }
     </div>
   </div>
 
   <!-- Floating Create Account Orb -->
+  @if (canAddMoreAccounts()) {
   <div class="floating-orb" (click)="onAddAccountClick()" kcTooltip="Create account" tooltipPosition="top">
-    <kc-icon
-      [iconClass]="'icon-add'"
-      [size]="'md'"
-    ></kc-icon>
+    <kc-icon [iconClass]="'icon-add'" [size]="'md'"></kc-icon>
   </div>
+  }
 </div>

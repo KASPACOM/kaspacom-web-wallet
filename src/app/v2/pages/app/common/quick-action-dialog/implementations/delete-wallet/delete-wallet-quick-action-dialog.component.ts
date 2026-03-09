@@ -12,7 +12,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   KcButtonComponent,
-  KcInputComponent,
   NotificationService,
 } from 'kaspacom-ui';
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
@@ -33,7 +32,6 @@ interface DeleteWalletDialogData {
     CommonModule,
     FormsModule,
     KcButtonComponent,
-    KcInputComponent,
     QuickActionDialogComponent,
   ],
   templateUrl: './delete-wallet-quick-action-dialog.component.html',

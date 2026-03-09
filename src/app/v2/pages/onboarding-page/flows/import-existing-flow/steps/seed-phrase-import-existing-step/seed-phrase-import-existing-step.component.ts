@@ -16,7 +16,6 @@ import {
 import {
   KcButtonComponent,
   KcInputComponent,
-  KcSnackbarComponent,
   NotificationService,
 } from 'kaspacom-ui';
 import { RadioInputComponent } from '../../../../../../shared/ui/input/radio/radio-input/radio-input.component';
@@ -31,7 +30,6 @@ import { ImportSwitchMethod } from '../import-switch-import-existing-step/compon
     ReactiveFormsModule,
     KcButtonComponent,
     KcInputComponent,
-    KcSnackbarComponent,
     RadioInputComponent,
   ],
   templateUrl: './seed-phrase-import-existing-step.component.html',

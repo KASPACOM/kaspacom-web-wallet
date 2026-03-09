@@ -15,3 +15,4 @@ export const KASPA_NETWORKS = {
 
 export const DEFAULT_DERIVED_PATH = "m/44'/111111'/0'/0/0";
 export const WALLET_APP_ID = 'WALLET_APP';
+export const KAS_NATIVE_FEE_RESERVE = 5;

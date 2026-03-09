@@ -1,11 +1,11 @@
-@if (open) {
+@if (open()) {
 <kc-base-modal title="Select a token" [showCloseButton]="true" [autoWidth]="false" (close)="onClose()">
   <div class="token-selector-content">
     <kc-input placeholder="Search name, symbol, or address" type="text" [isFullWidth]="true" prefixIcon="pi pi-search"
       (valueChange)="onSearchChange($event)"></kc-input>
 
     <div class="token-list">
-      @if (isLoading) {
+      @if (isLoading()) {
       <div class="flex justify-content-center p-24">
         <span class="text-gray-60">Loading tokens...</span>
       </div>

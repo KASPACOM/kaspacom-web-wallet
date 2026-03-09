@@ -925,9 +925,7 @@ export class ContractsPageComponent implements OnInit {
     if (normalized.startsWith('kaspa') || normalized.startsWith('kaspatest')) {
       try {
         const pubkeyBytes = this.templatePatcher.kaspaAddressToPubkeyBytes(value.trim());
-        const pubkeyUint8 = Uint8Array.from(pubkeyBytes);
-        const hash = blake2b(pubkeyUint8, { dkLen: 32 });
-        const hashHex = Array.from(hash).map(b => b.toString(16).padStart(2, '0')).join('');
+        const hashHex = this.computeBlake2bHex(pubkeyBytes);
         this.templateFormValues[paramName] = hashHex;
         this.templateFormValues[paramName + '_isAutoHashed'] = 'true';
       } catch {
@@ -937,19 +935,32 @@ export class ContractsPageComponent implements OnInit {
   }
 
   /**
+   * Convert a 64-char hex string into a 32-byte Uint8Array.
+   */
+  private hex32ToBytes(value: string): Uint8Array {
+    const bytes = new Uint8Array(32);
+    for (let i = 0; i < 64; i += 2) {
+      bytes[i / 2] = Number.parseInt(value.slice(i, i + 2), 16);
+    }
+    return bytes;
+  }
+
+  /**
+   * Compute a blake2b-256 hash and return lowercase hex.
+   */
+  private computeBlake2bHex(input: ArrayLike<number>): string {
+    const hash = blake2b(Uint8Array.from(input), { dkLen: 32 });
+    return Array.from(hash).map((byte) => byte.toString(16).padStart(2, '0')).join('');
+  }
+
+  /**
    * Compute blake2b-256 hash of a hex value and update the field
    */
   computeBlake2bHash(paramName: string) {
     const value = (this.templateFormValues[paramName] || '').trim().replace(/^0x/i, '');
     if (!/^[0-9a-fA-F]{64}$/.test(value)) return;
 
-    const bytes = new Uint8Array(32);
-    for (let i = 0; i < 64; i += 2) {
-      bytes[i / 2] = Number.parseInt(value.slice(i, i + 2), 16);
-    }
-    const hash = blake2b(bytes, { dkLen: 32 });
-    const hashHex = Array.from(hash).map(b => b.toString(16).padStart(2, '0')).join('');
-    this.templateFormValues[paramName] = hashHex;
+    this.templateFormValues[paramName] = this.computeBlake2bHex(this.hex32ToBytes(value));
     this.templateFormValues[paramName + '_isAutoHashed'] = 'true';
   }
 }

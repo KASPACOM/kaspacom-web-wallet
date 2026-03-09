@@ -11,6 +11,7 @@ import { QuickActionDialogService } from '../../../../../services/quick-action-d
 import { WalletService } from '../../../../../../services/wallet.service';
 import { AppWallet } from '../../../../../../classes/AppWallet';
 import { ShortenAddressPipe } from '../../../../../../pipes/shorten-address.pipe';
+import { CopyButtonComponent } from '../../../../../shared/ui/copy-button/copy-button.component';
 
 interface WalletAccount {
   id: string;
@@ -34,6 +35,7 @@ interface WalletAccount {
     KcTooltipDirective,
     KcSpinnerComponent,
     ShortenAddressPipe,
+    CopyButtonComponent,
   ],
   templateUrl: './wallet-management-page.component.html',
   styleUrl: './wallet-management-page.component.scss',

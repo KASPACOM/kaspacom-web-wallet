@@ -9,7 +9,6 @@ import {
   inject,
 } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { AppHeaderComponent } from './components/app-header/app-header.component';
 import { KaspaNetworkActionsService } from './services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { DOCUMENT, NgIf } from '@angular/common';
 import { environment } from '../environments/environment';
@@ -28,7 +27,6 @@ import { ConsentService } from './services/consent.service';
   selector: 'app-root',
   imports: [
     RouterOutlet,
-    AppHeaderComponent,
     NgIf,
     MessagePopupComponent,
     StartupBackgroundCanvasComponent,

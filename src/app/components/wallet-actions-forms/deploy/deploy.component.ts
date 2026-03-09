@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { WalletActionService } from '../../../services/wallet-action.service';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
@@ -11,7 +10,7 @@ import { MessagePopupService } from '../../../services/message-popup.service';
     selector: 'deploy',
     templateUrl: './deploy.component.html',
     styleUrls: ['./deploy.component.scss'],
-    imports: [NgIf, NgFor, FormsModule]
+    imports: [FormsModule]
 })
 export class DeployComponent {
   protected selectedToken = '';

@@ -10,10 +10,8 @@ import { CommonModule } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
 import {
-  KcInputComponent,
   KcCheckboxComponent,
   KcButtonComponent,
-  KcIconComponent,
 } from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
 import { SkeletonComponent } from '../../../../../../../../../shared/ui/skeleton/skeleton.component';
@@ -40,10 +38,8 @@ import { NetworkConfigService } from '../../../../../../../../../../services/net
   standalone: true,
   imports: [
     CommonModule,
-    KcInputComponent,
     KcCheckboxComponent,
     KcButtonComponent,
-    KcIconComponent,
     FormsModule,
     SkeletonComponent,
     AddressSmartInputComponent,

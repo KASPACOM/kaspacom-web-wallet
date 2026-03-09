@@ -5,7 +5,6 @@ import {
   KcButtonComponent,
   KcIconComponent,
   KcInputComponent,
-  KcSnackbarComponent,
   NotificationService,
 } from 'kaspacom-ui';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
@@ -19,7 +18,6 @@ import { WalletService } from '../../../../../../../services/wallet.service';
     KcButtonComponent,
     KcInputComponent,
     KcIconComponent,
-    KcSnackbarComponent,
   ],
   templateUrl: './seed-passphrase-import-existing-step.component.html',
   styleUrl: './seed-passphrase-import-existing-step.component.scss',

@@ -1,7 +1,6 @@
 import { Component, computed, Input } from '@angular/core';
-import { CommonModule, NgFor, NgIf } from '@angular/common';
+import { CommonModule, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
 import { WalletService } from '../../../services/wallet.service';
 import { WalletActionService } from '../../../services/wallet-action.service';
 import { PendingTransaction, Transaction } from '../../../../../public/kaspa/kaspa';
@@ -11,7 +10,7 @@ import { PendingTransaction, Transaction } from '../../../../../public/kaspa/kas
     selector: 'mempool-transactions',
     templateUrl: './mempool-transactions.component.html',
     styleUrls: ['./mempool-transactions.component.scss'],
-    imports: [NgIf, NgFor, FormsModule, SompiToNumberPipe, CommonModule]
+    imports: [NgIf, FormsModule, CommonModule]
 })
 export class MempoolTransactionsComponent {
   constructor(private walletService: WalletService,

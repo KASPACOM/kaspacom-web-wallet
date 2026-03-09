@@ -266,9 +266,17 @@ export class ContractsPageComponent implements OnInit {
 
   selectTemplate(template: ContractTemplate) {
     this.activeTemplate.set(template);
+    // Clear all form values — prevents stale data from previous template or localStorage
     this.templateFormValues = {};
     this.generatedContractJson.set(null);
     this.templateError.set(null);
+
+    // Clear any localStorage-cached template form values to prevent stale auto-fill
+    try {
+      localStorage.removeItem('kaspacom_template_form_' + template.id);
+    } catch {
+      // localStorage may not be available
+    }
   }
 
   async generateContract() {
@@ -562,31 +570,42 @@ export class ContractsPageComponent implements OnInit {
       return;
     }
 
-    if (!outputAddress) {
-      this.interactError.set('Output address is required');
-      return;
-    }
-
-    if (isNaN(outputAmountKas) || outputAmountKas <= 0) {
-      this.interactError.set('Output amount must be greater than 0');
-      return;
-    }
-
     try {
       this.isInteracting.set(true);
 
       const compiled = this.covenantService.parseCompiledContract(contractJson);
       const outpoint: CovenantOutpoint = { txid: txid.trim(), vout };
+      const inputAmount = BigInt(inputAmountSompi);
 
-      const outputs: SpendOutput[] = [
-        {
+      // Build outputs based on function type
+      let outputs: SpendOutput[];
+
+      if (this.functionRequiresOutput(functionName)) {
+        // Withdrawal function — validate user-provided output
+        if (!outputAddress) {
+          this.interactError.set('Output address is required');
+          return;
+        }
+        if (isNaN(outputAmountKas) || outputAmountKas <= 0) {
+          this.interactError.set('Output amount must be greater than 0');
+          return;
+        }
+        outputs = [{
           address: outputAddress,
           amount: BigInt(Math.floor(outputAmountKas * 1e8)),
-        },
-      ];
+        }];
+      } else {
+        // Redeploy function (keepAlive, increment) — send full balance minus fee back to covenant
+        const covenantAddress = this.covenantService.getContractAddress(compiled);
+        const feeSompi = BigInt(1_000_000); // 0.01 KAS
+        const redeployAmount = inputAmount > feeSompi ? inputAmount - feeSompi : 0n;
+        outputs = [{
+          address: covenantAddress,
+          amount: redeployAmount,
+        }];
+      }
 
       const privateKey = wallet.getPrivateKey().toString();
-      const inputAmount = BigInt(inputAmountSompi);
 
       const result = await this.covenantService.spend(
         compiled,
@@ -602,13 +621,26 @@ export class ContractsPageComponent implements OnInit {
         functionName: result.functionName,
       });
 
-      // Mark contract as spent in registry
+      // Update registry — mark as spent only for withdrawal functions
       if (this.selectedContractId) {
-        this.registryService.updateContract(this.selectedContractId, {
-          status: 'spent',
-          spendTxid: result.txid,
-          lastChecked: Date.now(),
-        });
+        if (this.functionRequiresOutput(functionName)) {
+          // Withdrawal: funds left the covenant
+          this.registryService.updateContract(this.selectedContractId, {
+            status: 'spent',
+            spendTxid: result.txid,
+            lastChecked: Date.now(),
+          });
+        } else {
+          // Redeploy (keepAlive/increment): update the outpoint to the new UTXO
+          this.registryService.updateContract(this.selectedContractId, {
+            lastChecked: Date.now(),
+            // The new outpoint txid is the spend result; vout is typically 0
+            outpoint: { txid: result.txid, vout: 0 },
+          });
+          // Update the interact form with the new outpoint
+          this.interactOutpointTxid = result.txid;
+          this.interactOutpointVout = '0';
+        }
         this.loadContracts();
       }
     } catch (error: any) {
@@ -840,11 +872,41 @@ export class ContractsPageComponent implements OnInit {
     }
   });
 
+  // ─── Function categorization ──────────────────────────────────────
+  /** Functions that do NOT produce an external withdrawal output */
+  private readonly REDEPLOY_FUNCTIONS = new Set(['keepAlive', 'increment']);
+
   /**
-   * Select an entrypoint function
+   * Whether the selected function requires user-visible output address/amount fields.
+   * keepAlive re-deploys to the covenant itself; increment updates on-chain state.
+   */
+  functionRequiresOutput(fnName: string): boolean {
+    return !!fnName && !this.REDEPLOY_FUNCTIONS.has(fnName);
+  }
+
+  /**
+   * Select an entrypoint function — clears stale state and auto-fills
+   * output fields based on the function type.
    */
   selectFunction(name: string) {
     this.selectedFunction = name;
+
+    // Clear stale interaction state
+    this.interactError.set(null);
+    this.interactResult.set(null);
+
+    if (this.functionRequiresOutput(name)) {
+      // Withdrawal function: default output to user's wallet, clear amount
+      this.interactOutputAddress = this.currentWallet()?.getAddress() || '';
+      this.interactOutputAmount = '';
+    } else {
+      // Redeploy function (keepAlive, increment): auto-fill covenant address + max amount
+      const contract = this.parsedInteractContract();
+      if (contract) {
+        this.interactOutputAddress = this.covenantService.getContractAddress(contract);
+      }
+      this.fillMaxOutputAmount();
+    }
   }
 
   /**
@@ -865,24 +927,55 @@ export class ContractsPageComponent implements OnInit {
   }
 
   /**
-   * Get human-readable description for a function
+   * Get human-readable description for a function, contextual to the contract type.
    */
   getFunctionDescription(name: string): string {
     const contract = this.parsedInteractContract();
-    const contractName = contract?.contract_name || '';
+    const contractName = (contract?.contract_name || '').toLowerCase();
 
-    const descriptions: Record<string, string> = {
+    // Contract-type-specific descriptions
+    const contextual: Record<string, Record<string, string>> = {
+      'timelockvault': {
+        'spend': 'Withdraw your locked funds immediately using the owner key.',
+        'recover': 'Emergency recovery using the backup key. Only available after the timelock expires.',
+      },
+      'deadmansswitch': {
+        'keepAlive': 'Prove you\'re still active. Re-deploys the contract with a fresh expiry — no withdrawal needed.',
+        'claim': 'Claim the inheritance. Only available if the owner missed their keepAlive deadline.',
+      },
+      'escrow': {
+        'release': 'Both buyer and seller agree to release funds to the recipient.',
+        'refund': 'Cancel the escrow and return funds to the sender. May require timelock expiry.',
+      },
+      'multisigvault': {
+        'spend12': 'Withdraw using 2-of-3 multi-sig. Requires signatures from two key holders.',
+      },
+      'counter': {
+        'increment': 'Increment the on-chain counter. The contract is re-deployed with the updated state.',
+      },
+    };
+
+    // Try contract-specific description first
+    const normalized = contractName.replace(/[\s_-]/g, '');
+    for (const [key, descs] of Object.entries(contextual)) {
+      if (normalized.includes(key.toLowerCase())) {
+        if (descs[name]) return descs[name];
+      }
+    }
+
+    // Fallback generic descriptions
+    const fallback: Record<string, string> = {
       'spend': 'Withdraw funds using the owner key. Available immediately — no timelock.',
       'recover': 'Emergency withdrawal using the recovery key. Only available after the timelock expires.',
-      'claim': 'Claim the funds locked in this contract to your address.',
+      'claim': 'Claim the funds locked in this contract.',
       'release': 'Release the locked funds to the designated recipient.',
       'refund': 'Return the locked funds to the original sender.',
-      'increment': 'Increment the on-chain counter state by 1.',
-      'keepAlive': 'Reset the dead man\'s switch timer. Must be called before timeout to prevent recovery.',
+      'increment': 'Update the on-chain state. The contract is re-deployed with new values.',
+      'keepAlive': 'Re-deploy the contract with a refreshed timer. No funds are withdrawn.',
       'execute': 'Execute this contract\'s logic.',
     };
 
-    return descriptions[name] || `Call the "${name}" function on this contract.`;
+    return fallback[name] || `Call the "${name}" function on this contract.`;
   }
 
   /**

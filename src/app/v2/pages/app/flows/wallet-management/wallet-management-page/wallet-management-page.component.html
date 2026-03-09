@@ -6,42 +6,18 @@
         <span class="wallet-label">Wallet</span>
         <div class="wallet-name-container">
           <span class="wallet-name">{{ currentWalletName() }}</span>
-          <kc-icon
-            class="pencil-icon"
-            [iconClass]="'icon-pencil'"
-            [size]="'xs'"
-            (click)="onEditWalletName()"
-            kcTooltip="Edit wallet name"
-            tooltipPosition="bottom"
-          ></kc-icon>
+          <kc-icon class="pencil-icon" [iconClass]="'icon-pencil'" [size]="'xs'" (click)="onEditWalletName()"
+            kcTooltip="Edit wallet name" tooltipPosition="bottom"></kc-icon>
         </div>
       </div>
     </div>
     <div class="header-right">
-            <kc-icon
-        class="more-options-icon"
-        [iconClass]="'icon-more-options'"
-        [size]="'md'"
-        (click)="onWalletOptionsClick()"
-        kcTooltip="Wallet options"
-        tooltipPosition="bottom"
-      ></kc-icon>
-            <kc-icon
-        class="update-icon"
-        [iconClass]="'icon-update'"
-        [size]="'md'"
-        (click)="onChangeWalletClicked()"
-        kcTooltip="Change wallet"
-        tooltipPosition="bottom"
-      ></kc-icon>
-      <kc-icon
-        class="close-icon"
-        [iconClass]="'icon-close'"
-        [size]="'md'"
-        (click)="onCloseClick()"
-        kcTooltip="Close"
-        tooltipPosition="bottom"
-      ></kc-icon>
+      <kc-icon class="more-options-icon" [iconClass]="'icon-more-options'" [size]="'md'"
+        (click)="onWalletOptionsClick()" kcTooltip="Wallet options" tooltipPosition="bottom"></kc-icon>
+      <kc-icon class="update-icon" [iconClass]="'icon-update'" [size]="'md'" (click)="onChangeWalletClicked()"
+        kcTooltip="Change wallet" tooltipPosition="bottom"></kc-icon>
+      <kc-icon class="close-icon" [iconClass]="'icon-close'" [size]="'md'" (click)="onCloseClick()" kcTooltip="Close"
+        tooltipPosition="bottom"></kc-icon>
     </div>
   </div>
 
@@ -94,7 +70,7 @@
                   <span class="balance-error">—</span>
                 }
                 @if (wallet.hasPendingTransactions()) {
-                  <div 
+                  <div
                     class="pending-indicator"
                     (click)="togglePendingTransactions(wallet, $event)"
                     [kcTooltip]="wallet.pendingTransactionCount() + ' pending transaction(s)'"
@@ -152,10 +128,9 @@
   </div>
 
   <!-- Floating Create Account Orb -->
+  @if (canAddMoreAccounts()) {
   <div class="floating-orb" (click)="onAddAccountClick()" kcTooltip="Create account" tooltipPosition="top">
-    <kc-icon
-      [iconClass]="'icon-add'"
-      [size]="'md'"
-    ></kc-icon>
+    <kc-icon [iconClass]="'icon-add'" [size]="'md'"></kc-icon>
   </div>
+  }
 </div>

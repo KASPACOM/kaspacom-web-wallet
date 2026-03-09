@@ -14,7 +14,6 @@ import {
   KcInputComponent,
   KcCheckboxComponent,
   KcButtonComponent,
-  KcIconComponent,
 } from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
 import { WalletService } from '../../../../../../../../../../services/wallet.service';
@@ -40,7 +39,6 @@ import { Krc20TokenLogoComponent } from '../../../../../../../home/assets-lists/
     KcInputComponent,
     KcCheckboxComponent,
     KcButtonComponent,
-    KcIconComponent,
     FormsModule,
     Krc20TokenLogoComponent,
     AddressSmartInputComponent,

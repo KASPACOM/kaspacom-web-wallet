@@ -34,7 +34,7 @@ const SUBNETWORK_ID_NATIVE = "0000000000000000000000000000000000000000";
 /** Domain separation key for covenant ID hashing — must match Rust `CovenantID` hasher */
 const COVENANT_ID_KEY = new TextEncoder().encode("CovenantID");
 
-type SupportedSigArg = Uint8Array;
+type SupportedSigArg = Uint8Array | bigint;
 
 function toScriptBytes(compiled: CompiledContract): Uint8Array {
   return Uint8Array.from(compiled.script);
@@ -123,14 +123,19 @@ function buildSigScript(
     const input = abiEntry.inputs[index];
     const arg = functionArgs[index];
 
-    if (input.type_name === "int" || input.type_name === "bool" || input.type_name === "string") {
-      throw new Error(
-        `Function "${functionName}" requires "${input.name}:${input.type_name}", but spendContract() only derives sig/pubkey arguments`,
-      );
+    if (input.type_name === "int" || input.type_name === "bool") {
+      if (typeof arg === "bigint") {
+        builder.addI64(arg);
+      } else {
+        throw new Error(
+          `Function "${functionName}" param "${input.name}:${input.type_name}" requires a bigint value, got Uint8Array`,
+        );
+      }
+      continue;
     }
 
     if (input.type_name === "sig") {
-      if (arg.length !== 65) {
+      if (typeof arg !== "object" || arg.length !== 65) {
         throw new Error(`Expected sig argument "${input.name}" to be 65 bytes`);
       }
       builder.addData(arg);
@@ -138,7 +143,7 @@ function buildSigScript(
     }
 
     if (input.type_name === "pubkey") {
-      if (arg.length !== 32) {
+      if (typeof arg !== "object" || arg.length !== 32) {
         throw new Error(`Expected pubkey argument "${input.name}" to be 32 bytes`);
       }
       builder.addData(arg);
@@ -146,6 +151,9 @@ function buildSigScript(
     }
 
     if (input.type_name === "byte" || /^byte\[\d+\]$/.test(input.type_name)) {
+      if (typeof arg !== "object") {
+        throw new Error(`Expected byte argument "${input.name}" to be Uint8Array`);
+      }
       builder.addData(encodeAbiBytesArray(input.type_name, arg));
       continue;
     }
@@ -182,6 +190,7 @@ function resolveSpendFunctionArgs(
   functionName: string,
   signature: Uint8Array,
   privateKey: PrivateKey,
+  extraArgs?: Record<string, bigint>,
 ): SupportedSigArg[] {
   const entry = getAbiEntry(compiled, functionName);
   const xOnlyPubkey = hexToBytes(privateKey.toPublicKey().toXOnlyPublicKey().toString());
@@ -192,6 +201,15 @@ function resolveSpendFunctionArgs(
     }
     if (input.type_name === "pubkey") {
       return xOnlyPubkey;
+    }
+    if (input.type_name === "int" || input.type_name === "bool") {
+      const val = extraArgs?.[input.name];
+      if (val === undefined) {
+        throw new Error(
+          `Function "${functionName}" requires "${input.name}:${input.type_name}" — pass it via extraArgs`,
+        );
+      }
+      return val;
     }
 
     throw new Error(
@@ -484,6 +502,7 @@ export async function spendContract(
   network: string,
   existingRpc?: RpcClient,
   covenantId?: string,
+  extraArgs?: Record<string, bigint>,
 ): Promise<SpendResult> {
   const privateKey = new PrivateKey(privateKeyHex);
   const covenantAddress = getCovenantAddress(compiled, network);
@@ -612,7 +631,7 @@ export async function spendContract(
       signature = signature.slice(1);
     }
     console.log('[CovenantSDK] signature bytes:', signature.length);
-    const functionArgs = resolveSpendFunctionArgs(compiled, functionName, signature, privateKey);
+    const functionArgs = resolveSpendFunctionArgs(compiled, functionName, signature, privateKey, extraArgs);
     const sigPrefix = buildSigScript(compiled, functionName, functionArgs);
 
     unsignedTx.inputs[0].signatureScript = ScriptBuilder.fromScript(toScriptBytes(compiled)).encodePayToScriptHashSignatureScript(
@@ -875,7 +894,7 @@ export async function completePartialSpend(
 
     // Build the complete sigscript in ABI order
     const abiEntry = getAbiEntry(compiled, partialSpend.functionName);
-    const functionArgs: Uint8Array[] = [];
+    const functionArgs: SupportedSigArg[] = [];
     for (const input of abiEntry.inputs) {
       if (input.type_name === 'sig') {
         const sigEntry = allSigs.find(s => s.paramName === input.name);
@@ -883,6 +902,11 @@ export async function completePartialSpend(
         functionArgs.push(hexToBytes(sigEntry.signatureHex));
       } else if (input.type_name === 'pubkey') {
         functionArgs.push(hexToBytes(privateKey.toPublicKey().toXOnlyPublicKey().toString()));
+      } else if (input.type_name === 'int' || input.type_name === 'bool') {
+        // Extra args are passed through the partial spend's extraArgs field
+        const extraVal = partialSpend.extraArgs?.[input.name];
+        if (extraVal === undefined) throw new Error(`Missing extra arg "${input.name}" in partial spend`);
+        functionArgs.push(BigInt(extraVal));
       } else {
         throw new Error(`Unsupported ABI input type "${input.type_name}" in two-phase signing`);
       }

@@ -10,7 +10,7 @@ import { WalletService } from '../../../../../services/wallet.service';
 import { CovenantService } from '../../../../../services/covenant/covenant.service';
 import { RpcService } from '../../../../../services/kaspa-netwrok-services/rpc.service';
 import { ContractRegistryService, ContractRegistryEntry, ContractStatus } from '../../../../../services/covenant/contract-registry.service';
-import { CompiledContract, CovenantOutpoint, SpendOutput } from '../../../../../services/covenant/covenant-sdk/types';
+import { CompiledContract, CovenantOutpoint, PartiallySignedSpend, SpendOutput } from '../../../../../services/covenant/covenant-sdk/types';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { CONTRACT_TEMPLATES, ContractTemplate, TemplateField } from '../../../../services/covenant/contract-templates';
 import { CtorArg, TemplatePatcherService } from '../../../../services/covenant/template-patcher.service';
@@ -124,6 +124,16 @@ export class ContractsPageComponent implements OnInit {
   interactError = signal<string | null>(null);
   isInteracting = signal(false);
 
+  // Extra function args (for non-sig/pubkey params like int amountToSeller in escrow arbitrate)
+  extraArgValues: { [paramName: string]: string } = {};
+
+  // Two-phase signing (multi-sig / escrow release)
+  partialSpendJson = signal<string | null>(null);
+  importPartialJson = '';
+  isCompletingPartial = signal(false);
+  partialCompleteResult = signal<{ txid: string; functionName: string } | null>(null);
+  partialCompleteError = signal<string | null>(null);
+
   // Computed selected contract from registry
   selectedContract = computed(() => {
     if (!this.selectedContractId) return null;
@@ -148,6 +158,18 @@ export class ContractsPageComponent implements OnInit {
     return contract.abi.filter((entry) =>
       contract.ast.functions.find((f) => f.name === entry.name && f.entrypoint)
     );
+  });
+
+  /**
+   * Extra (non-sig/pubkey) params for the selected function.
+   * E.g., escrow arbitrate has `amountToSeller: int`.
+   */
+  extraArgsForFunction = computed(() => {
+    const contract = this.parsedInteractContract();
+    if (!contract || !this.selectedFunction) return [];
+    const abiEntry = contract.abi.find(e => e.name === this.selectedFunction);
+    if (!abiEntry) return [];
+    return abiEntry.inputs.filter(i => i.type_name !== 'sig' && i.type_name !== 'pubkey');
   });
 
   // Current network
@@ -606,13 +628,35 @@ export class ContractsPageComponent implements OnInit {
 
       const privateKey = wallet.getPrivateKey().toString();
 
+      // Collect extra args (int, bool params like escrow arbitrate's amountToSeller)
+      const extraArgs = this.collectExtraArgs(compiled, functionName);
+
+      // Multi-sig functions: build partial spend instead of broadcasting
+      if (this.isMultiSigFunction(functionName)) {
+        const partial = await this.covenantService.buildPartial(
+          compiled, functionName, outpoint, inputAmount, outputs, privateKey,
+        );
+        const partialJson = JSON.stringify(partial, null, 2);
+        this.partialSpendJson.set(partialJson);
+        navigator.clipboard.writeText(partialJson).then(
+          () => {},
+          () => {} // Clipboard may not be available
+        );
+        this.interactResult.set({
+          txid: '(partial — share with co-signer)',
+          functionName,
+        });
+        return;
+      }
+
       const result = await this.covenantService.spend(
         compiled,
         outpoint,
         inputAmount,
         functionName,
         outputs,
-        privateKey
+        privateKey,
+        Object.keys(extraArgs).length > 0 ? extraArgs : undefined,
       );
 
       this.interactResult.set({
@@ -904,6 +948,8 @@ export class ContractsPageComponent implements OnInit {
     // Clear stale interaction state
     this.interactError.set(null);
     this.interactResult.set(null);
+    this.partialSpendJson.set(null);
+    this.extraArgValues = {};
 
     if (this.functionRequiresOutput(name)) {
       // Withdrawal function: default output to user's wallet, clear amount
@@ -1073,5 +1119,86 @@ export class ContractsPageComponent implements OnInit {
 
     this.templateFormValues[paramName] = this.computeBlake2bHex(this.hex32ToBytes(value));
     this.templateFormValues[paramName + '_isAutoHashed'] = 'true';
+  }
+
+  // ─── Extra Args (int/bool params) ──────────────────────────────────
+
+  /**
+   * Collect extra args from the form into a Record<string, bigint> for the SDK.
+   */
+  private collectExtraArgs(compiled: CompiledContract, functionName: string): Record<string, bigint> {
+    const abiEntry = compiled.abi.find(e => e.name === functionName);
+    if (!abiEntry) return {};
+
+    const result: Record<string, bigint> = {};
+    for (const input of abiEntry.inputs) {
+      if (input.type_name === 'int' || input.type_name === 'bool') {
+        const raw = this.extraArgValues[input.name];
+        if (raw === undefined || raw === '') {
+          throw new Error(`"${input.name}" (${input.type_name}) is required`);
+        }
+        result[input.name] = BigInt(raw);
+      }
+    }
+    return result;
+  }
+
+  // ─── Two-Phase Signing (Multi-Sig / Escrow Release) ────────────────
+
+  /**
+   * Import a partial spend JSON from co-signer and complete it.
+   */
+  async completePartialSpend() {
+    this.partialCompleteError.set(null);
+    this.partialCompleteResult.set(null);
+
+    const wallet = this.currentWallet();
+    if (!wallet) {
+      this.partialCompleteError.set('No wallet connected');
+      return;
+    }
+
+    if (!this.importPartialJson.trim()) {
+      this.partialCompleteError.set('Paste the partial spend JSON from the co-signer');
+      return;
+    }
+
+    try {
+      this.isCompletingPartial.set(true);
+      const partial: PartiallySignedSpend = JSON.parse(this.importPartialJson);
+      const privateKey = wallet.getPrivateKey().toString();
+      const result = await this.covenantService.completePartial(partial, privateKey);
+
+      this.partialCompleteResult.set({
+        txid: result.txid,
+        functionName: result.functionName,
+      });
+
+      // Update registry if we know the contract
+      if (this.selectedContractId) {
+        this.registryService.updateContract(this.selectedContractId, {
+          status: 'spent',
+          spendTxid: result.txid,
+          lastChecked: Date.now(),
+        });
+        this.loadContracts();
+      }
+    } catch (error: any) {
+      this.partialCompleteError.set(error?.message || 'Failed to complete partial spend');
+    } finally {
+      this.isCompletingPartial.set(false);
+    }
+  }
+
+  /**
+   * Copy partial spend JSON to clipboard
+   */
+  copyPartialSpend() {
+    const json = this.partialSpendJson();
+    if (!json) return;
+    navigator.clipboard.writeText(json).then(
+      () => alert('Partial spend JSON copied! Send it to the co-signer.'),
+      () => prompt('Copy this partial spend JSON:', json),
+    );
   }
 }

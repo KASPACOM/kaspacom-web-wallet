@@ -100,4 +100,6 @@ export interface PartiallySignedSpend {
   lockTime: string;
   /** sigOpCount for the function */
   sigOpCount: number;
+  /** Extra non-sig/pubkey args (e.g. int amountToSeller) — serialized as strings */
+  extraArgs?: Record<string, string>;
 }

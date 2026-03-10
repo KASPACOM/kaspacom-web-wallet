@@ -462,7 +462,7 @@
           @if (selectedFunction && isMultiSigFunction(selectedFunction)) {
             <div class="p-12 rounded-lg" style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3);">
               <span class="text-yellow typo-text-2">
-                This function requires multiple signers. Use the Share button on My Contracts to send the contract link to the co-signer.
+                Two-phase signing: clicking the button will sign your part and generate a partial spend JSON. Send it to the co-signer to complete.
               </span>
             </div>
           }
@@ -515,6 +515,91 @@
             </span>
           </div>
         }
+
+        <!-- Extra args (int/bool params, e.g. escrow arbitrate amountToSeller) -->
+        @for (arg of extraArgsForFunction(); track arg.name) {
+          <div class="form-group flex column gap-8">
+            <div class="flex align-items-center gap-4">
+              <label class="text-gray-60 typo-text-1">{{ arg.name }} ({{ arg.type_name }})</label>
+              <kc-icon [iconClass]="'icon-info'" [size]="'xs'" [kcTooltip]="'Value for ' + arg.name + ' parameter (type: ' + arg.type_name + ')'" tooltipPosition="top"></kc-icon>
+            </div>
+            <input
+              type="number"
+              class="form-input p-12 rounded-lg text-white typo-text-2"
+              [placeholder]="'Enter ' + arg.name + ' value (sompi)'"
+              [(ngModel)]="extraArgValues[arg.name]"
+              [disabled]="isInteracting()" />
+          </div>
+        }
+
+        <!-- Multi-sig: partial spend output -->
+        @if (partialSpendJson()) {
+          <div class="flex column gap-8 p-12 rounded-lg" style="background: rgba(255, 193, 7, 0.08); border: 1px solid rgba(255, 193, 7, 0.2);">
+            <span class="text-yellow typo-text-1 fw-bold">Partial Spend Created</span>
+            <span class="text-gray-75 typo-text-2">
+              Your signature has been added. Copy the JSON below and send it to the co-signer to complete the transaction.
+            </span>
+            <textarea
+              class="contract-input p-12 rounded-lg text-white typo-text-2"
+              rows="4"
+              readonly
+              [value]="partialSpendJson()!">
+            </textarea>
+            <kc-button
+              [text]="'Copy Partial Spend JSON'"
+              [isFullWidth]="true"
+              (buttonClick)="copyPartialSpend()">
+            </kc-button>
+          </div>
+        }
+      }
+
+      <!-- Two-Phase Signing: Complete a partial spend from co-signer -->
+      @if (parsedInteractContract()) {
+        <details class="advanced-section">
+          <summary class="text-gray-60 typo-text-2 cursor-pointer" kcTooltip="Complete a multi-sig transaction started by a co-signer" tooltipPosition="top">
+            Complete Co-Signer Transaction
+          </summary>
+          <div class="flex column gap-12 mt-8">
+            <span class="text-gray-75 typo-text-2">
+              Paste the partial spend JSON received from the co-signer. Your signature will be added and the transaction broadcast.
+            </span>
+            <textarea
+              class="contract-input p-12 rounded-lg text-white typo-text-2"
+              rows="4"
+              placeholder="Paste partial spend JSON from co-signer"
+              [(ngModel)]="importPartialJson"
+              [disabled]="isCompletingPartial()">
+            </textarea>
+            <kc-button
+              [text]="isCompletingPartial() ? 'Completing...' : 'Sign & Broadcast'"
+              [isDisabled]="isCompletingPartial() || !importPartialJson"
+              [isFullWidth]="true"
+              (buttonClick)="completePartialSpend()">
+            </kc-button>
+
+            @if (partialCompleteError()) {
+              <div class="error-message p-12 rounded-lg text-red typo-text-2">
+                {{ partialCompleteError() }}
+              </div>
+            }
+
+            @if (partialCompleteResult()) {
+              <div class="result-panel flex column gap-12 p-16 rounded-lg">
+                <h3 class="text-white typo-text-1 fw-bold">Transaction Sent!</h3>
+                <div class="result-row flex column gap-4">
+                  <span class="text-gray-60 typo-text-1">Transaction</span>
+                  <div class="flex align-items-center gap-8">
+                    <a [href]="getExplorerLink(partialCompleteResult()!.txid)" target="_blank" class="text-blue typo-text-2 text-truncate">
+                      {{ partialCompleteResult()!.txid }}
+                    </a>
+                    <app-copy-button [value]="partialCompleteResult()!.txid" [size]="'sm'"></app-copy-button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </details>
       }
 
       <!-- Error message -->

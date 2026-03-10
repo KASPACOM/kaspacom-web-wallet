@@ -17,7 +17,7 @@ import { createEIP1193Response } from './create-eip-1193-response';
 import { EthereumHandleActionRequestService } from './etherium-handle-action-request.service';
 import { AllowedApplicationsService } from '../communication-service/allowed-applications.service';
 import { WALLET_APP_ID } from '../../config/consts';
-import { ethers } from 'ethers';
+import { ethers, TransactionRequest } from 'ethers';
 
 @Injectable({
   providedIn: 'root',
@@ -143,7 +143,7 @@ export class EthereumWalletActionsService {
 
           const gas = await this.ethereumWalletChainManager
             .getCurrentWalletProvider()!
-            .estimateGas(wallet, transaction);
+            .estimateGas(wallet, transaction as TransactionRequest);
           return createEIP1193Response<T>(ethers.toQuantity(gas));
 
         case EIP1193RequestType.GET_TRANSACTION_BY_HASH:

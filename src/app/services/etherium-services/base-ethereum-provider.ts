@@ -52,7 +52,7 @@ export class BaseEthereumProvider {
     return await this.etherProvider.send('eth_blockNumber', []);
   }
 
-  async estimateGas(transaction: any): Promise<string> {
+  async ethEstimateGas(transaction: any): Promise<string> {
     return await this.etherProvider.send('eth_estimateGas', [transaction]);
   }
 

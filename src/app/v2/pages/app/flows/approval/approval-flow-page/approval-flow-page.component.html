@@ -125,8 +125,11 @@
   <!-- Error State -->
   <div *ngSwitchCase="ApprovalFlowState.ERROR" class="error-container">
     <div class="error-content">
+      <div class="error-icon-wrapper">
+        <kc-icon iconClass="icon-warning" size="lg" color="#f87171"></kc-icon>
+      </div>
       <h2>Transaction Failed</h2>
-      <p>{{ approvalConfig()?.error || 'An unexpected error occurred' }}</p>
+      <div class="error-message">{{ approvalConfig()?.error || 'An unexpected error occurred' }}</div>
       <kc-button
         [text]="'Close'"
         variant="secondary"

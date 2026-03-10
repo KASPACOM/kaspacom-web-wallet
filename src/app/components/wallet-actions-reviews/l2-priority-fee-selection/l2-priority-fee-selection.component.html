@@ -1,84 +1,153 @@
+<!-- Loading State -->
+<div *ngIf="!feeData" class="fee-loading">
+  <div class="fee-loading-spinner"></div>
+  <p>Estimating gas &amp; fees...</p>
+</div>
+
+<!-- Fee Spoiler Container -->
 <div class="fee-spoiler-container" *ngIf="feeData">
-  <div class="error" *ngIf="hasGasLimitError">
-    There was an error getting the gas limit, please check the current action is valid and set the gas limit accordingly.
+
+  <!-- Gas Estimation Error Banner -->
+  <div class="error-banner" *ngIf="hasGasLimitError">
+    <kc-icon iconClass="icon-warning" size="sm" color="var(--orange-20)"></kc-icon>
+    <span>Gas estimation failed — the transaction may be invalid. Please verify it and adjust the gas limit manually.</span>
   </div>
 
-  <div class="fee-options-grid">
-    <div class="fee-option-card" [class.selected]="selectedOption === 'low'" (click)="selectOption('low')">
-      <div class="option-title">Low</div>
-      <div class="option-fee">{{ gasFeeOptionToDisplay()!['low'].display }} KAS</div>
-    </div>
-    <div class="fee-option-card" [class.selected]="selectedOption === 'normal'" (click)="selectOption('normal')">
-      <div class="option-title">Normal</div>
-      <div class="option-fee">{{ gasFeeOptionToDisplay()!['normal'].display }} KAS</div>
-    </div>
-    <div class="fee-option-card" [class.selected]="selectedOption === 'priority'" (click)="selectOption('priority')">
-      <div class="option-title">Priority</div>
-      <div class="option-fee">{{ gasFeeOptionToDisplay()!['priority'].display }} KAS</div>
-    </div>
-  </div>
-  <!-- Custom Fee -->
-  <div class="custom-fee-section">
-    <div class="custom-fee-card" [class.selected]="selectedOption === 'custom'" (click)="selectOption('custom')">
-      <div class="custom-fee-header">
-        <span class="custom-fee-title">Custom Fee (Gwei)</span>
-      </div>
-      <div class="custom-fee-input">
-        <kc-input type="number" placeholder="Enter amount (Gwei)" [(ngModel)]="customFee"
-          (valueChange)="selectOption('custom')">
-          <div rightSideSlot class="input-icon">
-          </div>
-        </kc-input>
-      </div>
-    </div>
-  </div>
-    <div class="estimated-gas-section">
-    <div class="custom-fee-card">
-      <div class="custom-fee-header">
-        <span class="custom-fee-title">Gas Limit</span>
-      </div>
-      <div class="custom-fee-input">
-        <kc-input type="number" placeholder="Enter gas amount" [(ngModel)]="gasLimit" (valueChange)="updateGasLimit()">
-          <div rightSideSlot class="input-icon">
-          </div>
-        </kc-input>
-      </div>
-    </div>
-  </div>
-  <div class="fee-details-section">
-    <div class="fee-detail-row">
-      <span class="detail-label">Minimum transaction fee:</span>
-      <div class="detail-value">
-        <span>{{ currentBaseFee() }}</span>
-        <!-- Always show kaspa icon for fees -->
-        <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
-      </div>
-    </div>
-
-    <div class="fee-detail-row">
-      <span class="detail-label">Additional Priority fee (gwei):</span>
-      <div class="detail-value">
-        <ng-container>
-          <span>{{ gasFeeOptionToDisplay()![selectedOption].value }}</span>
-          <!-- Always show kaspa icon for fees -->
+  <!-- Fee Toggle Header (Spoiler) -->
+  <div class="fee-spoiler-toggle" (click)="toggleFeeSelection()">
+    <div class="fee-summary-left">
+      <kc-icon iconClass="icon-chain" size="sm" color="var(--kaspa-20)"></kc-icon>
+      <span class="fee-label">Total Fee:</span>
+      <div class="fee-value">
+        <ng-container *ngIf="totalFeeDisplay() !== undefined; else notSelected">
+          <span>{{ totalFeeDisplay() | number:'1.4-8' }}</span>
           <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
         </ng-container>
+        <ng-template #notSelected>
+          <span class="not-selected">Not selected</span>
+        </ng-template>
       </div>
     </div>
-
-    <div class="fee-detail-row">
-      <span class="detail-label">Total Fee:</span>
-      <div class="detail-value">
-        <ng-container>
-          <span>{{ gasFeeOptionToDisplay()![selectedOption].display }}</span>
-          <!-- Always show kaspa icon for fees -->
-          <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
-        </ng-container>
-      </div>
+    <div class="fee-spoiler-chevron">
+      <kc-icon
+        [iconClass]="showFeeSelection ? 'icon-chevron-up' : 'icon-chevron-down'"
+        size="sm"
+        color="var(--gray-60)">
+      </kc-icon>
     </div>
+  </div>
 
+  <!-- Fee Selection Content (Collapsible) -->
+  <div class="fee-selection-content" [@slideDown]="showFeeSelection ? 'open' : 'closed'">
+    <div class="fee-selection-inner">
+
+      <!-- Fee Options Grid -->
+      <div class="fee-options-grid">
+        <div class="fee-option-card" [class.selected]="selectedOption === 'low'" (click)="selectOption('low')">
+          <div class="option-title">Low</div>
+          <div class="option-fee" *ngIf="gasFeeOptionToDisplay()">
+            <span>{{ gasFeeOptionToDisplay()!['low'].display | number:'1.4-8' }}</span>
+            <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+          </div>
+          <div class="option-gwei" *ngIf="gasFeeOtions()">{{ fromWeiToGwei(gasFeeOtions()!.low) }} Gwei</div>
+        </div>
+
+        <div class="fee-option-card" [class.selected]="selectedOption === 'normal'" (click)="selectOption('normal')">
+          <div class="option-title">Normal</div>
+          <div class="option-fee" *ngIf="gasFeeOptionToDisplay()">
+            <span>{{ gasFeeOptionToDisplay()!['normal'].display | number:'1.4-8' }}</span>
+            <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+          </div>
+          <div class="option-gwei" *ngIf="gasFeeOtions()">{{ fromWeiToGwei(gasFeeOtions()!.normal) }} Gwei</div>
+        </div>
+
+        <div class="fee-option-card" [class.selected]="selectedOption === 'priority'" (click)="selectOption('priority')">
+          <div class="option-title">Priority</div>
+          <div class="option-fee" *ngIf="gasFeeOptionToDisplay()">
+            <span>{{ gasFeeOptionToDisplay()!['priority'].display | number:'1.4-8' }}</span>
+            <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+          </div>
+          <div class="option-gwei" *ngIf="gasFeeOtions()">{{ fromWeiToGwei(gasFeeOtions()!.priority) }} Gwei</div>
+        </div>
+      </div>
+
+      <!-- Custom Fee -->
+      <div class="custom-fee-section">
+        <div class="custom-fee-card"
+             [class.selected]="selectedOption === 'custom'"
+             [class.has-error]="selectedOption === 'custom' && !isCustomFeeValid()"
+             (click)="selectOption('custom')">
+          <div class="custom-fee-header">
+            <span class="custom-fee-title">Custom Fee</span>
+            <span class="custom-fee-unit">in wei</span>
+          </div>
+          <div class="custom-fee-input">
+            <kc-input
+              type="number"
+              placeholder="Min 1 wei"
+              [(ngModel)]="customFee"
+              (valueChange)="selectOption('custom')">
+            </kc-input>
+          </div>
+          <div class="validation-error" *ngIf="selectedOption === 'custom' && !isCustomFeeValid()">
+            Minimum custom fee is 1 wei
+          </div>
+        </div>
+      </div>
+
+      <!-- Gas Limit -->
+      <div class="estimated-gas-section">
+        <div class="custom-fee-card" [class.has-error]="!isGasLimitValid()">
+          <div class="custom-fee-header">
+            <span class="custom-fee-title">Gas Limit</span>
+          </div>
+          <div class="custom-fee-input">
+            <kc-input
+              type="number"
+              placeholder="Min 21,000"
+              [(ngModel)]="gasLimit"
+              (valueChange)="updateGasLimit()">
+            </kc-input>
+          </div>
+          <div class="validation-error" *ngIf="!isGasLimitValid()">
+            Gas limit must be at least 21,000
+          </div>
+        </div>
+      </div>
+
+      <!-- Fee Breakdown -->
+      <div class="fee-details-section">
+        <div class="fee-detail-row">
+          <span class="detail-label">Base Fee</span>
+          <div class="detail-value">
+            <span>{{ currentBaseFee() | number:'1.4-8' }}</span>
+            <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+          </div>
+        </div>
+
+        <div class="fee-detail-row" *ngIf="gasFeeOtions()">
+          <span class="detail-label">Priority Fee</span>
+          <div class="detail-value">
+            <span>{{ fromWeiToGwei(gasFeeOtions()![selectedOption]) }} Gwei</span>
+          </div>
+        </div>
+
+        <div class="fee-detail-row" *ngIf="gasLimit()">
+          <span class="detail-label">Gas Limit</span>
+          <div class="detail-value">
+            <span>{{ gasLimit() | number }}</span>
+          </div>
+        </div>
+
+        <div class="fee-detail-row total-row" *ngIf="totalFeeDisplay() !== undefined">
+          <span class="detail-label">Total Fee</span>
+          <div class="detail-value highlight">
+            <span>{{ totalFeeDisplay() | number:'1.4-8' }}</span>
+            <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+          </div>
+        </div>
+      </div>
+
+    </div>
   </div>
-  <!-- Loading State -->
-  <div *ngIf="!feeData" class="fee-loading">
-    <p>L2 PRIORITY FEE LOADING...</p>
-  </div>
+</div>

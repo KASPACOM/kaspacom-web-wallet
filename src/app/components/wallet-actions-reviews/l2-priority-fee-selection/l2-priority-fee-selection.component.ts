@@ -10,11 +10,9 @@ import {
 } from '@angular/core';
 import {
   CommonModule,
-  NgFor,
   NgIf,
-  TitleCasePipe,
 } from '@angular/common';
-import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
+import { trigger, state, style, transition, animate } from '@angular/animations';
 import { WalletAction } from '../../../types/wallet-action';
 import { AppWallet } from '../../../classes/AppWallet';
 import { FormsModule } from '@angular/forms';
@@ -25,6 +23,7 @@ import { ethers, FeeData } from 'ethers';
 
 type AvailableOption = 'low' | 'normal' | 'priority' | 'custom';
 const MIN_GAS_LIMIT = 21000n;
+const MIN_CUSTOM_FEE = 1;
 
 
 @Component({
@@ -33,13 +32,26 @@ const MIN_GAS_LIMIT = 21000n;
   styleUrls: ['./l2-priority-fee-selection.component.scss'],
   imports: [
     NgIf,
-    NgFor,
-    SompiToNumberPipe,
     FormsModule,
-    TitleCasePipe,
     CommonModule,
     KcIconComponent,
     KcInputComponent,
+  ],
+  animations: [
+    trigger('slideDown', [
+      state('closed', style({
+        height: '0px',
+        opacity: 0,
+        overflow: 'hidden',
+      })),
+      state('open', style({
+        height: '*',
+        opacity: 1,
+        overflow: 'visible',
+      })),
+      transition('closed => open', [animate('400ms ease-out')]),
+      transition('open => closed', [animate('300ms ease-in')]),
+    ]),
   ],
 })
 export class L2PriorityFeeSelectionComponent implements OnChanges {
@@ -51,78 +63,81 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
   } | undefined>();
   @Output() gasLimitSelected = new EventEmitter<bigint | undefined>();
 
-
   protected customFee = signal<number>(0);
   protected selectedOption: AvailableOption = 'normal';
   protected hasGasLimitError = false;
+  protected showFeeSelection = false;
 
-  protected feeData:
-    | undefined
-    | FeeData = undefined;
+  protected feeData: undefined | FeeData = undefined;
   protected gasLimit = signal<number | undefined>(undefined);
 
   protected gasLimitBigInt = computed(() => {
-    if (!this.gasLimit()) {
-      return undefined;
-    }
+    const gl = this.gasLimit();
+    if (gl === undefined || gl === null) return undefined;
+    return BigInt(gl);
+  });
 
-    return BigInt(this.gasLimit()!);
-  })
+  protected isGasLimitValid = computed(() => {
+    const gl = this.gasLimit();
+    if (gl === undefined || gl === null) return false;
+    return gl >= Number(MIN_GAS_LIMIT);
+  });
+
+  protected isCustomFeeValid = computed(() => {
+    if (this.selectedOption !== 'custom') return true;
+    return this.customFee() >= MIN_CUSTOM_FEE;
+  });
 
   protected gasFeeOtions = computed(() => {
-
-    if (!this.feeData) {
-      return undefined;
-    }
+    if (!this.feeData) return undefined;
 
     const baseFee = this.feeData.maxPriorityFeePerGas;
-    if (!baseFee) {
-      return undefined
-    }
+    if (!baseFee) return undefined;
 
     const maxPriorityFeePerGas = this.feeData.maxPriorityFeePerGas || 0n;
 
-
-
-    const low = 1n;
-    const normal = maxPriorityFeePerGas;
-    const priority = maxPriorityFeePerGas * 2n;
-    const custom = BigInt(this.customFee());
-
     return {
-      low,
-      normal,
-      priority,
-      custom,
+      low: 1n,
+      normal: maxPriorityFeePerGas,
+      priority: maxPriorityFeePerGas * 2n,
+      custom: BigInt(Math.max(0, Math.floor(this.customFee()))),
     };
-  })
+  });
 
   protected gasFeeOptionToDisplay = computed(() => {
-    if (!this.gasFeeOtions() || !this.gasLimit()) {
-      return undefined;
-    }
+    if (!this.gasFeeOtions() || !this.gasLimitBigInt()) return undefined;
 
-    const formattedOptions: {
-      [key: string]: {
-        value: bigint;
-        display: number;
-      }
-    } = {};
+    const formattedOptions: { [key: string]: { value: bigint; display: number } } = {};
+    const baseFeePerGas = (this.feeData!.gasPrice || 0n) - (this.feeData!.maxPriorityFeePerGas || 0n);
 
     for (const [key, value] of Object.entries(this.gasFeeOtions()!)) {
       formattedOptions[key] = {
         value,
-        display: this.fromWeiToKas((value + ((this.feeData!.gasPrice || 0n) - (this.feeData!.maxPriorityFeePerGas || 0n))) * this.gasLimitBigInt()!),
-      }
+        display: this.fromWeiToKas((value + baseFeePerGas) * this.gasLimitBigInt()!),
+      };
     }
 
     return formattedOptions;
-  })
+  });
 
   protected currentBaseFee = computed(() => {
-    return this.fromWeiToKas(((this.feeData?.gasPrice || 0n) - (this.feeData?.maxPriorityFeePerGas || 0n)) * (this.gasLimitBigInt() || 0n));
-  })
+    return this.fromWeiToKas(
+      ((this.feeData?.gasPrice || 0n) - (this.feeData?.maxPriorityFeePerGas || 0n)) *
+      (this.gasLimitBigInt() || 0n)
+    );
+  });
 
+  protected totalFeeDisplay = computed(() => {
+    const displayOptions = this.gasFeeOptionToDisplay();
+    if (!displayOptions) return undefined;
+    if (this.selectedOption === 'custom' && !this.isCustomFeeValid()) return undefined;
+    if (!this.isGasLimitValid()) return undefined;
+    return displayOptions[this.selectedOption]?.display;
+  });
+
+  toggleFeeSelection() {
+    this.showFeeSelection = !this.showFeeSelection;
+  }
 
   feeSelected(amount: bigint | undefined) {
     if (amount === undefined) {
@@ -137,29 +152,29 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
   }
 
   updateGasLimit() {
-    this.gasLimitSelected.emit(this.gasLimitBigInt());
+    if (!this.isGasLimitValid()) {
+      this.gasLimitSelected.emit(undefined);
+    } else {
+      this.gasLimitSelected.emit(this.gasLimitBigInt());
+    }
   }
 
   selectOption(option: AvailableOption | string) {
     this.selectedOption = option as AvailableOption;
 
-    if (
-      option !== 'custom' &&
-      this.gasFeeOtions() &&
-      option in this.gasFeeOtions()!
-    ) {
-      const fee =
-        this.gasFeeOtions()![option as 'low' | 'normal' | 'priority' | 'custom'];
+    if (option !== 'custom' && this.gasFeeOtions() && option in this.gasFeeOtions()!) {
+      const fee = this.gasFeeOtions()![option as 'low' | 'normal' | 'priority' | 'custom'];
       this.feeSelected(fee);
-
-    } else if (option == 'custom') {
-      this.feeSelected(
-        BigInt(this.customFee())
-      );
+    } else if (option === 'custom') {
+      if (!this.isCustomFeeValid()) {
+        this.priorityFeeSelected.emit(undefined);
+      } else {
+        this.feeSelected(BigInt(Math.floor(this.customFee())));
+      }
     }
   }
 
-  async ngOnChanges(changes: SimpleChanges): Promise<void> {
+  async ngOnChanges(_changes: SimpleChanges): Promise<void> {
     this.feeSelected(undefined);
     this.gasLimit.set(undefined);
     this.updateGasLimit();
@@ -172,11 +187,7 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
     const transaction: EthTransactionParams = actionData.params[0] as EthTransactionParams;
 
     const provider = this.wallet.getL2Provider();
-
-    if (!provider) {
-      throw new Error('No provider found');
-    }
-
+    if (!provider) throw new Error('No provider found');
 
     try {
       let gasForTransaction = await provider.estimateGas((await this.wallet.getL2Wallet())!, {
@@ -185,7 +196,7 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
         value: transaction.value,
         data: transaction.data,
         nonce: transaction.nonce ? parseInt(transaction.nonce) : undefined,
-      })
+      });
 
       if (gasForTransaction !== MIN_GAS_LIMIT) {
         gasForTransaction = gasForTransaction * 125n / 100n;
@@ -205,5 +216,9 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
 
   fromWeiToKas(number: bigint): number {
     return Number(ethers.formatUnits(number, this.wallet.getL2Provider()?.getConfig().nativeCurrency.decimals));
+  }
+
+  fromWeiToGwei(number: bigint): string {
+    return ethers.formatUnits(number, 9);
   }
 }

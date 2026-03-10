@@ -1,19 +1,32 @@
-import { DecimalPipe } from '@angular/common';
-import { Component, computed, inject, input } from '@angular/core';
-import { KcIconComponent } from '@kaspacom/ui';
+import { CommonModule, DecimalPipe } from '@angular/common';
+import { Component, computed, inject, input, signal } from '@angular/core';
+import {
+  KcIconComponent,
+  KcSpinnerComponent,
+  KcTooltipDirective,
+} from 'kaspacom-ui';
 import { WalletService } from '../../../../../services/wallet.service';
 import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { CommaFormatterPipe } from '../../../../../pipes/comma-formatter.pipe';
+import { ShortenAddressPipe } from '../../../../../pipes/shorten-address.pipe';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
+import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { KaspaPriceService } from '../../../../../services/kaspa-price.service';
+import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';
 
 @Component({
   selector: 'app-balance',
+  standalone: true,
   imports: [
+    CommonModule,
     DecimalPipe,
     CommaFormatterPipe,
+    ShortenAddressPipe,
     KcIconComponent,
+    KcSpinnerComponent,
+    KcTooltipDirective,
     SkeletonComponent,
+    CopyButtonComponent,
   ],
   templateUrl: './balance.component.html',
   styleUrl: './balance.component.scss',
@@ -23,6 +36,9 @@ export class BalanceComponent {
   private walletService = inject(WalletService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private kaspaPriceService = inject(KaspaPriceService);
+  private assetsManagerService = inject(AssetsManagerService);
+
+  protected readonly isRefreshing = signal(false);
 
   walletAddress = this.walletService.getCurrentDisplayWalletAddressAsString;
 
@@ -78,4 +94,35 @@ export class BalanceComponent {
 
     return this.kaspaNetworkActionsService.sompiToNumber(balanceData.mature);
   });
+
+  async onRefreshClick(event?: Event): Promise<void> {
+    event?.stopPropagation();
+    event?.preventDefault();
+
+    if (this.isRefreshing() || this.isLoading()) {
+      return;
+    }
+
+    this.isRefreshing.set(true);
+    const wallet = this.walletService.getCurrentWallet();
+
+    try {
+      if (wallet) {
+        const refreshTasks: Promise<unknown>[] = [wallet.refreshUtxosBalance()];
+
+        if (this.walletService.isL2Display()) {
+          refreshTasks.push(wallet.refreshL2Balance());
+        }
+
+        await Promise.all(refreshTasks);
+      }
+
+      this.kaspaPriceService.refreshPrice();
+      this.assetsManagerService.reloadAllCurrentAssetsAfterUpdate();
+    } catch (error) {
+      console.error('Failed to refresh wallet balance', error);
+    } finally {
+      this.isRefreshing.set(false);
+    }
+  }
 }

@@ -14,7 +14,7 @@
   height: 100%;
   width: 100%;
   color: var(--text-primary, #ffffff);
-  font-family: 'Poppins', 'Roboto', sans-serif;
+  font-family: "Poppins", "Roboto", sans-serif;
   padding: 16px 0;
 }
 
@@ -135,7 +135,7 @@
 
   .detail-value {
     color: var(--white);
-    font-family: 'SF Mono', 'Monaco', monospace;
+    font-family: "SF Mono", "Monaco", monospace;
     word-wrap: break-word;
     word-break: break-all;
     overflow-wrap: break-word;
@@ -155,7 +155,7 @@
     padding: 12px;
     border-radius: 6px;
     border: 1px solid var(--gray-15);
-    font-family: 'SF Mono', 'Monaco', monospace;
+    font-family: "SF Mono", "Monaco", monospace;
     font-size: 0.85rem;
     max-height: 200px;
     background: rgba(0, 0, 0, 0.2);
@@ -254,7 +254,7 @@ priority-fee-selection {
   height: 100%;
   min-height: 0;
   color: var(--text-primary, #ffffff);
-  font-family: 'Poppins', 'Roboto', sans-serif;
+  font-family: "Poppins", "Roboto", sans-serif;
   padding: 32px 20px 20px;
   justify-content: center;
   align-items: center;
@@ -309,7 +309,7 @@ app-approval-success-page {
     width: 100%;
     text-align: left;
     word-break: break-word;
-    font-family: 'SF Mono', 'Monaco', monospace;
+    font-family: "SF Mono", "Monaco", monospace;
   }
 }
 

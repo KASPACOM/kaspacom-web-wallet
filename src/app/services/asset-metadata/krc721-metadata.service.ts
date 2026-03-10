@@ -5,6 +5,7 @@ import { Krc721ApiService } from '../krc721-api/krc721-api.service';
 import { Krc721Nft, Krc721Metadata } from '../krc721-api/dtos/krc721-nft.dto';
 import { L1_ASSET_KEYS } from '../assets-manager/assets-stores/l1-assets-store.service';
 import { AssetsManagerService } from '../assets-manager/assets-manager.service';
+import { environment } from '../../../environments/environment';
 
 export interface Krc721NftWithMetadata extends Krc721Nft {
   metadataLoaded?: boolean;
@@ -75,6 +76,11 @@ export class Krc721MetadataService extends BaseAssetMetadataService<Krc721Nft, K
    * Get image URL for NFT
    */
   public getImageUrl(nft: Krc721Nft, metadata?: Krc721Metadata): string {
+    const cachedImageUrl = this.buildCachedImageUrl(nft.tick, nft.tokenId);
+    if (cachedImageUrl) {
+      return cachedImageUrl;
+    }
+
     const image = metadata?.image || nft.metadata?.image;
     if (image) {
       // Convert IPFS URL to HTTP URL if needed
@@ -94,5 +100,15 @@ export class Krc721MetadataService extends BaseAssetMetadataService<Krc721Nft, K
       nft => nft.tick === tick
     );
     this.initialize(filteredAssets);
+  }
+
+  private buildCachedImageUrl(tick?: string, tokenId?: string): string {
+    if (!tick || !tokenId || !environment.krc721CacheStreamUrl) {
+      return '';
+    }
+
+    const normalizedTick = encodeURIComponent(tick.toUpperCase());
+    const normalizedTokenId = encodeURIComponent(tokenId);
+    return `${environment.krc721CacheStreamUrl}/optimized/${normalizedTick}/${normalizedTokenId}`;
   }
 } 

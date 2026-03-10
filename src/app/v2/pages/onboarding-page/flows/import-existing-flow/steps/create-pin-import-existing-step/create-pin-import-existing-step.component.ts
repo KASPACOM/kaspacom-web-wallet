@@ -11,9 +11,8 @@ import {
   KcButtonComponent,
   KcIconComponent,
   KcInputComponent,
-  KcSnackbarComponent,
   NotificationService,
-} from '@kaspacom/ui';
+} from 'kaspacom-ui';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
 
 @Component({
@@ -24,7 +23,6 @@ import { ImportExistingFlowService } from '../../service/import-existing-flow.se
     KcButtonComponent,
     KcInputComponent,
     KcIconComponent,
-    KcSnackbarComponent,
   ],
   templateUrl: './create-pin-import-existing-step.component.html',
   styleUrl: './create-pin-import-existing-step.component.scss',

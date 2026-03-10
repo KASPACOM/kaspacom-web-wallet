@@ -1,0 +1,17 @@
+.seed-passphrase-step {
+  max-width: 360px;
+  text-align: center;
+
+  &__form {
+    width: 100%;
+  }
+
+  &__actions {
+    width: 100%;
+  }
+}
+
+.clickable {
+  cursor: pointer;
+}
+

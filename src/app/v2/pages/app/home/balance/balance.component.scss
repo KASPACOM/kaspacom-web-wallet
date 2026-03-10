@@ -35,3 +35,48 @@
     display: flex;
     min-height: 40px;
 }
+
+.wallet-address-display {
+  font-size: 12px;
+  color: var(--gray-60);
+  font-family: monospace;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.refresh-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  color: var(--gray-60);
+  transition: color 0.2s ease, opacity 0.2s ease;
+
+  &:hover {
+    color: var(--gray-40);
+  }
+
+  &--disabled {
+    pointer-events: none;
+    cursor: default;
+    opacity: 0.5;
+  }
+}
+
+.refresh-action__icon {
+  transition: transform 0.2s ease;
+}
+
+.refresh-action__spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

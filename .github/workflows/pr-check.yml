@@ -1,0 +1,105 @@
+name: PR Build & Test Check
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+        continue-on-error: false
+
+      - name: Lint check (if applicable)
+        run: |
+          if [ -f "package.json" ] && grep -q '"lint"' package.json; then
+            npm run lint
+          else
+            echo "Lint script not found, skipping..."
+          fi
+        continue-on-error: true
+
+      - name: Build application
+        run: npm run build
+        continue-on-error: false
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+      - name: Run unit tests
+        run: npm test -- --watch=false --browsers=ChromeHeadless
+        continue-on-error: false
+
+      - name: Check build artifacts
+        run: |
+          if [ -d "dist" ]; then
+            echo "✓ Build artifacts found"
+            du -sh dist/
+          else
+            echo "✗ Build artifacts not found"
+            exit 1
+          fi
+        continue-on-error: false
+
+      - name: Upload coverage reports (optional)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: coverage/
+          retention-days: 30
+
+      # - name: Comment on PR with results
+      #   if: always()
+      #   uses: actions/github-script@v6
+      #   with:
+      #     script: |
+      #       const buildStatus = '${{ job.status }}';
+      #       const message = buildStatus === 'success' 
+      #         ? '✅ Build and tests passed successfully!'
+      #         : '❌ Build or tests failed. Please check the logs above.';
+            
+      #       github.rest.issues.createComment({
+      #         issue_number: context.issue.number,
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         body: message
+      #       });
+
+  security-check:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+        continue-on-error: true

@@ -2,95 +2,37 @@
   <div class="flex column align-items-center gap-4">
     <span class="typo-title-3 p-4">Import Wallet</span>
     <span class="typo-text-2 text-medium text-align-center"
-      >Pick your import method</span
+      >Pick how you would like to connect your existing wallet.</span
     >
   </div>
-  <div class="flex full-width">
+
+  <div class="flex column full-width gap-16">
+    <kc-button
+      *ngIf="!userHasWallets()"
+      [text]="'Scan QR Code'"
+      [prefixIcon]="'icon-qr'"
+      [isFullWidth]="true"
+      [variant]="'tertiary'"
+      (buttonClick)="onQrScanClick()"
+    ></kc-button>
+
+    <div class="flex align-items-center gap-12 full-width"  *ngIf="!userHasWallets()">
+      <div class="separator-line"></div>
+      <span class="separator-text typo-text-3 text-medium">- OR -</span>
+      <div class="separator-line"></div>
+    </div>
+
     <app-import-switch
       class="full-width"
       [selectedMethod]="importMethod()"
+      [showImportFromFile]="!userHasWallets()"
       (methodChanged)="onImportMethodChange($event)"
     ></app-import-switch>
   </div>
 
-  @if (importMethod() === ImportSwitchMethod.SEED_PHRASE) {
-    <form [formGroup]="seedPhraseForm" (ngSubmit)="submitSeedPhrase()">
-      <div class="flex column align-items-center gap-24 full-width">
-        <div class="flex gap-24 justify-content-start full-width">
-          <app-radio-input
-            [value]="12"
-            [selected]="wordCount()"
-            (selectedChange)="onWordCountChange($event)"
-          >
-            <span class="typo-text-3">12 words</span>
-          </app-radio-input>
-          <app-radio-input
-            [value]="24"
-            [selected]="wordCount()"
-            (selectedChange)="onWordCountChange($event)"
-          >
-            <span class="typo-text-3">24 words</span>
-          </app-radio-input>
-        </div>
-        <div formArrayName="words" class="seed-container">
-          @for (item of words.controls; track $index) {
-            <kc-input
-              [id]="$index"
-              [formControlName]="$index"
-              [placeholder]="`${$index + 1}.`"
-              [isValid]="!(item.invalid && (item.touched || item.dirty))"
-              class="seed-container__word"
-            ></kc-input>
-          }
-        </div>
-        <kc-input
-          [isFullWidth]="true"
-          [label]="'Seed passphrase (optional)'"
-          [type]="'password'"
-          [placeholder]="'Enter seed passphrase'"
-          formControlName="seedPassphrase"
-        ></kc-input>
-      </div>
-    </form>
-  } @else if (importMethod() === ImportSwitchMethod.PRIVATE_KEY) {
-    <div class="flex column align-items-center gap-24 full-width">
-      <form
-        class="full-width"
-        [formGroup]="privateKeyForm"
-        (ngSubmit)="submitPrivateKey()"
-      >
-        <kc-input
-          [isFullWidth]="true"
-          [label]="'Enter your private key'"
-          [type]="privateKeyFieldType()"
-          [placeholder]="'Private key'"
-          [prepadInvalidReason]="true"
-          formControlName="privateKey"
-          (keydown.enter)="next.emit()"
-          [isValid]="!isPrivateKeyInvalid('privateKey')"
-          [invalidReason]="
-            !isPrivateKeyInvalid('privateKey') ? 'Cannot be empty' : undefined
-          "
-        >
-          <div
-            (click)="togglePrivateKeyVisibility()"
-            class="clickable"
-            rightSideSlot
-          >
-            <kc-icon
-              [iconClass]="privateKeyFieldIcon()"
-              [size]="'xs'"
-            ></kc-icon>
-          </div>
-        </kc-input>
-      </form>
-    </div>
-  }
-
   <kc-button
     [isFullWidth]="true"
     [text]="'Continue'"
-    [isDisabled]="!canSubmit()"
-    (buttonClick)="handleSubmit()"
+    (buttonClick)="onContinue()"
   ></kc-button>
 </div>

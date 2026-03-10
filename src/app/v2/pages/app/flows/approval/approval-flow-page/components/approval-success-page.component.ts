@@ -3,11 +3,10 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { WalletActionResult, WalletActionResultType, CommitRevealActionResult, ProtocolType } from '@kaspacom/wallet-messages';
 import { CompletedActionOverviewService } from '../../../../../../../services/action-info-services/completed-action-overview.service';
-import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
+import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { ApprovalFlowService } from '../../../../../../services/approval-flow.service';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { WalletActionService } from '../../../../../../../services/wallet-action.service';
-import { AssetsManagerService } from '../../../../../../../services/assets-manager/assets-manager.service';
 
 @Component({
   selector: 'app-approval-success-page',
@@ -21,7 +20,7 @@ import { AssetsManagerService } from '../../../../../../../services/assets-manag
     <div class="success-container">
       <!-- Success Header -->
       <div class="success-header">
-        <h2 class="typo-title-3 success-title">Transaction Successful!</h2>
+        <h2 class="typo-title-3 success-title">{{ successTitle }}</h2>
 
         <!-- Success Icon -->
         <div class="success-icon-wrapper">
@@ -103,12 +102,24 @@ export class ApprovalSuccessPageComponent {
   private approvalFlowService = inject(ApprovalFlowService);
   private router = inject(Router);
   private walletActionService = inject(WalletActionService);
-  private assetsManager = inject(AssetsManagerService);
 
   @Input() actionResult!: WalletActionResult;
 
   // Spoiler state
   protected showDetails = false;
+
+  get successTitle(): string {
+    if (!this.actionResult) {
+      return 'Transaction Successful!';
+    }
+
+    switch (this.actionResult.type) {
+      case WalletActionResultType.CompoundUtxos:
+        return 'UTXOs compounded successfully!';
+      default:
+        return 'Transaction Successful!';
+    }
+  }
 
   actionDisplay = computed(() =>
     this.completedActionOverviewService.getActionDisplay(this.actionResult)

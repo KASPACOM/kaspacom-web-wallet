@@ -1,31 +1,40 @@
-<kc-snackbar></kc-snackbar>
-<div class="flex column align-items-center gap-32">
-  <div class="flex column align-items-center gap-4">
-    <img
-      ngSrc="/svgs/success.svg"
-      alt="Success image"
-      width="334"
-      height="226"
-      priority
-    />
-    <span class="typo-title-3 p-4">Wallet Created</span>
-    <span class="typo-text-2 text-medium text-align-center"
-      >Your wallet address is:</span
-    >
-    <div class="address-container">
-      <span class="typo-text-3 text-medium text-align-center">
-        {{ displayWalletAddress() }}
-      </span>
-      <div (click)="copyAddressToClipboard()" class="clickable">
-        <kc-icon iconClass="icon-copy"></kc-icon>
+<div class="flex column align-items-center step-layout">
+  <div class="step-layout__content">
+    <div class="flex column align-items-center gap-32">
+      <div class="flex column align-items-center gap-4">
+        <img
+          ngSrc="/svgs/success.svg"
+          alt="Success image"
+          width="334"
+          height="226"
+          priority
+        />
+        <span class="typo-title-3 p-4">Wallet Created</span>
+        <span class="typo-text-2 text-medium text-align-center"
+          >Your wallet is ready to use.</span
+        >
+        <span class="typo-text-2 text-medium text-align-center"
+          >Your wallet address is:</span
+        >
+        <div class="address-container">
+          <span class="typo-text-3 text-medium text-align-center">
+            {{ displayWalletAddress() }}
+          </span>
+          <div (click)="copyAddressToClipboard()" class="clickable">
+            <kc-icon iconClass="icon-copy"></kc-icon>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-  <kc-button
-    [isFullWidth]="true"
-    type="submit"
-    [text]="'Finish'"
-    [isDisabled]="false"
-    (buttonClick)="onFinish()"
-  ></kc-button>
+
+  <div class="step-layout__buttons">
+    <kc-button
+      [isFullWidth]="true"
+      type="submit"
+      [text]="'Finish'"
+      [isDisabled]="false"
+      (buttonClick)="onFinish()"
+    ></kc-button>
+  </div>
 </div>

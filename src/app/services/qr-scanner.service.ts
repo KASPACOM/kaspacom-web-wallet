@@ -1,25 +1,33 @@
 import { Injectable, inject } from '@angular/core';
 import { Html5Qrcode } from 'html5-qrcode';
 import { UtilsHelper } from './utils.service';
-import { MessagePopupService } from './message-popup.service';
+import { NotificationService } from 'kaspacom-ui';
+import { WalletService } from './wallet.service';
 
 export interface QrScannerConfig {
   scannerId: string;
   title?: string;
-  onSuccess: (address: string) => void;
+  instruction?: string;
+  successMessage?: string;
+  validateAddress?: boolean;
+  onSuccess: (data: string) => void;
   onError?: (error: string) => void;
 }
+
+const MIN_QR_BOX_SIZE = 300;
 
 @Injectable({
   providedIn: 'root'
 })
 export class QrScannerService {
   private utilsHelper = inject(UtilsHelper);
-  private messagePopupService = inject(MessagePopupService);
-  
+  private notificationService = inject(NotificationService);
+
   private html5QrCode: Html5Qrcode | null = null;
   private isScanning = false;
   private currentConfig: QrScannerConfig | null = null;
+  private walletService: WalletService = inject(WalletService);
+
 
   async startScanning(config: QrScannerConfig): Promise<void> {
     if (this.isScanning) {
@@ -27,13 +35,13 @@ export class QrScannerService {
     }
 
     this.currentConfig = config;
-    
+
     try {
       this.isScanning = true;
-      
+
       // Create QR scanner instance with unique element ID
       const scannerId = config.scannerId;
-      
+
       // Create scanner element dynamically
       const scannerElement = document.createElement('div');
       scannerElement.id = scannerId;
@@ -49,7 +57,7 @@ export class QrScannerService {
       scannerElement.style.flexDirection = 'column';
       scannerElement.style.alignItems = 'center';
       scannerElement.style.justifyContent = 'center';
-      
+
       // Add header with title and close icon
       const header = document.createElement('div');
       header.style.position = 'absolute';
@@ -62,7 +70,7 @@ export class QrScannerService {
       header.style.padding = '20px';
       header.style.background = 'rgba(0, 0, 0, 0.3)';
       header.style.backdropFilter = 'blur(10px)';
-      
+
       // Add title
       const title = document.createElement('h2');
       title.textContent = config.title || 'Scan QR Code';
@@ -70,7 +78,7 @@ export class QrScannerService {
       title.style.fontSize = '20px';
       title.style.fontWeight = '600';
       title.style.margin = '0';
-      
+
       // Add close icon container
       const closeIconContainer = document.createElement('div');
       closeIconContainer.style.padding = '8px';
@@ -78,7 +86,7 @@ export class QrScannerService {
       closeIconContainer.style.borderRadius = '8px';
       closeIconContainer.style.transition = 'background-color 0.2s ease';
       closeIconContainer.onclick = () => this.stopScanning();
-      
+
       // Create close icon
       const closeIcon = document.createElement('div');
       closeIcon.innerHTML = '✕';
@@ -86,11 +94,11 @@ export class QrScannerService {
       closeIcon.style.fontSize = '24px';
       closeIcon.style.fontWeight = 'bold';
       closeIcon.style.lineHeight = '1';
-      
+
       closeIconContainer.appendChild(closeIcon);
       header.appendChild(title);
       header.appendChild(closeIconContainer);
-      
+
       // Add hover effect for close button
       closeIconContainer.addEventListener('mouseenter', () => {
         closeIconContainer.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
@@ -98,36 +106,47 @@ export class QrScannerService {
       closeIconContainer.addEventListener('mouseleave', () => {
         closeIconContainer.style.backgroundColor = 'transparent';
       });
-      
+
+      const boxSize = Math.min(window.innerWidth, window.innerHeight) * 0.8;
+
       // Add scanner container
       const scannerContainer = document.createElement('div');
       scannerContainer.id = scannerId + '-camera';
-      scannerContainer.style.width = '300px';
-      scannerContainer.style.height = '300px';
+      scannerContainer.style.width = boxSize + 'px';
+      scannerContainer.style.height = boxSize + 'px';
       scannerContainer.style.border = '2px dashed var(--primary)';
       scannerContainer.style.borderRadius = '12px';
       scannerContainer.style.overflow = 'hidden';
-      
+
       // Add instruction text
       const instruction = document.createElement('p');
-      instruction.textContent = 'Point camera at QR code containing wallet address';
+      instruction.textContent = config.instruction || 'Point camera at QR code containing wallet address';
       instruction.style.color = 'white';
       instruction.style.textAlign = 'center';
       instruction.style.marginBottom = '20px';
       instruction.style.fontSize = '16px';
-      
+
       scannerElement.appendChild(header);
       scannerElement.appendChild(instruction);
       scannerElement.appendChild(scannerContainer);
       document.body.appendChild(scannerElement);
-      
+
       // Initialize HTML5-QRCode scanner
-      this.html5QrCode = new Html5Qrcode(scannerContainer.id);
-      
+      this.html5QrCode = new Html5Qrcode(scannerContainer.id, {
+        verbose: false,
+        useBarCodeDetectorIfSupported: true,
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true,
+        }
+      });
+
+      const insideBoxSize = Math.max(MIN_QR_BOX_SIZE - 10, boxSize * 0.6);
+
       const qrConfig = {
         fps: 10,
-        qrbox: { width: 290, height: 290 }, // Make it fill almost the entire 300x300 container
+        qrbox: { width: insideBoxSize, height: insideBoxSize }, // Make it fill almost the entire 300x300 container
         aspectRatio: 1.0
+
       };
 
       // Get available cameras and start scanning
@@ -135,7 +154,7 @@ export class QrScannerService {
       if (devices && devices.length) {
         // Prefer back camera for better QR scanning
         const cameraId = devices.find(d => d.label.toLowerCase().includes('back'))?.id || devices[0].id;
-        
+
         await this.html5QrCode.start(
           cameraId,
           qrConfig,
@@ -143,8 +162,11 @@ export class QrScannerService {
             this.handleQrCodeDetected(decodedText);
           },
           (errorMessage: string) => {
-            // Ignore scanning errors, they're normal during scanning
-            console.debug('QR scan error:', errorMessage);
+            if (errorMessage != "QR code parse error, error = NotFoundException: No MultiFormat Readers were able to detect the code.") {
+              // Ignore scanning errors, they're normal during scanning
+              console.error('QR scan error:', errorMessage);
+              throw errorMessage;
+            }
           }
         );
       } else {
@@ -152,7 +174,7 @@ export class QrScannerService {
       }
     } catch (error) {
       console.error('Failed to start QR scanning:', error);
-      this.messagePopupService.showError('Failed to access camera. Please check permissions.');
+      this.notificationService.error('Failed to access camera', 'Please check permissions.');
       this.stopScanning();
       config.onError?.('Failed to access camera');
     }
@@ -167,42 +189,51 @@ export class QrScannerService {
         console.error('Error stopping QR scanner:', err);
       }
     }
-    
+
     // Remove scanner element from DOM
     if (this.currentConfig) {
       const scannerElements = document.querySelectorAll(`[id^="${this.currentConfig.scannerId}"]`);
       scannerElements.forEach(element => element.remove());
     }
-    
+
     this.isScanning = false;
     this.currentConfig = null;
   }
 
   private handleQrCodeDetected(qrText: string): void {
-    console.log('QR Code detected:', qrText);
-    
     if (!this.currentConfig) {
       return;
     }
-    
-    // Extract wallet address from QR code (it might be just the address or a URL)
-    let address = qrText.trim();
-    
-    // Handle kaspa: URI format
-    if (address.startsWith('kaspa:')) {
-      address = address.substring(6);
-    }
-    
-    // Validate the address
-    if (this.utilsHelper.isValidWalletAddress(address)) {
-      this.currentConfig.onSuccess(address);
-      this.messagePopupService.showSuccess('Wallet address scanned successfully!');
+
+    // If validateAddress is false, pass raw data directly
+    if (this.currentConfig.validateAddress === false) {
+      this.currentConfig.onSuccess(qrText.trim());
+      const successMsg = this.currentConfig.successMessage || 'QR code scanned successfully!';
+      this.notificationService.success('Success', successMsg);
       this.stopScanning();
-    } else {
-      const errorMsg = 'Invalid wallet address in QR code';
-      this.messagePopupService.showError(errorMsg);
-      this.currentConfig.onError?.(errorMsg);
+      return;
     }
+
+    const qrInfo = qrText.trim();
+
+
+    // Extract wallet address from QR code (it might be just the address or a URL)
+    const isValdAddress = this.walletService.isL2Display() ? this.utilsHelper.isValidEthereumAddress(qrInfo) : this.utilsHelper.isValidWalletAddress(qrInfo);
+
+    if (!isValdAddress) {
+      const errorMsg = 'Invalid wallet address in QR code';
+      this.notificationService.error('Error', errorMsg);
+      this.currentConfig.onError?.(errorMsg);
+      return;
+    }
+
+
+
+    // Validate the address
+    this.currentConfig.onSuccess(qrInfo);
+    const successMsg = this.currentConfig.successMessage || 'Wallet address scanned successfully!';
+    this.notificationService.success('Success', successMsg);
+    this.stopScanning();
   }
 
   isCurrentlyScanning(): boolean {

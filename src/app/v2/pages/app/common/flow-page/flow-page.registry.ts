@@ -13,6 +13,7 @@ import { SendL2Erc20ListComponent } from '../../flows/transaction/send-page/comp
 import { ApprovalFlowPageComponent } from '../../flows/approval/approval-flow-page/approval-flow-page.component';
 import { ReceiveFlowPageComponent } from '../../flows/receive/receive-flow-page.component';
 import { ExportWalletComponent } from '../../flows/export-wallet/export-wallet.component';
+import { ExportAccountComponent } from '../../flows/export-account/export-account.component';
 import { PlaceholderFlowPageComponent } from './placeholder-flow-page.component';
 import { ImportExistingFlowComponent } from '../../../onboarding-page/flows/import-existing-flow/import-existing-flow.component';
 import { NewWalletFlowComponent } from '../../../onboarding-page/flows/new-wallet-flow/new-wallet-flow.component';
@@ -23,13 +24,14 @@ import { ExportKaspacomWalletFlowPageComponent } from '../../flows/export-kaspac
 import { IFlowPageConfig } from './interfaces/flow-page.interface';
 import { NetworkSelectionModalComponent } from '../../../../shared/network-selection-modal/network-selection-modal.component';
 import { SendErc20Component } from '../../flows/transaction/send-page/components/send-asset/l2/send-erc20/send-erc20.component';
+import { SwapFlowPageComponent } from '../../flows/swap/swap-flow-page.component';
 
 export type FlowPageRegistryEntry =
   | Type<unknown>
   | {
-      component: Type<unknown>;
-      getInputs?: (config: IFlowPageConfig | null) => Record<string, unknown>;
-    };
+    component: Type<unknown>;
+    getInputs?: (config: IFlowPageConfig | null) => Record<string, unknown>;
+  };
 
 export const FLOW_PAGE_IDS = [
   'wallet-management',
@@ -47,6 +49,7 @@ export const FLOW_PAGE_IDS = [
   'send-erc20',
   'action-approval',
   'receive',
+  'export-account',
   'export-wallet',
   'export-kaspacom-wallet',
   'add-wallet',
@@ -54,7 +57,9 @@ export const FLOW_PAGE_IDS = [
   'send-confirmation',
   'settings-menu',
   'delete-wallet-confirmation',
+
   'network-selection',
+  'swap',
 ] as const;
 
 export type FlowPageId = (typeof FLOW_PAGE_IDS)[number];
@@ -75,6 +80,7 @@ export const FLOW_PAGE_REGISTRY: Record<FlowPageId, FlowPageRegistryEntry> = {
   'send-erc20': SendErc20Component,
   'action-approval': ApprovalFlowPageComponent,
   receive: ReceiveFlowPageComponent,
+  'export-account': ExportAccountComponent,
   'export-wallet': ExportWalletComponent,
   'export-kaspacom-wallet': ExportKaspacomWalletFlowPageComponent,
   'add-wallet': {
@@ -92,4 +98,5 @@ export const FLOW_PAGE_REGISTRY: Record<FlowPageId, FlowPageRegistryEntry> = {
   'settings-menu': SettingsMenuComponent,
   'delete-wallet-confirmation': DeleteWalletConfirmationComponent,
   'network-selection': NetworkSelectionModalComponent,
+  'swap': SwapFlowPageComponent,
 } as const;

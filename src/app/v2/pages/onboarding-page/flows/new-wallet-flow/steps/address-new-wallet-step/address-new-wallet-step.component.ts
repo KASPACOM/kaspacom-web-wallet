@@ -3,9 +3,8 @@ import { Component, OnInit, computed, inject, output } from '@angular/core';
 import {
   KcButtonComponent,
   KcIconComponent,
-  KcSnackbarComponent,
   NotificationService,
-} from '@kaspacom/ui';
+} from 'kaspacom-ui';
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 import { WalletService } from '../../../../../../../services/wallet.service';
 import { Router } from '@angular/router';
@@ -17,7 +16,6 @@ import { FlowPagesService } from '../../../../../../services/flow-pages.service'
     KcButtonComponent,
     NgOptimizedImage,
     KcIconComponent,
-    KcSnackbarComponent,
   ],
   templateUrl: './address-new-wallet-step.component.html',
   styleUrl: './address-new-wallet-step.component.scss',
@@ -36,11 +34,12 @@ export class AddressNewWalletStepComponent {
   private readonly flowPagesService = inject(FlowPagesService);
 
   walletAddress = computed(
-    () => this.newWalletFlowService.newWallet().walletAddress,
+    () => this.newWalletFlowService.getCurrentWalletAddress() || '',
   );
 
   displayWalletAddress = computed(() => {
     const address = this.walletAddress();
+    
     const len = 15;
     if (address.length < len) {
       return address;

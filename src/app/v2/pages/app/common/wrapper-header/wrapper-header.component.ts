@@ -1,6 +1,6 @@
 import { Component, inject, computed, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-import { KcIconComponent, KcButtonComponent } from '@kaspacom/ui';
+import { KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
 import { WalletService } from '../../../../../services/wallet.service';
 import { UtilsHelper } from '../../../../../services/utils.service';
 import { AccountSettingsService } from '../../../../services/account-settings.service';
@@ -15,10 +15,10 @@ import { environment } from '../../../../../../environments/environment';
   selector: 'app-wrapper-header',
   imports: [
     KcIconComponent,
-    KcButtonComponent,
     RouterModule,
     CopyButtonComponent,
     WalletProfileOrbComponent,
+    KcTooltipDirective,
   ],
   templateUrl: './wrapper-header.component.html',
   styleUrl: './wrapper-header.component.scss',

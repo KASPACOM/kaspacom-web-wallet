@@ -1,18 +1,23 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
+import { KcButtonComponent, KcIconComponent, KcInputComponent } from 'kaspacom-ui';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
 import { FlowPagesService } from '../../../../services/flow-pages.service';
 import { FlowPageId } from '../../common/flow-page/flow-page.registry';
 import { PasswordManagerService } from '../../../../../services/password-manager.service';
 import { WalletService } from '../../../../../services/wallet.service';
+import {
+  DELETE_ALL_WALLET_CONFIRMATION_PHRASE,
+  isDeleteWalletConfirmationValid,
+} from '../../../../shared/constants/delete-wallet.constants';
 
 @Component({
   selector: 'app-delete-wallet-confirmation',
   standalone: true,
-  imports: [CommonModule, KcButtonComponent, KcIconComponent],
+  imports: [CommonModule, FormsModule, KcButtonComponent, KcIconComponent, KcInputComponent],
   templateUrl: './delete-wallet-confirmation.component.html',
   styleUrl: './delete-wallet-confirmation.component.scss',
 })
@@ -20,6 +25,12 @@ export class DeleteWalletConfirmationComponent extends FlowPageBaseComponent {
   private passwordManagerService = inject(PasswordManagerService);
   private walletService = inject(WalletService);
   private router = inject(Router);
+
+  deleteConfirmationInput = signal('');
+  readonly deleteConfirmationPhrase = DELETE_ALL_WALLET_CONFIRMATION_PHRASE;
+  readonly isDeleteConfirmationValid = computed(() =>
+    isDeleteWalletConfirmationValid(this.deleteConfirmationInput()),
+  );
 
   get config(): IFlowPageConfig {
     return {
@@ -33,10 +44,15 @@ export class DeleteWalletConfirmationComponent extends FlowPageBaseComponent {
   }
 
   onCancel(): void {
+    this.deleteConfirmationInput.set('');
     this.flowPagesService.navigateBack();
   }
 
   async onDeleteWallet(): Promise<void> {
+    if (!this.isDeleteConfirmationValid()) {
+      return;
+    }
+
     try {
       // Clear all wallet data
       await this.passwordManagerService.clearAllData();
@@ -47,16 +63,15 @@ export class DeleteWalletConfirmationComponent extends FlowPageBaseComponent {
       // Close all flow pages
       this.flowPagesService.closePage();
       
-      // Navigate to the main route for login/create
-      this.router.navigate(['/wallet']);
-      
       // Force page reload to ensure clean state
       window.location.reload();
     } catch (error) {
       console.error('Error during wallet deletion:', error);
-      // Still try to navigate away even if there's an error
-      this.router.navigate(['/wallet']);
       window.location.reload();
     }
+  }
+
+  onDeleteConfirmationChange(value: string): void {
+    this.deleteConfirmationInput.set(value ?? '');
   }
 }

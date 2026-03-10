@@ -1,16 +1,17 @@
-import { Injectable, signal } from "@angular/core";
+import { Injectable, signal, WritableSignal } from "@angular/core";
 import { LOCAL_STORAGE_KEYS } from "../../config/consts";
 import { BaseEthereumProvider } from "./base-ethereum-provider";
 import { EIP1193ProviderChain } from "@kaspacom/wallet-messages";
 import { environment } from "../../../environments/environment";
 import { L2ConfigInterface } from "../../../environments/environment.interface";
 import { NETWORKS } from '@kaspacom/swap-sdk';
+import { VIEW_METHOD } from "../wallet.service";
 
 @Injectable({
     providedIn: 'root',
 })
 export class EthereumWalletChainManager {
-    private currentChain = signal<string | undefined>(localStorage.getItem(LOCAL_STORAGE_KEYS.CURRENT_ETHEREUM_CHAIN) || undefined);
+    private currentChain: WritableSignal<string | undefined>;
     private currentProvider: BaseEthereumProvider | undefined = undefined;
     protected allChainsByChainId: { [chainId: string]: EIP1193ProviderChain } = {};
     protected allChainsEnvConfigByChainId: { [chainId: string]: L2ConfigInterface } = {};
@@ -19,13 +20,32 @@ export class EthereumWalletChainManager {
     constructor(
     ) {
         if (!environment.isL2Enabled) {
+            this.currentChain = signal<string | undefined>(localStorage.getItem(LOCAL_STORAGE_KEYS.CURRENT_ETHEREUM_CHAIN) || undefined);
             return;
         }
         environment.l2Configs.forEach((config: L2ConfigInterface) => {
             this.allChainsEnvConfigByChainId[this.convertChainIdToHex(NETWORKS[config.sdkName].chainId)] = config;
         });
-
         this.setAllChainsByChainId();
+
+
+        let curentChain = localStorage.getItem(LOCAL_STORAGE_KEYS.CURRENT_ETHEREUM_CHAIN) || undefined;
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewTypeParam = urlParams.get('view');
+        const chainIdTypeParam = urlParams.get('chain');
+        if (viewTypeParam) {
+            if (viewTypeParam === VIEW_METHOD.L2) {
+                if (chainIdTypeParam && this.allChainsByChainId[chainIdTypeParam]) {
+                    curentChain = chainIdTypeParam;
+                } else if (!curentChain) {
+                    curentChain = Object.keys(this.allChainsEnvConfigByChainId)[0];
+                }
+            } else {
+                curentChain = undefined;
+            }
+        }
+        this.currentChain = signal<string | undefined>(curentChain);
+
         this.setCurrentWalletProviderAndStopOldOne();
     }
 
@@ -91,6 +111,7 @@ export class EthereumWalletChainManager {
             nativeCurrency: NETWORKS[config.sdkName].nativeToken,
             rpcUrls: [NETWORKS[config.sdkName].rpcUrl],
             blockExplorerUrls: NETWORKS[config.sdkName].blockExplorerUrl ? [NETWORKS[config.sdkName].blockExplorerUrl!] : [],
+            defiApiNetworkName: NETWORKS[config.sdkName].defiApiNetworkName,
         })).concat(JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS) || '[]'));
 
         this.allChainsByChainId = allChains.reduce((acc, chain) => {

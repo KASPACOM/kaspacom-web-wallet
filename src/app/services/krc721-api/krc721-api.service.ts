@@ -18,12 +18,40 @@ import {
   Krc721Operation, 
   Krc721OperationsResponse 
 } from './dtos/krc721-operations.dto';
+import { Krc721PortfolioDetailResponse, Krc721PortfolioResponse } from './dtos/krc721-portfolio.dto';
 
 @Injectable({ providedIn: 'root' })
 export class Krc721ApiService {
   private baseUrl = environment.krc721ApiBaseurl;
+  private kaspaComBaseUrl = environment.kaspaComApiBaseurl;
 
   constructor(private readonly httpClient: HttpClient) {}
+
+  // Portfolio
+  getPortfolio(address: string): Observable<Krc721PortfolioResponse> {
+    const params = new HttpParams().set('walletAddress', address);
+    return this.httpClient.get<Krc721PortfolioResponse>(`${this.kaspaComBaseUrl}/krc721/portfolio`, { params })
+      .pipe(
+        catchError(err => {
+          console.error('Error fetching portfolio:', err);
+          return of([]);
+        })
+      );
+  }
+
+  getPortfolioDetails(address: string, ticker: string): Observable<Krc721PortfolioDetailResponse> {
+    const params = new HttpParams()
+      .set('walletAddress', address)
+      .set('ticker', ticker.toUpperCase()); // Ensure ticker is uppercase
+      
+    return this.httpClient.get<Krc721PortfolioDetailResponse>(`${this.kaspaComBaseUrl}/krc721/portfolio`, { params })
+      .pipe(
+        catchError(err => {
+          console.error(`Error fetching portfolio details for ${ticker}:`, err);
+          return of([]);
+        })
+      );
+  }
 
   // Collections
   getCollections(
@@ -250,7 +278,8 @@ export class Krc721ApiService {
 
   // Load NFT metadata from cache
   getNftMetadata(tick: string, tokenId: string): Observable<any> {
-    const metadataUrl = `https://cache.krc721.stream/krc721/testnet-10/metadata/${tick}/${tokenId}`;
+
+    const metadataUrl = `${environment.krc721CacheStreamUrl}/metadata/${tick}/${tokenId}`;
     
     return this.httpClient
       .get<any>(metadataUrl)

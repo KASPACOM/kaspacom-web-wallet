@@ -8,7 +8,7 @@ import {
   AfterViewInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcIconComponent } from '@kaspacom/ui';
+import { KcIconComponent } from 'kaspacom-ui';
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
 import { FlowPagesService } from '../../../../../../services/flow-pages.service';
 
@@ -55,10 +55,10 @@ export class WalletOptionsQuickActionDialogComponent implements AfterViewInit {
     }, 300);
   }
 
-  onChangeWallet(): void {
+  onAddWallet(): void {
     this.flowPagesService.navigateToPage({
-      id: 'wallet-selection',
-      title: 'Select wallet',
+      id: 'add-wallet',
+      title: 'Add Wallet',
       canNavigateBack: true,
       showTitle: true,
       showBackground: true,

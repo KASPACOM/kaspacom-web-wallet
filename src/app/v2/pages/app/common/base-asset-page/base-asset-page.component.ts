@@ -1,7 +1,7 @@
 import { Component, Input, signal, OnInit, inject } from '@angular/core';
-import { CommonModule, DecimalPipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
+import { CommonModule, TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
-import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
+import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { WalletService } from '../../../../../services/wallet.service';
 
@@ -26,7 +26,6 @@ export interface AssetDetail {
   selector: 'app-base-asset-page',
   imports: [
     CommonModule,
-    DecimalPipe,
     TitleCasePipe,
     UpperCasePipe,
     KcButtonComponent,
@@ -113,7 +112,7 @@ export class BaseAssetPageComponent implements OnInit {
 
   protected shortenAddress(address: string): string {
     if (!address) return '';
-    return `${address.slice(0, 8)}...${address.slice(-6)}`;
+    return `${address.slice(0, 10)}...${address.slice(-8)}`;
   }
 
   protected getCurrentWalletAddress(): string {

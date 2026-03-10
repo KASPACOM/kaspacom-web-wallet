@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import {  KcIconComponent } from '@kaspacom/ui';
+import {  KcIconComponent } from 'kaspacom-ui';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { KaspaApiService } from '../../../../../services/kaspa-api/kaspa-api.service';
@@ -100,7 +100,7 @@ export class KaspaTransactionDetailsComponent implements OnInit {
 
   protected shortenAddress(address: string): string {
     if (!address) return '';
-    return `${address.slice(0, 20)}...${address.slice(-8)}`;
+    return `${address.slice(0, 10)}...${address.slice(-8)}`;
   }
 
   protected getTransactionStatus(transaction: FullTransactionResponseItem): string {

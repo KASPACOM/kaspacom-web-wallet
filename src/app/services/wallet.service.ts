@@ -12,6 +12,12 @@ import { cloneDeep } from "lodash";
 import { EthereumWalletChainManager } from './etherium-services/etherium-wallet-chain.manager';
 import { KaspaNetworkConnectionManagerService } from './kaspa-netwrok-services/kaspa-network-connection-manager.service';
 import { KaspaWalletMnemonicActionsService } from './kaspa-netwrok-services/kaspa-wallet-mnemonic-actions.service';
+import { MonitorService } from './monitor.service';
+
+export enum VIEW_METHOD {
+  L1 = 'l1',
+  L2 = 'l2',
+}
 
 @Injectable({
   providedIn: 'root',
@@ -30,8 +36,17 @@ export class WalletService {
     private readonly utilsService: UtilsHelper,
     private readonly injector: EnvironmentInjector,
     private readonly etheriumChainManager: EthereumWalletChainManager,
+    private readonly monitorService: MonitorService,
   ) {
-    this.isL2DisplaySignal = signal<boolean>(localStorage.getItem(LOCAL_STORAGE_KEYS.IS_L2_DISPLAY) === 'true');
+    let isL2View = localStorage.getItem(LOCAL_STORAGE_KEYS.IS_L2_DISPLAY) === 'true';
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewTypeParam = urlParams.get('view');
+    if (viewTypeParam) {
+      isL2View = viewTypeParam === VIEW_METHOD.L2;
+    }
+
+    this.isL2DisplaySignal = signal<boolean>(isL2View);
   }
 
   async addWallet(
@@ -40,6 +55,7 @@ export class WalletService {
     mnemonic?: string,
     passphrase?: string,
     accountData?: SavedWalletAccount,
+    isNewWallet?: boolean,
   ): Promise<{ sucess: boolean; error?: string }> {
     if (!privateKey && !(mnemonic && accountData)) {
       return {
@@ -96,7 +112,8 @@ export class WalletService {
 
     const id =
       Math.max(...currentWalletsData.wallets.map((wallet) => wallet.id), 0) + 1;
-    const result = await this.saveWalletData({
+
+    const walletData = {
       id,
       name,
       privateKey,
@@ -104,6 +121,21 @@ export class WalletService {
       password: passphrase,
       version: 1,
       accounts: accountData ? [accountData] : undefined,
+    }
+
+    const result = await this.saveWalletData(walletData);
+
+    const wallet = this.createAppWalletFromSavedWalletData(
+      walletData,
+      true,
+      walletData.accounts?.[0],
+    );
+
+
+    this.monitorService.track('Wallet Added', {
+      walletAddressL1: wallet?.getAddress(),
+      walletAddressL2: wallet?.getL2WalletAddress(),
+      isNew: isNewWallet,
     });
 
     if (result) {
@@ -119,11 +151,12 @@ export class WalletService {
     derivedPath: string,
     accountName: string,
     passphrase?: string,
+    isNewWallet?: boolean,
   ): Promise<{ sucess: boolean; error?: string }> {
     return await this.addWallet(name, undefined, mnemonic, passphrase, {
       name: accountName,
       derivedPath: derivedPath,
-    });
+    }, isNewWallet);
   }
 
   async addWalletAccount(
@@ -167,14 +200,21 @@ export class WalletService {
       };
     }
 
+    const newAccount = this.createAppWalletFromSavedWalletData(
+      walletData,
+      true,
+      walletAccountData,
+    );
+
     this.allWalletsSignal.update((oldValue) => [
       ...(oldValue || []),
-      this.createAppWalletFromSavedWalletData(
-        walletData,
-        true,
-        walletAccountData,
-      ),
+      newAccount,
     ]);
+
+    this.monitorService.track('Wallet Account Added', {
+      walletAddressL1: newAccount?.getAddress(),
+      walletAddressL2: newAccount?.getL2WalletAddress(),
+    });
 
     return {
       success: true,
@@ -598,6 +638,63 @@ export class WalletService {
     );
   }
 
+  async updateWalletAccountName(
+    wallet: AppWallet,
+    newName: string,
+  ): Promise<boolean> {
+    if (this.utilsService.isNullOrEmptyString(newName)) {
+      return false;
+    }
+
+    const walletsData = await this.passwordManagerService.getUserData();
+    const walletData = walletsData.wallets.find((w) => w.id === wallet.getId());
+
+    if (!walletData?.accounts?.length) {
+      return false;
+    }
+
+    const accountData = walletData.accounts.find(
+      (account) => account.derivedPath === wallet.getDerivedPath(),
+    );
+
+    if (!accountData) {
+      return false;
+    }
+
+    accountData.name = newName;
+
+    const currentWallet = this.currentWalletSignal();
+    if (
+      currentWallet &&
+      currentWallet.getIdWithAccount() === wallet.getIdWithAccount()
+    ) {
+      currentWallet.setAccountName(newName);
+      this.currentWalletSignal.set(cloneDeep(currentWallet));
+    }
+
+    this.allWalletsSignal.update((wallets) => {
+      if (!wallets) {
+        return wallets;
+      }
+
+      return wallets.map((existingWallet) => {
+        if (
+          existingWallet.getId() === wallet.getId() &&
+          existingWallet.getDerivedPath() === wallet.getDerivedPath()
+        ) {
+          existingWallet.setAccountName(newName);
+          return cloneDeep(existingWallet);
+        }
+
+        return existingWallet;
+      });
+    });
+
+    return await this.passwordManagerService.saveWalletsDataWithStoredPassword(
+      walletsData,
+    );
+  }
+
   getWalletAccountNumberFromDerivedPath(derivedPath: string): number {
     const lastAccount = derivedPath.split('/').pop();
     const accountNumber = Number(lastAccount);
@@ -656,13 +753,7 @@ export class WalletService {
   }
 
   public getCurrentDisplayWalletAddress = computed(() => {
-    if (this.isL2DisplaySignal()) {
-      const l2WalletAddress = this.currentWalletSignal()?.getL2WalletStateSignal()()?.address;
-
-      return l2WalletAddress;
-    }
-
-    return this.currentWalletSignal()?.getAddress();
+    return this.isL2DisplaySignal() ? this.currentWalletSignal()?.getL2WalletAddress() : this.currentWalletSignal()?.getAddress();
   });
 
   public getCurrentDisplayWalletAddressAsString = computed(() => {

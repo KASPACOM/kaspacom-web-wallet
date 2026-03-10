@@ -10,11 +10,9 @@ import { CommonModule } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
 import {
-  KcInputComponent,
   KcCheckboxComponent,
   KcButtonComponent,
-  KcIconComponent,
-} from '@kaspacom/ui';
+} from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
 import { SkeletonComponent } from '../../../../../../../../../shared/ui/skeleton/skeleton.component';
 import { INft } from '../../../../../../../common/interfaces/nft.interface';
@@ -33,16 +31,15 @@ import { AddressResolutionResult } from '../../../../../../../../../../services/
 import { Router } from '@angular/router';
 import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
 import { L1_ASSET_KEYS } from '../../../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
+import { environment } from '../../../../../../../../../../../environments/environment';
 
 @Component({
   selector: 'app-send-nft',
   standalone: true,
   imports: [
     CommonModule,
-    KcInputComponent,
     KcCheckboxComponent,
     KcButtonComponent,
-    KcIconComponent,
     FormsModule,
     SkeletonComponent,
     AddressSmartInputComponent,
@@ -293,7 +290,7 @@ export class SendNftComponent
             name: storedNft.metadata?.name,
             description: storedNft.metadata?.description,
             attributes: storedNft.metadata?.attributes,
-            image: storedNft.metadata?.image,
+            image: this.buildCachedImageUrl(storedNft.tick, storedNft.tokenId) || this.processImageUrl(storedNft.metadata?.image),
           };
           this.nft.set(nft);
         } else {
@@ -339,7 +336,7 @@ export class SendNftComponent
           name: metadata.name,
           description: metadata.description,
           attributes: metadata.attributes,
-          image: this.processImageUrl(metadata.image),
+          image: this.buildCachedImageUrl(nft.tick, nft.tokenId) || this.processImageUrl(metadata.image),
         };
 
         this.nft.set(updatedNft);
@@ -378,12 +375,19 @@ export class SendNftComponent
   // Helper method to get image URL
   getImageUrl(): string {
     const currentNft = this.nft();
-    if (currentNft?.image) {
-      // Convert IPFS URL to HTTP URL if needed
-      if (currentNft.image.startsWith('ipfs://')) {
-        return currentNft.image.replace('ipfs://', 'https://ipfs.io/ipfs/');
+    if (currentNft) {
+      const cachedImageUrl = this.buildCachedImageUrl(currentNft.tick, currentNft.tokenId);
+      if (cachedImageUrl) {
+        return cachedImageUrl;
       }
-      return currentNft.image;
+
+      const fallbackImage = currentNft.image;
+      if (fallbackImage) {
+        if (fallbackImage.startsWith('ipfs://')) {
+          return fallbackImage.replace('ipfs://', 'https://ipfs.io/ipfs/');
+        }
+        return fallbackImage;
+      }
     }
     return '';
   }
@@ -403,5 +407,15 @@ export class SendNftComponent
     // Close the flow and navigate to homepage with KRC721 tab
     this.flowPagesService.closePage();
     this.router.navigate(['/app/home'], { queryParams: { tab: 'krc721' } });
+  }
+
+  private buildCachedImageUrl(tick?: string, tokenId?: string): string {
+    if (!tick || !tokenId || !environment.krc721CacheStreamUrl) {
+      return '';
+    }
+
+    const normalizedTick = encodeURIComponent(tick.toUpperCase());
+    const normalizedTokenId = encodeURIComponent(tokenId);
+    return `${environment.krc721CacheStreamUrl}/optimized/${normalizedTick}/${normalizedTokenId}`;
   }
 }

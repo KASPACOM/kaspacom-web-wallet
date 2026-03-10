@@ -10,7 +10,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
-import { KcInputComponent, KcButtonComponent } from '@kaspacom/ui';
+import { KcInputComponent, KcButtonComponent } from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
 import { WalletService } from '../../../../../../../../../../services/wallet.service';
 import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';
@@ -255,7 +255,7 @@ export class SendL2KaspaComponent
 
     try {
       // Get the L2 wallet address for the sender
-      const l2WalletAddress = await currentWallet.getL2WalletAddress();
+      const l2WalletAddress = currentWallet.getL2WalletAddress();
       if (!l2WalletAddress) {
         this.messagePopupService.showError('L2 wallet not available');
         return;

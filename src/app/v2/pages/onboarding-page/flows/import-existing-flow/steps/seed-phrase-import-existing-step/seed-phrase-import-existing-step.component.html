@@ -1,0 +1,72 @@
+<div class="seed-phrase-step flex column align-items-center step-layout full-width">
+  <div class="step-layout__content">
+    <div class="flex column align-items-center gap-32 full-width">
+      <div class="flex column align-items-center gap-8 text-align-center">
+        <span class="typo-title-3">Enter recovery phrase</span>
+        <p class="typo-text-2 text-medium">
+          Paste or type your 12 or 24 word recovery phrase. Keep it private and never
+          share it with anyone.
+        </p>
+      </div>
+
+      <form
+        class="seed-phrase-step__form flex column gap-24 full-width"
+        [formGroup]="seedPhraseForm"
+        (ngSubmit)="submitSeedPhrase()"
+      >
+        <div class="seed-phrase-step__word-count flex gap-24 justify-content-center">
+          <app-radio-input
+            [value]="12"
+            [selected]="wordCount()"
+            (selectedChange)="onWordCountChange($event)"
+          >
+            <span class="typo-text-3">12 words</span>
+          </app-radio-input>
+          <app-radio-input
+            [value]="24"
+            [selected]="wordCount()"
+            (selectedChange)="onWordCountChange($event)"
+          >
+            <span class="typo-text-3">24 words</span>
+          </app-radio-input>
+        </div>
+
+        <div
+          class="seed-phrase-step__inputs"
+          formArrayName="words"
+          [attr.data-refresh-key]="trackPhraseCount()"
+        >
+          @for (control of words.controls; track $index) {
+            <kc-input
+              [id]="$index"
+              [formControlName]="$index"
+              [placeholder]="`${$index + 1}.`"
+              [isValid]="!(control.invalid && (control.dirty || control.touched))"
+              class="seed-phrase-step__word"
+            ></kc-input>
+          }
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="step-layout__buttons">
+    <div class="seed-phrase-step__actions flex gap-12 full-width">
+      <kc-button
+        [text]="'Back'"
+        [variant]="'tertiary'"
+        [isFullWidth]="true"
+        type="button"
+        (buttonClick)="previous.emit()"
+      ></kc-button>
+      <kc-button
+        [text]="'Continue'"
+        [isDisabled]="seedPhraseForm.invalid"
+        [isFullWidth]="true"
+        type="submit"
+        (buttonClick)="submitSeedPhrase()"
+      ></kc-button>
+    </div>
+  </div>
+</div>
+

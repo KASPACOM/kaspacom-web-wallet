@@ -6,17 +6,14 @@ import {
   inject,
   effect,
 } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
 import {
-  KcInputComponent,
   KcCheckboxComponent,
   KcButtonComponent,
-  KcIconComponent,
-} from '@kaspacom/ui';
+} from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
-import { SkeletonComponent } from '../../../../../../../../../shared/ui/skeleton/skeleton.component';
 import { KnsDomainAsset } from '../../../../../../../../../../services/kns-api/dtos/kns-domain.dto';
 import { KnsApiService } from '../../../../../../../../../../services/kns-api/kns-api.service';
 import { WalletService } from '../../../../../../../../../../services/wallet.service';
@@ -39,13 +36,9 @@ import { L1_ASSET_KEYS } from '../../../../../../../../../../services/assets-man
   standalone: true,
   imports: [
     CommonModule,
-    KcInputComponent,
     KcCheckboxComponent,
     KcButtonComponent,
-    KcIconComponent,
     FormsModule,
-    DatePipe,
-    SkeletonComponent,
     AddressSmartInputComponent,
   ],
   templateUrl: './send-kns.component.html',

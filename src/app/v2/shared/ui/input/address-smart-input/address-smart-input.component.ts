@@ -14,7 +14,8 @@ import {
   KcIconComponent,
   KcInputComponent,
   KcSpinnerComponent,
-} from '@kaspacom/ui';
+  KcTooltipDirective,
+} from 'kaspacom-ui';
 import { CopyButtonComponent } from '../../copy-button/copy-button.component';
 import {
   AddressResolutionService,
@@ -31,6 +32,7 @@ import {
     KcIconComponent,
     KcSpinnerComponent,
     CopyButtonComponent,
+    KcTooltipDirective,
   ],
   templateUrl: './address-smart-input.component.html',
   styleUrl: './address-smart-input.component.scss',
@@ -184,6 +186,6 @@ export class AddressSmartInputComponent implements OnChanges {
 
   protected shortenAddress(address: string): string {
     if (!address) return '';
-    return `${address.slice(0, 8)}...${address.slice(-6)}`;
+    return `${address.slice(0, 10)}...${address.slice(-8)}`;
   }
 }

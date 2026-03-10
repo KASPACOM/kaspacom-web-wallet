@@ -1,23 +1,67 @@
 <div class="balance-container flex column p-12 gap-4 align-items-center">
-
   <!-- Main USD Balance -->
-  @if (isLoading()) {
-  <app-skeleton [height]="'76px'" [width]="'300px'" [fullRound]="false"></app-skeleton>
+  @if (isLoading() || isRefreshing()) {
+    <app-skeleton
+      [height]="'76px'"
+      [width]="'300px'"
+      [fullRound]="false"
+    ></app-skeleton>
   } @else {
-  <div class="balance-container__value text-white typo-title-6 fade-in" style="font-size: 4rem">
-    ${{ usdBalance() | number : "1.2" }}
-  </div>
+    <div
+      class="balance-container__value text-white typo-title-6 fade-in"
+      style="font-size: 4rem"
+    >
+      ${{ usdBalance() | number: "1.2" }}
+    </div>
   }
 
   <!-- Network Balance -->
-  @if (isLoading()) {
-  <app-skeleton [height]="'33px'" [width]="'200px'" [fullRound]="false"></app-skeleton>
+  @if (isLoading() || isRefreshing()) {
+    <app-skeleton
+      [height]="'33px'"
+      [width]="'200px'"
+      [fullRound]="false"
+    ></app-skeleton>
   } @else {
-  <div class="kas-balance flex gap-8 align-items-center typo-title-4 fade-in" style="color: var(--gray-80)">
-    <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'md'"></kc-icon>
-    <span class="balance-amount">
-      {{ kasBalance() | commaFormatter }}
-    </span>
-  </div>
+    <div
+      class="kas-balance flex gap-8 align-items-center typo-title-4 fade-in"
+      style="color: var(--gray-80)"
+    >
+      <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'md'"></kc-icon>
+      <span class="balance-amount">
+        {{ kasBalance() | commaFormatter }}
+      </span>
+      <div
+        class="refresh-action"
+        [class.refresh-action--disabled]="isLoading() || isRefreshing()"
+        (click)="onRefreshClick($event)"
+        kcTooltip="Refresh balances"
+        tooltipPosition="top"
+      >
+        @if (isRefreshing()) {
+          <kc-spinner
+            class="refresh-action__spinner"
+            [size]="'xs'"
+          ></kc-spinner>
+        } @else {
+          <kc-icon
+            class="refresh-action__icon"
+            [iconClass]="'icon-update'"
+            [size]="'sm'"
+          ></kc-icon>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Wallet Address -->
+  @if (!isLoading()) {
+    <div class="wallet-address-display fade-in">
+      {{ walletAddress() | shortenAddress }}
+      <app-copy-button
+        [value]="walletAddress() || ''"
+        [size]="'sm'"
+      ></app-copy-button>
+    </div>
   }
 </div>

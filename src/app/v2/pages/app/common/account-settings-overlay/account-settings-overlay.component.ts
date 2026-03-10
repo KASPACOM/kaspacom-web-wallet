@@ -5,11 +5,12 @@ import {
   EventEmitter,
   signal,
   inject,
-  computed,
   OnInit,
+  Signal,
+  computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui';
+import { KcButtonComponent, KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
 import {
   trigger,
   state,
@@ -18,23 +19,23 @@ import {
   animate,
 } from '@angular/animations';
 import { WalletService } from '../../../../../services/wallet.service';
-import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { AppWallet } from '../../../../../classes/AppWallet';
+import { ShortenAddressPipe } from '../../../../../pipes/shorten-address.pipe';
 
 interface WalletAccount {
   id: string;
   name: string;
   address: string;
-  balance: number;
-  balanceDisplay: string;
   isSelected: boolean;
   wallet: AppWallet;
+  balance: Signal<number | undefined>;
+  isLoadingBalance: Signal<boolean>;
 }
 
 @Component({
   selector: 'app-account-settings-overlay',
   standalone: true,
-  imports: [CommonModule, KcButtonComponent, KcIconComponent],
+  imports: [CommonModule, KcButtonComponent, KcIconComponent, KcTooltipDirective, ShortenAddressPipe],
   templateUrl: './account-settings-overlay.component.html',
   styleUrl: './account-settings-overlay.component.scss',
   animations: [
@@ -87,9 +88,6 @@ export class AccountSettingsOverlayComponent implements OnInit {
   @Output() close = new EventEmitter<void>();
 
   private walletService = inject(WalletService);
-  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
-
-
   // Real wallet data
   wallets = signal<WalletAccount[]>([]);
 
@@ -98,8 +96,8 @@ export class AccountSettingsOverlayComponent implements OnInit {
   }
 
   private loadWallets(): void {
-    // Get all wallets and current wallet
-    const allWallets = this.walletService.getAllWallets(true)() || [];
+    // Get all wallets and current wallet - DON'T force balance refresh here
+    const allWallets = this.walletService.getAllWallets(false)() || [];
     const currentWallet = this.walletService.getCurrentWallet();
 
     // Group wallets by ID to get accounts
@@ -117,65 +115,61 @@ export class AccountSettingsOverlayComponent implements OnInit {
     walletGroups.forEach((group) => {
       if (group.length > 0 && group[0].supportAccounts()) {
         group.forEach((wallet) => {
-          const network = this.networkSelectionService.getCurrentNetwork();
-          const address = this.getWalletAddress(wallet, network);
-          const balance = this.getWalletBalance(wallet, network);
+          const address = this.getWalletAddress(wallet);
+          const isLoadingBalance = signal(true);
 
           accounts.push({
             id: wallet.getIdWithAccount(),
             name: wallet.getAccountName() || wallet.getName(),
             address: address,
-            balance: balance,
-            balanceDisplay: `${balance} ${network === 'l1-kaspa' ? 'KAS' : 'KAS'}`,
             isSelected:
               currentWallet?.getIdWithAccount() === wallet.getIdWithAccount(),
             wallet: wallet,
+            balance: computed(() => wallet.getTotalBalanceAsSignal()),
+            isLoadingBalance: isLoadingBalance.asReadonly(),
           });
+
+          // Load balance for this wallet asynchronously
+          this.loadBalanceForWallet(wallet, isLoadingBalance);
         });
       } else if (group.length > 0) {
         // Single wallet without accounts
         const wallet = group[0];
-        const network = this.networkSelectionService.getCurrentNetwork();
-        const address = this.getWalletAddress(wallet, network);
-        const balance = this.getWalletBalance(wallet, network);
+        const address = this.getWalletAddress(wallet);
+        const isLoadingBalance = signal(true);
 
         accounts.push({
           id: wallet.getIdWithAccount(),
           name: wallet.getName(),
           address: address,
-          balance: balance,
-          balanceDisplay: `${balance} ${network === 'l1-kaspa' ? 'KAS' : 'KAS'}`,
           isSelected:
             currentWallet?.getIdWithAccount() === wallet.getIdWithAccount(),
           wallet: wallet,
+          balance: computed(() => wallet.getTotalBalanceAsSignal()),
+          isLoadingBalance: isLoadingBalance.asReadonly(),
         });
+
+        // Load balance for this wallet asynchronously
+        this.loadBalanceForWallet(wallet, isLoadingBalance);
       }
     });
 
     this.wallets.set(accounts);
   }
 
-  private getWalletAddress(wallet: AppWallet, network: string): string {
-    if (network === 'l1-kaspa') {
-      return wallet.getAddress();
-    } else {
-      // For L2 networks, get the L2 address
-      const l2State = wallet.getL2WalletStateSignal()();
-      return l2State?.address || wallet.getAddress(); // fallback to L1
+  private async loadBalanceForWallet(wallet: AppWallet, loadingSignal: any): Promise<void> {
+    try {
+      // Refresh the balance for this specific wallet
+      await wallet.refreshUtxosBalance();
+    } catch (error) {
+      console.error(`Failed to load balance for wallet ${wallet.getAddress()}:`, error);
+    } finally {
+      loadingSignal.set(false);
     }
   }
 
-  private getWalletBalance(wallet: AppWallet, network: string): number {
-    if (network === 'l1-kaspa') {
-      const balanceData = wallet.getCurrentWalletStateBalanceSignalValue();
-      return balanceData
-        ? this.kaspaNetworkActionsService.sompiToNumber(balanceData.mature)
-        : 0;
-    } else {
-      // For L2 networks, get the L2 balance
-      const l2State = wallet.getL2WalletStateSignal()();
-      return l2State ? l2State.balanceFormatted : 0;
-    }
+  private getWalletAddress(wallet: AppWallet): string {
+    return this.walletService.isL2Display() ? wallet.getL2WalletAddress() : wallet.getAddress();
   }
 
   onClose(): void {
@@ -208,10 +202,5 @@ export class AccountSettingsOverlayComponent implements OnInit {
   createWallet(): void {
     // Logic for creating wallet
     console.log('Create wallet clicked');
-  }
-
-  shortenAddress(address: string): string {
-    if (!address) return '';
-    return `${address.slice(0, 10)}...${address.slice(-8)}`;
   }
 }

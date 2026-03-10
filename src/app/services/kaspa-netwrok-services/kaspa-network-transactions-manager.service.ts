@@ -177,12 +177,18 @@ export class KaspaNetworkTransactionsManagerService {
       0n
     );
 
+    let priorityEntriesSum = additionalOptions.priorityEntries ? additionalOptions.priorityEntries.reduce(
+      (previousValue, currentValue) => previousValue + currentValue.amount,
+      0n
+    ) : 0n;
+
     return await this.connectAndDo<{
       success: boolean;
       errorCode?: number;
       result?: ICreateTransactions;
     }>(async () => {
       const context = utxoProcessonManager.getContext()!;
+      
 
       if (sendAll) {
         const remeaingAmountToSend =
@@ -201,7 +207,7 @@ export class KaspaNetworkTransactionsManagerService {
           0n
         );
       } else {
-        if (context.balance!.mature < totalPaymentsAmount) {
+        if ((context.balance!.mature || 0n) + priorityEntriesSum < totalPaymentsAmount) {
           return {
             success: false,
             errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
@@ -231,7 +237,7 @@ export class KaspaNetworkTransactionsManagerService {
       };
 
       if (
-        context.balance!.mature < totalPaymentsAmount ||
+        (context.balance!.mature || 0n) + priorityEntriesSum < totalPaymentsAmount ||
         (outputs.length && outputs[0].amount <= MINIMAL_AMOUNT_TO_SEND)
       ) {
         return {

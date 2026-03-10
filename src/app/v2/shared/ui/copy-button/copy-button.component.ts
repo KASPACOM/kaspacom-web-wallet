@@ -1,8 +1,9 @@
 import { Component, Input, signal, OnDestroy } from '@angular/core';
-import { KcIconComponent } from '@kaspacom/ui';
+import { KcIconComponent } from 'kaspacom-ui';
 
 @Component({
   selector: 'app-copy-button',
+  standalone: true,
   imports: [KcIconComponent],
   templateUrl: './copy-button.component.html',
   styleUrl: './copy-button.component.scss',

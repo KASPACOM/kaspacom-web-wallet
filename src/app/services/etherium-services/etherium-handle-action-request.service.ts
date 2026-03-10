@@ -4,7 +4,7 @@ import { AppWallet } from "../../classes/AppWallet";
 import { WalletActionResultWithError } from "../../types/wallet-action-result";
 import { EtherService } from "./ether.service";
 import { createEIP1193Response } from "./create-eip-1193-response";
-import { ethers, TransactionRequest } from "ethers";
+import { ethers, FeeData, TransactionRequest } from "ethers";
 import { EthereumWalletChainManager } from "./etherium-wallet-chain.manager";
 import { MINIMAL_AMOUNT_TO_SEND } from "../kaspa-netwrok-services/kaspa-network-actions.service";
 
@@ -19,7 +19,7 @@ export class EthereumHandleActionRequestService {
             [EIP1193RequestType.WALLET_SWITCH_ETHEREUM_CHAIN]: this.handleWalletSwitchEthereumChainRequest.bind(this),
             [EIP1193RequestType.WALLET_ADD_ETHEREUM_CHAIN]: this.handleWalletAddEthereumChainRequest.bind(this),
         }
-    
+
 
     constructor(
         private readonly etherService: EtherService,
@@ -50,11 +50,94 @@ export class EthereumHandleActionRequestService {
         return await handler(action, wallet);
     }
 
+    normalizeFeeData(fee: FeeData): {
+        type?: number;
+        gasPrice?: bigint;
+        maxFeePerGas?: bigint;
+        maxPriorityFeePerGas?: bigint;
+    } {
+        const gasPrice = fee.gasPrice ?? null;
+        const maxFee = fee.maxFeePerGas ?? null;
+        const maxPriority = fee.maxPriorityFeePerGas ?? null;
+
+        // ---- Case 1: Proper EIP-1559 chain ----
+        if (
+            maxFee != null &&
+            maxPriority != null &&
+            gasPrice != null &&
+            maxFee >= gasPrice
+        ) {
+            return {
+                type: 2,
+                maxFeePerGas: maxFee,
+                maxPriorityFeePerGas: maxPriority,
+            };
+        }
+
+        // ---- Case 2: Broken EIP-1559 (your case) ----
+        if (gasPrice != null) {
+            return {
+                type: 0, // force legacy
+                gasPrice,
+            };
+        }
+
+        // ---- Case 3: Last resort fallback ----
+        const fallbackGasPrice = 2_000_000_000n; // 2 gwei safe default
+
+        return {
+            type: 0,
+            gasPrice: fallbackGasPrice,
+        };
+    }
+
+    applyFeesSafely(
+        tx: ethers.TransactionRequest,
+        fees: {
+            type?: number;
+            gasPrice?: bigint;
+            maxFeePerGas?: bigint;
+            maxPriorityFeePerGas?: bigint;
+        }
+    ) {
+        if (fees.type === 0) {
+            // Legacy tx → REMOVE EIP-1559 fields
+            delete tx.maxFeePerGas;
+            delete tx.maxPriorityFeePerGas;
+            delete tx.accessList;
+
+            tx.type = 0;
+            tx.gasPrice = fees.gasPrice;
+        } else {
+            // EIP-1559 tx → REMOVE legacy field
+            delete tx.gasPrice;
+
+            tx.type = 2;
+            tx.maxFeePerGas = fees.maxFeePerGas;
+            tx.maxPriorityFeePerGas = fees.maxPriorityFeePerGas;
+        }
+    }
+
+
     async handleSendTransactionRequest(action: EIP1193RequestPayload<EIP1193RequestType.SEND_TRANSACTION>, wallet: AppWallet): Promise<WalletActionResultWithError> {
+
+        const provider = wallet.getL2Provider()?.getProvider();
+        if (!provider) {
+            throw new Error("No L2 provider");
+        }
+
+        // 1. Read raw fee data
+        const feeData = await provider.getFeeData();
+
+        // 2. Normalize it (CRITICAL)
+        const normalizedFees = this.normalizeFeeData(feeData);
+
         const l2Wallet: ethers.Wallet = (await wallet.getL2Wallet())!;
         const l2Transaction = await this.etherService.createTransactionAndPopulate(action.params[0] as TransactionRequest, l2Wallet);
+        this.applyFeesSafely(l2Transaction, normalizedFees);
         const signedTransactionString = await this.etherService.signTransaction(l2Transaction, l2Wallet);
         const transactionHash = await this.etherService.sendTransactionToL2(wallet.getL2Provider()!, signedTransactionString);
+
 
         return {
             success: true,

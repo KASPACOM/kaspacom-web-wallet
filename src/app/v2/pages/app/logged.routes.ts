@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
-import { LoginComponent } from './login/login.component';
-import { SwapComponent } from './swap/swap.component';
+
 import { AppWrapperComponent } from './app-wrapper.component';
 import { CollectablesComponent } from './collectables/collectables.component';
 import { TransactionsComponent } from './transactions/transactions.component';
@@ -18,11 +17,7 @@ export const loggedRoutes: Routes = [
         children: HomeRoutes,
         data: { animation: 'Home' },
       },
-      {
-        path: 'swap',
-        component: SwapComponent,
-        data: { animation: 'Swap' },
-      },
+
       {
         path: 'collectables',
         component: CollectablesComponent,
@@ -44,10 +39,5 @@ export const loggedRoutes: Routes = [
         data: { animation: 'Activity' },
       },
     ],
-  },
-  {
-    path: 'login',
-    component: LoginComponent,
-    data: { animation: 'Login' },
   },
 ];

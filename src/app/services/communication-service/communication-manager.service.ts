@@ -15,6 +15,7 @@ import { EthereumWalletChainManager } from '../etherium-services/etherium-wallet
 import { BaseCommunicationApp } from './communication-app/base-communication-app';
 import { environment } from '../../../environments/environment';
 import { AllowedApplicationsService } from './allowed-applications.service';
+import { ApprovalFlowService } from '../../v2/services/approval-flow.service';
 
 @Injectable({
     providedIn: 'root',
@@ -32,6 +33,7 @@ export class CommunicationManagerService {
     protected ethereumWalletActionsService: EthereumWalletActionsService = inject(EthereumWalletActionsService);
     protected ethereumWalletChainManager: EthereumWalletChainManager = inject(EthereumWalletChainManager);
     protected allowedApplicationsService: AllowedApplicationsService = inject(AllowedApplicationsService);
+    protected approvalFlowService: ApprovalFlowService = inject(ApprovalFlowService);
 
 
     protected connectedApps: BaseCommunicationApp[] = [];
@@ -74,14 +76,14 @@ export class CommunicationManagerService {
         this.sendDisconnectionMessageToApp(app)
             .catch(error => console.error('Failed to send disconnect message to app ' + app.getApplicationId(), error))
             .finally(
-            () => {
-                try {
-                    app.disconnect();
-                } catch (err) {
-                    console.error('Failed to disconnect app ' + app.getApplicationId())
+                () => {
+                    try {
+                        app.disconnect();
+                    } catch (err) {
+                        console.error('Failed to disconnect app ' + app.getApplicationId())
+                    }
                 }
-            }
-        );
+            );
 
         const allowedAppIndex = this.allowedApps.indexOf(app);
         const connectedAppIndex = this.connectedApps.indexOf(app);
@@ -138,7 +140,11 @@ export class CommunicationManagerService {
                     await this.handleWalletActionRequest(message.payload, message.uuid, app);
                     break;
                 case WalletMessageTypeEnum.OpenWalletInfo:
-                    this.router.navigate(['/wallet-info']);
+                    // Clean up any ongoing approval flow before navigating
+                    this.approvalFlowService.closeApproval();
+                    // Clear any pending action state from the old review-action component
+                    this.walletActionsService.clearActionResult();
+                    this.router.navigate(['/app/home']);
                     break;
                 case WalletMessageTypeEnum.RejectWalletActionRequest:
                     this.walletActionsService.resolveCurrentWaitingForApproveAction(false);
@@ -250,7 +256,7 @@ export class CommunicationManagerService {
                 }
             } else if (actionData.action == WalletActionTypeEnum.EIP1193ProviderRequest) {
 
-                const eipResult = await this.ethereumWalletActionsService.handleRequest(actionData.data, async () => { await this.notifyActionAccepted(actionData, uuid); });
+                const eipResult = await this.ethereumWalletActionsService.handleRequest(actionData.data, async () => { await this.notifyActionAccepted(actionData, uuid); }, !actionData.displayIframeApproval, app?.getApplicationId());
 
                 result = {
                     success: true,
@@ -267,7 +273,7 @@ export class CommunicationManagerService {
                 if (action) {
                     result = await this.walletActionsService.validateAndDoActionAfterApproval(
                         action,
-                        true,
+                        actionData.displayIframeApproval,
                         async () => { await this.notifyActionAccepted(actionData, uuid); },
                     );
                 }
@@ -375,7 +381,7 @@ export class CommunicationManagerService {
         if (!environment.isL2Enabled) {
             return;
         }
-        const eventData = await this.ethereumWalletActionsService.getEventData(event);
+        const eventData = await this.ethereumWalletActionsService.getEventData(event, undefined, specificApp?.getApplicationId());
 
         await this.sendMessageToConnectedApps({
             type: WalletMessageTypeEnum.EIP1193Event,

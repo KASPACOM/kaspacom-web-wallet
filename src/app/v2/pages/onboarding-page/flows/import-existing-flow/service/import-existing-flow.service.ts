@@ -19,6 +19,16 @@ export interface IWalletImportResult {
   error?: string;
 }
 
+const INIT_INFO = {
+  importSwitchMethod: ImportSwitchMethod.SEED_PHRASE,
+  wordCount: 12,
+  seedPhrase: '',
+  seedPassphrase: '',
+  privateKey: '',
+  password: '',
+  confirmPassword: '',
+};
+
 @Injectable({
   providedIn: 'root',
 })
@@ -27,15 +37,7 @@ export class ImportExistingFlowService {
 
   private passwordManagerService = inject(PasswordManagerService);
 
-  private _model = signal<IImportExistingWallet>({
-    importSwitchMethod: ImportSwitchMethod.SEED_PHRASE,
-    wordCount: 12,
-    seedPhrase: '',
-    seedPassphrase: '',
-    privateKey: '',
-    password: '',
-    confirmPassword: '',
-  });
+  private _model = signal<IImportExistingWallet>({ ...INIT_INFO });
 
   private _skipPassword = false;
 
@@ -51,22 +53,40 @@ export class ImportExistingFlowService {
     return this._model;
   }
 
-  init() {}
+  init() {
+    this._model.set({
+      ...INIT_INFO
+    });
+  }
 
-  printState() {}
+  printState() { }
 
   submitSeedPhraseStep(
     seedPhrase: string,
     wordCount: number,
     importSwitchMethod: ImportSwitchMethod,
-    seedPassphrase: string = '',
   ) {
     this._model.set({
       ...this._model(),
       seedPhrase,
       wordCount,
       importSwitchMethod,
+    });
+    this.printState();
+  }
+
+  submitSeedPassphraseStep(seedPassphrase: string) {
+    this._model.set({
+      ...this._model(),
       seedPassphrase,
+    });
+    this.printState();
+  }
+
+  setImportSwitchMethod(method: ImportSwitchMethod) {
+    this._model.set({
+      ...this._model(),
+      importSwitchMethod: method,
     });
     this.printState();
   }
@@ -107,6 +127,8 @@ export class ImportExistingFlowService {
           this._model().privateKey.trim(),
           undefined,
           undefined,
+          undefined,
+          false,
         );
         importResult = { success: tmp.sucess, error: tmp.error };
       } else {
@@ -141,6 +163,10 @@ export class ImportExistingFlowService {
         const tmp = await this.walletService.addWallet(
           'Saved Wallet ' + walletCount,
           this._model().privateKey.trim(),
+          undefined,
+          undefined,
+          undefined,
+          false,
         );
         importResult = { success: tmp.sucess, error: tmp.error };
       } else {

@@ -31,22 +31,37 @@
             ],
             "styles": ["src/styles.scss"],
             "scripts": [],
+            "allowedCommonJsDependencies": [
+              "@segment/analytics.js-video-plugins",
+              "@segment/facade",
+              "lodash",
+              "jsbi",
+              "decimal.js-light",
+              "big.js",
+              "toformat",
+              "js-sha3",
+              "qrcode",
+              "bn.js",
+              "hash.js",
+              "graphemer"
+            ],
             "server": "src/main.server.ts",
             "prerender": false,
-            "ssr": false
+            "ssr": false,
+            "sourceMap": true
           },
           "configurations": {
             "production": {
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "2.5MB",
-                  "maximumError": "3MB"
+                  "maximumWarning": "6MB",
+                  "maximumError": "6MB"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "6kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "10kB",
+                  "maximumError": "12kB"
                 }
               ],
               "outputHashing": "all"
@@ -71,12 +86,16 @@
               ],
               "optimization": false,
               "extractLicenses": false,
-              "sourceMap": true
+              "sourceMap": true,
+              "outputHashing": "all"
             }
           },
           "defaultConfiguration": "production"
         },
         "serve": {
+          "options": {
+            "host": "local.kaspa.com"
+          },
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {

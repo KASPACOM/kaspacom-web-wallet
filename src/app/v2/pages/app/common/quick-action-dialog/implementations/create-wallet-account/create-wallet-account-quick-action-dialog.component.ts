@@ -1,11 +1,10 @@
 import { Component, Input, Output, EventEmitter, inject, ChangeDetectorRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { KcInputComponent, KcButtonComponent, NotificationService } from '@kaspacom/ui';
+import { KcInputComponent, KcButtonComponent, NotificationService } from 'kaspacom-ui';
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
 import { WalletService } from '../../../../../../../services/wallet.service';
 import { AppWallet } from '../../../../../../../classes/AppWallet';
-import { PasswordManagerService } from '../../../../../../../services/password-manager.service';
 
 @Component({
   selector: 'app-create-wallet-account-quick-action-dialog',
@@ -22,7 +21,6 @@ export class CreateWalletAccountQuickActionDialogComponent implements AfterViewI
 
   private notificationService = inject(NotificationService);
   private walletService = inject(WalletService);
-  private passwordManagerService = inject(PasswordManagerService);
   private cdr = inject(ChangeDetectorRef);
 
   // Form data
@@ -82,7 +80,10 @@ export class CreateWalletAccountQuickActionDialogComponent implements AfterViewI
           // For accounts, we need to update the account name, not the wallet name
           if (wallet.getDerivedPath()) {
             // This is an account, update account name
-            const success = await this.updateAccountName(wallet, this.accountName);
+            const success = await this.walletService.updateWalletAccountName(
+              wallet,
+              this.accountName,
+            );
             if (success) {
               this.notificationService.success('Success', `Account name updated successfully!`);
               // Account name is already updated in storage, no need to reload
@@ -165,29 +166,5 @@ export class CreateWalletAccountQuickActionDialogComponent implements AfterViewI
         this.notificationService.error('Error', 'An error occurred');
       }
     }
-  }
-
-  private async updateAccountName(wallet: AppWallet, newName: string): Promise<boolean> {
-    // Get wallet data and update the account name
-    const walletsData = await this.passwordManagerService.getUserData();
-
-    const walletData = walletsData.wallets.find((w) => w.id === wallet.getId());
-    if (!walletData || !walletData.accounts) {
-      return false;
-    }
-
-    // Find and update the account
-    const account = walletData.accounts.find(acc => acc.derivedPath === wallet.getDerivedPath());
-    if (account) {
-      account.name = newName;
-
-      // Save the updated data
-      const success = await this.passwordManagerService.saveWalletsDataWithStoredPassword(walletsData);
-
-      // Don't call loadWallets here - let the parent method handle it
-      return success;
-    }
-
-    return false;
   }
 }

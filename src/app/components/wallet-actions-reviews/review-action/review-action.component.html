@@ -10,7 +10,7 @@
       <ng-container *ngIf="currentActionDisplay(); else unknownAction">
         <h3 class="typo-title-3">{{ currentActionDisplay()!.title }}</h3>
         <h4 class="typo-text-3" *ngIf="currentActionDisplay()!.subtitle">{{ currentActionDisplay()!.subtitle }}</h4>
-        
+
         <div class="details-list">
           <div *ngFor="let row of currentActionDisplay()!.rows">
             <div *ngIf="row.inputField; else noInputField">
@@ -74,7 +74,6 @@
         <ng-container *ngIf="currentProgressSignal() !== undefined">
           <div class="progress-container">
             <h3 class="typo-title-4">Processing Action...</h3>
-            <p class="typo-text-3">{{ currentProgressSignal() }}</p>
             <div class="progress-bar">
               <div class="progress-fill"></div>
             </div>

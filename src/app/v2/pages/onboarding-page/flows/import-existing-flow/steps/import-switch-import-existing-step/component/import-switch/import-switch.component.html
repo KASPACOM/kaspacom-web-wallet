@@ -1,20 +1,44 @@
-<div class="import-switch">
-  <div
-    class="import-switch__item"
-    [class.import-switch__item--active]="
+<div class="import-switch" [class.only-two-options]="!showImportFromFile()">
+  <div class="import-switch__track">
+    <div
+      class="import-switch__slider"
+      [class.import-switch__slider--middle]="
+        selectedMethod() === ImportSwitchMethod.PRIVATE_KEY
+      "
+      [class.import-switch__slider--right]="
+        selectedMethod() === ImportSwitchMethod.BACKUP
+      "
+    ></div>
+  </div>
+  <button
+    class="import-switch__option"
+    [class.import-switch__option--active]="
       selectedMethod() === ImportSwitchMethod.SEED_PHRASE
     "
     (click)="methodChanged.emit(ImportSwitchMethod.SEED_PHRASE)"
+    type="button"
   >
-    Import by seed phrase
-  </div>
-  <div
-    class="import-switch__item"
-    [class.import-switch__item--active]="
+    <span class="import-switch__label">Seed Phrase</span>
+  </button>
+  <button
+    class="import-switch__option"
+    [class.import-switch__option--active]="
       selectedMethod() === ImportSwitchMethod.PRIVATE_KEY
     "
     (click)="methodChanged.emit(ImportSwitchMethod.PRIVATE_KEY)"
+    type="button"
   >
-    Import by private key
-  </div>
+    <span class="import-switch__label">Private Key</span>
+  </button>
+  <button
+    *ngIf="showImportFromFile()"
+    class="import-switch__option"
+    [class.import-switch__option--active]="
+      selectedMethod() === ImportSwitchMethod.BACKUP
+    "
+    (click)="methodChanged.emit(ImportSwitchMethod.BACKUP)"
+    type="button"
+  >
+    <span class="import-switch__label">Backup File</span>
+  </button>
 </div>

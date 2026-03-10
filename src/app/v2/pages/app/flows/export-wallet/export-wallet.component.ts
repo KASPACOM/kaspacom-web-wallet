@@ -1,16 +1,17 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcButtonComponent, NotificationService } from '@kaspacom/ui';
+import { KcButtonComponent, NotificationService } from 'kaspacom-ui';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
 import { WalletService } from '../../../../../services/wallet.service';
 import { PasswordManagerService } from '../../../../../services/password-manager.service';
 import { SeedPhraseWordComponent } from '../../../onboarding-page/flows/new-wallet-flow/steps/create-seed-phrase-new-wallet-step/component/seed-phrase-word/seed-phrase-word.component';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-export-wallet',
   standalone: true,
-  imports: [CommonModule, KcButtonComponent, SeedPhraseWordComponent],
+  imports: [CommonModule, KcButtonComponent, SeedPhraseWordComponent, FormsModule],
   templateUrl: './export-wallet.component.html',
   styleUrl: './export-wallet.component.scss',
 })
@@ -32,10 +33,54 @@ export class ExportWalletComponent extends FlowPageBaseComponent {
 
   seedWords = signal<string[]>([]);
   hasMnemonic = signal<boolean>(true);
+  currentStep = signal<'password' | 'export'>('password');
+  password = signal<string>('');
+  passwordError = signal<string | null>(null);
+  isVerifying = signal<boolean>(false);
 
   override async ngOnInit(): Promise<void> {
     super.ngOnInit();
-    await this.loadMnemonic();
+    this.hasMnemonic.set(this.walletService.getCurrentWallet()?.isHasMnemonic() ?? false);
+  }
+
+  onPasswordInput(): void {
+    if (this.passwordError()) {
+      this.passwordError.set(null);
+    }
+  }
+
+  async onVerifyPassword(): Promise<void> {
+    const passwordValue = this.password().trim();
+
+    this.passwordError.set(null);
+
+    if (!passwordValue) {
+      this.passwordError.set('Please enter your password');
+      return;
+    }
+
+    this.isVerifying.set(true);
+
+    try {
+      const isValid = await this.passwordManagerService.checkAndLoadPassword(
+        passwordValue,
+      );
+
+      if (!isValid) {
+        this.passwordError.set('Incorrect password. Please try again.');
+        this.password.set('');
+        return;
+      }
+
+      this.password.set('');
+      await this.loadMnemonic();
+      this.currentStep.set('export');
+    } catch (error) {
+      console.error('Password verification error:', error);
+      this.passwordError.set('Failed to verify password');
+    } finally {
+      this.isVerifying.set(false);
+    }
   }
 
   private async loadMnemonic(): Promise<void> {
@@ -62,7 +107,7 @@ export class ExportWalletComponent extends FlowPageBaseComponent {
   }
 
   copySeedToClipboard(): void {
-    const content = this.getNumberedSeedString();
+    const content = this.seedWords().join(' ');
     navigator.clipboard.writeText(content).then(
       () => {
         this.notificationService.success(

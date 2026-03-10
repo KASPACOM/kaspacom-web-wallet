@@ -55,10 +55,10 @@ export class WalletOptionsQuickActionDialogComponent implements AfterViewInit {
     }, 300);
   }
 
-  onChangeWallet(): void {
+  onAddWallet(): void {
     this.flowPagesService.navigateToPage({
-      id: 'wallet-selection',
-      title: 'Select wallet',
+      id: 'add-wallet',
+      title: 'Add Wallet',
       canNavigateBack: true,
       showTitle: true,
       showBackground: true,

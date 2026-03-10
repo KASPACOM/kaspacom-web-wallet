@@ -1,5 +1,5 @@
+import { Component, computed, Input } from '@angular/core';
 import { CommonModule, NgIf } from '@angular/common';
-import { Component, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { WalletService } from '../../../services/wallet.service';
 

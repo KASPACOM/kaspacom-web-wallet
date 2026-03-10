@@ -16,7 +16,6 @@ import {
 import {
   KcButtonComponent,
   KcInputComponent,
-  KcSnackbarComponent,
   NotificationService,
 } from 'kaspacom-ui';
 import { RadioInputComponent } from '../../../../../../shared/ui/input/radio/radio-input/radio-input.component';

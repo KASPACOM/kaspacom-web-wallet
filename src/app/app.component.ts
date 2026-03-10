@@ -10,6 +10,7 @@ import {
   inject,
 } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { KaspaNetworkActionsService } from './services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { environment } from '../environments/environment';
 import { MessagePopupComponent } from './components/message-popup/message-popup.component';
 import { StartupBackgroundCanvasComponent } from './components/startup-background-canvas/startup-background-canvas.component';
@@ -18,7 +19,6 @@ import { IFrameCommunicationApp } from './services/communication-service/communi
 import { CommunicationManagerService } from './services/communication-service/communication-manager.service';
 import { ConsentService } from './services/consent.service';
 import { EthereumWalletChainManager } from './services/etherium-services/etherium-wallet-chain.manager';
-import { KaspaNetworkActionsService } from './services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { KaspaNetworkConnectionManagerService } from './services/kaspa-netwrok-services/kaspa-network-connection-manager.service';
 import { MessagePopupService } from './services/message-popup.service';
 import { WalletService } from './services/wallet.service';

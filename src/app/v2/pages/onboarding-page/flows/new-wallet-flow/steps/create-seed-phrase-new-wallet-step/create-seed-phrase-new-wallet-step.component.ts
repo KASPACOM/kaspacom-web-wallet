@@ -1,7 +1,6 @@
 import { Component, OnInit, inject, input, output, signal } from '@angular/core';
 import {
   KcButtonComponent,
-  KcSnackbarComponent,
   NotificationService,
 } from 'kaspacom-ui';
 import { RadioInputComponent } from '../../../../../../shared/ui/input/radio/radio-input/radio-input.component';
@@ -14,7 +13,6 @@ import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
   selector: 'app-create-seed-phrase-new-wallet-step',
   imports: [
     KcButtonComponent,
-    KcSnackbarComponent,
     RadioInputComponent,
     SeedPhraseWordComponent,
     CheckboxInputComponent,

@@ -1,9 +1,9 @@
-import { Component, Input, signal, OnInit, inject } from '@angular/core';
 import { CommonModule, TitleCasePipe, UpperCasePipe } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
-import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { WalletService } from '../../../../../services/wallet.service';
+import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 
 export interface AssetTransaction {
   id: string;
@@ -30,10 +30,10 @@ export interface AssetDetail {
     UpperCasePipe,
     KcButtonComponent,
     KcIconComponent,
-    SkeletonComponent
+    SkeletonComponent,
   ],
   templateUrl: './base-asset-page.component.html',
-  styleUrl: './base-asset-page.component.scss'
+  styleUrl: './base-asset-page.component.scss',
 })
 export class BaseAssetPageComponent implements OnInit {
   protected router = inject(Router);
@@ -78,13 +78,17 @@ export class BaseAssetPageComponent implements OnInit {
     const balance = parseFloat(detail.balance);
     return balance.toLocaleString('en-US', {
       minimumFractionDigits: 0,
-      maximumFractionDigits: detail.decimals || 0
+      maximumFractionDigits: detail.decimals || 0,
     });
   }
 
   protected formatTransactionAmount(transaction: AssetTransaction): string {
     const amount = parseFloat(transaction.amount);
-    const sign = transaction.type === 'transfer' && transaction.from === this.getCurrentWalletAddress() ? '-' : '+';
+    const sign =
+      transaction.type === 'transfer' &&
+      transaction.from === this.getCurrentWalletAddress()
+        ? '-'
+        : '+';
     return `${sign}${amount.toLocaleString()}`;
   }
 
@@ -106,7 +110,7 @@ export class BaseAssetPageComponent implements OnInit {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   }
 

@@ -36,6 +36,14 @@ export class EthereumWalletActionsService {
                     async () => { await onActionApproval?.() },
                 )
 
+                // Handle rejected or failed actions
+                if (!walletResponse.success || !walletResponse.result) {
+                    return createEIP1193Response<T>(undefined, {
+                        code: walletResponse.errorCode || ERROR_CODES.EIP1193.USER_REJECTED,
+                        message: ERROR_CODES_MESSAGES[walletResponse.errorCode || ERROR_CODES.EIP1193.USER_REJECTED] || 'User rejected the request'
+                    });
+                }
+
                 return (walletResponse.result as EIP1193ProviderRequestActionResult<T>).eip1193Response;
             }
 

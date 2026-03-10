@@ -264,7 +264,8 @@ priority-fee-selection {
 
 // Ensure child components also take full height
 app-approval-loading-page,
-app-approval-success-page {
+app-approval-success-page,
+app-swap-approval {
   height: 100%;
   display: block;
 }

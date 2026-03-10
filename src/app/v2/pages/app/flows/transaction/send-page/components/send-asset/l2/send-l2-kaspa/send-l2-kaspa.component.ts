@@ -1,29 +1,28 @@
+import { CommonModule } from '@angular/common';
 import {
   Component,
   computed,
   effect,
   inject,
-  OnInit,
   OnDestroy,
-  signal,
+  OnInit,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
-import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
-import { KcInputComponent, KcButtonComponent } from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
-import { WalletService } from '../../../../../../../../../../services/wallet.service';
-import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';
-import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
-import { ApprovalFlowService } from '../../../../../../../../../services/approval-flow.service';
-import { QrScannerService } from '../../../../../../../../../../services/qr-scanner.service';
 import { Router } from '@angular/router';
-import { AddressSmartInputComponent } from '../../../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
-import { UtilsHelper } from '../../../../../../../../../../services/utils.service';
 import { EIP1193RequestType } from '@kaspacom/wallet-messages';
 import { parseUnits } from 'ethers';
+import { KcButtonComponent, KcInputComponent } from 'kaspacom-ui';
+import { TokenLogoComponent } from '../../../../../../../../../../components/token-logo/token-logo.component';
 import { EthereumWalletChainManager } from '../../../../../../../../../../services/etherium-services/etherium-wallet-chain.manager';
-import { Erc20TokenLogoComponent } from '../../../../../../../home/assets-lists/l2/logo/erc20-token-logo/erc20-token-logo.component';
+import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
+import { QrScannerService } from '../../../../../../../../../../services/qr-scanner.service';
+import { UtilsHelper } from '../../../../../../../../../../services/utils.service';
+import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';
+import { WalletService } from '../../../../../../../../../../services/wallet.service';
+import { ApprovalFlowService } from '../../../../../../../../../services/approval-flow.service';
+import { AddressSmartInputComponent } from '../../../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
+import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
+import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
 
 @Component({
   selector: 'app-send-l2-kaspa',
@@ -33,7 +32,7 @@ import { Erc20TokenLogoComponent } from '../../../../../../../home/assets-lists/
     KcInputComponent,
     KcButtonComponent,
     FormsModule,
-    Erc20TokenLogoComponent,
+    TokenLogoComponent,
     AddressSmartInputComponent,
   ],
   templateUrl: './send-l2-kaspa.component.html',
@@ -41,7 +40,8 @@ import { Erc20TokenLogoComponent } from '../../../../../../../home/assets-lists/
 })
 export class SendL2KaspaComponent
   extends FlowPageBaseComponent
-  implements OnInit, OnDestroy {
+  implements OnInit, OnDestroy
+{
   private walletService = inject(WalletService);
   private walletActionService = inject(WalletActionService);
   private messagePopupService = inject(MessagePopupService);
@@ -49,7 +49,7 @@ export class SendL2KaspaComponent
   private qrScannerService = inject(QrScannerService);
   private router = inject(Router);
   private utilsHelper = inject(UtilsHelper);
-  private ethereumWalletChainManager = inject(EthereumWalletChainManager)
+  private ethereumWalletChainManager = inject(EthereumWalletChainManager);
 
   // Form data
   walletAddress: string = '';
@@ -270,7 +270,9 @@ export class SendL2KaspaComponent
       // Convert Kaspa amount to L2 blockchain format (e.g., 1 KAS -> appropriate wei amount)
       const l2Amount = parseUnits(
         String(this.kaspaAmount),
-        this.ethereumWalletChainManager.getChainConfig(this.ethereumWalletChainManager.getCurrentChainSignal()()!)?.nativeCurrency.decimals || 18,
+        this.ethereumWalletChainManager.getChainConfig(
+          this.ethereumWalletChainManager.getCurrentChainSignal()()!,
+        )?.nativeCurrency.decimals || 18,
       );
 
       // Create EIP1193 action for L2 Kaspa transaction

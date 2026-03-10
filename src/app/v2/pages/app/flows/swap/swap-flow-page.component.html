@@ -1,75 +1,107 @@
 <div class="swap-flow-container flex column full-height p-16 gap-16">
-    <!-- Content -->
-    <div class="swap-card flex column gap-12">
-        <!-- Settings Header -->
-        <div class="flex justify-content-end">
-            <kc-button variant="tertiary" size="sm" (buttonClick)="settingsOpen.set(true)">
+    <!-- Swap Card -->
+    <div class="swap-card flex column">
+        <!-- Header -->
+        <div class="swap-header flex justify-content-between align-items-center">
+            <span class="swap-title">Swap</span>
+            <button class="settings-btn" (click)="settingsOpen.set(true)" title="Settings">
                 <kc-icon [iconClass]="'icon-settings'" [size]="'sm'"></kc-icon>
-            </kc-button>
+            </button>
         </div>
 
-        <!-- FROM -->
-        <div class="token-input-container p-12 rounded bg-surface-2">
-            <div class="flex justify-content-between align-items-center mb-8">
-                <span class="text-gray-60 typo-text-2">From</span>
-                <span class="text-gray-60 typo-text-2" *ngIf="fromToken()">
-                    Balance: {{ fromToken()?.balance | commaFormatter }}
-                </span>
+        <!-- Percentage Options -->
+        <div class="percentage-options-wrapper flex justify-content-end">
+          <div class="percentage-options">
+              <button class="percentage-btn" [class.active]="selectedPercentage() === 25" (click)="onPercentageClick(25)">25%</button>
+              <button class="percentage-btn" [class.active]="selectedPercentage() === 50" (click)="onPercentageClick(50)">50%</button>
+              <button class="percentage-btn" [class.active]="selectedPercentage() === 75" (click)="onPercentageClick(75)">75%</button>
+              <button class="percentage-btn" [class.active]="selectedPercentage() === 100" (click)="onPercentageClick(100)">MAX</button>
+          </div>
+        </div>
+
+        <!-- Token Inputs Wrapper -->
+        <div class="token-inputs-wrapper">
+            <!-- SELL (From) -->
+            <div class="token-input-box sell-box" [class.error]="fromInputError()">
+                <div class="token-input-header">
+                    <span class="token-input-label">Sell</span>
+                    <span class="token-balance" *ngIf="fromToken()" [class.error-text]="isInsufficientBalance()">
+                        Balance: {{ fromToken()?.balance | commaFormatter }}
+                    </span>
+                </div>
+                <div class="token-input-row">
+                    <input type="text"
+                           inputmode="decimal"
+                           class="token-amount-input"
+                           [class.error]="fromInputError()"
+                           placeholder="0"
+                           [ngModel]="fromAmountInput()"
+                           (ngModelChange)="onFromAmountChange($event)" />
+                    <button class="token-select-btn" (click)="openTokenModal('from')">
+                        @if (fromToken()) {
+                            <kc-token-logo [ticker]="fromToken()!.symbol" [address]="fromToken()!.address" size="md"></kc-token-logo>
+                            <span class="token-symbol">{{ fromToken()?.symbol }}</span>
+                        } @else {
+                            <span class="select-token-text">Select</span>
+                        }
+                        <kc-icon iconClass="icon-chevron-down" size="xs"></kc-icon>
+                    </button>
+                </div>
             </div>
-            <div class="flex gap-8 align-items-center">
-                <kc-input class="flex-1" placeholder="0.0" type="number" [ngModel]="fromAmountInput()"
-                    (valueChange)="onFromAmountChange($event)" [isFullWidth]="true">
-                </kc-input>
-                <kc-button [text]="fromToken()?.symbol || 'Select'" variant="secondary" size="md"
-                    (buttonClick)="openTokenModal('from')">
-                    <img *ngIf="fromToken()?.logoURI" [src]="fromToken()?.logoURI" class="token-logo-sm mr-2" />
-                </kc-button>
+
+            <!-- Switch Button -->
+            <div class="switch-btn-container">
+                <button class="switch-btn" (click)="switchTokens()" title="Switch tokens">
+                    <div class="switch-arrows">
+                        <kc-icon iconClass="icon-switch-vertical-01" size="sm"></kc-icon>
+                    </div>
+                </button>
+            </div>
+
+            <!-- BUY (To) -->
+            <div class="token-input-box buy-box">
+                <div class="token-input-header">
+                    <span class="token-input-label">Buy</span>
+                    <span class="token-balance" *ngIf="toToken()">
+                        Balance: {{ toToken()?.balance | commaFormatter }}
+                    </span>
+                </div>
+                <div class="token-input-row">
+                    <input type="text"
+                           inputmode="decimal"
+                           class="token-amount-input"
+                           placeholder="0"
+                           [ngModel]="toAmountInput()"
+                           (ngModelChange)="onToAmountChange($event)" />
+                    <button class="token-select-btn" (click)="openTokenModal('to')">
+                        @if (toToken()) {
+                            <kc-token-logo [ticker]="toToken()!.symbol" [address]="toToken()!.address" size="md"></kc-token-logo>
+                            <span class="token-symbol">{{ toToken()?.symbol }}</span>
+                        } @else {
+                            <span class="select-token-text">Select</span>
+                        }
+                        <kc-icon iconClass="icon-chevron-down" size="xs"></kc-icon>
+                    </button>
+                </div>
+                <!-- Min Received -->
+                <div class="min-received" *ngIf="!currentIsOutput() && minReceived()">
+                    Min received: {{ minReceived() }} {{ toToken()?.symbol }}
+                </div>
             </div>
         </div>
 
-        <!-- Switch -->
-        <div class="flex justify-content-center z-index-1" style="margin-top: -20px; margin-bottom: -15px;">
-            <kc-button variant="tertiary" size="sm" (buttonClick)="switchTokens()">
-                <kc-icon iconClass="icon-refresh"></kc-icon>
-            </kc-button>
-        </div>
-
-        <!-- TO -->
-        <div class="token-input-container p-12 rounded bg-surface-2">
-            <div class="flex justify-content-between align-items-center mb-8">
-                <span class="text-gray-60 typo-text-2">To</span>
-                <span class="text-gray-60 typo-text-2" *ngIf="toToken()">
-                    Balance: {{ toToken()?.balance | commaFormatter }}
-                </span>
-            </div>
-            <div class="flex gap-8 align-items-center">
-                <kc-input class="flex-1" placeholder="0.0" type="number" [ngModel]="toAmountInput()"
-                    (valueChange)="onToAmountChange($event)" [isFullWidth]="true">
-                </kc-input>
-                <kc-button [text]="toToken()?.symbol || 'Select'" variant="secondary" size="md"
-                    (buttonClick)="openTokenModal('to')">
-                </kc-button>
-            </div>
-            <!-- Min Received -->
-            <div class="mt-8 flex justify-content-end" *ngIf="!currentIsOutput() && minReceived()">
-                <span class="text-gray-60 typo-text-3">Min received: {{ minReceived() }} {{ toToken()?.symbol }}</span>
+        <!-- Trade Info -->
+        <div class="trade-info" *ngIf="controllerState()?.tradeInfo?.route">
+            <div class="trade-info-row">
+                <span class="trade-info-label">Route</span>
+                <span class="trade-info-value">{{ routePath() }}</span>
             </div>
         </div>
 
-        <!-- Info -->
-        <div class="info-container p-12 flex column gap-4" *ngIf="controllerState()?.tradeInfo?.route">
-            <div class="flex justify-content-between gap-2">
-                <span class="text-gray-60 font-12">Route</span>
-                <span class="text-right font-12">{{ routePath() }}</span>
-            </div>
-        </div>
-
-        <!-- Action Button -->
-        <div class="mt-8">
-            <kc-button [text]="swapText()" [variant]="'primary'" [isFullWidth]="true" [isDisabled]="isSwapDisabled()"
-                (buttonClick)="executeSwap()">
-            </kc-button>
-        </div>
+        <!-- Swap Button -->
+        <kc-button [text]="swapText()" [variant]="'primary'" [isFullWidth]="true" [isDisabled]="isSwapDisabled()"
+            (buttonClick)="executeSwap()">
+        </kc-button>
     </div>
 
     <app-token-selector-modal [open]="!!tokenModalOpen()" [tokens]="allTokens()" [isLoading]="loadingTokens()"

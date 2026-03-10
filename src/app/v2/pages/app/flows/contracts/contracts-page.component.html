@@ -460,43 +460,53 @@
           }
         </div>
 
-        <!-- Output address -->
-        <div class="form-group flex column gap-8">
-          <div class="flex align-items-center gap-4">
-            <label class="text-gray-60 typo-text-1">Send To</label>
-            <kc-icon [iconClass]="'icon-info'" [size]="'xs'" kcTooltip="The Kaspa address where funds will be sent when you withdraw" tooltipPosition="top"></kc-icon>
-          </div>
-          <input
-            type="text"
-            class="form-input p-12 rounded-lg text-white typo-text-2"
-            placeholder="Kaspa address (defaults to your wallet)"
-            [(ngModel)]="interactOutputAddress"
-            [disabled]="isInteracting()" />
-        </div>
-
-        <!-- Output amount -->
-        <div class="form-group flex column gap-8">
-          <div class="flex justify-content-between align-items-center">
+        <!-- Output address + amount (only for withdrawal functions) -->
+        @if (selectedFunction && functionRequiresOutput(selectedFunction)) {
+          <div class="form-group flex column gap-8">
             <div class="flex align-items-center gap-4">
-              <label class="text-gray-60 typo-text-1">Withdraw Amount (KAS)</label>
-              <kc-icon [iconClass]="'icon-info'" [size]="'xs'" kcTooltip="Amount to withdraw. A small fee (~0.01 KAS) is deducted for the transaction. Use 'Max' to withdraw everything." tooltipPosition="top"></kc-icon>
+              <label class="text-gray-60 typo-text-1">Send To</label>
+              <kc-icon [iconClass]="'icon-info'" [size]="'xs'" kcTooltip="The Kaspa address where funds will be sent when you withdraw" tooltipPosition="top"></kc-icon>
             </div>
-            <span
-              class="text-blue typo-text-2 cursor-pointer"
-              (click)="fillMaxOutputAmount()"
-              kcTooltip="Withdraw full balance minus transaction fee" tooltipPosition="left">
-              Max
+            <input
+              type="text"
+              class="form-input p-12 rounded-lg text-white typo-text-2"
+              placeholder="Kaspa address (defaults to your wallet)"
+              [(ngModel)]="interactOutputAddress"
+              [disabled]="isInteracting()" />
+          </div>
+
+          <div class="form-group flex column gap-8">
+            <div class="flex justify-content-between align-items-center">
+              <div class="flex align-items-center gap-4">
+                <label class="text-gray-60 typo-text-1">Withdraw Amount (KAS)</label>
+                <kc-icon [iconClass]="'icon-info'" [size]="'xs'" kcTooltip="Amount to withdraw. A small fee (~0.01 KAS) is deducted for the transaction. Use 'Max' to withdraw everything." tooltipPosition="top"></kc-icon>
+              </div>
+              <span
+                class="text-blue typo-text-2 cursor-pointer"
+                (click)="fillMaxOutputAmount()"
+                kcTooltip="Withdraw full balance minus transaction fee" tooltipPosition="left">
+                Max
+              </span>
+            </div>
+            <input
+              type="number"
+              class="form-input p-12 rounded-lg text-white typo-text-2"
+              placeholder="Amount in KAS"
+              [(ngModel)]="interactOutputAmount"
+              [disabled]="isInteracting()"
+              step="0.01"
+              min="0" />
+          </div>
+        }
+
+        <!-- Info banner for redeploy functions (keepAlive, increment) -->
+        @if (selectedFunction && !functionRequiresOutput(selectedFunction)) {
+          <div class="p-12 rounded-lg" style="background: rgba(111, 199, 186, 0.08); border: 1px solid rgba(111, 199, 186, 0.2);">
+            <span class="text-gray-75 typo-text-2">
+              ♻️ This action re-deploys the full balance back to the contract (minus ~0.01 KAS fee). No external withdrawal.
             </span>
           </div>
-          <input
-            type="number"
-            class="form-input p-12 rounded-lg text-white typo-text-2"
-            placeholder="Amount in KAS"
-            [(ngModel)]="interactOutputAmount"
-            [disabled]="isInteracting()"
-            step="0.01"
-            min="0" />
-        </div>
+        }
       }
 
       <!-- Error message -->

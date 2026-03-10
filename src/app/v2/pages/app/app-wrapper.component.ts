@@ -13,10 +13,14 @@ import { DynamicFlowPageOutletComponent } from './common/flow-page/dynamic-flow-
 import { DynamicQuickActionDialogOutletComponent } from './common/quick-action-dialog/dynamic-quick-action-dialog-outlet.component';
 import { IframeAccountSelectionComponent } from './iframe-account-selection/iframe-account-selection.component';
 import { IframeAccountSelectionService } from '../../services/iframe-account-selection.service';
+import { DesktopViewService } from '../../services/desktop-view.service';
 
-import { KcSnackbarComponent, KcSpinnerComponent } from 'kaspacom-ui';
+import { KcSnackbarComponent, KcSpinnerComponent, KcIconComponent } from 'kaspacom-ui';
 import { WalletService } from '../../../services/wallet.service';
 import { AssetsManagerService } from '../../../services/assets-manager/assets-manager.service';
+
+/** Minimum viewport width (px) required to activate the expanded layout. */
+const EXPANDED_MIN_WIDTH = 960;
 
 @Component({
   selector: 'app-app-wrapper',
@@ -31,6 +35,7 @@ import { AssetsManagerService } from '../../../services/assets-manager/assets-ma
     ReviewActionComponent,
     KcSnackbarComponent,
     KcSpinnerComponent,
+    KcIconComponent,
     IframeAccountSelectionComponent,
   ],
   templateUrl: './app-wrapper.component.html',
@@ -48,10 +53,23 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   private walletService = inject(WalletService);
   protected assetsManager = inject(AssetsManagerService);
   iframeAccountSelectionService = inject(IframeAccountSelectionService);
+  desktopViewService = inject(DesktopViewService);
   shouldEnforceAccountSelection = signal(this.iframeAccountSelectionService.shouldEnforceAccountSelection());
 
   // Detect if running in iframe mode
   showIframeLoader = signal(false);
+
+  // Track viewport width for responsive expanded layout
+  private windowWidth = signal(window.innerWidth);
+  private readonly onResize = () => this.windowWidth.set(window.innerWidth);
+
+  /** True only when the user opted in AND the viewport is wide enough. */
+  readonly isExpandedLayout = computed(
+    () =>
+      !this.desktopViewService.isIframe &&
+      this.desktopViewService.isExpandedView() &&
+      this.windowWidth() >= EXPANDED_MIN_WIDTH,
+  );
 
   // Computed signal to determine if account selection overlay should be shown
   shouldShowAccountSelectionOverlay = computed(() => {
@@ -81,7 +99,7 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Nothing needed here for now
+    window.addEventListener('resize', this.onResize);
   }
 
   onAccountSelected(): void {
@@ -135,6 +153,7 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.animationFrameId !== null) {
       cancelAnimationFrame(this.animationFrameId);
     }
+    window.removeEventListener('resize', this.onResize);
     window.removeEventListener('resize', this.boundResizeCanvas);
     window.removeEventListener('mousemove', this.boundMouseMove);
     window.removeEventListener('mouseleave', this.boundMouseLeave);

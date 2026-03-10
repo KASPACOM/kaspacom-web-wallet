@@ -119,6 +119,30 @@
   }
 }
 
+.expand-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--gray-60);
+  transition: color 0.2s ease, background-color 0.2s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    color: var(--white);
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  // Only show on viewports wide enough to activate expanded layout
+  @media (max-width: 959px) {
+    display: none;
+  }
+}
+
 .network-selection-section {
   display: flex;
   align-items: center;

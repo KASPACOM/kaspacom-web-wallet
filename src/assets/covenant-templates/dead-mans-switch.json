@@ -1,21 +1,12 @@
 {
   "contract_name": "DeadManSwitch",
   "script": [
-    8,
-    128,
-    81,
-    1,
-    0,
-    0,
-    0,
-    0,
-    0,
     118,
     0,
     156,
     99,
     117,
-    81,
+    0,
     121,
     32,
     170,
@@ -62,46 +53,6 @@
     148,
     162,
     105,
-    0,
-    121,
-    88,
-    205,
-    88,
-    124,
-    126,
-    185,
-    118,
-    201,
-    118,
-    2,
-    158,
-    0,
-    148,
-    89,
-    147,
-    124,
-    188,
-    126,
-    170,
-    2,
-    0,
-    0,
-    1,
-    170,
-    126,
-    1,
-    32,
-    126,
-    124,
-    126,
-    1,
-    135,
-    126,
-    0,
-    195,
-    135,
-    105,
-    117,
     117,
     81,
     103,
@@ -110,26 +61,9 @@
     156,
     99,
     117,
-    81,
+    0,
     121,
     32,
-    187,
-    188,
-    189,
-    190,
-    191,
-    192,
-    193,
-    194,
-    195,
-    196,
-    197,
-    198,
-    199,
-    200,
-    201,
-    202,
-    203,
     204,
     205,
     206,
@@ -145,12 +79,33 @@
     216,
     217,
     218,
+    219,
+    220,
+    221,
+    222,
+    223,
+    224,
+    225,
+    226,
+    227,
+    228,
+    229,
+    230,
+    231,
+    232,
+    233,
+    234,
+    235,
     172,
     105,
+    6,
     0,
-    121,
-    177,
-    117,
+    16,
+    165,
+    212,
+    232,
+    0,
+    176,
     117,
     81,
     103,
@@ -185,26 +140,10 @@
         "type_ref": {
           "base": "int"
         },
-        "name": "initInactivityPeriod",
-        "span": "int initInactivityPeriod",
+        "name": "expiry",
+        "span": "int expiry",
         "type_span": "int ",
-        "name_span": "initInactivityPeriod"
-      }
-    ],
-    "fields": [
-      {
-        "type_ref": {
-          "base": "int"
-        },
-        "name": "inactivityPeriod",
-        "expr": {
-          "kind": "identifier",
-          "data": "initInactivityPeriod",
-          "span": "initInactivityPeriod"
-        },
-        "span": "int inactivityPeriod = initInactivityPeriod;",
-        "type_span": "int ",
-        "name_span": "inactivityPeriod"
+        "name_span": "expiry"
       }
     ],
     "constants": [],
@@ -305,43 +244,12 @@
               "span": "require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - 1000);",
               "message_span": null
             }
-          },
-          {
-            "kind": "function_call",
-            "data": {
-              "name": "validateOutputState",
-              "args": [
-                {
-                  "kind": "int",
-                  "data": 0,
-                  "span": "0"
-                },
-                {
-                  "kind": "state_object",
-                  "data": [
-                    {
-                      "name": "inactivityPeriod",
-                      "expr": {
-                        "kind": "identifier",
-                        "data": "inactivityPeriod",
-                        "span": "inactivityPeriod"
-                      },
-                      "span": "inactivityPeriod: inactivityPeriod ",
-                      "name_span": "inactivityPeriod"
-                    }
-                  ],
-                  "span": "{ inactivityPeriod: inactivityPeriod }"
-                }
-              ],
-              "span": "validateOutputState(0, { inactivityPeriod: inactivityPeriod });",
-              "name_span": "validateOutputState"
-            }
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function keepAlive(sig s) {\n        require(checkSig(s, owner));\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - 1000);\n        validateOutputState(0, { inactivityPeriod: inactivityPeriod });\n    }",
+        "span": "entrypoint function keepAlive(sig s) {\n        require(checkSig(s, owner));\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - 1000);\n    }",
         "name_span": "keepAlive",
-        "body_span": "require(checkSig(s, owner));\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - 1000);\n        validateOutputState(0, { inactivityPeriod: inactivityPeriod });"
+        "body_span": "require(checkSig(s, owner));\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - 1000);"
       },
       {
         "name": "claim",
@@ -390,26 +298,26 @@
           {
             "kind": "time_op",
             "data": {
-              "tx_var": "this_age",
+              "tx_var": "tx_time",
               "expr": {
                 "kind": "identifier",
-                "data": "inactivityPeriod",
-                "span": "inactivityPeriod"
+                "data": "expiry",
+                "span": "expiry"
               },
               "message": null,
-              "span": "require(this.age >= inactivityPeriod);",
-              "tx_var_span": "this.age",
+              "span": "require(tx.time >= expiry);",
+              "tx_var_span": "tx.time",
               "message_span": null
             }
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function claim(sig s) {\n        require(checkSig(s, heir));\n        require(this.age >= inactivityPeriod);\n    }",
+        "span": "entrypoint function claim(sig s) {\n        require(checkSig(s, heir));\n        require(tx.time >= expiry);\n    }",
         "name_span": "claim",
-        "body_span": "require(checkSig(s, heir));\n        require(this.age >= inactivityPeriod);"
+        "body_span": "require(checkSig(s, heir));\n        require(tx.time >= expiry);"
       }
     ],
-    "span": "contract DeadManSwitch(pubkey owner, pubkey heir, int initInactivityPeriod) {\n    int inactivityPeriod = initInactivityPeriod;\n    \n    entrypoint function keepAlive(sig s) {\n        require(checkSig(s, owner));\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - 1000);\n        validateOutputState(0, { inactivityPeriod: inactivityPeriod });\n    }\n    \n    entrypoint function claim(sig s) {\n        require(checkSig(s, heir));\n        require(this.age >= inactivityPeriod);\n    }\n}",
+    "span": "contract DeadManSwitch(pubkey owner, pubkey heir, int expiry) {\n\n    entrypoint function keepAlive(sig s) {\n        require(checkSig(s, owner));\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - 1000);\n    }\n    \n    entrypoint function claim(sig s) {\n        require(checkSig(s, heir));\n        require(tx.time >= expiry);\n    }\n}",
     "name_span": "DeadManSwitch"
   },
   "abi": [

@@ -458,6 +458,14 @@
           @if (availableFunctions().length === 0 && interactContractJson) {
             <span class="text-gray-60 typo-text-2">No callable functions found in this contract</span>
           }
+
+          @if (selectedFunction && isMultiSigFunction(selectedFunction)) {
+            <div class="p-12 rounded-lg" style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3);">
+              <span class="text-yellow typo-text-2">
+                This function requires multiple signers. Use the Share button on My Contracts to send the contract link to the co-signer.
+              </span>
+            </div>
+          }
         </div>
 
         <!-- Output address + amount (only for withdrawal functions) -->
@@ -503,7 +511,7 @@
         @if (selectedFunction && !functionRequiresOutput(selectedFunction)) {
           <div class="p-12 rounded-lg" style="background: rgba(111, 199, 186, 0.08); border: 1px solid rgba(111, 199, 186, 0.2);">
             <span class="text-gray-75 typo-text-2">
-              ♻️ This action re-deploys the full balance back to the contract (minus ~0.01 KAS fee). No external withdrawal.
+              Funds will be re-locked into the same contract (minus ~0.00001 KAS fee). No external withdrawal.
             </span>
           </div>
         }

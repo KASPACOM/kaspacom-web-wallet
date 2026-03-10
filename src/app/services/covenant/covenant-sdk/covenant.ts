@@ -593,7 +593,7 @@ export async function spendContract(
     console.log('[CovenantSDK] lockTime:', lockTime.toString(), needsLockTime ? '(Unix ms — tx.time lock)' : '(no lockTime needed)');
 
     const unsignedTx = new Transaction({
-      version: 0,
+      version: 1,
       lockTime,
       inputs: txInputs,
       outputs: txOutputs,
@@ -762,7 +762,7 @@ export async function buildPartialSpend(
     }));
 
     const unsignedTx = new Transaction({
-      version: 0,
+      version: 1,
       lockTime,
       inputs: txInputs,
       outputs: txOutputs,
@@ -852,7 +852,7 @@ export async function completePartialSpend(
     }));
 
     const unsignedTx = new Transaction({
-      version: 0,
+      version: 1,
       lockTime: BigInt(partialSpend.lockTime),
       inputs: txInputs,
       outputs: txOutputs,

@@ -483,10 +483,7 @@ export class ContractsPageComponent implements OnInit {
         compiledJson: contractJson,
         deployTxid: result.txid,
         contractAddress: result.contractAddress,
-        outpoint: {
-          txid: result.txid,
-          vout: 0, // Deployment output is usually vout 0
-        },
+        outpoint: result.outpoint,
         amountSompi: amountSompi.toString(),
         deployedBy: {
           address: wallet.getAddress(),
@@ -596,8 +593,10 @@ export class ContractsPageComponent implements OnInit {
         }];
       } else {
         // Redeploy function (keepAlive, increment) — send full balance minus fee back to covenant
+        // IMPORTANT: DMS contract enforces tx.outputs[0].value >= tx.inputs[...].value - 1000
+        // Fee MUST be <= 1000 sompi (0.00001 KAS), NOT 1_000_000!
         const covenantAddress = this.covenantService.getContractAddress(compiled);
-        const feeSompi = BigInt(1_000_000); // 0.01 KAS
+        const feeSompi = 1000n; // 0.00001 KAS — matches contract's fee constant
         const redeployAmount = inputAmount > feeSompi ? inputAmount - feeSompi : 0n;
         outputs = [{
           address: covenantAddress,
@@ -621,7 +620,7 @@ export class ContractsPageComponent implements OnInit {
         functionName: result.functionName,
       });
 
-      // Update registry — mark as spent only for withdrawal functions
+      // Update registry based on function type
       if (this.selectedContractId) {
         if (this.functionRequiresOutput(functionName)) {
           // Withdrawal: funds left the covenant
@@ -634,8 +633,8 @@ export class ContractsPageComponent implements OnInit {
           // Redeploy (keepAlive/increment): update the outpoint to the new UTXO
           this.registryService.updateContract(this.selectedContractId, {
             lastChecked: Date.now(),
-            // The new outpoint txid is the spend result; vout is typically 0
             outpoint: { txid: result.txid, vout: 0 },
+            amountSompi: (inputAmount - 1000n).toString(),
           });
           // Update the interact form with the new outpoint
           this.interactOutpointTxid = result.txid;
@@ -877,6 +876,17 @@ export class ContractsPageComponent implements OnInit {
   private readonly REDEPLOY_FUNCTIONS = new Set(['keepAlive', 'increment']);
 
   /**
+   * Check if the selected function requires multiple signers (two-phase signing)
+   */
+  isMultiSigFunction(fnName: string): boolean {
+    const contract = this.parsedInteractContract();
+    if (!contract) return false;
+    const abiEntry = contract.abi.find(e => e.name === fnName);
+    if (!abiEntry) return false;
+    return abiEntry.inputs.filter(i => i.type_name === 'sig').length > 1;
+  }
+
+  /**
    * Whether the selected function requires user-visible output address/amount fields.
    * keepAlive re-deploys to the covenant itself; increment updates on-chain state.
    */
@@ -900,12 +910,20 @@ export class ContractsPageComponent implements OnInit {
       this.interactOutputAddress = this.currentWallet()?.getAddress() || '';
       this.interactOutputAmount = '';
     } else {
-      // Redeploy function (keepAlive, increment): auto-fill covenant address + max amount
+      // Redeploy function (keepAlive, increment): auto-fill covenant address + correct amount
       const contract = this.parsedInteractContract();
       if (contract) {
         this.interactOutputAddress = this.covenantService.getContractAddress(contract);
       }
-      this.fillMaxOutputAmount();
+      // Use contract's fee constant (1000 sompi), NOT fillMaxOutputAmount (which uses 1M)
+      const inputSompi = this.interactInputAmount;
+      if (inputSompi) {
+        try {
+          const outputSompi = BigInt(inputSompi) - 1000n;
+          const outputKas = Number(outputSompi) / 1e8;
+          this.interactOutputAmount = outputKas.toFixed(8).replace(/\.?0+$/, '');
+        } catch { /* ignore */ }
+      }
     }
   }
 

@@ -52,6 +52,7 @@ export class L2TransactionComponent implements OnInit {
 
       // Process each field and convert value to wei if present
       if (formData.value) cleanData.value = parseEther(String(formData.value));
+      if (formData.gasLimit && formData.gasLimit.length) cleanData.gasLimit = formData.gasLimit;
       if (formData.gasPrice) cleanData.gasPrice = formData.gasPrice;
       if (formData.data) cleanData.data = formData.data;
       if (formData.nonce) cleanData.nonce = formData.nonce;

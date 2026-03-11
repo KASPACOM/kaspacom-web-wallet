@@ -92,7 +92,7 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
     if (!this.feeData) return undefined;
 
     const baseFee = this.feeData.maxPriorityFeePerGas;
-    if (!baseFee) return undefined;
+    if (baseFee === null || baseFee === undefined) return undefined;
 
     const maxPriorityFeePerGas = this.feeData.maxPriorityFeePerGas || 0n;
 

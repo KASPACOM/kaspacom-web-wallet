@@ -292,7 +292,7 @@ export class WalletActionService {
 
       if (
         result.l2PriorityInfo.priorityFee !== undefined &&
-        result.l2PriorityInfo.baseFee
+        result.l2PriorityInfo.baseFee !== undefined
       ) {
         actionTransaction.maxPriorityFeePerGas = String(
           result.l2PriorityInfo.priorityFee,

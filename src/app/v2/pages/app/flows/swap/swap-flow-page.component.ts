@@ -26,21 +26,30 @@ import {
   KcIconComponent,
   NotificationService,
 } from 'kaspacom-ui';
-import { EIP1193RequestPayload, EIP1193RequestType } from '@kaspacom/wallet-messages';
+import {
+  EIP1193RequestPayload,
+  EIP1193RequestType,
+} from '@kaspacom/wallet-messages';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { ethers } from 'ethers';
 import { TokenLogoComponent } from '../../../../../components/token-logo/token-logo.component';
 import { CommaFormatterPipe } from '../../../../../pipes/comma-formatter.pipe';
 import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';
-import { L2AssetsStoreService, L2_ASSET_KEYS } from '../../../../../services/assets-manager/assets-stores/l2-assets-store.service';
+import {
+  L2AssetsStoreService,
+  L2_ASSET_KEYS,
+} from '../../../../../services/assets-manager/assets-stores/l2-assets-store.service';
 import { EthereumWalletActionsService } from '../../../../../services/etherium-services/etherium-wallet-actions.service';
 import { EthereumWalletChainManager } from '../../../../../services/etherium-services/etherium-wallet-chain.manager';
 import { WalletService } from '../../../../../services/wallet.service';
 import { SwapContextService } from '../../../../services/swap-context.service';
 import { SwapSettingsModalComponent } from './components/swap-settings-modal/swap-settings-modal.component';
 import { TokenSelectorModalComponent } from './components/token-selector-modal/token-selector-modal.component';
-import { KAS_NATIVE_FEE_RESERVE, WALLET_APP_ID } from '../../../../../config/consts';
+import {
+  KAS_NATIVE_FEE_RESERVE,
+  WALLET_APP_ID,
+} from '../../../../../config/consts';
 
 @Component({
   selector: 'app-swap-flow-page',
@@ -70,7 +79,8 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
   private swapContextService = inject(SwapContextService);
   private assetsManagerService = inject(AssetsManagerService);
 
-  private readonly nativeTokenAddress = '0x0000000000000000000000000000000000000000';
+  private readonly nativeTokenAddress =
+    '0x0000000000000000000000000000000000000000';
 
   // State
   controller = signal<SwapSdkController | null>(null);
@@ -112,8 +122,8 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
   private amountSub: Subscription;
 
   // Wrap/unwrap detection
-  isFromTokenNative = computed(() =>
-    this.fromToken()?.address.toLowerCase() === this.nativeTokenAddress,
+  isFromTokenNative = computed(
+    () => this.fromToken()?.address.toLowerCase() === this.nativeTokenAddress,
   );
 
   isWrapOperation = computed(() => {
@@ -634,8 +644,9 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
     const wrappedToken = this.currentNetworkWrappedToken();
     if (!fromToken || !toToken || !wrappedToken) return;
 
-    const walletAddress =
-      this.walletService.getCurrentWallet()?.getL2WalletAddress();
+    const walletAddress = this.walletService
+      .getCurrentWallet()
+      ?.getL2WalletAddress();
     if (!walletAddress) return;
 
     const amount = parseFloat(this.fromAmountInput());
@@ -683,10 +694,16 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
 
       if (result.error) {
         if (result.error.code === 4001) {
-          this.notificationService.error(`${operationName} Error`, 'User rejected');
+          this.notificationService.error(
+            `${operationName} Error`,
+            'User rejected',
+          );
           return;
         }
-        this.notificationService.error(`${operationName} Error`, result.error.message);
+        this.notificationService.error(
+          `${operationName} Error`,
+          result.error.message,
+        );
         return;
       }
 
@@ -700,7 +717,10 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
       this.waitForConfirmationAndRefresh(txHash, fromToken, toToken);
     } catch (err: any) {
       if (err?.code === 4001 || err?.info?.error?.code === 4001) {
-        this.notificationService.error(`${operationName} Error`, 'User rejected');
+        this.notificationService.error(
+          `${operationName} Error`,
+          'User rejected',
+        );
         return;
       }
       this.notificationService.error(
@@ -729,14 +749,17 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
       // Directly fetch fresh balances from blockchain for non-native tokens.
       // This bypasses the graph API which may lag or miss new tokens entirely.
       const nativeAddr = this.nativeTokenAddress.toLowerCase();
-      const l2Store = this.assetsManagerService.getAllAssetStores().l2 as L2AssetsStoreService;
+      const l2Store = this.assetsManagerService.getAllAssetStores()
+        .l2 as L2AssetsStoreService;
       const chainFetches: Promise<any>[] = [];
 
       if (fromToken && fromToken.address.toLowerCase() !== nativeAddr) {
         chainFetches.push(
           l2Store
             .getErc20InfoFromBlockchain(fromToken.address, true)
-            .catch((e) => console.error('Error fetching fromToken balance:', e)),
+            .catch((e) =>
+              console.error('Error fetching fromToken balance:', e),
+            ),
         );
       }
       if (toToken && toToken.address.toLowerCase() !== nativeAddr) {

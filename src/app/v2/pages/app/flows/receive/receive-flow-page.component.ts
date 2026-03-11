@@ -1,5 +1,5 @@
-import { Component, computed, inject, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, computed, inject, OnDestroy, OnInit } from '@angular/core';
 import { QRCodeComponent } from 'angularx-qrcode';
 import { WalletService } from '../../../../../services/wallet.service';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
@@ -25,7 +25,6 @@ export class ReceiveFlowPageComponent implements OnInit, OnDestroy {
 
   // Computed properties for reactive updates
   currentWallet = computed(() => this.walletService.getCurrentWallet());
-
 
   walletAddress = this.walletService.getCurrentDisplayWalletAddressAsString;
 

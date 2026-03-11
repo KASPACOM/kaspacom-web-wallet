@@ -1,3 +1,4 @@
+import { DOCUMENT, NgIf } from '@angular/common';
 import {
   AfterViewInit,
   Component,
@@ -10,18 +11,17 @@ import {
 } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { KaspaNetworkActionsService } from './services/kaspa-netwrok-services/kaspa-network-actions.service';
-import { DOCUMENT, NgIf } from '@angular/common';
 import { environment } from '../environments/environment';
+import { MessagePopupComponent } from './components/message-popup/message-popup.component';
+import { StartupBackgroundCanvasComponent } from './components/startup-background-canvas/startup-background-canvas.component';
+import { AssetsManagerService } from './services/assets-manager/assets-manager.service';
 import { IFrameCommunicationApp } from './services/communication-service/communication-app/iframe-communication.service';
 import { CommunicationManagerService } from './services/communication-service/communication-manager.service';
-import { MessagePopupComponent } from './components/message-popup/message-popup.component';
+import { ConsentService } from './services/consent.service';
+import { EthereumWalletChainManager } from './services/etherium-services/etherium-wallet-chain.manager';
+import { KaspaNetworkConnectionManagerService } from './services/kaspa-netwrok-services/kaspa-network-connection-manager.service';
 import { MessagePopupService } from './services/message-popup.service';
 import { WalletService } from './services/wallet.service';
-import { KaspaNetworkConnectionManagerService } from './services/kaspa-netwrok-services/kaspa-network-connection-manager.service';
-import { EthereumWalletChainManager } from './services/etherium-services/etherium-wallet-chain.manager';
-import { AssetsManagerService } from './services/assets-manager/assets-manager.service';
-import { StartupBackgroundCanvasComponent } from './components/startup-background-canvas/startup-background-canvas.component';
-import { ConsentService } from './services/consent.service';
 
 @Component({
   selector: 'app-root',

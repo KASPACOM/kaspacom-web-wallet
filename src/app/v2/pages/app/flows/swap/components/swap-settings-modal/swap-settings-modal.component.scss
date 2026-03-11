@@ -1,7 +1,85 @@
+:host {
+    ::ng-deep {
+        kc-base-modal {
+            .modal-container {
+                background-color: var(--vampire-black, #0d1316) !important;
+                border-color: var(--border-color, #1a2025) !important;
+            }
+
+            .modal-header {
+                background-color: var(--vampire-black, #0d1316) !important;
+                border-bottom-color: var(--border-color, #1a2025) !important;
+            }
+
+            .modal-title-text {
+                color: var(--color-text-primary, #fff) !important;
+            }
+
+            .modal-content {
+                background-color: var(--vampire-black, #0d1316) !important;
+            }
+
+            .close-button kc-icon {
+                color: var(--gray-60, #aaa) !important;
+            }
+        }
+    }
+}
+
 .settings-content {
     display: flex;
     flex-direction: column;
     gap: 16px;
     min-width: 380px;
     max-width: 90vw;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    kc-form-error-message {
+        color: var(--error, #E04242);
+    }
+}
+
+.slippage-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+
+    kc-input {
+        flex: 1;
+    }
+}
+
+.slippage-options {
+    display: flex;
+    gap: 8px;
+    padding-bottom: 4px;
+}
+
+.slippage-btn {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--gray-60);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: var(--bg-primary);
+        color: var(--color-text-primary);
+        border-color: var(--primary-40);
+    }
+
+    &.active {
+        background: var(--primary-20);
+        border-color: var(--primary-40);
+        color: var(--primary);
+    }
 }

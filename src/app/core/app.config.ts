@@ -11,6 +11,8 @@ import { provideClientHydration } from '@angular/platform-browser';
 import { provideHttpClient } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { V2TMP_ROUTES } from '../v2/v2.routes';
+import { environment } from '../../environments/environment';
+import { DEFI_API_BASE_URL, LOGOS_URL } from '../config/injection-tokens';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -27,6 +29,14 @@ export const appConfig: ApplicationConfig = {
     {
       provide: Sentry.TraceService,
       deps: [Router],
+    },
+    {
+      provide: DEFI_API_BASE_URL,
+      useValue: environment.kaspaComDefiApiBaseurl,
+    },
+    {
+      provide: LOGOS_URL,
+      useValue: environment.logosUrl,
     },
     {
       provide: APP_INITIALIZER,

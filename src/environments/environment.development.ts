@@ -13,6 +13,7 @@ export const environment: Environment = {
   krc721CacheStreamUrl: 'https://cache.krc721.stream/krc721/testnet-10',
   knsApiBaseurl: 'https://api.knsdomains.org/tn10',
   kaspaExplorerBaseurl: 'https://explorer-tn10.kaspa.org',
+  logosUrl: 'https://erc20-logo-dev.s3.eu-central-1.amazonaws.com/',
   kaspaNetwork: KASPA_NETWORKS.TESTNET10,
   allowedDomains: [
     'localhost',

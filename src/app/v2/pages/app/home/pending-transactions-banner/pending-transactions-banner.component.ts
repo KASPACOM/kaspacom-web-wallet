@@ -1,8 +1,8 @@
-import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, computed, inject, signal } from '@angular/core';
 import { KcIconComponent, KcSpinnerComponent } from 'kaspacom-ui';
-import { WalletService } from '../../../../../services/wallet.service';
 import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
+import { WalletService } from '../../../../../services/wallet.service';
 
 @Component({
   selector: 'app-pending-transactions-banner',
@@ -26,7 +26,7 @@ export class PendingTransactionsBannerComponent {
 
   hasPendingTransactions = computed(() => {
     const data = this.mempoolData();
-    return data ? (data.sending.length > 0 || data.receiving.length > 0) : false;
+    return data ? data.sending.length > 0 || data.receiving.length > 0 : false;
   });
 
   totalPendingCount = computed(() => {
@@ -74,4 +74,3 @@ export class PendingTransactionsBannerComponent {
     }
   }
 }
-

@@ -87,13 +87,15 @@ export class SeedPhraseImportExistingStepComponent {
   onPaste(event: ClipboardEvent): void {
     // Only handle paste events on input elements or their containers
     const target = event.target as HTMLElement;
-    const inputElement = target.tagName === 'INPUT' 
-      ? target as HTMLInputElement 
-      : target.closest('input') as HTMLInputElement;
-    
+    const inputElement =
+      target.tagName === 'INPUT'
+        ? (target as HTMLInputElement)
+        : (target.closest('input') as HTMLInputElement);
+
     // Check if the paste is happening within our seed phrase form
-    const isInSeedPhraseForm = target.closest('.seed-phrase-step__form') !== null;
-    
+    const isInSeedPhraseForm =
+      target.closest('.seed-phrase-step__form') !== null;
+
     if (!inputElement || !isInSeedPhraseForm) {
       return;
     }
@@ -110,7 +112,7 @@ export class SeedPhraseImportExistingStepComponent {
     // Find the index of the input where paste is happening
     // Try to get it from the input's id, or find it by traversing the DOM
     let startIndex = -1;
-    
+
     // If id didn't work, find the input's position by looking for the kc-input parent
     if (startIndex === -1) {
       const kcInputElement = inputElement.closest('kc-input');
@@ -118,20 +120,27 @@ export class SeedPhraseImportExistingStepComponent {
         // Find all kc-input elements in the form and get the index
         const formContainer = target.closest('.seed-phrase-step__inputs');
         if (formContainer) {
-          const allKcInputs = Array.from(formContainer.querySelectorAll('kc-input'));
+          const allKcInputs = Array.from(
+            formContainer.querySelectorAll('kc-input'),
+          );
           startIndex = allKcInputs.indexOf(kcInputElement);
         }
       }
     }
-    
+
     // Fallback: try to find by formControlName attribute on parent
     if (startIndex === -1) {
       const formControlElement = inputElement.closest('[formControlName]');
       if (formControlElement) {
-        const formControlName = formControlElement.getAttribute('formControlName');
+        const formControlName =
+          formControlElement.getAttribute('formControlName');
         if (formControlName) {
           const nameIndex = parseInt(formControlName, 10);
-          if (!isNaN(nameIndex) && nameIndex >= 0 && nameIndex < this.wordCount()) {
+          if (
+            !isNaN(nameIndex) &&
+            nameIndex >= 0 &&
+            nameIndex < this.wordCount()
+          ) {
             startIndex = nameIndex;
           }
         }
@@ -143,8 +152,10 @@ export class SeedPhraseImportExistingStepComponent {
     }
 
     // Split the pasted text by whitespace and filter out empty strings
-    const pastedWords = pastedText.trim().split(/\s+/).filter(word => word.length > 0);
-  
+    const pastedWords = pastedText
+      .trim()
+      .split(/\s+/)
+      .filter((word) => word.length > 0);
 
     // Fill inputs starting from the paste location
     let lastFilledIndex = startIndex - 1;
@@ -160,8 +171,10 @@ export class SeedPhraseImportExistingStepComponent {
     const nextIndex = lastFilledIndex + 1;
     if (nextIndex < this.wordCount()) {
       // Store the form container reference before setTimeout
-      const formContainer = target.closest('.seed-phrase-step__inputs') as HTMLElement;
-      
+      const formContainer = target.closest(
+        '.seed-phrase-step__inputs',
+      ) as HTMLElement;
+
       // Use setTimeout to ensure the DOM is updated before focusing
       setTimeout(() => {
         if (!formContainer) {
@@ -169,10 +182,14 @@ export class SeedPhraseImportExistingStepComponent {
         }
 
         // Get all kc-input elements in order
-        const allKcInputs = Array.from(formContainer.querySelectorAll('kc-input')) as HTMLElement[];
+        const allKcInputs = Array.from(
+          formContainer.querySelectorAll('kc-input'),
+        ) as HTMLElement[];
         if (allKcInputs[nextIndex]) {
           // Find the actual input element inside the kc-input component
-          const nextInput = allKcInputs[nextIndex].querySelector('input') as HTMLInputElement;
+          const nextInput = allKcInputs[nextIndex].querySelector(
+            'input',
+          ) as HTMLInputElement;
           if (nextInput) {
             nextInput.focus();
             // Also try to select the text if any
@@ -196,9 +213,8 @@ export class SeedPhraseImportExistingStepComponent {
 
     mnemonic = mnemonic.toLowerCase();
 
-    const derivedAddr = this.walletService.getWalletAddressFromMnemonic(
-      mnemonic,
-    );
+    const derivedAddr =
+      this.walletService.getWalletAddressFromMnemonic(mnemonic);
 
     if (!derivedAddr) {
       this.notificationService.error(
@@ -217,4 +233,3 @@ export class SeedPhraseImportExistingStepComponent {
     this.next.emit();
   }
 }
-

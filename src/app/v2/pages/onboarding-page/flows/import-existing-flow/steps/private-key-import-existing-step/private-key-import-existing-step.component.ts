@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   KcButtonComponent,
@@ -72,7 +79,8 @@ export class PrivateKeyImportExistingStepComponent {
     );
 
     if (this.skipPassword()) {
-      const result = await this.importExistingFlowService.finalSubmitSkipPassword();
+      const result =
+        await this.importExistingFlowService.finalSubmitSkipPassword();
       if (!result.success) {
         this.notificationService.error(
           'Error',
@@ -85,4 +93,3 @@ export class PrivateKeyImportExistingStepComponent {
     this.next.emit();
   }
 }
-

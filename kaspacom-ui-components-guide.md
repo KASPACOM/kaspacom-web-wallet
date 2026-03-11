@@ -1,27 +1,28 @@
 # Kaspacom UI Components Guide
 
 ## Overview
-**@kaspacom/ui** is an Angular UI Component Library for KaspaCom DeFi Applications. This guide provides comprehensive documentation for all available components, their properties, and usage examples.
 
-**Version:** 1.0.40  
+**kaspacom-ui** is an Angular UI Component Library for KaspaCom DeFi Applications. This guide provides comprehensive documentation for all available components, their properties, and usage examples.
+
+**Version:** 1.1.3  
 **Framework:** Angular 19.2.0+  
 **Dependencies:** PrimeNG 19.0.0+, PrimeIcons 7.0.0+
 
 ## Installation
 
 ```bash
-npm install @kaspacom/ui --save
+npm install kaspacom-ui --save
 ```
 
 ## Import Statement
 
 ```typescript
-import { 
-  KcButtonComponent, 
-  KcInputComponent, 
+import {
+  KcButtonComponent,
+  KcInputComponent,
   KcCardComponent,
   // ... other components
-} from '@kaspacom/ui';
+} from "kaspacom-ui";
 ```
 
 ---
@@ -31,6 +32,7 @@ import {
 ### 1. Button Component (`kc-button`)
 
 #### Properties
+
 - **text**: `string` - Button text
 - **variant**: `ButtonVariant` - Button style variant
   - Options: `'primary'` | `'secondary'` | `'tertiary'` | `'gradient_1'` | `'gradient_2'`
@@ -47,18 +49,13 @@ import {
 - **loadingText**: `string` - Text shown during loading
 
 #### Events
+
 - **buttonClick**: `MouseEvent` - Click event handler
 
 #### Usage Example
+
 ```html
-<kc-button 
-  text="Submit" 
-  variant="primary" 
-  size="md"
-  [isLoading]="isSubmitting"
-  prefixIcon="pi-check"
-  (buttonClick)="handleSubmit($event)">
-</kc-button>
+<kc-button text="Submit" variant="primary" size="md" [isLoading]="isSubmitting" prefixIcon="pi-check" (buttonClick)="handleSubmit($event)"> </kc-button>
 ```
 
 ---
@@ -66,6 +63,7 @@ import {
 ### 2. Input Component (`kc-input`)
 
 #### Properties
+
 - **label**: `string` - Input label
 - **placeholder**: `string` - Placeholder text
 - **type**: `'text'` | `'password'` | `'number'` - Input type
@@ -82,6 +80,7 @@ import {
 - **max**: `number` - Maximum value (for number type)
 
 #### Events
+
 - **valueChange**: `any` - Value change event
 - **blur**: `void` - Blur event
 - **focus**: `void` - Focus event
@@ -90,16 +89,9 @@ import {
 - **validationChange**: `boolean` - Validation state change
 
 #### Usage Example
+
 ```html
-<kc-input 
-  label="Email Address"
-  placeholder="Enter your email"
-  type="text"
-  prefixIcon="pi-envelope"
-  [isValid]="emailValid"
-  invalidReason="Please enter a valid email"
-  (valueChange)="onEmailChange($event)">
-</kc-input>
+<kc-input label="Email Address" placeholder="Enter your email" type="text" prefixIcon="pi-envelope" [isValid]="emailValid" invalidReason="Please enter a valid email" (valueChange)="onEmailChange($event)"> </kc-input>
 ```
 
 ---
@@ -107,6 +99,7 @@ import {
 ### 3. Card Component (`kc-card`)
 
 #### Properties
+
 - **title**: `string` - Card title
 - **showHeader**: `boolean` - Show header section
 - **isClosable**: `boolean` - Show close button
@@ -120,21 +113,17 @@ import {
 - **maxHeight**: `string` - Maximum height
 
 #### Content Projection
+
 - **leftSlot**: Left side content
 - **rightSlot**: Right side content
 - **footerSlot**: Footer content
 
 #### Usage Example
+
 ```html
-<kc-card 
-  title="User Profile" 
-  [showHeader]="true"
-  [isClosable]="true"
-  prefixIcon="pi-user"
-  size="md">
-  
+<kc-card title="User Profile" [showHeader]="true" [isClosable]="true" prefixIcon="pi-user" size="md">
   <div>Card content goes here</div>
-  
+
   <div footerSlot>
     <kc-button text="Save" variant="primary"></kc-button>
   </div>
@@ -146,6 +135,7 @@ import {
 ### 4. Dropdown Select Component (`kc-dropdown-select`)
 
 #### Properties
+
 - **options**: `DropdownOption[]` - Array of options
 - **placeholder**: `string` - Placeholder text
 - **size**: `ComponentSize` - Dropdown size
@@ -162,17 +152,13 @@ import {
 - **searchField**: `string` - Search field
 
 #### Events
+
 - **valueChange**: `any` - Selection change event
 
 #### Usage Example
+
 ```html
-<kc-dropdown-select 
-  [options]="countryOptions"
-  placeholder="Select country"
-  size="md"
-  [isSearchable]="true"
-  (valueChange)="onCountrySelect($event)">
-</kc-dropdown-select>
+<kc-dropdown-select [options]="countryOptions" placeholder="Select country" size="md" [isSearchable]="true" (valueChange)="onCountrySelect($event)"> </kc-dropdown-select>
 ```
 
 ```typescript
@@ -189,22 +175,20 @@ countryOptions: DropdownOption[] = [
 ### 5. Checkbox Component (`kc-checkbox`)
 
 #### Properties
+
 - **label**: `string` - Checkbox label
 - **size**: `ComponentSize` - Checkbox size
 - **isDisabled**: `boolean` - Disabled state
 - **isChecked**: `boolean` - Checked state
 
 #### Events
+
 - **checkedChange**: `boolean` - Check state change
 
 #### Usage Example
+
 ```html
-<kc-checkbox 
-  label="Accept Terms and Conditions"
-  size="md"
-  [isChecked]="termsAccepted"
-  (checkedChange)="onTermsChange($event)">
-</kc-checkbox>
+<kc-checkbox label="Accept Terms and Conditions" size="md" [isChecked]="termsAccepted" (checkedChange)="onTermsChange($event)"> </kc-checkbox>
 ```
 
 ---
@@ -212,6 +196,7 @@ countryOptions: DropdownOption[] = [
 ### 6. Chip Component (`kc-chip`)
 
 #### Properties
+
 - **text**: `string` - Chip text
 - **variant**: `ChipVariant` - Chip style
   - Options: `'success'` | `'error'` | `'warning'` | `'info'` | `'neutral'`
@@ -222,13 +207,9 @@ countryOptions: DropdownOption[] = [
 - **suffixIconColor**: `string` - Suffix icon color
 
 #### Usage Example
+
 ```html
-<kc-chip 
-  text="Active"
-  variant="success"
-  size="sm"
-  prefixIcon="pi-check">
-</kc-chip>
+<kc-chip text="Active" variant="success" size="sm" prefixIcon="pi-check"> </kc-chip>
 ```
 
 ---
@@ -236,6 +217,7 @@ countryOptions: DropdownOption[] = [
 ### 7. Icon Component (`kc-icon`)
 
 #### Properties
+
 - **iconClass**: `string` - Icon class name
 - **size**: `ComponentSize` - Icon size
 - **iconSize**: `ComponentSize` - Specific icon size
@@ -245,12 +227,9 @@ countryOptions: DropdownOption[] = [
 - **isDefaultColor**: `boolean` - Use default color
 
 #### Usage Example
+
 ```html
-<kc-icon 
-  iconClass="pi-home"
-  size="md"
-  color="#6FC7BA">
-</kc-icon>
+<kc-icon iconClass="pi-home" size="md" color="#6FC7BA"> </kc-icon>
 ```
 
 ---
@@ -258,9 +237,11 @@ countryOptions: DropdownOption[] = [
 ### 8. Spinner Component (`kc-spinner`)
 
 #### Properties
+
 - **size**: `ComponentSize` - Spinner size
 
 #### Usage Example
+
 ```html
 <kc-spinner size="md"></kc-spinner>
 ```
@@ -270,6 +251,7 @@ countryOptions: DropdownOption[] = [
 ### 9. Base Modal Component (`kc-base-modal`)
 
 #### Properties
+
 - **title**: `string` - Modal title
 - **showCloseButton**: `boolean` - Show close button
 - **titleIconClass**: `string` - Title icon class
@@ -277,18 +259,15 @@ countryOptions: DropdownOption[] = [
 - **autoWidth**: `boolean` - Auto width sizing
 
 #### Events
+
 - **close**: `void` - Close event
 
 #### Usage Example
+
 ```html
-<kc-base-modal 
-  title="Confirm Action"
-  [showCloseButton]="true"
-  titleIconClass="pi-exclamation-triangle"
-  (close)="onModalClose()">
-  
+<kc-base-modal title="Confirm Action" [showCloseButton]="true" titleIconClass="pi-exclamation-triangle" (close)="onModalClose()">
   <p>Are you sure you want to continue?</p>
-  
+
   <div rightSideSlot>
     <kc-button text="Cancel" variant="secondary"></kc-button>
     <kc-button text="Confirm" variant="primary"></kc-button>
@@ -301,6 +280,7 @@ countryOptions: DropdownOption[] = [
 ### 10. Split Button Component (`kc-split-button`)
 
 #### Properties
+
 - **text**: `string` - Main button text
 - **variant**: `ButtonVariant` - Button variant
 - **size**: `ComponentSize` - Button size
@@ -318,19 +298,14 @@ countryOptions: DropdownOption[] = [
 - **isFullscreenMenu**: `boolean` - Fullscreen menu
 
 #### Events
+
 - **buttonClick**: `MouseEvent` - Main button click
 - **optionClick**: `SplitButtonOption` - Menu option click
 
 #### Usage Example
+
 ```html
-<kc-split-button 
-  text="Save Document"
-  variant="primary"
-  size="md"
-  [options]="saveOptions"
-  (buttonClick)="onSave($event)"
-  (optionClick)="onSaveOption($event)">
-</kc-split-button>
+<kc-split-button text="Save Document" variant="primary" size="md" [options]="saveOptions" (buttonClick)="onSave($event)" (optionClick)="onSaveOption($event)"> </kc-split-button>
 ```
 
 ---
@@ -338,6 +313,7 @@ countryOptions: DropdownOption[] = [
 ### 11. Switch Navigation Component (`kc-switch-navigation`)
 
 #### Properties
+
 - **options**: `SwitchNavigationOption[]` - Navigation options
 - **currentActive**: `string` - Current active option
 - **disabled**: `boolean` - Disabled state
@@ -345,16 +321,13 @@ countryOptions: DropdownOption[] = [
 - **size**: `ComponentSize` - Component size
 
 #### Events
+
 - **selectOption**: `string` - Option selection event
 
 #### Usage Example
+
 ```html
-<kc-switch-navigation 
-  [options]="navOptions"
-  [currentActive]="activeTab"
-  size="md"
-  (selectOption)="onTabChange($event)">
-</kc-switch-navigation>
+<kc-switch-navigation [options]="navOptions" [currentActive]="activeTab" size="md" (selectOption)="onTabChange($event)"> </kc-switch-navigation>
 ```
 
 ---
@@ -362,6 +335,7 @@ countryOptions: DropdownOption[] = [
 ### 12. Tooltip Directive (`kcTooltip`)
 
 #### Properties
+
 - **kcTooltip**: `string` - Tooltip text
 - **tooltipTemplate**: `TemplateRef<any>` - Custom tooltip template
 - **tooltipPosition**: `'top'` | `'bottom'` | `'left'` | `'right'` - Position
@@ -376,13 +350,9 @@ countryOptions: DropdownOption[] = [
 - **tooltipActionableDebounce**: `number` - Debounce time
 
 #### Usage Example
+
 ```html
-<kc-button 
-  text="Hover me"
-  kcTooltip="This is a helpful tooltip"
-  tooltipPosition="top"
-  tooltipShowDelay="500">
-</kc-button>
+<kc-button text="Hover me" kcTooltip="This is a helpful tooltip" tooltipPosition="top" tooltipShowDelay="500"> </kc-button>
 ```
 
 ---
@@ -390,6 +360,7 @@ countryOptions: DropdownOption[] = [
 ### 13. Notification Service
 
 #### Methods
+
 - **success(title, description, duration?)**: Show success notification
 - **error(title, description, duration?)**: Show error notification
 - **warning(title, description, duration?)**: Show warning notification
@@ -400,14 +371,15 @@ countryOptions: DropdownOption[] = [
 - **setConfig(config)**: Configure notification settings
 
 #### Usage Example
+
 ```typescript
-import { NotificationService } from '@kaspacom/ui';
+import { NotificationService } from 'kaspacom-ui';
 
 constructor(private notificationService: NotificationService) {}
 
 showSuccess() {
   this.notificationService.success(
-    'Success!', 
+    'Success!',
     'Operation completed successfully',
     5000
   );
@@ -415,7 +387,7 @@ showSuccess() {
 
 showError() {
   this.notificationService.error(
-    'Error!', 
+    'Error!',
     'Something went wrong',
     0 // No auto-dismiss
   );
@@ -429,6 +401,7 @@ showError() {
 ### Color Palette
 
 #### Primary Colors
+
 - **Primary**: `#6FC7BA` (Kaspa-20)
 - **Secondary**: `#B43AED` (Purple-20)
 - **Tertiary**: `#595CFF` (Blue-20)
@@ -436,6 +409,7 @@ showError() {
 - **Background Secondary**: `#0D1316`
 
 #### Status Colors
+
 - **Success**: `#3FC753` (Green-20)
 - **Warning**: `#E6A223` (Orange-20)
 - **Error**: `#E04242` (Red-20)
@@ -443,15 +417,18 @@ showError() {
 - **Neutral**: `#9E9E9E` (Gray-60)
 
 #### Gradients
+
 - **Gradient 1**: `linear-gradient(90deg, #B43AED 0%, #FFD27D 44.23%, #A2FFF1 85.58%)`
 - **Gradient 2**: `linear-gradient(90deg, #7477FF 0%, #595CFF 30%, #B43AED 70%, #D883FF 100%)`
 
 ### Typography
 
 #### Font Family
+
 - **Primary**: "Poppins", sans-serif
 
 #### Typography Classes
+
 - **Titles**: `.typo-title-1` to `.typo-title-6` (14px - 40px, semibold)
 - **Text**: `.typo-text-1` to `.typo-text-6` (12px - 24px, regular)
 - **Headers**: `.typo-header-1`, `.typo-header-2` (36px - 48px, bold)
@@ -462,6 +439,7 @@ showError() {
 ### Component Sizes
 
 All components use the `ComponentSize` type:
+
 - **xs**: Extra small
 - **sm**: Small
 - **md**: Medium (default)
@@ -482,54 +460,30 @@ All components use the `ComponentSize` type:
 ## Common Patterns
 
 ### Form with Validation
+
 ```html
 <form [formGroup]="myForm">
-  <kc-input 
-    label="Email"
-    formControlName="email"
-    [isValid]="myForm.get('email')?.valid || false"
-    invalidReason="Please enter a valid email">
-  </kc-input>
-  
-  <kc-checkbox 
-    label="Newsletter"
-    formControlName="newsletter">
-  </kc-checkbox>
-  
-  <kc-button 
-    text="Submit"
-    variant="primary"
-    [isDisabled]="myForm.invalid"
-    (buttonClick)="onSubmit()">
-  </kc-button>
+  <kc-input label="Email" formControlName="email" [isValid]="myForm.get('email')?.valid || false" invalidReason="Please enter a valid email"> </kc-input>
+
+  <kc-checkbox label="Newsletter" formControlName="newsletter"> </kc-checkbox>
+
+  <kc-button text="Submit" variant="primary" [isDisabled]="myForm.invalid" (buttonClick)="onSubmit()"> </kc-button>
 </form>
 ```
 
 ### Modal with Actions
+
 ```html
-<kc-base-modal 
-  title="Delete Item"
-  [showCloseButton]="true"
-  (close)="closeModal()">
-  
+<kc-base-modal title="Delete Item" [showCloseButton]="true" (close)="closeModal()">
   <p>Are you sure you want to delete this item?</p>
-  
+
   <div rightSideSlot>
-    <kc-button 
-      text="Cancel" 
-      variant="secondary"
-      (buttonClick)="closeModal()">
-    </kc-button>
-    <kc-button 
-      text="Delete" 
-      variant="primary"
-      role="danger"
-      (buttonClick)="confirmDelete()">
-    </kc-button>
+    <kc-button text="Cancel" variant="secondary" (buttonClick)="closeModal()"> </kc-button>
+    <kc-button text="Delete" variant="primary" role="danger" (buttonClick)="confirmDelete()"> </kc-button>
   </div>
 </kc-base-modal>
 ```
 
 ---
 
-This guide covers all the main components in the @kaspacom/ui library. Refer to the individual component definitions for the most up-to-date properties and methods.
+This guide covers all the main components in the kaspacom-ui library. Refer to the individual component definitions for the most up-to-date properties and methods.

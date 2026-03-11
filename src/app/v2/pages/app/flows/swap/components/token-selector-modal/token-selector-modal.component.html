@@ -13,17 +13,18 @@
       @for (token of filteredTokens(); track token.address) {
       <button class="token-item" (click)="onTokenSelect(token)">
         <div class="token-info">
-          @if (token.logoURI) {
-          <img [src]="token.logoURI" [alt]="token.symbol" class="token-logo" />
-          } @else {
-          <div class="token-logo-placeholder"></div>
-          }
+          <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
           <div class="token-details">
             <span class="token-symbol">{{ token.symbol }}</span>
             <span class="token-name">{{ token.name }}</span>
           </div>
         </div>
-        <span class="token-address">{{ token.address }}</span>
+        <div class="token-balance-info">
+          @if (token.balance) {
+          <span class="token-balance">{{ token.balance | commaFormatter }}</span>
+          }
+          <span class="token-address" (click)="copyAddress($event, token.address)" title="Click to copy address">{{ token.address | slice:0:6 }}...{{ token.address | slice:-4 }}</span>
+        </div>
       </button>
       } @empty {
       <div class="no-tokens">No tokens found</div>

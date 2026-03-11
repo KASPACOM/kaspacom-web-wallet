@@ -8,6 +8,13 @@ import { PasswordManagerService } from '../../../../../services/password-manager
 import { SeedPhraseWordComponent } from '../../../onboarding-page/flows/new-wallet-flow/steps/create-seed-phrase-new-wallet-step/component/seed-phrase-word/seed-phrase-word.component';
 import { FormsModule } from '@angular/forms';
 
+interface ExportWalletTransientState {
+  currentStep: 'password' | 'export';
+  seedWords: string[];
+  password: string;
+  passwordError: string | null;
+}
+
 @Component({
   selector: 'app-export-wallet',
   standalone: true,
@@ -41,6 +48,26 @@ export class ExportWalletComponent extends FlowPageBaseComponent {
   override async ngOnInit(): Promise<void> {
     super.ngOnInit();
     this.hasMnemonic.set(this.walletService.getCurrentWallet()?.isHasMnemonic() ?? false);
+
+    const saved = this.restoreTransientState<ExportWalletTransientState>();
+    if (saved) {
+      this.currentStep.set(saved.currentStep);
+      this.seedWords.set(saved.seedWords);
+      this.password.set(saved.password);
+      this.passwordError.set(saved.passwordError);
+    }
+  }
+
+  override ngOnDestroy(): void {
+    if (this.flowPagesService.isPageOpen(this.config.id)) {
+      this.saveTransientState({
+        currentStep: this.currentStep(),
+        seedWords: this.seedWords(),
+        password: this.password(),
+        passwordError: this.passwordError(),
+      } satisfies ExportWalletTransientState);
+    }
+    super.ngOnDestroy();
   }
 
   onPasswordInput(): void {

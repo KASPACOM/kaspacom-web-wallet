@@ -38,7 +38,7 @@
       <div class="wrapper__right">
         <!-- Right-panel header (title + navigation controls) -->
         <div class="wrapper__right-header">
-          @if (flowPagesService.isAnyPageOpen()) {
+          @if (flowPagesService.isAnyPageOpen() && (flowPagesService.activePage()?.showTitle ?? true)) {
             <div class="wrapper__right-nav">
               @if (flowPagesService.canNavigateBack()) {
                 <kc-icon

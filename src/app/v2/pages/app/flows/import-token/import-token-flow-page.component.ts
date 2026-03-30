@@ -1,0 +1,152 @@
+import {
+  Component,
+  OnInit,
+  inject,
+  signal,
+} from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import {
+  KcButtonComponent,
+  KcInputComponent,
+  KcIconComponent,
+  KcSpinnerComponent,
+  NotificationService,
+} from 'kaspacom-ui';
+import { Erc20Token } from '@kaspacom/swap-sdk';
+import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';
+import { L2AssetsStoreService } from '../../../../../services/assets-manager/assets-stores/l2-assets-store.service';
+import { FlowPagesService } from '../../../../services/flow-pages.service';
+import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
+
+type ImportState = 'idle' | 'loading' | 'found' | 'already-imported' | 'error';
+
+@Component({
+  selector: 'app-import-token-flow-page',
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    KcButtonComponent,
+    KcInputComponent,
+    KcIconComponent,
+    KcSpinnerComponent,
+    SkeletonComponent,
+  ],
+  templateUrl: './import-token-flow-page.component.html',
+  styleUrl: './import-token-flow-page.component.scss',
+  host: {
+    '[class.full-width]': 'true',
+    '[class.full-height]': 'true',
+  },
+})
+export class ImportTokenFlowPageComponent implements OnInit {
+  private assetsManagerService = inject(AssetsManagerService);
+  private flowPagesService = inject(FlowPagesService);
+  private notificationService = inject(NotificationService);
+
+  contractAddress = signal<string>('');
+  state = signal<ImportState>('idle');
+  errorMessage = signal<string>('');
+  tokenInfo = signal<Erc20Token | null>(null);
+  isSaving = signal<boolean>(false);
+
+  private get l2Store(): L2AssetsStoreService {
+    return this.assetsManagerService.getAllAssetStores().l2 as L2AssetsStoreService;
+  }
+
+  ngOnInit(): void {}
+
+  onAddressChange(value: string): void {
+    this.contractAddress.set(value || '');
+    // Reset state when address changes
+    if (this.state() !== 'idle') {
+      this.state.set('idle');
+      this.tokenInfo.set(null);
+      this.errorMessage.set('');
+    }
+  }
+
+  async pasteFromClipboard(): Promise<void> {
+    try {
+      const text = await navigator.clipboard.readText();
+      this.contractAddress.set(text.trim());
+      this.onAddressChange(text.trim());
+    } catch {
+      this.notificationService.error('Clipboard Error', 'Could not read from clipboard');
+    }
+  }
+
+  async lookupToken(): Promise<void> {
+    const address = this.contractAddress().trim();
+    if (!address) {
+      this.errorMessage.set('Please enter a contract address');
+      this.state.set('error');
+      return;
+    }
+
+    // Basic EVM address validation
+    if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
+      this.errorMessage.set('Invalid contract address format');
+      this.state.set('error');
+      return;
+    }
+
+    this.state.set('loading');
+    this.tokenInfo.set(null);
+    this.errorMessage.set('');
+
+    try {
+      // Check if already imported
+      const alreadySaved = await this.l2Store.isErc20TokenSavedOnLocalStorage(address);
+      if (alreadySaved) {
+        const token = await this.l2Store.getErc20InfoFromBlockchain(address);
+        this.tokenInfo.set(token);
+        this.state.set('already-imported');
+        return;
+      }
+
+      // Fetch token info from blockchain
+      const token = await this.l2Store.getErc20InfoFromBlockchain(address);
+      this.tokenInfo.set(token);
+      this.state.set('found');
+    } catch (err: any) {
+      console.error('Failed to load token:', err);
+      this.errorMessage.set(err?.message || 'Token not found. Make sure the address is a valid ERC20 contract.');
+      this.state.set('error');
+    }
+  }
+
+  async onAccept(): Promise<void> {
+    const token = this.tokenInfo();
+    if (!token) return;
+
+    this.isSaving.set(true);
+    try {
+      await this.l2Store.addTokenToLocalStore(token);
+      this.notificationService.success('Token Imported', `${token.symbol} has been added to your wallet`);
+      this.flowPagesService.closePage();
+    } catch (err: any) {
+      this.notificationService.error('Import Failed', err?.message || 'Failed to save token');
+    } finally {
+      this.isSaving.set(false);
+    }
+  }
+
+  onCancel(): void {
+    this.flowPagesService.closePage();
+  }
+
+  shortAddress(address: string): string {
+    if (!address || address.length < 10) return address;
+    return `${address.slice(0, 8)}...${address.slice(-6)}`;
+  }
+
+  formatBalance(token: Erc20Token): string {
+    if (token.balance === undefined || token.balance === null) return '0';
+    return Number(token.balance).toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 6,
+    });
+  }
+}

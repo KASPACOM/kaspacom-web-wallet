@@ -5,7 +5,7 @@ export const environment: Environment = {
   isProduction: true,
   consentScriptUrl: 'https://kaspa.com/js/modules/kaspa-consent.min.js',
   consentCssUrl: 'https://kaspa.com/css/consent.min.css',
-  segmentKey: '2XsX2NggJCYJZlCgCVAlMNP6vzGFh22n',
+  segmentKey: 'VjcBOF7puALWzPyE19iNkCLseTTDfVga',
   clarityKey: 'v3s9mm1mn8',
   addressableKey: '2e716db8140e460fa988107810e59824',
   kaspaComApiBaseurl: 'https://api.kaspa.com',
@@ -18,7 +18,7 @@ export const environment: Environment = {
   kaspaExplorerBaseurl: 'https://explorer.kaspa.org',
   kaspaNetwork: KASPA_NETWORKS.MAINNET,
   allowedDomains: ['wallet.kaspa.com'],
-  isL2Enabled: false,
+  isL2Enabled: true,
   l2Configs: [
     {
       sdkName: 'kasplex',
@@ -26,5 +26,5 @@ export const environment: Environment = {
       l1TransactionPrefix: 'kasplex',
     },
   ],
-  segmentKey: 'VjcBOF7puALWzPyE19iNkCLseTTDfVga',
+  logosUrl: 'https://erc20-logo-dev.s3.eu-central-1.amazonaws.com/',
 };

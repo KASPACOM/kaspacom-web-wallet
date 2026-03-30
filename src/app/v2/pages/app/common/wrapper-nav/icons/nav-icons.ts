@@ -58,6 +58,14 @@ export class NavIcons {
 </svg>
   `;
 
+  static readonly lending = `
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M12 26V22M16 26V18M20 26V20M24 26V16M28 26V14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="20" cy="14" r="4" stroke="currentColor" stroke-width="2" fill="none"/>
+  <path d="M18 14h4M20 12v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+</svg>
+  `;
+
   static readonly chevronUp = `
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M18 15L12 9L6 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>

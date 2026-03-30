@@ -41,6 +41,11 @@ export class WrapperNavComponent implements AfterViewInit, OnDestroy {
       link: '/app/home',
     },
     {
+      svgContent: this.domSanitizer.bypassSecurityTrustHtml(NavIcons.lending),
+      alt: 'Lending',
+      link: '/app/lending',
+    },
+    {
       svgContent: this.domSanitizer.bypassSecurityTrustHtml(NavIcons.activity),
       alt: 'History',
       link: '/app/activity',

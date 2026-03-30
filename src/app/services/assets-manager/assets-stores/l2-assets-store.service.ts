@@ -166,7 +166,7 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
     return parseFloat(formatUnits(balance.toString(), tokenDecimals));
   }
 
-  protected async addTokenToLocalStore(token: Erc20Token) {
+  public async addTokenToLocalStore(token: Erc20Token) {
     const chain = this.ethereumWalletChainManager.getCurrentChainSignal()();
 
     if (!chain) {
@@ -177,7 +177,7 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
     await this.reloadAsset(L2_ASSET_KEYS.erc20);
   }
 
-  protected async removeTokenFromLocalStore(token: Erc20Token) {
+  public async removeTokenFromLocalStore(token: Erc20Token) {
     const chain = this.ethereumWalletChainManager.getCurrentChainSignal()();
 
     if (!chain) {
@@ -188,7 +188,7 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
     await this.reloadAsset(L2_ASSET_KEYS.erc20);
   }
 
-  protected isErc20TokenSavedOnLocalStorage(tokenAddress: string): boolean {
+  public isErc20TokenSavedOnLocalStorage(tokenAddress: string): boolean {
     return !!this.l2LocalERC20Tokens.getToken(
       tokenAddress,
       this.ethereumWalletChainManager.getCurrentChainSignal()()!,

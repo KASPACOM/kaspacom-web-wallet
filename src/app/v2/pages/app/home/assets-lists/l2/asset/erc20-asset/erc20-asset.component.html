@@ -32,6 +32,16 @@
       class="flex-1"
       (click)="onSendAction()">
     </kc-button>
+    @if (isTokenSaved()) {
+      <kc-button
+        [variant]="'secondary'"
+        [size]="'md'"
+        [text]="isRemoving() ? 'Removing...' : 'Remove'"
+        [isDisabled]="isRemoving()"
+        class="flex-1"
+        (click)="onRemoveToken()">
+      </kc-button>
+    }
   </div>
 
   <!-- Tabs Section -->

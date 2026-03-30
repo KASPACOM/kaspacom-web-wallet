@@ -64,7 +64,7 @@ export class L2TransactionHistoryService {
                 blockHash: receipt.blockHash,
                 blockNumber: receipt.blockNumber,
                 gasUsed: String(receipt.gasUsed),
-                blobGasUsed: receipt.gasUsed?.toString(),
+                blobGasUsed: receipt.blobGasUsed?.toString(),
                 gasPrice: String(receipt.gasPrice),
                 blobGasPrice: receipt.blobGasPrice?.toString(),
                 type: receipt.type,

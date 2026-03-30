@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Transaction } from 'ethers';
+import { Transaction, formatUnits } from 'ethers';
 import { KcIconComponent, KcSpinnerComponent } from 'kaspacom-ui';
 import { L2TransactionHistory } from '../../../../../../../db/dtos/l2-transaction-history';
 import { L2TransactionHistoryService } from '../../../../../../../services/l2-services/l2-transaction-history.service';
@@ -76,7 +76,7 @@ export class L2TxHistoryComponent {
     try {
       const txData = this.getTxData(tx);
       if (!txData?.value) return '0 KAS';
-      const valueInEth = Number(txData.value) / 1e18;
+      const valueInEth = parseFloat(formatUnits(txData.value, 18));
       if (valueInEth === 0) return '0 KAS';
       return `${valueInEth.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 6 })} KAS`;
     } catch {
@@ -87,7 +87,7 @@ export class L2TxHistoryComponent {
   getGasFee(tx: L2TransactionHistory): string {
     if (!tx.receiptInfo) return '—';
     try {
-      const fee = Number(tx.receiptInfo.fee) / 1e18;
+      const fee = parseFloat(formatUnits(tx.receiptInfo.fee, 18));
       return `${fee.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 8 })} KAS`;
     } catch {
       return '—';

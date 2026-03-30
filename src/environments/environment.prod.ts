@@ -25,6 +25,37 @@ export const environment: Environment = {
       sdkName: 'kasplex',
       icon: '💎',
       l1TransactionPrefix: 'kasplex',
+      customChainConfig: {
+        chainId: 202555,
+        name: 'Kasplex',
+        rpcUrl: 'https://evmrpc.kasplex.org',
+        blockExplorerUrl: 'https://explorer.kasplex.org',
+        nativeToken: {
+          address: '0x0000000000000000000000000000000000000000',
+          decimals: 18,
+          name: 'Kasplex Kaspa',
+          symbol: 'KAS',
+        },
+        defiApiNetworkName: 'kasplex',
+      },
+    },
+    {
+      sdkName: 'igra-mainnet',
+      icon: '🔷',
+      l1TransactionPrefix: 'igra',
+      customChainConfig: {
+        chainId: 38833,
+        name: 'IGRA Mainnet',
+        rpcUrl: 'https://rpc.igralabs.com:8545',
+        blockExplorerUrl: 'https://explorer.igralabs.com',
+        nativeToken: {
+          address: '0x0000000000000000000000000000000000000000',
+          decimals: 18,
+          name: 'Kaspa',
+          symbol: 'KAS',
+        },
+        defiApiNetworkName: 'igra',
+      },
     },
   ],
 };

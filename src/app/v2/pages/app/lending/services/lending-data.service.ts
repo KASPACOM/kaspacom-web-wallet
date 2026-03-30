@@ -206,10 +206,10 @@ export class LendingDataService {
           suppliedBalance,
           borrowedBalance,
           isCollateral: userReserve?.usageAsCollateralEnabled ?? reserve.usageAsCollateralEnabled ?? false,
-          canSupply: parseFloat(walletBalance) > 0 && reserve.isActive && !reserve.isFrozen,
-          canWithdraw: parseFloat(suppliedBalance) > 0,
-          canBorrow: reserve.borrowingEnabled && reserve.isActive && !reserve.isFrozen,
-          canRepay: parseFloat(borrowedBalance) > 0,
+          canSupply: parseFloat(walletBalance) > 0 && reserve.isActive && !reserve.isFrozen && !reserve.isPaused,
+          canWithdraw: parseFloat(suppliedBalance) > 0 && !reserve.isPaused,
+          canBorrow: reserve.borrowingEnabled && reserve.isActive && !reserve.isFrozen && !reserve.isPaused,
+          canRepay: parseFloat(borrowedBalance) > 0 && !reserve.isPaused,
           isActive: reserve.isActive,
           isFrozen: reserve.isFrozen,
           borrowingEnabled: reserve.borrowingEnabled,
@@ -323,16 +323,18 @@ export class LendingDataService {
 
     try {
       const parsedAmount = ethers.parseUnits(amount, token.decimals);
+      const isFullRepay = amount === token.borrowedBalance;
+      const repayAmount = isFullRepay ? ethers.MaxUint256 : parsedAmount;
       const erc20 = this.getErc20(token.address);
 
       const allowance = await erc20.allowance(userAddress, IGRA_LENDING_CONTRACTS.POOL) as bigint;
-      if (allowance < parsedAmount) {
-        const approveResult = await erc20.approve(IGRA_LENDING_CONTRACTS.POOL, parsedAmount.toString());
+      if (allowance < repayAmount) {
+        const approveResult = await erc20.approve(IGRA_LENDING_CONTRACTS.POOL, repayAmount.toString());
         if (!approveResult?.result) return false;
       }
 
       const pool = this.getPool();
-      const result = await pool.repay(token.address, parsedAmount, VARIABLE_RATE_MODE, userAddress);
+      const result = await pool.repay(token.address, repayAmount, VARIABLE_RATE_MODE, userAddress);
       return !!result?.result;
     } catch (e) {
       console.error('repay error:', e);

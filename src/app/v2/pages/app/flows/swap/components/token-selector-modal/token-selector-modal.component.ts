@@ -1,10 +1,10 @@
 import {
   Component,
   EventEmitter,
-  Input,
   Output,
   computed,
   inject,
+  input,
   signal,
 } from '@angular/core';
 import { CommonModule, SlicePipe } from '@angular/common';
@@ -31,10 +31,10 @@ import { TokenLogoComponent } from '../../../../../../../components/token-logo/t
 export class TokenSelectorModalComponent {
   private messagePopupService = inject(MessagePopupService);
 
-  @Input() open = false;
-  @Input() isLoading = false;
-  @Input() tokens: Erc20Token[] = [];
-  @Input() excludedToken: Erc20Token | null = null;
+  open = input(false);
+  isLoading = input(false);
+  tokens = input<Erc20Token[]>([]);
+  excludedToken = input<Erc20Token | null>(null);
   @Output() close = new EventEmitter<void>();
   @Output() selectToken = new EventEmitter<Erc20Token>();
 
@@ -42,22 +42,27 @@ export class TokenSelectorModalComponent {
 
   filteredTokens = computed(() => {
     const query = this.searchQuery().trim().toLowerCase();
-    let tokens = this.tokens;
+    const excluded = this.excludedToken();
+    let tokens = this.tokens();
 
-    if (this.excludedToken) {
+    if (excluded) {
       tokens = tokens.filter(
-        (t) =>
-          t.address.toLowerCase() !== this.excludedToken!.address.toLowerCase(),
+        (t) => t.address.toLowerCase() !== excluded.address.toLowerCase(),
       );
     }
 
-    if (!query) return tokens;
+    const sortByBalance = (list: Erc20Token[]) =>
+      [...list].sort((a, b) => (b.balance ?? 0) - (a.balance ?? 0));
 
-    return tokens.filter(
-      (token) =>
-        token.symbol.toLowerCase().includes(query) ||
-        token.name.toLowerCase().includes(query) ||
-        token.address.toLowerCase().includes(query),
+    if (!query) return sortByBalance(tokens);
+
+    return sortByBalance(
+      tokens.filter(
+        (token) =>
+          token.symbol.toLowerCase().includes(query) ||
+          token.name.toLowerCase().includes(query) ||
+          token.address.toLowerCase().includes(query),
+      ),
     );
   });
 

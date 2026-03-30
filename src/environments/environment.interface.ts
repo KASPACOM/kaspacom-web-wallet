@@ -9,6 +9,17 @@ export interface L2CustomChainConfig {
     name: string;
     symbol: string;
   };
+  wrappedToken?: {
+    address: string;
+    decimals: number;
+    name: string;
+    symbol: string;
+  };
+  routerAddress?: string;
+  factoryAddress?: string;
+  routerPermitFeeAddress?: string;
+  pairCodeHash?: string;
+  badckendApiUrl?: string;
   defiApiNetworkName?: string;
 }
 

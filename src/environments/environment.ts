@@ -15,12 +15,30 @@ export const environment: Environment = {
   kaspaExplorerBaseurl: 'https://explorer.kaspa.org',
   kaspaNetwork: KASPA_NETWORKS.MAINNET,
   allowedDomains: ['wallet.kaspa.com'],
-  isL2Enabled: false,
+  isL2Enabled: true,
   l2Configs: [
     {
       sdkName: 'kasplex',
       icon: '💎',
       l1TransactionPrefix: 'kasplex',
+    },
+    {
+      sdkName: 'igra-mainnet',
+      icon: '🔷',
+      l1TransactionPrefix: 'igra',
+      customChainConfig: {
+        chainId: 38833,
+        name: 'IGRA Mainnet',
+        rpcUrl: 'https://rpc.igralabs.com:8545',
+        blockExplorerUrl: 'https://explorer.igralabs.com',
+        nativeToken: {
+          address: '0x0000000000000000000000000000000000000000',
+          decimals: 18,
+          name: 'Kaspa',
+          symbol: 'KAS',
+        },
+        defiApiNetworkName: 'igra',
+      },
     },
   ],
   segmentKey: 'VjcBOF7puALWzPyE19iNkCLseTTDfVga',

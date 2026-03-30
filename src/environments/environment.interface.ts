@@ -1,7 +1,23 @@
+export interface L2CustomChainConfig {
+  chainId: number;
+  name: string;
+  rpcUrl: string;
+  blockExplorerUrl?: string;
+  nativeToken: {
+    address: string;
+    decimals: number;
+    name: string;
+    symbol: string;
+  };
+  defiApiNetworkName?: string;
+}
+
 export interface L2ConfigInterface {
   sdkName: string,
   icon: string,
   l1TransactionPrefix?: string;
+  /** Optional custom chain config — used when sdkName is not present in the swap-sdk NETWORKS */
+  customChainConfig?: L2CustomChainConfig;
 }
 
 export interface Environment {

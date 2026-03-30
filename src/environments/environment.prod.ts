@@ -25,6 +25,11 @@ export const environment: Environment = {
       icon: '💎',
       l1TransactionPrefix: 'kasplex',
     },
+    {
+      sdkName: 'igra',
+      icon: '💎',
+      l1TransactionPrefix: 'igra',
+    },
   ],
   segmentKey: 'VjcBOF7puALWzPyE19iNkCLseTTDfVga',
 };

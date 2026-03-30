@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { WalletAction, WalletActionType } from "../../../types/wallet-action";
 import { KRC721_TRANSACTIONS_PRICE, Krc721OperationDataService } from "./krc721-operation-data.service";
-import { KaspaNetworkActionsService } from "../../kaspa-netwrok-services/kaspa-network-actions.service";
+import { KaspaNetworkActionsService, REVEAL_PSKT_AMOUNT } from "../../kaspa-netwrok-services/kaspa-network-actions.service";
 import { UtilsHelper } from "../../utils.service";
 import { ProtocolType } from "@kaspacom/wallet-messages/dist/types/protocol-type.enum";
 
@@ -83,6 +83,63 @@ export class Krc721WalletActionService {
                 },
                 options: {
                     revealPriorityFee: KRC721_TRANSACTIONS_PRICE.TRANSFER,
+                }
+            },
+        };
+    }
+
+    createListKrc721Action(
+        walletAddress: string,
+        ticker: string,
+        tokenId: string,
+        psktOutputs: {
+            address: string;
+            amount: bigint;
+        }[],
+    ): WalletAction {
+        const sendData = this.krc721OperationDataService.getSendData(ticker, tokenId);
+
+        const sendScript = this.kaspaNetworkActionsService.createGenericScriptFromString(
+            CURRENT_PROTOCOL,
+            this.utils.stringifyProtocolAction(sendData),
+            walletAddress,
+        );
+
+        return {
+            type: WalletActionType.COMMIT_REVEAL,
+            data: {
+                actionScript: {
+                    type: CURRENT_PROTOCOL,
+                    stringifyAction: this.utils.stringifyProtocolAction(this.krc721OperationDataService.getListData(ticker, tokenId)),
+                },
+                options: {
+                    additionalOutputs: [{
+                        address: sendScript.scriptAddress,
+                        amount: REVEAL_PSKT_AMOUNT,
+                    }],
+                    revealPskt: {
+                        outputs: psktOutputs,
+                        script: sendScript,
+                    }
+                }
+            },
+        };
+    }
+
+    createCancelListingKrc721Action(
+        ticker: string,
+        tokenId: string,
+        transactionId: string,
+    ): WalletAction {
+        return {
+            type: WalletActionType.COMMIT_REVEAL,
+            data: {
+                actionScript: {
+                    type: CURRENT_PROTOCOL,
+                    stringifyAction: this.utils.stringifyProtocolAction(this.krc721OperationDataService.getSendData(ticker, tokenId)),
+                },
+                options: {
+                    commitTransactionId: transactionId
                 }
             },
         };

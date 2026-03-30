@@ -73,6 +73,7 @@
                   "with": "src/environments/environment.development.ts"
                 }
               ],
+              "outputHashing": "all",
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
@@ -84,6 +85,7 @@
                   "with": "src/environments/environment.stage.ts"
                 }
               ],
+              "outputHashing": "all",
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true,

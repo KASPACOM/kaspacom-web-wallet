@@ -59,11 +59,11 @@ export class Erc20AssetComponent
     return this.assetsManagerService.getAllAssetStores().l2 as L2AssetsStoreService;
   }
 
-  override ngOnInit() {
+  override async ngOnInit() {
     this.address = this.route.snapshot.paramMap.get('address');
     this.loadAssetData();
     if (this.address) {
-      this.isTokenSaved.set(this.l2Store.isErc20TokenSavedOnLocalStorage(this.address));
+      this.isTokenSaved.set(await this.l2Store.isErc20TokenSavedOnLocalStorage(this.address));
     }
   }
 

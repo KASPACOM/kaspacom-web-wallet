@@ -188,10 +188,11 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
     await this.reloadAsset(L2_ASSET_KEYS.erc20);
   }
 
-  public isErc20TokenSavedOnLocalStorage(tokenAddress: string): boolean {
-    return !!this.l2LocalERC20Tokens.getToken(
+  public async isErc20TokenSavedOnLocalStorage(tokenAddress: string): Promise<boolean> {
+    const token = await this.l2LocalERC20Tokens.getToken(
       tokenAddress,
       this.ethereumWalletChainManager.getCurrentChainSignal()()!,
     );
+    return !!token;
   }
 }

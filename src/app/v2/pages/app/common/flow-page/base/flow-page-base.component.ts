@@ -53,4 +53,12 @@ export abstract class FlowPageBaseComponent extends FlowPageBase implements OnIn
   protected getCurrentConfig(): IFlowPageConfig | null {
     return this.flowPagesService.getCurrentPage();
   }
+
+  protected saveTransientState(state: unknown): void {
+    this.flowPagesService.saveTransientState(this.config.id, state);
+  }
+
+  protected restoreTransientState<T>(): T | undefined {
+    return this.flowPagesService.getTransientState<T>(this.config.id);
+  }
 }

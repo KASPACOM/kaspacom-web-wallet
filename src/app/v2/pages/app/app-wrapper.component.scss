@@ -202,6 +202,119 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
   }
 }
 
+// ── Expanded desktop layout ──────────────────────────────────────────────────
+
+.wrapper--expanded {
+  width: 960px;
+  flex-direction: row;
+  align-items: stretch;
+
+  // Override mobile/compact sizing when on a wide enough viewport
+  height: 82vh;
+}
+
+.wrapper__left {
+  width: 480px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px dashed rgba(#6fc7ba, 0.2);
+}
+
+.wrapper__right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.wrapper__right-header {
+  flex-shrink: 0;
+  padding: 16px 16px 12px;
+  border-bottom: 1px dashed rgba(#6fc7ba, 0.15);
+  backdrop-filter: blur(7px);
+  background: transparent;
+}
+
+.wrapper__right-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wrapper__right-title {
+  flex: 1;
+  color: var(--white);
+}
+
+.wrapper__right-back {
+  cursor: pointer;
+  color: var(--gray-60);
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    color: var(--white);
+  }
+}
+
+.wrapper__right-close {
+  flex-shrink: 0;
+  cursor: pointer;
+
+  ::ng-deep .icon {
+    color: var(--gray-60) !important;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: var(--white) !important;
+    }
+  }
+}
+
+.wrapper__right-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+
+  app-dynamic-flow-page-outlet {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+.wrapper__right-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 32px;
+  opacity: 0.4;
+}
+
+.wrapper__right-placeholder-icon {
+  color: var(--primary);
+}
+
+.wrapper__right-placeholder-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.6;
+  margin: 0;
+}
+
+// ── end expanded layout ──────────────────────────────────────────────────────
+
 // Placeholder page styling
 .placeholder-page {
   display: flex;

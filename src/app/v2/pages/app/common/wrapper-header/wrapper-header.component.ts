@@ -10,6 +10,7 @@ import { FlowPagesService } from '../../../../services/flow-pages.service';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { WalletProfileOrbComponent } from '../../../../shared/ui/wallet-profile-orb/wallet-profile-orb.component';
 import { FlowPageId } from '../flow-page/flow-page.registry';
+import { DesktopViewService } from '../../../../services/desktop-view.service';
 
 @Component({
   selector: 'app-wrapper-header',
@@ -30,6 +31,7 @@ export class WrapperHeaderComponent {
   accountSettingsService = inject(AccountSettingsService);
   flowPagesService = inject(FlowPagesService);
   ethereumWalletChainManager = inject(EthereumWalletChainManager);
+  desktopViewService = inject(DesktopViewService);
 
   // Use signals for reactive updates
   currentWallet = this.walletService.getCurrentWalletSignal();

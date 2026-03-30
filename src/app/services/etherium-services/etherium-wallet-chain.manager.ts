@@ -27,6 +27,7 @@ export class EthereumWalletChainManager {
             this.currentChain = signal<string | undefined>(localStorage.getItem(LOCAL_STORAGE_KEYS.CURRENT_ETHEREUM_CHAIN) || undefined);
             return;
         }
+
         environment.l2Configs.forEach((config: L2ConfigInterface) => {
             this.allChainsEnvConfigByChainId[this.convertChainIdToHex(NETWORKS[config.sdkName].chainId)] = config;
         });

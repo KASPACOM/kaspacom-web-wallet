@@ -13,11 +13,12 @@ export interface L2CustomChainConfig {
 }
 
 export interface L2ConfigInterface {
+  /** SDK network key — used only by the swap flow to initialize the swap controller */
   sdkName: string;
   icon: string;
   l1TransactionPrefix?: string;
-  /** Optional custom chain config — used when sdkName is not present in the swap-sdk NETWORKS */
-  customChainConfig?: L2CustomChainConfig;
+  /** Chain config for wallet operations (RPC, chain ID, explorer, native token). Required for all L2 chains. */
+  customChainConfig: L2CustomChainConfig;
 }
 
 export interface Environment {

@@ -4,7 +4,6 @@ import { BaseEthereumProvider } from "./base-ethereum-provider";
 import { EIP1193ProviderChain } from "@kaspacom/wallet-messages";
 import { environment } from "../../../environments/environment";
 import { L2ConfigInterface } from "../../../environments/environment.interface";
-import { NETWORKS } from '@kaspacom/swap-sdk';
 import { VIEW_METHOD } from "../wallet.service";
 
 export interface ExtendedEIP1193ProviderChain extends EIP1193ProviderChain {
@@ -28,12 +27,8 @@ export class EthereumWalletChainManager {
             return;
         }
         environment.l2Configs.forEach((config: L2ConfigInterface) => {
-            const chainId = config.customChainConfig
-                ? config.customChainConfig.chainId
-                : NETWORKS[config.sdkName]?.chainId;
-            if (chainId !== undefined) {
-                this.allChainsEnvConfigByChainId[this.convertChainIdToHex(chainId)] = config;
-            }
+            const chainId = config.customChainConfig.chainId;
+            this.allChainsEnvConfigByChainId[this.convertChainIdToHex(chainId)] = config;
         });
         this.setAllChainsByChainId();
 
@@ -115,27 +110,15 @@ export class EthereumWalletChainManager {
     }
     private setAllChainsByChainId(): void {
         const allChains: ExtendedEIP1193ProviderChain[] = Object.values(environment.l2Configs)
-            .filter((config: L2ConfigInterface) => config.customChainConfig || NETWORKS[config.sdkName])
             .map((config: L2ConfigInterface) => {
-                if (config.customChainConfig) {
-                    const c = config.customChainConfig;
-                    return {
-                        chainId: this.convertChainIdToHex(c.chainId),
-                        chainName: c.name,
-                        nativeCurrency: c.nativeToken,
-                        rpcUrls: [c.rpcUrl],
-                        blockExplorerUrls: c.blockExplorerUrl ? [c.blockExplorerUrl] : [],
-                        defiApiNetworkName: c.defiApiNetworkName,
-                    };
-                }
-                const n = NETWORKS[config.sdkName];
+                const c = config.customChainConfig;
                 return {
-                    chainId: this.convertChainIdToHex(n.chainId),
-                    chainName: n.name,
-                    nativeCurrency: n.nativeToken,
-                    rpcUrls: [n.rpcUrl],
-                    blockExplorerUrls: n.blockExplorerUrl ? [n.blockExplorerUrl!] : [],
-                    defiApiNetworkName: n.defiApiNetworkName,
+                    chainId: this.convertChainIdToHex(c.chainId),
+                    chainName: c.name,
+                    nativeCurrency: c.nativeToken,
+                    rpcUrls: [c.rpcUrl],
+                    blockExplorerUrls: c.blockExplorerUrl ? [c.blockExplorerUrl] : [],
+                    defiApiNetworkName: c.defiApiNetworkName,
                 };
             })
             .concat(JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS) || '[]'));

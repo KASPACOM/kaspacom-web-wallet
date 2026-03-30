@@ -55,5 +55,3 @@ export const environment: Environment = {
   ],
   segmentKey: 'VjcBOF7puALWzPyE19iNkCLseTTDfVga',
 };
-  logosUrl: 'https://erc20-logo-dev.s3.eu-central-1.amazonaws.com/',
-};

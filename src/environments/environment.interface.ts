@@ -52,5 +52,3 @@ export interface Environment {
   isL2Enabled: boolean;
   l2Configs: L2ConfigInterface[];
 }
-  logosUrl?: string;
-}

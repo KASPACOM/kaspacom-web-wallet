@@ -27,5 +27,4 @@ export const environment: Environment = {
       l1TransactionPrefix: 'kasplex',
     },
   ],
-  logosUrl: 'https://erc20-logo-dev.s3.eu-central-1.amazonaws.com/',
 };

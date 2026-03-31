@@ -143,6 +143,12 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
     border-radius: 0;
   }
 
+  // In iframe mode, use 100% to let the parent control dimensions
+  .iframe-mode & {
+    height: 100%;
+    width: 100%;
+  }
+
   &__nav {
     position: sticky;
     bottom: 0;

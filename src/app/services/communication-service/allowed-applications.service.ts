@@ -20,12 +20,15 @@ export class AllowedApplicationsService {
         return this.allowedAppLocations[appId]?.includes(currentWalletIdWithAccount) || false;
     }
 
-    addAllowedApplication(appId: string, currentWalletIdWithAccount: string) {
+    addAllowedApplication(appId: string, currentWalletIdWithAccount: string, persist = true) {
         this.allowedAppLocations[appId] = this.allowedAppLocations[appId] || [];
-        this.allowedAppLocations[appId].push(currentWalletIdWithAccount);
+        if (!this.allowedAppLocations[appId].includes(currentWalletIdWithAccount)) {
+            this.allowedAppLocations[appId].push(currentWalletIdWithAccount);
+        }
 
-        this.saveToLocalStorage();
-
+        if (persist) {
+            this.saveToLocalStorage();
+        }
     }
 
     removeAllowedApplication(appId: string) {

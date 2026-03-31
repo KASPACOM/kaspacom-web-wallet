@@ -63,7 +63,24 @@ function checkStorageAvailability(): boolean {
   }
 }
 
+// In cross-origin iframes (e.g., iOS Safari), request storage access before checking.
+// requestStorageAccess requires a user gesture to succeed; the sandbox attribute
+// "allow-storage-access-by-user-activation" and allow="storage-access" on the iframe
+// enable this. If the call fails (no gesture yet, or unsupported), we fall through
+// to the normal storage check which will show the error message.
+function ensureStorageAccess(): Promise<void> {
+  if (window !== window.top && document.requestStorageAccess) {
+    return document.requestStorageAccess().catch(() => {
+      // Denied or not supported — fall through
+    });
+  }
+  return Promise.resolve();
+}
+
 // Check for storage access before loading
+ensureStorageAccess().then(initApp);
+
+function initApp() {
 if (!checkStorageAvailability()) {
   const error = new Error('Storage access blocked');
   Sentry.captureException(error, {
@@ -157,5 +174,6 @@ kaspa
       `WASM Load Error: ${err?.message || err}\n\nThis may be caused by:\n- Network connectivity issues\n- Ad blocker or browser extension interference\n- Browser compatibility issues\n- CORS or security policy restrictions`,
     );
   });
+} // end initApp
 
 export class MainModule {}

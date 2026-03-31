@@ -63,6 +63,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     if (IFrameCommunicationApp.isIframe()) {
+      this.document.body.classList.add('iframe-mode');
       this.communicationManagerService.addApp(new IFrameCommunicationApp());
     }
 

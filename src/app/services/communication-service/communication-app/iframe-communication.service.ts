@@ -17,12 +17,13 @@ export class IFrameCommunicationApp implements BaseCommunicationApp {
   }
 
   async sendMessage(message: WalletMessageInterface): Promise<void> {
-    window.parent.postMessage(message, IFrameCommunicationApp.getTopUrl());
+    const targetOrigin = IFrameCommunicationApp.getTopUrl() || '*';
+    window.parent.postMessage(message, targetOrigin);
   }
 
   async setOnMessageEventHandler(handler: (message: WalletMessageInterface) => void): Promise<void> {
     this.onMessageWithBind = (event: MessageEvent) => {
-      if (event.origin !== this.currentUrl) {
+      if (this.currentUrl && event.origin !== this.currentUrl) {
         return;
       }
 
@@ -49,7 +50,17 @@ export class IFrameCommunicationApp implements BaseCommunicationApp {
   }
 
   private static getTopUrl(): string {
-    return document.location.ancestorOrigins[0] || document.referrer;
+    const ancestorOrigin = document.location.ancestorOrigins?.[0];
+    if (ancestorOrigin) {
+      return ancestorOrigin;
+    }
+
+    if (document.referrer) {
+      return new URL(document.referrer).origin;
+    }
+
+    // Fallback: use '*' is unsafe, so return empty and let validation handle it
+    return '';
   }
 
 }

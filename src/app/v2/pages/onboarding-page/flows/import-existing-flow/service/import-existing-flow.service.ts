@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { ImportSwitchMethod } from '../steps/import-switch-import-existing-step/component/import-switch/import-switch-method.enum';
 import { WalletService } from '../../../../../../services/wallet.service';
+import { ReferralService } from '../../../../../../services/referral.service';
 import { DEFAULT_DERIVED_PATH } from '../../../../../../config/consts';
 import { PasswordManagerService } from '../../../../../../services/password-manager.service';
 
@@ -36,6 +37,8 @@ export class ImportExistingFlowService {
   private walletService = inject(WalletService);
 
   private passwordManagerService = inject(PasswordManagerService);
+
+  private referralService = inject(ReferralService);
 
   private _model = signal<IImportExistingWallet>({ ...INIT_INFO });
 
@@ -150,6 +153,15 @@ export class ImportExistingFlowService {
       const importError = 'Error importing wallet. Please try again.';
       importResult = { success: false, error: importError };
     }
+
+    // Register with referral system (fire-and-forget, never blocks)
+    if (importResult?.success) {
+      const walletAddress = this.getImportedWalletAddress();
+      if (walletAddress) {
+        this.referralService.registerWallet(walletAddress);
+      }
+    }
+
     return importResult;
   }
 
@@ -189,6 +201,35 @@ export class ImportExistingFlowService {
       importResult = { success: false, error: importError };
     }
 
+    // Register with referral system (fire-and-forget, never blocks)
+    if (importResult?.success) {
+      const walletAddress = this.getImportedWalletAddress();
+      if (walletAddress) {
+        this.referralService.registerWallet(walletAddress);
+      }
+    }
+
     return importResult!;
+  }
+
+  /**
+   * Derive the wallet address from the current import model
+   * (mnemonic or private key).
+   */
+  private getImportedWalletAddress(): string | null {
+    try {
+      if (
+        this._model().importSwitchMethod !== ImportSwitchMethod.PRIVATE_KEY &&
+        this._model().seedPhrase
+      ) {
+        return this.walletService.getWalletAddressFromMnemonic(
+          this._model().seedPhrase.trim(),
+          this._model().seedPassphrase,
+        );
+      }
+    } catch {
+      // Best-effort — don't block the flow
+    }
+    return null;
   }
 }

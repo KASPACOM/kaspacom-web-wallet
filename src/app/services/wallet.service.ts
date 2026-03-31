@@ -336,6 +336,12 @@ export class WalletService {
     );
   }
 
+  getWalletAddressFromPrivateKey(privateKey: string): string {
+    return this.kaspaWalletMnemonicActionsService.convertPrivateKeyToAddress(
+      privateKey,
+    );
+  }
+
   private async saveWalletData(walletData: SavedWalletData): Promise<boolean> {
     const walletsData = await this.passwordManagerService.getUserData();
     walletsData.wallets.push(walletData);

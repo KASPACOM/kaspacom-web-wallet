@@ -218,10 +218,13 @@ export class ImportExistingFlowService {
    */
   private getImportedWalletAddress(): string | null {
     try {
-      if (
-        this._model().importSwitchMethod !== ImportSwitchMethod.PRIVATE_KEY &&
-        this._model().seedPhrase
-      ) {
+      if (this._model().importSwitchMethod === ImportSwitchMethod.PRIVATE_KEY) {
+        if (this._model().privateKey) {
+          return this.walletService.getWalletAddressFromPrivateKey(
+            this._model().privateKey.trim(),
+          );
+        }
+      } else if (this._model().seedPhrase) {
         return this.walletService.getWalletAddressFromMnemonic(
           this._model().seedPhrase.trim(),
           this._model().seedPassphrase,

@@ -7,13 +7,17 @@ import { L2ConfigInterface } from "../../../environments/environment.interface";
 import { NETWORKS } from '@kaspacom/swap-sdk';
 import { VIEW_METHOD } from "../wallet.service";
 
+export interface ExtendedEIP1193ProviderChain extends EIP1193ProviderChain {
+    defiApiNetworkName?: string;
+}
+
 @Injectable({
     providedIn: 'root',
 })
 export class EthereumWalletChainManager {
     private currentChain: WritableSignal<string | undefined>;
     private currentProvider: BaseEthereumProvider | undefined = undefined;
-    protected allChainsByChainId: { [chainId: string]: EIP1193ProviderChain } = {};
+    protected allChainsByChainId: { [chainId: string]: ExtendedEIP1193ProviderChain } = {};
     protected allChainsEnvConfigByChainId: { [chainId: string]: L2ConfigInterface } = {};
 
 
@@ -23,6 +27,7 @@ export class EthereumWalletChainManager {
             this.currentChain = signal<string | undefined>(localStorage.getItem(LOCAL_STORAGE_KEYS.CURRENT_ETHEREUM_CHAIN) || undefined);
             return;
         }
+
         environment.l2Configs.forEach((config: L2ConfigInterface) => {
             this.allChainsEnvConfigByChainId[this.convertChainIdToHex(NETWORKS[config.sdkName].chainId)] = config;
         });
@@ -53,7 +58,7 @@ export class EthereumWalletChainManager {
         return this.allChainsEnvConfigByChainId[chainId];
     }
 
-    getChainConfig(chainId: string): EIP1193ProviderChain | undefined {
+    getChainConfig(chainId: string): ExtendedEIP1193ProviderChain | undefined {
         return this.getAllChainsByChainId()[chainId];
     }
 
@@ -101,11 +106,11 @@ export class EthereumWalletChainManager {
     }
 
 
-    public getAllChainsByChainId(): { [chainId: string]: EIP1193ProviderChain } {
+    public getAllChainsByChainId(): { [chainId: string]: ExtendedEIP1193ProviderChain } {
         return this.allChainsByChainId;
     }
     private setAllChainsByChainId(): void {
-        const allChains: EIP1193ProviderChain[] = Object.values(environment.l2Configs).map((config: L2ConfigInterface) => ({
+        const allChains: ExtendedEIP1193ProviderChain[] = Object.values(environment.l2Configs).map((config: L2ConfigInterface) => ({
             chainId: this.convertChainIdToHex(NETWORKS[config.sdkName].chainId),
             chainName: NETWORKS[config.sdkName].name,
             nativeCurrency: NETWORKS[config.sdkName].nativeToken,
@@ -117,10 +122,10 @@ export class EthereumWalletChainManager {
         this.allChainsByChainId = allChains.reduce((acc, chain) => {
             acc[chain.chainId] = chain;
             return acc;
-        }, {} as { [chainId: string]: EIP1193ProviderChain });
+        }, {} as { [chainId: string]: ExtendedEIP1193ProviderChain });
     }
 
-    public addChain(chain: EIP1193ProviderChain): void {
+    public addChain(chain: ExtendedEIP1193ProviderChain): void {
         localStorage.setItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS, JSON.stringify([...JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS) || '[]'), chain]));
         this.setAllChainsByChainId();
     }

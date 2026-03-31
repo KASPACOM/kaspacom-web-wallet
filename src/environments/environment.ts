@@ -13,6 +13,7 @@ export const environment: Environment = {
   krc721CacheStreamUrl: 'https://cache.krc721.stream/krc721/mainnet',
   knsApiBaseurl: 'https://api.knsdomains.org/mainnet',
   kaspaExplorerBaseurl: 'https://explorer.kaspa.org',
+  logosUrl: 'https://erc20-logo-dev.s3.eu-central-1.amazonaws.com/',
   kaspaNetwork: KASPA_NETWORKS.MAINNET,
   allowedDomains: ['wallet.kaspa.com'],
   isL2Enabled: false,

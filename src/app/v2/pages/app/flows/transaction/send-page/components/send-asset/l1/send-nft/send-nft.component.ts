@@ -1,49 +1,42 @@
+import { CommonModule } from '@angular/common';
 import {
   Component,
-  OnInit,
-  OnDestroy,
-  signal,
-  inject,
   effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
-import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
-import {
-  KcInputComponent,
-  KcCheckboxComponent,
-  KcButtonComponent,
-  KcIconComponent,
-} from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
-import { SkeletonComponent } from '../../../../../../../../../shared/ui/skeleton/skeleton.component';
-import { INft } from '../../../../../../../common/interfaces/nft.interface';
-import { Krc721ApiService } from '../../../../../../../../../../services/krc721-api/krc721-api.service';
-import { WalletService } from '../../../../../../../../../../services/wallet.service';
-import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';
-import { Krc721WalletActionService } from '../../../../../../../../../../services/protocols/krc721/krc721-wallet-actions.service';
-import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
-import { ApprovalFlowService } from '../../../../../../../../../services/approval-flow.service';
-import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import { firstValueFrom } from 'rxjs';
-import { UtilsHelper } from '../../../../../../../../../../services/utils.service';
-import { QrScannerService } from '../../../../../../../../../../services/qr-scanner.service';
-import { AddressSmartInputComponent } from '../../../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
-import { AddressResolutionResult } from '../../../../../../../../../../services/address-resolution.service';
 import { Router } from '@angular/router';
+import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
+import { KcButtonComponent, KcCheckboxComponent } from 'kaspacom-ui';
+import { firstValueFrom } from 'rxjs';
+import { environment } from '../../../../../../../../../../../environments/environment';
+import { AddressResolutionResult } from '../../../../../../../../../../services/address-resolution.service';
 import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
 import { L1_ASSET_KEYS } from '../../../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
-import { environment } from '../../../../../../../../../../../environments/environment';
+import { Krc721ApiService } from '../../../../../../../../../../services/krc721-api/krc721-api.service';
+import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
+import { Krc721WalletActionService } from '../../../../../../../../../../services/protocols/krc721/krc721-wallet-actions.service';
+import { QrScannerService } from '../../../../../../../../../../services/qr-scanner.service';
+import { UtilsHelper } from '../../../../../../../../../../services/utils.service';
+import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';
+import { WalletService } from '../../../../../../../../../../services/wallet.service';
+import { ApprovalFlowService } from '../../../../../../../../../services/approval-flow.service';
+import { AddressSmartInputComponent } from '../../../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
+import { SkeletonComponent } from '../../../../../../../../../shared/ui/skeleton/skeleton.component';
+import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
+import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
+import { INft } from '../../../../../../../common/interfaces/nft.interface';
 
 @Component({
   selector: 'app-send-nft',
   standalone: true,
   imports: [
     CommonModule,
-    KcInputComponent,
     KcCheckboxComponent,
     KcButtonComponent,
-    KcIconComponent,
     FormsModule,
     SkeletonComponent,
     AddressSmartInputComponent,
@@ -279,7 +272,9 @@ export class SendNftComponent
         this.nft.set(nftData);
       } else if (navigationData?.tick && navigationData?.tokenId) {
         // Fallback: try to find NFT in assets store
-        const krc721Assets = this.assetsManagerService.getAllAssetStores().l1.getAssets(L1_ASSET_KEYS.krc721);
+        const krc721Assets = this.assetsManagerService
+          .getAllAssetStores()
+          .l1.getAssets(L1_ASSET_KEYS.krc721);
         const storedNft = krc721Assets.find(
           (nft) =>
             nft.tick === navigationData.tick &&
@@ -294,7 +289,9 @@ export class SendNftComponent
             name: storedNft.metadata?.name,
             description: storedNft.metadata?.description,
             attributes: storedNft.metadata?.attributes,
-            image: this.buildCachedImageUrl(storedNft.tick, storedNft.tokenId) || this.processImageUrl(storedNft.metadata?.image),
+            image:
+              this.buildCachedImageUrl(storedNft.tick, storedNft.tokenId) ||
+              this.processImageUrl(storedNft.metadata?.image),
           };
           this.nft.set(nft);
         } else {
@@ -340,7 +337,9 @@ export class SendNftComponent
           name: metadata.name,
           description: metadata.description,
           attributes: metadata.attributes,
-          image: this.buildCachedImageUrl(nft.tick, nft.tokenId) || this.processImageUrl(metadata.image),
+          image:
+            this.buildCachedImageUrl(nft.tick, nft.tokenId) ||
+            this.processImageUrl(metadata.image),
         };
 
         this.nft.set(updatedNft);
@@ -380,7 +379,10 @@ export class SendNftComponent
   getImageUrl(): string {
     const currentNft = this.nft();
     if (currentNft) {
-      const cachedImageUrl = this.buildCachedImageUrl(currentNft.tick, currentNft.tokenId);
+      const cachedImageUrl = this.buildCachedImageUrl(
+        currentNft.tick,
+        currentNft.tokenId,
+      );
       if (cachedImageUrl) {
         return cachedImageUrl;
       }

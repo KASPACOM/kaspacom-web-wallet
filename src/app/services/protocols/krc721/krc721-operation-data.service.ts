@@ -3,6 +3,8 @@ import {
   Krc721Deploy,
   Krc721Mint,
   Krc721Transfer,
+  Krc721List,
+  Krc721Send,
   Krc721OperationType
 } from '../../../types/kaspa-network/krc721-operations-data.interface';
 
@@ -16,7 +18,7 @@ export const KRC721_TRANSACTIONS_PRICE = {
   providedIn: 'root',
 })
 export class Krc721OperationDataService {
-  
+
   getDeployData(
     ticker: string,
     maxSupply: string,
@@ -66,6 +68,24 @@ export class Krc721OperationDataService {
       op: Krc721OperationType.TRANSFER,
       tick: ticker,
       to: toAddress,
+      tokenId: tokenId,
+    };
+  }
+
+  getListData(ticker: string, tokenId: string): Krc721List {
+    return {
+      p: 'krc-721',
+      op: Krc721OperationType.LIST,
+      tick: ticker.toLowerCase(),
+      tokenId: tokenId,
+    };
+  }
+
+  getSendData(ticker: string, tokenId: string): Krc721Send {
+    return {
+      p: 'krc-721',
+      op: Krc721OperationType.SEND,
+      tick: ticker.toLowerCase(),
       tokenId: tokenId,
     };
   }

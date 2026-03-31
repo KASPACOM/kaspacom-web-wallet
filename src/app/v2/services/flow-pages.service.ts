@@ -15,6 +15,8 @@ export class FlowPagesService implements IFlowPageNavigation {
     currentIndex: -1,
   });
 
+  private readonly _transientStates = new Map<string, unknown>();
+
   // Computed properties for reactive UI updates
   activePage = computed(() => {
     const stack = this.pageStackSignal();
@@ -61,6 +63,10 @@ export class FlowPagesService implements IFlowPageNavigation {
   }
 
   navigateBack(): void {
+    const currentId = this.activePage()?.id;
+    if (currentId) {
+      this._transientStates.delete(currentId);
+    }
     this.pageStackSignal.update((stack) => {
       if (stack.currentIndex > 0) {
         // Remove the current page from the stack and go to the previous one
@@ -79,6 +85,7 @@ export class FlowPagesService implements IFlowPageNavigation {
   }
 
   closePage(): void {
+    this._transientStates.clear();
     this.pageStackSignal.set({
       pages: [],
       currentIndex: -1,
@@ -87,10 +94,19 @@ export class FlowPagesService implements IFlowPageNavigation {
 
   // Convenience method to open a new flow sequence
   openFlow(config: IFlowPageConfig): void {
+    this._transientStates.clear();
     this.pageStackSignal.set({
       pages: [config],
       currentIndex: 0,
     });
+  }
+
+  saveTransientState(pageId: string, state: unknown): void {
+    this._transientStates.set(pageId, state);
+  }
+
+  getTransientState<T>(pageId: string): T | undefined {
+    return this._transientStates.get(pageId) as T | undefined;
   }
 
   isPageOpen(pageId: FlowPageId): boolean {

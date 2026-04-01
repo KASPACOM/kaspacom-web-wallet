@@ -124,6 +124,7 @@ function showStorageAccessPrompt(): void {
 }
 
 // Main entry point
+let appInitialized = false;
 if (checkStorageAvailability()) {
   initApp();
 } else if (isInIframe() && typeof document.requestStorageAccess === 'function') {
@@ -151,7 +152,6 @@ if (checkStorageAvailability()) {
   );
 }
 
-let appInitialized = false;
 function initApp() {
   if (appInitialized) return;
   appInitialized = true;

@@ -80,7 +80,9 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       if (iframeApp.getApplicationId()) {
         this.communicationManagerService.addApp(iframeApp);
       } else {
-        console.error('Cannot establish iframe communication: parent origin unknown. Ensure the embedding page sends a Referrer header.');
+        console.error(
+          'Cannot establish iframe communication: parent origin is unknown. Ensure the embedding page allows the origin to be sent via the browser referrer policy (e.g., appropriate Referrer-Policy header or <iframe referrerpolicy>), so the standard Referer header and document.referrer are available.',
+        );
       }
     }
 

@@ -60,7 +60,20 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    if (IFrameCommunicationApp.isIframe()) {
+    let isIframe = false;
+    try {
+      isIframe = IFrameCommunicationApp.isIframe();
+    } catch (error) {
+      // Fallback for cross-origin iframes where accessing parent.location may throw.
+      console.warn('Failed to determine iframe status from IFrameCommunicationApp.isIframe; falling back to window.self !== window.top.', error);
+      try {
+        isIframe = window.self !== window.top;
+      } catch {
+        isIframe = false;
+      }
+    }
+
+    if (isIframe) {
       this.document.body.classList.add('iframe-mode');
       const iframeApp = new IFrameCommunicationApp();
       if (iframeApp.getApplicationId()) {

@@ -69,7 +69,8 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       try {
         isIframe = window.self !== window.top;
       } catch {
-        isIframe = false;
+        // If even the safe check fails due to iframe restrictions, assume we are in an iframe.
+        isIframe = true;
       }
     }
 

@@ -125,7 +125,8 @@ function showStorageAccessPrompt(): void {
 
 // Main entry point
 if (checkStorageAvailability()) {
-  initApp();
+  // Defer initApp to run after module evaluation, avoiding TDZ on appInitialized
+  window.setTimeout(() => initApp(), 0);
 } else if (isInIframe() && typeof document.requestStorageAccess === 'function') {
   // In iframe with storage blocked — show prompt for user gesture
   showStorageAccessPrompt();

@@ -62,16 +62,11 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
     let isIframe = false;
     try {
-      isIframe = IFrameCommunicationApp.isIframe();
-    } catch (error) {
-      // Fallback for cross-origin iframes where accessing parent.location may throw.
-      console.warn('Failed to determine iframe status from IFrameCommunicationApp.isIframe; falling back to window.self !== window.top.', error);
-      try {
-        isIframe = window.self !== window.top;
-      } catch {
-        // If even the safe check fails due to iframe restrictions, assume we are in an iframe.
-        isIframe = true;
-      }
+      // Use a safe, non-throwing iframe detection that doesn't depend on cross-origin-sensitive APIs.
+      isIframe = window.self !== window.top;
+    } catch {
+      // If even this check fails due to unusual iframe restrictions, assume we are in an iframe.
+      isIframe = true;
     }
 
     if (isIframe) {

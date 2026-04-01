@@ -98,7 +98,10 @@ function showStorageAccessPrompt(): void {
     </div>
   `;
 
-  document.getElementById('grant-storage-btn')?.addEventListener('click', async () => {
+  document.getElementById('grant-storage-btn')?.addEventListener('click', async (e) => {
+    const btn = e.target as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = 'Enabling...';
     try {
       if (document.requestStorageAccess) {
         await document.requestStorageAccess();
@@ -148,7 +151,11 @@ if (checkStorageAvailability()) {
   );
 }
 
+let appInitialized = false;
 function initApp() {
+  if (appInitialized) return;
+  appInitialized = true;
+
   // Timeout fallback - if app doesn't start within expected time, show error
   const loadingTimeout = setTimeout(() => {
     const loader = document.getElementById('application-loader-startup');

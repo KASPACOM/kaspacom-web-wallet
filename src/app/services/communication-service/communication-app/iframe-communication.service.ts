@@ -55,9 +55,11 @@ export class IFrameCommunicationApp implements BaseCommunicationApp {
   }
 
   static isIframe(): boolean {
-    return (
-      window.self !== window.top || window.location != window.parent.location
-    );
+    try {
+      return window.self !== window.top;
+    } catch {
+      return true;
+    }
   }
 
   private static getTopUrl(): string {

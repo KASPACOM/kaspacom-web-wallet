@@ -5,30 +5,41 @@ export class IFrameCommunicationApp implements BaseCommunicationApp {
   protected currentUrl: string;
   protected onMessageWithBind: (event: MessageEvent) => void;
 
-  constructor(
-  ) {
+  constructor() {
     this.currentUrl = IFrameCommunicationApp.getTopUrl();
     this.onMessageWithBind = () => undefined;
   }
 
-  
   getName(): string | undefined {
-    return new URL(this.currentUrl).hostname;
+    if (!this.currentUrl) {
+      return undefined;
+    }
+    try {
+      return new URL(this.currentUrl).hostname;
+    } catch {
+      return undefined;
+    }
   }
 
   async sendMessage(message: WalletMessageInterface): Promise<void> {
-    const targetOrigin = IFrameCommunicationApp.getTopUrl() || '*';
-    window.parent.postMessage(message, targetOrigin);
+    if (!this.currentUrl) {
+      console.error('Cannot send message: parent origin unknown');
+      return;
+    }
+    window.parent.postMessage(message, this.currentUrl);
   }
 
   async setOnMessageEventHandler(handler: (message: WalletMessageInterface) => void): Promise<void> {
     this.onMessageWithBind = (event: MessageEvent) => {
-      if (this.currentUrl && event.origin !== this.currentUrl) {
+      if (!this.currentUrl || event.origin !== this.currentUrl) {
+        return;
+      }
+
+      if (event.source !== window.parent) {
         return;
       }
 
       const message = event.data as WalletMessageInterface;
-
       handler(message);
     };
 
@@ -56,11 +67,16 @@ export class IFrameCommunicationApp implements BaseCommunicationApp {
     }
 
     if (document.referrer) {
-      return new URL(document.referrer).origin;
+      try {
+        const origin = new URL(document.referrer).origin;
+        if (origin && origin !== 'null' && origin.startsWith('http')) {
+          return origin;
+        }
+      } catch {
+        // Invalid referrer URL — fall through
+      }
     }
 
-    // Fallback: use '*' is unsafe, so return empty and let validation handle it
     return '';
   }
-
 }

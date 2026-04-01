@@ -62,7 +62,12 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (IFrameCommunicationApp.isIframe()) {
       this.document.body.classList.add('iframe-mode');
-      this.communicationManagerService.addApp(new IFrameCommunicationApp());
+      const iframeApp = new IFrameCommunicationApp();
+      if (iframeApp.getApplicationId()) {
+        this.communicationManagerService.addApp(iframeApp);
+      } else {
+        console.error('Cannot establish iframe communication: parent origin unknown. Ensure the embedding page sends a Referrer header.');
+      }
     }
 
     this.assetsManager.initializeWalletListenerAndStart();

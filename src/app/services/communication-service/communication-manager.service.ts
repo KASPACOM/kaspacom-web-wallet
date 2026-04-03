@@ -109,9 +109,7 @@ export class CommunicationManagerService {
             const result = await this.walletActionsService.showCommunicationAppApprovalDialogToUser(app, true);
 
             if (result.isApproved) {
-                if (result.alwaysApprove) {
-                    this.allowedApplicationsService.addAllowedApplication(appId, currentWalletIdWithAccount);
-                }
+                this.allowedApplicationsService.addAllowedApplication(appId, currentWalletIdWithAccount, result.alwaysApprove);
             } else {
                 this.removeApp(app);
                 return;

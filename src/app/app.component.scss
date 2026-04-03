@@ -3,6 +3,12 @@
   width: 100dvw;
   height: 100vh;
   height: 100dvh;
+
+  // In iframe mode, use 100% to avoid iOS keyboard pushing content offscreen
+  .iframe-mode & {
+    height: 100%;
+    width: 100%;
+  }
   overflow-y: auto;
   overflow-x: hidden;
   display: block;

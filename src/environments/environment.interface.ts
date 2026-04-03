@@ -1,7 +1,24 @@
+export interface L2CustomChainConfig {
+  chainId: number;
+  name: string;
+  rpcUrl: string;
+  blockExplorerUrl?: string;
+  nativeToken: {
+    address: string;
+    decimals: number;
+    name: string;
+    symbol: string;
+  };
+  defiApiNetworkName?: string;
+}
+
 export interface L2ConfigInterface {
+  /** SDK network key — used only by the swap flow to initialize the swap controller */
   sdkName: string;
   icon: string;
   l1TransactionPrefix?: string;
+  /** Chain config for wallet operations (RPC, chain ID, explorer, native token). Required for all L2 chains. */
+  customChainConfig: L2CustomChainConfig;
 }
 
 export interface Environment {

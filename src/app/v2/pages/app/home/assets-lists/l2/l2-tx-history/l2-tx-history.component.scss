@@ -1,4 +1,10 @@
 .l2-tx-history {
+  .l2-tx-history-loading {
+    min-height: 160px;
+    padding: 40px 24px;
+    border-radius: 14px;
+  }
+
   .no-transactions {
     display: flex;
     flex-direction: column;

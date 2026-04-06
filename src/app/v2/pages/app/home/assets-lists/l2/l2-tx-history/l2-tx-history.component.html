@@ -1,5 +1,10 @@
 <div class="l2-tx-history full-width">
-  @if (!hasTransactions()) {
+  @if (historyLoading()) {
+    <div class="l2-tx-history-loading card-0 flex column align-items-center justify-content-center gap-12">
+      <kc-spinner [size]="'lg'"></kc-spinner>
+      <p class="typo-text-2 text-gray-60">Loading history…</p>
+    </div>
+  } @else if (!hasTransactions()) {
     <!-- Empty state -->
     <div class="no-transactions card-0">
       <kc-icon

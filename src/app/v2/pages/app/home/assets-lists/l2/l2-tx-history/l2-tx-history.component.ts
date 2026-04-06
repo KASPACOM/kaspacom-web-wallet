@@ -26,6 +26,7 @@ export class L2TxHistoryComponent {
   private parseWarningHashes = new Set<string>();
 
   transactions = this.l2TxHistoryService.getTransactionHistorySignal();
+  historyLoading = this.l2TxHistoryService.getTransactionHistoryLoadingSignal();
   expandedHash = signal<string | null>(null);
   private lastTxHashKey: string | null = null;
 

@@ -12,10 +12,10 @@
     </div>
   } @else {
     <div class="tx-list flex column gap-8">
-      @for (tx of transactions(); track tx.id) {
+      @for (tx of transactions(); track tx.hash) {
         <div
           class="tx-card card-0 card-hover cursor-pointer fade-in"
-          (click)="toggleExpand(tx.id)"
+          (click)="toggleExpand(tx.hash)"
         >
           <!-- Row summary -->
           <div class="tx-row flex align-items-center gap-12">
@@ -50,7 +50,7 @@
                 {{ getFormattedValue(tx) }}
               </span>
               <kc-icon
-                [iconClass]="isExpanded(tx.id) ? 'icon-arrow-up' : 'icon-arrow-down'"
+                [iconClass]="isExpanded(tx.hash) ? 'icon-arrow-up' : 'icon-arrow-down'"
                 [size]="'xs'"
                 [color]="'var(--gray-60)'"
               ></kc-icon>
@@ -58,7 +58,7 @@
           </div>
 
           <!-- Expanded details -->
-          @if (isExpanded(tx.id)) {
+          @if (isExpanded(tx.hash)) {
             <div class="tx-details flex column gap-12 mt-12">
               <div class="tx-detail-row flex justify-content-between align-items-center">
                 <span class="typo-text-3 text-gray-60">Status</span>

@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Transaction, formatUnits } from 'ethers';
+import { type Transaction, formatUnits } from 'ethers';
 import { KcIconComponent, KcSpinnerComponent } from 'kaspacom-ui';
 import { L2TransactionHistory } from '../../../../../../../db/dtos/l2-transaction-history';
 import { L2TransactionHistoryService } from '../../../../../../../services/l2-services/l2-transaction-history.service';
@@ -19,9 +19,10 @@ export type L2TxStatus = 'pending' | 'success' | 'failed';
 })
 export class L2TxHistoryComponent {
   private l2TxHistoryService = inject(L2TransactionHistoryService);
+  private txDataCache = new Map<string, Transaction | null>();
 
   transactions = this.l2TxHistoryService.getTransactionHistorySignal();
-  expandedId = signal<number | null>(null);
+  expandedHash = signal<string | null>(null);
 
   hasTransactions = computed(() => this.transactions().length > 0);
 
@@ -30,13 +31,12 @@ export class L2TxHistoryComponent {
     return tx.receiptInfo.status === 1 ? 'success' : 'failed';
   }
 
-  toggleExpand(id: number | undefined): void {
-    if (id === undefined) return;
-    this.expandedId.update((current) => (current === id ? null : id));
+  toggleExpand(hash: string): void {
+    this.expandedHash.update((current) => (current === hash ? null : hash));
   }
 
-  isExpanded(id: number | undefined): boolean {
-    return id !== undefined && this.expandedId() === id;
+  isExpanded(hash: string): boolean {
+    return this.expandedHash() === hash;
   }
 
   formatTimestamp(timestamp: number): string {
@@ -60,9 +60,14 @@ export class L2TxHistoryComponent {
   }
 
   getTxData(tx: L2TransactionHistory): Transaction | null {
+    const cached = this.txDataCache.get(tx.hash);
+    if (cached !== undefined) return cached;
     try {
-      return this.l2TxHistoryService.getInfoFromTransactionData(tx.transactionData);
+      const result = this.l2TxHistoryService.getInfoFromTransactionData(tx.transactionData);
+      this.txDataCache.set(tx.hash, result);
+      return result;
     } catch {
+      this.txDataCache.set(tx.hash, null);
       return null;
     }
   }

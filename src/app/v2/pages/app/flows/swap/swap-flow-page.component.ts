@@ -337,10 +337,19 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
       }
 
       // Prepare network configuration with optional wrapped token override
-      let networkConfig: any = config.sdkName;
-      const baseNetwork = NETWORKS[config.sdkName];
+      type SwapNetworkMap = typeof NETWORKS;
+      type SwapNetworkName = keyof SwapNetworkMap;
+      type SwapNetworkConfig = SwapNetworkMap[SwapNetworkName];
 
-      if (baseNetwork && config.customChainConfig.wrappedTokenAddress) {
+      const sdkName = config.sdkName as SwapNetworkName;
+      const baseNetwork: SwapNetworkConfig | undefined = NETWORKS[sdkName];
+      let networkConfig: SwapNetworkName | SwapNetworkConfig = sdkName;
+
+      if (
+        baseNetwork &&
+        config.customChainConfig.wrappedTokenAddress &&
+        baseNetwork.wrappedToken
+      ) {
         networkConfig = {
           ...baseNetwork,
           wrappedToken: {

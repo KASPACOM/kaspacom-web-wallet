@@ -21,7 +21,11 @@
         @let status = getStatus(tx);
         <div
           class="tx-card card-0 card-hover cursor-pointer fade-in"
+          role="button"
+          tabindex="0"
+          [attr.aria-expanded]="isExpanded(tx.hash)"
           (click)="toggleExpand(tx.hash)"
+          (keydown)="onCardKeydown($event, tx.hash)"
         >
           <!-- Row summary -->
           <div class="tx-row flex align-items-center gap-12">

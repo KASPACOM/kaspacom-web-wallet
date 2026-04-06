@@ -37,6 +37,7 @@ export class L2TxHistoryComponent {
       const key = this.transactions().map(tx => tx.hash).sort().join('|');
       if (this.lastTxHashKey !== key) {
         this.txDataCache.clear();
+        this.parseWarningHashes.clear();
         this.lastTxHashKey = key;
       }
     });
@@ -51,6 +52,13 @@ export class L2TxHistoryComponent {
 
   toggleExpand(hash: string): void {
     this.expandedHash.update((current) => (current === hash ? null : hash));
+  }
+
+  onCardKeydown(event: KeyboardEvent, hash: string): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.toggleExpand(hash);
+    }
   }
 
   isExpanded(hash: string): boolean {

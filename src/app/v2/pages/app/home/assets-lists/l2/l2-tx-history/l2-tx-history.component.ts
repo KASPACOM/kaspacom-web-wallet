@@ -23,6 +23,7 @@ export class L2TxHistoryComponent {
   private l2TxHistoryService = inject(L2TransactionHistoryService);
   private chainManager = inject(EthereumWalletChainManager);
   private txDataCache = new Map<string, Transaction | null>();
+  private parseWarningHashes = new Set<string>();
 
   transactions = this.l2TxHistoryService.getTransactionHistorySignal();
   expandedHash = signal<string | null>(null);
@@ -82,7 +83,15 @@ export class L2TxHistoryComponent {
       const result = this.l2TxHistoryService.getInfoFromTransactionData(tx.transactionData);
       this.txDataCache.set(tx.hash, result);
       return result;
-    } catch {
+    } catch (error) {
+      if (!this.parseWarningHashes.has(tx.hash)) {
+        this.parseWarningHashes.add(tx.hash);
+        console.warn('Failed to parse L2 transaction data', {
+          hash: tx.hash,
+          chainId: tx.chainId,
+          error,
+        });
+      }
       this.txDataCache.set(tx.hash, null);
       return null;
     }
@@ -111,7 +120,13 @@ export class L2TxHistoryComponent {
       const num = parseFloat(formatted);
       if (num === 0) return `0 ${symbol}`;
       return `${num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 6 })} ${symbol}`;
-    } catch {
+    } catch (error) {
+      console.warn('Failed to format L2 transaction value', {
+        hash: tx.hash,
+        decimals,
+        symbol,
+        error,
+      });
       return '—';
     }
   }
@@ -122,7 +137,14 @@ export class L2TxHistoryComponent {
     try {
       const fee = parseFloat(formatUnits(tx.receiptInfo.fee, decimals));
       return `${fee.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 8 })} ${symbol}`;
-    } catch {
+    } catch (error) {
+      console.warn('Failed to format L2 gas fee', {
+        hash: tx.hash,
+        decimals,
+        symbol,
+        fee: tx.receiptInfo.fee,
+        error,
+      });
       return '—';
     }
   }

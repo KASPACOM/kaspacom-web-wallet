@@ -2,7 +2,7 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { type Transaction, formatUnits } from 'ethers';
 import { KcIconComponent, KcSpinnerComponent } from 'kaspacom-ui';
-import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
+import { CopyButtonComponent } from '../../../../../../shared/ui/copy-button/copy-button.component';
 import { L2TransactionHistory } from '../../../../../../../db/dtos/l2-transaction-history';
 import { L2TransactionHistoryService } from '../../../../../../../services/l2-services/l2-transaction-history.service';
 import { EthereumWalletChainManager } from '../../../../../../../services/etherium-services/etherium-wallet-chain.manager';
@@ -26,12 +26,17 @@ export class L2TxHistoryComponent {
 
   transactions = this.l2TxHistoryService.getTransactionHistorySignal();
   expandedHash = signal<string | null>(null);
+  private lastTxHashKey: string | null = null;
 
   constructor() {
-    // Clear cache when transactions list resets (wallet/network change)
+    // Clear cache only when the set of transaction hashes changes (wallet/network switch),
+    // not on every signal update (e.g. receipt info updates)
     effect(() => {
-      this.transactions(); // track signal
-      this.txDataCache.clear();
+      const key = this.transactions().map(tx => tx.hash).sort().join('|');
+      if (this.lastTxHashKey !== key) {
+        this.txDataCache.clear();
+        this.lastTxHashKey = key;
+      }
     });
   }
 
@@ -62,7 +67,7 @@ export class L2TxHistoryComponent {
 
   shortenAddress(address: string | null | undefined): string {
     if (!address) return '—';
-    return `${address.slice(0, 8)}...${address.slice(-6)}`;
+    return `${address.slice(0, 10)}...${address.slice(-8)}`;
   }
 
   shortenHash(hash: string): string {

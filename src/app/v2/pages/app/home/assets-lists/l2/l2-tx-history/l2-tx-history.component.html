@@ -20,7 +20,7 @@
           <!-- Row summary -->
           <div class="tx-row flex align-items-center gap-12">
             <!-- Status badge -->
-            <div class="tx-status flex align-items-center justify-content-center" [class]="'tx-status--' + getStatus(tx)">
+            <div class="tx-status flex align-items-center justify-content-center" [ngClass]="'tx-status--' + getStatus(tx)">
               @switch (getStatus(tx)) {
                 @case ('pending') {
                   <kc-spinner [size]="'xs'"></kc-spinner>
@@ -62,7 +62,7 @@
             <div class="tx-details flex column gap-12 mt-12">
               <div class="tx-detail-row flex justify-content-between align-items-center">
                 <span class="typo-text-3 text-gray-60">Status</span>
-                <span class="tx-status-badge typo-text-3 font-weight-medium" [class]="'tx-status-text--' + getStatus(tx)">
+                <span class="tx-status-badge typo-text-3 font-weight-medium" [ngClass]="'tx-status-text--' + getStatus(tx)">
                   @switch (getStatus(tx)) {
                     @case ('pending') { Pending }
                     @case ('success') { Confirmed }

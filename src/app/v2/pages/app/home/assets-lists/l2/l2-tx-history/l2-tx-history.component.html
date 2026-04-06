@@ -73,20 +73,9 @@
 
               <div class="tx-detail-row flex justify-content-between align-items-center">
                 <span class="typo-text-3 text-gray-60">TX Hash</span>
-                <div class="flex align-items-center gap-8">
+                <div class="flex align-items-center gap-8" (click)="stopPropagation($event)">
                   <span class="typo-text-3 text-gray-90">{{ shortenHash(tx.hash) }}</span>
-                  <button
-                    type="button"
-                    class="cursor-pointer hover-opacity"
-                    aria-label="Copy transaction hash"
-                    (click)="copyToClipboard(tx.hash, $event)"
-                  >
-                    <kc-icon
-                      [iconClass]="'icon-copy'"
-                      [size]="'xs'"
-                      [color]="'var(--gray-60)'"
-                    ></kc-icon>
-                  </button>
+                  <app-copy-button [value]="tx.hash" [size]="'xs'"></app-copy-button>
                 </div>
               </div>
 

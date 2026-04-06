@@ -1,7 +1,8 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { type Transaction, formatUnits } from 'ethers';
 import { KcIconComponent, KcSpinnerComponent } from 'kaspacom-ui';
+import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { L2TransactionHistory } from '../../../../../../../db/dtos/l2-transaction-history';
 import { L2TransactionHistoryService } from '../../../../../../../services/l2-services/l2-transaction-history.service';
 import { EthereumWalletChainManager } from '../../../../../../../services/etherium-services/etherium-wallet-chain.manager';
@@ -11,7 +12,7 @@ export type L2TxStatus = 'pending' | 'success' | 'failed';
 @Component({
   selector: 'app-l2-tx-history',
   standalone: true,
-  imports: [CommonModule, KcIconComponent, KcSpinnerComponent],
+  imports: [CommonModule, KcIconComponent, KcSpinnerComponent, CopyButtonComponent],
   templateUrl: './l2-tx-history.component.html',
   styleUrl: './l2-tx-history.component.scss',
   host: {
@@ -25,6 +26,14 @@ export class L2TxHistoryComponent {
 
   transactions = this.l2TxHistoryService.getTransactionHistorySignal();
   expandedHash = signal<string | null>(null);
+
+  constructor() {
+    // Clear cache when transactions list resets (wallet/network change)
+    effect(() => {
+      this.transactions(); // track signal
+      this.txDataCache.clear();
+    });
+  }
 
   hasTransactions = computed(() => this.transactions().length > 0);
 
@@ -113,24 +122,7 @@ export class L2TxHistoryComponent {
     }
   }
 
-  copyToClipboard(text: string, event: Event): void {
+  stopPropagation(event: Event): void {
     event.stopPropagation();
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(text).catch(() => this.fallbackCopy(text));
-    } else {
-      this.fallbackCopy(text);
-    }
-  }
-
-  private fallbackCopy(text: string): void {
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.setAttribute('readonly', '');
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-    document.body.appendChild(textarea);
-    textarea.select();
-    try { document.execCommand('copy'); } catch { /* no-op */ }
-    document.body.removeChild(textarea);
   }
 }

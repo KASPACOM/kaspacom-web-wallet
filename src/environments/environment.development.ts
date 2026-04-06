@@ -57,6 +57,7 @@ export const environment: Environment = {
           symbol: 'IKAS',
         },
         defiApiNetworkName: 'igra',
+        wrappedTokenAddress: '0x394C68684F9AFCEb9b804531EF07a864E8081738',
       },
     },
   ],

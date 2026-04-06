@@ -336,8 +336,35 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
         return;
       }
 
-      // Set wrapped token for this network
-      const wrappedToken = NETWORKS[config.sdkName]?.wrappedToken;
+      // Prepare network configuration with optional wrapped token override
+      type SwapNetworkMap = typeof NETWORKS;
+      type SwapNetworkName = keyof SwapNetworkMap;
+      type SwapNetworkConfig = SwapNetworkMap[SwapNetworkName];
+
+      const sdkName = config.sdkName as SwapNetworkName;
+      const baseNetwork: SwapNetworkConfig | undefined = NETWORKS[sdkName];
+      let networkConfig: SwapNetworkName | SwapNetworkConfig = sdkName;
+
+      if (
+        baseNetwork &&
+        config.customChainConfig.wrappedTokenAddress &&
+        baseNetwork.wrappedToken
+      ) {
+        networkConfig = {
+          ...baseNetwork,
+          wrappedToken: {
+            ...baseNetwork.wrappedToken,
+            address: config.customChainConfig.wrappedTokenAddress,
+          },
+        };
+      }
+
+      // Set wrapped token for this network in component state
+      const wrappedToken =
+        typeof networkConfig === 'string'
+          ? baseNetwork?.wrappedToken
+          : networkConfig.wrappedToken;
+
       if (wrappedToken) {
         this.currentNetworkWrappedToken.set(wrappedToken);
       }
@@ -350,7 +377,7 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
       }
 
       const ctrl = createKaspaComSwapController({
-        networkConfig: config.sdkName,
+        networkConfig: networkConfig,
         onChange: async (state) => {
           this.controllerState.set(state);
 

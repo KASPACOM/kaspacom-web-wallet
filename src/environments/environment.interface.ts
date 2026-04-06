@@ -10,6 +10,7 @@ export interface L2CustomChainConfig {
     symbol: string;
   };
   defiApiNetworkName?: string;
+  wrappedTokenAddress?: string;
 }
 
 export interface L2ConfigInterface {

@@ -4,6 +4,7 @@ import { type Transaction, formatUnits } from 'ethers';
 import { KcIconComponent, KcSpinnerComponent } from 'kaspacom-ui';
 import { L2TransactionHistory } from '../../../../../../../db/dtos/l2-transaction-history';
 import { L2TransactionHistoryService } from '../../../../../../../services/l2-services/l2-transaction-history.service';
+import { EthereumWalletChainManager } from '../../../../../../../services/etherium-services/etherium-wallet-chain.manager';
 
 export type L2TxStatus = 'pending' | 'success' | 'failed';
 
@@ -19,6 +20,7 @@ export type L2TxStatus = 'pending' | 'success' | 'failed';
 })
 export class L2TxHistoryComponent {
   private l2TxHistoryService = inject(L2TransactionHistoryService);
+  private chainManager = inject(EthereumWalletChainManager);
   private txDataCache = new Map<string, Transaction | null>();
 
   transactions = this.l2TxHistoryService.getTransactionHistorySignal();
@@ -72,28 +74,40 @@ export class L2TxHistoryComponent {
     }
   }
 
-  getToAddress(tx: L2TransactionHistory): string {
+  getToAddress(tx: L2TransactionHistory): string | null {
     const txData = this.getTxData(tx);
-    return txData?.to ?? '—';
+    return txData?.to ?? null;
+  }
+
+  private getNativeCurrency(): { decimals: number; symbol: string } {
+    const config = this.chainManager.getCurrentWalletProvider()?.getConfig();
+    return {
+      decimals: config?.nativeCurrency?.decimals ?? 18,
+      symbol: config?.nativeCurrency?.symbol ?? 'KAS',
+    };
   }
 
   getFormattedValue(tx: L2TransactionHistory): string {
+    const { decimals, symbol } = this.getNativeCurrency();
     try {
       const txData = this.getTxData(tx);
-      if (!txData?.value) return '0 KAS';
-      const valueInEth = parseFloat(formatUnits(txData.value, 18));
-      if (valueInEth === 0) return '0 KAS';
-      return `${valueInEth.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 6 })} KAS`;
+      if (txData === null) return '—';
+      if (!txData.value) return `0 ${symbol}`;
+      const formatted = formatUnits(txData.value, decimals);
+      const num = parseFloat(formatted);
+      if (num === 0) return `0 ${symbol}`;
+      return `${num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 6 })} ${symbol}`;
     } catch {
-      return '— KAS';
+      return '—';
     }
   }
 
   getGasFee(tx: L2TransactionHistory): string {
     if (!tx.receiptInfo) return '—';
+    const { decimals, symbol } = this.getNativeCurrency();
     try {
-      const fee = parseFloat(formatUnits(tx.receiptInfo.fee, 18));
-      return `${fee.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 8 })} KAS`;
+      const fee = parseFloat(formatUnits(tx.receiptInfo.fee, decimals));
+      return `${fee.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 8 })} ${symbol}`;
     } catch {
       return '—';
     }
@@ -101,6 +115,22 @@ export class L2TxHistoryComponent {
 
   copyToClipboard(text: string, event: Event): void {
     event.stopPropagation();
-    navigator.clipboard.writeText(text).catch(() => {});
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).catch(() => this.fallbackCopy(text));
+    } else {
+      this.fallbackCopy(text);
+    }
+  }
+
+  private fallbackCopy(text: string): void {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try { document.execCommand('copy'); } catch { /* no-op */ }
+    document.body.removeChild(textarea);
   }
 }

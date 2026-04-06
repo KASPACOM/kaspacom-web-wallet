@@ -117,9 +117,7 @@ export class L2TxHistoryComponent {
       if (txData === null) return '—';
       if (!txData.value) return `0 ${symbol}`;
       const formatted = formatUnits(txData.value, decimals);
-      const num = parseFloat(formatted);
-      if (num === 0) return `0 ${symbol}`;
-      return `${num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 6 })} ${symbol}`;
+      return `${this.formatDecimalString(formatted, 6)} ${symbol}`;
     } catch (error) {
       console.warn('Failed to format L2 transaction value', {
         hash: tx.hash,
@@ -135,8 +133,8 @@ export class L2TxHistoryComponent {
     if (!tx.receiptInfo) return '—';
     const { decimals, symbol } = this.getNativeCurrency();
     try {
-      const fee = parseFloat(formatUnits(tx.receiptInfo.fee, decimals));
-      return `${fee.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 8 })} ${symbol}`;
+      const fee = formatUnits(tx.receiptInfo.fee, decimals);
+      return `${this.formatDecimalString(fee, 8)} ${symbol}`;
     } catch (error) {
       console.warn('Failed to format L2 gas fee', {
         hash: tx.hash,
@@ -147,6 +145,17 @@ export class L2TxHistoryComponent {
       });
       return '—';
     }
+  }
+
+  private formatDecimalString(value: string, maxFractionDigits: number): string {
+    const negative = value.startsWith('-');
+    const normalized = negative ? value.slice(1) : value;
+    const [integerPartRaw, fractionPartRaw = ''] = normalized.split('.');
+    const integerPart = integerPartRaw.replace(/^0+(?=\d)/, '') || '0';
+    const fractionPart = fractionPartRaw.slice(0, maxFractionDigits).replace(/0+$/, '');
+    const groupedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    const result = fractionPart ? `${groupedInteger}.${fractionPart}` : groupedInteger;
+    return negative ? `-${result}` : result;
   }
 
   stopPropagation(event: Event): void {

@@ -166,32 +166,53 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
     return parseFloat(formatUnits(balance.toString(), tokenDecimals));
   }
 
-  protected async addTokenToLocalStore(token: Erc20Token) {
+  public async addTokenToLocalStore(token: Erc20Token) {
     const chain = this.ethereumWalletChainManager.getCurrentChainSignal()();
 
     if (!chain) {
       throw new Error('Chain not found');
     }
 
-    await this.l2LocalERC20Tokens.addToken(token, chain);
-    await this.reloadAsset(L2_ASSET_KEYS.erc20);
-  }
-
-  protected async removeTokenFromLocalStore(token: Erc20Token) {
-    const chain = this.ethereumWalletChainManager.getCurrentChainSignal()();
-
-    if (!chain) {
-      throw new Error('Chain not found');
-    }
-
-    await this.l2LocalERC20Tokens.removeToken(token, chain);
-    await this.reloadAsset(L2_ASSET_KEYS.erc20);
-  }
-
-  protected isErc20TokenSavedOnLocalStorage(tokenAddress: string): boolean {
-    return !!this.l2LocalERC20Tokens.getToken(
-      tokenAddress,
-      this.ethereumWalletChainManager.getCurrentChainSignal()()!,
+    await this.l2LocalERC20Tokens.addToken(
+      {
+        ...token,
+        address: ethers.getAddress(token.address),
+      },
+      chain,
     );
+    await this.reloadAsset(L2_ASSET_KEYS.erc20);
+  }
+
+  public async removeTokenFromLocalStore(token: Erc20Token) {
+    const chain = this.ethereumWalletChainManager.getCurrentChainSignal()();
+
+    if (!chain) {
+      throw new Error('Chain not found');
+    }
+
+    await this.l2LocalERC20Tokens.removeToken(
+      {
+        ...token,
+        address: ethers.getAddress(token.address),
+      },
+      chain,
+    );
+    await this.reloadAsset(L2_ASSET_KEYS.erc20);
+  }
+
+  public async getSavedErc20TokenLocally(tokenAddress: string): Promise<Erc20Token | null> {
+    const chain = this.ethereumWalletChainManager.getCurrentChainSignal()();
+
+    if (!chain) {
+      throw new Error('Chain not found');
+    }
+
+    const normalizedAddress = ethers.getAddress(tokenAddress);
+    return (await this.l2LocalERC20Tokens.getToken(normalizedAddress, chain)) ?? null;
+  }
+
+  public async isErc20TokenSavedLocally(tokenAddress: string): Promise<boolean> {
+    const token = await this.getSavedErc20TokenLocally(tokenAddress);
+    return !!token;
   }
 }

@@ -49,6 +49,9 @@ export class ImportTokenFlowPageComponent {
   tokenInfo = signal<Erc20Token | null>(null);
   isSaving = signal<boolean>(false);
 
+  /** Increments on each new lookup; lets in-flight promises detect stale results */
+  private lookupId = 0;
+
   private get l2Store(): L2AssetsStoreService {
     return this.assetsManagerService.getAllAssetStores().l2 as L2AssetsStoreService;
   }
@@ -56,8 +59,9 @@ export class ImportTokenFlowPageComponent {
 
   onAddressChange(value: string): void {
     this.contractAddress.set(value || '');
-    // Reset state when address changes
+    // Reset state when address changes; increment lookupId to abort in-flight lookup
     if (this.state() !== 'idle') {
+      this.lookupId++;
       this.state.set('idle');
       this.tokenInfo.set(null);
       this.errorMessage.set('');
@@ -91,6 +95,10 @@ export class ImportTokenFlowPageComponent {
 
     const normalizedAddress = ethers.getAddress(address);
 
+    // Capture the current lookup ID; if it changes while awaiting, we discard results
+    this.lookupId++;
+    const thisLookupId = this.lookupId;
+
     this.state.set('loading');
     this.tokenInfo.set(null);
     this.errorMessage.set('');
@@ -98,17 +106,28 @@ export class ImportTokenFlowPageComponent {
     try {
       // Check if already imported
       const savedToken = await this.l2Store.getSavedErc20TokenLocally(normalizedAddress);
-      if (savedToken) {
-        this.tokenInfo.set(savedToken);
-        this.state.set('already-imported');
-        return;
-      }
 
-      // Fetch token info from blockchain
-      const token = await this.l2Store.getErc20InfoFromBlockchain(normalizedAddress);
-      this.tokenInfo.set(token);
-      this.state.set('found');
+      // Abort if the user changed the address while we were waiting
+      if (this.lookupId !== thisLookupId) return;
+
+      try {
+        // Always try to fetch fresh token data (balance + current metadata)
+        const freshToken = await this.l2Store.getErc20InfoFromBlockchain(normalizedAddress);
+        if (this.lookupId !== thisLookupId) return;
+        this.tokenInfo.set(savedToken ? { ...savedToken, ...freshToken } : freshToken);
+        this.state.set(savedToken ? 'already-imported' : 'found');
+      } catch {
+        if (this.lookupId !== thisLookupId) return;
+        if (savedToken) {
+          // Show local metadata even if blockchain fetch failed
+          this.tokenInfo.set(savedToken);
+          this.state.set('already-imported');
+        } else {
+          throw new Error('Token not found. Make sure the address is a valid ERC20 contract.');
+        }
+      }
     } catch (err: any) {
+      if (this.lookupId !== thisLookupId) return;
       console.error('Failed to load token:', err);
       this.errorMessage.set(err?.message || 'Token not found. Make sure the address is a valid ERC20 contract.');
       this.state.set('error');

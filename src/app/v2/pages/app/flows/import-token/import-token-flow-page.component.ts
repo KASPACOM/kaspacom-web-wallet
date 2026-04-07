@@ -97,10 +97,9 @@ export class ImportTokenFlowPageComponent {
 
     try {
       // Check if already imported
-      const alreadySaved = await this.l2Store.isErc20TokenSavedLocally(normalizedAddress);
-      if (alreadySaved) {
-        const token = await this.l2Store.getErc20InfoFromBlockchain(normalizedAddress);
-        this.tokenInfo.set(token);
+      const savedToken = await this.l2Store.getSavedErc20TokenLocally(normalizedAddress);
+      if (savedToken) {
+        this.tokenInfo.set(savedToken);
         this.state.set('already-imported');
         return;
       }

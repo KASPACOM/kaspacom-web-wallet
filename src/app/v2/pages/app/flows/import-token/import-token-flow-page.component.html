@@ -11,8 +11,8 @@
           [placeholder]="'0x...'"
           [type]="'text'"
           [isFullWidth]="true"
-          [isValid]="state() !== 'error'"
-          [invalidReason]="state() === 'error' ? errorMessage() : ''"
+          [isValid]="state() !== 'error' && state() !== 'already-imported'"
+          [invalidReason]="state() === 'error' || state() === 'already-imported' ? errorMessage() : ''"
           [ngModel]="contractAddress()"
           (valueChange)="onAddressChange($event)">
         </kc-input>
@@ -52,11 +52,6 @@
   <!-- Already Imported State -->
   @if (state() === 'already-imported' && tokenInfo()) {
     <div class="token-found-section flex column gap-16">
-      <div class="already-imported-badge flex align-items-center gap-8 p-12">
-        <kc-icon [iconClass]="'icon-checkmark'" [size]="'sm'" [color]="'var(--green-20)'"></kc-icon>
-        <span class="typo-text-1 text-success">This token is already in your wallet</span>
-      </div>
-
       <!-- Token Info Card -->
       <div class="token-card card-0 flex column gap-16 p-16">
         <div class="token-header flex align-items-center gap-16">

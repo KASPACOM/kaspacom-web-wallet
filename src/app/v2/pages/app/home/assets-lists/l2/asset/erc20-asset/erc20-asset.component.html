@@ -30,7 +30,7 @@
       [size]="'md'"
       [text]="'Send'"
       class="flex-1"
-      (click)="onSendAction()">
+      (buttonClick)="onSendAction()">
     </kc-button>
     @if (isTokenSaved()) {
       <kc-button
@@ -39,7 +39,7 @@
         [text]="isRemoving() ? 'Removing...' : 'Remove'"
         [isDisabled]="isRemoving()"
         class="flex-1"
-        (click)="onRemoveToken()">
+        (buttonClick)="onRemoveToken()">
       </kc-button>
     }
   </div>

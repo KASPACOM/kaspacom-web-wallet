@@ -73,12 +73,9 @@ export class Erc20AssetComponent
       this.isTokenSaved.set(
         await this.l2Store.isErc20TokenSavedLocally(normalizedAddress),
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to load saved token state:', error);
-      this.notificationService.error(
-        'Load Failed',
-        error?.message || 'Failed to load saved token state',
-      );
+      this.isTokenSaved.set(false);
     }
   }
 

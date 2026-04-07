@@ -116,12 +116,18 @@ export class ImportTokenFlowPageComponent {
         const freshToken = await this.l2Store.getErc20InfoFromBlockchain(normalizedAddress);
         if (this.lookupId !== thisLookupId) return;
         this.tokenInfo.set(savedToken ? { ...savedToken, ...freshToken } : freshToken);
-        this.state.set(savedToken ? 'already-imported' : 'found');
+        if (savedToken) {
+          this.errorMessage.set('Token has already been added.');
+          this.state.set('already-imported');
+        } else {
+          this.state.set('found');
+        }
       } catch {
         if (this.lookupId !== thisLookupId) return;
         if (savedToken) {
           // Show local metadata even if blockchain fetch failed
           this.tokenInfo.set(savedToken);
+          this.errorMessage.set('Token has already been added.');
           this.state.set('already-imported');
         } else {
           throw new Error('Token not found. Make sure the address is a valid ERC20 contract.');

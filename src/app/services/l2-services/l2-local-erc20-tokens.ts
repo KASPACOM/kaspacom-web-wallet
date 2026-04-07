@@ -26,21 +26,25 @@ export class L2LocalERC20Tokens {
         });
     }
 
-    async getToken(tokenAddress: string, chainId: string): Promise<Erc20Token | undefined> {
-        // Try checksummed address first; fall back to the raw address for backward compat
-        // (tokens saved before address normalisation was introduced may use non-checksummed keys)
-        let token = await this.db.erc20Tokens.get([tokenAddress, chainId]);
-        if (!token) {
-            try {
-                const checksummed = ethers.getAddress(tokenAddress);
-                if (checksummed !== tokenAddress) {
-                    token = await this.db.erc20Tokens.get([checksummed, chainId]);
-                }
-            } catch {
-                // invalid address – ignore
-            }
+    /** Build all address variants to check/delete for backward compat with legacy stored casings */
+    private addressVariants(address: string): string[] {
+        const variants = new Set<string>([address, address.toLowerCase()]);
+        try {
+            variants.add(ethers.getAddress(address));
+        } catch {
+            // invalid address — ignore
         }
-        return token;
+        return Array.from(variants);
+    }
+
+    async getToken(tokenAddress: string, chainId: string): Promise<Erc20Token | undefined> {
+        // Try all known address variants (checksummed, original, lowercase) so legacy
+        // entries stored before address-normalisation are still found.
+        for (const variant of this.addressVariants(tokenAddress)) {
+            const token = await this.db.erc20Tokens.get([variant, chainId]);
+            if (token) return token;
+        }
+        return undefined;
     }
 
     async addToken(token: Erc20Token, chainId: string) {
@@ -54,15 +58,10 @@ export class L2LocalERC20Tokens {
     }
 
     async removeToken(token: Erc20Token, chainId: string) {
-        // Delete by the stored address; also attempt the alternate casing for backward compat
-        await this.db.erc20Tokens.delete([token.address, chainId]);
-        try {
-            const checksummed = ethers.getAddress(token.address);
-            if (checksummed !== token.address) {
-                await this.db.erc20Tokens.delete([checksummed, chainId]);
-            }
-        } catch {
-            // invalid address – ignore
+        // Delete all known address variants so legacy entries under different casings are
+        // cleaned up too. Dexie.delete is a no-op when the key doesn't exist.
+        for (const variant of this.addressVariants(token.address)) {
+            await this.db.erc20Tokens.delete([variant, chainId]);
         }
     }
 }

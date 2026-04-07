@@ -71,7 +71,6 @@ export class ImportTokenFlowPageComponent {
   async pasteFromClipboard(): Promise<void> {
     try {
       const text = await navigator.clipboard.readText();
-      this.contractAddress.set(text.trim());
       this.onAddressChange(text.trim());
     } catch {
       this.notificationService.error('Clipboard Error', 'Could not read from clipboard');

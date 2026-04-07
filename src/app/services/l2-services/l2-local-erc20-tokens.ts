@@ -14,16 +14,27 @@ export class L2LocalERC20Tokens {
     
 
     async getAllTokensByChain(chainId: string): Promise<Erc20Token[]> {
-        const tokens = await this.db.erc20Tokens.where('chainId').equals(chainId).toArray();
+        const rows = await this.db.erc20Tokens.where('chainId').equals(chainId).toArray();
 
-        return tokens.map((token) => {
-            return {
-                address: token.address,
+        // Same contract may exist under multiple DB keys (legacy lowercase vs checksummed).
+        const byNormAddress = new Map<string, Erc20Token>();
+        for (const token of rows) {
+            let address = token.address;
+            try {
+                address = ethers.getAddress(token.address);
+            } catch {
+                // keep stored string if not a valid hex address
+            }
+            const key = address.toLowerCase();
+            byNormAddress.set(key, {
+                address,
                 decimals: token.decimals,
                 name: token.name,
                 symbol: token.symbol,
-            };
-        });
+            });
+        }
+
+        return Array.from(byNormAddress.values());
     }
 
     /** Build all address variants to check/delete for backward compat with legacy stored casings */

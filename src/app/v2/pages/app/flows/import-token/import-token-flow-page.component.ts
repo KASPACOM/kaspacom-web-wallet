@@ -80,6 +80,7 @@ export class ImportTokenFlowPageComponent {
   async lookupToken(): Promise<void> {
     const address = this.contractAddress().trim();
     if (!address) {
+      this.tokenInfo.set(null);
       this.errorMessage.set('Please enter a contract address');
       this.state.set('error');
       return;
@@ -87,6 +88,7 @@ export class ImportTokenFlowPageComponent {
 
     // Basic EVM address validation
     if (!ethers.isAddress(address)) {
+      this.tokenInfo.set(null);
       this.errorMessage.set('Invalid contract address format');
       this.state.set('error');
       return;

@@ -22,7 +22,7 @@
         [size]="'md'"
         [text]="'Paste'"
         class="paste-btn"
-        (click)="pasteFromClipboard()">
+        (buttonClick)="pasteFromClipboard()">
       </kc-button>
     </div>
 
@@ -32,7 +32,7 @@
       [text]="state() === 'loading' ? 'Looking up...' : 'Look Up Token'"
       [isDisabled]="!contractAddress() || state() === 'loading'"
       class="full-width"
-      (click)="lookupToken()">
+      (buttonClick)="lookupToken()">
     </kc-button>
   </div>
 
@@ -90,7 +90,7 @@
         [size]="'md'"
         [text]="'Close'"
         class="full-width"
-        (click)="onCancel()">
+        (buttonClick)="onCancel()">
       </kc-button>
     </div>
   }
@@ -135,7 +135,7 @@
           [size]="'md'"
           [text]="'Cancel'"
           class="flex-1"
-          (click)="onCancel()">
+          (buttonClick)="onCancel()">
         </kc-button>
         <kc-button
           [variant]="'primary'"
@@ -143,7 +143,7 @@
           [text]="isSaving() ? 'Importing...' : 'Import Token'"
           [isDisabled]="isSaving()"
           class="flex-1"
-          (click)="onAccept()">
+          (buttonClick)="onAccept()">
         </kc-button>
       </div>
     </div>

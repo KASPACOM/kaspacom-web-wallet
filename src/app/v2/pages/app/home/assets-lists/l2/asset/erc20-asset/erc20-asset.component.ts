@@ -59,11 +59,25 @@ export class Erc20AssetComponent
     return this.assetsManagerService.getAllAssetStores().l2 as L2AssetsStoreService;
   }
 
-  override async ngOnInit() {
+  override ngOnInit(): void {
     this.address = this.route.snapshot.paramMap.get('address');
-    this.loadAssetData();
+    void this.loadAssetData();
     if (this.address) {
-      this.isTokenSaved.set(await this.l2Store.isErc20TokenSavedOnLocalStorage(this.address));
+      void this.loadIsTokenSaved(this.address);
+    }
+  }
+
+  private async loadIsTokenSaved(address: string): Promise<void> {
+    try {
+      this.isTokenSaved.set(
+        await this.l2Store.isErc20TokenSavedOnLocalStorage(address),
+      );
+    } catch (error: any) {
+      console.error('Failed to load saved token state:', error);
+      this.notificationService.error(
+        'Load Failed',
+        error?.message || 'Failed to load saved token state',
+      );
     }
   }
 

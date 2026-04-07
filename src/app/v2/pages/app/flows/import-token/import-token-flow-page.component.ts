@@ -1,6 +1,5 @@
 import {
   Component,
-  OnInit,
   inject,
   signal,
 } from '@angular/core';
@@ -10,10 +9,10 @@ import {
   KcButtonComponent,
   KcInputComponent,
   KcIconComponent,
-  KcSpinnerComponent,
   NotificationService,
 } from 'kaspacom-ui';
 import { Erc20Token } from '@kaspacom/swap-sdk';
+import { ethers } from 'ethers';
 import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';
 import { L2AssetsStoreService } from '../../../../../services/assets-manager/assets-stores/l2-assets-store.service';
 import { FlowPagesService } from '../../../../services/flow-pages.service';
@@ -30,7 +29,6 @@ type ImportState = 'idle' | 'loading' | 'found' | 'already-imported' | 'error';
     KcButtonComponent,
     KcInputComponent,
     KcIconComponent,
-    KcSpinnerComponent,
     SkeletonComponent,
   ],
   templateUrl: './import-token-flow-page.component.html',
@@ -40,7 +38,7 @@ type ImportState = 'idle' | 'loading' | 'found' | 'already-imported' | 'error';
     '[class.full-height]': 'true',
   },
 })
-export class ImportTokenFlowPageComponent implements OnInit {
+export class ImportTokenFlowPageComponent {
   private assetsManagerService = inject(AssetsManagerService);
   private flowPagesService = inject(FlowPagesService);
   private notificationService = inject(NotificationService);
@@ -55,7 +53,6 @@ export class ImportTokenFlowPageComponent implements OnInit {
     return this.assetsManagerService.getAllAssetStores().l2 as L2AssetsStoreService;
   }
 
-  ngOnInit(): void {}
 
   onAddressChange(value: string): void {
     this.contractAddress.set(value || '');
@@ -86,11 +83,13 @@ export class ImportTokenFlowPageComponent implements OnInit {
     }
 
     // Basic EVM address validation
-    if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
+    if (!ethers.isAddress(address)) {
       this.errorMessage.set('Invalid contract address format');
       this.state.set('error');
       return;
     }
+
+    const normalizedAddress = ethers.getAddress(address);
 
     this.state.set('loading');
     this.tokenInfo.set(null);
@@ -98,16 +97,16 @@ export class ImportTokenFlowPageComponent implements OnInit {
 
     try {
       // Check if already imported
-      const alreadySaved = await this.l2Store.isErc20TokenSavedOnLocalStorage(address);
+      const alreadySaved = await this.l2Store.isErc20TokenSavedOnLocalStorage(normalizedAddress);
       if (alreadySaved) {
-        const token = await this.l2Store.getErc20InfoFromBlockchain(address);
+        const token = await this.l2Store.getErc20InfoFromBlockchain(normalizedAddress);
         this.tokenInfo.set(token);
         this.state.set('already-imported');
         return;
       }
 
       // Fetch token info from blockchain
-      const token = await this.l2Store.getErc20InfoFromBlockchain(address);
+      const token = await this.l2Store.getErc20InfoFromBlockchain(normalizedAddress);
       this.tokenInfo.set(token);
       this.state.set('found');
     } catch (err: any) {

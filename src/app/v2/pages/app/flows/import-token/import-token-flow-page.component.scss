@@ -1,0 +1,63 @@
+.import-token-container {
+  overflow-y: auto;
+
+  .input-section {
+    .address-input-row {
+      .paste-btn {
+        margin-top: 24px; // Align with input field (accounting for label height)
+        flex-shrink: 0;
+      }
+    }
+  }
+
+  .loading-section {
+    .token-card {
+      border-radius: 14px;
+    }
+  }
+
+  .token-found-section {
+    .token-card {
+      border-radius: 14px;
+
+      .token-header {
+        .token-logo-placeholder {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          background: var(--primary-bg, rgba(var(--primary-rgb, 70, 130, 220), 0.15));
+          border: 2px solid var(--primary, #4682dc);
+          flex-shrink: 0;
+
+          .token-symbol-initial {
+            color: var(--primary, #4682dc);
+            font-weight: 700;
+            text-transform: uppercase;
+          }
+        }
+      }
+
+      .token-details {
+        border-top: 1px solid var(--base-3, rgba(255, 255, 255, 0.08));
+        padding-top: 12px;
+
+        .detail-row {
+          .font-mono {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 13px;
+          }
+        }
+      }
+    }
+
+    .action-buttons {
+      margin-top: 8px;
+    }
+  }
+
+  .error-section {
+    background: var(--red-bg, rgba(239, 68, 68, 0.08));
+    border-radius: 14px;
+    border: 1px solid var(--red-20, #ef4444);
+  }
+}

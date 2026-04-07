@@ -1,0 +1,155 @@
+<div class="import-token-container full-width full-height flex column p-16 gap-24">
+
+  <!-- Address Input Section -->
+  <div class="input-section flex column gap-12">
+    <div class="section-label typo-text-1 text-gray-60">Token Contract Address</div>
+
+    <div class="address-input-row flex gap-8 align-items-start">
+      <div class="flex-1">
+        <kc-input
+          [label]="'Contract Address'"
+          [placeholder]="'0x...'"
+          [type]="'text'"
+          [isFullWidth]="true"
+          [isValid]="state() !== 'error' && state() !== 'already-imported'"
+          [invalidReason]="state() === 'error' || state() === 'already-imported' ? errorMessage() : ''"
+          [ngModel]="contractAddress()"
+          (valueChange)="onAddressChange($event)">
+        </kc-input>
+      </div>
+      <kc-button
+        [variant]="'secondary'"
+        [size]="'md'"
+        [text]="'Paste'"
+        class="paste-btn"
+        (buttonClick)="pasteFromClipboard()">
+      </kc-button>
+    </div>
+
+    <kc-button
+      [variant]="'primary'"
+      [size]="'md'"
+      [text]="state() === 'loading' ? 'Looking up...' : 'Look Up Token'"
+      [isDisabled]="!contractAddress() || state() === 'loading'"
+      class="full-width"
+      (buttonClick)="lookupToken()">
+    </kc-button>
+  </div>
+
+  <!-- Loading State -->
+  @if (state() === 'loading') {
+    <div class="loading-section flex column gap-16">
+      <div class="token-card card-0 flex align-items-center gap-16 p-16">
+        <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="true"></app-skeleton>
+        <div class="flex column gap-8 flex-1">
+          <app-skeleton [height]="'20px'" [width]="'140px'"></app-skeleton>
+          <app-skeleton [height]="'16px'" [width]="'100px'"></app-skeleton>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Already Imported State -->
+  @if (state() === 'already-imported' && tokenInfo()) {
+    <div class="token-found-section flex column gap-16">
+      <!-- Token Info Card -->
+      <div class="token-card card-0 flex column gap-16 p-16">
+        <div class="token-header flex align-items-center gap-16">
+          <div class="token-logo-placeholder flex align-items-center justify-content-center">
+            <span class="token-symbol-initial typo-title-4">{{ tokenInfo()!.symbol.charAt(0) || '?' }}</span>
+          </div>
+          <div class="flex column gap-4">
+            <div class="text-gray-90 typo-title-4">{{ tokenInfo()!.symbol }}</div>
+            <div class="text-gray-60 typo-text-1">{{ tokenInfo()!.name }}</div>
+          </div>
+        </div>
+
+        <div class="token-details flex column gap-8">
+          <div class="detail-row flex justify-content-between align-items-center">
+            <span class="text-gray-60 typo-text-1">Address</span>
+            <span class="text-gray-90 font-mono">{{ shortAddress(tokenInfo()!.address) }}</span>
+          </div>
+          <div class="detail-row flex justify-content-between align-items-center">
+            <span class="text-gray-60 typo-text-1">Balance</span>
+            <span class="text-gray-90">{{ formatBalance(tokenInfo()!) }} {{ tokenInfo()!.symbol }}</span>
+          </div>
+          <div class="detail-row flex justify-content-between align-items-center">
+            <span class="text-gray-60 typo-text-1">Decimals</span>
+            <span class="text-gray-90">{{ tokenInfo()!.decimals }}</span>
+          </div>
+        </div>
+      </div>
+
+      <kc-button
+        [variant]="'secondary'"
+        [size]="'md'"
+        [text]="'Close'"
+        class="full-width"
+        (buttonClick)="onCancel()">
+      </kc-button>
+    </div>
+  }
+
+  <!-- Token Found State -->
+  @if (state() === 'found' && tokenInfo()) {
+    <div class="token-found-section flex column gap-16">
+      <div class="section-label typo-text-1 text-gray-60">Token Found</div>
+
+      <!-- Token Info Card -->
+      <div class="token-card card-0 flex column gap-16 p-16">
+        <div class="token-header flex align-items-center gap-16">
+          <div class="token-logo-placeholder flex align-items-center justify-content-center">
+            <span class="token-symbol-initial typo-title-4">{{ tokenInfo()!.symbol.charAt(0) || '?' }}</span>
+          </div>
+          <div class="flex column gap-4">
+            <div class="text-gray-90 typo-title-4">{{ tokenInfo()!.symbol }}</div>
+            <div class="text-gray-60 typo-text-1">{{ tokenInfo()!.name }}</div>
+          </div>
+        </div>
+
+        <div class="token-details flex column gap-8">
+          <div class="detail-row flex justify-content-between align-items-center">
+            <span class="text-gray-60 typo-text-1">Address</span>
+            <span class="text-gray-90 font-mono">{{ shortAddress(tokenInfo()!.address) }}</span>
+          </div>
+          <div class="detail-row flex justify-content-between align-items-center">
+            <span class="text-gray-60 typo-text-1">Balance</span>
+            <span class="text-gray-90">{{ formatBalance(tokenInfo()!) }} {{ tokenInfo()!.symbol }}</span>
+          </div>
+          <div class="detail-row flex justify-content-between align-items-center">
+            <span class="text-gray-60 typo-text-1">Decimals</span>
+            <span class="text-gray-90">{{ tokenInfo()!.decimals }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Accept / Cancel Buttons -->
+      <div class="action-buttons flex gap-12">
+        <kc-button
+          [variant]="'secondary'"
+          [size]="'md'"
+          [text]="'Cancel'"
+          class="flex-1"
+          (buttonClick)="onCancel()">
+        </kc-button>
+        <kc-button
+          [variant]="'primary'"
+          [size]="'md'"
+          [text]="isSaving() ? 'Importing...' : 'Import Token'"
+          [isDisabled]="isSaving()"
+          class="flex-1"
+          (buttonClick)="onAccept()">
+        </kc-button>
+      </div>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (state() === 'error') {
+    <div class="error-section flex column align-items-center gap-16 p-16">
+      <kc-icon [iconClass]="'icon-close'" [size]="'lg'" [color]="'var(--red-20)'"></kc-icon>
+      <div class="text-center text-gray-60 typo-text-1">{{ errorMessage() }}</div>
+    </div>
+  }
+
+</div>

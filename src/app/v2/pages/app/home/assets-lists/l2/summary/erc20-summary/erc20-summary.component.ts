@@ -15,10 +15,12 @@ import { AssetsManagerService } from '../../../../../../../../services/assets-ma
 import { L2_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l2-assets-store.service';
 import { Erc20Token } from '@kaspacom/swap-sdk';
 import { Erc20AssetCardComponent } from '../../asset-card/erc20-asset-card/erc20-asset-card.component';
+import { KcButtonComponent } from 'kaspacom-ui';
+import { FlowPagesService } from '../../../../../../../services/flow-pages.service';
 
 @Component({
   selector: 'app-erc20-summary',
-  imports: [SkeletonComponent, InfiniteScrollDirective, Erc20AssetCardComponent ],
+  imports: [SkeletonComponent, InfiniteScrollDirective, Erc20AssetCardComponent, KcButtonComponent],
   templateUrl: './erc20-summary.component.html',
   styleUrl: './erc20-summary.component.scss',
   host: {
@@ -30,6 +32,7 @@ export class Erc20SummaryComponent
 {
   private assetsManagerService = inject(AssetsManagerService);
   private router = inject(Router);
+  private flowPagesService = inject(FlowPagesService);
   private destroy$ = new Subject<void>();
 
   @ViewChild(InfiniteScrollDirective) infiniteScroll!: InfiniteScrollDirective;
@@ -62,6 +65,14 @@ export class Erc20SummaryComponent
   onTokenClick(token: Erc20Token): void {
     // Navigate to the KRC20 asset detail page
     this.router.navigate(['/app/home/asset/erc20', token.address]);
+  }
+
+  onImportToken(): void {
+    this.flowPagesService.openFlow({
+      id: 'import-token',
+      title: 'Import Token',
+      canNavigateBack: true,
+    });
   }
 
   // TrackBy function to prevent unnecessary re-renders

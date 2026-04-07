@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { formatUnits } from 'ethers';
+import { formatUnits, getAddress } from 'ethers';
 import { KcButtonComponent, KcIconComponent, NotificationService } from 'kaspacom-ui';
 import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
 import { L2AssetsStoreService } from '../../../../../../../../services/assets-manager/assets-stores/l2-assets-store.service';
@@ -69,8 +69,9 @@ export class Erc20AssetComponent
 
   private async loadIsTokenSaved(address: string): Promise<void> {
     try {
+      const normalizedAddress = getAddress(address);
       this.isTokenSaved.set(
-        await this.l2Store.isErc20TokenSavedOnLocalStorage(address),
+        await this.l2Store.isErc20TokenSavedLocally(normalizedAddress),
       );
     } catch (error: any) {
       console.error('Failed to load saved token state:', error);
@@ -169,7 +170,10 @@ export class Erc20AssetComponent
 
     this.isRemoving.set(true);
     try {
-      await this.l2Store.removeTokenFromLocalStore({ ...info });
+      await this.l2Store.removeTokenFromLocalStore({
+        ...info,
+        address: getAddress(info.address),
+      });
       this.notificationService.success('Token Removed', `${info.symbol} has been removed from your wallet`);
       this.isTokenSaved.set(false);
       this.goBack();

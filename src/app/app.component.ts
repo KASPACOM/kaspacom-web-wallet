@@ -58,11 +58,12 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async ngOnInit() {
     console.log('App component initialized');
-    this.referralService.captureReferralCode();
 
     if (!this.isAllowedDomain()) {
       return;
     }
+
+    this.referralService.captureReferralCode();
 
     let isIframe = false;
     try {

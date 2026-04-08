@@ -336,10 +336,14 @@ export class WalletService {
     );
   }
 
-  getWalletAddressFromPrivateKey(privateKey: string): string {
-    return this.kaspaWalletMnemonicActionsService.convertPrivateKeyToAddress(
-      privateKey,
-    );
+  getWalletAddressFromPrivateKey(privateKey: string): string | null {
+    try {
+      return this.kaspaWalletMnemonicActionsService.convertPrivateKeyToAddress(
+        privateKey,
+      );
+    } catch {
+      return null;
+    }
   }
 
   private async saveWalletData(walletData: SavedWalletData): Promise<boolean> {

@@ -4,6 +4,17 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 const REFERRAL_STORAGE_KEY = 'kc-ref-code';
+/** Referral codes are short slugs; cap size and charset before localStorage / API. */
+const REF_CODE_MAX_LENGTH = 64;
+const REF_CODE_PATTERN = /^[a-z0-9_-]+$/;
+
+function isValidRefCode(normalized: string): boolean {
+  return (
+    normalized.length > 0 &&
+    normalized.length <= REF_CODE_MAX_LENGTH &&
+    REF_CODE_PATTERN.test(normalized)
+  );
+}
 
 @Injectable({ providedIn: 'root' })
 export class ReferralService {
@@ -18,20 +29,27 @@ export class ReferralService {
     try {
       const params = new URLSearchParams(window.location.search);
       const ref = params.get('ref');
-      if (ref && ref.trim()) {
-        localStorage.setItem(REFERRAL_STORAGE_KEY, ref.trim().toLowerCase());
-
-        // Remove ?ref= from URL without reload
-        params.delete('ref');
-        const newSearch = params.toString();
-        const newUrl =
-          window.location.pathname +
-          (newSearch ? '?' + newSearch : '') +
-          window.location.hash;
-        window.history.replaceState(null, '', newUrl);
+      if (!ref) {
+        return;
       }
-    } catch (error) {
-      console.error('ReferralService: Failed to capture referral code', error);
+      const normalized = ref.trim().toLowerCase();
+      if (!isValidRefCode(normalized)) {
+        return;
+      }
+      localStorage.setItem(REFERRAL_STORAGE_KEY, normalized);
+
+      // Remove ?ref= from URL without reload
+      params.delete('ref');
+      const newSearch = params.toString();
+      const newUrl =
+        window.location.pathname +
+        (newSearch ? '?' + newSearch : '') +
+        window.location.hash;
+      window.history.replaceState(null, '', newUrl);
+    } catch {
+      if (!environment.isProduction) {
+        console.error('ReferralService: Failed to capture referral code');
+      }
     }
   }
 
@@ -55,12 +73,10 @@ export class ReferralService {
 
       // Clear referral code on success
       localStorage.removeItem(REFERRAL_STORAGE_KEY);
-    } catch (error) {
-      // Silent fail — don't block wallet creation flow
-      console.error(
-        'ReferralService: Failed to register wallet referral',
-        error,
-      );
+    } catch {
+      if (!environment.isProduction) {
+        console.error('ReferralService: Failed to register wallet referral');
+      }
     }
   }
 }

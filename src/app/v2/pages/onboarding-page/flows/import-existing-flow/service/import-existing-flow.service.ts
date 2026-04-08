@@ -154,13 +154,7 @@ export class ImportExistingFlowService {
       importResult = { success: false, error: importError };
     }
 
-    // Register with referral system (fire-and-forget, never blocks)
-    if (importResult?.success) {
-      const walletAddress = this.getImportedWalletAddress();
-      if (walletAddress) {
-        this.referralService.registerWallet(walletAddress);
-      }
-    }
+    this.tryRegisterReferralAfterSuccessfulImport(importResult);
 
     return importResult;
   }
@@ -201,13 +195,7 @@ export class ImportExistingFlowService {
       importResult = { success: false, error: importError };
     }
 
-    // Register with referral system (fire-and-forget, never blocks)
-    if (importResult?.success) {
-      const walletAddress = this.getImportedWalletAddress();
-      if (walletAddress) {
-        this.referralService.registerWallet(walletAddress);
-      }
-    }
+    this.tryRegisterReferralAfterSuccessfulImport(importResult);
 
     return importResult!;
   }
@@ -216,6 +204,18 @@ export class ImportExistingFlowService {
    * Derive the wallet address from the current import model
    * (mnemonic or private key).
    */
+  private tryRegisterReferralAfterSuccessfulImport(
+    importResult: IWalletImportResult | undefined,
+  ): void {
+    if (!importResult?.success) {
+      return;
+    }
+    const walletAddress = this.getImportedWalletAddress();
+    if (walletAddress) {
+      void this.referralService.registerWallet(walletAddress);
+    }
+  }
+
   private getImportedWalletAddress(): string | null {
     try {
       if (this._model().importSwitchMethod === ImportSwitchMethod.PRIVATE_KEY) {

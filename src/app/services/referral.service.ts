@@ -6,6 +6,7 @@ import { DEFI_API_BASE_URL } from '../config/injection-tokens';
 import { LOCAL_STORAGE_KEYS } from '../config/consts';
 
 export const REFERRAL_STORAGE_KEY = LOCAL_STORAGE_KEYS.REFERRAL_CODE;
+const LEGACY_REFERRAL_STORAGE_KEY = LOCAL_STORAGE_KEYS.LEGACY_REFERRAL_CODE;
 /** Referral codes are short slugs; cap size and charset before localStorage / API. */
 const REF_CODE_MAX_LENGTH = 64;
 const REF_CODE_PATTERN = /^[a-z0-9_-]+$/;
@@ -38,7 +39,15 @@ export class ReferralService {
       if (!isValidRefCode(normalized)) {
         return;
       }
-      localStorage.setItem(REFERRAL_STORAGE_KEY, normalized);
+
+      // Persist to storage (best-effort — URL cleanup must still happen)
+      try {
+        localStorage.setItem(REFERRAL_STORAGE_KEY, normalized);
+      } catch (storageErr) {
+        if (!environment.isProduction) {
+          console.error('ReferralService: Failed to persist referral code', storageErr);
+        }
+      }
 
       // Remove ?ref= from URL without reload
       params.delete('ref');
@@ -61,8 +70,25 @@ export class ReferralService {
    */
   async registerWallet(walletAddress: string): Promise<void> {
     try {
-      const storedRefCode = localStorage.getItem(REFERRAL_STORAGE_KEY);
-      const normalizedRefCode = storedRefCode?.trim().toLowerCase() ?? '';
+      // Read referral code from storage (best-effort)
+      let storedRefCode = '';
+      let hasLegacy = false;
+      try {
+        storedRefCode = localStorage.getItem(REFERRAL_STORAGE_KEY) ?? '';
+        if (!storedRefCode) {
+          const legacyCode = localStorage.getItem(LEGACY_REFERRAL_STORAGE_KEY);
+          if (legacyCode) {
+            storedRefCode = legacyCode;
+            hasLegacy = true;
+            // Migrate legacy key to new key
+            localStorage.setItem(REFERRAL_STORAGE_KEY, legacyCode);
+          }
+        }
+      } catch {
+        // Storage read is best-effort; proceed with empty body
+      }
+
+      const normalizedRefCode = storedRefCode.trim().toLowerCase();
       const body: Record<string, string> = isValidRefCode(normalizedRefCode)
         ? { referredBy: normalizedRefCode }
         : {};
@@ -75,7 +101,14 @@ export class ReferralService {
       );
 
       // Clear referral code on success
-      localStorage.removeItem(REFERRAL_STORAGE_KEY);
+      try {
+        localStorage.removeItem(REFERRAL_STORAGE_KEY);
+        if (hasLegacy) {
+          localStorage.removeItem(LEGACY_REFERRAL_STORAGE_KEY);
+        }
+      } catch {
+        // Best-effort cleanup
+      }
     } catch (err) {
       if (!environment.isProduction) {
         console.error(

@@ -78,10 +78,16 @@ export class ReferralService {
         if (!storedRefCode) {
           const legacyCode = localStorage.getItem(LEGACY_REFERRAL_STORAGE_KEY);
           if (legacyCode) {
-            storedRefCode = legacyCode;
-            hasLegacy = true;
-            // Migrate legacy key to new key
-            localStorage.setItem(REFERRAL_STORAGE_KEY, legacyCode);
+            const normalizedLegacy = legacyCode.trim().toLowerCase();
+            if (isValidRefCode(normalizedLegacy)) {
+              storedRefCode = normalizedLegacy;
+              hasLegacy = true;
+              // Migrate legacy key to new key (canonical form)
+              localStorage.setItem(REFERRAL_STORAGE_KEY, normalizedLegacy);
+            } else {
+              // Invalid legacy code — clean it up but don't migrate
+              hasLegacy = true;
+            }
           }
         }
       } catch {

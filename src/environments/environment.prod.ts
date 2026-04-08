@@ -57,6 +57,23 @@ export const environment: Environment = {
         defiApiNetworkName: 'igra',
       },
     },
-
+    {
+      sdkName: 'igra',
+      icon: '🔷',
+      l1TransactionPrefix: 'igra',
+      customChainConfig: {
+        chainId: 38833,
+        name: 'IGRA Mainnet',
+        rpcUrl: 'https://rpc.igralabs.com:8545',
+        blockExplorerUrl: 'https://explorer.igralabs.com',
+        nativeToken: {
+          address: '0x0000000000000000000000000000000000000000',
+          decimals: 18,
+          name: 'IgraKaspa',
+          symbol: 'IKAS',
+        },
+        defiApiNetworkName: 'igra',
+      },
+    },
   ],
 };

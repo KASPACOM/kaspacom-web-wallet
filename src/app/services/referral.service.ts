@@ -46,7 +46,7 @@ export class ReferralService {
         window.location.pathname +
         (newSearch ? '?' + newSearch : '') +
         window.location.hash;
-      window.history.replaceState(null, '', newUrl);
+      window.history.replaceState(window.history.state, '', newUrl);
     } catch (err) {
       if (!environment.isProduction) {
         console.error('ReferralService: Failed to capture referral code', err);
@@ -77,7 +77,10 @@ export class ReferralService {
       localStorage.removeItem(REFERRAL_STORAGE_KEY);
     } catch (err) {
       if (!environment.isProduction) {
-        console.error('ReferralService: Failed to register wallet referral', err);
+        console.error(
+          'ReferralService: Failed to register wallet referral',
+          err,
+        );
       }
     }
   }

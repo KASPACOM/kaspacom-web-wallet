@@ -110,7 +110,7 @@ export class NewWalletFlowService {
     if (walletAdditionResult.success) {
       const walletAddress = this.getCurrentWalletAddress();
       if (walletAddress) {
-        this.referralService.registerWallet(walletAddress);
+        void this.referralService.registerWallet(walletAddress);
       }
     }
 

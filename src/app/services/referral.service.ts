@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { DEFI_API_BASE_URL } from '../config/injection-tokens';
 
 const REFERRAL_STORAGE_KEY = 'kc-ref-code';
 /** Referral codes are short slugs; cap size and charset before localStorage / API. */
@@ -19,7 +20,7 @@ function isValidRefCode(normalized: string): boolean {
 @Injectable({ providedIn: 'root' })
 export class ReferralService {
   private readonly httpClient = inject(HttpClient);
-  private readonly baseUrl = environment.kaspaComDefiApiBaseurl;
+  private readonly baseUrl = inject(DEFI_API_BASE_URL);
 
   /**
    * Capture ?ref= query parameter from the URL, store in localStorage,
@@ -46,9 +47,9 @@ export class ReferralService {
         (newSearch ? '?' + newSearch : '') +
         window.location.hash;
       window.history.replaceState(null, '', newUrl);
-    } catch {
+    } catch (err) {
       if (!environment.isProduction) {
-        console.error('ReferralService: Failed to capture referral code');
+        console.error('ReferralService: Failed to capture referral code', err);
       }
     }
   }
@@ -74,9 +75,9 @@ export class ReferralService {
 
       // Clear referral code on success
       localStorage.removeItem(REFERRAL_STORAGE_KEY);
-    } catch {
+    } catch (err) {
       if (!environment.isProduction) {
-        console.error('ReferralService: Failed to register wallet referral');
+        console.error('ReferralService: Failed to register wallet referral', err);
       }
     }
   }

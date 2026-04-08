@@ -65,8 +65,9 @@ export class NewWalletFlowService {
   }
 
   prepareSeedPhrase(seedPhrase: string, seedPhraseWordCount: number) {
+    const trimmed = seedPhrase.trim();
     const walletAddress = this.walletService.getWalletAddressFromMnemonic(
-      seedPhrase,
+      trimmed,
       this._newWallet().seedPassphrase,
     );
     if (!walletAddress) {
@@ -74,7 +75,7 @@ export class NewWalletFlowService {
     }
     this._newWallet.set({
       ...this._newWallet(),
-      seedPhrase,
+      seedPhrase: trimmed,
       seedPhraseWordCount,
     });
     this.printState();
@@ -133,8 +134,9 @@ export class NewWalletFlowService {
     seedPhrase: string,
     seedPhraseWordCount: number,
   ): Promise<IWalletCreationResult> {
+    const trimmed = seedPhrase.trim();
     const walletAddress = this.walletService.getWalletAddressFromMnemonic(
-      seedPhrase,
+      trimmed,
       this._newWallet().seedPassphrase,
     );
     if (!walletAddress) {
@@ -142,7 +144,7 @@ export class NewWalletFlowService {
     }
     this._newWallet.set({
       ...this._newWallet(),
-      seedPhrase,
+      seedPhrase: trimmed,
       seedPhraseWordCount,
     });
     this.printState();

@@ -57,10 +57,6 @@ export const environment: Environment = {
         defiApiNetworkName: 'igra',
       },
     },
-    {
-      sdkName: 'igra',
-      icon: '💎',
-      l1TransactionPrefix: 'igra',
-    },
+
   ],
 };

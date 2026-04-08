@@ -3,8 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { DEFI_API_BASE_URL } from '../config/injection-tokens';
+import { LOCAL_STORAGE_KEYS } from '../config/consts';
 
-const REFERRAL_STORAGE_KEY = 'kc-ref-code';
+export const REFERRAL_STORAGE_KEY = LOCAL_STORAGE_KEYS.REFERRAL_CODE;
 /** Referral codes are short slugs; cap size and charset before localStorage / API. */
 const REF_CODE_MAX_LENGTH = 64;
 const REF_CODE_PATTERN = /^[a-z0-9_-]+$/;

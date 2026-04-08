@@ -4,11 +4,8 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { ReferralService } from './referral.service';
+import { ReferralService, REFERRAL_STORAGE_KEY as REF_KEY } from './referral.service';
 import { DEFI_API_BASE_URL } from '../config/injection-tokens';
-
-/** Must match REFERRAL_STORAGE_KEY in referral.service.ts */
-const REF_KEY = 'kc-ref-code';
 
 describe('ReferralService', () => {
   let service: ReferralService;

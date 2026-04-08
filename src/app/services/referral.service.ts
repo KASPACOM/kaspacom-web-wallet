@@ -59,9 +59,10 @@ export class ReferralService {
    */
   async registerWallet(walletAddress: string): Promise<void> {
     try {
-      const refCode = localStorage.getItem(REFERRAL_STORAGE_KEY);
-      const body: Record<string, string> = refCode
-        ? { referredBy: refCode }
+      const storedRefCode = localStorage.getItem(REFERRAL_STORAGE_KEY);
+      const normalizedRefCode = storedRefCode?.trim().toLowerCase() ?? '';
+      const body: Record<string, string> = isValidRefCode(normalizedRefCode)
+        ? { referredBy: normalizedRefCode }
         : {};
 
       await firstValueFrom(

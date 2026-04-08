@@ -167,7 +167,7 @@ export class NewWalletFlowService {
 
   getCurrentWalletAddress() {
     return this.walletService.getWalletAddressFromMnemonic(
-      this._newWallet().seedPhrase,
+      this._newWallet().seedPhrase.trim(),
       this._newWallet().seedPassphrase,
     );
   }

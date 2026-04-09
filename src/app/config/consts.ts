@@ -6,6 +6,7 @@ export const LOCAL_STORAGE_KEYS = {
   CURRENT_ETHEREUM_CHAIN: 'currentEthereumChain',
   ALLOWED_APPLICATIONS: 'allowedApplications',
   IS_L2_DISPLAY: 'isL2Display',
+  REFERRAL_CODE: 'referralCode',
 };
 
 export const KASPA_NETWORKS = {

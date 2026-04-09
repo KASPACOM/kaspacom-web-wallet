@@ -6,7 +6,6 @@ import { DEFI_API_BASE_URL } from '../config/injection-tokens';
 import { LOCAL_STORAGE_KEYS } from '../config/consts';
 
 export const REFERRAL_STORAGE_KEY = LOCAL_STORAGE_KEYS.REFERRAL_CODE;
-const LEGACY_REFERRAL_STORAGE_KEY = LOCAL_STORAGE_KEYS.LEGACY_REFERRAL_CODE;
 /** Referral codes are short slugs; cap size and charset before localStorage / API. */
 const REF_CODE_MAX_LENGTH = 64;
 const REF_CODE_PATTERN = /^[a-z0-9_-]+$/;
@@ -70,26 +69,9 @@ export class ReferralService {
    */
   async registerWallet(walletAddress: string): Promise<void> {
     try {
-      // Read referral code from storage (best-effort)
       let storedRefCode = '';
-      let hasLegacy = false;
       try {
         storedRefCode = localStorage.getItem(REFERRAL_STORAGE_KEY) ?? '';
-        if (!storedRefCode) {
-          const legacyCode = localStorage.getItem(LEGACY_REFERRAL_STORAGE_KEY);
-          if (legacyCode) {
-            const normalizedLegacy = legacyCode.trim().toLowerCase();
-            if (isValidRefCode(normalizedLegacy)) {
-              storedRefCode = normalizedLegacy;
-              hasLegacy = true;
-              // Migrate legacy key to new key (canonical form)
-              localStorage.setItem(REFERRAL_STORAGE_KEY, normalizedLegacy);
-            } else {
-              // Invalid legacy code — remove it immediately and don't migrate
-              localStorage.removeItem(LEGACY_REFERRAL_STORAGE_KEY);
-            }
-          }
-        }
       } catch {
         // Storage read is best-effort; proceed with empty body
       }
@@ -106,12 +88,8 @@ export class ReferralService {
         ),
       );
 
-      // Clear referral code on success
       try {
         localStorage.removeItem(REFERRAL_STORAGE_KEY);
-        if (hasLegacy) {
-          localStorage.removeItem(LEGACY_REFERRAL_STORAGE_KEY);
-        }
       } catch {
         // Best-effort cleanup
       }

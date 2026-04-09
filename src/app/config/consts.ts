@@ -7,7 +7,6 @@ export const LOCAL_STORAGE_KEYS = {
   ALLOWED_APPLICATIONS: 'allowedApplications',
   IS_L2_DISPLAY: 'isL2Display',
   REFERRAL_CODE: 'referralCode',
-  LEGACY_REFERRAL_CODE: 'kc-ref-code',
 };
 
 export const KASPA_NETWORKS = {

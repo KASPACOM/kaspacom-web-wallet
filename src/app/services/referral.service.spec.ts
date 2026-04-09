@@ -6,9 +6,6 @@ import {
 import { provideHttpClient } from '@angular/common/http';
 import { ReferralService, REFERRAL_STORAGE_KEY as REF_KEY } from './referral.service';
 import { DEFI_API_BASE_URL } from '../config/injection-tokens';
-import { LOCAL_STORAGE_KEYS } from '../config/consts';
-
-const LEGACY_KEY = LOCAL_STORAGE_KEYS.LEGACY_REFERRAL_CODE;
 
 describe('ReferralService', () => {
   let service: ReferralService;
@@ -26,13 +23,11 @@ describe('ReferralService', () => {
     service = TestBed.inject(ReferralService);
     httpMock = TestBed.inject(HttpTestingController);
     localStorage.removeItem(REF_KEY);
-    localStorage.removeItem(LEGACY_KEY);
   });
 
   afterEach(() => {
     httpMock.verify();
     localStorage.removeItem(REF_KEY);
-    localStorage.removeItem(LEGACY_KEY);
   });
 
   it('should be created', () => {
@@ -109,26 +104,6 @@ describe('ReferralService', () => {
       await promise;
 
       expect(localStorage.getItem(REF_KEY)).toBeNull();
-    });
-
-    it('migrates legacy key: normalizes, POSTs, and clears both keys on success', async () => {
-      localStorage.setItem(LEGACY_KEY, '  Legacy_Code  ');
-      const wallet = 'kaspa:legacy-addr';
-      const promise = service.registerWallet(wallet);
-
-      const req = httpMock.expectOne(
-        (r) =>
-          r.method === 'POST' &&
-          r.url ===
-            `${apiBase}/user-referrals/user-referral?walletAddress=${encodeURIComponent(wallet)}`,
-      );
-      expect(req.request.body).toEqual({ referredBy: 'legacy_code' });
-
-      req.flush({});
-      await promise;
-
-      expect(localStorage.getItem(REF_KEY)).toBeNull();
-      expect(localStorage.getItem(LEGACY_KEY)).toBeNull();
     });
 
     it('does not clear localStorage when the request fails', async () => {

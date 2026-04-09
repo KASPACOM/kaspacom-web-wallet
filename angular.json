@@ -77,19 +77,6 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
-            },
-            "stage": {
-              "fileReplacements": [
-                {
-                  "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.stage.ts"
-                }
-              ],
-              "outputHashing": "all",
-              "optimization": false,
-              "extractLicenses": false,
-              "sourceMap": true,
-              "outputHashing": "all"
             }
           },
           "defaultConfiguration": "production"

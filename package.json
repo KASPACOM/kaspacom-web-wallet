@@ -8,7 +8,6 @@
     "start:https": "ng serve --host 0.0.0.0 --ssl true",
     "build": "ng build && npm run sentry:sourcemaps",
     "build:dev": "ng build --configuration development",
-    "build:stage": "ng build --configuration stage",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:wallet-front-new": "node dist/wallet-front-new/server/server.mjs",

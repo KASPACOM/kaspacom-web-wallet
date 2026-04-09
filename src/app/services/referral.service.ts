@@ -85,8 +85,8 @@ export class ReferralService {
               // Migrate legacy key to new key (canonical form)
               localStorage.setItem(REFERRAL_STORAGE_KEY, normalizedLegacy);
             } else {
-              // Invalid legacy code — clean it up but don't migrate
-              hasLegacy = true;
+              // Invalid legacy code — remove it immediately and don't migrate
+              localStorage.removeItem(LEGACY_REFERRAL_STORAGE_KEY);
             }
           }
         }

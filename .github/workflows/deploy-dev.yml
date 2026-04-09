@@ -53,8 +53,11 @@ jobs:
           --exclude "favicon.ico" \
           --exclude "logo.png" \
           --exclude "images/*" \
+          --exclude "images/**" \
           --exclude "svgs/*" \
+          --exclude "svgs/**" \
           --exclude "kaspa/*" \
+          --exclude "kaspa/**" \
           --cache-control "public,max-age=31536000,immutable"
 
         # 2. Upload unhashed public assets with short-lived cache
@@ -63,8 +66,11 @@ jobs:
           --include "favicon.ico" \
           --include "logo.png" \
           --include "images/*" \
+          --include "images/**" \
           --include "svgs/*" \
+          --include "svgs/**" \
           --include "kaspa/*" \
+          --include "kaspa/**" \
           --cache-control "public,max-age=3600"
 
         # 3. Upload index.html with strict no-cache headers

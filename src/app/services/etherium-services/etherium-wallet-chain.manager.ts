@@ -4,7 +4,6 @@ import { BaseEthereumProvider } from "./base-ethereum-provider";
 import { EIP1193ProviderChain } from "@kaspacom/wallet-messages";
 import { environment } from "../../../environments/environment";
 import { L2ConfigInterface } from "../../../environments/environment.interface";
-import { NETWORKS } from '@kaspacom/swap-sdk';
 import { VIEW_METHOD } from "../wallet.service";
 
 export interface ExtendedEIP1193ProviderChain extends EIP1193ProviderChain {
@@ -29,7 +28,8 @@ export class EthereumWalletChainManager {
         }
 
         environment.l2Configs.forEach((config: L2ConfigInterface) => {
-            this.allChainsEnvConfigByChainId[this.convertChainIdToHex(NETWORKS[config.sdkName].chainId)] = config;
+            const chainId = config.customChainConfig.chainId;
+            this.allChainsEnvConfigByChainId[this.convertChainIdToHex(chainId)] = config;
         });
         this.setAllChainsByChainId();
 
@@ -110,14 +110,19 @@ export class EthereumWalletChainManager {
         return this.allChainsByChainId;
     }
     private setAllChainsByChainId(): void {
-        const allChains: ExtendedEIP1193ProviderChain[] = Object.values(environment.l2Configs).map((config: L2ConfigInterface) => ({
-            chainId: this.convertChainIdToHex(NETWORKS[config.sdkName].chainId),
-            chainName: NETWORKS[config.sdkName].name,
-            nativeCurrency: NETWORKS[config.sdkName].nativeToken,
-            rpcUrls: [NETWORKS[config.sdkName].rpcUrl],
-            blockExplorerUrls: NETWORKS[config.sdkName].blockExplorerUrl ? [NETWORKS[config.sdkName].blockExplorerUrl!] : [],
-            defiApiNetworkName: NETWORKS[config.sdkName].defiApiNetworkName,
-        })).concat(JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS) || '[]'));
+        const allChains: ExtendedEIP1193ProviderChain[] = Object.values(environment.l2Configs)
+            .map((config: L2ConfigInterface) => {
+                const c = config.customChainConfig;
+                return {
+                    chainId: this.convertChainIdToHex(c.chainId),
+                    chainName: c.name,
+                    nativeCurrency: c.nativeToken,
+                    rpcUrls: [c.rpcUrl],
+                    blockExplorerUrls: c.blockExplorerUrl ? [c.blockExplorerUrl] : [],
+                    defiApiNetworkName: c.defiApiNetworkName,
+                };
+            })
+            .concat(JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS) || '[]'));
 
         this.allChainsByChainId = allChains.reduce((acc, chain) => {
             acc[chain.chainId] = chain;

@@ -17,6 +17,19 @@ export enum ApprovalFlowState {
   ERROR = 'error', // Showing error page
 }
 
+export type L2PriorityInfo = {
+  baseFee: bigint;
+  priorityFee: bigint;
+  gasLimit: bigint;
+};
+
+export type ApprovalPageResultParams = {
+  isApproved: boolean;
+  priorityFee?: bigint;
+  l2PriorityInfo?: L2PriorityInfo;
+  additionalParams?: { [key: string]: any };
+}
+
 export interface ApprovalFlowConfig {
   mode: ApprovalDisplayMode;
   action: WalletAction;
@@ -51,11 +64,7 @@ export class ApprovalFlowService {
 
   // Resolve function for the current approval
   private currentResolve:
-    | ((result: {
-        isApproved: boolean;
-        priorityFee?: bigint;
-        additionalParams?: { [key: string]: any };
-      }) => void)
+    | ((result: ApprovalPageResultParams) => void)
     | null = null;
 
   // Signal to track completion events for components to listen to
@@ -73,11 +82,7 @@ export class ApprovalFlowService {
   async showApproval(
     action: WalletAction,
     isFromIframe: boolean = false,
-  ): Promise<{
-    isApproved: boolean;
-    priorityFee?: bigint;
-    additionalParams?: { [key: string]: any };
-  }> {
+  ): Promise<ApprovalPageResultParams> {
     // Determine display mode based on context
     const mode = this.determineDisplayMode(isFromIframe);
 
@@ -104,11 +109,7 @@ export class ApprovalFlowService {
   /**
    * Resolves the current approval with the given result
    */
-  resolveApproval(result: {
-    isApproved: boolean;
-    priorityFee?: bigint;
-    additionalParams?: { [key: string]: any };
-  }) {
+  resolveApproval(result: ApprovalPageResultParams) {
     if (this.currentResolve) {
       this.currentResolve(result);
       this.currentResolve = null;

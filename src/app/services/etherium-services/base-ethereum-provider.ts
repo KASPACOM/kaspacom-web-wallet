@@ -1,4 +1,4 @@
-import { ethers, TransactionReceipt } from "ethers";
+import { ethers, FeeData, TransactionReceipt, TransactionRequest } from "ethers";
 import { EIP1193ProviderChain } from "@kaspacom/wallet-messages";
 import { environment } from "../../../environments/environment";
 
@@ -52,7 +52,7 @@ export class BaseEthereumProvider {
     return await this.etherProvider.send('eth_blockNumber', []);
   }
 
-  async estimateGas(transaction: any): Promise<string> {
+  async ethEstimateGas(transaction: any): Promise<string> {
     return await this.etherProvider.send('eth_estimateGas', [transaction]);
   }
 
@@ -72,6 +72,20 @@ export class BaseEthereumProvider {
     return await this.etherProvider.waitForTransaction(txHash);
   }
 
+  async estimateGas(wallet: ethers.Wallet, transaction: TransactionRequest): Promise<bigint> {
+    const populatedTransaction = await wallet.populateTransaction(transaction);
+
+    return await this.etherProvider.estimateGas(populatedTransaction);
+  }
+
+  async getFeeData(): Promise<FeeData> {
+    return await this.etherProvider.getFeeData();
+  }
+
+  async supportsEIP1559() {
+    const block = await this.etherProvider.getBlock("latest");
+    return block && block.baseFeePerGas != null;
+  }
 
   getProvider(): ethers.JsonRpcProvider {
     return this.etherProvider;

@@ -25,6 +25,7 @@ import { IFlowPageConfig } from './interfaces/flow-page.interface';
 import { NetworkSelectionModalComponent } from '../../../../shared/network-selection-modal/network-selection-modal.component';
 import { SendErc20Component } from '../../flows/transaction/send-page/components/send-asset/l2/send-erc20/send-erc20.component';
 import { SwapFlowPageComponent } from '../../flows/swap/swap-flow-page.component';
+import { ImportTokenFlowPageComponent } from '../../flows/import-token/import-token-flow-page.component';
 
 export type FlowPageRegistryEntry =
   | Type<unknown>
@@ -60,6 +61,7 @@ export const FLOW_PAGE_IDS = [
 
   'network-selection',
   'swap',
+  'import-token',
 ] as const;
 
 export type FlowPageId = (typeof FLOW_PAGE_IDS)[number];
@@ -99,4 +101,5 @@ export const FLOW_PAGE_REGISTRY: Record<FlowPageId, FlowPageRegistryEntry> = {
   'delete-wallet-confirmation': DeleteWalletConfirmationComponent,
   'network-selection': NetworkSelectionModalComponent,
   'swap': SwapFlowPageComponent,
+  'import-token': ImportTokenFlowPageComponent,
 } as const;

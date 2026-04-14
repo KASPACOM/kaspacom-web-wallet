@@ -21,11 +21,43 @@ export class L2TransactionHistoryService {
 
 
     protected transactionsHistorySignal = signal<L2TransactionHistory[]>([]);
-
+    private readonly transactionHistoryLoading = signal(false);
+    private historyReloadGeneration = 0;
 
     constructor() {
-        toObservable(this.chainManager.getCurrentChainSignal()).subscribe(this.onNetworkChange.bind(this));
-        toObservable(this.walletService.getCurrentWalletSignal()).subscribe(this.onNetworkChange.bind(this));
+        toObservable(this.chainManager.getCurrentChainSignal()).subscribe(() => {
+            void this.scheduleHistoryReload();
+        });
+        toObservable(this.walletService.getCurrentWalletSignal()).subscribe(() => {
+            void this.scheduleHistoryReload();
+        });
+    }
+
+    getTransactionHistoryLoadingSignal(): Signal<boolean> {
+        return this.transactionHistoryLoading.asReadonly();
+    }
+
+    private scheduleHistoryReload(): void {
+        void this.reloadHistory();
+    }
+
+    private async reloadHistory(): Promise<void> {
+        const gen = ++this.historyReloadGeneration;
+        this.transactionHistoryLoading.set(true);
+        this.transactionsHistorySignal.set([]);
+
+        const wallet = this.walletService.getCurrentWalletSignal()();
+        const chainId = this.chainManager.getCurrentChainSignal()();
+        try {
+            if (!wallet || !chainId) {
+                return;
+            }
+            await this.loadTransactions(gen);
+        } finally {
+            if (gen === this.historyReloadGeneration) {
+                this.transactionHistoryLoading.set(false);
+            }
+        }
     }
 
     async addTransactionAndWaitForResult(signedTransactionRequest: string) {
@@ -64,7 +96,7 @@ export class L2TransactionHistoryService {
                 blockHash: receipt.blockHash,
                 blockNumber: receipt.blockNumber,
                 gasUsed: String(receipt.gasUsed),
-                blobGasUsed: receipt.gasUsed?.toString(),
+                blobGasUsed: receipt.blobGasUsed?.toString(),
                 gasPrice: String(receipt.gasPrice),
                 blobGasPrice: receipt.blobGasPrice?.toString(),
                 type: receipt.type,
@@ -84,15 +116,7 @@ export class L2TransactionHistoryService {
         return Transaction.from(transactionData);
     }
 
-    protected onNetworkChange() {
-        this.transactionsHistorySignal.set([]);
-
-        if (this.walletService.getCurrentWalletSignal()() && this.chainManager.getCurrentChainSignal()()) {
-            this.loadTransactions();
-        }
-    }
-
-    protected async loadTransactions() {
+    protected async loadTransactions(expectedGen: number) {
         const chainId = this.chainManager.getCurrentChainSignal()()!;
         const walletId = this.walletService.getCurrentWalletSignal()!()!.getIdWithAccount();
 
@@ -101,17 +125,25 @@ export class L2TransactionHistoryService {
             .equals([chainId, walletId])
             .toArray();
 
-        const sortedResult = result.sort((a, b) => b.timestamp - a.timestamp);
-
-        // remove if needed 
-        if (result.length > MAX_TO_KEEP) {
-            const toDelete = sortedResult.slice(-AMOUNT_TO_REMOVE).map(tx => tx.id!);
-
-            // Remove them efficiently
-            await this.db.transactionHistory.bulkDelete(toDelete);
+        if (expectedGen !== this.historyReloadGeneration) {
+            return;
         }
 
-        this.transactionsHistorySignal.set(sortedResult);
+        const sortedResult = result.sort((a, b) => b.timestamp - a.timestamp);
+
+        let rows = sortedResult;
+        if (result.length > MAX_TO_KEEP) {
+            const toDelete = sortedResult.slice(-AMOUNT_TO_REMOVE).map(tx => tx.id!);
+            await this.db.transactionHistory.bulkDelete(toDelete);
+            const deleteSet = new Set(toDelete);
+            rows = sortedResult.filter((tx) => tx.id !== undefined && !deleteSet.has(tx.id));
+        }
+
+        if (expectedGen !== this.historyReloadGeneration) {
+            return;
+        }
+
+        this.transactionsHistorySignal.set(rows);
         this.getReceiptForUnfinishedTransaction();
     }
 

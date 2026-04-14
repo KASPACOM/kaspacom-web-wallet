@@ -76,14 +76,25 @@
           </div>
         </ng-template>
 
-        <!-- Priority Fee Selection -->
-        <ng-container *ngIf="isActionHasPriorityFee()">
-          <priority-fee-selection
-            [action]="approvalConfig()!.action"
-            [wallet]="wallet()"
-            (priorityFeeSelected)="setCurrentPriorityFee($event)">
-          </priority-fee-selection>
-        </ng-container>
+      <!-- Priority Fee Selection -->
+      <ng-container *ngIf="isActionHasPriorityFee()">
+        <priority-fee-selection
+          [action]="approvalConfig()!.action"
+          [wallet]="wallet()"
+          (priorityFeeSelected)="setCurrentPriorityFee($event)">
+        </priority-fee-selection>
+      </ng-container>
+
+            <!-- Priority Fee Selection -->
+      <ng-container *ngIf="isActionHasL2PriorityFee()">
+        <l2-priority-fee-selection
+          [action]="approvalConfig()!.action"
+          [wallet]="wallet()"
+          (priorityFeeSelected)="setL2CurrentPriorityFee($event)"
+          (gasLimitSelected)="setL2GasLimit($event)">
+        >
+        </l2-priority-fee-selection>
+      </ng-container>
 
         <!-- Action Buttons - Last element that gets pushed to bottom -->
         <div class="action-buttons-section">
@@ -127,19 +138,11 @@
   <!-- Error State -->
   <div *ngSwitchCase="ApprovalFlowState.ERROR" class="error-container">
     <div class="error-content">
+      <div class="error-icon-wrapper">
+        <kc-icon iconClass="icon-warning" size="lg" color="#f87171"></kc-icon>
+      </div>
       <h2>Transaction Failed</h2>
-      <p class="error-summary">
-        We were unable to complete this transaction. Review the details below and try again.
-      </p>
-      <label class="error-details-label" for="transaction-error-details">
-        Error details
-      </label>
-      <textarea
-        id="transaction-error-details"
-        class="error-details-textarea"
-        readonly
-        [value]="approvalConfig()?.error || 'No additional details were provided.'">
-      </textarea>
+      <div class="error-message">{{ approvalConfig()?.error || 'An unexpected error occurred' }}</div>
       <kc-button
         [text]="'Close'"
         variant="secondary"

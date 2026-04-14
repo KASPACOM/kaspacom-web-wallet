@@ -4,7 +4,6 @@ import {
   BaseAssetStoreData,
 } from './base-assets-store.service';
 import { Erc20Token } from '@kaspacom/swap-sdk';
-import _ from 'lodash';
 import { EthereumWalletChainManager } from '../../etherium-services/etherium-wallet-chain.manager';
 import { L2WalletState } from '../../../classes/AppWallet';
 import { ERC20Contract } from '../../etherium-services/smart-contracts/contracts/erc20-contract';
@@ -46,6 +45,38 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
   }
 
   /**
+   * Merge graph/API tokens with locally saved imports. Must key by case-normalized
+   * address — API often returns lowercase `id` while local DB stores checksummed
+   * addresses; otherwise the same contract appears twice in the list.
+   */
+  private mergeErc20TokenSources(
+    graphTokens: Erc20Token[],
+    localTokens: Erc20Token[],
+  ): Erc20Token[] {
+    const byNormAddress = new Map<string, Erc20Token>();
+
+    const put = (token: Erc20Token) => {
+      let address = token.address;
+      try {
+        address = ethers.getAddress(token.address);
+      } catch {
+        // keep as-is if the id is not a valid EVM address
+      }
+      const key = address.toLowerCase();
+      byNormAddress.set(key, { ...token, address });
+    };
+
+    for (const t of graphTokens) {
+      put(t);
+    }
+    for (const t of localTokens) {
+      put(t);
+    }
+
+    return Array.from(byNormAddress.values());
+  }
+
+  /**
    * Reload KRC20 tokens with pagination
    */
   protected async getErc20Tokens(walletAddress: string): Promise<Erc20Token[]> {
@@ -54,13 +85,10 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
       this.getErc20TokensFromGraph(walletAddress).catch(() => []),
     ]);
 
-    const tokensById = _.keyBy(erc20TokensFromGraph, 'address');
-
-    for (const token of erc20TokensFromContracts) {
-      tokensById[token.address] = token;
-    }
-
-    return Object.values(tokensById);
+    return this.mergeErc20TokenSources(
+      erc20TokensFromGraph,
+      erc20TokensFromContracts,
+    );
   }
 
   protected async getErc20TokensFromGraph(
@@ -166,32 +194,53 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
     return parseFloat(formatUnits(balance.toString(), tokenDecimals));
   }
 
-  protected async addTokenToLocalStore(token: Erc20Token) {
+  public async addTokenToLocalStore(token: Erc20Token) {
     const chain = this.ethereumWalletChainManager.getCurrentChainSignal()();
 
     if (!chain) {
       throw new Error('Chain not found');
     }
 
-    await this.l2LocalERC20Tokens.addToken(token, chain);
-    await this.reloadAsset(L2_ASSET_KEYS.erc20);
-  }
-
-  protected async removeTokenFromLocalStore(token: Erc20Token) {
-    const chain = this.ethereumWalletChainManager.getCurrentChainSignal()();
-
-    if (!chain) {
-      throw new Error('Chain not found');
-    }
-
-    await this.l2LocalERC20Tokens.removeToken(token, chain);
-    await this.reloadAsset(L2_ASSET_KEYS.erc20);
-  }
-
-  protected isErc20TokenSavedOnLocalStorage(tokenAddress: string): boolean {
-    return !!this.l2LocalERC20Tokens.getToken(
-      tokenAddress,
-      this.ethereumWalletChainManager.getCurrentChainSignal()()!,
+    await this.l2LocalERC20Tokens.addToken(
+      {
+        ...token,
+        address: ethers.getAddress(token.address),
+      },
+      chain,
     );
+    await this.reloadAsset(L2_ASSET_KEYS.erc20);
+  }
+
+  public async removeTokenFromLocalStore(token: Erc20Token) {
+    const chain = this.ethereumWalletChainManager.getCurrentChainSignal()();
+
+    if (!chain) {
+      throw new Error('Chain not found');
+    }
+
+    await this.l2LocalERC20Tokens.removeToken(
+      {
+        ...token,
+        address: ethers.getAddress(token.address),
+      },
+      chain,
+    );
+    await this.reloadAsset(L2_ASSET_KEYS.erc20);
+  }
+
+  public async getSavedErc20TokenLocally(tokenAddress: string): Promise<Erc20Token | null> {
+    const chain = this.ethereumWalletChainManager.getCurrentChainSignal()();
+
+    if (!chain) {
+      throw new Error('Chain not found');
+    }
+
+    const normalizedAddress = ethers.getAddress(tokenAddress);
+    return (await this.l2LocalERC20Tokens.getToken(normalizedAddress, chain)) ?? null;
+  }
+
+  public async isErc20TokenSavedLocally(tokenAddress: string): Promise<boolean> {
+    const token = await this.getSavedErc20TokenLocally(tokenAddress);
+    return !!token;
   }
 }

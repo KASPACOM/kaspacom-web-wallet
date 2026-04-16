@@ -344,14 +344,15 @@ export class TokenSelectorModalComponent implements OnInit {
         }
       }
 
-      if (!this.destroyed) {
+      const currentChainId = this.chainManager.getCurrentChainSignal()();
+      if (!this.destroyed && currentChainId === chainIdAtFetch) {
         this.mostTradedTokens.set(Array.from(uniqueTokens.values()));
         this.mostTradedChainId = chainIdAtFetch;
       }
     } catch (err) {
       console.warn('[TokenSelector] Failed to load most traded tokens:', err);
     } finally {
-      if (!this.destroyed) {
+      if (!this.destroyed && this.chainManager.getCurrentChainSignal()() === chainIdAtFetch) {
         this.mostTradedLoading.set(false);
       }
     }

@@ -98,7 +98,14 @@ export class TokenSelectorModalComponent implements OnInit {
     effect(() => {
       const isOpen = this.open();
       untracked(() => {
-        if (!isOpen) return;
+        if (!isOpen) {
+          if (this.searchDebounceTimer) {
+            clearTimeout(this.searchDebounceTimer);
+            this.searchDebounceTimer = null;
+          }
+          this.searchLoading.set(false);
+          return;
+        }
         this.searchQuery.set('');
         this.searchResults.set([]);
         if (this.searchDebounceTimer) {

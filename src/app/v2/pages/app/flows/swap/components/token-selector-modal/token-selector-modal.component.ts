@@ -102,6 +102,8 @@ export class TokenSelectorModalComponent implements OnInit {
             clearTimeout(this.searchDebounceTimer);
             this.searchDebounceTimer = null;
           }
+          this.searchRequestId++;
+          this.searchResults.set([]);
           this.searchLoading.set(false);
           return;
         }

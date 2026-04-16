@@ -102,23 +102,25 @@
         @if (searchHistory().length) {
           <div class="section-header">Recent searches</div>
           @for (token of searchHistory(); track token.address) {
-            <button class="token-item" (click)="onTokenSelect(token)">
-              <div class="token-info">
-                <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
-                <div class="token-details">
-                  <span class="token-symbol">{{ token.symbol }}</span>
-                  <div class="token-meta">
-                    <span class="token-name">{{ token.name }}</span>
-                    <span class="token-address" (click)="copyAddress($event, token.address)" title="Copy address">
-                      {{ shortenAddress(token.address) }}
-                    </span>
+            @if (token.address !== excludedToken()?.address) {
+              <button class="token-item" (click)="onTokenSelect(token)">
+                <div class="token-info">
+                  <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
+                  <div class="token-details">
+                    <span class="token-symbol">{{ token.symbol }}</span>
+                    <div class="token-meta">
+                      <span class="token-name">{{ token.name }}</span>
+                      <span class="token-address" (click)="copyAddress($event, token.address)" title="Copy address">
+                        {{ shortenAddress(token.address) }}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              @if (token.balance) {
-                <span class="token-balance">{{ token.balance | commaFormatter }}</span>
-              }
-            </button>
+                @if (token.balance) {
+                  <span class="token-balance">{{ token.balance | commaFormatter }}</span>
+                }
+              </button>
+            }
           }
         }
 

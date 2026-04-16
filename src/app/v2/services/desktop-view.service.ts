@@ -1,6 +1,7 @@
 import { Injectable, signal, WritableSignal } from '@angular/core';
 
 const STORAGE_KEY = 'kw-desktop-expanded';
+const MOBILE_BREAKPOINT = 960;
 
 @Injectable({ providedIn: 'root' })
 export class DesktopViewService {
@@ -20,8 +21,10 @@ export class DesktopViewService {
       }
     })();
 
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const isDesktop = !this.isIframe && window.innerWidth >= MOBILE_BREAKPOINT;
     this.isExpandedView = signal(
-      !this.isIframe && localStorage.getItem(STORAGE_KEY) === 'true',
+      stored !== null ? stored === 'true' : isDesktop,
     );
   }
 

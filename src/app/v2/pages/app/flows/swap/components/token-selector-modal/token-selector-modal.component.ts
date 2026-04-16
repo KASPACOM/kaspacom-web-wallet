@@ -1,35 +1,73 @@
 import {
   Component,
   EventEmitter,
+  OnInit,
   Output,
-  computed,
   inject,
   input,
   signal,
+  computed,
+  effect,
+  untracked,
+  DestroyRef,
 } from '@angular/core';
-import { CommonModule, SlicePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { KcBaseModalComponent, KcInputComponent } from 'kaspacom-ui';
 import { MessagePopupService } from '../../../../../../../services/message-popup.service';
 import type { Erc20Token } from '@kaspacom/swap-sdk';
 import { CommaFormatterPipe } from '../../../../../../../pipes/comma-formatter.pipe';
 import { TokenLogoComponent } from '../../../../../../../components/token-logo/token-logo.component';
+import {
+  KaspaComDefiApiService,
+  DexTokenSearchResult,
+  LfgSearchToken,
+} from '../../../../../../../services/kaspacom-api/kaspacom-defi-api.service';
+import { EthereumWalletChainManager } from '../../../../../../../services/etherium-services/etherium-wallet-chain.manager';
+import { environment } from '../../../../../../../../environments/environment';
+
+const HISTORY_STORAGE_KEY_PREFIX = 'swap-token-search-history';
+const MAX_HISTORY = 3;
+const EVM_ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/;
+
+function isLocalStorageAvailable(): boolean {
+  try {
+    const key = '__ls_test__';
+    localStorage.setItem(key, '1');
+    localStorage.removeItem(key);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 @Component({
   selector: 'app-token-selector-modal',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     KcBaseModalComponent,
     KcInputComponent,
-    SlicePipe,
     CommaFormatterPipe,
     TokenLogoComponent,
   ],
   templateUrl: './token-selector-modal.component.html',
   styleUrl: './token-selector-modal.component.scss',
 })
-export class TokenSelectorModalComponent {
+export class TokenSelectorModalComponent implements OnInit {
   private messagePopupService = inject(MessagePopupService);
+  private defiApiService = inject(KaspaComDefiApiService);
+  private chainManager = inject(EthereumWalletChainManager);
+  private destroyRef = inject(DestroyRef);
+
+  private historyStorageKey = computed(() => {
+    const chainId = this.chainManager.getCurrentChainSignal()();
+    const chainConfig = chainId ? this.chainManager.getChainConfig(chainId) : undefined;
+    const network = chainConfig?.defiApiNetworkName || chainConfig?.chainName || 'unknown';
+    const env = environment.isProduction ? 'prod' : 'dev';
+    return `${HISTORY_STORAGE_KEY_PREFIX}-${network}-${env}`;
+  });
 
   open = input(false);
   isLoading = input(false);
@@ -38,53 +76,299 @@ export class TokenSelectorModalComponent {
   @Output() close = new EventEmitter<void>();
   @Output() selectToken = new EventEmitter<Erc20Token>();
 
+  // Search state
   searchQuery = signal('');
+  searchLoading = signal(false);
+  searchResults = signal<Erc20Token[]>([]);
 
-  filteredTokens = computed(() => {
-    const query = this.searchQuery().trim().toLowerCase();
-    const excluded = this.excludedToken();
-    let tokens = this.tokens();
+  // Default state (no query)
+  mostTradedTokens = signal<Erc20Token[]>([]);
+  mostTradedLoading = signal(false);
+  searchHistory = signal<Erc20Token[]>([]);
 
-    if (excluded) {
-      tokens = tokens.filter(
-        (t) => t.address.toLowerCase() !== excluded.address.toLowerCase(),
-      );
-    }
+  private localStorageAvailable = isLocalStorageAvailable();
+  private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private destroyed = false;
 
-    const sortByBalance = (list: Erc20Token[]) =>
-      [...list].sort((a, b) => (b.balance ?? 0) - (a.balance ?? 0));
-
-    if (!query) return sortByBalance(tokens);
-
-    return sortByBalance(
-      tokens.filter(
-        (token) =>
-          token.symbol.toLowerCase().includes(query) ||
-          token.name.toLowerCase().includes(query) ||
-          token.address.toLowerCase().includes(query),
-      ),
-    );
-  });
-
-  onSearchChange(value: string) {
-    this.searchQuery.set(value);
+  constructor() {
+    // Reload when the modal opens so timing issues on initial mount don't leave
+    // the section empty (the component is always in the DOM, ngOnInit fires once).
+    effect(() => {
+      const isOpen = this.open();
+      untracked(() => {
+        if (!isOpen) return;
+        this.searchQuery.set('');
+        this.searchResults.set([]);
+        if (this.searchDebounceTimer) {
+          clearTimeout(this.searchDebounceTimer);
+          this.searchDebounceTimer = null;
+        }
+        this.loadSearchHistory();
+        if (!this.mostTradedTokens().length && !this.mostTradedLoading()) {
+          this.loadMostTradedTokens();
+        }
+      });
+    });
   }
 
-  onTokenSelect(token: Erc20Token) {
+  // User's own tokens (sorted by balance, minus excluded)
+  userTokens = computed(() => {
+    const excluded = this.excludedToken();
+    const tokens = this.tokens();
+    const filtered = excluded
+      ? tokens.filter(
+          (t) => t.address.toLowerCase() !== excluded.address.toLowerCase(),
+        )
+      : tokens;
+    return this.sortByBalance(filtered);
+  });
+
+  ngOnInit(): void {
+    this.destroyRef.onDestroy(() => {
+      this.destroyed = true;
+      if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer);
+    });
+  }
+
+  onSearchChange(value: string): void {
+    this.searchQuery.set(value);
+
+    if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer);
+
+    if (!value.trim()) {
+      this.searchResults.set([]);
+      return;
+    }
+
+    this.searchLoading.set(true);
+    this.searchDebounceTimer = setTimeout(() => {
+      this.performSearch(value.trim());
+    }, 300);
+  }
+
+  async onTokenSelect(token: Erc20Token): Promise<void> {
+    this.addToHistory(token);
     this.selectToken.emit(token);
   }
 
-  onClose() {
+  onClose(): void {
     this.close.emit();
   }
 
-  async copyAddress(event: Event, address: string) {
+  async copyAddress(event: Event, address: string): Promise<void> {
     event.stopPropagation();
     try {
       await navigator.clipboard.writeText(address);
       this.messagePopupService.showSuccess('Address copied to clipboard');
     } catch {
       this.messagePopupService.showError('Failed to copy address');
+    }
+  }
+
+  shortenAddress(address: string): string {
+    if (!address || address.length < 10) return address;
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  }
+
+  private sortByBalance(list: Erc20Token[]): Erc20Token[] {
+    return [...list].sort((a, b) => (b.balance ?? 0) - (a.balance ?? 0));
+  }
+
+  private async performSearch(query: string): Promise<void> {
+    try {
+      let results: Erc20Token[];
+
+      if (EVM_ADDRESS_REGEX.test(query)) {
+        results = await this.searchByAddress(query);
+      } else {
+        results = await this.searchByTerm(query);
+      }
+
+      if (!this.destroyed) {
+        this.searchResults.set(results);
+      }
+    } catch {
+      if (!this.destroyed) {
+        this.searchResults.set([]);
+      }
+    } finally {
+      if (!this.destroyed) {
+        this.searchLoading.set(false);
+      }
+    }
+  }
+
+  private async searchByAddress(address: string): Promise<Erc20Token[]> {
+    const lowerAddr = address.toLowerCase();
+    const excluded = this.excludedToken();
+
+    if (excluded && excluded.address.toLowerCase() === lowerAddr) {
+      return [];
+    }
+
+    // Check local user tokens first
+    const local = this.tokens().find(
+      (t) => t.address.toLowerCase() === lowerAddr,
+    );
+    if (local) return [local];
+
+    // Fall back to backend metadata endpoint
+    const metadata = await this.defiApiService.getTokenMetadata(address);
+    if (metadata?.name && metadata?.symbol) {
+      return [
+        {
+          address,
+          name: metadata.name,
+          symbol: metadata.symbol,
+          decimals: Number(metadata.decimals),
+          balance: 0,
+        },
+      ];
+    }
+
+    return [];
+  }
+
+  private async searchByTerm(query: string): Promise<Erc20Token[]> {
+    const [dexResults, lfgResults] = await Promise.all([
+      this.defiApiService.searchDexTokens(query),
+      this.defiApiService.searchLfgTokens(query),
+    ]);
+
+    const localBalanceMap = new Map<string, number>(
+      this.tokens().map((t) => [t.address.toLowerCase(), t.balance ?? 0]),
+    );
+    const excluded = this.excludedToken();
+
+    const seen = new Set<string>();
+    const merged: Erc20Token[] = [];
+
+    const addToken = (token: Erc20Token) => {
+      const addrLower = token.address.toLowerCase();
+      if (seen.has(addrLower)) return;
+      if (excluded && excluded.address.toLowerCase() === addrLower) return;
+      seen.add(addrLower);
+      merged.push({
+        ...token,
+        balance: localBalanceMap.get(addrLower) ?? token.balance ?? 0,
+      });
+    };
+
+    // User tokens matching the query first
+    const queryLower = query.toLowerCase();
+    for (const t of this.tokens()) {
+      if (
+        t.name?.toLowerCase().includes(queryLower) ||
+        t.symbol?.toLowerCase().includes(queryLower)
+      ) {
+        addToken(t);
+      }
+    }
+
+    for (const r of dexResults) {
+      addToken(this.dexResultToToken(r));
+    }
+
+    for (const r of lfgResults) {
+      addToken(this.lfgResultToToken(r));
+    }
+
+    return this.sortByBalance(merged);
+  }
+
+  private dexResultToToken(r: DexTokenSearchResult): Erc20Token {
+    return {
+      address: r.id,
+      name: r.name,
+      symbol: r.symbol,
+      decimals: Number(r.decimals),
+      balance: 0,
+    };
+  }
+
+  private lfgResultToToken(r: LfgSearchToken): Erc20Token {
+    return {
+      address: r.tokenAddress,
+      name: r.name,
+      symbol: r.ticker,
+      decimals: r.decimals,
+      balance: 0,
+    };
+  }
+
+  private async loadMostTradedTokens(): Promise<void> {
+    this.mostTradedLoading.set(true);
+    try {
+      const pairs = await this.defiApiService.getMostTradedPairs();
+
+      const localBalanceMap = new Map<string, number>(
+        this.tokens().map((t) => [t.address.toLowerCase(), t.balance ?? 0]),
+      );
+      // Tokens the user already owns — hide them from "Most traded" to avoid duplication
+      const userTokenAddresses = new Set<string>(
+        this.tokens().map((t) => t.address.toLowerCase()),
+      );
+      const excluded = this.excludedToken();
+
+      const uniqueTokens = new Map<string, Erc20Token>();
+      for (const info of pairs.slice(0, 15)) {
+        const pairData = info?.pair ?? info; // handle both nested and flat structures
+        for (const raw of [pairData?.token0, pairData?.token1]) {
+          if (!raw) continue;
+          // handle both `id` and `address` field names from the API
+          const addr: string | undefined = raw.id ?? (raw as any).address;
+          if (!addr) continue;
+          const addrLower = addr.toLowerCase();
+          if (uniqueTokens.has(addrLower)) continue;
+          if (userTokenAddresses.has(addrLower)) continue;
+          if (excluded && excluded.address.toLowerCase() === addrLower) continue;
+          uniqueTokens.set(addrLower, {
+            address: addr,
+            name: raw.name ?? '',
+            symbol: raw.symbol ?? '',
+            decimals: Number(raw.decimals ?? 18),
+            balance: localBalanceMap.get(addrLower) ?? 0,
+          });
+        }
+      }
+
+      if (!this.destroyed) {
+        this.mostTradedTokens.set(Array.from(uniqueTokens.values()));
+      }
+    } catch (err) {
+      console.warn('[TokenSelector] Failed to load most traded tokens:', err);
+    } finally {
+      if (!this.destroyed) {
+        this.mostTradedLoading.set(false);
+      }
+    }
+  }
+
+  private loadSearchHistory(): void {
+    if (!this.localStorageAvailable) return;
+    try {
+      const raw = localStorage.getItem(this.historyStorageKey());
+      if (raw) {
+        this.searchHistory.set(JSON.parse(raw));
+      }
+    } catch {
+      // ignore — history is non-critical
+    }
+  }
+
+  private addToHistory(token: Erc20Token): void {
+    if (!this.localStorageAvailable) return;
+    try {
+      let history = this.searchHistory();
+      history = history.filter(
+        (t) => t.address.toLowerCase() !== token.address.toLowerCase(),
+      );
+      history.unshift({ ...token, balance: token.balance ?? 0 });
+      if (history.length > MAX_HISTORY) history.pop();
+      this.searchHistory.set(history);
+      localStorage.setItem(this.historyStorageKey(), JSON.stringify(history));
+    } catch {
+      // ignore
     }
   }
 }

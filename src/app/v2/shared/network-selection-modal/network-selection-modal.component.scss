@@ -58,6 +58,16 @@
           margin-right: 16px;
           min-width: 32px;
           text-align: center;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          .chain-icon {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            border-radius: 50%;
+          }
         }
 
         .network-info {

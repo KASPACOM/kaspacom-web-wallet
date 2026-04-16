@@ -1,34 +1,132 @@
 @if (open()) {
 <kc-base-modal title="Select a token" [showCloseButton]="true" [autoWidth]="false" (close)="onClose()">
   <div class="token-selector-content">
-    <kc-input placeholder="Search name, symbol, or address" type="text" [isFullWidth]="true" prefixIcon="pi pi-search"
-      (valueChange)="onSearchChange($event)"></kc-input>
 
-    <div class="token-list">
-      @if (isLoading()) {
-      <div class="flex justify-content-center p-24">
-        <span class="text-gray-60">Loading tokens...</span>
-      </div>
-      } @else {
-      @for (token of filteredTokens(); track token.address) {
-      <button class="token-item" (click)="onTokenSelect(token)">
-        <div class="token-info">
-          <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
-          <div class="token-details">
-            <span class="token-symbol">{{ token.symbol }}</span>
-            <span class="token-name">{{ token.name }}</span>
+    <kc-input
+      placeholder="Search name, symbol, or address"
+      type="text"
+      [isFullWidth]="true"
+      prefixIcon="pi pi-search"
+      (valueChange)="onSearchChange($event)"
+    ></kc-input>
+
+    <div class="token-list" #scrollContainer>
+
+      <!-- ── SEARCH ACTIVE ── -->
+      @if (searchQuery().trim()) {
+
+        @if (searchLoading()) {
+          <div class="section-loading">Searching...</div>
+        } @else if (searchResults().length === 0) {
+          <div class="no-tokens">
+            <span>No tokens found</span>
+            <span class="no-tokens-hint">Try another name or paste a contract address.</span>
           </div>
-        </div>
-        <div class="token-balance-info">
-          @if (token.balance) {
-          <span class="token-balance">{{ token.balance | commaFormatter }}</span>
+        } @else {
+          @for (token of searchResults(); track token.address) {
+            <button class="token-item" (click)="onTokenSelect(token)">
+              <div class="token-info">
+                <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
+                <div class="token-details">
+                  <span class="token-symbol">{{ token.symbol }}</span>
+                  <div class="token-meta">
+                    <span class="token-name">{{ token.name }}</span>
+                    <span class="token-address" (click)="copyAddress($event, token.address)" title="Copy address">
+                      {{ shortenAddress(token.address) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              @if (token.balance) {
+                <span class="token-balance">{{ token.balance | commaFormatter }}</span>
+              }
+            </button>
           }
-          <span class="token-address" (click)="copyAddress($event, token.address)" title="Click to copy address">{{ token.address | slice:0:6 }}...{{ token.address | slice:-4 }}</span>
-        </div>
-      </button>
-      } @empty {
-      <div class="no-tokens">No tokens found</div>
-      }
+        }
+
+      } @else {
+
+        <!-- ── NO QUERY: YOUR TOKENS ── -->
+        @if (isLoading()) {
+          <div class="section-loading">Loading tokens...</div>
+        } @else if (userTokens().length) {
+          <div class="section-header">Your tokens</div>
+          @for (token of userTokens(); track token.address) {
+            <button class="token-item" (click)="onTokenSelect(token)">
+              <div class="token-info">
+                <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
+                <div class="token-details">
+                  <span class="token-symbol">{{ token.symbol }}</span>
+                  <div class="token-meta">
+                    <span class="token-name">{{ token.name }}</span>
+                    <span class="token-address" (click)="copyAddress($event, token.address)" title="Copy address">
+                      {{ shortenAddress(token.address) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              @if (token.balance) {
+                <span class="token-balance">{{ token.balance | commaFormatter }}</span>
+              }
+            </button>
+          }
+        }
+
+        <!-- ── NO QUERY: MOST TRADED ── -->
+        @if (mostTradedLoading()) {
+          <div class="section-loading">Loading popular tokens...</div>
+        } @else if (mostTradedTokens().length) {
+          <div class="section-header">Most traded</div>
+          @for (token of mostTradedTokens(); track token.address) {
+            <button class="token-item" (click)="onTokenSelect(token)">
+              <div class="token-info">
+                <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
+                <div class="token-details">
+                  <span class="token-symbol">{{ token.symbol }}</span>
+                  <div class="token-meta">
+                    <span class="token-name">{{ token.name }}</span>
+                    <span class="token-address" (click)="copyAddress($event, token.address)" title="Copy address">
+                      {{ shortenAddress(token.address) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              @if (token.balance) {
+                <span class="token-balance">{{ token.balance | commaFormatter }}</span>
+              }
+            </button>
+          }
+        }
+
+        <!-- ── NO QUERY: RECENT SEARCHES ── -->
+        @if (searchHistory().length) {
+          <div class="section-header">Recent searches</div>
+          @for (token of searchHistory(); track token.address) {
+            <button class="token-item" (click)="onTokenSelect(token)">
+              <div class="token-info">
+                <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
+                <div class="token-details">
+                  <span class="token-symbol">{{ token.symbol }}</span>
+                  <div class="token-meta">
+                    <span class="token-name">{{ token.name }}</span>
+                    <span class="token-address" (click)="copyAddress($event, token.address)" title="Copy address">
+                      {{ shortenAddress(token.address) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              @if (token.balance) {
+                <span class="token-balance">{{ token.balance | commaFormatter }}</span>
+              }
+            </button>
+          }
+        }
+
+        <!-- ── EMPTY STATE (all sections empty) ── -->
+        @if (!isLoading() && !mostTradedLoading() && userTokens().length === 0 && mostTradedTokens().length === 0 && searchHistory().length === 0) {
+          <div class="no-tokens">No tokens available</div>
+        }
+
       }
     </div>
   </div>

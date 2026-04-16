@@ -42,8 +42,13 @@ export class NetworkSelectionModalComponent {
     this.onClose();
   }
 
-  getNetworkIcon(network: EIP1193ProviderChain): string {
-    return this.ethereumWalletChainManager.getChainEnvConfig(network.chainId)?.icon || '🌐';
+  getNetworkIcon(network: EIP1193ProviderChain): string | null {
+    return this.ethereumWalletChainManager.getChainEnvConfig(network.chainId)?.icon || null;
+  }
+
+  getNetworkShortName(network: EIP1193ProviderChain): string {
+    const envConfig = this.ethereumWalletChainManager.getChainEnvConfig(network.chainId);
+    return envConfig?.shortName || network.chainName;
   }
 
   isCurrentNetwork(networkId: string): boolean {

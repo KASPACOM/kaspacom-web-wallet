@@ -147,6 +147,8 @@ export class TokenSelectorModalComponent implements OnInit {
 
     if (!value.trim()) {
       this.searchResults.set([]);
+      this.searchLoading.set(false);
+      this.searchRequestId++;
       return;
     }
 

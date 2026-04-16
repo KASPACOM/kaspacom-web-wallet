@@ -19,8 +19,9 @@
       <div *ngFor="let network of networks" class="network-item" [class.selected]="isCurrentNetwork(network.chainId)"
         (click)="setL2Network(network)">
         <div class="network-icon">
-          @if (getNetworkIcon(network)) {
-            <img [src]="getNetworkIcon(network)!" alt="" class="chain-icon" />
+          @let networkIcon = getNetworkIcon(network);
+          @if (networkIcon) {
+            <img [src]="networkIcon!" alt="" class="chain-icon" />
           } @else {
             🌐
           }

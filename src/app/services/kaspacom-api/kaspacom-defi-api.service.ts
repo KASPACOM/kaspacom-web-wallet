@@ -30,6 +30,37 @@ export interface MostTradedPairResult {
   swapCount: number;
 }
 
+// Raw shapes returned by the API — may differ from the normalized types above.
+interface RawMostTradedToken {
+  id?: string;
+  address?: string;
+  symbol?: string;
+  name?: string;
+  decimals?: string;
+}
+
+export interface MostTradedPairInfo {
+  pair: MostTradedPair;
+  amountKAS: string;
+  swapCount: number;
+}
+
+export interface MostTradedPair {
+  id: string;
+  token0: {
+    id: string;
+    symbol: string;
+    name: string;
+    decimals: string;
+  };
+  token1: {
+    id: string;
+    symbol: string;
+    name: string;
+    decimals: string;
+  };
+}
+
 export interface LfgSearchToken {
   tokenAddress: string;
   ticker: string;
@@ -103,10 +134,9 @@ export class KaspaComDefiApiService {
 
     return firstValueFrom(
       this.httpClient
-        .get<{ tokens: DexTokenSearchResult[] }>(
-          `${this.baseurl}/${TOKENS_CONTROLLER}/search`,
-          { params },
-        )
+        .get<{
+          tokens: DexTokenSearchResult[];
+        }>(`${this.baseurl}/${TOKENS_CONTROLLER}/search`, { params })
         .pipe(
           map((response) => response?.tokens ?? []),
           catchError(() => of([])),
@@ -124,12 +154,32 @@ export class KaspaComDefiApiService {
 
     return firstValueFrom(
       this.httpClient
-        .get<{ pairs: MostTradedPairResult[] }>(
-          `${this.baseurl}/${DEX_CONTROLLER}/most-traded/pairs`,
-          { params },
-        )
+        .get<{
+          pairs: MostTradedPairInfo[];
+        }>(`${this.baseurl}/${DEX_CONTROLLER}/most-traded/pairs`, { params })
         .pipe(
-          map((response) => response?.pairs ?? []),
+          map((response) =>
+            (response?.pairs ?? []).map((entry): MostTradedPairResult => {
+              const pairData = entry.pair ?? entry;
+              const normalizeToken = (
+                raw: RawMostTradedToken | undefined,
+              ): MostTradedPairToken => ({
+                id: raw?.id ?? raw?.address ?? '',
+                symbol: raw?.symbol ?? '',
+                name: raw?.name ?? '',
+                decimals: raw?.decimals ?? '18',
+              });
+              return {
+                pair: {
+                  id: pairData.id ?? '',
+                  token0: normalizeToken(pairData.token0),
+                  token1: normalizeToken(pairData.token1),
+                },
+                amountKAS: entry.amountKAS ?? '',
+                swapCount: entry.swapCount ?? 0,
+              };
+            }),
+          ),
           catchError(() => of([])),
         ),
     );
@@ -153,10 +203,12 @@ export class KaspaComDefiApiService {
 
     return firstValueFrom(
       this.httpClient
-        .get<{ success: boolean; result: LfgSearchToken[] }>(
-          `${this.baseurl}/${EXPLORER_CONTROLLER}/lfg-tokens/search`,
-          { params },
-        )
+        .get<{
+          success: boolean;
+          result: LfgSearchToken[];
+        }>(`${this.baseurl}/${EXPLORER_CONTROLLER}/lfg-tokens/search`, {
+          params,
+        })
         .pipe(
           map((response) => (response?.success ? response.result : [])),
           catchError(() => of([])),
@@ -175,10 +227,13 @@ export class KaspaComDefiApiService {
 
     return firstValueFrom(
       this.httpClient
-        .get<{ name: string; symbol: string; decimals: string }>(
-          `${this.baseurl}/${TOKENS_CONTROLLER}/${tokenAddress}/metadata`,
-          { params },
-        )
+        .get<{
+          name: string;
+          symbol: string;
+          decimals: string;
+        }>(`${this.baseurl}/${TOKENS_CONTROLLER}/${tokenAddress}/metadata`, {
+          params,
+        })
         .pipe(catchError(() => of(null))),
     );
   }

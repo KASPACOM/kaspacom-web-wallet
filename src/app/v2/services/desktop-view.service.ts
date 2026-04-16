@@ -1,4 +1,5 @@
-import { Injectable, signal, WritableSignal } from '@angular/core';
+import { inject, Injectable, PLATFORM_ID, signal, WritableSignal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 
 const STORAGE_KEY = 'kw-desktop-expanded';
 export const MOBILE_BREAKPOINT = 960;
@@ -11,18 +12,24 @@ export class DesktopViewService {
   /** User-selected expanded-view preference (persisted in localStorage). */
   readonly isExpandedView: WritableSignal<boolean>;
 
-  constructor() {
-    this.isIframe = (() => {
-      try {
-        return window.self !== window.top;
-      } catch {
-        // Cross-origin iframe – treat as embedded.
-        return true;
-      }
-    })();
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const isDesktop = !this.isIframe && window.innerWidth >= MOBILE_BREAKPOINT;
+  constructor() {
+    if (this.isBrowser) {
+      this.isIframe = (() => {
+        try {
+          return window.self !== window.top;
+        } catch {
+          // Cross-origin iframe – treat as embedded.
+          return true;
+        }
+      })();
+    } else {
+      this.isIframe = false;
+    }
+
+    const stored = this.isBrowser ? localStorage.getItem(STORAGE_KEY) : null;
+    const isDesktop = this.isBrowser && !this.isIframe && window.innerWidth >= MOBILE_BREAKPOINT;
     this.isExpandedView = signal(
       stored !== null ? stored === 'true' : isDesktop,
     );
@@ -32,6 +39,8 @@ export class DesktopViewService {
     if (this.isIframe) return;
     const next = !this.isExpandedView();
     this.isExpandedView.set(next);
-    localStorage.setItem(STORAGE_KEY, String(next));
+    if (this.isBrowser) {
+      localStorage.setItem(STORAGE_KEY, String(next));
+    }
   }
 }

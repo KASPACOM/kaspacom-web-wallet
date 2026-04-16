@@ -35,7 +35,6 @@
                       type="button"
                       class="token-address"
                       (click)="copyAddress($event, token.address)"
-                      title="Copy address"
                       [attr.aria-label]="'Copy address for ' + token.symbol"
                     >
                       {{ shortenAddress(token.address) }}
@@ -65,9 +64,14 @@
                   <span class="token-symbol">{{ token.symbol }}</span>
                   <div class="token-meta">
                     <span class="token-name">{{ token.name }}</span>
-                    <span class="token-address" (click)="copyAddress($event, token.address)" title="Copy address">
+                    <button
+                      type="button"
+                      class="token-address"
+                      (click)="copyAddress($event, token.address)"
+                      [attr.aria-label]="'Copy address for ' + token.symbol"
+                    >
                       {{ shortenAddress(token.address) }}
-                    </span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -91,9 +95,14 @@
                   <span class="token-symbol">{{ token.symbol }}</span>
                   <div class="token-meta">
                     <span class="token-name">{{ token.name }}</span>
-                    <span class="token-address" (click)="copyAddress($event, token.address)" title="Copy address">
+                    <button
+                      type="button"
+                      class="token-address"
+                      (click)="copyAddress($event, token.address)"
+                      [attr.aria-label]="'Copy address for ' + token.symbol"
+                    >
                       {{ shortenAddress(token.address) }}
-                    </span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -116,9 +125,14 @@
                     <span class="token-symbol">{{ token.symbol }}</span>
                     <div class="token-meta">
                       <span class="token-name">{{ token.name }}</span>
-                      <span class="token-address" (click)="copyAddress($event, token.address)" title="Copy address">
+                      <button
+                        type="button"
+                        class="token-address"
+                        (click)="copyAddress($event, token.address)"
+                        [attr.aria-label]="'Copy address for ' + token.symbol"
+                      >
                         {{ shortenAddress(token.address) }}
-                      </span>
+                      </button>
                     </div>
                   </div>
                 </div>

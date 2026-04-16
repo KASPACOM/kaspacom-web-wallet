@@ -128,6 +128,10 @@
 }
 
 .token-address {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
   font-size: 11px;
   color: var(--gray-40, #777);
   font-family: monospace;
@@ -137,6 +141,12 @@
 
   &:hover {
     color: var(--primary, #6fc7ba);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary, #6fc7ba);
+    outline-offset: 2px;
+    border-radius: 2px;
   }
 }
 

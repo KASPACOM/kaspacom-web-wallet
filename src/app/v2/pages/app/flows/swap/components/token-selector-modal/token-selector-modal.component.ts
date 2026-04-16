@@ -327,11 +327,8 @@ export class TokenSelectorModalComponent implements OnInit {
 
       const uniqueTokens = new Map<string, Erc20Token>();
       for (const info of pairs.slice(0, 15)) {
-        const pairData = info?.pair ?? info; // handle both nested and flat structures
-        for (const raw of [pairData?.token0, pairData?.token1]) {
-          if (!raw) continue;
-          // handle both `id` and `address` field names from the API
-          const addr: string | undefined = raw.id ?? (raw as any).address;
+        for (const raw of [info.pair.token0, info.pair.token1]) {
+          const addr = raw.id;
           if (!addr) continue;
           const addrLower = addr.toLowerCase();
           if (uniqueTokens.has(addrLower)) continue;

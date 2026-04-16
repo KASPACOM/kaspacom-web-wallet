@@ -12,7 +12,6 @@ import {
   DestroyRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { KcBaseModalComponent, KcInputComponent } from 'kaspacom-ui';
 import { MessagePopupService } from '../../../../../../../services/message-popup.service';
 import type { Erc20Token } from '@kaspacom/swap-sdk';
@@ -46,7 +45,6 @@ function isLocalStorageAvailable(): boolean {
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     KcBaseModalComponent,
     KcInputComponent,
     CommaFormatterPipe,
@@ -89,6 +87,7 @@ export class TokenSelectorModalComponent implements OnInit {
   private localStorageAvailable = isLocalStorageAvailable();
   private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
   private destroyed = false;
+  private searchRequestId = 0;
   // Track which chain the cached mostTradedTokens were fetched for.
   private mostTradedChainId: string | undefined = undefined;
 
@@ -152,8 +151,9 @@ export class TokenSelectorModalComponent implements OnInit {
     }
 
     this.searchLoading.set(true);
+    const requestId = ++this.searchRequestId;
     this.searchDebounceTimer = setTimeout(() => {
-      this.performSearch(value.trim());
+      this.performSearch(value.trim(), requestId);
     }, 300);
   }
 
@@ -185,7 +185,7 @@ export class TokenSelectorModalComponent implements OnInit {
     return [...list].sort((a, b) => (b.balance ?? 0) - (a.balance ?? 0));
   }
 
-  private async performSearch(query: string): Promise<void> {
+  private async performSearch(query: string, requestId: number): Promise<void> {
     try {
       let results: Erc20Token[];
 
@@ -195,15 +195,15 @@ export class TokenSelectorModalComponent implements OnInit {
         results = await this.searchByTerm(query);
       }
 
-      if (!this.destroyed) {
+      if (!this.destroyed && requestId === this.searchRequestId) {
         this.searchResults.set(results);
       }
     } catch {
-      if (!this.destroyed) {
+      if (!this.destroyed && requestId === this.searchRequestId) {
         this.searchResults.set([]);
       }
     } finally {
-      if (!this.destroyed) {
+      if (!this.destroyed && requestId === this.searchRequestId) {
         this.searchLoading.set(false);
       }
     }

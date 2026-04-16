@@ -1,7 +1,7 @@
 import { Injectable, signal, WritableSignal } from '@angular/core';
 
 const STORAGE_KEY = 'kw-desktop-expanded';
-const MOBILE_BREAKPOINT = 960;
+export const MOBILE_BREAKPOINT = 960;
 
 @Injectable({ providedIn: 'root' })
 export class DesktopViewService {

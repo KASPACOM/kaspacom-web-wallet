@@ -21,7 +21,7 @@
         @if (currentNetworkInfo()?.icon) {
           <img [src]="currentNetworkInfo()!.icon!" alt="" class="chain-icon" />
         } @else {
-          <img src="/images/tokens-logos/KAS.png" alt="Kaspa" class="chain-icon" />
+          <span class="chain-icon" aria-label="Generic network icon" role="img">🌐</span>
         }
       </div>
       <div class="network-name">

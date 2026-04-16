@@ -25,7 +25,7 @@ export const environment: Environment = {
   l2Configs: [
     {
       sdkName: 'kasplex-testnet',
-      icon: '/images/chains/kasplex.svg',
+      icon: 'images/chains/kasplex.svg',
       shortName: 'Kasplex',
       l1TransactionPrefix: 'kasplex',
       customChainConfig: {
@@ -44,7 +44,7 @@ export const environment: Environment = {
     },
     {
       sdkName: 'igra-testnet',
-      icon: '/images/chains/igra.svg',
+      icon: 'images/chains/igra.svg',
       shortName: 'Galleon',
       l1TransactionPrefix: 'igra',
       customChainConfig: {

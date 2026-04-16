@@ -24,7 +24,14 @@
           </div>
         } @else {
           @for (token of searchResults(); track token.address) {
-            <button class="token-item" (click)="onTokenSelect(token)">
+            <div
+              class="token-item"
+              role="button"
+              tabindex="0"
+              (click)="onTokenSelect(token)"
+              (keydown.enter)="onTokenSelect(token)"
+              (keydown.space)="$event.preventDefault(); onTokenSelect(token)"
+            >
               <div class="token-info">
                 <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
                 <div class="token-details">
@@ -45,7 +52,7 @@
               @if (token.balance) {
                 <span class="token-balance">{{ token.balance | commaFormatter }}</span>
               }
-            </button>
+            </div>
           }
         }
 
@@ -57,7 +64,14 @@
         } @else if (userTokens().length) {
           <div class="section-header">Your tokens</div>
           @for (token of userTokens(); track token.address) {
-            <button class="token-item" (click)="onTokenSelect(token)">
+            <div
+              class="token-item"
+              role="button"
+              tabindex="0"
+              (click)="onTokenSelect(token)"
+              (keydown.enter)="onTokenSelect(token)"
+              (keydown.space)="$event.preventDefault(); onTokenSelect(token)"
+            >
               <div class="token-info">
                 <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
                 <div class="token-details">
@@ -78,7 +92,7 @@
               @if (token.balance) {
                 <span class="token-balance">{{ token.balance | commaFormatter }}</span>
               }
-            </button>
+            </div>
           }
         }
 
@@ -88,7 +102,14 @@
         } @else if (mostTradedTokens().length) {
           <div class="section-header">Most traded</div>
           @for (token of mostTradedTokens(); track token.address) {
-            <button class="token-item" (click)="onTokenSelect(token)">
+            <div
+              class="token-item"
+              role="button"
+              tabindex="0"
+              (click)="onTokenSelect(token)"
+              (keydown.enter)="onTokenSelect(token)"
+              (keydown.space)="$event.preventDefault(); onTokenSelect(token)"
+            >
               <div class="token-info">
                 <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
                 <div class="token-details">
@@ -109,7 +130,7 @@
               @if (token.balance) {
                 <span class="token-balance">{{ token.balance | commaFormatter }}</span>
               }
-            </button>
+            </div>
           }
         }
 
@@ -118,7 +139,14 @@
           <div class="section-header">Recent searches</div>
           @for (token of searchHistory(); track token.address) {
             @if (token.address !== excludedToken()?.address) {
-              <button class="token-item" (click)="onTokenSelect(token)">
+              <div
+                class="token-item"
+                role="button"
+                tabindex="0"
+                (click)="onTokenSelect(token)"
+                (keydown.enter)="onTokenSelect(token)"
+                (keydown.space)="$event.preventDefault(); onTokenSelect(token)"
+              >
                 <div class="token-info">
                   <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
                   <div class="token-details">
@@ -139,7 +167,7 @@
                 @if (token.balance) {
                   <span class="token-balance">{{ token.balance | commaFormatter }}</span>
                 }
-              </button>
+              </div>
             }
           }
         }

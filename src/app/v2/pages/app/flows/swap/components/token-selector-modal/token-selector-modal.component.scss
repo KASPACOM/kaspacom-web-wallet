@@ -83,6 +83,11 @@
   &:hover {
     background-color: var(--bg-tertiary, #1a2025);
   }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary, #6fc7ba);
+    outline-offset: -2px;
+  }
 }
 
 .token-info {

@@ -272,7 +272,8 @@ export class TokenSelectorModalComponent implements OnInit {
     for (const t of this.tokens()) {
       if (
         t.name?.toLowerCase().includes(queryLower) ||
-        t.symbol?.toLowerCase().includes(queryLower)
+        t.symbol?.toLowerCase().includes(queryLower) ||
+        t.address?.toLowerCase().includes(queryLower)
       ) {
         addToken(t);
       }

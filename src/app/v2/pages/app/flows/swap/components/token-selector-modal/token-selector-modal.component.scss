@@ -4,6 +4,8 @@
       .modal-container {
         background-color: var(--vampire-black, #0d1316) !important;
         border-color: var(--border-color, #1a2025) !important;
+        width: 520px !important;
+        max-width: 95vw !important;
       }
 
       .modal-header {
@@ -32,7 +34,7 @@
   gap: 16px;
   width: 100%;
   min-width: 320px;
-  max-width: 480px;
+  max-width: 520px;
   box-sizing: border-box;
 }
 

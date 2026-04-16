@@ -89,6 +89,8 @@ export class TokenSelectorModalComponent implements OnInit {
   private localStorageAvailable = isLocalStorageAvailable();
   private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
   private destroyed = false;
+  // Track which chain the cached mostTradedTokens were fetched for.
+  private mostTradedChainId: string | undefined = undefined;
 
   constructor() {
     // Reload when the modal opens so timing issues on initial mount don't leave
@@ -104,7 +106,9 @@ export class TokenSelectorModalComponent implements OnInit {
           this.searchDebounceTimer = null;
         }
         this.loadSearchHistory();
-        if (!this.mostTradedTokens().length && !this.mostTradedLoading()) {
+        const currentChainId = this.chainManager.getCurrentChainSignal()();
+        const chainChanged = currentChainId !== this.mostTradedChainId;
+        if ((!this.mostTradedTokens().length || chainChanged) && !this.mostTradedLoading()) {
           this.loadMostTradedTokens();
         }
       });
@@ -297,6 +301,7 @@ export class TokenSelectorModalComponent implements OnInit {
   }
 
   private async loadMostTradedTokens(): Promise<void> {
+    const chainIdAtFetch = this.chainManager.getCurrentChainSignal()();
     this.mostTradedLoading.set(true);
     try {
       const pairs = await this.defiApiService.getMostTradedPairs();
@@ -334,6 +339,7 @@ export class TokenSelectorModalComponent implements OnInit {
 
       if (!this.destroyed) {
         this.mostTradedTokens.set(Array.from(uniqueTokens.values()));
+        this.mostTradedChainId = chainIdAtFetch;
       }
     } catch (err) {
       console.warn('[TokenSelector] Failed to load most traded tokens:', err);

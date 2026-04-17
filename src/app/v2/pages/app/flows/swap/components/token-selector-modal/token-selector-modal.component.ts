@@ -65,6 +65,8 @@ export class TokenSelectorModalComponent implements OnInit {
   private chainManager = inject(EthereumWalletChainManager);
   private destroyRef = inject(DestroyRef);
 
+  hasChain = computed(() => !!this.chainManager.getCurrentChainSignal()());
+
   private historyStorageKey = computed(() => {
     const chainId = this.chainManager.getCurrentChainSignal()();
     const chainConfig = chainId ? this.chainManager.getChainConfig(chainId) : undefined;
@@ -121,9 +123,11 @@ export class TokenSelectorModalComponent implements OnInit {
         }
         this.loadSearchHistory();
         const currentChainId = this.chainManager.getCurrentChainSignal()();
-        const chainChanged = currentChainId !== this.mostTradedChainId;
-        if ((!this.mostTradedTokens().length || chainChanged) && !this.mostTradedLoading()) {
-          this.loadMostTradedTokens();
+        if (currentChainId) {
+          const chainChanged = currentChainId !== this.mostTradedChainId;
+          if ((!this.mostTradedTokens().length || chainChanged) && !this.mostTradedLoading()) {
+            this.loadMostTradedTokens();
+          }
         }
       });
     });
@@ -240,7 +244,8 @@ export class TokenSelectorModalComponent implements OnInit {
     );
     if (local) return [local];
 
-    // Fall back to backend metadata endpoint
+    // Fall back to backend metadata endpoint — requires a chain to be selected
+    if (!this.chainManager.getCurrentChainSignal()()) return [];
     const metadata = await this.defiApiService.getTokenMetadata(address);
     if (metadata?.name && metadata?.symbol) {
       return [
@@ -258,10 +263,12 @@ export class TokenSelectorModalComponent implements OnInit {
   }
 
   private async searchByTerm(query: string): Promise<Erc20Token[]> {
-    const [dexResults, lfgResults] = await Promise.all([
-      this.defiApiService.searchDexTokens(query),
-      this.defiApiService.searchLfgTokens(query),
-    ]);
+    const [dexResults, lfgResults] = this.chainManager.getCurrentChainSignal()()
+      ? await Promise.all([
+          this.defiApiService.searchDexTokens(query),
+          this.defiApiService.searchLfgTokens(query),
+        ])
+      : [[], []];
 
     const localBalanceMap = new Map<string, number>(
       this.tokens().map((t) => [t.address.toLowerCase(), t.balance ?? 0]),
@@ -327,6 +334,7 @@ export class TokenSelectorModalComponent implements OnInit {
 
   private async loadMostTradedTokens(): Promise<void> {
     const chainIdAtFetch = this.chainManager.getCurrentChainSignal()();
+    if (!chainIdAtFetch) return;
     this.mostTradedLoading.set(true);
     try {
       const pairs = await this.defiApiService.getMostTradedPairs();

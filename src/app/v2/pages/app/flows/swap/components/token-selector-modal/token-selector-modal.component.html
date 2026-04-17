@@ -176,7 +176,14 @@
 
         <!-- ── EMPTY STATE (all sections empty) ── -->
         @if (!isLoading() && !mostTradedLoading() && userTokens().length === 0 && mostTradedTokens().length === 0 && searchHistory().length === 0) {
-          <div class="no-tokens">No tokens available</div>
+          @if (!hasChain()) {
+            <div class="no-tokens">
+              <span>No network selected</span>
+              <span class="no-tokens-hint">Switch to an L2 network to browse popular tokens.</span>
+            </div>
+          } @else {
+            <div class="no-tokens">No tokens available</div>
+          }
         }
 
       }

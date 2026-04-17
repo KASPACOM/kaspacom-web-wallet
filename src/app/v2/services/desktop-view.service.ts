@@ -28,7 +28,7 @@ export class DesktopViewService {
       this.isIframe = false;
     }
 
-    const stored = this.isBrowser ? localStorage.getItem(STORAGE_KEY) : null;
+    const stored = this.isBrowser ? this.readStorage() : null;
     const isDesktop = this.isBrowser && !this.isIframe && window.innerWidth >= MOBILE_BREAKPOINT;
     this.isExpandedView = signal(
       stored !== null ? stored === 'true' : isDesktop,
@@ -40,7 +40,23 @@ export class DesktopViewService {
     const next = !this.isExpandedView();
     this.isExpandedView.set(next);
     if (this.isBrowser) {
-      localStorage.setItem(STORAGE_KEY, String(next));
+      this.writeStorage(String(next));
+    }
+  }
+
+  private readStorage(): string | null {
+    try {
+      return localStorage.getItem(STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  private writeStorage(value: string): void {
+    try {
+      localStorage.setItem(STORAGE_KEY, value);
+    } catch {
+      // Storage unavailable (privacy mode, quota exceeded, blocked iframe) — skip persistence.
     }
   }
 }

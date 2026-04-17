@@ -84,9 +84,10 @@ export class KaspaComDefiApiService {
   ) {}
 
   private buildHttpParamsWithNetwork(params?: Record<string, any>): HttpParams {
-    const config = this.ethereumWalletChainManager.getChainConfig(
-      this.ethereumWalletChainManager.getCurrentChainSignal()()!,
-    );
+    const chainId = this.ethereumWalletChainManager.getCurrentChainSignal()();
+    const config = chainId
+      ? this.ethereumWalletChainManager.getChainConfig(chainId)
+      : undefined;
     const network = config?.defiApiNetworkName || config?.chainName;
     return this.buildHttpParams({ ...params, network });
   }

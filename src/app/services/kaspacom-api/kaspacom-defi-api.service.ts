@@ -160,7 +160,7 @@ export class KaspaComDefiApiService {
         .pipe(
           map((response) =>
             (response?.pairs ?? []).map((entry): MostTradedPairResult => {
-              const pairData = entry.pair ?? entry;
+              const pairData = entry.pair;
               const normalizeToken = (
                 raw: RawMostTradedToken | undefined,
               ): MostTradedPairToken => ({

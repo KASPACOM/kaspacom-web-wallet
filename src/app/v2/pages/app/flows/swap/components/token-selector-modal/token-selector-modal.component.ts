@@ -361,15 +361,38 @@ export class TokenSelectorModalComponent implements OnInit {
     }
   }
 
+  private isStoredHistoryToken(value: unknown): value is Erc20Token {
+    if (!value || typeof value !== 'object') return false;
+
+    const token = value as Partial<Erc20Token>;
+    return (
+      typeof token.address === 'string' &&
+      typeof token.name === 'string' &&
+      typeof token.symbol === 'string' &&
+      typeof token.decimals === 'number'
+    );
+  }
+
   private loadSearchHistory(): void {
     if (!this.localStorageAvailable) return;
     try {
       const raw = localStorage.getItem(this.historyStorageKey());
-      if (raw) {
-        this.searchHistory.set(JSON.parse(raw));
+      if (!raw) {
+        this.searchHistory.set([]);
+        return;
       }
+
+      const parsed: unknown = JSON.parse(raw);
+      if (!Array.isArray(parsed)) {
+        this.searchHistory.set([]);
+        return;
+      }
+
+      this.searchHistory.set(
+        parsed.filter((item): item is Erc20Token => this.isStoredHistoryToken(item)).slice(0, MAX_HISTORY),
+      );
     } catch {
-      // ignore — history is non-critical
+      this.searchHistory.set([]);
     }
   }
 

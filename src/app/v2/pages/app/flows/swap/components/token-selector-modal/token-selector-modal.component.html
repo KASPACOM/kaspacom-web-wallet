@@ -138,7 +138,7 @@
         @if (searchHistory().length) {
           <div class="section-header">Recent searches</div>
           @for (token of searchHistory(); track token.address) {
-            @if (token.address !== excludedToken()?.address) {
+            @if (token.address?.toLowerCase() !== excludedToken()?.address?.toLowerCase()) {
               <div
                 class="token-item"
                 role="button"

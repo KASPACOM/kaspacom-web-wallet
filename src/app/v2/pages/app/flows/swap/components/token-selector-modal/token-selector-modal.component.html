@@ -29,8 +29,7 @@
               role="button"
               tabindex="0"
               (click)="onTokenSelect(token)"
-              (keydown.enter)="onTokenSelect(token)"
-              (keydown.space)="$event.preventDefault(); onTokenSelect(token)"
+              (keydown)="onRowKey($event, token)"
             >
               <div class="token-info">
                 <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
@@ -42,6 +41,8 @@
                       type="button"
                       class="token-address"
                       (click)="copyAddress($event, token.address)"
+                      (keydown.enter)="$event.stopPropagation()"
+                      (keydown.space)="$event.stopPropagation()"
                       [attr.aria-label]="'Copy address for ' + token.symbol"
                     >
                       {{ shortenAddress(token.address) }}
@@ -69,8 +70,7 @@
               role="button"
               tabindex="0"
               (click)="onTokenSelect(token)"
-              (keydown.enter)="onTokenSelect(token)"
-              (keydown.space)="$event.preventDefault(); onTokenSelect(token)"
+              (keydown)="onRowKey($event, token)"
             >
               <div class="token-info">
                 <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
@@ -82,6 +82,8 @@
                       type="button"
                       class="token-address"
                       (click)="copyAddress($event, token.address)"
+                      (keydown.enter)="$event.stopPropagation()"
+                      (keydown.space)="$event.stopPropagation()"
                       [attr.aria-label]="'Copy address for ' + token.symbol"
                     >
                       {{ shortenAddress(token.address) }}
@@ -107,8 +109,7 @@
               role="button"
               tabindex="0"
               (click)="onTokenSelect(token)"
-              (keydown.enter)="onTokenSelect(token)"
-              (keydown.space)="$event.preventDefault(); onTokenSelect(token)"
+              (keydown)="onRowKey($event, token)"
             >
               <div class="token-info">
                 <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
@@ -120,6 +121,8 @@
                       type="button"
                       class="token-address"
                       (click)="copyAddress($event, token.address)"
+                      (keydown.enter)="$event.stopPropagation()"
+                      (keydown.space)="$event.stopPropagation()"
                       [attr.aria-label]="'Copy address for ' + token.symbol"
                     >
                       {{ shortenAddress(token.address) }}
@@ -144,8 +147,7 @@
                 role="button"
                 tabindex="0"
                 (click)="onTokenSelect(token)"
-                (keydown.enter)="onTokenSelect(token)"
-                (keydown.space)="$event.preventDefault(); onTokenSelect(token)"
+                (keydown)="onRowKey($event, token)"
               >
                 <div class="token-info">
                   <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>

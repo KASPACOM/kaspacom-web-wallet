@@ -26,6 +26,12 @@ import { EthereumWalletChainManager } from '../../../../../../../services/etheri
 import { environment } from '../../../../../../../../environments/environment';
 
 const HISTORY_STORAGE_KEY_PREFIX = 'swap-token-search-history';
+const DEFAULT_DECIMALS = 18;
+
+function safeDecimals(value: unknown): number {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : DEFAULT_DECIMALS;
+}
 const MAX_HISTORY = 3;
 const EVM_ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/;
 
@@ -162,6 +168,12 @@ export class TokenSelectorModalComponent implements OnInit {
     }, 300);
   }
 
+  onRowKey(event: KeyboardEvent, token: Erc20Token): void {
+    if (event.target !== event.currentTarget) return;
+    if (event.key === 'Enter') { this.onTokenSelect(token); return; }
+    if (event.key === ' ') { event.preventDefault(); this.onTokenSelect(token); }
+  }
+
   async onTokenSelect(token: Erc20Token): Promise<void> {
     this.addToHistory(token);
     this.selectToken.emit(token);
@@ -236,7 +248,7 @@ export class TokenSelectorModalComponent implements OnInit {
           address,
           name: metadata.name,
           symbol: metadata.symbol,
-          decimals: Number(metadata.decimals),
+          decimals: safeDecimals(metadata.decimals),
           balance: 0,
         },
       ];
@@ -298,7 +310,7 @@ export class TokenSelectorModalComponent implements OnInit {
       address: r.id,
       name: r.name,
       symbol: r.symbol,
-      decimals: Number(r.decimals),
+      decimals: safeDecimals(r.decimals),
       balance: 0,
     };
   }
@@ -341,7 +353,7 @@ export class TokenSelectorModalComponent implements OnInit {
             address: addr,
             name: raw.name ?? '',
             symbol: raw.symbol ?? '',
-            decimals: Number(raw.decimals ?? 18),
+            decimals: safeDecimals(raw.decimals),
             balance: localBalanceMap.get(addrLower) ?? 0,
           });
         }

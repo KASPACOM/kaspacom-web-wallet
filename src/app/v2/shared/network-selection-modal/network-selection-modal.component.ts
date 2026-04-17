@@ -29,10 +29,6 @@ export class NetworkSelectionModalComponent {
     this.networks = Object.values(this.ethereumWalletChainManager.getAllChainsByChainId());
   }
 
-  getNetworkName(network: EIP1193ProviderChain) {
-    return network.chainName;
-  }
-
   onClose(): void {
     this.flowPagesService.closePage();
   }

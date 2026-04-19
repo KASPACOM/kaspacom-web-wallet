@@ -6,7 +6,7 @@
     <ng-container *ngIf="isSwapTransaction() && swapContext(); else regularApproval">
       <app-swap-approval
         [swapContext]="swapContext()!"
-        [isLoading]="isLoading"
+        [isLoading]="isLoading()"
         (approve)="onAccept()"
         (reject)="onReject()">
       </app-swap-approval>
@@ -100,12 +100,12 @@
         <div class="action-buttons-section">
           <div class="action-buttons">
             <kc-button
-              [text]="isLoading ? 'Processing...' : 'Approve'"
+              [text]="isLoading() ? 'Processing...' : 'Approve'"
               variant="primary"
               size="lg"
               [isFullWidth]="true"
               [isDisabled]="!isAvailableForApproval()"
-              [isLoading]="isLoading"
+              [isLoading]="isLoading()"
               (buttonClick)="onAccept()"
               class="accept-button">
             </kc-button>
@@ -115,7 +115,7 @@
               variant="tertiary"
               size="lg"
               [isFullWidth]="true"
-              [isDisabled]="isLoading"
+              [isDisabled]="isLoading()"
               (buttonClick)="onReject()"
               class="reject-button">
             </kc-button>

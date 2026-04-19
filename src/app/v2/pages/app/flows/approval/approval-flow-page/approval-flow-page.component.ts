@@ -126,21 +126,21 @@ export class ApprovalFlowPageComponent implements OnDestroy {
   });
 
   // Form state
-  protected currentPriorityFee: bigint | undefined = undefined;
+  protected currentPriorityFee: WritableSignal<bigint | undefined> = signal(undefined);
   protected currentL2PriorityFee: WritableSignal<
     Partial<L2PriorityInfo> | undefined
   > = signal(undefined);
   protected additionalParams: { [key: string]: any } = {};
-  protected isLoading = false;
+  protected isLoading = signal(false);
 
   isAvailableForApproval = computed(() => {
-    if (this.isLoading) {
+    if (this.isLoading()) {
       return false;
     }
 
     if (
       this.isActionHasPriorityFee() &&
-      this.currentPriorityFee === undefined
+      this.currentPriorityFee() === undefined
     ) {
       return false;
     }
@@ -160,7 +160,7 @@ export class ApprovalFlowPageComponent implements OnDestroy {
       return;
     }
 
-    this.isLoading = true;
+    this.isLoading.set(true);
 
     try {
       // Resolve the approval to continue with transaction processing
@@ -168,12 +168,12 @@ export class ApprovalFlowPageComponent implements OnDestroy {
       this.approvalFlowService.resolveApproval({
         isApproved: true,
         l2PriorityInfo: this.currentL2PriorityFee() as L2PriorityInfo,
-        priorityFee: this.currentPriorityFee,
+        priorityFee: this.currentPriorityFee(),
         additionalParams: this.additionalParams,
       });
     } catch (error) {
       console.error('Error during approval:', error);
-      this.isLoading = false;
+      this.isLoading.set(false);
       this.approvalFlowService.setErrorState('Failed to process approval');
     }
   }
@@ -191,15 +191,15 @@ export class ApprovalFlowPageComponent implements OnDestroy {
   }
 
   setCurrentPriorityFee(priorityFee: bigint | undefined) {
-    this.currentPriorityFee = priorityFee;
+    this.currentPriorityFee.set(priorityFee);
   }
 
   setL2CurrentPriorityFee(
     info:
       | {
-          priorityFee: bigint;
-          baseFee: bigint;
-        }
+        priorityFee: bigint;
+        baseFee: bigint;
+      }
       | undefined,
   ) {
     if (info == undefined) {

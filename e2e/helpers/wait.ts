@@ -17,17 +17,19 @@ export async function waitForRootTransition(page: Page): Promise<void> {
  * Click a kc-button whose `[text]` input matches `text`. The web component
  * forwards the click to an inner native button, so we locate the nested
  * button to sidestep any host-level click listeners.
+ *
+ * Mobile viewports (iPhone 14, etc.) sometimes render actions below the
+ * fold inside the phone-frame panel, so we scroll into view before click.
  */
 export async function clickKcButton(page: Page, text: string): Promise<void> {
   const btn = page.locator(`kc-button:has-text("${text}")`).first();
   await expect(btn).toBeVisible({ timeout: 10_000 });
   const innerBtn = btn.locator('button').first();
-  const count = await innerBtn.count();
-  if (count > 0) {
-    await innerBtn.click();
-  } else {
-    await btn.click();
-  }
+  const target = (await innerBtn.count()) > 0 ? innerBtn : btn;
+  await target.scrollIntoViewIfNeeded().catch(() => {
+    /* element already in view or not scrollable — fall through */
+  });
+  await target.click();
 }
 
 /**

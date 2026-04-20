@@ -12,6 +12,7 @@
     "test": "ng test",
     "e2e": "playwright test",
     "e2e:smoke": "playwright test --grep @smoke",
+    "e2e:funded": "playwright test --grep @funded",
     "e2e:install": "playwright install --with-deps chromium",
     "serve:ssr:wallet-front-new": "node dist/wallet-front-new/server/server.mjs",
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org kaspacom --project wallet ./dist && sentry-cli sourcemaps upload --org kaspacom --project wallet ./dist"

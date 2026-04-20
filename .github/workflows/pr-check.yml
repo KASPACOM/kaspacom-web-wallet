@@ -136,6 +136,60 @@ jobs:
           path: test-results/
           retention-days: 14
 
+  e2e-funded:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # Funded tests need the KASPACOM org-level KASPA_E2E_SEED secret. When
+    # the secret is unset (forks, external contributors), the @funded test
+    # self-skips via authenticateFundedWallet() — the job stays green for
+    # visibility.
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run funded-wallet E2E tests
+        run: npm run e2e:funded
+        env:
+          CI: 'true'
+          KASPA_E2E_SEED: ${{ secrets.KASPA_E2E_SEED }}
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-funded-report
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-funded-traces
+          path: test-results/
+          retention-days: 14
+
   security-check:
     runs-on: ubuntu-latest
     continue-on-error: true

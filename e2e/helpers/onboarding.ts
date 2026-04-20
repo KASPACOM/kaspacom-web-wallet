@@ -15,7 +15,11 @@ export async function gotoLanding(page: Page): Promise<void> {
   ).toBeVisible();
 }
 
-async function fillPasswordInputs(page: Page, password: string): Promise<void> {
+async function fillPasswordInputs(
+  page: Page,
+  password: string,
+  submitButtonText: 'Continue' | 'Next' = 'Continue',
+): Promise<void> {
   const pw = page.locator('kc-input[formcontrolname="password"] input').first();
   const confirm = page
     .locator('kc-input[formcontrolname="confirmPassword"] input')
@@ -23,7 +27,7 @@ async function fillPasswordInputs(page: Page, password: string): Promise<void> {
   await expect(pw).toBeVisible({ timeout: 10_000 });
   await pw.fill(password);
   await confirm.fill(password);
-  await clickKcButton(page, 'Continue');
+  await clickKcButton(page, submitButtonText);
 }
 
 /**
@@ -124,9 +128,11 @@ export async function importBySeedPhrase(
     await clickKcButton(page, 'Continue');
   }
 
-  // Step 4: Create PIN / password (same form as new wallet).
-  await waitForHeading(page, /Create Your Password/i);
-  await fillPasswordInputs(page, password);
+  // Step 4: Create PIN — import flow uses heading "Create Password" (no
+  // "Your") and button "Next" (not "Continue"). Different component from
+  // the new-wallet flow's CREATE_PASSWORD step.
+  await waitForHeading(page, /^Create Password$/i);
+  await fillPasswordInputs(page, password, 'Next');
 
   await waitForWalletHome(page);
 }
@@ -148,8 +154,8 @@ export async function importByPrivateKey(
   await input.fill(privateKey);
   await clickKcButton(page, 'Continue');
 
-  await waitForHeading(page, /Create Your Password/i);
-  await fillPasswordInputs(page, password);
+  await waitForHeading(page, /^Create Password$/i);
+  await fillPasswordInputs(page, password, 'Next');
 
   await waitForWalletHome(page);
 }

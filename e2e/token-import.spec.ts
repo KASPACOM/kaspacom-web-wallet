@@ -34,7 +34,7 @@ test.describe('Token import (ERC20)', () => {
 
     // Import flow rendered — contract address input is the anchor.
     await expect(
-      page.locator('kc-input[label="Contract Address"]').first(),
+      page.locator('.import-token-container').first(),
     ).toBeVisible({ timeout: 10_000 });
     await expect(
       page.locator('kc-button', { hasText: 'Look Up Token' }).first(),
@@ -67,7 +67,7 @@ test.describe('Token import (ERC20)', () => {
     await importBtn.locator('button').first().click();
 
     const addrInput = page
-      .locator('kc-input[label="Contract Address"] input')
+      .locator('.import-token-container .address-input-row kc-input input')
       .first();
     await expect(addrInput).toBeVisible({ timeout: 10_000 });
     await addrInput.fill('this-is-not-a-valid-hex-address');
@@ -77,7 +77,7 @@ test.describe('Token import (ERC20)', () => {
     // Component sets state='error' which renders invalidReason inside the
     // input. Assert any error-style message shows up near the input.
     const errorText = page
-      .locator('kc-input[label="Contract Address"]')
+      .locator('.import-token-container')
       .locator('text=/invalid|not valid|enter a valid/i')
       .first();
     await expect(errorText).toBeVisible({ timeout: 10_000 });

@@ -16,15 +16,42 @@
 
 ## PR 2 — Send + On-Chain Verification + KNS + QR
 
-- [ ] Pre-funded testnet wallet seed added to GitHub secrets (`KASPA_E2E_SEED`)
-- [ ] Helper: seed pre-funded wallet into localStorage (skip onboarding for funded-wallet tests)
-- [ ] Helper: poll block explorer for tx confirmation (`explorer-tn10.kaspa.org` API)
-- [ ] Helper: fake camera stream for `html5-qrcode` (serve a canvas-generated QR as MediaStream)
-- [ ] `e2e/send-l1.spec.ts` — KAS, KRC20, KRC721 (covers #184), fee estimation, insufficient balance
-- [ ] `e2e/send-l2.spec.ts` — L2 KAS (WKAS), ERC20, gas priority (covers #176)
-- [ ] `e2e/kns-send.spec.ts` — send by `.kas` domain, domain not found, domain resolution loading state
-- [ ] `e2e/qr-send.spec.ts` — scan QR code and pre-fill send form
-- [ ] Each successful send test asserts the tx hash appears in the explorer within 30s
+Split into 2a–2e so each PR is independently ship-able.
+
+### PR 2a — Funded-wallet auth + explorer helper + balance smoke
+
+- [x] `KASPA_E2E_SEED` added as KASPACOM org secret
+- [x] `getFundedSeed()` helper in `fixtures/wallet.ts` — self-skips when unset
+- [x] `authenticateFundedWallet()` in `helpers/auth.ts` — drives import UI with funded seed
+- [x] `readKasBalance()` + `readWalletAddress()` in `helpers/home.ts` — clipboard-based address read
+- [x] `waitForTxConfirmed()` in `helpers/explorer.ts` — TN10 explorer poll (~60s deadline)
+- [x] `fixtures/network.ts` — TN10 / Kasplex / IGRA endpoints + fallback addresses
+- [x] `e2e/funded-wallet.spec.ts` — @funded balance + address smoke test
+- [x] `e2e:funded` npm script
+- [x] New `e2e-funded` CI job runs `@funded` tag, skips cleanly when secret unset
+
+### PR 2b — Send KAS L1
+
+- [ ] Pre-seed wallet state into localStorage helper (skip onboarding for speed)
+- [ ] `send-l1.spec.ts` — send KAS happy path + insufficient balance
+- [ ] On-chain verification via `waitForTxConfirmed`
+
+### PR 2c — KRC20 + KRC721
+
+- [ ] `send-krc20.spec.ts` (covers #172 reserve/wrap issues)
+- [ ] `send-krc721.spec.ts` (covers #184 regression)
+- [ ] Mint helper — ensure wallet has KRC20 + KRC721 before test
+
+### PR 2d — L2 sends
+
+- [ ] `send-l2.spec.ts` — L2 KAS (WKAS), ERC20
+- [ ] Gas priority assertions (covers #176)
+
+### PR 2e — KNS + QR
+
+- [ ] `kns-send.spec.ts` — send by `.kas` domain
+- [ ] Helper: fake camera stream for `html5-qrcode`
+- [ ] `qr-send.spec.ts` — scan QR and pre-fill
 
 ## PR 3 — Swap + Approval + Iframe (multi-browser + mobile)
 

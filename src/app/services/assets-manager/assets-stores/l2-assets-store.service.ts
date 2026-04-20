@@ -19,8 +19,10 @@ export const L2_ASSET_KEYS = {
   // ens: 'ens',
 };
 
+export type Erc20TokenWithPrice = Erc20Token & { tokenPriceUSD?: number };
+
 export interface L2AssetStoreData extends BaseAssetStoreData {
-  [L2_ASSET_KEYS.erc20]: Erc20Token;
+  [L2_ASSET_KEYS.erc20]: Erc20TokenWithPrice;
   [L2_ASSET_KEYS.l2State]: L2WalletState;
 }
 
@@ -79,16 +81,44 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
   /**
    * Reload KRC20 tokens with pagination
    */
-  protected async getErc20Tokens(walletAddress: string): Promise<Erc20Token[]> {
-    const [erc20TokensFromContracts, erc20TokensFromGraph] = await Promise.all([
-      this.getErc20TokensFromSavedTokens(walletAddress),
-      this.getErc20TokensFromGraph(walletAddress).catch(() => []),
-    ]);
+  protected async getErc20Tokens(
+    walletAddress: string,
+  ): Promise<Erc20TokenWithPrice[]> {
+    const [erc20TokensFromContracts, erc20TokensFromGraph, priceByAddress] =
+      await Promise.all([
+        this.getErc20TokensFromSavedTokens(walletAddress),
+        this.getErc20TokensFromGraph(walletAddress).catch(() => []),
+        this.getErc20PriceMap().catch(() => new Map<string, number>()),
+      ]);
 
-    return this.mergeErc20TokenSources(
+    const merged = this.mergeErc20TokenSources(
       erc20TokensFromGraph,
       erc20TokensFromContracts,
     );
+
+    return merged.map((token) => ({
+      ...token,
+      tokenPriceUSD: priceByAddress.get(token.address.toLowerCase()),
+    }));
+  }
+
+  /**
+   * Build a `normalized-address → USD price` map from the defi /dex/tokens list.
+   * The wallet-tokens endpoint does not include price, so prices are joined here.
+   */
+  protected async getErc20PriceMap(): Promise<Map<string, number>> {
+    if (!this.ethereumWalletChainManager.getCurrentChainSignal()()) {
+      return new Map();
+    }
+
+    const tokens = await this.kaspacomDefiApi.getTokens();
+    const map = new Map<string, number>();
+    for (const token of tokens) {
+      if (typeof token.tokenPriceUSD === 'number') {
+        map.set(token.id.toLowerCase(), token.tokenPriceUSD);
+      }
+    }
+    return map;
   }
 
   protected async getErc20TokensFromGraph(

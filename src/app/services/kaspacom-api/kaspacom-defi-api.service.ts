@@ -3,7 +3,6 @@ import { HttpClient, HttpParams, } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { DexApiWalletToken } from './dtos/dex-api-wallet-tokens.interface';
-import { DexApiToken, DexApiTokensResponse } from './dtos/dex-api-tokens.interface';
 import { EthereumWalletChainManager } from '../etherium-services/etherium-wallet-chain.manager';
 
 
@@ -50,19 +49,4 @@ export class KaspaComDefiApiService {
     );
   }
 
-  /**
-   * GET /dex/tokens
-   * Returns all tokens on the current network with price/marketcap info.
-   * Wallet-tokens endpoint does not include price — callers merge by address.
-   */
-  async getTokens(): Promise<DexApiToken[]> {
-    const params = this.buildHttpParamsWithNetwork();
-    const response = await firstValueFrom(
-      this.httpClient.get<DexApiTokensResponse>(
-        `${this.baseurl}/${DEX_CONTROLLER}/tokens`,
-        { params },
-      ),
-    );
-    return response?.tokens ?? [];
-  }
 }

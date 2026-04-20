@@ -11,6 +11,7 @@ import { ethers, formatUnits } from 'ethers';
 import { L2LocalERC20Tokens } from '../../l2-services/l2-local-erc20-tokens';
 import { UtilsHelper } from '../../utils.service';
 import { KaspaComDefiApiService } from '../../kaspacom-api/kaspacom-defi-api.service';
+import { L2TokenPricesService } from '../../l2-services/l2-token-prices.service';
 
 export const L2_ASSET_KEYS = {
   l2State: 'l2State',
@@ -36,6 +37,7 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
   protected l2LocalERC20Tokens = inject(L2LocalERC20Tokens);
   protected utilsHelper = inject(UtilsHelper);
   protected kaspacomDefiApi = inject(KaspaComDefiApiService);
+  protected l2TokenPrices = inject(L2TokenPricesService);
 
   protected override getLoadFunctionAssetsNames(): {
     [K in keyof L2AssetStoreData]: string;
@@ -78,47 +80,30 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
     return Array.from(byNormAddress.values());
   }
 
-  /**
-   * Reload KRC20 tokens with pagination
-   */
   protected async getErc20Tokens(
     walletAddress: string,
   ): Promise<Erc20TokenWithPrice[]> {
-    const [erc20TokensFromContracts, erc20TokensFromGraph, priceByAddress] =
-      await Promise.all([
-        this.getErc20TokensFromSavedTokens(walletAddress),
-        this.getErc20TokensFromGraph(walletAddress).catch(() => []),
-        this.getErc20PriceMap().catch(() => new Map<string, number>()),
-      ]);
+    const [erc20TokensFromContracts, erc20TokensFromGraph] = await Promise.all([
+      this.getErc20TokensFromSavedTokens(walletAddress),
+      this.getErc20TokensFromGraph(walletAddress).catch(() => []),
+    ]);
 
     const merged = this.mergeErc20TokenSources(
       erc20TokensFromGraph,
       erc20TokensFromContracts,
     );
 
+    const chainId = this.ethereumWalletChainManager.getCurrentChainSignal()();
+    const priceByAddress = chainId
+      ? await this.l2TokenPrices
+          .getPriceMap(merged, chainId)
+          .catch(() => new Map<string, number>())
+      : new Map<string, number>();
+
     return merged.map((token) => ({
       ...token,
       tokenPriceUSD: priceByAddress.get(token.address.toLowerCase()),
     }));
-  }
-
-  /**
-   * Build a `normalized-address → USD price` map from the defi /dex/tokens list.
-   * The wallet-tokens endpoint does not include price, so prices are joined here.
-   */
-  protected async getErc20PriceMap(): Promise<Map<string, number>> {
-    if (!this.ethereumWalletChainManager.getCurrentChainSignal()()) {
-      return new Map();
-    }
-
-    const tokens = await this.kaspacomDefiApi.getTokens();
-    const map = new Map<string, number>();
-    for (const token of tokens) {
-      if (typeof token.tokenPriceUSD === 'number') {
-        map.set(token.id.toLowerCase(), token.tokenPriceUSD);
-      }
-    }
-    return map;
   }
 
   protected async getErc20TokensFromGraph(

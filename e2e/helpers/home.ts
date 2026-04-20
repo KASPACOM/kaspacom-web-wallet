@@ -1,20 +1,37 @@
 import { Page, expect } from '@playwright/test';
 
-/**
- * Parse the rendered KAS balance from the balance component. Waits until
- * the skeleton has cleared and the `.balance-amount` text is visible, then
- * strips commas and returns the numeric value.
- *
- * Returns NaN when the text doesn't parse (caller should treat as 'unknown'
- * rather than 'zero').
- */
-export async function readKasBalance(page: Page): Promise<number> {
-  const amount = page.locator('.balance-amount').first();
-  await expect(amount).toBeVisible({ timeout: 30_000 });
-  const raw = (await amount.textContent())?.trim() ?? '';
+function parseBalanceText(raw: string): number {
   const normalized = raw.replace(/,/g, '').replace(/[^\d.]/g, '');
   const n = Number.parseFloat(normalized);
   return Number.isFinite(n) ? n : NaN;
+}
+
+/**
+ * Parse the rendered KAS balance from the balance component. Waits until
+ * the skeleton clears, then — if the initial value is 0 — polls for up to
+ * `waitForNonZeroMs` to accommodate the UTXO fetch that populates the
+ * balance asynchronously after login.
+ *
+ * Returns NaN only when the text never parses; returns 0 when the wallet
+ * truly holds nothing (poll deadline exceeded).
+ */
+export async function readKasBalance(
+  page: Page,
+  opts: { waitForNonZeroMs?: number } = {},
+): Promise<number> {
+  const waitForNonZeroMs = opts.waitForNonZeroMs ?? 45_000;
+  const amount = page.locator('.balance-amount').first();
+  await expect(amount).toBeVisible({ timeout: 30_000 });
+
+  const deadline = Date.now() + waitForNonZeroMs;
+  let last = NaN;
+  while (Date.now() < deadline) {
+    const raw = (await amount.textContent())?.trim() ?? '';
+    last = parseBalanceText(raw);
+    if (Number.isFinite(last) && last > 0) return last;
+    await page.waitForTimeout(2_000);
+  }
+  return last;
 }
 
 /**

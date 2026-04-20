@@ -96,6 +96,7 @@ export class TokenSelectorModalComponent implements OnInit {
   private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
   private destroyed = false;
   private searchRequestId = 0;
+  private mostTradedRequestId = 0;
   // Track which chain the cached mostTradedTokens were fetched for.
   private mostTradedChainId: string | undefined = undefined;
 
@@ -111,6 +112,8 @@ export class TokenSelectorModalComponent implements OnInit {
             this.searchDebounceTimer = null;
           }
           this.searchRequestId++;
+          this.mostTradedRequestId++;
+          this.mostTradedLoading.set(false);
           this.searchResults.set([]);
           this.searchLoading.set(false);
           return;
@@ -347,6 +350,7 @@ export class TokenSelectorModalComponent implements OnInit {
   private async loadMostTradedTokens(): Promise<void> {
     const chainIdAtFetch = this.chainManager.getCurrentChainSignal()();
     if (!chainIdAtFetch) return;
+    const requestId = ++this.mostTradedRequestId;
     this.mostTradedLoading.set(true);
     try {
       const pairs = await this.defiApiService.getMostTradedPairs();
@@ -379,15 +383,14 @@ export class TokenSelectorModalComponent implements OnInit {
         }
       }
 
-      const currentChainId = this.chainManager.getCurrentChainSignal()();
-      if (!this.destroyed && currentChainId === chainIdAtFetch) {
+      if (!this.destroyed && requestId === this.mostTradedRequestId) {
         this.mostTradedTokens.set(Array.from(uniqueTokens.values()));
         this.mostTradedChainId = chainIdAtFetch;
       }
     } catch (err) {
       console.warn('[TokenSelector] Failed to load most traded tokens:', err);
     } finally {
-      if (!this.destroyed && this.chainManager.getCurrentChainSignal()() === chainIdAtFetch) {
+      if (!this.destroyed && requestId === this.mostTradedRequestId) {
         this.mostTradedLoading.set(false);
       }
     }

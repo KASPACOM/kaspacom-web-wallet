@@ -22,6 +22,10 @@ test.describe('Funded wallet', () => {
       type: 'kas-balance',
       description: balance.toString(),
     });
+    // Also surface to plain CI logs so unattended runs don't require
+    // downloading the HTML report to find the address.
+    // eslint-disable-next-line no-console
+    console.log(`\n::notice::KASPA_E2E_SEED → address=${address} balance=${balance} KAS`);
 
     expect(address).toMatch(/^kaspatest:[a-z0-9]+$/);
     expect(balance).not.toBeNaN();

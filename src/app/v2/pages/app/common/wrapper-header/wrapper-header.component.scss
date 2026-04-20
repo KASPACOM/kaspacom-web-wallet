@@ -164,6 +164,20 @@
     .network-icon {
       font-size: 16px;
       line-height: 1;
+      display: flex;
+      align-items: center;
+
+      .chain-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+        border-radius: 50%;
+        font-size: 16px;
+        line-height: 1;
+      }
     }
 
     .network-name {

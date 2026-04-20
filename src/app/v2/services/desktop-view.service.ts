@@ -1,6 +1,8 @@
-import { Injectable, signal, WritableSignal } from '@angular/core';
+import { inject, Injectable, PLATFORM_ID, signal, WritableSignal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 
 const STORAGE_KEY = 'kw-desktop-expanded';
+export const MOBILE_BREAKPOINT = 960;
 
 @Injectable({ providedIn: 'root' })
 export class DesktopViewService {
@@ -10,18 +12,26 @@ export class DesktopViewService {
   /** User-selected expanded-view preference (persisted in localStorage). */
   readonly isExpandedView: WritableSignal<boolean>;
 
-  constructor() {
-    this.isIframe = (() => {
-      try {
-        return window.self !== window.top;
-      } catch {
-        // Cross-origin iframe – treat as embedded.
-        return true;
-      }
-    })();
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
+  constructor() {
+    if (this.isBrowser) {
+      this.isIframe = (() => {
+        try {
+          return window.self !== window.top;
+        } catch {
+          // Cross-origin iframe – treat as embedded.
+          return true;
+        }
+      })();
+    } else {
+      this.isIframe = false;
+    }
+
+    const stored = this.isBrowser ? this.readStorage() : null;
+    const isDesktop = this.isBrowser && !this.isIframe && window.innerWidth >= MOBILE_BREAKPOINT;
     this.isExpandedView = signal(
-      !this.isIframe && localStorage.getItem(STORAGE_KEY) === 'true',
+      stored !== null ? stored === 'true' : isDesktop,
     );
   }
 
@@ -29,6 +39,24 @@ export class DesktopViewService {
     if (this.isIframe) return;
     const next = !this.isExpandedView();
     this.isExpandedView.set(next);
-    localStorage.setItem(STORAGE_KEY, String(next));
+    if (this.isBrowser) {
+      this.writeStorage(String(next));
+    }
+  }
+
+  private readStorage(): string | null {
+    try {
+      return localStorage.getItem(STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  private writeStorage(value: string): void {
+    try {
+      localStorage.setItem(STORAGE_KEY, value);
+    } catch {
+      // Storage unavailable (privacy mode, quota exceeded, blocked iframe) — skip persistence.
+    }
   }
 }

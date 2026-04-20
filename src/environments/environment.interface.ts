@@ -16,7 +16,10 @@ export interface L2CustomChainConfig {
 export interface L2ConfigInterface {
   /** SDK network key — used only by the swap flow to initialize the swap controller */
   sdkName: string;
+  /** Relative path to the chain's SVG icon (e.g. 'images/chains/kasplex.svg') */
   icon: string;
+  /** One-word display name shown in the header (e.g. 'Kasplex', 'Galleon') */
+  shortName: string;
   l1TransactionPrefix?: string;
   /** Chain config for wallet operations (RPC, chain ID, explorer, native token). Required for all L2 chains. */
   customChainConfig: L2CustomChainConfig;

@@ -1,5 +1,5 @@
-import { Component, inject, signal, computed, ViewChild, ElementRef, AfterViewInit, OnDestroy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, signal, computed, ViewChild, ElementRef, AfterViewInit, OnDestroy, OnInit, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { Router, RouterOutlet, ChildrenOutletContexts } from '@angular/router';
 import { navAnimation } from './common/animation/nav.animation';
 import { WrapperHeaderComponent } from './common/wrapper-header/wrapper-header.component';
@@ -13,14 +13,11 @@ import { DynamicFlowPageOutletComponent } from './common/flow-page/dynamic-flow-
 import { DynamicQuickActionDialogOutletComponent } from './common/quick-action-dialog/dynamic-quick-action-dialog-outlet.component';
 import { IframeAccountSelectionComponent } from './iframe-account-selection/iframe-account-selection.component';
 import { IframeAccountSelectionService } from '../../services/iframe-account-selection.service';
-import { DesktopViewService } from '../../services/desktop-view.service';
+import { DesktopViewService, MOBILE_BREAKPOINT } from '../../services/desktop-view.service';
 
 import { KcSnackbarComponent, KcSpinnerComponent, KcIconComponent } from 'kaspacom-ui';
 import { WalletService } from '../../../services/wallet.service';
 import { AssetsManagerService } from '../../../services/assets-manager/assets-manager.service';
-
-/** Minimum viewport width (px) required to activate the expanded layout. */
-const EXPANDED_MIN_WIDTH = 960;
 
 @Component({
   selector: 'app-app-wrapper',
@@ -46,6 +43,9 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('graphCanvas', { static: false })
   graphCanvas!: ElementRef<HTMLCanvasElement>;
 
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
+
   private contexts = inject(ChildrenOutletContexts);
   accountSettingsService = inject(AccountSettingsService);
   flowPagesService = inject(FlowPagesService);
@@ -60,7 +60,7 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   showIframeLoader = signal(false);
 
   // Track viewport width for responsive expanded layout
-  private windowWidth = signal(window.innerWidth);
+  private windowWidth = signal(this.isBrowser ? window.innerWidth : MOBILE_BREAKPOINT);
   private readonly onResize = () => this.windowWidth.set(window.innerWidth);
 
   /** True only when the user opted in AND the viewport is wide enough. */
@@ -68,7 +68,7 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
     () =>
       !this.desktopViewService.isIframe &&
       this.desktopViewService.isExpandedView() &&
-      this.windowWidth() >= EXPANDED_MIN_WIDTH,
+      this.windowWidth() >= MOBILE_BREAKPOINT,
   );
 
   // Computed signal to determine if account selection overlay should be shown
@@ -99,7 +99,9 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    window.addEventListener('resize', this.onResize);
+    if (this.isBrowser) {
+      window.addEventListener('resize', this.onResize);
+    }
   }
 
   onAccountSelected(): void {
@@ -146,17 +148,21 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    this.initGraphAnimation();
+    if (this.isBrowser) {
+      this.initGraphAnimation();
+    }
   }
 
   ngOnDestroy(): void {
     if (this.animationFrameId !== null) {
       cancelAnimationFrame(this.animationFrameId);
     }
-    window.removeEventListener('resize', this.onResize);
-    window.removeEventListener('resize', this.boundResizeCanvas);
-    window.removeEventListener('mousemove', this.boundMouseMove);
-    window.removeEventListener('mouseleave', this.boundMouseLeave);
+    if (this.isBrowser) {
+      window.removeEventListener('resize', this.onResize);
+      window.removeEventListener('resize', this.boundResizeCanvas);
+      window.removeEventListener('mousemove', this.boundMouseMove);
+      window.removeEventListener('mouseleave', this.boundMouseLeave);
+    }
   }
 
   private initGraphAnimation(): void {
@@ -190,8 +196,8 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private resizeCanvas(): void {
     const canvas = this.graphCanvas.nativeElement;
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.width = this.isBrowser ? window.innerWidth : 0;
+    canvas.height = this.isBrowser ? window.innerHeight : 0;
   }
 
   private handleMouseMove(e: MouseEvent): void {

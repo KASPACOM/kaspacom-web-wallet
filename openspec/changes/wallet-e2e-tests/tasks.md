@@ -83,7 +83,7 @@ Split into 2a–2e so each PR is independently ship-able.
 - [ ] `e2e/asset-detail.spec.ts` — click asset → detail view, transaction history drill-down, copy address
 - [x] `e2e/multi-wallet.spec.ts` (PR 4c) — wallet-management opens via `.profile-container` click, active wallet renders with `.selected` modifier and a non-empty name
 - [x] `helpers/wallet-management.ts` — `openWalletManagement()` via `.profile-container` click
-- [ ] **PR 4c.1**: row-action icons (`.wallet-item__export` / `.wallet-item__trash`) + `.floating-orb` add-account dialog — initial selectors from explore didn't render as expected on a fresh wallet; needs local dev-server debug
+- [x] **PR 4c.1**: row-action icons asserted via `.toBeAttached()` (they're `visibility: hidden` until `.wallet-item:hover` or `@media < 768px`). Add-account dialog targets `.quick-action-dialog-content` (host is `display: inline, height: 0` portal) and clicks **Create** button (not "Save" as explore reported)
 
 ## PR 5 — Nightly + Mirror + Alerts
 

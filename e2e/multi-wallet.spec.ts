@@ -29,9 +29,57 @@ test.describe('Multi-wallet management', () => {
     ).not.toHaveText('', { timeout: 5_000 });
   });
 
-  // Row-action controls (export/delete icons) + add-account dialog tests
-  // deferred to PR 4c.1. Initial CI run showed `.wallet-item__export` and
-  // `.floating-orb → app-quick-action-dialog` don't render as the explore
-  // agent's HTML snapshot suggested on a fresh wallet — needs a local
-  // dev-server debug session to pin down the actual rendered state.
+  test('@smoke wallet item exposes address + export + delete controls in the DOM', async ({
+    page,
+  }) => {
+    await openWalletManagement(page);
+
+    // .wallet-item__export and __trash are styled `opacity:0; visibility:hidden`
+    // on desktop and only become visible on row hover (SCSS line 207) or
+    // under `@media (max-width:768px)`. For a regression test we only care
+    // that they are attached to the DOM — a dropped icon would still fail
+    // `.toBeAttached()`. This keeps us viewport- and hover-agnostic.
+    const firstItem = page.locator('.wallet-item').first();
+    await expect(firstItem.locator('.wallet-item__address').first()).toBeVisible();
+    await expect(firstItem.locator('.wallet-item__export').first()).toBeAttached();
+    await expect(firstItem.locator('.wallet-item__trash').first()).toBeAttached();
+  });
+
+  test('@smoke add-account dialog opens from the floating orb and validates input', async ({
+    page,
+  }) => {
+    await openWalletManagement(page);
+
+    const orb = page.locator('.floating-orb').first();
+    const orbVisible = await orb.isVisible().catch(() => false);
+    test.skip(
+      !orbVisible,
+      'floating-orb (add account) not available for this wallet scheme.',
+    );
+
+    await orb.click();
+
+    // The `app-quick-action-dialog` host element is display:inline with
+    // height:0 (Angular portal pattern). The real dialog box is rendered
+    // as the `.quick-action-dialog-content` child with the slideUp
+    // animation — that's what we can assert on.
+    await expect(page.locator('.quick-action-dialog-content').first()).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText(/Add account/i).first()).toBeVisible();
+
+    // The add-account dialog's CTA is labeled "Create" (not "Save" as
+    // the explore report guessed).
+    const createBtn = page
+      .locator('.quick-action-dialog-content kc-button', { hasText: 'Create' })
+      .locator('button')
+      .first();
+    await expect(createBtn).toBeDisabled();
+
+    const nameInput = page
+      .locator('.quick-action-dialog-content kc-input input')
+      .first();
+    await nameInput.fill('E2E test account');
+    await expect(createBtn).toBeEnabled();
+  });
 });

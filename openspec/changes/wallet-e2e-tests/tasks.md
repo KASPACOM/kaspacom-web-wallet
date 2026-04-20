@@ -87,10 +87,17 @@ Split into 2a–2e so each PR is independently ship-able.
 
 ## PR 5 — Nightly + Mirror + Alerts
 
-- [ ] `.github/workflows/e2e-nightly.yml` — runs full suite across Chromium + WebKit + Firefox + Mobile Safari at 02:00 UTC
-- [ ] Nightly workflow posts failure summary to Telegram topic `51073` (Test Engineer) via existing bot webhook
-- [ ] Mirror `@smoke` suite (onboarding + 1 send + 1 swap) into `KASPACOM/E2E-Tests` under new `wallet/` project so cross-repo nightly also exercises wallet
-- [ ] Update `E2E-Tests` README + this `tasks.md` with the final cross-repo relationship
+### PR 5a — Nightly workflow + Telegram alert (this PR)
+
+- [x] `.github/workflows/e2e-nightly.yml` — runs full suite across Chromium + WebKit + Firefox + Mobile Safari at 02:00 UTC
+- [x] Nightly workflow posts failure summary to Telegram topic `51073` (Test Engineer) via bot webhook — pattern cribbed from `KASPACOM/E2E-Tests/.github/workflows/nightly.yml`
+- [x] Merged blob reports into one HTML artifact per nightly run (14-day retention)
+
+### PR 5b — Mirror into central E2E-Tests
+
+- [ ] Add `wallet/` project to `KASPACOM/E2E-Tests/playwright.config.ts` covering the @smoke subset
+- [ ] Update `E2E-Tests` nightly workflow matrix to include `wallet` alongside `defi` / `kaspiano` / `api`
+- [ ] Update `E2E-Tests` README with cross-repo relationship
 - [ ] Archive this OpenSpec change → `openspec/archive/`
 
 ## Post-merge hygiene

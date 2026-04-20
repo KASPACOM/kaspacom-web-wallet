@@ -25,7 +25,7 @@ test.describe('Settings', () => {
     await expect(page.locator('kc-button', { hasText: 'Log out' })).toBeVisible();
   });
 
-  test('export wallet is password-gated and reveals backup data on verify', async ({
+  test('@smoke export wallet is password-gated and reveals backup data on verify', async ({
     page,
   }) => {
     await openSettings(page);
@@ -61,7 +61,7 @@ test.describe('Settings', () => {
     ).toBeVisible({ timeout: 10_000 });
   });
 
-  test('delete wallet requires "DELETE MY DATA" phrase before the button enables', async ({
+  test('@smoke delete wallet requires "DELETE MY DATA" phrase before the button enables', async ({
     page,
   }) => {
     await openSettings(page);

@@ -62,7 +62,7 @@ Split into 2a–2e so each PR is independently ship-able.
 - [ ] **mobile-safari stabilization (PR 3x)** — continue-on-error for now. Playwright stability check fails on kc-button inside the animated phone-frame; synthetic-click fallback helps landing test but not deeper flows. Debug locally with real iPhone 14 viewport to identify the blocking layout / animation and tighten the helper.
 - [ ] `e2e/swap.spec.ts` — quote, approval, 5 KAS reserve, wrap/unwrap 1:1, balance refresh after swap (covers #172)
 - [ ] `e2e/approval.spec.ts` — L1 approval (regression test for #191), L2 approval, revoke approval
-- [ ] `e2e/iframe.spec.ts` — iframe embed context, Safari UA, Firefox UA, mobile viewport `100dvh`, localStorage bridge (covers #185)
+- [x] `e2e/iframe.spec.ts` — iframe-embedded landing renders Create+Connect (covers #185 across chromium/webkit/firefox); iframe viewport fills host without overflow (covers #185 100dvh). localStorage-bridge + reload-persistence deferred pending the balance-signal investigation.
 - [ ] CI: add `e2e-smoke` matrix over `[chromium, webkit, firefox]` for iframe suite only
 
 ## PR 4 — Settings + Token Import + Address Book + Misc

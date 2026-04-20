@@ -24,7 +24,7 @@ test.describe('Token import (ERC20)', () => {
     await switchToL2(page);
   });
 
-  test('opens import token flow from L2 ERC20 assets', async ({ page }) => {
+  test('@smoke opens import token flow from L2 ERC20 assets', async ({ page }) => {
     // On a fresh L2 wallet the ERC20 tab is the default empty view.
     const importBtn = page
       .locator('kc-button', { hasText: /^\+?\s*Import Token$/ })
@@ -41,7 +41,7 @@ test.describe('Token import (ERC20)', () => {
     ).toBeVisible();
   });
 
-  test('Look Up button stays disabled while address input is empty', async ({
+  test('@smoke Look Up button stays disabled while address input is empty', async ({
     page,
   }) => {
     const importBtn = page
@@ -59,7 +59,7 @@ test.describe('Token import (ERC20)', () => {
     await expect(lookUpBtn).toBeDisabled();
   });
 
-  test('invalid hex address surfaces an error on look-up', async ({ page }) => {
+  test('@smoke invalid hex address surfaces an error on look-up', async ({ page }) => {
     const importBtn = page
       .locator('kc-button', { hasText: /^\+?\s*Import Token$/ })
       .first();

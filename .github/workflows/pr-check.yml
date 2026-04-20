@@ -168,6 +168,16 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Diagnose KASPA_E2E_SEED visibility
+        run: |
+          if [ -n "$KASPA_E2E_SEED" ]; then
+            echo "::notice::KASPA_E2E_SEED is visible to CI (length=${#KASPA_E2E_SEED}, words=$(echo "$KASPA_E2E_SEED" | wc -w))"
+          else
+            echo "::warning::KASPA_E2E_SEED is EMPTY or UNSET. If this is on the main repo (not a fork), check org secret repo-access list at https://github.com/organizations/KASPACOM/settings/secrets/actions/KASPA_E2E_SEED"
+          fi
+        env:
+          KASPA_E2E_SEED: ${{ secrets.KASPA_E2E_SEED }}
+
       - name: Run funded-wallet E2E tests
         run: npm run e2e:funded
         env:

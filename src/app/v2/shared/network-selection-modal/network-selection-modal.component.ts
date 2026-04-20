@@ -59,8 +59,7 @@ export class NetworkSelectionModalComponent {
 
   isCurrentNetwork(networkId: string): boolean {
     return (
-      this.ethereumWalletChainManager.getCurrentChainSignal() &&
-      this.ethereumWalletChainManager.getCurrentChainSignal()() == networkId
+      this.ethereumWalletChainManager.getCurrentChainSignal()() === networkId
     );
   }
 

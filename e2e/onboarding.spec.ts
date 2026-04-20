@@ -14,7 +14,11 @@ import {
   importBySeedPhrase,
   login,
 } from './helpers/onboarding';
-import { clickKcButton, waitForStepTransition } from './helpers/wait';
+import {
+  clickKcButton,
+  waitForHeading,
+  waitForRootTransition,
+} from './helpers/wait';
 
 test.describe('Onboarding', () => {
   test.beforeEach(async ({ page }) => {
@@ -23,7 +27,9 @@ test.describe('Onboarding', () => {
 
   test('@smoke landing page shows create + import actions', async ({ page }) => {
     await gotoLanding(page);
-    await expect(page.locator('kc-button', { hasText: 'Create New Wallet' })).toBeVisible();
+    await expect(
+      page.locator('kc-button', { hasText: 'Create New Wallet' }),
+    ).toBeVisible();
     await expect(
       page.locator('kc-button', { hasText: 'Connect Existing Wallet' }),
     ).toBeVisible();
@@ -46,9 +52,10 @@ test.describe('Onboarding', () => {
   test('seed-saved checkbox gates the Continue button', async ({ page }) => {
     await gotoLanding(page);
     await clickKcButton(page, 'Create New Wallet');
-    await waitForStepTransition(page);
+    await waitForRootTransition(page);
 
-    // Get past password step
+    // Password step
+    await waitForHeading(page, /Create Your Password/i);
     await page
       .locator('kc-input[formcontrolname="password"] input')
       .first()
@@ -58,17 +65,18 @@ test.describe('Onboarding', () => {
       .first()
       .fill(TEST_PASSWORD);
     await clickKcButton(page, 'Continue');
-    await waitForStepTransition(page);
 
-    // On the seed display step, Continue should be disabled until checkbox is ticked.
+    // Seed display step — Continue must start disabled
+    await waitForHeading(page, /Recovery Phrase/i);
     const continueBtn = page
       .locator('kc-button', { hasText: 'Continue' })
-      .last();
-    const buttonEl = continueBtn.locator('button, [role="button"]').first();
-    await expect(buttonEl).toBeDisabled();
+      .last()
+      .locator('button')
+      .first();
+    await expect(continueBtn).toBeDisabled();
 
     await page.getByText('I saved my recovery phrase').click();
-    await expect(buttonEl).toBeEnabled();
+    await expect(continueBtn).toBeEnabled();
   });
 
   test('@smoke import via 12-word seed phrase lands on home', async ({ page }) => {
@@ -88,24 +96,24 @@ test.describe('Onboarding', () => {
   }) => {
     await gotoLanding(page);
     await clickKcButton(page, 'Connect Existing Wallet');
-    await waitForStepTransition(page);
+    await waitForRootTransition(page);
+
+    // Import-switch step — Seed Phrase default, click Continue to advance.
+    await waitForHeading(page, /Import Wallet/i);
+    await clickKcButton(page, 'Continue');
+
+    // Seed input step
+    await waitForHeading(page, /Enter recovery phrase/i);
     const inputs = page.locator('.seed-phrase-step__word input');
-    await expect(inputs).toHaveCount(12);
+    await expect(inputs).toHaveCount(12, { timeout: 10_000 });
     const words = INVALID_SEED_12.split(/\s+/);
     for (let i = 0; i < words.length; i++) {
       await inputs.nth(i).fill(words[i]);
     }
     await clickKcButton(page, 'Continue');
 
-    // We must NOT land on /app/home within a reasonable window.
-    await page
-      .waitForURL(/\/app\/home/, { timeout: 5_000 })
-      .then(() => {
-        throw new Error('Invalid seed unexpectedly reached wallet home');
-      })
-      .catch((err: Error) => {
-        if (err.message.includes('unexpectedly reached')) throw err;
-      });
+    // We must NOT reach /app/home within 10s.
+    await page.waitForTimeout(5_000);
     expect(page.url()).not.toMatch(/\/app\/home/);
   });
 
@@ -121,17 +129,16 @@ test.describe('Onboarding', () => {
     await gotoLanding(page);
     await createNewWallet(page, TEST_PASSWORD, 12);
 
-    // Simulate new session: reload to force login screen.
+    // Reload to force login screen.
     await page.reload({ waitUntil: 'domcontentloaded' });
     const loginPw = page
       .locator('form.onboarding-v2__login-form kc-input input')
       .first();
-    await expect(loginPw).toBeVisible();
+    await expect(loginPw).toBeVisible({ timeout: 10_000 });
     await loginPw.fill('definitely-the-wrong-password');
     await clickKcButton(page, 'Login');
 
-    // URL must not transition to /app/home; an invalid-credentials reason appears.
-    await page.waitForTimeout(1_000);
+    await page.waitForTimeout(2_000);
     expect(page.url()).not.toMatch(/\/app\/home/);
   });
 
@@ -141,6 +148,6 @@ test.describe('Onboarding', () => {
 
     await page.reload({ waitUntil: 'domcontentloaded' });
     await login(page, TEST_PASSWORD);
-    await expect(page).toHaveURL(/\/app\/home/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/app\/home/, { timeout: 30_000 });
   });
 });

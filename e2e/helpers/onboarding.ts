@@ -10,9 +10,12 @@ export type WordCount = 12 | 24;
 
 export async function gotoLanding(page: Page): Promise<void> {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
+  // The desktop hero `<h1>` ("The Official KaspaCom Wallet") is hidden on
+  // mobile viewports. Instead wait for the "Create New Wallet" button in
+  // the phone-frame panel — visible in every viewport.
   await expect(
-    page.getByRole('heading', { name: /Official KaspaCom Wallet/i }),
-  ).toBeVisible();
+    page.locator('kc-button', { hasText: 'Create New Wallet' }).first(),
+  ).toBeVisible({ timeout: 15_000 });
 }
 
 async function fillPasswordInputs(

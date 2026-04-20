@@ -67,8 +67,16 @@ Split into 2a–2e so each PR is independently ship-able.
 
 ## PR 4 — Settings + Token Import + Address Book + Misc
 
-- [ ] `e2e/settings.spec.ts` — export seed behind password, export private key behind password, network switch (TN10/Kasplex/IGRA), wallet deletion confirmation flow
-- [x] `e2e/token-import.spec.ts` (PR 4b) — opens import flow on L2, Look Up disabled on empty input, invalid-hex error (covers #182 entry-point regression). Full import + remove flow deferred until L2 RPC connection behavior is confirmed.
+### PR 4a — Settings (this PR)
+
+- [x] `e2e/settings.spec.ts` — settings menu opens, export wallet password gate, delete wallet phrase validation
+- [x] `helpers/settings.ts` — `openSettings()` / `closeSettings()`
+- [ ] Export private key flow (separate entry point — defer to PR 4a.1 once we find the account-settings overlay entry)
+- [ ] Network switch (dev-mode only, not on prod — lower priority)
+
+### PR 4b — Token import (merged in #199)
+
+- [x] `e2e/token-import.spec.ts` — opens import flow on L2, Look Up disabled on empty input, invalid-hex error (covers #182 entry-point regression). Full import + remove flow deferred until L2 RPC connection behavior is confirmed.
 - [x] `helpers/network.ts` — `switchToL2()` (dev-mode network selector)
 - [ ] `e2e/address-book.spec.ts` — add / edit / delete contacts, use contact in send flow
 - [ ] `e2e/pending-tx.spec.ts` — pending-transactions banner appears during broadcast and clears on confirmation

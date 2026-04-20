@@ -139,15 +139,29 @@ export class TokenSelectorModalComponent implements OnInit {
     effect(() => {
       const chainId = this.chainManager.getCurrentChainSignal()();
       untracked(() => {
-        if (!this.open() || !chainId) return;
-        this.mostTradedTokens.set([]);
-        this.mostTradedChainId = undefined;
+        if (!this.open()) return;
+        this.resetChainScopedState();
+        if (!chainId) return;
         this.loadSearchHistory();
         this.loadMostTradedTokens();
       });
     });
   }
 
+  private resetChainScopedState(): void {
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+      this.searchDebounceTimer = null;
+    }
+    this.searchRequestId++;
+    this.mostTradedRequestId++;
+    this.mostTradedLoading.set(false);
+    this.searchLoading.set(false);
+    this.searchResults.set([]);
+    this.searchHistory.set([]);
+    this.mostTradedTokens.set([]);
+    this.mostTradedChainId = undefined;
+  }
   // User's own tokens (sorted by balance, minus excluded)
   userTokens = computed(() => {
     const excluded = this.excludedToken();

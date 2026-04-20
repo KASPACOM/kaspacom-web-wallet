@@ -19,14 +19,17 @@ export async function readKasBalance(
   page: Page,
   opts: { waitForNonZeroMs?: number; refreshEveryMs?: number } = {},
 ): Promise<number> {
-  const waitForNonZeroMs = opts.waitForNonZeroMs ?? 75_000;
-  const refreshEveryMs = opts.refreshEveryMs ?? 15_000;
+  const waitForNonZeroMs = opts.waitForNonZeroMs ?? 90_000;
+  const refreshEveryMs = opts.refreshEveryMs ?? 20_000;
   const amount = page.locator('.balance-amount').first();
+  // Wait for the first render (skeleton → number) before we start polling.
   await expect(amount).toBeVisible({ timeout: 30_000 });
 
   // The wallet caches balance from login-time UTXO fetch and does not
   // auto-repoll. Click `.refresh-action` on an interval to force a fresh
-  // query against the Kaspa API.
+  // query. While refreshing, `isRefreshing()` is true and the balance
+  // element is replaced with <app-skeleton>, so every loop iteration must
+  // wait for the element to reappear before calling textContent.
   const refreshBtn = page.locator('.refresh-action').first();
   const deadline = Date.now() + waitForNonZeroMs;
   const start = Date.now();
@@ -34,16 +37,28 @@ export async function readKasBalance(
   let lastRefreshAt = 0;
 
   while (Date.now() < deadline) {
-    const raw = (await amount.textContent())?.trim() ?? '';
-    last = parseBalanceText(raw);
-    if (Number.isFinite(last) && last > 0) return last;
+    // `.balance-amount` may be gone during a refresh. Wait up to 8s for it
+    // to reappear. If it never does, treat as unknown and try a refresh.
+    const present = await amount
+      .waitFor({ state: 'visible', timeout: 8_000 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (present) {
+      const raw = (await amount.textContent().catch(() => ''))?.trim() ?? '';
+      last = parseBalanceText(raw);
+      if (Number.isFinite(last) && last > 0) return last;
+    }
 
     const elapsed = Date.now() - start;
     if (elapsed - lastRefreshAt >= refreshEveryMs) {
       lastRefreshAt = elapsed;
-      if (await refreshBtn.isVisible().catch(() => false)) {
+      const btnVisible = await refreshBtn
+        .isVisible()
+        .catch(() => false);
+      if (btnVisible) {
         await refreshBtn.click().catch(() => {
-          /* refresh may be disabled mid-fetch */
+          /* disabled mid-fetch */
         });
       }
     }

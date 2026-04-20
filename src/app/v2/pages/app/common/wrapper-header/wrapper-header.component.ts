@@ -45,8 +45,8 @@ export class WrapperHeaderComponent {
       );
 
       return {
-        name: chainConfig?.chainName,
-        icon: envConfig?.icon || '🌐',
+        name: envConfig?.shortName || chainConfig?.chainName,
+        icon: envConfig?.icon || null,
       };
     }
 

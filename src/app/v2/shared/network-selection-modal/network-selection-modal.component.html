@@ -4,7 +4,7 @@
     <div class="networks-list">
       <div class="network-item" [class.selected]="!isCurrentNetworkL2()" (click)="setL1Network()">
         <div class="network-icon">
-          🌐
+          <img src="images/tokens-logos/KAS.png" alt="Kaspa" class="chain-icon" />
         </div>
         <div class="network-info">
           <div class="network-name">Kaspa L1</div>
@@ -19,10 +19,15 @@
       <div *ngFor="let network of networks" class="network-item" [class.selected]="isCurrentNetwork(network.chainId)"
         (click)="setL2Network(network)">
         <div class="network-icon">
-          {{ getNetworkIcon(network) }}
+          @let networkIcon = getNetworkIcon(network);
+          @if (networkIcon) {
+            <img [src]="networkIcon!" alt="" class="chain-icon" />
+          } @else {
+            <span role="img" aria-label="Network icon">🌐</span>
+          }
         </div>
         <div class="network-info">
-          <div class="network-name">{{ getNetworkName(network) }}</div>
+          <div class="network-name">{{ getNetworkShortName(network) }}</div>
         </div>
         <div class="network-status">
           <kc-icon *ngIf="isCurrentNetwork(network.chainId)" [iconClass]="'icon-check'" [size]="'sm'"></kc-icon>

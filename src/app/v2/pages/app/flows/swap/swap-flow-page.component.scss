@@ -17,7 +17,7 @@ $swap-input-row-height: 45px;
   background-color: var(--bg-primary);
   border-radius: 24px;
   padding: 16px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--gray-20, #333333);
   gap: 16px;
 }
 
@@ -61,7 +61,7 @@ $swap-input-row-height: 45px;
   background-color: var(--bg-secondary);
   border-radius: 20px;
   padding: $swap-input-box-padding;
-  border: 1px solid transparent;
+  border: 1px solid var(--gray-25, #404040);
   transition: border-color 0.2s ease;
 
   &.sell-box,
@@ -74,11 +74,12 @@ $swap-input-row-height: 45px;
   }
 
   &:hover {
-    border-color: var(--border-color);
+    border-color: var(--gray-45, #757575);
   }
 
   &:focus-within {
-    border-color: var(--primary-40);
+    border-color: var(--primary, #6fc7ba);
+    background-color: var(--bg-tertiary);
   }
 
   &.error {
@@ -100,8 +101,8 @@ $swap-input-row-height: 45px;
 
 .token-input-label {
   font-size: 14px;
-  font-weight: 500;
-  color: var(--gray-60);
+  font-weight: 600;
+  color: var(--gray-75, #bdbdbd);
 }
 
 .token-balance {
@@ -127,25 +128,25 @@ $swap-input-row-height: 45px;
 .percentage-btn {
   flex: 1;
   background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  color: var(--gray-60);
+  border: 1px solid var(--gray-25, #404040);
+  color: var(--gray-75, #bdbdbd);
   font-size: 13px;
   font-weight: 500;
-  padding: 4px 4px;
+  padding: 5px 10px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: var(--bg-primary);
-    color: var(--color-text-primary);
-    border-color: var(--primary-40);
+    background: var(--bg-secondary);
+    color: var(--white, #fff);
+    border-color: var(--gray-45, #757575);
   }
 
   &.active {
-    background: var(--primary-20);
-    border-color: var(--primary-40);
-    color: var(--primary);
+    background: var(--primary-20, #2a4a5a);
+    border-color: var(--primary, #6fc7ba);
+    color: var(--primary, #6fc7ba);
   }
 }
 
@@ -180,6 +181,7 @@ $swap-input-row-height: 45px;
     margin: 0;
   }
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .token-select-btn {
@@ -187,7 +189,7 @@ $swap-input-row-height: 45px;
   align-items: center;
   gap: 8px;
   background-color: var(--bg-tertiary);
-  border: none;
+  border: 1px solid var(--gray-25, #404040);
   border-radius: 20px;
   padding: 8px 12px;
   cursor: pointer;
@@ -196,7 +198,8 @@ $swap-input-row-height: 45px;
   color: var(--color-text-primary);
 
   &:hover {
-    background-color: var(--bg-primary);
+    background-color: var(--bg-secondary);
+    border-color: var(--gray-45, #757575);
   }
 }
 
@@ -293,6 +296,7 @@ $swap-input-row-height: 45px;
   background-color: var(--bg-secondary);
   border-radius: 16px;
   padding: 14px 16px;
+  border: 1px solid var(--gray-20, #333333);
 }
 
 .trade-info-row {

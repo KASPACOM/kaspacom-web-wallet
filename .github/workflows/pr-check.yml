@@ -115,6 +115,10 @@ jobs:
         run: npm run e2e:smoke
         env:
           CI: 'true'
+          # Pre-funded TN10 seed for send/swap tests. Set as a KASPACOM
+          # organization secret. Unset/empty on forks; funded-wallet tests
+          # self-skip via getFundedSeed() when missing.
+          KASPA_E2E_SEED: ${{ secrets.KASPA_E2E_SEED }}
 
       - name: Upload Playwright report on failure
         if: failure()

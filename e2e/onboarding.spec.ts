@@ -79,11 +79,7 @@ test.describe('Onboarding', () => {
     await expect(continueBtn).toBeEnabled();
   });
 
-  // Not @smoke until PR 2 introduces KASPA_E2E_SEED — the BIP39 all-abandon
-  // test vector is rejected by @kaspacom/wallet-messages (likely a well-known-
-  // seed guard). The test still runs in the full suite via `npm run e2e`;
-  // re-tag as @smoke once a verified TN10 seed is wired in.
-  test('import via 12-word seed phrase lands on home', async ({ page }) => {
+  test('@smoke import via 12-word seed phrase lands on home', async ({ page }) => {
     await gotoLanding(page);
     await importBySeedPhrase(page, BIP39_TEST_SEED_12, TEST_PASSWORD);
     expect(await hasStoredWallet(page)).toBe(true);

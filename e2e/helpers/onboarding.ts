@@ -134,6 +134,12 @@ export async function importBySeedPhrase(
   await waitForHeading(page, /^Create Password$/i);
   await fillPasswordInputs(page, password, 'Next');
 
+  // Step 5: Success — "Wallet Loading" screen with a "Finish" button that
+  // calls walletService.forceReloadWallets() then router.navigate(/app/home).
+  // Unlike the new-wallet ADDRESS step, this one does not auto-navigate.
+  await waitForHeading(page, /Wallet Loading/i);
+  await clickKcButton(page, 'Finish');
+
   await waitForWalletHome(page);
 }
 
@@ -156,6 +162,9 @@ export async function importByPrivateKey(
 
   await waitForHeading(page, /^Create Password$/i);
   await fillPasswordInputs(page, password, 'Next');
+
+  await waitForHeading(page, /Wallet Loading/i);
+  await clickKcButton(page, 'Finish');
 
   await waitForWalletHome(page);
 }

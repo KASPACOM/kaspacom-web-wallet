@@ -8,6 +8,8 @@
 - [x] Fixtures: test seed phrase, test private key (unfunded)
 - [x] Helpers: wait for hydration, clear/seed localStorage, drive onboarding flow
 - [x] `e2e/onboarding.spec.ts` — 10 tests: create (12/24), import seed (12/24), invalid seed, private key, login right/wrong password, checkbox gating
+  - [x] 3 tests tagged `@smoke` in CI gate: landing, create, login-wrong-password
+  - [ ] Re-tag `@smoke` on import-seed tests once PR 2 wires `KASPA_E2E_SEED` (BIP39 all-abandon test vector is rejected by the wallet SDK — needs a real TN10 seed)
 - [x] Update `.github/workflows/pr-check.yml` — new `e2e-smoke` job (Chromium)
 - [x] `e2e/README.md` — how to run locally, env vars, CI behavior
 - [x] Fix dev-server host binding for CI (override `local.kaspa.com` → `127.0.0.1 --disable-host-check`)

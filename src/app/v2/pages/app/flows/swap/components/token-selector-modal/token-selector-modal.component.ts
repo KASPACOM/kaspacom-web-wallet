@@ -188,9 +188,19 @@ export class TokenSelectorModalComponent implements OnInit {
   }
 
   onRowKey(event: KeyboardEvent, token: Erc20Token): void {
-    if (event.target !== event.currentTarget) return;
-    if (event.key === 'Enter') { this.onTokenSelect(token); return; }
-    if (event.key === ' ') { event.preventDefault(); this.onTokenSelect(token); }
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+
+    if (event.key === 'Enter') {
+      this.onTokenSelect(token);
+      return;
+    }
+
+    if (event.key === ' ') {
+      event.preventDefault();
+      this.onTokenSelect(token);
+    }
   }
 
   async onTokenSelect(token: Erc20Token): Promise<void> {

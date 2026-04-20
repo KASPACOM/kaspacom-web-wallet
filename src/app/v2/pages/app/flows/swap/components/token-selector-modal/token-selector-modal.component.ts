@@ -131,6 +131,18 @@ export class TokenSelectorModalComponent implements OnInit {
         }
       });
     });
+
+    // When the chain changes while the modal is already open, refresh chain-scoped state.
+    effect(() => {
+      const chainId = this.chainManager.getCurrentChainSignal()();
+      untracked(() => {
+        if (!this.open() || !chainId) return;
+        this.mostTradedTokens.set([]);
+        this.mostTradedChainId = undefined;
+        this.loadSearchHistory();
+        this.loadMostTradedTokens();
+      });
+    });
   }
 
   // User's own tokens (sorted by balance, minus excluded)

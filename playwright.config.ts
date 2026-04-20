@@ -37,6 +37,20 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      // Mobile viewport — covers the iOS Safari regressions from PR #185
+      // (localStorage bridge, `100dvh` overflow).
+      name: 'mobile-safari',
+      use: { ...devices['iPhone 14'] },
+    },
   ],
 
   webServer: process.env.E2E_SKIP_SERVER

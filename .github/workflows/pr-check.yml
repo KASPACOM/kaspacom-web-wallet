@@ -86,6 +86,10 @@ jobs:
   e2e-smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, webkit, firefox, mobile-safari]
 
     steps:
       - name: Checkout code
@@ -104,27 +108,26 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-v2
           restore-keys: |
             playwright-${{ runner.os }}-
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        # `mobile-safari` uses the WebKit engine, so installing chromium +
+        # webkit + firefox covers all four projects.
+        run: npx playwright install --with-deps chromium webkit firefox
 
-      - name: Run E2E smoke tests
-        run: npm run e2e:smoke
+      - name: Run @smoke on ${{ matrix.project }}
+        run: npx playwright test --grep @smoke --project=${{ matrix.project }}
         env:
           CI: 'true'
-          # Pre-funded TN10 seed for send/swap tests. Set as a KASPACOM
-          # organization secret. Unset/empty on forks; funded-wallet tests
-          # self-skip via getFundedSeed() when missing.
           KASPA_E2E_SEED: ${{ secrets.KASPA_E2E_SEED }}
 
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.project }}
           path: playwright-report/
           retention-days: 14
 
@@ -132,7 +135,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-traces
+          name: playwright-traces-${{ matrix.project }}
           path: test-results/
           retention-days: 14
 
@@ -169,6 +172,9 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run funded-wallet E2E tests
+        # Funded tests are Chromium-only by design — the cross-browser
+        # signal lives in the e2e-smoke matrix; @funded asserts on-chain
+        # state and doesn't need re-running per browser engine.
         run: npm run e2e:funded
         env:
           CI: 'true'

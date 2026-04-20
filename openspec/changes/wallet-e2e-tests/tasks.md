@@ -55,8 +55,9 @@ Split into 2a–2e so each PR is independently ship-able.
 
 ## PR 3 — Swap + Approval + Iframe (multi-browser + mobile)
 
-- [ ] Extend `playwright.config.ts` with `webkit`, `firefox`, and `mobile-safari` (iPhone 14) projects
-- [ ] Add `e2e:all` and `e2e:mobile` npm scripts
+- [x] Extend `playwright.config.ts` with `webkit`, `firefox`, and `mobile-safari` (iPhone 14) projects
+- [x] Add `e2e:webkit`, `e2e:firefox`, `e2e:mobile`, `e2e:smoke:all` npm scripts
+- [x] `e2e-smoke` CI job becomes a matrix over all four projects — PR gate now blocks on Safari / Firefox / mobile regressions, not just Chromium
 - [ ] `e2e/swap.spec.ts` — quote, approval, 5 KAS reserve, wrap/unwrap 1:1, balance refresh after swap (covers #172)
 - [ ] `e2e/approval.spec.ts` — L1 approval (regression test for #191), L2 approval, revoke approval
 - [ ] `e2e/iframe.spec.ts` — iframe embed context, Safari UA, Firefox UA, mobile viewport `100dvh`, localStorage bridge (covers #185)

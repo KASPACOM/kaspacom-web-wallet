@@ -17,18 +17,36 @@ function parseBalanceText(raw: string): number {
  */
 export async function readKasBalance(
   page: Page,
-  opts: { waitForNonZeroMs?: number } = {},
+  opts: { waitForNonZeroMs?: number; refreshEveryMs?: number } = {},
 ): Promise<number> {
-  const waitForNonZeroMs = opts.waitForNonZeroMs ?? 45_000;
+  const waitForNonZeroMs = opts.waitForNonZeroMs ?? 75_000;
+  const refreshEveryMs = opts.refreshEveryMs ?? 15_000;
   const amount = page.locator('.balance-amount').first();
   await expect(amount).toBeVisible({ timeout: 30_000 });
 
+  // The wallet caches balance from login-time UTXO fetch and does not
+  // auto-repoll. Click `.refresh-action` on an interval to force a fresh
+  // query against the Kaspa API.
+  const refreshBtn = page.locator('.refresh-action').first();
   const deadline = Date.now() + waitForNonZeroMs;
+  const start = Date.now();
   let last = NaN;
+  let lastRefreshAt = 0;
+
   while (Date.now() < deadline) {
     const raw = (await amount.textContent())?.trim() ?? '';
     last = parseBalanceText(raw);
     if (Number.isFinite(last) && last > 0) return last;
+
+    const elapsed = Date.now() - start;
+    if (elapsed - lastRefreshAt >= refreshEveryMs) {
+      lastRefreshAt = elapsed;
+      if (await refreshBtn.isVisible().catch(() => false)) {
+        await refreshBtn.click().catch(() => {
+          /* refresh may be disabled mid-fetch */
+        });
+      }
+    }
     await page.waitForTimeout(2_000);
   }
   return last;

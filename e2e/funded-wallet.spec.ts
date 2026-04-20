@@ -8,9 +8,10 @@ test.describe('Funded wallet', () => {
   test('@funded imports pre-funded seed and shows balance + address', async ({
     page,
   }, testInfo) => {
-    // Import (~15s) + balance poll (up to 45s) + address read can exceed
-    // the default 60s test timeout on CI. Give 2x headroom.
-    test.setTimeout(120_000);
+    // Import (~15s) + balance poll with periodic refresh (up to 75s) +
+    // address read can exceed the default 60s test timeout. Extra headroom
+    // for the refresh-click loop driving the wallet's balance re-fetch.
+    test.setTimeout(180_000);
     await authenticateFundedWallet(page);
 
     const [balance, address] = await Promise.all([

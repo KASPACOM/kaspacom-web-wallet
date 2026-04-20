@@ -57,7 +57,9 @@ Split into 2a–2e so each PR is independently ship-able.
 
 - [x] Extend `playwright.config.ts` with `webkit`, `firefox`, and `mobile-safari` (iPhone 14) projects
 - [x] Add `e2e:webkit`, `e2e:firefox`, `e2e:mobile`, `e2e:smoke:all` npm scripts
-- [x] `e2e-smoke` CI job becomes a matrix over all four projects — PR gate now blocks on Safari / Firefox / mobile regressions, not just Chromium
+- [x] `e2e-smoke` CI job becomes a matrix over all four projects
+- [x] Chromium / WebKit / Firefox gate the PR (green)
+- [ ] **mobile-safari stabilization (PR 3x)** — continue-on-error for now. Playwright stability check fails on kc-button inside the animated phone-frame; synthetic-click fallback helps landing test but not deeper flows. Debug locally with real iPhone 14 viewport to identify the blocking layout / animation and tighten the helper.
 - [ ] `e2e/swap.spec.ts` — quote, approval, 5 KAS reserve, wrap/unwrap 1:1, balance refresh after swap (covers #172)
 - [ ] `e2e/approval.spec.ts` — L1 approval (regression test for #191), L2 approval, revoke approval
 - [ ] `e2e/iframe.spec.ts` — iframe embed context, Safari UA, Firefox UA, mobile viewport `100dvh`, localStorage bridge (covers #185)

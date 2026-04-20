@@ -18,22 +18,25 @@ Every one of these is a flow a Playwright test would execute on every PR. The ce
 
 ## What Changes
 
-Add in-repo Playwright E2E suite at `e2e/`. Runs against TN10 L1 + Kasplex/IGRA testnet L2 using a pre-funded test wallet stored in GitHub Actions secrets. Six suites, ~40 tests total, landed across multiple PRs:
+Add in-repo Playwright E2E suite at `e2e/`. Runs against TN10 L1 + Kasplex/IGRA testnet L2 using a pre-funded test wallet stored in GitHub Actions secrets. **Five suites, ~65 tests total**, across three browsers (Chromium, WebKit, Firefox) plus a mobile viewport for the iframe suite. Landing across five PRs:
 
-- **PR 1 (this proposal):** Infrastructure + onboarding suite + CI
-- **PR 2:** Send L1 + L2
-- **PR 3:** Swap + approval + iframe
-- **PR 4:** Settings + token import
+- **PR 1 (merged first):** Infrastructure + onboarding suite + CI smoke gate (Chromium only)
+- **PR 2:** Send L1 + L2 + on-chain verification + KNS resolution + QR scan
+- **PR 3:** Swap + approval + iframe (adds WebKit + Firefox + mobile viewport projects)
+- **PR 4:** Settings + token import + address book + pending-tx banner + asset detail + wallet switching
+- **PR 5:** Nightly workflow + Test Engineer alert + mirror `@smoke` into `KASPACOM/E2E-Tests`
 
-CI gate: `@smoke`-tagged subset runs on every PR; full suite runs nightly.
+CI gate: `@smoke`-tagged subset runs on every PR (Chromium only, ~3 min). Full suite runs nightly across all browsers and reports failures to Telegram topic 51073.
 
 ## Impact
 
 - **Affected specs:** new `testing/e2e` capability
 - **Affected code:**
   - New `e2e/` folder (Playwright tests, fixtures, helpers)
-  - New `playwright.config.ts`
-  - `package.json` — add `@playwright/test`, `dotenv`; add `e2e`/`e2e:smoke` scripts
-  - `.github/workflows/pr-check.yml` — add e2e job
-  - Minimal `data-testid` attributes added to key interactive elements in onboarding/home (no visual or behavioral change)
+  - New `playwright.config.ts` — gains WebKit + Firefox + Mobile Safari projects in PR 3
+  - `package.json` — add `@playwright/test`, `dotenv`; add `e2e` / `e2e:smoke` / `e2e:all` / `e2e:mobile` scripts
+  - `.github/workflows/pr-check.yml` — add `e2e-smoke` job
+  - New `.github/workflows/e2e-nightly.yml` (PR 5) — full suite, all browsers, Telegram alert on failure
+  - Minimal `data-testid` attributes added as selectors break under refactors (incremental)
 - **No runtime dependency changes** — Playwright is devDependency only.
+- **New secret required:** `KASPA_E2E_SEED` (TN10 pre-funded wallet seed phrase) — gate for PR 2 onward.

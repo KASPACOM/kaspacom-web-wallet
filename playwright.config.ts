@@ -5,7 +5,9 @@ import * as path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '.env.e2e') });
 
 const PORT = Number(process.env.E2E_PORT || 4200);
-const BASE_URL = process.env.E2E_BASE_URL || `http://localhost:${PORT}`;
+// Use 127.0.0.1 (not localhost) to avoid IPv6 ::1 / IPv4 mismatches with the
+// Angular dev server, which binds to IPv4 only.
+const BASE_URL = process.env.E2E_BASE_URL || `http://127.0.0.1:${PORT}`;
 const IS_CI = !!process.env.CI;
 
 export default defineConfig({
@@ -40,7 +42,11 @@ export default defineConfig({
   webServer: process.env.E2E_SKIP_SERVER
     ? undefined
     : {
-        command: 'npm run start -- --port ' + PORT,
+        // `ng serve` defaults to host `local.kaspa.com` via angular.json which
+        // only resolves on dev machines. Pin to 127.0.0.1 for CI + containers,
+        // and disable the host-check so the `ng serve` hostname guard doesn't
+        // reject requests from Playwright's Chromium.
+        command: `npm run start -- --host 127.0.0.1 --port ${PORT} --disable-host-check`,
         url: BASE_URL,
         reuseExistingServer: !IS_CI,
         timeout: 180_000,

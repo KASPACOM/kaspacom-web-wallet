@@ -43,3 +43,9 @@ Thumbs.db
 
 # Sentry Config File
 .sentryclirc
+
+# Playwright E2E
+/playwright-report
+/test-results
+/playwright/.cache
+.env.e2e

@@ -13,12 +13,6 @@ import { clearWalletState } from './storage';
  */
 export async function authenticateFundedWallet(page: Page): Promise<string> {
   const seed = getFundedSeed();
-  const rawLen = (process.env.KASPA_E2E_SEED ?? '').length;
-  const rawWords = (process.env.KASPA_E2E_SEED ?? '').trim().split(/\s+/).filter(Boolean).length;
-  // eslint-disable-next-line no-console
-  console.log(
-    `[e2e/auth] KASPA_E2E_SEED diagnostics: rawLen=${rawLen} rawWords=${rawWords} getFundedSeed=${seed ? 'set' : 'undefined'}`,
-  );
   test.skip(!seed, 'KASPA_E2E_SEED not set — funded-wallet tests require the pre-funded TN10 seed');
 
   await clearWalletState(page);

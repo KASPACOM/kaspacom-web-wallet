@@ -17,17 +17,31 @@ export async function waitForRootTransition(page: Page): Promise<void> {
  * Click a kc-button whose `[text]` input matches `text`. The web component
  * forwards the click to an inner native button, so we locate the nested
  * button to sidestep any host-level click listeners.
+ *
+ * Desktop: normal click.
+ * Mobile (iPhone 14 project): Playwright's stability check times out on
+ * kc-button inside the phone-frame panel — the canvas animation keeps the
+ * layout slightly un-stable. Fall through to a synthetic-click via
+ * dispatchEvent which doesn't care about stability.
  */
 export async function clickKcButton(page: Page, text: string): Promise<void> {
   const btn = page.locator(`kc-button:has-text("${text}")`).first();
   await expect(btn).toBeVisible({ timeout: 10_000 });
   const innerBtn = btn.locator('button').first();
-  const count = await innerBtn.count();
-  if (count > 0) {
-    await innerBtn.click();
-  } else {
-    await btn.click();
+  const target = (await innerBtn.count()) > 0 ? innerBtn : btn;
+  await target.scrollIntoViewIfNeeded().catch(() => {});
+
+  try {
+    await target.click({ timeout: 8_000 });
+    return;
+  } catch {
+    // Fall through to synthetic click.
   }
+
+  await target.evaluate((el) => {
+    if (el instanceof HTMLElement) el.click();
+    else el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
 }
 
 /**

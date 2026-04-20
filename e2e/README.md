@@ -7,10 +7,15 @@ Playwright E2E suite for `kaspacom-web-wallet`. Part of the
 
 ```bash
 npm install
-npx playwright install --with-deps chromium
-npm run e2e            # full suite (spins up dev server)
-npm run e2e:smoke      # @smoke-tagged subset only
-npm run e2e -- --ui    # Playwright UI mode
+npm run e2e:install          # installs chromium, webkit, firefox (with deps)
+npm run e2e                  # full suite, all browsers (~10 min)
+npm run e2e:smoke            # @smoke on Chromium only (fastest)
+npm run e2e:smoke:all        # @smoke across all 4 projects
+npm run e2e:funded           # funded-wallet tests (needs KASPA_E2E_SEED)
+npm run e2e:webkit           # Safari (WebKit) project only
+npm run e2e:firefox          # Firefox project only
+npm run e2e:mobile           # iPhone 14 viewport project only
+npm run e2e -- --ui          # Playwright UI mode
 ```
 
 The dev server is started automatically via `webServer` in `playwright.config.ts`.

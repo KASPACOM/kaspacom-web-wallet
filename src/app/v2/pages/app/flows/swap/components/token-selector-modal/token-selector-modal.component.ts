@@ -69,8 +69,11 @@ export class TokenSelectorModalComponent implements OnInit {
 
   private historyStorageKey = computed(() => {
     const chainId = this.chainManager.getCurrentChainSignal()();
-    const chainConfig = chainId ? this.chainManager.getChainConfig(chainId) : undefined;
-    const network = chainConfig?.defiApiNetworkName || chainConfig?.chainName || 'unknown';
+    const chainConfig = chainId
+      ? this.chainManager.getChainConfig(chainId)
+      : undefined;
+    const network =
+      chainConfig?.defiApiNetworkName || chainConfig?.chainName || 'unknown';
     const env = environment.isProduction ? 'prod' : 'dev';
     return `${HISTORY_STORAGE_KEY_PREFIX}-${network}-${env}`;
   });
@@ -128,7 +131,10 @@ export class TokenSelectorModalComponent implements OnInit {
         const currentChainId = this.chainManager.getCurrentChainSignal()();
         if (currentChainId) {
           const chainChanged = currentChainId !== this.mostTradedChainId;
-          if ((!this.mostTradedTokens().length || chainChanged) && !this.mostTradedLoading()) {
+          if (
+            (!this.mostTradedTokens().length || chainChanged) &&
+            !this.mostTradedLoading()
+          ) {
             this.loadMostTradedTokens();
           }
         }
@@ -146,7 +152,8 @@ export class TokenSelectorModalComponent implements OnInit {
         this.loadSearchHistory();
         this.loadMostTradedTokens();
         if (currentQuery) {
-          this.performSearch(currentQuery);
+          const requestId = ++this.searchRequestId;
+          this.performSearch(currentQuery, requestId);
         }
       });
     });
@@ -400,7 +407,8 @@ export class TokenSelectorModalComponent implements OnInit {
           const addrLower = addr.toLowerCase();
           if (uniqueTokens.has(addrLower)) continue;
           if (userTokenAddresses.has(addrLower)) continue;
-          if (excluded && excluded.address.toLowerCase() === addrLower) continue;
+          if (excluded && excluded.address.toLowerCase() === addrLower)
+            continue;
           uniqueTokens.set(addrLower, {
             address: addr,
             name: raw.name ?? '',
@@ -452,7 +460,9 @@ export class TokenSelectorModalComponent implements OnInit {
       }
 
       this.searchHistory.set(
-        parsed.filter((item): item is Erc20Token => this.isStoredHistoryToken(item)).slice(0, MAX_HISTORY),
+        parsed
+          .filter((item): item is Erc20Token => this.isStoredHistoryToken(item))
+          .slice(0, MAX_HISTORY),
       );
     } catch {
       this.searchHistory.set([]);

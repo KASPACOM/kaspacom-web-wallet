@@ -140,10 +140,14 @@ export class TokenSelectorModalComponent implements OnInit {
       const chainId = this.chainManager.getCurrentChainSignal()();
       untracked(() => {
         if (!this.open()) return;
+        const currentQuery = this.searchQuery().trim();
         this.resetChainScopedState();
         if (!chainId) return;
         this.loadSearchHistory();
         this.loadMostTradedTokens();
+        if (currentQuery) {
+          this.performSearch(currentQuery);
+        }
       });
     });
   }

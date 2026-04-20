@@ -68,7 +68,8 @@ Split into 2a–2e so each PR is independently ship-able.
 ## PR 4 — Settings + Token Import + Address Book + Misc
 
 - [ ] `e2e/settings.spec.ts` — export seed behind password, export private key behind password, network switch (TN10/Kasplex/IGRA), wallet deletion confirmation flow
-- [ ] `e2e/token-import.spec.ts` — import ERC20 by address (covers #182), reject invalid address, remove imported token, referral capture fire-and-forget (covers #186)
+- [x] `e2e/token-import.spec.ts` (PR 4b) — opens import flow on L2, Look Up disabled on empty input, invalid-hex error (covers #182 entry-point regression). Full import + remove flow deferred until L2 RPC connection behavior is confirmed.
+- [x] `helpers/network.ts` — `switchToL2()` (dev-mode network selector)
 - [ ] `e2e/address-book.spec.ts` — add / edit / delete contacts, use contact in send flow
 - [ ] `e2e/pending-tx.spec.ts` — pending-transactions banner appears during broadcast and clears on confirmation
 - [ ] `e2e/asset-detail.spec.ts` — click asset → detail view, transaction history drill-down, copy address

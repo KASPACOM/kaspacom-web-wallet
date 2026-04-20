@@ -16,16 +16,16 @@
     </div>
   </div>
   <div class="asset-card__usd-info flex column align-items-end">
-    @if (token()?.tokenPriceUSD; as price) {
+    @if (token()?.tokenPriceUSD !== undefined && token()?.tokenPriceUSD !== null) {
       <div class="text-gray-90">
-        @if (price >= 0.01) {
-          ${{ price | number : '1.2-2' }}
+        @if (token()!.tokenPriceUSD >= 0.01) {
+          ${{ token()!.tokenPriceUSD | number : '1.2-2' }}
         } @else {
-          ${{ price | number : '1.2-8' }}
+          ${{ token()!.tokenPriceUSD | number : '1.2-8' }}
         }
       </div>
       <div class="text-gray-60 typo-text-1 asset-card__usd-meta">
-        ${{ ((token()?.balance || 0) * price) | number : '1.2-2' }}
+        ${{ ((token()?.balance || 0) * token()!.tokenPriceUSD) | number : '1.2-2' }}
       </div>
     } @else {
       <div class="text-gray-90">—</div>

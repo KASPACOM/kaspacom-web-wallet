@@ -145,9 +145,11 @@ export class L2TokenPricesService implements OnDestroy {
       const kasAmount = parseFloat(tradeComputed.amountOut);
       if (!isFinite(kasAmount) || kasAmount <= 0) return undefined;
 
-      const current = new Map(this._kasAmounts());
-      current.set(cacheKey, { kasAmount, cachedAt: Date.now() });
-      this._kasAmounts.set(current);
+      this._kasAmounts.update((current) => {
+        const next = new Map(current);
+        next.set(cacheKey, { kasAmount, cachedAt: Date.now() });
+        return next;
+      });
 
       return kasAmount * kasUsdPrice;
     } catch {

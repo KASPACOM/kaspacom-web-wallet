@@ -33,15 +33,31 @@ export class L2TokenPricesService implements OnDestroy {
   // Cache stores KAS amounts (the expensive on-chain part), keyed by `chainId:address`
   private _kasAmounts = signal<Map<string, CachedKasAmount>>(new Map());
 
-  // Derives USD prices reactively — updates instantly when KAS/USD price ticks
-  public readonly tokenPrices = computed<Map<string, number>>(() => {
+  // Derives USD prices reactively — updates instantly when KAS/USD price ticks.
+  // Outer key: chainId. Inner key: lowercased token address.
+  public readonly pricesByChain = computed<Map<string, Map<string, number>>>(() => {
     const kasUsd = this.kaspaPrice.price();
-    const map = new Map<string, number>();
-    for (const [key, { kasAmount }] of this._kasAmounts()) {
-      map.set(key, kasAmount * kasUsd);
+    const result = new Map<string, Map<string, number>>();
+    for (const [cacheKey, { kasAmount }] of this._kasAmounts()) {
+      const { chainId, address } = L2TokenPricesService.parseCacheKey(cacheKey);
+      let chainMap = result.get(chainId);
+      if (!chainMap) {
+        chainMap = new Map<string, number>();
+        result.set(chainId, chainMap);
+      }
+      chainMap.set(address, kasAmount * kasUsd);
     }
-    return map;
+    return result;
   });
+
+  private static buildCacheKey(chainId: string, address: string): string {
+    return `${chainId}:${address.toLowerCase()}`;
+  }
+
+  private static parseCacheKey(key: string): { chainId: string; address: string } {
+    const i = key.indexOf(':');
+    return { chainId: key.slice(0, i), address: key.slice(i + 1) };
+  }
 
   private contextByChain = new Map<string, ChainSwapContext>();
 
@@ -54,12 +70,14 @@ export class L2TokenPricesService implements OnDestroy {
 
     const now = Date.now();
     const kasUsd = this.kaspaPrice.price();
+    if (!kasUsd) return map;
+
     const cachedKasAmounts = this._kasAmounts();
     const tokensToRefresh: Erc20Token[] = [];
 
     for (const token of tokens) {
       const address = token.address.toLowerCase();
-      const cacheKey = `${chainId}:${address}`;
+      const cacheKey = L2TokenPricesService.buildCacheKey(chainId, address);
       const cached = cachedKasAmounts.get(cacheKey);
 
       if (cached && now - cached.cachedAt < KAS_AMOUNT_CACHE_TTL_MS) {
@@ -127,7 +145,7 @@ export class L2TokenPricesService implements OnDestroy {
       return kasUsdPrice;
     }
 
-    const cacheKey = `${chainId}:${addr}`;
+    const cacheKey = L2TokenPricesService.buildCacheKey(chainId, addr);
     const cached = this._kasAmounts().get(cacheKey);
     if (cached && Date.now() - cached.cachedAt < KAS_AMOUNT_CACHE_TTL_MS) {
       return cached.kasAmount * kasUsdPrice;

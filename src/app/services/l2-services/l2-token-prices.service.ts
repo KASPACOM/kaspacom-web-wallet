@@ -52,9 +52,30 @@ export class L2TokenPricesService implements OnDestroy {
     const map = new Map<string, number>();
     if (!tokens.length) return map;
 
+    const now = Date.now();
+    const kasUsd = this.kaspaPrice.price();
+    const cachedKasAmounts = this._kasAmounts();
+    const tokensToRefresh: Erc20Token[] = [];
+
+    for (const token of tokens) {
+      const address = token.address.toLowerCase();
+      const cacheKey = `${chainId}:${address}`;
+      const cached = cachedKasAmounts.get(cacheKey);
+
+      if (cached && now - cached.cachedAt < KAS_AMOUNT_CACHE_TTL_MS) {
+        map.set(address, cached.kasAmount * kasUsd);
+      } else {
+        tokensToRefresh.push(token);
+      }
+    }
+
+    if (!tokensToRefresh.length) {
+      return map;
+    }
+
     await this.ensurePairsReady(chainId);
 
-    const queue = [...tokens];
+    const queue = [...tokensToRefresh];
     let active = 0;
 
     await new Promise<void>((resolve) => {

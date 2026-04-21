@@ -91,7 +91,16 @@ export class L2TokenPricesService implements OnDestroy {
       return map;
     }
 
-    await this.ensurePairsReady(chainId);
+    const ctx = this.getChainContext(chainId);
+    const wrappedAddr = ctx?.networkConfig.wrappedToken.address.toLowerCase();
+    const needsPairs = tokensToRefresh.some((t) => {
+      const addr = t.address.toLowerCase();
+      return addr !== NATIVE_TOKEN_ADDRESS && addr !== wrappedAddr;
+    });
+
+    if (needsPairs) {
+      await this.ensurePairsReady(chainId);
+    }
 
     const queue = [...tokensToRefresh];
     let active = 0;

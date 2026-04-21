@@ -94,9 +94,10 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
     );
 
     const chainId = this.ethereumWalletChainManager.getCurrentChainSignal()();
+    const priceable = merged.filter((t) => ethers.isAddress(t.address));
     const priceByAddress = chainId
       ? await this.l2TokenPrices
-          .getPriceMap(merged, chainId)
+          .getPriceMap(priceable, chainId)
           .catch(() => new Map<string, number>())
       : new Map<string, number>();
 

@@ -190,7 +190,15 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
     };
 
     if (updateCurrentState) {
-      this.updateOrAddAsset(L2_ASSET_KEYS.erc20, token, 'address', true);
+      const existing = (this.data[L2_ASSET_KEYS.erc20]?.() ?? []).find(
+        (t) => t.address?.toLowerCase() === tokenAddress.toLowerCase(),
+      ) as Erc20TokenWithPrice | undefined;
+
+      const tokenWithPrice: Erc20TokenWithPrice = {
+        ...token,
+        tokenPriceUSD: existing?.tokenPriceUSD,
+      };
+      this.updateOrAddAsset(L2_ASSET_KEYS.erc20, tokenWithPrice, 'address', true);
     }
 
     return token;

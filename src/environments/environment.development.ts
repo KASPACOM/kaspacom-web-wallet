@@ -7,6 +7,7 @@ export const environment: Environment = {
   consentCssUrl: 'https://dev.kaspa.com/css/consent.min.css',
   kaspaComApiBaseurl: 'https://dev-api.kaspa.com',
   kaspaComDefiApiBaseurl: 'https://dev-api-defi.kaspa.com',
+  geckoTerminalApiBaseurl: 'https://api.geckoterminal.com/api/v2',
   kasplexApiBaseurl: 'https://tn10api.kasplex.org/v1',
   kaspaApiBaseurl: 'https://api-tn10.kaspa.org',
   krc721ApiBaseurl: 'https://testnet-10.krc721.stream/api/v1/krc721/testnet-10',

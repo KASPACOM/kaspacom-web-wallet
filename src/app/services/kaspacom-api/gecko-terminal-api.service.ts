@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import type {
   GeckoOhlcvEntry,
   GeckoOhlcvResponse,
@@ -11,7 +12,7 @@ import type {
 
 @Injectable({ providedIn: 'root' })
 export class GeckoTerminalApiService {
-  private readonly BASE_URL = 'https://api.geckoterminal.com/api/v2';
+  private readonly BASE_URL = environment.geckoTerminalApiBaseurl;
 
   constructor(private readonly httpClient: HttpClient) {}
 

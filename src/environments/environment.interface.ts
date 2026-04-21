@@ -34,6 +34,7 @@ export interface Environment {
   consentCssUrl?: string;
   kaspaComApiBaseurl: string;
   kaspaComDefiApiBaseurl: string;
+  geckoTerminalApiBaseurl: string;
   kasplexApiBaseurl: string;
   kaspaApiBaseurl: string;
   krc721ApiBaseurl: string;

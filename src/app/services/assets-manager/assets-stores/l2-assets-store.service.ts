@@ -83,23 +83,32 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
   protected async getErc20Tokens(
     walletAddress: string,
   ): Promise<Erc20TokenWithPrice[]> {
+    const chainId = this.ethereumWalletChainManager.getCurrentChainSignal()();
+
     const [erc20TokensFromContracts, erc20TokensFromGraph] = await Promise.all([
-      this.getErc20TokensFromSavedTokens(walletAddress),
-      this.getErc20TokensFromGraph(walletAddress).catch(() => []),
+      this.getErc20TokensFromSavedTokens(walletAddress, chainId),
+      this.getErc20TokensFromGraph(walletAddress, chainId).catch(() => []),
     ]);
+
+    if (this.ethereumWalletChainManager.getCurrentChainSignal()() !== chainId) {
+      return [];
+    }
 
     const merged = this.mergeErc20TokenSources(
       erc20TokensFromGraph,
       erc20TokensFromContracts,
     );
 
-    const chainId = this.ethereumWalletChainManager.getCurrentChainSignal()();
     const priceable = merged.filter((t) => ethers.isAddress(t.address));
     const priceByAddress = chainId
       ? await this.l2TokenPrices
           .getPriceMap(priceable, chainId)
           .catch(() => new Map<string, number>())
       : new Map<string, number>();
+
+    if (this.ethereumWalletChainManager.getCurrentChainSignal()() !== chainId) {
+      return [];
+    }
 
     return merged.map((token) => ({
       ...token,
@@ -109,8 +118,9 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
 
   protected async getErc20TokensFromGraph(
     walletAddress: string,
+    chainId?: string | null,
   ): Promise<Erc20Token[]> {
-    if (!this.ethereumWalletChainManager.getCurrentChainSignal()()) return [];
+    if (!(chainId ?? this.ethereumWalletChainManager.getCurrentChainSignal()())) return [];
 
     const tokens =
       await this.kaspacomDefiApi.getWalletTokensBalances(walletAddress);
@@ -126,10 +136,11 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
 
   protected async getErc20TokensFromSavedTokens(
     walletAddress: string,
+    chainId?: string | null,
   ): Promise<Erc20Token[]> {
-    const tokens = await this.l2LocalERC20Tokens.getAllTokensByChain(
-      this.ethereumWalletChainManager.getCurrentChainSignal()()!,
-    );
+    const chain = chainId ?? this.ethereumWalletChainManager.getCurrentChainSignal()();
+    if (!chain) return [];
+    const tokens = await this.l2LocalERC20Tokens.getAllTokensByChain(chain);
 
     if (tokens.length == 0) {
       return [];

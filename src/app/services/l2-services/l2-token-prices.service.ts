@@ -173,8 +173,12 @@ export class L2TokenPricesService implements OnDestroy {
       if (!isFinite(kasAmount) || kasAmount <= 0) return undefined;
 
       this._kasAmounts.update((current) => {
+        const now = Date.now();
         const next = new Map(current);
-        next.set(cacheKey, { kasAmount, cachedAt: Date.now() });
+        for (const [key, entry] of next) {
+          if (now - entry.cachedAt >= KAS_AMOUNT_CACHE_TTL_MS) next.delete(key);
+        }
+        next.set(cacheKey, { kasAmount, cachedAt: now });
         return next;
       });
 

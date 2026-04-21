@@ -99,43 +99,55 @@ export class L2TokenPricesService implements OnDestroy {
     if (!ctx) return map;
 
     const wrappedAddr = ctx.networkConfig.wrappedToken.address.toLowerCase();
-    const needsPairs = tokensToRefresh.some((t) => {
+    const immediateTokens = tokensToRefresh.filter((t) => {
+      const addr = t.address.toLowerCase();
+      return addr === NATIVE_TOKEN_ADDRESS || addr === wrappedAddr;
+    });
+    const pairDependentTokens = tokensToRefresh.filter((t) => {
       const addr = t.address.toLowerCase();
       return addr !== NATIVE_TOKEN_ADDRESS && addr !== wrappedAddr;
     });
 
-    if (needsPairs) {
+    const processTokenPrices = async (tokens: Erc20Token[]) => {
+      if (!tokens.length) {
+        return;
+      }
+
+      const queue = [...tokens];
+      let active = 0;
+
+      await new Promise<void>((resolve) => {
+        const tryNext = () => {
+          if (!queue.length && active === 0) {
+            resolve();
+            return;
+          }
+          while (active < CONCURRENT_PRICE_JOBS && queue.length) {
+            const token = queue.shift()!;
+            active++;
+            this.calculateTokenPriceInUSD(token, chainId)
+              .then((price) => {
+                if (price !== undefined) {
+                  map.set(token.address.toLowerCase(), price);
+                }
+              })
+              .catch(() => undefined)
+              .finally(() => {
+                active--;
+                tryNext();
+              });
+          }
+        };
+        tryNext();
+      });
+    };
+
+    await processTokenPrices(immediateTokens);
+
+    if (pairDependentTokens.length) {
       await this.ensurePairsReady(chainId);
+      await processTokenPrices(pairDependentTokens);
     }
-
-    const queue = [...tokensToRefresh];
-    let active = 0;
-
-    await new Promise<void>((resolve) => {
-      const tryNext = () => {
-        if (!queue.length && active === 0) {
-          resolve();
-          return;
-        }
-        while (active < CONCURRENT_PRICE_JOBS && queue.length) {
-          const token = queue.shift()!;
-          active++;
-          this.calculateTokenPriceInUSD(token, chainId)
-            .then((price) => {
-              if (price !== undefined) {
-                map.set(token.address.toLowerCase(), price);
-              }
-            })
-            .catch(() => undefined)
-            .finally(() => {
-              active--;
-              tryNext();
-            });
-        }
-      };
-      tryNext();
-    });
-
     return map;
   }
 

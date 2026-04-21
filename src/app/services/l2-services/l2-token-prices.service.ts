@@ -37,8 +37,12 @@ export class L2TokenPricesService implements OnDestroy {
   // Outer key: chainId. Inner key: lowercased token address.
   public readonly pricesByChain = computed<Map<string, Map<string, number>>>(() => {
     const kasUsd = this.kaspaPrice.price();
+    if (!kasUsd) return new Map();
+
+    const now = Date.now();
     const result = new Map<string, Map<string, number>>();
-    for (const [cacheKey, { kasAmount }] of this._kasAmounts()) {
+    for (const [cacheKey, { kasAmount, cachedAt }] of this._kasAmounts()) {
+      if (now - cachedAt >= KAS_AMOUNT_CACHE_TTL_MS) continue;
       const { chainId, address } = L2TokenPricesService.parseCacheKey(cacheKey);
       let chainMap = result.get(chainId);
       if (!chainMap) {

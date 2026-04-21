@@ -180,8 +180,12 @@ export class L2TokenPricesService implements OnDestroy {
     if (!ctx) return;
 
     if (Date.now() - ctx.pairsRefreshedAt > PAIRS_REFRESH_TTL_MS) {
-      await ctx.service.refreshPairs().catch(() => undefined);
-      ctx.pairsRefreshedAt = Date.now();
+      try {
+        await ctx.service.refreshPairs();
+        ctx.pairsRefreshedAt = Date.now();
+      } catch {
+        return;
+      }
     } else {
       await ctx.service.waitForPairsLoaded().catch(() => undefined);
     }

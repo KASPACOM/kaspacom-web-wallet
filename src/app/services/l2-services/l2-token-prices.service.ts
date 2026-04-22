@@ -12,6 +12,7 @@ import { KaspaPriceService } from '../kaspa-price.service';
 const NATIVE_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000000';
 const KAS_AMOUNT_CACHE_TTL_MS = 3 * 60 * 1000;
 const PAIRS_REFRESH_TTL_MS = 5 * 60 * 1000;
+const PAIRS_REFRESH_BACKOFF_MS = 30 * 1000;
 const CONCURRENT_PRICE_JOBS = 5;
 
 interface CachedKasAmount {
@@ -125,10 +126,10 @@ export class L2TokenPricesService implements OnDestroy {
           while (active < CONCURRENT_PRICE_JOBS && queue.length) {
             const token = queue.shift()!;
             active++;
-            this.calculateTokenPriceInUSD(token, chainId)
-              .then((price) => {
-                if (price !== undefined) {
-                  map.set(token.address.toLowerCase(), price);
+            this.fetchKasAmountForToken(token, chainId)
+              .then((kasAmount) => {
+                if (kasAmount !== undefined) {
+                  map.set(token.address.toLowerCase(), kasAmount * kasUsd);
                 }
               })
               .catch(() => undefined)
@@ -157,26 +158,31 @@ export class L2TokenPricesService implements OnDestroy {
   ): Promise<number | undefined> {
     const kasUsdPrice = this.kaspaPrice.price();
     if (!kasUsdPrice) return undefined;
+    const kasAmount = await this.fetchKasAmountForToken(token, chainId);
+    return kasAmount !== undefined ? kasAmount * kasUsdPrice : undefined;
+  }
 
+  private async fetchKasAmountForToken(
+    token: Erc20Token,
+    chainId: string,
+  ): Promise<number | undefined> {
     const addr = token.address.toLowerCase();
 
-    if (addr === NATIVE_TOKEN_ADDRESS) {
-      return kasUsdPrice;
-    }
+    if (addr === NATIVE_TOKEN_ADDRESS) return 1;
 
     const ctx = this.getChainContext(chainId);
     if (!ctx) return undefined;
 
     const wrappedAddr = ctx.networkConfig.wrappedToken.address.toLowerCase();
-    if (addr === wrappedAddr) {
-      return kasUsdPrice;
-    }
+    if (addr === wrappedAddr) return 1;
 
     const cacheKey = L2TokenPricesService.buildCacheKey(chainId, addr);
     const cached = this._kasAmounts().get(cacheKey);
     if (cached && Date.now() - cached.cachedAt < KAS_AMOUNT_CACHE_TTL_MS) {
-      return cached.kasAmount * kasUsdPrice;
+      return cached.kasAmount;
     }
+
+    await this.ensurePairsReady(chainId);
 
     try {
       const { computed: tradeComputed } = await ctx.service.calculateTrade(
@@ -200,7 +206,7 @@ export class L2TokenPricesService implements OnDestroy {
         return next;
       });
 
-      return kasAmount * kasUsdPrice;
+      return kasAmount;
     } catch {
       return undefined;
     }
@@ -215,6 +221,7 @@ export class L2TokenPricesService implements OnDestroy {
         await ctx.service.refreshPairs();
         ctx.pairsRefreshedAt = Date.now();
       } catch {
+        ctx.pairsRefreshedAt = Date.now() - PAIRS_REFRESH_TTL_MS + PAIRS_REFRESH_BACKOFF_MS;
         return;
       }
     } else {

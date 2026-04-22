@@ -4,10 +4,10 @@
     <div class="networks-list">
       <div class="network-item" [class.selected]="!isCurrentNetworkL2()" (click)="setL1Network()">
         <div class="network-icon">
-          <img src="images/tokens-logos/KAS.png" alt="Kaspa" class="chain-icon" />
+          <img [src]="l1Config.icon" alt="Kaspa" class="chain-icon" />
         </div>
         <div class="network-info">
-          <div class="network-name">Kaspa L1</div>
+          <div class="network-name">{{ l1Config.shortName }}</div>
         </div>
         <div class="network-status">
           <kc-icon *ngIf="!isCurrentNetworkL2()" [iconClass]="'icon-check'" [size]="'sm'"></kc-icon>

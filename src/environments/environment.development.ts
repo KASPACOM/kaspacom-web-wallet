@@ -22,6 +22,10 @@ export const environment: Environment = {
     'dev-wallet.kaspa.com',
     'local.kaspa.com',
   ],
+  l1Config: {
+    shortName: 'Kaspa L1',
+    icon: 'images/tokens-logos/KAS.png',
+  },
   isL2Enabled: true,
   l2Configs: [
     {

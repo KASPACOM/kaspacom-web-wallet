@@ -20,6 +20,10 @@ export const environment: Environment = {
   kaspaNetwork: KASPA_NETWORKS.MAINNET,
   logosUrl: 'https://erc20-logo.s3.us-east-1.amazonaws.com/',
   allowedDomains: ['wallet.kaspa.com'],
+  l1Config: {
+    shortName: 'Kaspa L1',
+    icon: 'images/tokens-logos/KAS.png',
+  },
   isL2Enabled: true,
   l2Configs: [
     {

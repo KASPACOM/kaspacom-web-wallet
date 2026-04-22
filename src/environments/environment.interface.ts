@@ -25,6 +25,11 @@ export interface L2ConfigInterface {
   customChainConfig: L2CustomChainConfig;
 }
 
+export interface L1ConfigInterface {
+  shortName: string;
+  icon: string;
+}
+
 export interface Environment {
   isProduction: boolean;
   segmentKey?: string;
@@ -44,6 +49,7 @@ export interface Environment {
   kaspaNetwork: string;
   logosUrl: string;
   allowedDomains: string[];
+  l1Config: L1ConfigInterface;
   isL2Enabled: boolean;
   l2Configs: L2ConfigInterface[];
 }

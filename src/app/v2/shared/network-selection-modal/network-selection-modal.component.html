@@ -4,7 +4,7 @@
     <div class="networks-list">
       <div class="network-item" [class.selected]="!isCurrentNetworkL2()" (click)="setL1Network()">
         <div class="network-icon">
-          <img [src]="l1Config.icon" alt="Kaspa" class="chain-icon" />
+          <img [src]="l1Config.icon" [alt]="l1Config.shortName" class="chain-icon" />
         </div>
         <div class="network-info">
           <div class="network-name">{{ l1Config.shortName }}</div>

@@ -29,7 +29,7 @@ export class EthereumWalletActionsService {
     private readonly walletService: WalletService,
     private readonly walletActionsService: WalletActionService,
     private readonly allowedApplicationsService: AllowedApplicationsService,
-  ) {}
+  ) { }
 
   async handleRequest<T extends EIP1193RequestType>(
     request: EIP1193RequestPayload<T>,
@@ -107,10 +107,10 @@ export class EthereumWalletActionsService {
             this.ethereumWalletChainManager.getCurrentChainSignal()()!,
           );
         case EIP1193RequestType.ETH_CALL:
-          let transaction = request.params?.[0];
+          const ethCalltransaction = request.params?.[0];
           const blockTag = request.params?.[1] as string | undefined;
 
-          if (!transaction) {
+          if (!ethCalltransaction) {
             return createEIP1193Response<T>(undefined, {
               code: ERROR_CODES.EIP1193.INVALID_PARAMETERS,
               message: 'Transaction object is required',
@@ -119,7 +119,7 @@ export class EthereumWalletActionsService {
 
           const callResult = await this.ethereumWalletChainManager
             .getCurrentWalletProvider()!
-            .ethCall(transaction, blockTag);
+            .ethCall(ethCalltransaction, blockTag);
           return createEIP1193Response<T>(callResult);
 
         case EIP1193RequestType.GET_BLOCK_NUMBER:
@@ -129,7 +129,7 @@ export class EthereumWalletActionsService {
           return createEIP1193Response<T>(blockNumber);
 
         case EIP1193RequestType.GET_ESTIMATE_GAS:
-          transaction = request.params?.[0] as any;
+          const estimateGasTransaction = request.params?.[0] as any;
           const wallet = await this.walletService
             .getCurrentWallet()
             ?.getL2Wallet();
@@ -143,7 +143,7 @@ export class EthereumWalletActionsService {
 
           const gas = await this.ethereumWalletChainManager
             .getCurrentWalletProvider()!
-            .estimateGas(wallet, transaction as TransactionRequest);
+            .estimateGas(wallet, estimateGasTransaction as TransactionRequest);
           return createEIP1193Response<T>(ethers.toQuantity(gas));
 
         case EIP1193RequestType.GET_TRANSACTION_BY_HASH:
@@ -258,11 +258,11 @@ export class EthereumWalletActionsService {
       appId == WALLET_APP_ID
         ? wallets
         : wallets.filter((wallet) => {
-            return this.allowedApplicationsService.isAllowedApplication(
-              appId,
-              wallet.getIdWithAccount(),
-            );
-          });
+          return this.allowedApplicationsService.isAllowedApplication(
+            appId,
+            wallet.getIdWithAccount(),
+          );
+        });
 
     if (filteredWallets.length === 0) {
       return [];

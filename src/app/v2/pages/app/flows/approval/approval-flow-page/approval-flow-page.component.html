@@ -7,8 +7,17 @@
       <app-swap-approval
         [swapContext]="swapContext()!"
         [isLoading]="isLoading()"
+        [canApprove]="isAvailableForApproval()"
         (approve)="onAccept()"
         (reject)="onReject()">
+        <ng-container *ngIf="isActionHasL2PriorityFee()">
+          <l2-priority-fee-selection
+            [action]="approvalConfig()!.action"
+            [wallet]="wallet()"
+            (priorityFeeSelected)="setL2CurrentPriorityFee($event)"
+            (gasLimitSelected)="setL2GasLimit($event)">
+          </l2-priority-fee-selection>
+        </ng-container>
       </app-swap-approval>
     </ng-container>
 
@@ -92,7 +101,6 @@
           [wallet]="wallet()"
           (priorityFeeSelected)="setL2CurrentPriorityFee($event)"
           (gasLimitSelected)="setL2GasLimit($event)">
-        >
         </l2-priority-fee-selection>
       </ng-container>
 

@@ -38,7 +38,7 @@ export const environment: Environment = {
       },
     },
     {
-      sdkName: 'igra-mainnet',
+      sdkName: 'igra',
       icon: 'images/chains/igra.svg',
       shortName: 'IGRA',
       l1TransactionPrefix: 'igra',

@@ -21,6 +21,7 @@ import { CommaFormatterPipe } from '../../../../../../../pipes/comma-formatter.p
 export class SwapApprovalComponent {
   swapContext = input.required<SwapContext>();
   isLoading = input<boolean>(false);
+  canApprove = input<boolean>(true);
 
   approve = output<void>();
   reject = output<void>();

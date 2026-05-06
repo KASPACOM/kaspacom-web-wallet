@@ -95,6 +95,8 @@
       </div>
     </div>
 
+    <ng-content></ng-content>
+
     <!-- Action Buttons -->
     <div class="action-buttons-section">
       <div class="action-buttons">
@@ -103,7 +105,7 @@
           variant="primary"
           size="lg"
           [isFullWidth]="true"
-          [isDisabled]="isLoading()"
+          [isDisabled]="isLoading() || !canApprove()"
           [isLoading]="isLoading()"
           (buttonClick)="onApprove()">
         </kc-button>

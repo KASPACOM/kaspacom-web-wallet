@@ -7,7 +7,6 @@ export const environment: Environment = {
   consentCssUrl: 'https://dev.kaspa.com/css/consent.min.css',
   kaspaComApiBaseurl: 'https://dev-api.kaspa.com',
   kaspaComDefiApiBaseurl: 'https://dev-api-defi.kaspa.com',
-  geckoTerminalApiBaseurl: 'https://api.geckoterminal.com/api/v2',
   kasplexApiBaseurl: 'https://tn10api.kasplex.org/v1',
   kaspaApiBaseurl: 'https://api-tn10.kaspa.org',
   krc721ApiBaseurl: 'https://testnet-10.krc721.stream/api/v1/krc721/testnet-10',
@@ -33,6 +32,42 @@ export const environment: Environment = {
       icon: 'images/chains/kasplex.svg',
       shortName: 'Kasplex',
       l1TransactionPrefix: 'kasplex',
+      verifiedTokens: [
+        {
+          address: '0xf40178040278E16c8813dB20a84119A605812FB3',
+          symbol: 'WKAS',
+          decimals: 18,
+        },
+        {
+          address: '0x508B83AB67fEDcd1e8b6F8AE88F5Eb0B1670eFb6',
+          symbol: 'WBTC',
+          decimals: 8,
+          externalUsdPrice: { provider: 'coingecko', coinGeckoId: 'wrapped-bitcoin' },
+        },
+        {
+          address: '0x54319ceE10d537Dec6aa812d6f22eC3F31AC7ca6',
+          symbol: 'WETH',
+          decimals: 18,
+          externalUsdPrice: { provider: 'coingecko', coinGeckoId: 'weth' },
+        },
+        {
+          address: '0x9E7edE66d39d9b69d817b7368CD9d66a7D6Dc468',
+          symbol: 'DAI',
+          decimals: 18,
+        },
+        {
+          address: '0xFC84a4b04E0074D08c4242A291bfC73840E5Ad14',
+          symbol: 'USDC',
+          decimals: 6,
+          externalUsdPrice: { provider: 'coingecko', coinGeckoId: 'usd-coin' },
+        },
+        {
+          address: '0xDaf8B68Cdf320727af105bCa68e174b5EDB3433E',
+          symbol: 'USDT',
+          decimals: 6,
+          externalUsdPrice: { provider: 'coingecko', coinGeckoId: 'tether' },
+        },
+      ],
       customChainConfig: {
         chainId: 167012,
         name: 'Kasplex Testnet',
@@ -45,6 +80,7 @@ export const environment: Environment = {
           symbol: 'KAS',
         },
         defiApiNetworkName: 'kasplex',
+        wrappedTokenAddress: '0xf40178040278E16c8813dB20a84119A605812FB3',
       },
     },
     {
@@ -52,6 +88,42 @@ export const environment: Environment = {
       icon: 'images/chains/igra.svg',
       shortName: 'Galleon',
       l1TransactionPrefix: 'igra',
+      verifiedTokens: [
+        {
+          address: '0x394C68684F9AFCEb9b804531EF07a864E8081738',
+          symbol: 'WKAS',
+          decimals: 18,
+        },
+        {
+          address: '0x2429526815517B971d45B0899C3D67990A68BcD7',
+          symbol: 'WBTC',
+          decimals: 8,
+          externalUsdPrice: { provider: 'coingecko', coinGeckoId: 'wrapped-bitcoin' },
+        },
+        {
+          address: '0x23A8E284A6193C1D6A51A7b34d047ae0b969D660',
+          symbol: 'WETH',
+          decimals: 18,
+          externalUsdPrice: { provider: 'coingecko', coinGeckoId: 'weth' },
+        },
+        {
+          address: '0x2c680F22600A632c9291c2f1E3b070ED79c1168e',
+          symbol: 'DAI',
+          decimals: 18,
+        },
+        {
+          address: '0xfEE6ee271c2fD76EdAd5De7B8177C3935799111A',
+          symbol: 'USDC',
+          decimals: 6,
+          externalUsdPrice: { provider: 'coingecko', coinGeckoId: 'usd-coin' },
+        },
+        {
+          address: '0xb522AC3161D67b6Ed2e311E0036A2F49F903bcc7',
+          symbol: 'USDT',
+          decimals: 6,
+          externalUsdPrice: { provider: 'coingecko', coinGeckoId: 'tether' },
+        },
+      ],
       customChainConfig: {
         chainId: 38836,
         name: 'IGRA Testnet (Galleon)',

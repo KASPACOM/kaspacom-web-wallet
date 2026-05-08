@@ -31,6 +31,7 @@ const PAIRS_REFRESH_BACKOFF_MS = 30 * 1000;
 const CONCURRENT_PRICE_JOBS = 5;
 const COINGECKO_SIMPLE_PRICE_URL = 'https://api.coingecko.com/api/v3/simple/price';
 const EXTERNAL_USD_PRICE_CACHE_TTL_MS = 5 * 60 * 1000;
+const NON_LP_ERROR_BACKOFF_MS = 5 * 60 * 1000;
 
 type CoinGeckoSimplePriceResponse = Record<string, { usd?: number }>;
 
@@ -93,7 +94,8 @@ export class L2TokenPricesService implements OnDestroy {
   }
 
   private contextByChain = new Map<string, ChainSwapContext>();
-  private readonly _nonLpAddresses = new Set<string>();
+  // Map value: 0 = permanent (definitively not LP), >0 = backoff expiry ms (transient error)
+  private readonly _nonLpAddresses = new Map<string, number>();
 
   async getPriceMap(
     tokens: Erc20Token[],
@@ -117,15 +119,8 @@ export class L2TokenPricesService implements OnDestroy {
 
     for (const token of tokens) {
       const address = token.address.toLowerCase();
-      const cacheKey = L2TokenPricesService.buildCacheKey(chainId, address);
-      const cached = cachedKasAmounts.get(cacheKey);
 
-      if (cached && now - cached.cachedAt < KAS_AMOUNT_CACHE_TTL_MS) {
-        map.set(address, cached.kasAmount * kasUsd);
-        continue;
-      }
-
-      // Try CoinGecko external price
+      // External CoinGecko price takes priority over DEX-derived cache
       const extConfig = this.getExternalUsdPriceConfig(address, chainId);
       if (extConfig) {
         const extCacheKey = this.getExternalUsdPriceCacheKey(chainId, extConfig.coinGeckoId);
@@ -138,6 +133,14 @@ export class L2TokenPricesService implements OnDestroy {
           map.set(address, extCached.priceUsd);
           continue;
         }
+      }
+
+      const cacheKey = L2TokenPricesService.buildCacheKey(chainId, address);
+      const cached = cachedKasAmounts.get(cacheKey);
+
+      if (cached && now - cached.cachedAt < KAS_AMOUNT_CACHE_TTL_MS) {
+        map.set(address, cached.kasAmount * kasUsd);
+        continue;
       }
 
       tokensForDex.push(token);
@@ -233,7 +236,8 @@ export class L2TokenPricesService implements OnDestroy {
   ): Promise<number | undefined> {
     const addr = token.address.toLowerCase();
     const nonLpKey = `${chainId}:${addr}`;
-    if (this._nonLpAddresses.has(nonLpKey)) return undefined;
+    const nonLpExpiry = this._nonLpAddresses.get(nonLpKey);
+    if (nonLpExpiry !== undefined && (nonLpExpiry === 0 || Date.now() < nonLpExpiry)) return undefined;
 
     try {
       const pair = new Contract(token.address, LP_PAIR_ABI, ctx.provider);
@@ -254,7 +258,7 @@ export class L2TokenPricesService implements OnDestroy {
       const reserve1 = parseFloat(formatUnits(reserves[1], t1Dec));
       const totalSupply = parseFloat(formatUnits(totalSupplyRaw, 18));
       if (totalSupply <= 0) {
-        this._nonLpAddresses.add(nonLpKey);
+        this._nonLpAddresses.set(nonLpKey, 0);
         return undefined;
       }
 
@@ -326,7 +330,7 @@ export class L2TokenPricesService implements OnDestroy {
 
       return totalKas / totalSupply;
     } catch {
-      this._nonLpAddresses.add(nonLpKey);
+      this._nonLpAddresses.set(nonLpKey, Date.now() + NON_LP_ERROR_BACKOFF_MS);
       return undefined;
     }
   }

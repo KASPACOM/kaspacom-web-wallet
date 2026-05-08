@@ -524,7 +524,13 @@ export class L2TokenPricesService implements OnDestroy {
         );
       }
     } catch {
-      // silently fail; callers fall back to DEX pricing
+      const now = new Date();
+      for (const id of coinGeckoIds) {
+        this._externalUsdPriceCache.set(
+          this.getExternalUsdPriceCacheKey(chainId, id),
+          { priceUsd: Number.NaN, lastUpdated: now },
+        );
+      }
     }
   }
 
@@ -585,16 +591,20 @@ export class L2TokenPricesService implements OnDestroy {
     const cacheKey = this.getExternalUsdPriceCacheKey(chainId, config.coinGeckoId);
     if (!forceRefresh) {
       const cached = this._externalUsdPriceCache.get(cacheKey);
-      if (this.isExternalUsdPriceCacheFresh(cached)) return cached.priceUsd;
+      if (this.isExternalUsdPriceCacheFresh(cached)) {
+        return Number.isFinite(cached.priceUsd) ? cached.priceUsd : null;
+      }
     }
 
     const verifiedTokens = this.getVerifiedTokens(chainId);
     await this.fetchExternalUsdPricesForChain(verifiedTokens, chainId, forceRefresh);
 
-    return this._externalUsdPriceCache.get(cacheKey)?.priceUsd ?? null;
+    const finalCached = this._externalUsdPriceCache.get(cacheKey);
+    return finalCached && Number.isFinite(finalCached.priceUsd) ? finalCached.priceUsd : null;
   }
 
   ngOnDestroy(): void {
     this.contextByChain.clear();
+    this._nonLpAddresses.clear();
   }
 }

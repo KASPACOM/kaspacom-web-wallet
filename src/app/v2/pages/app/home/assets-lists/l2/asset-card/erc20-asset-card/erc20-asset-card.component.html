@@ -16,9 +16,25 @@
     </div>
   </div>
   <div class="asset-card__usd-info flex column align-items-end">
-    <div class="text-gray-90">
-      ${{ (((token()?.balance) || 0) * ((0) || 0)) | number : '1.2-2' }}
-    </div>
-    <div class="text-gray-60 typo-text-1 asset-card__usd-meta">$0.00</div>
+    @if (token(); as t) {
+      @if (t.tokenPriceUSD !== undefined && t.tokenPriceUSD !== null) {
+        <div class="text-gray-90">
+          ${{ ((t.balance || 0) * t.tokenPriceUSD) | number : '1.2-2' }}
+        </div>
+        <div class="text-gray-60 typo-text-1 asset-card__usd-meta">
+          @if (t.tokenPriceUSD >= 0.01) {
+            ${{ t.tokenPriceUSD | number : '1.2-2' }}
+          } @else {
+            ${{ t.tokenPriceUSD | number : '1.2-8' }}
+          }
+        </div>
+      } @else {
+        <div class="text-gray-90">—</div>
+        <div class="text-gray-60 typo-text-1 asset-card__usd-meta">—</div>
+      }
+    } @else {
+      <div class="text-gray-90">—</div>
+      <div class="text-gray-60 typo-text-1 asset-card__usd-meta">—</div>
+    }
   </div>
 </div>

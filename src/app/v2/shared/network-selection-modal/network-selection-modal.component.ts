@@ -6,6 +6,7 @@ import { EthereumWalletChainManager } from '../../../services/etherium-services/
 import { EIP1193ProviderChain } from '@kaspacom/wallet-messages';
 import { WalletService } from '../../../services/wallet.service';
 import { Router } from '@angular/router';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'network-selection-modal',
@@ -20,6 +21,7 @@ export class NetworkSelectionModalComponent {
   private router = inject(Router);
 
   protected networks: EIP1193ProviderChain[];
+  protected l1Config = environment.l1Config;
 
   isCurrentNetworkL2 = computed(() =>
     this.walletService.getIsL2DisplaySignal()(),

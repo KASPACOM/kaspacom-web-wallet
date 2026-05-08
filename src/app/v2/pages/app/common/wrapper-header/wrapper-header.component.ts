@@ -50,7 +50,10 @@ export class WrapperHeaderComponent {
       };
     }
 
-    return undefined;
+    return {
+      name: environment.l1Config.shortName,
+      icon: environment.l1Config.icon,
+    };
   });
 
   walletName = computed(() => {

@@ -10,6 +10,7 @@ export const environment: Environment = {
   addressableKey: '2e716db8140e460fa988107810e59824',
   kaspaComApiBaseurl: 'https://api.kaspa.com',
   kaspaComDefiApiBaseurl: 'https://api-defi.kaspa.com',
+  geckoTerminalApiBaseurl: 'https://api.geckoterminal.com/api/v2',
   kasplexApiBaseurl: 'https://api.kasplex.org/v1',
   kaspaApiBaseurl: 'https://api.kaspa.org',
   krc721ApiBaseurl: 'https://mainnet.krc721.stream/api/v1/krc721/mainnet',
@@ -19,6 +20,10 @@ export const environment: Environment = {
   kaspaNetwork: KASPA_NETWORKS.MAINNET,
   logosUrl: 'https://erc20-logo.s3.us-east-1.amazonaws.com/',
   allowedDomains: ['wallet.kaspa.com'],
+  l1Config: {
+    shortName: 'Kaspa L1',
+    icon: 'images/tokens-logos/KAS.png',
+  },
   isL2Enabled: true,
   l2Configs: [
     {

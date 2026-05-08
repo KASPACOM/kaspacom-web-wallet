@@ -11,6 +11,7 @@ import { ethers, formatUnits } from 'ethers';
 import { L2LocalERC20Tokens } from '../../l2-services/l2-local-erc20-tokens';
 import { UtilsHelper } from '../../utils.service';
 import { KaspaComDefiApiService } from '../../kaspacom-api/kaspacom-defi-api.service';
+import { L2TokenPricesService } from '../../l2-services/l2-token-prices.service';
 
 export const L2_ASSET_KEYS = {
   l2State: 'l2State',
@@ -19,8 +20,10 @@ export const L2_ASSET_KEYS = {
   // ens: 'ens',
 };
 
+export type Erc20TokenWithPrice = Erc20Token & { tokenPriceUSD?: number };
+
 export interface L2AssetStoreData extends BaseAssetStoreData {
-  [L2_ASSET_KEYS.erc20]: Erc20Token;
+  [L2_ASSET_KEYS.erc20]: Erc20TokenWithPrice;
   [L2_ASSET_KEYS.l2State]: L2WalletState;
 }
 
@@ -34,6 +37,7 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
   protected l2LocalERC20Tokens = inject(L2LocalERC20Tokens);
   protected utilsHelper = inject(UtilsHelper);
   protected kaspacomDefiApi = inject(KaspaComDefiApiService);
+  protected l2TokenPrices = inject(L2TokenPricesService);
 
   protected override getLoadFunctionAssetsNames(): {
     [K in keyof L2AssetStoreData]: string;
@@ -76,25 +80,47 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
     return Array.from(byNormAddress.values());
   }
 
-  /**
-   * Reload KRC20 tokens with pagination
-   */
-  protected async getErc20Tokens(walletAddress: string): Promise<Erc20Token[]> {
+  protected async getErc20Tokens(
+    walletAddress: string,
+  ): Promise<Erc20TokenWithPrice[]> {
+    const chainId = this.ethereumWalletChainManager.getCurrentChainSignal()();
+
     const [erc20TokensFromContracts, erc20TokensFromGraph] = await Promise.all([
-      this.getErc20TokensFromSavedTokens(walletAddress),
-      this.getErc20TokensFromGraph(walletAddress).catch(() => []),
+      this.getErc20TokensFromSavedTokens(walletAddress, chainId),
+      this.getErc20TokensFromGraph(walletAddress, chainId).catch(() => []),
     ]);
 
-    return this.mergeErc20TokenSources(
+    if (this.ethereumWalletChainManager.getCurrentChainSignal()() !== chainId) {
+      return [];
+    }
+
+    const merged = this.mergeErc20TokenSources(
       erc20TokensFromGraph,
       erc20TokensFromContracts,
     );
+
+    const priceable = merged.filter((t) => ethers.isAddress(t.address));
+    const priceByAddress = chainId
+      ? await this.l2TokenPrices
+          .getPriceMap(priceable, chainId)
+          .catch(() => new Map<string, number>())
+      : new Map<string, number>();
+
+    if (this.ethereumWalletChainManager.getCurrentChainSignal()() !== chainId) {
+      return [];
+    }
+
+    return merged.map((token) => ({
+      ...token,
+      tokenPriceUSD: priceByAddress.get(token.address.toLowerCase()),
+    }));
   }
 
   protected async getErc20TokensFromGraph(
     walletAddress: string,
+    chainId?: string | null,
   ): Promise<Erc20Token[]> {
-    if (!this.ethereumWalletChainManager.getCurrentChainSignal()()) return [];
+    if (!(chainId ?? this.ethereumWalletChainManager.getCurrentChainSignal()())) return [];
 
     const tokens =
       await this.kaspacomDefiApi.getWalletTokensBalances(walletAddress);
@@ -110,10 +136,11 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
 
   protected async getErc20TokensFromSavedTokens(
     walletAddress: string,
+    chainId?: string | null,
   ): Promise<Erc20Token[]> {
-    const tokens = await this.l2LocalERC20Tokens.getAllTokensByChain(
-      this.ethereumWalletChainManager.getCurrentChainSignal()()!,
-    );
+    const chain = chainId ?? this.ethereumWalletChainManager.getCurrentChainSignal()();
+    if (!chain) return [];
+    const tokens = await this.l2LocalERC20Tokens.getAllTokensByChain(chain);
 
     if (tokens.length == 0) {
       return [];
@@ -175,7 +202,15 @@ export class L2AssetsStoreService extends BaseAssetsStoreService<L2AssetStoreDat
     };
 
     if (updateCurrentState) {
-      this.updateOrAddAsset(L2_ASSET_KEYS.erc20, token, 'address', true);
+      const existing = (this.data[L2_ASSET_KEYS.erc20]?.() ?? []).find(
+        (t) => t.address?.toLowerCase() === tokenAddress.toLowerCase(),
+      ) as Erc20TokenWithPrice | undefined;
+
+      const tokenWithPrice: Erc20TokenWithPrice = {
+        ...token,
+        tokenPriceUSD: existing?.tokenPriceUSD,
+      };
+      this.updateOrAddAsset(L2_ASSET_KEYS.erc20, tokenWithPrice, 'address', true);
     }
 
     return token;

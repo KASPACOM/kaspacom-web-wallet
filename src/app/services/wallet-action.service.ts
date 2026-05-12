@@ -58,10 +58,10 @@ export class WalletActionService {
   }>({});
   private actionToApprove = signal<
     | {
-      action: WalletAction;
-      resolve: (data: { isApproved: boolean; priorityFee?: bigint }) => void;
-      additionalParams?: { [parmName: string]: any };
-    }
+        action: WalletAction;
+        resolve: (data: { isApproved: boolean; priorityFee?: bigint }) => void;
+        additionalParams?: { [parmName: string]: any };
+      }
     | undefined
   >(undefined);
 
@@ -320,6 +320,9 @@ export class WalletActionService {
     if (!isUsingV2Flow) {
       await this.showTransactionLoaderToUser(0, currentWalletAddress);
     }
+    this.monitorService.track('Transaction Started', {
+      action_type: action,
+    });
 
     let actionResult: WalletActionResultWithError;
     try {
@@ -339,8 +342,9 @@ export class WalletActionService {
       console.error('Error executing wallet action:', error);
 
       this.monitorService.track('Transaction Failed', {
-        action,
-        error: error,
+        action_type: action,
+        error_category: 'unknown',
+        error_code: error instanceof Error ? error.name : 'UnknownError',
       });
 
       if (isUsingV2Flow) {
@@ -364,8 +368,9 @@ export class WalletActionService {
 
     if (!actionResult.success) {
       this.monitorService.track('Transaction Failed', {
-        action,
-        actionResult,
+        action_type: action,
+        error_code: actionResult.errorCode,
+        error_category: 'wallet_action',
       });
 
       if (isUsingV2Flow) {
@@ -390,9 +395,8 @@ export class WalletActionService {
       );
     }
 
-    this.monitorService.track('Transaction Success', {
-      action,
-      actionResult,
+    this.monitorService.track('Transaction Succeeded', {
+      action_type: action,
     });
 
     return { ...actionResult, isUsingV2Flow };
@@ -464,13 +468,13 @@ export class WalletActionService {
 
   getActionToApproveSignal(): Signal<
     | {
-      action: WalletAction;
-      resolve: (data: {
-        isApproved: boolean;
-        priorityFee?: bigint;
-        additionalParams?: { [parmName: string]: any };
-      }) => void;
-    }
+        action: WalletAction;
+        resolve: (data: {
+          isApproved: boolean;
+          priorityFee?: bigint;
+          additionalParams?: { [parmName: string]: any };
+        }) => void;
+      }
     | undefined
   > {
     return this.actionToApprove.asReadonly();
@@ -895,7 +899,11 @@ export class WalletActionService {
     }
 
     for (const input of transaction.inputs) {
-      const utxoAddress = input.utxo.address || this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(input.utxo.scriptPublicKey);
+      const utxoAddress =
+        input.utxo.address ||
+        this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(
+          input.utxo.scriptPublicKey,
+        );
 
       if (!utxoAddress) {
         return {

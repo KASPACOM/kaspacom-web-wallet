@@ -256,7 +256,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
         await this.walletService.selectCurrentWalletFromLocalStorageNullsafe();
       }
 
-      this.monitorService.track('User Logged In', {
+      this.monitorService.track('Wallet Logged In', {
         isIframe: IFrameCommunicationApp.isIframe(),
       });
 

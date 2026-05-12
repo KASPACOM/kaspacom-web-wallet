@@ -1,6 +1,4 @@
 import { Injectable } from '@angular/core';
-import { Router, NavigationEnd } from '@angular/router';
-import { filter } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 declare const KaspaConsentManager: any;
@@ -14,7 +12,7 @@ declare global {
   providedIn: 'root'
 })
 export class ConsentService {
-  constructor(private router: Router) {
+  constructor() {
     this.init();
   }
 
@@ -45,15 +43,6 @@ export class ConsentService {
           clarityKey: (environment as any).clarityKey,
           addressableKey: (environment as any).addressableKey,
           debugMode: !environment.isProduction
-       });
-
-       // Track subsequent navigations
-       this.router.events.pipe(
-         filter((event): event is NavigationEnd => event instanceof NavigationEnd)
-       ).subscribe((event) => {
-          if (window.analytics) {
-             window.analytics.page(event.urlAfterRedirects);
-          }
        });
     }
   }

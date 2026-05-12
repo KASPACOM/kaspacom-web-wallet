@@ -321,7 +321,7 @@ export class WalletActionService {
       await this.showTransactionLoaderToUser(0, currentWalletAddress);
     }
     this.monitorService.track('Transaction Started', {
-      action_type: action,
+      action_type: action.type,
     });
 
     let actionResult: WalletActionResultWithError;
@@ -342,7 +342,7 @@ export class WalletActionService {
       console.error('Error executing wallet action:', error);
 
       this.monitorService.track('Transaction Failed', {
-        action_type: action,
+        action_type: action.type,
         error_category: 'unknown',
         error_code: error instanceof Error ? error.name : 'UnknownError',
       });
@@ -368,7 +368,7 @@ export class WalletActionService {
 
     if (!actionResult.success) {
       this.monitorService.track('Transaction Failed', {
-        action_type: action,
+        action_type: action.type,
         error_code: actionResult.errorCode,
         error_category: 'wallet_action',
       });
@@ -396,7 +396,7 @@ export class WalletActionService {
     }
 
     this.monitorService.track('Transaction Succeeded', {
-      action_type: action,
+      action_type: action.type,
     });
 
     return { ...actionResult, isUsingV2Flow };

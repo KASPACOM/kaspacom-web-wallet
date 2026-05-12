@@ -111,6 +111,7 @@ export class ContractsPageComponent implements OnInit {
   // Interact form - plain properties for ngModel
   selectedContractId = '';
   interactContractJson = '';
+  interactContractJson1 = '';
   interactOutpointTxid = '';
   interactOutpointVout = '';
   interactInputAmount = '';
@@ -155,9 +156,16 @@ export class ContractsPageComponent implements OnInit {
   availableFunctions = computed(() => {
     const contract = this.parsedInteractContract();
     if (!contract) return [];
-    return contract.abi.filter((entry) =>
+    const funcs = contract.abi.filter((entry) =>
       contract.ast.functions.find((f) => f.name === entry.name && f.entrypoint)
     );
+
+    // Inject 'transfer' action for KCC20 contracts (handled outside the standard ABI flow)
+    if (contract.contract_name === 'KCC20' && !funcs.some((f) => f.name === 'transfer')) {
+      funcs.push({ name: 'transfer', inputs: [{ name: 'recipient', type_name: 'pubkey' }] } as any);
+    }
+
+    return funcs;
   });
 
   /**
@@ -515,6 +523,7 @@ export class ContractsPageComponent implements OnInit {
         deployedAt: Date.now(),
         network: this.network(),
         accessRoles: this.parseAccessRoles(compiled),
+        covenantId: result.covenantId,
       };
 
       this.registryService.addContract(entry);
@@ -639,8 +648,8 @@ export class ContractsPageComponent implements OnInit {
         const partialJson = JSON.stringify(partial, null, 2);
         this.partialSpendJson.set(partialJson);
         navigator.clipboard.writeText(partialJson).then(
-          () => {},
-          () => {} // Clipboard may not be available
+          () => { },
+          () => { } // Clipboard may not be available
         );
         this.interactResult.set({
           txid: '(partial — share with co-signer)',
@@ -648,6 +657,7 @@ export class ContractsPageComponent implements OnInit {
         });
         return;
       }
+
 
       const result = await this.covenantService.spend(
         compiled,
@@ -657,6 +667,7 @@ export class ContractsPageComponent implements OnInit {
         outputs,
         privateKey,
         Object.keys(extraArgs).length > 0 ? extraArgs : undefined,
+        undefined,
       );
 
       this.interactResult.set({
@@ -1016,6 +1027,9 @@ export class ContractsPageComponent implements OnInit {
       },
       'counter': {
         'increment': 'Increment the on-chain counter. The contract is re-deployed with the updated state.',
+      },
+      'kcc20': {
+        'transfer': 'Transfer KCC20 tokens to another user. Enter the recipient Kaspa address and the token amount to send. Both UTXOs remain locked in the covenant.',
       },
     };
 

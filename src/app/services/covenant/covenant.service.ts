@@ -17,7 +17,7 @@ export class CovenantService {
   constructor(
     private readonly rpcService: RpcService,
     private readonly networkConfigService: NetworkConfigService,
-  ) {}
+  ) { }
 
   /**
    * Get the wRPC URL for the current network
@@ -27,8 +27,8 @@ export class CovenantService {
     try {
       const activeNetwork = this.networkConfigService.getActiveNetwork();
       if (activeNetwork.wrpcUrl) return activeNetwork.wrpcUrl;
-    } catch {}
-    
+    } catch { }
+
     // Fallback to hardcoded
     const network = this.rpcService.getNetwork();
     return this.FALLBACK_RPC_URLS[network] || '';
@@ -85,6 +85,7 @@ export class CovenantService {
     outputs: SpendOutput[],
     privateKeyHex: string,
     extraArgs?: Record<string, bigint>,
+    covenantId?: string,
   ): Promise<SpendResult> {
     const network = this.rpcService.getNetwork();
     const existingRpc = this.rpcService.getRpc();
@@ -93,13 +94,13 @@ export class CovenantService {
 
     if (existingRpc) {
       try {
-        return await spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, '', privateKeyHex, network, existingRpc, undefined, extraArgs);
+        return await spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, '', privateKeyHex, network, existingRpc, covenantId, extraArgs);
       } catch (err: any) {
         console.warn('[CovenantService] Spend with existing RPC failed, trying new connection:', err?.message);
       }
     }
 
-    return spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, rpcUrl, privateKeyHex, network, undefined, undefined, extraArgs);
+    return spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, rpcUrl, privateKeyHex, network, undefined, covenantId, extraArgs);
   }
 
   /**

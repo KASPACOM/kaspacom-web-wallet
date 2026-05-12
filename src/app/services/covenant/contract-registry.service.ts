@@ -22,6 +22,7 @@ export interface ContractRegistryEntry {
     params: Array<{ name: string; type: string }>;
     description: string; // human readable like "Owner can spend"
   }>;
+  covenantId?: string;
 }
 
 @Injectable({

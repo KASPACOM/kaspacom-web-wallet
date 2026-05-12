@@ -18,6 +18,7 @@ import {
   type ITransactionInput,
   type ITransactionOutput,
   type UtxoEntryReference,
+  TransactionInput,
 } from "../../../../../public/kaspa/kaspa";
 import { blake2b } from "@noble/hashes/blake2b";
 import {
@@ -550,7 +551,8 @@ export async function spendContract(
         previousOutpoint: entry.outpoint,
         utxo: entry,
         sequence: 0n,
-        sigOpCount,
+        ...buildInputMassFields({ version: 0, sigOpCount: 1, computeBudget: null }),
+        ...buildInputMassFields({ version: 1, sigOpCount: 1, computeBudget: 30 }),
       },
     ];
 
@@ -652,6 +654,36 @@ export async function spendContract(
     if (ownRpc) await rpc.disconnect().catch(() => undefined);
   }
 }
+
+function buildInputMassFields({ version, sigOpCount, computeBudget }: { version: number, sigOpCount: number, computeBudget: number | null }) {
+  if (Number(version || 0) >= 1 && computeBudget != null) {
+    return inputPreservesComputeBudget()
+      ? { sigOpCount: 0, computeBudget }
+      : { sigOpCount: computeBudget };
+  }
+  return { sigOpCount };
+}
+
+function inputPreservesComputeBudget() {
+  try {
+    const input = new TransactionInput({
+      previousOutpoint: {
+        transactionId: "0000000000000000000000000000000000000000000000000000000000000000",
+        index: 0
+      },
+      signatureScript: '',
+      sequence: 0n,
+      sigOpCount: 0,
+      computeBudget: 1
+    });
+    const result = Number((input.toJSON?.() as any)?.computeBudget || input.computeBudget || 0) === 1;
+    input.free?.();
+    return result;
+  } catch {
+    return false;
+  }
+}
+
 
 /**
  * Query UTXOs for a covenant address and return covenant-specific information.
@@ -853,7 +885,7 @@ export async function completePartialSpend(
     const utxos = await getAddressUtxos(rpc, covenantAddress);
     const entry = utxos.find(
       (u: any) => u.outpoint.transactionId === partialSpend.outpoint.txid &&
-                   Number(u.outpoint.index) === partialSpend.outpoint.vout
+        Number(u.outpoint.index) === partialSpend.outpoint.vout
     );
     if (!entry) throw new Error(`UTXO not found for completion`);
 

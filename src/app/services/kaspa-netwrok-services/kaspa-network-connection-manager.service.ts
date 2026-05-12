@@ -1,4 +1,4 @@
-import { Injectable, Signal, signal, WritableSignal } from '@angular/core';
+import { Injectable, OnDestroy, Signal, signal, WritableSignal } from '@angular/core';
 import { RpcService } from './rpc.service';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
 import { RpcClient } from '../../../../public/kaspa/kaspa';
@@ -11,17 +11,33 @@ const MAX_RECONNECT_DELAY = 30 * 1000;
 @Injectable({
   providedIn: 'root',
 })
-export class KaspaNetworkConnectionManagerService {
+export class KaspaNetworkConnectionManagerService implements OnDestroy {
   private connectionPromise?: Promise<void>;
   private reconnectTimeout?: ReturnType<typeof setTimeout>;
   private reconnectScheduledFor?: number;
   private reconnectAttempts = 0;
   private attachedRpcs = new WeakSet<RpcClient>();
+  private onlineHandler?: () => void;
+  private visibilityHandler?: () => void;
   private connectionStatusSignal: WritableSignal<RpcConnectionStatus> =
     signal<RpcConnectionStatus>(RpcConnectionStatus.DISCONNECTED);
 
   constructor(private readonly rpcService: RpcService) {
     this.listenForBrowserResume();
+  }
+
+  ngOnDestroy(): void {
+    if (typeof window !== 'undefined') {
+      if (this.onlineHandler) {
+        window.removeEventListener('online', this.onlineHandler);
+        this.onlineHandler = undefined;
+      }
+      if (this.visibilityHandler) {
+        document.removeEventListener('visibilitychange', this.visibilityHandler);
+        this.visibilityHandler = undefined;
+      }
+    }
+    this.clearReconnectTimeout();
   }
 
   private setSignalStatusIfChanged(status: RpcConnectionStatus) {
@@ -35,13 +51,15 @@ export class KaspaNetworkConnectionManagerService {
       return;
     }
 
-    window.addEventListener('online', () => this.scheduleReconnect('browser-online', 0));
+    this.onlineHandler = () => this.scheduleReconnect('browser-online', 0);
+    window.addEventListener('online', this.onlineHandler);
 
-    document.addEventListener('visibilitychange', () => {
+    this.visibilityHandler = () => {
       if (document.visibilityState === 'visible') {
         this.scheduleReconnect('tab-visible', 0);
       }
-    });
+    };
+    document.addEventListener('visibilitychange', this.visibilityHandler);
   }
 
   private attachDisconnectHandler(currentRpc: RpcClient): void {

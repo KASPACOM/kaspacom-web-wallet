@@ -18,7 +18,7 @@
 - [x] Run cross-model review.
 - [x] Fix MAJOR stale timed-out RPC client finding.
 - [ ] Wait for all GitHub checks to complete.
-- [ ] If any GitHub check fails, diagnose/fix once and rerun.
+- [x] If any GitHub check fails, diagnose/fix once and rerun — mobile-safari was cancelled by PR job timeout, so PR smoke timeout was aligned with nightly.
 - [ ] If same gate fails again, escalate with exact error.
 
 ## Manual QA

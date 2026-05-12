@@ -9,11 +9,14 @@ export class AllowedApplicationsService {
     private sessionAppLocations: { [appId: string]: string[] } = {};
 
     constructor() {
-        const allowedApplications = localStorage.getItem(LOCAL_STORAGE_KEYS.ALLOWED_APPLICATIONS);
-        if (allowedApplications) {
-            this.persistedAppLocations = JSON.parse(allowedApplications);
-        } else {
-            this.persistedAppLocations = {};
+        this.persistedAppLocations = {};
+        try {
+            const allowedApplications = localStorage.getItem(LOCAL_STORAGE_KEYS.ALLOWED_APPLICATIONS);
+            if (allowedApplications) {
+                this.persistedAppLocations = JSON.parse(allowedApplications);
+            }
+        } catch (err) {
+            console.warn('Failed loading allowed applications from localStorage', err);
         }
     }
 
@@ -45,6 +48,10 @@ export class AllowedApplicationsService {
     }
 
     private saveToLocalStorage() {
-        localStorage.setItem(LOCAL_STORAGE_KEYS.ALLOWED_APPLICATIONS, JSON.stringify(this.persistedAppLocations));
+        try {
+            localStorage.setItem(LOCAL_STORAGE_KEYS.ALLOWED_APPLICATIONS, JSON.stringify(this.persistedAppLocations));
+        } catch (err) {
+            console.warn('Failed persisting allowed applications to localStorage', err);
+        }
     }
 }

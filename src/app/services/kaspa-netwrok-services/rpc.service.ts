@@ -20,6 +20,8 @@ export class RpcService {
   }
 
   refreshRpc() {
+    const previousRpc = this.RPC;
+
     if (localStorage.getItem(LOCAL_STORAGE_KEYS.RPC_URL)) {
       this.RPC = new RpcClient({
         url: localStorage.getItem(LOCAL_STORAGE_KEYS.RPC_URL) || '',
@@ -34,8 +36,19 @@ export class RpcService {
       });
     }
 
+    this.disconnectRpc(previousRpc);
 
     return this.getRpc();
+  }
+
+  private disconnectRpc(rpc: RpcClient | undefined): void {
+    if (!rpc || rpc === this.RPC) {
+      return;
+    }
+
+    rpc.disconnect().catch((err: unknown) => {
+      console.warn('Failed disconnecting previous RPC client', err);
+    });
   }
 
   getNetwork() {

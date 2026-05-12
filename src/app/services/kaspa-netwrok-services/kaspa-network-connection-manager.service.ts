@@ -1,31 +1,43 @@
-import { Injectable, Signal, signal, WritableSignal } from '@angular/core';
+import { Injectable, OnDestroy, Signal, signal, WritableSignal } from '@angular/core';
 import { RpcService } from './rpc.service';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
+import { RpcClient } from '../../../../public/kaspa/kaspa';
 
 const CONNECTION_TIMEOUT = 10 * 1000;
 const SERVER_INFO_TIMEOUT = 5 * 1000;
+const BASE_RECONNECT_DELAY = 1 * 1000;
+const MAX_RECONNECT_DELAY = 30 * 1000;
 
 @Injectable({
   providedIn: 'root',
 })
-export class KaspaNetworkConnectionManagerService {
+export class KaspaNetworkConnectionManagerService implements OnDestroy {
   private connectionPromise?: Promise<void>;
-  private connectionMadeResolve?: (value: void | PromiseLike<void>) => void;
-  private connectionMadeReject?: (reason?: any) => void;
-  private isTryingToConnect?: boolean = false;
+  private reconnectTimeout?: ReturnType<typeof setTimeout>;
+  private reconnectScheduledFor?: number;
+  private reconnectAttempts = 0;
+  private attachedRpcs = new WeakSet<RpcClient>();
+  private onlineHandler?: () => void;
+  private visibilityHandler?: () => void;
   private connectionStatusSignal: WritableSignal<RpcConnectionStatus> =
     signal<RpcConnectionStatus>(RpcConnectionStatus.DISCONNECTED);
 
-  constructor(private readonly rpcService: RpcService) {}
+  constructor(private readonly rpcService: RpcService) {
+    this.listenForBrowserResume();
+  }
 
-  private initPromise() {
-    this.connectionPromise = new Promise((resolve, reject) => {
-      this.connectionMadeResolve = resolve;
-      this.connectionMadeReject = reject;
-    });
-    this.connectionPromise.catch((err) =>
-      console.error('Failed initializing connection', err),
-    );
+  ngOnDestroy(): void {
+    if (typeof window !== 'undefined') {
+      if (this.onlineHandler) {
+        window.removeEventListener('online', this.onlineHandler);
+        this.onlineHandler = undefined;
+      }
+      if (this.visibilityHandler) {
+        document.removeEventListener('visibilitychange', this.visibilityHandler);
+        this.visibilityHandler = undefined;
+      }
+    }
+    this.clearReconnectTimeout();
   }
 
   private setSignalStatusIfChanged(status: RpcConnectionStatus) {
@@ -34,129 +46,197 @@ export class KaspaNetworkConnectionManagerService {
     }
   }
 
-  private async handleConnection() {
-    console.log('Trying to connect to RPC...');
-
-    let reachedTimeout = false;
-
-    let timeoutForConnection: ReturnType<typeof setTimeout> | null = setTimeout(
-      () => {
-        console.error('Rpc connection timeout, connect function stuck');
-
-        this.connectionMadeReject!();
-        reachedTimeout = true;
-      },
-      CONNECTION_TIMEOUT,
-    );
-
-    try {
-      const currentRpc = await this.rpcService.refreshRpc();
-      currentRpc!.addEventListener('disconnect', () => {
-        console.log('disconnected from RPC');
-        if (this.rpcService.getRpc() == currentRpc) {
-          console.log('current connection reset');
-          this.setSignalStatusIfChanged(RpcConnectionStatus.DISCONNECTED);
-          this.waitForConnection();
-        }
-      });
-      await currentRpc!.connect();
-
-      if (reachedTimeout) {
-        console.error('Rpc connection reached time out');
-        try {
-          await currentRpc!.disconnect();
-        } catch (err) {
-          console.error('Failed disconnecting RPC', err);
-        }
-
-        throw new Error('Rpc connection reached time out');
-      }
-
-      clearTimeout(timeoutForConnection);
-      timeoutForConnection = null;
-
-      if (!(await this.isServerValid())) {
-        await currentRpc!.disconnect();
-        throw new Error('Rpc connected to an invalid server');
-      }
-    } catch (err) {
-      console.error('Failed connecting RPC', err);
-      this.waitForConnection().catch((err) => console.error(err));
-
-      if (!reachedTimeout) {
-        this.connectionMadeReject!('Failed connecting to RPC');
-      }
+  private listenForBrowserResume(): void {
+    if (typeof window === 'undefined') {
       return;
-    } finally {
-      if (timeoutForConnection) {
-        clearTimeout(timeoutForConnection);
-      }
     }
 
-    console.log('RPC Connected Successfully');
+    this.onlineHandler = () => this.scheduleReconnect('browser-online', 0);
+    window.addEventListener('online', this.onlineHandler);
 
-    this.connectionMadeResolve!();
+    this.visibilityHandler = () => {
+      if (document.visibilityState === 'visible') {
+        this.scheduleReconnect('tab-visible', 0);
+      }
+    };
+    document.addEventListener('visibilitychange', this.visibilityHandler);
   }
 
-  private async isServerValid(): Promise<boolean> {
-    if (!this.rpcService.getRpc()!.isConnected) {
-      return false;
+  private attachDisconnectHandler(currentRpc: RpcClient): void {
+    if (this.attachedRpcs.has(currentRpc)) {
+      return;
     }
+    this.attachedRpcs.add(currentRpc);
 
-    return new Promise(async (res) => {
-      let isTimeoutCalled = false;
-
-      const timeout = setTimeout(async () => {
-        console.error('getServerInfo Timeout');
-        isTimeoutCalled = true;
-        res(false);
-      }, SERVER_INFO_TIMEOUT);
-
-      try {
-        const serverInfo = await this.rpcService.getRpc()!.getServerInfo();
-
-        if (!isTimeoutCalled) {
-          res(serverInfo.isSynced && serverInfo.hasUtxoIndex);
-        }
-      } catch (err) {
-        console.error('Failed getServerInfo', err);
-        if (!isTimeoutCalled) {
-          res(false);
-        }
-      } finally {
-        clearTimeout(timeout);
+    currentRpc.addEventListener('disconnect', () => {
+      if (this.rpcService.getRpc() !== currentRpc) {
+        return;
       }
+
+      console.warn('Disconnected from current Kaspa RPC');
+      this.setSignalStatusIfChanged(RpcConnectionStatus.DISCONNECTED);
+      this.scheduleReconnect('rpc-disconnect');
     });
   }
 
-  public async waitForConnection(): Promise<void> {
-    if (!this.rpcService.getRpc()!.isConnected && !this.isTryingToConnect) {
-      this.isTryingToConnect = true;
-      this.initPromise();
-      this.handleConnection();
-      this.setSignalStatusIfChanged(RpcConnectionStatus.CONNECTING);
+  private scheduleReconnect(reason: string, delay?: number): void {
+    if (this.reconnectTimeout) {
+      // Backoff retries (no explicit delay) yield to whatever is already scheduled.
+      // Explicit-delay callers (online/visibility resume) preempt only if sooner.
+      if (delay === undefined) {
+        return;
+      }
+      const newScheduledFor = Date.now() + delay;
+      if (
+        this.reconnectScheduledFor !== undefined &&
+        newScheduledFor >= this.reconnectScheduledFor
+      ) {
+        return;
+      }
+      this.clearReconnectTimeout();
+    }
+
+    const reconnectDelay = delay ?? this.getReconnectDelay();
+    this.reconnectScheduledFor = Date.now() + reconnectDelay;
+    this.reconnectTimeout = setTimeout(() => {
+      this.reconnectTimeout = undefined;
+      this.reconnectScheduledFor = undefined;
+
+      const rpc = this.rpcService.getRpc();
+      if (rpc?.isConnected) {
+        this.setSignalStatusIfChanged(RpcConnectionStatus.CONNECTED);
+        return;
+      }
+
+      this.waitForConnection(true).catch((err) => {
+        console.warn(`Kaspa RPC reconnect failed after ${reason}`, err);
+      });
+    }, reconnectDelay);
+  }
+
+  private clearReconnectTimeout(): void {
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = undefined;
+    }
+    this.reconnectScheduledFor = undefined;
+  }
+
+  private getReconnectDelay(): number {
+    const exponentialDelay = BASE_RECONNECT_DELAY * Math.pow(2, this.reconnectAttempts++);
+    const jitter = Math.floor(Math.random() * 500);
+    return Math.min(exponentialDelay + jitter, MAX_RECONNECT_DELAY);
+  }
+
+  private async handleConnection(forceRefresh = false): Promise<void> {
+    console.log('Trying to connect to RPC...');
+
+    const currentRpc = forceRefresh
+      ? this.rpcService.refreshRpc()
+      : this.rpcService.getRpc() ?? this.rpcService.refreshRpc();
+
+    if (!currentRpc) {
+      throw new Error('RPC client is not initialized');
+    }
+
+    this.attachDisconnectHandler(currentRpc);
+
+    try {
+      await this.withTimeout(currentRpc.connect(), CONNECTION_TIMEOUT, 'Rpc connection timeout');
+
+      if (this.rpcService.getRpc() !== currentRpc) {
+        await this.disconnectRpc(currentRpc);
+        throw new Error('RPC client was replaced while connecting');
+      }
+
+      if (!(await this.isServerValid(currentRpc))) {
+        await this.disconnectRpc(currentRpc);
+        throw new Error('Rpc connected to an invalid server');
+      }
+    } catch (err) {
+      await this.disconnectRpc(currentRpc);
+      this.setSignalStatusIfChanged(RpcConnectionStatus.DISCONNECTED);
+      this.scheduleReconnect('connection-failure');
+      throw err;
+    }
+
+    this.reconnectAttempts = 0;
+    this.setSignalStatusIfChanged(RpcConnectionStatus.CONNECTED);
+    console.log('RPC Connected Successfully');
+  }
+
+  private async disconnectRpc(rpc: RpcClient): Promise<void> {
+    try {
+      await rpc.disconnect();
+    } catch (err) {
+      console.warn('Failed disconnecting RPC', err);
+    }
+  }
+
+  private async withTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number,
+    errorMessage: string,
+  ): Promise<T> {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeout = setTimeout(() => reject(new Error(errorMessage)), timeoutMs);
+    });
+
+    try {
+      return await Promise.race([promise, timeoutPromise]);
+    } finally {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+    }
+  }
+
+  private async isServerValid(rpc: RpcClient): Promise<boolean> {
+    if (!rpc.isConnected) {
+      return false;
     }
 
     try {
-      await this.connectionPromise;
-
-      if (!this.rpcService.getRpc()!.isConnected) {
-        throw new Error('Rpc not connected');
-      }
-
-      this.setSignalStatusIfChanged(
-        this.rpcService.getRpc()!.isConnected
-          ? RpcConnectionStatus.CONNECTED
-          : RpcConnectionStatus.DISCONNECTED,
+      const serverInfo = await this.withTimeout(
+        rpc.getServerInfo(),
+        SERVER_INFO_TIMEOUT,
+        'getServerInfo Timeout',
       );
-    } catch (err) {
-      console.log('catch connectionPromise');
-      this.setSignalStatusIfChanged(RpcConnectionStatus.DISCONNECTED);
 
-      throw err;
-    } finally {
-      this.isTryingToConnect = false;
+      return serverInfo.isSynced && serverInfo.hasUtxoIndex;
+    } catch (err) {
+      console.error('Failed getServerInfo', err);
+      return false;
     }
+  }
+
+  public async waitForConnection(forceRefresh = false): Promise<void> {
+    const rpc = this.rpcService.getRpc();
+    if (!forceRefresh && rpc?.isConnected) {
+      this.setSignalStatusIfChanged(RpcConnectionStatus.CONNECTED);
+      return;
+    }
+
+    if (this.connectionPromise) {
+      return this.connectionPromise;
+    }
+
+    this.clearReconnectTimeout();
+
+    this.setSignalStatusIfChanged(RpcConnectionStatus.CONNECTING);
+
+    this.connectionPromise = this.handleConnection(forceRefresh)
+      .catch((err) => {
+        this.setSignalStatusIfChanged(RpcConnectionStatus.DISCONNECTED);
+        throw err;
+      })
+      .finally(() => {
+        this.connectionPromise = undefined;
+      });
+
+    return this.connectionPromise;
   }
 
   getConnectionStatusSignal(): Signal<RpcConnectionStatus> {

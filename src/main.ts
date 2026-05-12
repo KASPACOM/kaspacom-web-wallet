@@ -5,15 +5,20 @@ import * as kaspa from '../public/kaspa/kaspa';
 import * as Sentry from '@sentry/angular';
 
 const APPLICATION_INIT_TIMEOUT = 30000;
+const KASPA_WASM_PATH = './kaspa/kaspa_bg.wasm';
+const TRANSIENT_WASM_RETRY_DELAY = 750;
+
+const sentryEnvironment =
+  window.location.hostname.includes('localhost') ||
+  window.location.hostname.includes('local.kaspa') ||
+  window.location.hostname.includes('127.0.0.1')
+    ? 'development'
+    : 'production';
+const isProductionEnvironment = sentryEnvironment === 'production';
 
 Sentry.init({
   dsn: 'https://5d158ddfd93e605cbd494bf92522964a@o4510546501959680.ingest.us.sentry.io/4510550518595584',
-  environment:
-    window.location.hostname.includes('localhost') ||
-    window.location.hostname.includes('local.kaspa') ||
-    window.location.hostname.includes('127.0.0.1')
-      ? 'development'
-      : 'production',
+  environment: sentryEnvironment,
   // Setting this option to true will send default PII data to Sentry.
   // For example, automatic IP address collection on events
   sendDefaultPii: true,
@@ -22,6 +27,92 @@ Sentry.init({
   // Performance monitoring
   tracesSampleRate: 0.1, // 10% of transactions for performance monitoring
 });
+
+function getStartupContext() {
+  return {
+    route: window.location.pathname,
+    origin: window.location.origin,
+    visibility_state: document.visibilityState,
+    online: navigator.onLine,
+    user_agent: navigator.userAgent,
+    hostname: window.location.hostname,
+  };
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) {
+    return err.message;
+  }
+
+  return String(err);
+}
+
+function isTransientLoadError(err: unknown): boolean {
+  const message = getErrorMessage(err).toLowerCase();
+  return (
+    message.includes('abort') ||
+    message.includes('network') ||
+    message.includes('load failed') ||
+    message.includes('failed to fetch') ||
+    message.includes('body loading was aborted')
+  );
+}
+
+function shouldCaptureStartupError(err: unknown): boolean {
+  if (isProductionEnvironment) {
+    return true;
+  }
+
+  return !isTransientLoadError(err);
+}
+
+function captureStartupException(
+  err: unknown,
+  errorType: string,
+  extraContext: Record<string, unknown> = {},
+): void {
+  if (!shouldCaptureStartupError(err)) {
+    console.warn(`[Sentry skipped:${errorType}]`, err);
+    return;
+  }
+
+  Sentry.captureException(err, {
+    tags: { error_type: errorType },
+    contexts: {
+      startup: {
+        ...getStartupContext(),
+        ...extraContext,
+      },
+    },
+  });
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function loadKaspaWasm(): Promise<void> {
+  try {
+    await kaspa.default({ module_or_path: KASPA_WASM_PATH });
+  } catch (err) {
+    if (!isTransientLoadError(err)) {
+      throw err;
+    }
+
+    console.warn('Kaspa WASM load failed transiently; retrying once', err);
+    await delay(TRANSIENT_WASM_RETRY_DELAY);
+    await kaspa.default({ module_or_path: KASPA_WASM_PATH });
+  }
+}
 
 // Function to show user-friendly error message
 function showLoadingError(message: string, technicalDetails?: string) {
@@ -32,7 +123,7 @@ function showLoadingError(message: string, technicalDetails?: string) {
       content.innerHTML = `
         <div style="color: #ff6b6b; text-align: center;">
           <div style="font-size: 2rem; margin-bottom: 16px;">⚠️</div>
-          <div style="font-size: 1rem; margin-bottom: 8px;">${message}</div>
+          <div style="font-size: 1rem; margin-bottom: 8px;">${escapeHtml(message)}</div>
           <div style="font-size: 0.875rem; color: rgba(255,255,255,0.6); margin-bottom: 16px;">
             Please try refreshing the page. If the problem persists, try clearing your browser cache.
           </div>
@@ -40,7 +131,7 @@ function showLoadingError(message: string, technicalDetails?: string) {
             technicalDetails
               ? `<details style="font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-top: 16px;">
             <summary style="cursor: pointer;">Technical details</summary>
-            <pre style="text-align: left; margin-top: 8px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 4px; overflow-x: auto;">${technicalDetails}</pre>
+            <pre style="text-align: left; margin-top: 8px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 4px; overflow-x: auto;">${escapeHtml(technicalDetails)}</pre>
           </details>`
               : ''
           }
@@ -133,15 +224,7 @@ if (checkStorageAvailability()) {
 } else {
   // Not in iframe or no Storage Access API — fail with error
   const error = new Error('Storage access blocked');
-  Sentry.captureException(error, {
-    tags: { error_type: 'storage_blocked' },
-    contexts: {
-      browser: {
-        userAgent: navigator.userAgent,
-        hostname: window.location.hostname,
-      },
-    },
-  });
+  captureStartupException(error, 'storage_blocked');
   showLoadingError(
     'Storage access is blocked',
     'This application requires storage access to function. Please check your browser privacy settings:\n\n' +
@@ -161,17 +244,9 @@ function initApp() {
     const loader = document.getElementById('application-loader-startup');
     if (loader && !loader.classList.contains('fade-out')) {
       const error = new Error(`Application initialization timeout (${APPLICATION_INIT_TIMEOUT / 1000}s)`);
-      Sentry.captureException(error, {
-        tags: { error_type: 'initialization_timeout' },
-        contexts: {
-          timing: {
-            timeout_duration: APPLICATION_INIT_TIMEOUT,
-          },
-          browser: {
-            userAgent: navigator.userAgent,
-            hostname: window.location.hostname,
-          },
-        },
+      captureStartupException(error, 'initialization_timeout', {
+        timeout_duration: APPLICATION_INIT_TIMEOUT,
+        wasm_path: KASPA_WASM_PATH,
       });
       showLoadingError(
         'Application is taking longer than expected to load',
@@ -181,8 +256,7 @@ function initApp() {
   }, APPLICATION_INIT_TIMEOUT);
 
   // Load WASM and bootstrap application with proper error handling
-  kaspa
-    .default({ module_or_path: './kaspa/kaspa_bg.wasm' })
+  loadKaspaWasm()
     .then(() => {
       kaspa.initWASM32Bindings({ validateClassNames: false });
       bootstrapApplication(AppComponent, appConfig)
@@ -193,38 +267,25 @@ function initApp() {
         .catch((err) => {
           clearTimeout(loadingTimeout);
           console.error('Angular bootstrap failed:', err);
-          Sentry.captureException(err, {
-            tags: { error_type: 'bootstrap_failure' },
-            contexts: {
-              bootstrap: {
-                error_message: err?.message || String(err),
-              },
-            },
+          captureStartupException(err, 'bootstrap_failure', {
+            error_message: getErrorMessage(err),
           });
           showLoadingError(
             'Failed to start the application',
-            `Bootstrap Error: ${err?.message || err}`,
+            `Bootstrap Error: ${getErrorMessage(err)}`,
           );
         });
     })
     .catch((err) => {
       clearTimeout(loadingTimeout);
       console.error('WASM loading failed:', err);
-      Sentry.captureException(err, {
-        tags: { error_type: 'wasm_load_failure' },
-        contexts: {
-          wasm: {
-            error_message: err?.message || String(err),
-            wasm_path: './kaspa/kaspa_bg.wasm',
-          },
-          browser: {
-            userAgent: navigator.userAgent,
-          },
-        },
+      captureStartupException(err, 'wasm_load_failure', {
+        error_message: getErrorMessage(err),
+        wasm_path: KASPA_WASM_PATH,
       });
       showLoadingError(
         'Failed to load required application resources',
-        `WASM Load Error: ${err?.message || err}\n\nThis may be caused by:\n- Network connectivity issues\n- Ad blocker or browser extension interference\n- Browser compatibility issues\n- CORS or security policy restrictions`,
+        `WASM Load Error: ${getErrorMessage(err)}\n\nThis may be caused by:\n- Network connectivity issues\n- Ad blocker or browser extension interference\n- Browser compatibility issues\n- CORS or security policy restrictions`,
       );
     });
 }

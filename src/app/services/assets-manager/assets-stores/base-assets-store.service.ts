@@ -11,9 +11,10 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
     protected walletService = inject(WalletService);
 
     protected data: { [K in keyof T]: WritableSignal<T[K][] | undefined> } = {} as any;
-    protected autoReloadInterval: NodeJS.Timeout | undefined;
+    protected autoReloadInterval: ReturnType<typeof setTimeout> | undefined;
     protected loadAssetsFunctionsNames: { [K in keyof T]: string }
-    protected loadAssetsTimeouts: { [K in keyof T]: NodeJS.Timeout | undefined } | undefined;
+    protected loadAssetsTimeouts: { [K in keyof T]: ReturnType<typeof setTimeout> | undefined } | undefined;
+    private loadAssetsGeneration = 0;
 
 
     protected assetsLoaderInfo: {
@@ -80,15 +81,22 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
             throw new Error('Assets are already loading');
         }
 
-        this.loadAssetsTimeouts = {} as any;
+        this.loadAssetsGeneration++;
+        const generation = this.loadAssetsGeneration;
+        const timeouts = {} as { [K in keyof T]: ReturnType<typeof setTimeout> | undefined };
+        this.loadAssetsTimeouts = timeouts;
         for (let key in this.loadAssetsFunctionsNames) {
-            this.loadAssetsTimeouts![key] = undefined;
-            this.loadAssetAndSetTimeout(key);
+            timeouts[key] = undefined;
+            this.loadAssetAndSetTimeout(key, generation);
         }
     }
 
     public reloadAllAssets() {
-        for (let key in this.loadAssetsTimeouts) {
+        if (!this.loadAssetsTimeouts) {
+            return;
+        }
+
+        for (let key in this.loadAssetsFunctionsNames) {
             this.reloadAsset(key);
         }
     }
@@ -96,11 +104,14 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
     public reloadAsset(key: keyof T) {
         if (this.loadAssetsTimeouts) {
             clearTimeout(this.loadAssetsTimeouts[key]);
-            this.loadAssetAndSetTimeout(key);
+            this.loadAssetsTimeouts[key] = undefined;
+            this.loadAssetAndSetTimeout(key, this.loadAssetsGeneration);
         }
     }
 
     public stopLoadingAllAssetsAndClear(): void {
+        this.loadAssetsGeneration++;
+
         if (this.loadAssetsTimeouts) {
             for (let key in this.loadAssetsTimeouts) {
                 clearTimeout(this.loadAssetsTimeouts[key]);
@@ -108,35 +119,65 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
             this.loadAssetsTimeouts = undefined;
         }
 
+        for (let key in this.assetsLoaderInfo) {
+            this.assetsLoaderInfo[key].loading.set(false);
+        }
+
         this.clearAllAssets();
     }
 
-    protected async loadAsset(key: keyof T): Promise<void> {
+    private isActiveLoadGeneration(generation: number): boolean {
+        return !!this.loadAssetsTimeouts && generation === this.loadAssetsGeneration;
+    }
+
+    protected async loadAsset(key: keyof T, generation = this.loadAssetsGeneration): Promise<void> {
+        if (!this.isActiveLoadGeneration(generation)) {
+            return;
+        }
+
         this.assetsLoaderInfo[key].loading.set(true);
 
         try {
             const assets = await this.runLoadAssetFunction(key);
+            if (!this.isActiveLoadGeneration(generation)) {
+                return;
+            }
             this.data[key].set(assets);
             this.notifyAssetListeners(key, assets);
         } catch (e) {
             console.error(`Error loading ${key.toString()} assets`);
             console.error(e);
         } finally {
-            this.assetsLoaderInfo[key].loading.set(false);
+            if (this.isActiveLoadGeneration(generation)) {
+                this.assetsLoaderInfo[key].loading.set(false);
+            }
         }
     }
 
 
-    protected async loadAssetAndSetTimeout(key: keyof T) {
+    protected async loadAssetAndSetTimeout(key: keyof T, generation = this.loadAssetsGeneration) {
+        if (!this.isActiveLoadGeneration(generation)) {
+            return;
+        }
+
         try {
-            await this.loadAsset(key);
+            await this.loadAsset(key, generation);
         } catch (e) {
             console.error(`Error loading ${key.toString()} assets`);
             console.error(e);
         }
 
-        this.loadAssetsTimeouts![key] = setTimeout(async () => {
-            this.loadAssetAndSetTimeout(key);
+        if (!this.isActiveLoadGeneration(generation)) {
+            return;
+        }
+
+        const timeouts = this.loadAssetsTimeouts;
+        if (!timeouts) {
+            return;
+        }
+
+        timeouts[key] = setTimeout(() => {
+            this.loadAssetAndSetTimeout(key, generation);
         }, this.AUTO_RELOAD_INTERVAL);
     }
 

@@ -15,7 +15,9 @@ export class KaspaNetworkConnectionManagerService {
   private connectionPromise?: Promise<void>;
   private isTryingToConnect = false;
   private reconnectTimeout?: ReturnType<typeof setTimeout>;
+  private reconnectScheduledFor?: number;
   private reconnectAttempts = 0;
+  private attachedRpcs = new WeakSet<RpcClient>();
   private connectionStatusSignal: WritableSignal<RpcConnectionStatus> =
     signal<RpcConnectionStatus>(RpcConnectionStatus.DISCONNECTED);
 
@@ -44,6 +46,11 @@ export class KaspaNetworkConnectionManagerService {
   }
 
   private attachDisconnectHandler(currentRpc: RpcClient): void {
+    if (this.attachedRpcs.has(currentRpc)) {
+      return;
+    }
+    this.attachedRpcs.add(currentRpc);
+
     currentRpc.addEventListener('disconnect', () => {
       if (this.rpcService.getRpc() !== currentRpc) {
         return;
@@ -57,12 +64,26 @@ export class KaspaNetworkConnectionManagerService {
 
   private scheduleReconnect(reason: string, delay?: number): void {
     if (this.reconnectTimeout) {
-      return;
+      // Backoff retries (no explicit delay) yield to whatever is already scheduled.
+      // Explicit-delay callers (online/visibility resume) preempt only if sooner.
+      if (delay === undefined) {
+        return;
+      }
+      const newScheduledFor = Date.now() + delay;
+      if (
+        this.reconnectScheduledFor !== undefined &&
+        newScheduledFor >= this.reconnectScheduledFor
+      ) {
+        return;
+      }
+      this.clearReconnectTimeout();
     }
 
     const reconnectDelay = delay ?? this.getReconnectDelay();
+    this.reconnectScheduledFor = Date.now() + reconnectDelay;
     this.reconnectTimeout = setTimeout(() => {
       this.reconnectTimeout = undefined;
+      this.reconnectScheduledFor = undefined;
 
       const rpc = this.rpcService.getRpc();
       if (rpc?.isConnected) {
@@ -74,6 +95,14 @@ export class KaspaNetworkConnectionManagerService {
         console.warn(`Kaspa RPC reconnect failed after ${reason}`, err);
       });
     }, reconnectDelay);
+  }
+
+  private clearReconnectTimeout(): void {
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = undefined;
+    }
+    this.reconnectScheduledFor = undefined;
   }
 
   private getReconnectDelay(): number {
@@ -177,10 +206,7 @@ export class KaspaNetworkConnectionManagerService {
       return this.connectionPromise;
     }
 
-    if (this.reconnectTimeout) {
-      clearTimeout(this.reconnectTimeout);
-      this.reconnectTimeout = undefined;
-    }
+    this.clearReconnectTimeout();
 
     this.isTryingToConnect = true;
     this.setSignalStatusIfChanged(RpcConnectionStatus.CONNECTING);

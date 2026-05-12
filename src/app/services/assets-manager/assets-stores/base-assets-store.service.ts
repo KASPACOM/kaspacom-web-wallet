@@ -15,6 +15,7 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
     protected loadAssetsFunctionsNames: { [K in keyof T]: string }
     protected loadAssetsTimeouts: { [K in keyof T]: ReturnType<typeof setTimeout> | undefined } | undefined;
     private loadAssetsGeneration = 0;
+    private loadAssetTokens: { [K in keyof T]: number } = {} as any;
 
 
     protected assetsLoaderInfo: {
@@ -42,6 +43,7 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
                 loading: signal(false),
             };
             this.assetListeners[key] = new Set();
+            this.loadAssetTokens[key] = 0;
         }
     }
 
@@ -87,7 +89,8 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
         this.loadAssetsTimeouts = timeouts;
         for (let key in this.loadAssetsFunctionsNames) {
             timeouts[key] = undefined;
-            this.loadAssetAndSetTimeout(key, generation);
+            const token = ++this.loadAssetTokens[key];
+            this.loadAssetAndSetTimeout(key, generation, token);
         }
     }
 
@@ -105,7 +108,8 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
         if (this.loadAssetsTimeouts) {
             clearTimeout(this.loadAssetsTimeouts[key]);
             this.loadAssetsTimeouts[key] = undefined;
-            this.loadAssetAndSetTimeout(key, this.loadAssetsGeneration);
+            const token = ++this.loadAssetTokens[key];
+            this.loadAssetAndSetTimeout(key, this.loadAssetsGeneration, token);
         }
     }
 
@@ -128,6 +132,10 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
 
     private isActiveLoadGeneration(generation: number): boolean {
         return !!this.loadAssetsTimeouts && generation === this.loadAssetsGeneration;
+    }
+
+    private isActiveLoad(key: keyof T, generation: number, token: number): boolean {
+        return this.isActiveLoadGeneration(generation) && token === this.loadAssetTokens[key];
     }
 
     protected async loadAsset(key: keyof T, generation = this.loadAssetsGeneration): Promise<void> {
@@ -155,8 +163,12 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
     }
 
 
-    protected async loadAssetAndSetTimeout(key: keyof T, generation = this.loadAssetsGeneration) {
-        if (!this.isActiveLoadGeneration(generation)) {
+    protected async loadAssetAndSetTimeout(
+        key: keyof T,
+        generation = this.loadAssetsGeneration,
+        token = this.loadAssetTokens[key],
+    ) {
+        if (!this.isActiveLoad(key, generation, token)) {
             return;
         }
 
@@ -167,7 +179,7 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
             console.error(e);
         }
 
-        if (!this.isActiveLoadGeneration(generation)) {
+        if (!this.isActiveLoad(key, generation, token)) {
             return;
         }
 
@@ -177,7 +189,7 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
         }
 
         timeouts[key] = setTimeout(() => {
-            this.loadAssetAndSetTimeout(key, generation);
+            this.loadAssetAndSetTimeout(key, generation, token);
         }, this.AUTO_RELOAD_INTERVAL);
     }
 

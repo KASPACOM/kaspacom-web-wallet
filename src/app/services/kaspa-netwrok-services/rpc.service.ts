@@ -21,10 +21,16 @@ export class RpcService {
 
   refreshRpc() {
     const previousRpc = this.RPC;
+    let storedRpcUrl: string | null = null;
+    try {
+      storedRpcUrl = localStorage.getItem(LOCAL_STORAGE_KEYS.RPC_URL);
+    } catch (err) {
+      console.warn('Failed reading RPC URL from localStorage', err);
+    }
 
-    if (localStorage.getItem(LOCAL_STORAGE_KEYS.RPC_URL)) {
+    if (storedRpcUrl) {
       this.RPC = new RpcClient({
-        url: localStorage.getItem(LOCAL_STORAGE_KEYS.RPC_URL) || '',
+        url: storedRpcUrl,
         encoding: Encoding.Borsh,
         networkId: this.network,
       });

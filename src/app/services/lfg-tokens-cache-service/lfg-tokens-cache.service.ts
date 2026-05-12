@@ -23,11 +23,13 @@ import { ImageService } from '../image-service/image.service';
 export class LfgTokensCacheService {
   private readonly imageService = inject(ImageService);
   private readonly CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+  private readonly ERROR_BACKOFF_MS = 30 * 1000; // 30 seconds before retrying after a failure
 
   private cacheLoadedPromise: Promise<LfgTokenResponse> | undefined = undefined;
 
   private tokensCache = new Map<string, LfgToken>();
   private cacheTimestamp: number | null = null;
+  private errorBackoffUntil = 0;
   private responseCache = signal<LfgTokenResponse | null>(null);
 
   constructor(@Inject(DEFI_API_BASE_URL) private baseUrl: string) {}
@@ -82,6 +84,12 @@ export class LfgTokensCacheService {
       return await this.cacheLoadedPromise;
     }
 
+    if (Date.now() < this.errorBackoffUntil && this.responseCache()) {
+      // Recent failure; serve the previous (possibly empty) response
+      // instead of stampeding the backend with retries.
+      return this.responseCache()!;
+    }
+
     this.cacheLoadedPromise = new Promise<LfgTokenResponse>((resolve) => {
       (async () => {
         try {
@@ -92,6 +100,7 @@ export class LfgTokensCacheService {
           // Update cache
           this.responseCache.set(response);
           this.cacheTimestamp = Date.now();
+          this.errorBackoffUntil = 0;
 
           // Rebuild token lookup map
           this.tokensCache.clear();
@@ -102,6 +111,7 @@ export class LfgTokensCacheService {
           resolve(response);
         } catch (error) {
           console.error('Failed to fetch LFG tokens from backend:', error);
+          this.errorBackoffUntil = Date.now() + this.ERROR_BACKOFF_MS;
           // Return empty response to prevent failures downstream
           const emptyResponse: LfgTokenResponse = {
             name: '',
@@ -112,6 +122,9 @@ export class LfgTokensCacheService {
             keywords: [],
             tokens: [],
           };
+          if (!this.responseCache()) {
+            this.responseCache.set(emptyResponse);
+          }
           resolve(emptyResponse);
         }
       })();
@@ -141,6 +154,7 @@ export class LfgTokensCacheService {
     this.tokensCache.clear();
     this.responseCache.set(null);
     this.cacheTimestamp = null;
+    this.errorBackoffUntil = 0;
     this.cacheLoadedPromise = undefined;
   }
 

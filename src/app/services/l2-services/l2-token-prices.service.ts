@@ -255,7 +255,7 @@ export class L2TokenPricesService implements OnDestroy {
       maxHops: 3,
     });
 
-    const ctx: ChainSwapContext = { service, networkConfig, pairsRefreshedAt: Date.now() };
+    const ctx: ChainSwapContext = { service, networkConfig, pairsRefreshedAt: 0 };
     this.contextByChain.set(chainId, ctx);
     return ctx;
   }

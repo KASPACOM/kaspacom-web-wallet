@@ -91,8 +91,12 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
   protected gasFeeOtions = computed(() => {
     if (!this.feeData) return undefined;
 
-    const baseFee = this.feeData.maxPriorityFeePerGas;
-    if (baseFee === null || baseFee === undefined) return undefined;
+    // EIP-1559 exposes maxPriorityFeePerGas; legacy chains only expose
+    // gasPrice. Require at least one to be present so we can render a
+    // sensible fee option list.
+    if (this.feeData.maxPriorityFeePerGas == null && this.feeData.gasPrice == null) {
+      return undefined;
+    }
 
     const maxPriorityFeePerGas = this.feeData.maxPriorityFeePerGas || 0n;
 

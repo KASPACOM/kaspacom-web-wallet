@@ -303,7 +303,6 @@ export class WalletActionService {
       }
 
       action.data.params[0] = actionTransaction;
-      console.log('transaction', action.data.params[0]);
     }
 
     // // Add 2-second delay to allow canvas animation to show before processing

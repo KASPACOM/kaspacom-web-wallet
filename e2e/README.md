@@ -1,7 +1,7 @@
 # Wallet E2E Tests
 
 Playwright E2E suite for `kaspacom-web-wallet`. Part of the
-[wallet-e2e-tests](../openspec/changes/wallet-e2e-tests/proposal.md) change.
+[wallet-e2e-tests](../openspec/archive/wallet-e2e-tests/proposal.md) change.
 
 ## Running locally
 
@@ -20,24 +20,27 @@ npm run e2e -- --ui          # Playwright UI mode
 
 The dev server is started automatically via `webServer` in `playwright.config.ts`.
 To run against an already-running server, set `E2E_SKIP_SERVER=1` and
-`E2E_BASE_URL=http://localhost:4200`.
+`E2E_BASE_URL=http://127.0.0.1:4200`. The default base URL uses `127.0.0.1`
+(not `localhost`) to avoid IPv6 `::1` / IPv4 mismatches with the Angular
+dev server, which binds to IPv4 only — see `playwright.config.ts`.
 
 ## Environment variables
 
 | Var | Purpose | Default |
 |-----|---------|---------|
 | `E2E_PORT` | Port for auto-started dev server | `4200` |
-| `E2E_BASE_URL` | Override base URL | `http://localhost:<E2E_PORT>` |
+| `E2E_BASE_URL` | Override base URL | `http://127.0.0.1:<E2E_PORT>` |
 | `E2E_SKIP_SERVER` | Skip auto-starting the dev server | unset |
-| `KASPA_E2E_SEED` | (PR 2+) Pre-funded testnet seed for send/swap tests | unset |
+| `KASPA_E2E_SEED` | Pre-funded testnet seed for funded-wallet tests | unset |
 
 Secrets go in `.env.e2e` at repo root (gitignored).
 
 ## Scope
 
-Current suite: **onboarding only** (create, import, login, lock). Send / swap /
-approval / iframe / settings land in follow-up PRs per the
-[tasks list](../openspec/changes/wallet-e2e-tests/tasks.md).
+Current suite covers onboarding (create, import, login, lock), settings,
+iframe communication, ERC-20 token import, multi-wallet management, and
+funded-wallet send/swap flows. See the [tasks list](../openspec/archive/wallet-e2e-tests/tasks.md)
+for the breakdown.
 
 ## CI
 

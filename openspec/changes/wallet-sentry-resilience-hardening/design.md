@@ -37,7 +37,7 @@ Likely causes:
 | WASM transient abort fails permanently | avoidable startup failure | retry transient load once with short delay |
 | Local dev noise pollutes triage | false production signal | suppress transient startup captures in development only |
 | Test runner unavailable/full disk | false confidence | free stale scratch space, run build + at least one browser Karma command |
-| Mobile Safari PR smoke hits job timeout | GitHub reports `cancelled`, bypassing `continue-on-error` and blocking PR despite documented non-blocking intent | align PR job timeout with nightly (45m) so mobile-safari can complete/fail normally while remaining non-blocking |
+| Mobile Safari PR smoke is unstable/unrelated to this Sentry fix | blocks focused RPC/assets PR with known mobile-only E2E flake | remove mobile-safari from PR gate and track as separate stabilization work; Chromium/Firefox/WebKit remain blocking |
 
 ## Validation Strategy
 

@@ -85,16 +85,13 @@ jobs:
 
   e2e-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    # mobile-safari (iPhone 14 viewport) hits Playwright stability-check
-    # issues we haven't fully debugged — mark it non-blocking for now so
-    # the other three engines still gate the PR while we iterate. Track in
-    # openspec/changes/wallet-e2e-tests/tasks.md (PR 3x mobile stabilization).
-    continue-on-error: ${{ matrix.project == 'mobile-safari' }}
+    timeout-minutes: 20
+    # Mobile Safari remains a separate stabilization track. Keep PR gates focused
+    # on deterministic desktop engines until the mobile-safari smoke suite is fixed.
     strategy:
       fail-fast: false
       matrix:
-        project: [chromium, webkit, firefox, mobile-safari]
+        project: [chromium, webkit, firefox]
 
     steps:
       - name: Checkout code

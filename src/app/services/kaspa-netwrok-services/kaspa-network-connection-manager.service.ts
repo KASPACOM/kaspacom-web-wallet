@@ -13,7 +13,6 @@ const MAX_RECONNECT_DELAY = 30 * 1000;
 })
 export class KaspaNetworkConnectionManagerService {
   private connectionPromise?: Promise<void>;
-  private isTryingToConnect = false;
   private reconnectTimeout?: ReturnType<typeof setTimeout>;
   private reconnectScheduledFor?: number;
   private reconnectAttempts = 0;
@@ -208,7 +207,6 @@ export class KaspaNetworkConnectionManagerService {
 
     this.clearReconnectTimeout();
 
-    this.isTryingToConnect = true;
     this.setSignalStatusIfChanged(RpcConnectionStatus.CONNECTING);
 
     this.connectionPromise = this.handleConnection(forceRefresh)
@@ -217,7 +215,6 @@ export class KaspaNetworkConnectionManagerService {
         throw err;
       })
       .finally(() => {
-        this.isTryingToConnect = false;
         this.connectionPromise = undefined;
       });
 

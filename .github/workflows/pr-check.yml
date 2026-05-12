@@ -115,8 +115,7 @@ jobs:
             playwright-${{ runner.os }}-
 
       - name: Install Playwright browsers
-        # `mobile-safari` uses the WebKit engine, so installing chromium +
-        # webkit + firefox covers all four projects.
+        # Covers the chromium / webkit / firefox projects in the matrix above.
         run: npx playwright install --with-deps chromium webkit firefox
 
       - name: Run @smoke on ${{ matrix.project }}

@@ -85,9 +85,12 @@ export class GeckoTerminalApiService {
   }
 
   private calcPriceChange(candles: GeckoOhlcvEntry[], periods: number): number | null {
-    if (candles.length < 2) return null;
+    // Need at least `periods + 1` candles to span the requested window;
+    // otherwise the change would be measured over an incomplete period
+    // and silently misrepresented as the full window.
+    if (candles.length < periods + 1) return null;
     const newest = candles[candles.length - 1];
-    const oldest = candles[Math.max(0, candles.length - 1 - periods)];
+    const oldest = candles[candles.length - 1 - periods];
     if (!oldest.open || oldest.open === 0) return null;
     return ((newest.close - oldest.open) / oldest.open) * 100;
   }

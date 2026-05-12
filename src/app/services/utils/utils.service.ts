@@ -87,6 +87,15 @@ export class UtilsService {
       ticker = 'KAS';
     }
 
+    const fallbackUrl = './images/kc-all-black.png';
+    const localUrl = this.availableLocalTokensLogos.has(ticker.toUpperCase())
+      ? `./images/tokens-logos/${ticker.toUpperCase()}.png`
+      : '';
+    if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
+      // Skip backend/S3 lookups for sentinel or invalid addresses.
+      return localUrl || fallbackUrl;
+    }
+
     let lfgTokenUrl = '';
 
     // Try to find logo in LFG tokens array
@@ -113,10 +122,6 @@ export class UtilsService {
     } catch {
       console.error('logo not found for address', address);
     }
-    const fallbackUrl = './images/kc-all-black.png';
-    const localUrl = this.availableLocalTokensLogos.has(ticker.toUpperCase())
-      ? `./images/tokens-logos/${ticker.toUpperCase()}.png`
-      : '';
     const test = (url: string) =>
       new Promise<string>((res) => {
         if (!url) return res('');

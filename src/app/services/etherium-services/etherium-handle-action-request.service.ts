@@ -107,14 +107,22 @@ export class EthereumHandleActionRequestService {
             delete tx.accessList;
 
             tx.type = 0;
-            tx.gasPrice = fees.gasPrice;
+            // Preserve user-selected gasPrice if already set on the tx
+            if (tx.gasPrice == null) {
+                tx.gasPrice = fees.gasPrice;
+            }
         } else {
             // EIP-1559 tx → REMOVE legacy field
             delete tx.gasPrice;
 
             tx.type = 2;
-            tx.maxFeePerGas = fees.maxFeePerGas;
-            tx.maxPriorityFeePerGas = fees.maxPriorityFeePerGas;
+            // Preserve user-selected EIP-1559 fees if already set on the tx
+            if (tx.maxFeePerGas == null) {
+                tx.maxFeePerGas = fees.maxFeePerGas;
+            }
+            if (tx.maxPriorityFeePerGas == null) {
+                tx.maxPriorityFeePerGas = fees.maxPriorityFeePerGas;
+            }
         }
     }
 

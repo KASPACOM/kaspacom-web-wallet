@@ -551,7 +551,6 @@ export async function spendContract(
         previousOutpoint: entry.outpoint,
         utxo: entry,
         sequence: 0n,
-        ...buildInputMassFields({ version: 0, sigOpCount: 1, computeBudget: null }),
         ...buildInputMassFields({ version: 1, sigOpCount: 1, computeBudget: 30 }),
       },
     ];
@@ -804,7 +803,7 @@ export async function buildPartialSpend(
       previousOutpoint: entry.outpoint,
       utxo: entry,
       sequence: 0n,
-      sigOpCount,
+      ...buildInputMassFields({ version: 1, sigOpCount, computeBudget: 30 }),
     }];
 
     const txOutputs: ITransactionOutput[] = outputs.map(o => ({
@@ -828,17 +827,24 @@ export async function buildPartialSpend(
     if (signature.length === 66 && signature[0] === 65) signature = signature.slice(1);
     const sigHex = bytesToHex(signature);
 
-    // Match this pubkey to contract params
+    // Match this pubkey to contract params by scanning the compiled script bytes
     const contractPubkeys = extractContractPubkeys(compiled);
     const signatures: Array<{ paramName: string; signatureHex: string }> = [];
     const pendingParams: string[] = [];
 
-    for (const sigParam of sigParams) {
-      // Find which contract pubkey this sig param references
-      // In the ABI, sig params map to constructor pubkey params by position/name convention
-      const matchingPubkey = findMatchingPubkey(compiled, functionName, sigParam.name, contractPubkeys);
+    const myPubkeyBytes = hexToBytes(pubkeyHex);
+    const scriptBytes = toScriptBytes(compiled);
 
-      if (matchingPubkey && matchingPubkey === pubkeyHex) {
+    for (const sigParam of sigParams) {
+      // findMatchingPubkey returns the PUBKEY PARAM NAME (e.g. "key1") that must sign this sig param.
+      // We then check whether our actual pubkey bytes appear at the position where that
+      // constructor param is embedded in the script.
+      const pubkeyParamName = findMatchingPubkeyParamName(compiled, functionName, sigParam.name);
+      const myKeyMatchesThisParam = pubkeyParamName
+        ? scriptContainsPubkeyForParam(compiled, pubkeyParamName, myPubkeyBytes, scriptBytes)
+        : false;
+
+      if (myKeyMatchesThisParam) {
         signatures.push({ paramName: sigParam.name, signatureHex: sigHex });
       } else {
         pendingParams.push(sigParam.name);
@@ -890,11 +896,12 @@ export async function completePartialSpend(
     if (!entry) throw new Error(`UTXO not found for completion`);
 
     // Rebuild the exact same unsigned TX
+    const sigOpCount = partialSpend.sigOpCount;
     const txInputs: ITransactionInput[] = [{
       previousOutpoint: entry.outpoint,
       utxo: entry,
       sequence: 0n,
-      sigOpCount: partialSpend.sigOpCount,
+      ...buildInputMassFields({ version: 1, sigOpCount, computeBudget: 30 }),
     }];
 
     const txOutputs: ITransactionOutput[] = partialSpend.outputs.map(o => ({
@@ -966,26 +973,26 @@ export async function completePartialSpend(
 // ── Helpers for Two-Phase Signing ────────────────────────────
 
 function extractContractPubkeys(compiled: CompiledContract): Map<string, string> {
-  // Extract pubkey param names and their placeholder values from the AST
+  // Extract pubkey param names from the AST (values are not stored in compiled JSON)
   const pubkeys = new Map<string, string>();
   for (const param of compiled.ast.params) {
     if (param.type_ref.base === 'pubkey') {
-      pubkeys.set(param.name, ''); // Value will be matched at runtime
+      pubkeys.set(param.name, '');
     }
   }
   return pubkeys;
 }
 
-function findMatchingPubkey(
+/**
+ * Returns the constructor PUBKEY PARAM NAME (e.g. "key1") that must sign
+ * the given sig param (e.g. "s1") in the given function.
+ * Scans the AST for require(checkSig(sigParam, pubkeyParam)) patterns.
+ */
+function findMatchingPubkeyParamName(
   compiled: CompiledContract,
   functionName: string,
   sigParamName: string,
-  _contractPubkeys: Map<string, string>,
 ): string | undefined {
-  // In SilverScript, sig params in functions reference constructor pubkeys
-  // by convention. E.g., in escrow:
-  //   release(sig buyerSig, sig sellerSig) → buyer, seller pubkeys
-  // We match by examining the AST require(checkSig(sigParam, pubkeyParam)) calls
   const astFn = compiled.ast.functions.find(f => f.name === functionName);
   if (!astFn) return undefined;
 
@@ -995,12 +1002,59 @@ function findMatchingPubkey(
       if (expr?.kind === 'call' && expr.data?.name === 'checkSig') {
         const args = expr.data.args;
         if (args?.length === 2 && args[0]?.data === sigParamName) {
-          // Found: checkSig(sigParamName, pubkeyName)
-          // The pubkey name references a constructor param
-          return args[1]?.data; // Returns the pubkey param name, not the actual hex
+          // Returns the pubkey param name (e.g. "key1")
+          return args[1]?.data as string | undefined;
         }
       }
     }
   }
   return undefined;
+}
+
+/**
+ * Checks whether the caller's pubkey is the one baked into the compiled script
+ * for the specific constructor param named `pubkeyParamName`.
+ *
+ * Strategy:
+ *   1. Scan the script for all `0x20 <32 bytes>` pushes and collect unique
+ *      pubkey sequences in first-appearance order.
+ *   2. The N-th unique pubkey (0-indexed) corresponds to the N-th constructor
+ *      pubkey param (e.g. key1=0, key2=1, key3=2) — this matches how
+ *      SilverScript embeds params sequentially per branch.
+ *   3. Look up the index of `pubkeyParamName` in the AST params list.
+ *   4. Return true only if the caller's pubkey matches that specific slot.
+ *
+ * This ensures signer3 (key3) only claims "s3" params, not "s2" params,
+ * even though key3 also appears in the script.
+ */
+function scriptContainsPubkeyForParam(
+  compiled: CompiledContract,
+  pubkeyParamName: string,
+  pubkeyBytes: Uint8Array,
+  scriptBytes: Uint8Array,
+): boolean {
+  if (pubkeyBytes.length !== 32) return false;
+
+  // Step 1: Collect unique 32-byte pubkey values from the script in first-appearance order.
+  // Each pubkey is pushed as: 0x20 (OP_DATA_32) followed by 32 bytes.
+  const seenHexOrder: string[] = [];
+  for (let i = 0; i <= scriptBytes.length - 33; i++) {
+    if (scriptBytes[i] === 0x20) {
+      const pkHex = bytesToHex(scriptBytes.slice(i + 1, i + 33));
+      if (!seenHexOrder.includes(pkHex)) {
+        seenHexOrder.push(pkHex);
+      }
+    }
+  }
+
+  // Step 2: Find the index of pubkeyParamName among the constructor's pubkey params.
+  const pubkeyParams = compiled.ast.params.filter(p => p.type_ref.base === 'pubkey');
+  const paramIndex = pubkeyParams.findIndex(p => p.name === pubkeyParamName);
+  if (paramIndex === -1) return false;
+
+  // Step 3: The pubkey at that index in the script must match our caller's key.
+  const expectedPubkeyHex = seenHexOrder[paramIndex];
+  if (!expectedPubkeyHex) return false;
+
+  return bytesToHex(pubkeyBytes) === expectedPubkeyHex;
 }

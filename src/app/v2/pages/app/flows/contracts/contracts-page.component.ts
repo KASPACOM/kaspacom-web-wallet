@@ -14,6 +14,7 @@ import { CompiledContract, CovenantOutpoint, PartiallySignedSpend, SpendOutput }
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { CONTRACT_TEMPLATES, ContractTemplate, TemplateField } from '../../../../services/covenant/contract-templates';
 import { CtorArg, TemplatePatcherService } from '../../../../services/covenant/template-patcher.service';
+import { PublicKey } from '../../../../../../../public/kaspa/kaspa';
 
 type TabName = 'deploy' | 'my-contracts' | 'interact' | 'templates';
 
@@ -171,14 +172,21 @@ export class ContractsPageComponent implements OnInit {
   /**
    * Extra (non-sig/pubkey) params for the selected function.
    * E.g., escrow arbitrate has `amountToSeller: int`.
+   *
+   * NOTE: This is a plain getter (not a computed signal) so that Angular's
+   * change-detection re-evaluates it every cycle, picking up changes to the
+   * plain string property `selectedFunction` that a computed() would not track.
    */
-  extraArgsForFunction = computed(() => {
+  extraArgsForFunction(): Array<{ name: string; type_name: string }> {
     const contract = this.parsedInteractContract();
     if (!contract || !this.selectedFunction) return [];
     const abiEntry = contract.abi.find(e => e.name === this.selectedFunction);
     if (!abiEntry) return [];
+    // For Escrow arbitrate, amountToSeller is collected via the standard
+    // "Withdraw Amount (KAS)" field, so we don't render a separate input for it.
+    if (this.selectedFunction === 'arbitrate' && contract.contract_name === 'Escrow') return [];
     return abiEntry.inputs.filter(i => i.type_name !== 'sig' && i.type_name !== 'pubkey');
-  });
+  }
 
   // Current network
   network = computed(() => this.rpcService.getNetwork());
@@ -604,11 +612,58 @@ export class ContractsPageComponent implements OnInit {
       const compiled = this.covenantService.parseCompiledContract(contractJson);
       const outpoint: CovenantOutpoint = { txid: txid.trim(), vout };
       const inputAmount = BigInt(inputAmountSompi);
+      const privateKey = wallet.getPrivateKey().toString();
 
       // Build outputs based on function type
       let outputs: SpendOutput[];
 
-      if (this.functionRequiresOutput(functionName)) {
+      if (functionName === 'arbitrate' && compiled.contract_name === 'Escrow') {
+        // Escrow arbitrate: the "Withdraw Amount (KAS)" field is reused as amountToSeller.
+        if (isNaN(outputAmountKas) || outputAmountKas <= 0) {
+          this.interactError.set('Enter the amount to send to the seller in the "Withdraw Amount" field');
+          return;
+        }
+        const amountToSellerSompi = BigInt(Math.floor(outputAmountKas * 1e8));
+        const feeSompi = 1000n;
+        const amountToBuyerSompi = inputAmount > amountToSellerSompi + feeSompi
+          ? inputAmount - amountToSellerSompi - feeSompi
+          : 0n;
+
+        // Derive seller/buyer addresses from pubkeys baked into the compiled script.
+        // Escrow constructor order: buyer (param 0), seller (param 1).
+        const pubkeys = this.extractPubkeysFromScript(compiled);
+        const buyerAddress = pubkeys[0] ? this.pubkeyToAddress(pubkeys[0]) : '';
+        const sellerAddress = pubkeys[1] ? this.pubkeyToAddress(pubkeys[1]) : '';
+
+        if (!sellerAddress || !buyerAddress) {
+          this.interactError.set('Could not derive buyer/seller addresses from contract script');
+          return;
+        }
+
+        outputs = [
+          { address: sellerAddress, amount: amountToSellerSompi },
+          { address: buyerAddress, amount: amountToBuyerSompi },
+        ];
+        console.log('[Interact] Arbitrate outputs:', outputs);
+
+        // Pass amountToSeller as extraArgs so the SDK can build the sigscript correctly.
+        // We also pass 5000n gasAmountSompi to add an extra input for network fees,
+        // as the Escrow contract's fixed 1000 fee is often too low for this complex TX.
+        const result = await this.covenantService.spend(
+          compiled, outpoint, inputAmount, functionName, outputs, privateKey,
+          { amountToSeller: amountToSellerSompi },
+          undefined,
+        );
+        this.interactResult.set({ txid: result.txid, functionName: result.functionName });
+        if (this.selectedContractId) {
+          this.registryService.updateContract(this.selectedContractId, {
+            status: 'spent', spendTxid: result.txid, lastChecked: Date.now(),
+          });
+          this.loadContracts();
+        }
+        return;
+
+      } else if (this.functionRequiresOutput(functionName)) {
         // Withdrawal function — validate user-provided output
         if (!outputAddress) {
           this.interactError.set('Output address is required');
@@ -635,7 +690,6 @@ export class ContractsPageComponent implements OnInit {
         }];
       }
 
-      const privateKey = wallet.getPrivateKey().toString();
 
       // Collect extra args (int, bool params like escrow arbitrate's amountToSeller)
       const extraArgs = this.collectExtraArgs(compiled, functionName);
@@ -1214,5 +1268,38 @@ export class ContractsPageComponent implements OnInit {
       () => alert('Partial spend JSON copied! Send it to the co-signer.'),
       () => prompt('Copy this partial spend JSON:', json),
     );
+  }
+
+  // ─── Helpers for Escrow arbitrate ─────────────────────────────────
+
+  /**
+   * Scan the compiled script for all unique 32-byte pubkey pushes (OP_DATA_32 = 0x20).
+   * Returns them in first-appearance order, which matches the SilverScript constructor
+   * parameter order.
+   */
+  private extractPubkeysFromScript(compiled: CompiledContract): string[] {
+    const scriptBytes = Uint8Array.from(compiled.script);
+    const seen: string[] = [];
+    for (let i = 0; i <= scriptBytes.length - 33; i++) {
+      if (scriptBytes[i] === 0x20) {
+        const pkHex = Array.from(scriptBytes.slice(i + 1, i + 33))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+        if (!seen.includes(pkHex)) seen.push(pkHex);
+      }
+    }
+    return seen;
+  }
+
+  /**
+   * Convert an x-only 32-byte pubkey hex into a Kaspa P2PK address for the current network.
+   */
+  private pubkeyToAddress(pkHex: string): string {
+    try {
+      return new PublicKey(pkHex).toAddress(this.rpcService.getNetwork()).toString();
+    } catch (e) {
+      console.warn('[Contracts] pubkeyToAddress failed for', pkHex, e);
+      return '';
+    }
   }
 }

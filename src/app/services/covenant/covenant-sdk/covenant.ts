@@ -639,6 +639,19 @@ export async function spendContract(
       sigPrefix,
     );
 
+    // Sign extra inputs (gas) if any
+    for (let i = 1; i < unsignedTx.inputs.length; i++) {
+      const sigHexStr = String(createInputSignature(unsignedTx, i, privateKey, SighashType.All));
+      let sigBytes = hexToBytes(sigHexStr);
+      if (sigBytes.length === 66 && sigBytes[0] === 65) {
+        sigBytes = sigBytes.slice(1);
+      }
+      // For standard P2PK/P2TR gas inputs, the signatureScript must be a valid script (a push of the signature).
+      unsignedTx.inputs[i].signatureScript = new ScriptBuilder().addData(sigBytes).drain();
+    }
+
+    console.log('Transaction to submit', unsignedTx);
+
     const submitted = await rpc.submitTransaction({
       transaction: unsignedTx,
       allowOrphan: false,

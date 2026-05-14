@@ -26,6 +26,10 @@
       </kc-button>
     </div>
 
+    @if (showAddressError()) {
+      <div class="address-error typo-text-1 text-red">Invalid contract address format</div>
+    }
+
     <kc-button
       [variant]="'primary'"
       [size]="'md'"

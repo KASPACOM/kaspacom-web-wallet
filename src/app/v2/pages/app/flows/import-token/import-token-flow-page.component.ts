@@ -46,6 +46,7 @@ export class ImportTokenFlowPageComponent {
 
   contractAddress = signal<string>('');
   isAddressValid = computed(() => ethers.isAddress(this.contractAddress().trim()));
+  showAddressError = computed(() => this.contractAddress().trim().length > 0 && !this.isAddressValid());
   state = signal<ImportState>('idle');
   errorMessage = signal<string>('');
   tokenInfo = signal<Erc20Token | null>(null);

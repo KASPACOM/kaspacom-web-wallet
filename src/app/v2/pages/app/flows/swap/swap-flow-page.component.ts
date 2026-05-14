@@ -654,7 +654,6 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
       }
     } catch (err: any) {
       if (err?.code === 4001 || err?.info?.error?.code === 4001) {
-        this.notificationService.error('Swap Error', 'User rejected');
         return;
       }
       this.notificationService.error(

@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { ImportSwitchMethod } from '../steps/import-switch-import-existing-step/component/import-switch/import-switch-method.enum';
 import { WalletService } from '../../../../../../services/wallet.service';
+import { ReferralService } from '../../../../../../services/referral.service';
 import { DEFAULT_DERIVED_PATH } from '../../../../../../config/consts';
 import { PasswordManagerService } from '../../../../../../services/password-manager.service';
 
@@ -19,6 +20,16 @@ export interface IWalletImportResult {
   error?: string;
 }
 
+const INIT_INFO = {
+  importSwitchMethod: ImportSwitchMethod.SEED_PHRASE,
+  wordCount: 12,
+  seedPhrase: '',
+  seedPassphrase: '',
+  privateKey: '',
+  password: '',
+  confirmPassword: '',
+};
+
 @Injectable({
   providedIn: 'root',
 })
@@ -27,15 +38,9 @@ export class ImportExistingFlowService {
 
   private passwordManagerService = inject(PasswordManagerService);
 
-  private _model = signal<IImportExistingWallet>({
-    importSwitchMethod: ImportSwitchMethod.SEED_PHRASE,
-    wordCount: 12,
-    seedPhrase: '',
-    seedPassphrase: '',
-    privateKey: '',
-    password: '',
-    confirmPassword: '',
-  });
+  private referralService = inject(ReferralService);
+
+  private _model = signal<IImportExistingWallet>({ ...INIT_INFO });
 
   private _skipPassword = false;
 
@@ -51,9 +56,13 @@ export class ImportExistingFlowService {
     return this._model;
   }
 
-  init() {}
+  init() {
+    this._model.set({
+      ...INIT_INFO
+    });
+  }
 
-  printState() {}
+  printState() { }
 
   submitSeedPhraseStep(
     seedPhrase: string,
@@ -121,7 +130,7 @@ export class ImportExistingFlowService {
           this._model().privateKey.trim(),
           undefined,
           undefined,
-          undefined, 
+          undefined,
           false,
         );
         importResult = { success: tmp.sucess, error: tmp.error };
@@ -144,6 +153,9 @@ export class ImportExistingFlowService {
       const importError = 'Error importing wallet. Please try again.';
       importResult = { success: false, error: importError };
     }
+
+    this.tryRegisterReferralAfterSuccessfulImport(importResult);
+
     return importResult;
   }
 
@@ -183,6 +195,44 @@ export class ImportExistingFlowService {
       importResult = { success: false, error: importError };
     }
 
+    this.tryRegisterReferralAfterSuccessfulImport(importResult);
+
     return importResult!;
+  }
+
+  /**
+   * Derive the wallet address from the current import model
+   * (mnemonic or private key).
+   */
+  private tryRegisterReferralAfterSuccessfulImport(
+    importResult: IWalletImportResult | undefined,
+  ): void {
+    if (!importResult?.success) {
+      return;
+    }
+    const walletAddress = this.getImportedWalletAddress();
+    if (walletAddress) {
+      void this.referralService.registerWallet(walletAddress);
+    }
+  }
+
+  private getImportedWalletAddress(): string | null {
+    try {
+      if (this._model().importSwitchMethod === ImportSwitchMethod.PRIVATE_KEY) {
+        if (this._model().privateKey) {
+          return this.walletService.getWalletAddressFromPrivateKey(
+            this._model().privateKey.trim(),
+          );
+        }
+      } else if (this._model().seedPhrase) {
+        return this.walletService.getWalletAddressFromMnemonic(
+          this._model().seedPhrase.trim(),
+          this._model().seedPassphrase,
+        );
+      }
+    } catch {
+      // Best-effort — don't block the flow
+    }
+    return null;
   }
 }

@@ -3,7 +3,6 @@ import { Component, OnInit, computed, inject, output } from '@angular/core';
 import {
   KcButtonComponent,
   KcIconComponent,
-  KcSnackbarComponent,
   NotificationService,
 } from 'kaspacom-ui';
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
@@ -17,7 +16,6 @@ import { FlowPagesService } from '../../../../../../services/flow-pages.service'
     KcButtonComponent,
     NgOptimizedImage,
     KcIconComponent,
-    KcSnackbarComponent,
   ],
   templateUrl: './address-new-wallet-step.component.html',
   styleUrl: './address-new-wallet-step.component.scss',

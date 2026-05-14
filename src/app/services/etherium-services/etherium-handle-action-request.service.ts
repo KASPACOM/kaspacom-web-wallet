@@ -101,20 +101,29 @@ export class EthereumHandleActionRequestService {
         }
     ) {
         if (fees.type === 0) {
-            // Legacy tx → REMOVE EIP-1559 fields
+            // On chains normalized to legacy, the approval UI may still have
+            // written the user's selected fee as maxFeePerGas — capture it
+            // before we strip EIP-1559 fields so the selection isn't lost.
+            const userSelectedPrice = tx.gasPrice ?? tx.maxFeePerGas;
+
             delete tx.maxFeePerGas;
             delete tx.maxPriorityFeePerGas;
             delete tx.accessList;
 
             tx.type = 0;
-            tx.gasPrice = fees.gasPrice;
+            tx.gasPrice = userSelectedPrice ?? fees.gasPrice;
         } else {
             // EIP-1559 tx → REMOVE legacy field
             delete tx.gasPrice;
 
             tx.type = 2;
-            tx.maxFeePerGas = fees.maxFeePerGas;
-            tx.maxPriorityFeePerGas = fees.maxPriorityFeePerGas;
+            // Preserve user-selected EIP-1559 fees if already set on the tx
+            if (tx.maxFeePerGas == null) {
+                tx.maxFeePerGas = fees.maxFeePerGas;
+            }
+            if (tx.maxPriorityFeePerGas == null) {
+                tx.maxPriorityFeePerGas = fees.maxPriorityFeePerGas;
+            }
         }
     }
 

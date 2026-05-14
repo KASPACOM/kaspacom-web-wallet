@@ -6,6 +6,7 @@ import { EthereumWalletChainManager } from '../../../services/etherium-services/
 import { EIP1193ProviderChain } from '@kaspacom/wallet-messages';
 import { WalletService } from '../../../services/wallet.service';
 import { Router } from '@angular/router';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'network-selection-modal',
@@ -20,17 +21,19 @@ export class NetworkSelectionModalComponent {
   private router = inject(Router);
 
   protected networks: EIP1193ProviderChain[];
+  protected l1Config = environment.l1Config;
 
-  isCurrentNetworkL2 = computed(() => this.walletService.getIsL2DisplaySignal()());
-  currentL2Network = computed(() => this.ethereumWalletChainManager.getCurrentChainSignal()());
-
+  isCurrentNetworkL2 = computed(() =>
+    this.walletService.getIsL2DisplaySignal()(),
+  );
+  currentL2Network = computed(() =>
+    this.ethereumWalletChainManager.getCurrentChainSignal()(),
+  );
 
   constructor() {
-    this.networks = Object.values(this.ethereumWalletChainManager.getAllChainsByChainId());
-  }
-
-  getNetworkName(network: EIP1193ProviderChain) {
-    return network.chainName;
+    this.networks = Object.values(
+      this.ethereumWalletChainManager.getAllChainsByChainId(),
+    );
   }
 
   onClose(): void {
@@ -38,16 +41,28 @@ export class NetworkSelectionModalComponent {
   }
 
   onCloseAfterNetworkChanged(): void {
-      this.router.navigate(['/app/home']);
+    this.router.navigate(['/app/home']);
     this.onClose();
   }
 
-  getNetworkIcon(network: EIP1193ProviderChain): string {
-    return this.ethereumWalletChainManager.getChainEnvConfig(network.chainId)?.icon || '🌐';
+  getNetworkIcon(network: EIP1193ProviderChain): string | null {
+    return (
+      this.ethereumWalletChainManager.getChainEnvConfig(network.chainId)
+        ?.icon || null
+    );
+  }
+
+  getNetworkShortName(network: EIP1193ProviderChain): string {
+    const envConfig = this.ethereumWalletChainManager.getChainEnvConfig(
+      network.chainId,
+    );
+    return envConfig?.shortName || network.chainName;
   }
 
   isCurrentNetwork(networkId: string): boolean {
-    return this.ethereumWalletChainManager.getCurrentChainSignal() && this.ethereumWalletChainManager.getCurrentChainSignal()() == networkId;
+    return (
+      this.ethereumWalletChainManager.getCurrentChainSignal()() === networkId
+    );
   }
 
   setL1Network(): void {

@@ -1,16 +1,65 @@
+:host {
+  ::ng-deep {
+    kc-base-modal {
+      .modal-container {
+        background-color: var(--vampire-black, #0d1316) !important;
+        border-color: var(--border-color, #1a2025) !important;
+        width: 520px !important;
+        max-width: 95vw !important;
+      }
+
+      .modal-header {
+        background-color: var(--vampire-black, #0d1316) !important;
+        border-bottom-color: var(--border-color, #1a2025) !important;
+      }
+
+      .modal-title-text {
+        color: var(--color-text-primary, #fff) !important;
+      }
+
+      .modal-content {
+        background-color: var(--vampire-black, #0d1316) !important;
+      }
+
+      .close-button kc-icon {
+        color: var(--gray-60, #aaa) !important;
+      }
+    }
+  }
+}
+
 .token-selector-content {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  min-width: 480px;
-  max-width: 90vw;
+  width: 100%;
+  min-width: 320px;
+  max-width: 520px;
+  box-sizing: border-box;
 }
 
 .token-list {
-  max-height: 360px;
+  height: 420px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  border-radius: 12px;
+  border: 1px solid var(--border-color, #1a2025);
+  background-color: var(--vampire-black, #0d1316);
+}
+
+.section-header {
+  padding: 10px 16px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gray-60, #aaa);
+  position: sticky;
+  top: 0;
+  background-color: var(--vampire-black, #0d1316);
+  z-index: 1;
+  border-bottom: 1px solid var(--border-color, #1a2025);
 }
 
 .token-item {
@@ -18,16 +67,26 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px;
-  background: transparent;
+  padding: 12px 16px;
+  background-color: var(--vampire-black, #0d1316);
   border: none;
-  border-bottom: 1px solid var(--color-border-primary, #333);
+  border-bottom: 1px solid var(--border-color, #1a2025);
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.15s ease;
   color: var(--color-text-primary, #fff);
+  text-align: left;
+
+  &:last-child {
+    border-bottom: none;
+  }
 
   &:hover {
-    background-color: var(--color-background-secondary, #0D1316);
+    background-color: var(--bg-tertiary, #1a2025);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary, #6fc7ba);
+    outline-offset: -2px;
   }
 }
 
@@ -35,20 +94,9 @@
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.token-logo {
-  width: 32px;
-  height: 32px;
-  border-radius: 16px;
-  object-fit: cover;
-}
-
-.token-logo-placeholder {
-  width: 32px;
-  height: 32px;
-  border-radius: 16px;
-  background-color: var(--color-background-tertiary, #333);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .token-details {
@@ -56,26 +104,84 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .token-symbol {
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.token-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .token-name {
   font-size: 12px;
-  color: var(--color-text-secondary, #aaa);
+  color: var(--gray-60, #aaa);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
 }
 
 .token-address {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
   font-size: 11px;
-  color: var(--color-text-tertiary, #777);
+  color: var(--gray-40, #777);
   font-family: monospace;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &:hover {
+    color: var(--primary, #6fc7ba);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary, #6fc7ba);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+.token-balance {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary, #fff);
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.section-loading {
+  padding: 20px 16px;
+  font-size: 13px;
+  color: var(--gray-60, #aaa);
+  text-align: center;
 }
 
 .no-tokens {
-  padding: 32px;
+  padding: 48px 32px;
   text-align: center;
-  color: var(--color-text-secondary, #aaa);
+  color: var(--gray-60, #aaa);
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.no-tokens-hint {
+  font-size: 12px;
+  color: var(--gray-40, #777);
 }

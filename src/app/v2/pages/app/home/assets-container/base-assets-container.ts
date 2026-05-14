@@ -8,6 +8,7 @@ export const ASSET_TAB_IDS = {
   KRC721: 'krc721',
   KNS: 'kns',
   L2_ERC20: 'l2-ERC20',
+  L2_TX_HISTORY: 'l2-tx-history',
 } as const;
 
 export type AssetTabId = (typeof ASSET_TAB_IDS)[keyof typeof ASSET_TAB_IDS];

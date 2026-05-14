@@ -11,7 +11,6 @@ import { FormsModule } from '@angular/forms';
 import {
   KcButtonComponent,
   KcInputComponent,
-  KcSnackbarComponent,
 } from 'kaspacom-ui';
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 
@@ -28,7 +27,6 @@ interface VerificationWordEntry {
     FormsModule,
     KcButtonComponent,
     KcInputComponent,
-    KcSnackbarComponent,
   ],
   templateUrl: './verify-seed-phrase-new-wallet-step.component.html',
   styleUrl: './verify-seed-phrase-new-wallet-step.component.scss',

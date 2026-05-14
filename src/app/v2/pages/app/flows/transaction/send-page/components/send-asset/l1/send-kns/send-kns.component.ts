@@ -1,51 +1,41 @@
+import { CommonModule } from '@angular/common';
 import {
   Component,
-  OnInit,
-  OnDestroy,
-  signal,
-  inject,
   effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
 } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
-import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
-import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
-import {
-  KcInputComponent,
-  KcCheckboxComponent,
-  KcButtonComponent,
-  KcIconComponent,
-} from 'kaspacom-ui';
 import { FormsModule } from '@angular/forms';
-import { SkeletonComponent } from '../../../../../../../../../shared/ui/skeleton/skeleton.component';
-import { KnsDomainAsset } from '../../../../../../../../../../services/kns-api/dtos/kns-domain.dto';
-import { KnsApiService } from '../../../../../../../../../../services/kns-api/kns-api.service';
-import { WalletService } from '../../../../../../../../../../services/wallet.service';
-import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';
-import { KnsWalletActionService } from '../../../../../../../../../../services/protocols/kns/kns-wallet-actions.service';
-import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
-import { ApprovalFlowService } from '../../../../../../../../../services/approval-flow.service';
-import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import { firstValueFrom } from 'rxjs';
-import { UtilsHelper } from '../../../../../../../../../../services/utils.service';
-import { QrScannerService } from '../../../../../../../../../../services/qr-scanner.service';
-import { AddressSmartInputComponent } from '../../../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
-import { AddressResolutionResult } from '../../../../../../../../../../services/address-resolution.service';
 import { Router } from '@angular/router';
+import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
+import { KcButtonComponent, KcCheckboxComponent } from 'kaspacom-ui';
+import { firstValueFrom } from 'rxjs';
+import { AddressResolutionResult } from '../../../../../../../../../../services/address-resolution.service';
 import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
 import { L1_ASSET_KEYS } from '../../../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
+import { KnsDomainAsset } from '../../../../../../../../../../services/kns-api/dtos/kns-domain.dto';
+import { KnsApiService } from '../../../../../../../../../../services/kns-api/kns-api.service';
+import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
+import { KnsWalletActionService } from '../../../../../../../../../../services/protocols/kns/kns-wallet-actions.service';
+import { QrScannerService } from '../../../../../../../../../../services/qr-scanner.service';
+import { UtilsHelper } from '../../../../../../../../../../services/utils.service';
+import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';
+import { WalletService } from '../../../../../../../../../../services/wallet.service';
+import { ApprovalFlowService } from '../../../../../../../../../services/approval-flow.service';
+import { AddressSmartInputComponent } from '../../../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
+import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
+import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
 
 @Component({
   selector: 'app-send-kns',
   standalone: true,
   imports: [
     CommonModule,
-    KcInputComponent,
     KcCheckboxComponent,
     KcButtonComponent,
-    KcIconComponent,
     FormsModule,
-    DatePipe,
-    SkeletonComponent,
     AddressSmartInputComponent,
   ],
   templateUrl: './send-kns.component.html',
@@ -271,7 +261,9 @@ export class SendKnsComponent
         this.domain.set(domainData);
       } else if (navigationData?.assetId) {
         // Fallback: try to find domain in assets store
-        const knsAssets = this.assetsManagerService.getAllAssetStores().l1.getAssets(L1_ASSET_KEYS.kns);
+        const knsAssets = this.assetsManagerService
+          .getAllAssetStores()
+          .l1.getAssets(L1_ASSET_KEYS.kns);
         const storedDomain = knsAssets.find(
           (domain) => domain.assetId === navigationData.assetId,
         );

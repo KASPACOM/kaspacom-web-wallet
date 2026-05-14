@@ -2,7 +2,7 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { WalletAction, WalletActionType } from '../../types/wallet-action';
 import { FlowPagesService } from './flow-pages.service';
 import { Router } from '@angular/router';
-import { WalletActionResult } from '@kaspacom/wallet-messages';
+import { WalletActionResult, EIP1193RequestPayload, EIP1193RequestType } from '@kaspacom/wallet-messages';
 
 export enum ApprovalDisplayMode {
   FLOW_PAGE = 'flow_page', // For regular app usage - integrated flow
@@ -15,6 +15,19 @@ export enum ApprovalFlowState {
   PROCESSING = 'processing', // Loading/processing transaction
   SUCCESS = 'success', // Showing success page
   ERROR = 'error', // Showing error page
+}
+
+export type L2PriorityInfo = {
+  baseFee: bigint;
+  priorityFee: bigint;
+  gasLimit: bigint;
+};
+
+export type ApprovalPageResultParams = {
+  isApproved: boolean;
+  priorityFee?: bigint;
+  l2PriorityInfo?: L2PriorityInfo;
+  additionalParams?: { [key: string]: any };
 }
 
 export interface ApprovalFlowConfig {
@@ -51,11 +64,7 @@ export class ApprovalFlowService {
 
   // Resolve function for the current approval
   private currentResolve:
-    | ((result: {
-        isApproved: boolean;
-        priorityFee?: bigint;
-        additionalParams?: { [key: string]: any };
-      }) => void)
+    | ((result: ApprovalPageResultParams) => void)
     | null = null;
 
   // Signal to track completion events for components to listen to
@@ -73,11 +82,7 @@ export class ApprovalFlowService {
   async showApproval(
     action: WalletAction,
     isFromIframe: boolean = false,
-  ): Promise<{
-    isApproved: boolean;
-    priorityFee?: bigint;
-    additionalParams?: { [key: string]: any };
-  }> {
+  ): Promise<ApprovalPageResultParams> {
     // Determine display mode based on context
     const mode = this.determineDisplayMode(isFromIframe);
 
@@ -104,11 +109,7 @@ export class ApprovalFlowService {
   /**
    * Resolves the current approval with the given result
    */
-  resolveApproval(result: {
-    isApproved: boolean;
-    priorityFee?: bigint;
-    additionalParams?: { [key: string]: any };
-  }) {
+  resolveApproval(result: ApprovalPageResultParams) {
     if (this.currentResolve) {
       this.currentResolve(result);
       this.currentResolve = null;
@@ -206,6 +207,19 @@ export class ApprovalFlowService {
     this.cleanupApproval();
   }
 
+  /**
+   * Rejects and cleans up a pending approval without triggering navigation.
+   * Used when the approval page is destroyed externally (e.g. user navigated back).
+   */
+  rejectIfPending() {
+    if (this.currentResolve) {
+      this.currentResolve({ isApproved: false });
+      this.currentResolve = null;
+    }
+    this.currentApprovalConfigSignal.set(null);
+    this.completionSignal.set(null);
+  }
+
   private determineDisplayMode(isFromIframe: boolean): ApprovalDisplayMode {
     if (isFromIframe) {
       return ApprovalDisplayMode.MODAL_DIALOG;
@@ -231,13 +245,21 @@ export class ApprovalFlowService {
   }
 
   private showAsFlowPage(config: ApprovalFlowConfig) {
-    this.flowPagesService.openFlow({
-      id: 'action-approval',
+    const pageConfig = {
+      id: 'action-approval' as const,
       title: this.getApprovalTitle(config.action),
       canNavigateBack: config.state === ApprovalFlowState.APPROVAL,
       showTitle: config.state === ApprovalFlowState.APPROVAL,
       showBackground: config.state === ApprovalFlowState.APPROVAL,
-    });
+    };
+
+    // If a flow page is already open, add approval on top of the stack
+    // Otherwise, start a new flow
+    if (this.flowPagesService.isAnyPageOpen()) {
+      this.flowPagesService.navigateToPage(pageConfig);
+    } else {
+      this.flowPagesService.openFlow(pageConfig);
+    }
   }
 
   private showAsFullPage(config: ApprovalFlowConfig) {
@@ -269,7 +291,9 @@ export class ApprovalFlowService {
   private cleanupByMode(mode: ApprovalDisplayMode) {
     switch (mode) {
       case ApprovalDisplayMode.FLOW_PAGE:
-        this.flowPagesService.closePage();
+        // Use navigateBack() to return to the previous page in the stack
+        // instead of closePage() which clears the entire stack
+        this.flowPagesService.navigateBack();
         break;
       case ApprovalDisplayMode.MODAL_DIALOG:
         // Modal cleanup handled by review-action component
@@ -290,6 +314,22 @@ export class ApprovalFlowService {
         return 'Sign Message';
       case WalletActionType.SIGN_PSKT_TRANSACTION:
         return 'Sign Transaction';
+      case WalletActionType.EIP1193_PROVIDER_REQUEST:
+        const eipData = action.data as EIP1193RequestPayload<EIP1193RequestType>;
+        switch (eipData.method) {
+          case EIP1193RequestType.SEND_TRANSACTION:
+          case EIP1193RequestType.KAS_SEND_TRANSACTION:
+            return 'Send Transaction';
+          case EIP1193RequestType.WALLET_ADD_ETHEREUM_CHAIN:
+            return 'Add Network';
+          case EIP1193RequestType.WALLET_SWITCH_ETHEREUM_CHAIN:
+            return 'Switch Network';
+          case EIP1193RequestType.SIGN_TYPED_DATA:
+          case EIP1193RequestType.SIGN_TYPED_DATA_V4:
+            return 'Sign Message';
+          default:
+            return 'L2 Action';
+        }
       default:
         return 'Confirm Action';
     }

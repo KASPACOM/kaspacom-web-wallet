@@ -15,7 +15,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import {
   KcButtonComponent,
   KcIconComponent,
@@ -48,7 +48,6 @@ interface PanelCopy {
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    RouterLink,
     KcButtonComponent,
     KcIconComponent,
     KcInputComponent,
@@ -71,7 +70,9 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
   private readonly walletService = inject(WalletService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
-  private readonly iframeAccountSelectionService = inject(IframeAccountSelectionService);
+  private readonly iframeAccountSelectionService = inject(
+    IframeAccountSelectionService,
+  );
   private readonly monitorService = inject(MonitorService);
 
   readonly shouldShowLogin = signal(
@@ -218,7 +219,9 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
 
   isInvalid(controlName: string): boolean {
     const control = this.loginForm.get(controlName);
-    return control ? control.invalid && (control.dirty || control.touched) : false;
+    return control
+      ? control.invalid && (control.dirty || control.touched)
+      : false;
   }
 
   async onSubmit(): Promise<void> {
@@ -230,14 +233,11 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
     const password = this.loginForm.controls.password.value;
 
     try {
-      const isValidPassword = await this.passwordManagerService.checkAndLoadPassword(
-        password,
-      );
+      const isValidPassword =
+        await this.passwordManagerService.checkAndLoadPassword(password);
 
       if (!isValidPassword) {
-        this.loginForm
-          .get('password')
-          ?.setErrors({ invalidCredentials: true });
+        this.loginForm.get('password')?.setErrors({ invalidCredentials: true });
         return;
       }
 
@@ -258,8 +258,8 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
 
       this.monitorService.track('User Logged In', {
         isIframe: IFrameCommunicationApp.isIframe(),
-      })
-      
+      });
+
       await this.router.navigate(['./app/home']);
     } catch (error) {
       console.error('Login failed', error);
@@ -290,7 +290,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
   private triggerTransition(callback: () => void): void {
     this.isTransitioning.set(true);
     callback();
-    
+
     // Re-enable scroll after transition completes (600ms matches typical CSS transitions)
     setTimeout(() => {
       this.isTransitioning.set(false);
@@ -482,4 +482,3 @@ class Node {
     ctx.shadowColor = 'rgba(100, 200, 255, 0.5)';
   }
 }
-

@@ -1,11 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   KcButtonComponent,
   KcIconComponent,
   KcInputComponent,
-  KcSnackbarComponent,
   NotificationService,
 } from 'kaspacom-ui';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
@@ -19,7 +25,6 @@ import { ImportSwitchMethod } from '../import-switch-import-existing-step/compon
     KcButtonComponent,
     KcInputComponent,
     KcIconComponent,
-    KcSnackbarComponent,
   ],
   templateUrl: './private-key-import-existing-step.component.html',
   styleUrl: './private-key-import-existing-step.component.scss',
@@ -74,7 +79,8 @@ export class PrivateKeyImportExistingStepComponent {
     );
 
     if (this.skipPassword()) {
-      const result = await this.importExistingFlowService.finalSubmitSkipPassword();
+      const result =
+        await this.importExistingFlowService.finalSubmitSkipPassword();
       if (!result.success) {
         this.notificationService.error(
           'Error',
@@ -87,4 +93,3 @@ export class PrivateKeyImportExistingStepComponent {
     this.next.emit();
   }
 }
-

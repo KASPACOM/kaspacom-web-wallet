@@ -1,7 +1,9 @@
 export enum Krc721OperationType {
   DEPLOY = 'deploy',
   MINT = 'mint',
-  TRANSFER = 'transfer'
+  TRANSFER = 'transfer',
+  LIST = 'list',
+  SEND = 'send'
 }
 
 export interface Krc721Deploy {
@@ -30,5 +32,19 @@ export interface Krc721Transfer {
   op: Krc721OperationType.TRANSFER;
   tick: string;
   to: string;
+  tokenId: string;
+}
+
+export interface Krc721List {
+  p: 'krc-721';
+  op: Krc721OperationType.LIST;
+  tick: string;
+  tokenId: string;
+}
+
+export interface Krc721Send {
+  p: 'krc-721';
+  op: Krc721OperationType.SEND;
+  tick: string;
   tokenId: string;
 }

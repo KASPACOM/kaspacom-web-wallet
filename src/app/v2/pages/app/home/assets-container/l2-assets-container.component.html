@@ -8,7 +8,19 @@
     @case ('l2-ERC20') {
       <app-erc20-summary></app-erc20-summary>
     }
+    @case ('l2-tx-history') {
+      <app-l2-tx-history></app-l2-tx-history>
+    }
   }
 </kc-labeled-tabs>
 
-
+@if (showImportTokenFab()) {
+  <div class="import-token-fab">
+    <kc-button
+      [variant]="'secondary'"
+      [size]="'sm'"
+      [text]="'+ Import Token'"
+      (buttonClick)="onImportToken()">
+    </kc-button>
+  </div>
+}

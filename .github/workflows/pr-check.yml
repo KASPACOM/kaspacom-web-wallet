@@ -83,6 +83,120 @@ jobs:
       #         body: message
       #       });
 
+  e2e-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Mobile Safari remains a separate stabilization track. Keep PR gates focused
+    # on deterministic desktop engines until the mobile-safari smoke suite is fixed.
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, webkit, firefox]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-v2
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright browsers
+        # Covers the chromium / webkit / firefox projects in the matrix above.
+        run: npx playwright install --with-deps chromium webkit firefox
+
+      - name: Run @smoke on ${{ matrix.project }}
+        run: npx playwright test --grep @smoke --project=${{ matrix.project }}
+        env:
+          CI: 'true'
+          KASPA_E2E_SEED: ${{ secrets.KASPA_E2E_SEED }}
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.project }}
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-${{ matrix.project }}
+          path: test-results/
+          retention-days: 14
+
+  e2e-funded:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # Funded tests need the KASPACOM org-level KASPA_E2E_SEED secret. When
+    # the secret is unset (forks, external contributors), the @funded test
+    # self-skips via authenticateFundedWallet() — the job stays green for
+    # visibility.
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run funded-wallet E2E tests
+        # Funded tests are Chromium-only by design — the cross-browser
+        # signal lives in the e2e-smoke matrix; @funded asserts on-chain
+        # state and doesn't need re-running per browser engine.
+        run: npm run e2e:funded
+        env:
+          CI: 'true'
+          KASPA_E2E_SEED: ${{ secrets.KASPA_E2E_SEED }}
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-funded-report
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-funded-traces
+          path: test-results/
+          retention-days: 14
+
   security-check:
     runs-on: ubuntu-latest
     continue-on-error: true

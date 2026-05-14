@@ -31,6 +31,20 @@
             ],
             "styles": ["src/styles.scss"],
             "scripts": [],
+            "allowedCommonJsDependencies": [
+              "@segment/analytics.js-video-plugins",
+              "@segment/facade",
+              "lodash",
+              "jsbi",
+              "decimal.js-light",
+              "big.js",
+              "toformat",
+              "js-sha3",
+              "qrcode",
+              "bn.js",
+              "hash.js",
+              "graphemer"
+            ],
             "server": "src/main.server.ts",
             "prerender": false,
             "ssr": false,
@@ -46,8 +60,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "6kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "10kB",
+                  "maximumError": "12kB"
                 }
               ],
               "outputHashing": "all"
@@ -59,21 +73,10 @@
                   "with": "src/environments/environment.development.ts"
                 }
               ],
+              "outputHashing": "all",
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
-            },
-            "stage": {
-              "fileReplacements": [
-                {
-                  "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.stage.ts"
-                }
-              ],
-              "optimization": false,
-              "extractLicenses": false,
-              "sourceMap": true,
-              "outputHashing": "all"
             }
           },
           "defaultConfiguration": "production"

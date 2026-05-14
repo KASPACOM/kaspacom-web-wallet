@@ -1,24 +1,20 @@
+import { CommonModule } from '@angular/common';
 import {
+  AfterViewInit,
+  ChangeDetectorRef,
   Component,
-  Input,
-  Output,
+  computed,
   EventEmitter,
   inject,
-  ChangeDetectorRef,
-  AfterViewInit,
-  computed,
+  Input,
+  Output,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import {
-  KcButtonComponent,
-  KcInputComponent,
-  NotificationService,
-} from 'kaspacom-ui';
-import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
+import { KcButtonComponent, NotificationService } from 'kaspacom-ui';
+import _ from 'lodash';
 import { AppWallet } from '../../../../../../../classes/AppWallet';
 import { WalletService } from '../../../../../../../services/wallet.service';
-import _ from 'lodash';
+import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
 
 interface DeleteWalletDialogData {
   walletName: string;
@@ -33,7 +29,6 @@ interface DeleteWalletDialogData {
     CommonModule,
     FormsModule,
     KcButtonComponent,
-    KcInputComponent,
     QuickActionDialogComponent,
   ],
   templateUrl: './delete-wallet-quick-action-dialog.component.html',
@@ -56,10 +51,13 @@ export class DeleteWalletQuickActionDialogComponent implements AfterViewInit {
       return true;
     }
 
-    const allWalletsByWalletId = _.keyBy(this.walletService.getAllWallets()()!, 'id');
+    const allWalletsByWalletId = _.keyBy(
+      this.walletService.getAllWallets()()!,
+      'id',
+    );
 
     return Object.values(allWalletsByWalletId).length < 2;
-  })
+  });
 
   ngAfterViewInit(): void {
     setTimeout(() => {
@@ -71,8 +69,6 @@ export class DeleteWalletQuickActionDialogComponent implements AfterViewInit {
   get walletName(): string {
     return this.data?.walletName || '';
   }
-
-
 
   onBackdropClick(): void {
     this.closeDialog();

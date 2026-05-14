@@ -1,36 +1,318 @@
+// Swap component layout variables
+$swap-input-box-min-height: 150px; // Height to accommodate input + min-received row
+$swap-input-box-padding: 16px;
+$swap-buy-box-padding-top: 20px; // Extra padding to prevent switch button overlap
+$swap-input-row-height: 45px;
+
 .swap-flow-container {
-    height: 100%;
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
-    overflow-y: auto;
+  height: 100%;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  overflow-y: auto;
 }
 
 .swap-card {
-    width: 100%;
+  width: 100%;
+  background-color: var(--bg-primary);
+  border-radius: 24px;
+  padding: 16px;
+  border: 1px solid var(--gray-20, #333333);
+  gap: 16px;
 }
 
-.token-input-container {
+// Header
+.swap-header {
+  padding: 0 4px 8px;
+}
+
+.swap-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.settings-btn {
+  background: transparent;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: background-color 0.2s ease;
+
+  &:hover {
     background-color: var(--bg-secondary);
-    border-radius: 16px;
-    border: 1px solid var(--border-color);
+  }
 }
 
-.z-index-1 {
-    z-index: 1;
-    position: relative;
+// Token Inputs Wrapper
+.token-inputs-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
+.token-input-row {
+  min-height: $swap-input-row-height;
+  max-height: $swap-input-row-height;
+}
+// Token Input Box
+.token-input-box {
+  background-color: var(--bg-secondary);
+  border-radius: 20px;
+  padding: $swap-input-box-padding;
+  border: 1px solid var(--gray-25, #404040);
+  transition: border-color 0.2s ease;
 
-.info-container {
+  &.sell-box,
+  &.buy-box {
+    min-height: $swap-input-box-min-height;
+  }
+
+  &.buy-box {
+    padding-top: $swap-buy-box-padding-top;
+  }
+
+  &:hover {
+    border-color: var(--gray-45, #757575);
+  }
+
+  &:focus-within {
+    border-color: var(--primary, #6fc7ba);
     background-color: var(--bg-tertiary);
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
+  }
+
+  &.error {
+    border-color: var(--error, #e04242);
+
+    &:hover,
+    &:focus-within {
+      border-color: var(--error, #e04242);
+    }
+  }
 }
 
-.font-12 {
-    font-size: 12px;
+.token-input-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
 }
 
-.text-error {
-    color: var(--error);
+.token-input-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-75, #bdbdbd);
+}
+
+.token-balance {
+  font-size: 13px;
+  color: var(--gray-60);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  &.error-text {
+    color: var(--error, #e04242);
+  }
+}
+
+// Percentage Options
+.percentage-options {
+  display: flex;
+  float: right;
+  gap: 8px;
+  width: max-content;
+}
+
+.percentage-btn {
+  flex: 1;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--gray-25, #404040);
+  color: var(--gray-75, #bdbdbd);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--bg-secondary);
+    color: var(--white, #fff);
+    border-color: var(--gray-45, #757575);
+  }
+
+  &.active {
+    background: var(--primary-20, #2a4a5a);
+    border-color: var(--primary, #6fc7ba);
+    color: var(--primary, #6fc7ba);
+  }
+}
+
+.token-input-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.token-amount-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 32px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  min-width: 0;
+
+  &::placeholder {
+    color: var(--gray-40);
+  }
+
+  &.error {
+    color: var(--error, #e04242);
+  }
+
+  // Hide number input spinners
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.token-select-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--gray-25, #404040);
+  border-radius: 20px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  color: var(--color-text-primary);
+
+  &:hover {
+    background-color: var(--bg-secondary);
+    border-color: var(--gray-45, #757575);
+  }
+}
+
+.token-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.token-icon-placeholder {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    var(--primary-20) 0%,
+    var(--primary-40) 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  text-transform: uppercase;
+}
+
+.token-symbol {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.select-token-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--primary);
+}
+
+// Switch Button
+.switch-btn-container {
+  position: absolute;
+  top: 50%; // Adjusted for asymmetric box heights
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
+.switch-btn {
+  background-color: var(--bg-tertiary, #1a2025);
+  border: 4px solid var(--bg-primary, #0d1316);
+  border-radius: 12px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background-color: var(--bg-secondary, #141a1f);
+    border-color: var(--primary-40, #3a5a5a);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.switch-arrows {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+  color: var(--primary);
+
+  kc-icon {
+    transition: transform 0.2s ease;
+    font-size: 24px;
+  }
+}
+
+// Min Received
+.min-received {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--gray-60);
+  text-align: right;
+}
+
+// Trade Info
+.trade-info {
+  background-color: var(--bg-secondary);
+  border-radius: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--gray-20, #333333);
+}
+
+.trade-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.trade-info-label {
+  font-size: 13px;
+  color: var(--gray-60);
+}
+
+.trade-info-value {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  text-align: right;
 }

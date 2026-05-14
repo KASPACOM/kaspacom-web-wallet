@@ -2,67 +2,88 @@
 
   <!-- Approval State -->
   <div *ngSwitchCase="ApprovalFlowState.APPROVAL" class="approval-flow-container">
-    <div class="approval-flow-content">
+    <!-- Swap Approval (custom UI for swap transactions) -->
+    <ng-container *ngIf="isSwapTransaction() && swapContext(); else regularApproval">
+      <app-swap-approval
+        [swapContext]="swapContext()!"
+        [isLoading]="isLoading()"
+        [canApprove]="isAvailableForApproval()"
+        (approve)="onAccept()"
+        (reject)="onReject()">
+        <ng-container *ngIf="isActionHasL2PriorityFee()">
+          <l2-priority-fee-selection
+            [action]="approvalConfig()!.action"
+            [wallet]="wallet()"
+            (priorityFeeSelected)="setL2CurrentPriorityFee($event)"
+            (gasLimitSelected)="setL2GasLimit($event)">
+          </l2-priority-fee-selection>
+        </ng-container>
+      </app-swap-approval>
+    </ng-container>
 
-      <!-- Transaction Header -->
-      <div class="transaction-header">
-        <h2 *ngIf="isActionHasPriorityFee()">Transaction Review</h2>
-        <h2 *ngIf="!isActionHasPriorityFee()">Action Review</h2>
-        <p>Please review the details below before proceeding.</p>
-      </div>
+    <!-- Regular Approval -->
+    <ng-template #regularApproval>
+      <div class="approval-flow-content">
 
-      <!-- Action Details Section -->
-      <ng-container *ngIf="actionDisplay(); else unknownAction">
-        <div class="action-overview-card">
-          <div class="action-header">
-            <h3 class="action-title">{{ actionDisplay()!.title }}</h3>
-            <h4 class="action-subtitle" *ngIf="actionDisplay()!.subtitle">{{ actionDisplay()!.subtitle }}</h4>
-          </div>
-
-          <!-- Action Detail Rows -->
-          <div class="action-details-grid">
-            <ng-container *ngFor="let row of actionDisplay()!.rows">
-
-              <!-- Input Fields (checkboxes) -->
-              <div *ngIf="row.inputField; else noInputField" class="detail-card checkbox-container">
-                <div *ngIf="row.inputField.fieldType === InputFieldType.CHECKBOX">
-                  <label class="checkbox-label">
-                    <input
-                      type="checkbox"
-                      [(ngModel)]="additionalParams[row.inputField.fieldParam]"
-                      [checked]="row.fieldValue === 'true'">
-                    <span>{{ row.fieldName }}</span>
-                  </label>
-                </div>
-              </div>
-
-              <!-- Regular Detail Rows -->
-              <ng-template #noInputField>
-                <!-- Signing Message Detail -->
-                <div *ngIf="row.isCodeBlock" class="detail-card detail-signing-message">
-                  <div class="detail-label">{{ row.fieldName }}</div>
-                  <div class="detail-value">{{ row.fieldValue }}</div>
-                </div>
-
-                <!-- Regular Detail -->
-                <div *ngIf="!row.isCodeBlock" class="detail-card">
-                  <div class="detail-label">{{ row.fieldName }}</div>
-                  <div class="detail-value">{{ row.fieldValue }}</div>
-                </div>
-              </ng-template>
-
-            </ng-container>
-          </div>
+        <!-- Transaction Header -->
+        <div class="transaction-header">
+          <h2 *ngIf="isActionHasPriorityFee()">Transaction Review</h2>
+          <h2 *ngIf="!isActionHasPriorityFee()">Action Review</h2>
+          <p>Please review the details below before proceeding.</p>
         </div>
-      </ng-container>
 
-      <ng-template #unknownAction>
-        <div class="unknown-action-card">
-          <kc-icon iconClass="icon-warning" size="lg" color="var(--orange-20)"></kc-icon>
-          <h3>Unknown Action</h3>
-          <p>This action type is not recognized. Please proceed with caution.</p>
-        </div>
-      </ng-template>
+        <!-- Action Details Section -->
+        <ng-container *ngIf="actionDisplay(); else unknownAction">
+          <div class="action-overview-card">
+            <div class="action-header">
+              <h3 class="action-title">{{ actionDisplay()!.title }}</h3>
+              <h4 class="action-subtitle" *ngIf="actionDisplay()!.subtitle">{{ actionDisplay()!.subtitle }}</h4>
+            </div>
+
+            <!-- Action Detail Rows -->
+            <div class="action-details-grid">
+              <ng-container *ngFor="let row of actionDisplay()!.rows">
+
+                <!-- Input Fields (checkboxes) -->
+                <div *ngIf="row.inputField; else noInputField" class="detail-card checkbox-container">
+                  <div *ngIf="row.inputField.fieldType === InputFieldType.CHECKBOX">
+                    <label class="checkbox-label">
+                      <input
+                        type="checkbox"
+                        [(ngModel)]="additionalParams[row.inputField.fieldParam]"
+                        [checked]="row.fieldValue === 'true'">
+                      <span>{{ row.fieldName }}</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Regular Detail Rows -->
+                <ng-template #noInputField>
+                  <!-- Signing Message Detail -->
+                  <div *ngIf="row.isCodeBlock" class="detail-card detail-signing-message">
+                    <div class="detail-label">{{ row.fieldName }}</div>
+                    <div class="detail-value">{{ row.fieldValue }}</div>
+                  </div>
+
+                  <!-- Regular Detail -->
+                  <div *ngIf="!row.isCodeBlock" class="detail-card">
+                    <div class="detail-label">{{ row.fieldName }}</div>
+                    <div class="detail-value">{{ row.fieldValue }}</div>
+                  </div>
+                </ng-template>
+
+              </ng-container>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-template #unknownAction>
+          <div class="unknown-action-card">
+            <kc-icon iconClass="icon-warning" size="lg" color="var(--orange-20)"></kc-icon>
+            <h3>Unknown Action</h3>
+            <p>This action type is not recognized. Please proceed with caution.</p>
+          </div>
+        </ng-template>
 
       <!-- Priority Fee Selection -->
       <ng-container *ngIf="isActionHasPriorityFee()">
@@ -73,32 +94,43 @@
         </priority-fee-selection>
       </ng-container>
 
-      <!-- Action Buttons - Last element that gets pushed to bottom -->
-      <div class="action-buttons-section">
-        <div class="action-buttons">
-          <kc-button
-            [text]="isLoading ? 'Processing...' : 'Approve'"
-            variant="primary"
-            size="lg"
-            [isFullWidth]="true"
-            [isDisabled]="!isAvailableForApproval()"
-            [isLoading]="isLoading"
-            (buttonClick)="onAccept()"
-            class="accept-button">
-          </kc-button>
+            <!-- Priority Fee Selection -->
+      <ng-container *ngIf="isActionHasL2PriorityFee()">
+        <l2-priority-fee-selection
+          [action]="approvalConfig()!.action"
+          [wallet]="wallet()"
+          (priorityFeeSelected)="setL2CurrentPriorityFee($event)"
+          (gasLimitSelected)="setL2GasLimit($event)">
+        </l2-priority-fee-selection>
+      </ng-container>
 
-          <kc-button
-            [text]="'Reject'"
-            variant="tertiary"
-            size="lg"
-            [isFullWidth]="true"
-            [isDisabled]="isLoading"
-            (buttonClick)="onReject()"
-            class="reject-button">
-          </kc-button>
+        <!-- Action Buttons - Last element that gets pushed to bottom -->
+        <div class="action-buttons-section">
+          <div class="action-buttons">
+            <kc-button
+              [text]="isLoading() ? 'Processing...' : 'Approve'"
+              variant="primary"
+              size="lg"
+              [isFullWidth]="true"
+              [isDisabled]="!isAvailableForApproval()"
+              [isLoading]="isLoading()"
+              (buttonClick)="onAccept()"
+              class="accept-button">
+            </kc-button>
+
+            <kc-button
+              [text]="'Reject'"
+              variant="tertiary"
+              size="lg"
+              [isFullWidth]="true"
+              [isDisabled]="isLoading()"
+              (buttonClick)="onReject()"
+              class="reject-button">
+            </kc-button>
+          </div>
         </div>
       </div>
-    </div>
+    </ng-template>
   </div>
 
   <!-- Processing/Loading State -->
@@ -114,19 +146,11 @@
   <!-- Error State -->
   <div *ngSwitchCase="ApprovalFlowState.ERROR" class="error-container">
     <div class="error-content">
+      <div class="error-icon-wrapper">
+        <kc-icon iconClass="icon-warning" size="lg" color="#f87171"></kc-icon>
+      </div>
       <h2>Transaction Failed</h2>
-      <p class="error-summary">
-        We were unable to complete this transaction. Review the details below and try again.
-      </p>
-      <label class="error-details-label" for="transaction-error-details">
-        Error details
-      </label>
-      <textarea
-        id="transaction-error-details"
-        class="error-details-textarea"
-        readonly
-        [value]="approvalConfig()?.error || 'No additional details were provided.'">
-      </textarea>
+      <div class="error-message">{{ approvalConfig()?.error || 'An unexpected error occurred' }}</div>
       <kc-button
         [text]="'Close'"
         variant="secondary"

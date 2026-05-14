@@ -9,7 +9,16 @@
       }
     </div>
   } @else if (tokens().length === 0) {
-    <div class="text-gray-60 p-16">No ERC20 tokens found</div>
+    <div class="empty-state flex column align-items-center gap-16 p-16 full-width">
+      <div class="text-gray-60">No ERC20 tokens found</div>
+      <kc-button
+        [variant]="'primary'"
+        [size]="'md'"
+        [text]="'Import Token'"
+        class="full-width"
+        (buttonClick)="onImportToken()">
+      </kc-button>
+    </div>
   } @else {
     @for ( token of tokens(); track trackByToken($index, token) ) {
       <erc20-asset-card class="erc20-summary-container__card full-width"

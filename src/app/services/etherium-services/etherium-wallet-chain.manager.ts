@@ -4,8 +4,11 @@ import { BaseEthereumProvider } from "./base-ethereum-provider";
 import { EIP1193ProviderChain } from "@kaspacom/wallet-messages";
 import { environment } from "../../../environments/environment";
 import { L2ConfigInterface } from "../../../environments/environment.interface";
-import { NETWORKS } from '@kaspacom/swap-sdk';
 import { VIEW_METHOD } from "../wallet.service";
+
+export interface ExtendedEIP1193ProviderChain extends EIP1193ProviderChain {
+    defiApiNetworkName?: string;
+}
 
 @Injectable({
     providedIn: 'root',
@@ -13,7 +16,7 @@ import { VIEW_METHOD } from "../wallet.service";
 export class EthereumWalletChainManager {
     private currentChain: WritableSignal<string | undefined>;
     private currentProvider: BaseEthereumProvider | undefined = undefined;
-    protected allChainsByChainId: { [chainId: string]: EIP1193ProviderChain } = {};
+    protected allChainsByChainId: { [chainId: string]: ExtendedEIP1193ProviderChain } = {};
     protected allChainsEnvConfigByChainId: { [chainId: string]: L2ConfigInterface } = {};
 
 
@@ -23,8 +26,10 @@ export class EthereumWalletChainManager {
             this.currentChain = signal<string | undefined>(localStorage.getItem(LOCAL_STORAGE_KEYS.CURRENT_ETHEREUM_CHAIN) || undefined);
             return;
         }
+
         environment.l2Configs.forEach((config: L2ConfigInterface) => {
-            this.allChainsEnvConfigByChainId[this.convertChainIdToHex(NETWORKS[config.sdkName].chainId)] = config;
+            const chainId = config.customChainConfig.chainId;
+            this.allChainsEnvConfigByChainId[this.convertChainIdToHex(chainId)] = config;
         });
         this.setAllChainsByChainId();
 
@@ -53,7 +58,7 @@ export class EthereumWalletChainManager {
         return this.allChainsEnvConfigByChainId[chainId];
     }
 
-    getChainConfig(chainId: string): EIP1193ProviderChain | undefined {
+    getChainConfig(chainId: string): ExtendedEIP1193ProviderChain | undefined {
         return this.getAllChainsByChainId()[chainId];
     }
 
@@ -101,26 +106,31 @@ export class EthereumWalletChainManager {
     }
 
 
-    public getAllChainsByChainId(): { [chainId: string]: EIP1193ProviderChain } {
+    public getAllChainsByChainId(): { [chainId: string]: ExtendedEIP1193ProviderChain } {
         return this.allChainsByChainId;
     }
     private setAllChainsByChainId(): void {
-        const allChains: EIP1193ProviderChain[] = Object.values(environment.l2Configs).map((config: L2ConfigInterface) => ({
-            chainId: this.convertChainIdToHex(NETWORKS[config.sdkName].chainId),
-            chainName: NETWORKS[config.sdkName].name,
-            nativeCurrency: NETWORKS[config.sdkName].nativeToken,
-            rpcUrls: [NETWORKS[config.sdkName].rpcUrl],
-            blockExplorerUrls: NETWORKS[config.sdkName].blockExplorerUrl ? [NETWORKS[config.sdkName].blockExplorerUrl!] : [],
-            defiApiNetworkName: NETWORKS[config.sdkName].defiApiNetworkName,
-        })).concat(JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS) || '[]'));
+        const allChains: ExtendedEIP1193ProviderChain[] = Object.values(environment.l2Configs)
+            .map((config: L2ConfigInterface) => {
+                const c = config.customChainConfig;
+                return {
+                    chainId: this.convertChainIdToHex(c.chainId),
+                    chainName: c.name,
+                    nativeCurrency: c.nativeToken,
+                    rpcUrls: [c.rpcUrl],
+                    blockExplorerUrls: c.blockExplorerUrl ? [c.blockExplorerUrl] : [],
+                    defiApiNetworkName: c.defiApiNetworkName,
+                };
+            })
+            .concat(JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS) || '[]'));
 
         this.allChainsByChainId = allChains.reduce((acc, chain) => {
             acc[chain.chainId] = chain;
             return acc;
-        }, {} as { [chainId: string]: EIP1193ProviderChain });
+        }, {} as { [chainId: string]: ExtendedEIP1193ProviderChain });
     }
 
-    public addChain(chain: EIP1193ProviderChain): void {
+    public addChain(chain: ExtendedEIP1193ProviderChain): void {
         localStorage.setItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS, JSON.stringify([...JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS) || '[]'), chain]));
         this.setAllChainsByChainId();
     }

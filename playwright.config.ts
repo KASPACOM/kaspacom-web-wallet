@@ -1,0 +1,70 @@
+import { defineConfig, devices } from '@playwright/test';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+
+dotenv.config({ path: path.resolve(__dirname, '.env.e2e') });
+
+const PORT = Number(process.env.E2E_PORT || 4200);
+// Use 127.0.0.1 (not localhost) to avoid IPv6 ::1 / IPv4 mismatches with the
+// Angular dev server, which binds to IPv4 only.
+const BASE_URL = process.env.E2E_BASE_URL || `http://127.0.0.1:${PORT}`;
+const IS_CI = !!process.env.CI;
+
+export default defineConfig({
+  testDir: './e2e',
+  testMatch: '**/*.spec.ts',
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
+  fullyParallel: false,
+  workers: 1,
+  forbidOnly: IS_CI,
+  retries: IS_CI ? 1 : 0,
+  reporter: IS_CI
+    ? [['github'], ['html', { outputFolder: 'playwright-report', open: 'never' }]]
+    : [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
+
+  use: {
+    baseURL: BASE_URL,
+    trace: 'retain-on-failure',
+    video: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    actionTimeout: 15_000,
+    navigationTimeout: 30_000,
+  },
+
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      // Mobile viewport — covers the iOS Safari regressions from PR #185
+      // (localStorage bridge, `100dvh` overflow).
+      name: 'mobile-safari',
+      use: { ...devices['iPhone 14'] },
+    },
+  ],
+
+  webServer: process.env.E2E_SKIP_SERVER
+    ? undefined
+    : {
+        // `ng serve` defaults to host `local.kaspa.com` via angular.json which
+        // only resolves on dev machines. Pin to 127.0.0.1 for CI + containers,
+        // and disable the host-check so the `ng serve` hostname guard doesn't
+        // reject requests from Playwright's Chromium.
+        command: `npm run start -- --host 127.0.0.1 --port ${PORT} --disable-host-check`,
+        url: BASE_URL,
+        reuseExistingServer: !IS_CI,
+        timeout: 180_000,
+        stdout: 'pipe',
+        stderr: 'pipe',
+      },
+});

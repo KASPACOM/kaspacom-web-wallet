@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { INewWallet } from '../interface/new-wallet.interface';
 import { WalletService } from '../../../../../../services/wallet.service';
+import { ReferralService } from '../../../../../../services/referral.service';
 import { DEFAULT_DERIVED_PATH } from '../../../../../../config/consts';
 import { UtilsHelper } from '../../../../../../services/utils.service';
 import { PasswordManagerService } from '../../../../../../services/password-manager.service';
@@ -20,6 +21,8 @@ export class NewWalletFlowService {
   private readonly utilsHelper = inject(UtilsHelper);
 
   private readonly passwordManagerService = inject(PasswordManagerService);
+
+  private readonly referralService = inject(ReferralService);
 
   private _newWallet = signal<INewWallet>({
     password: '',
@@ -62,8 +65,9 @@ export class NewWalletFlowService {
   }
 
   prepareSeedPhrase(seedPhrase: string, seedPhraseWordCount: number) {
+    const trimmed = seedPhrase.trim();
     const walletAddress = this.walletService.getWalletAddressFromMnemonic(
-      seedPhrase,
+      trimmed,
       this._newWallet().seedPassphrase,
     );
     if (!walletAddress) {
@@ -71,7 +75,7 @@ export class NewWalletFlowService {
     }
     this._newWallet.set({
       ...this._newWallet(),
-      seedPhrase,
+      seedPhrase: trimmed,
       seedPhraseWordCount,
     });
     this.printState();
@@ -103,6 +107,14 @@ export class NewWalletFlowService {
       walletAdditionResult = { success: false, error: creationError };
     }
 
+    // Register with referral system (fire-and-forget, never blocks)
+    if (walletAdditionResult.success) {
+      const walletAddress = this.getCurrentWalletAddress();
+      if (walletAddress) {
+        void this.referralService.registerWallet(walletAddress);
+      }
+    }
+
     return walletAdditionResult;
   }
 
@@ -122,8 +134,9 @@ export class NewWalletFlowService {
     seedPhrase: string,
     seedPhraseWordCount: number,
   ): Promise<IWalletCreationResult> {
+    const trimmed = seedPhrase.trim();
     const walletAddress = this.walletService.getWalletAddressFromMnemonic(
-      seedPhrase,
+      trimmed,
       this._newWallet().seedPassphrase,
     );
     if (!walletAddress) {
@@ -131,7 +144,7 @@ export class NewWalletFlowService {
     }
     this._newWallet.set({
       ...this._newWallet(),
-      seedPhrase,
+      seedPhrase: trimmed,
       seedPhraseWordCount,
     });
     this.printState();
@@ -156,7 +169,7 @@ export class NewWalletFlowService {
 
   getCurrentWalletAddress() {
     return this.walletService.getWalletAddressFromMnemonic(
-      this._newWallet().seedPhrase,
+      this._newWallet().seedPhrase.trim(),
       this._newWallet().seedPassphrase,
     );
   }

@@ -413,7 +413,9 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
             }
             console.error(result.error);
             this.notificationService.error('Swap Error', result.error.message);
-            throw result;
+            const err: any = new Error(result.error.message ?? 'Unknown error');
+            err.code = result.error.code;
+            throw err;
           }
 
           return result.result;

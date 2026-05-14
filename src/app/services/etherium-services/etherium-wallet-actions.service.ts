@@ -61,6 +61,13 @@ export class EthereumWalletActionsService {
             },
           );
 
+        if (!walletResponse.success) {
+          return createEIP1193Response<T>(undefined, {
+            code: walletResponse.errorCode ?? ERROR_CODES.EIP1193.INTERNAL_ERROR,
+            message: ERROR_CODES_MESSAGES[walletResponse.errorCode ?? ERROR_CODES.EIP1193.INTERNAL_ERROR] ?? 'Unknown error',
+          });
+        }
+
         return (walletResponse.result as EIP1193ProviderRequestActionResult<T>)
           .eip1193Response;
       }

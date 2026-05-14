@@ -1,5 +1,6 @@
 import {
   Component,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -44,6 +45,7 @@ export class ImportTokenFlowPageComponent {
   private notificationService = inject(NotificationService);
 
   contractAddress = signal<string>('');
+  isAddressValid = computed(() => ethers.isAddress(this.contractAddress().trim()));
   state = signal<ImportState>('idle');
   errorMessage = signal<string>('');
   tokenInfo = signal<Erc20Token | null>(null);

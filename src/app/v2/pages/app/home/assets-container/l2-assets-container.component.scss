@@ -1,0 +1,13 @@
+.import-token-fab {
+  position: sticky;
+  bottom: 16px;
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 0;
+  z-index: 10;
+  pointer-events: none;
+
+  kc-button {
+    pointer-events: all;
+  }
+}

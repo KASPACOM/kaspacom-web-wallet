@@ -86,6 +86,8 @@ export class CovenantService {
     privateKeyHex: string,
     extraArgs?: Record<string, bigint>,
     covenantId?: string,
+    priorityFee: bigint = 0n,
+    useSenderFee: boolean = false,
   ): Promise<SpendResult> {
     const network = this.rpcService.getNetwork();
     const existingRpc = this.rpcService.getRpc();
@@ -94,13 +96,13 @@ export class CovenantService {
 
     if (existingRpc) {
       try {
-        return await spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, '', privateKeyHex, network, existingRpc, covenantId, extraArgs);
+        return await spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, '', privateKeyHex, network, existingRpc, covenantId, extraArgs, priorityFee, useSenderFee);
       } catch (err: any) {
         console.warn('[CovenantService] Spend with existing RPC failed, trying new connection:', err?.message);
       }
     }
 
-    return spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, rpcUrl, privateKeyHex, network, undefined, covenantId, extraArgs);
+    return spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, rpcUrl, privateKeyHex, network, undefined, covenantId, extraArgs, priorityFee, useSenderFee);
   }
 
   /**

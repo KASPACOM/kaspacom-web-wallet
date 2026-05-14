@@ -653,6 +653,8 @@ export class ContractsPageComponent implements OnInit {
           compiled, outpoint, inputAmount, functionName, outputs, privateKey,
           { amountToSeller: amountToSellerSompi },
           undefined,
+          0n, // priorityFee
+          true, // useSenderFee
         );
         this.interactResult.set({ txid: result.txid, functionName: result.functionName });
         if (this.selectedContractId) {

@@ -1,6 +1,7 @@
 import {
   Address,
   addressFromScriptPublicKey,
+  calculateTransactionFee,
   createInputSignature,
   createTransaction,
   createTransactions,
@@ -504,6 +505,8 @@ export async function spendContract(
   existingRpc?: RpcClient,
   covenantId?: string,
   extraArgs?: Record<string, bigint>,
+  priorityFee: bigint = 0n,
+  useSenderFee: boolean = false,
 ): Promise<SpendResult> {
   const privateKey = new PrivateKey(privateKeyHex);
   const covenantAddress = getCovenantAddress(compiled, network);
@@ -555,6 +558,44 @@ export async function spendContract(
       },
     ];
 
+    // --- Fee and Change Logic (Dynamic) ---
+    const MAX_TRANSACTION_FEE = 20000n;
+    const MINIMAL_AMOUNT_TO_SEND = 20000000n; // 0.2 KAS as per project constants
+
+    const spendOutputsSum = outputs.reduce((sum, o) => sum + o.amount, 0n);
+    const senderAddress = privateKey.toAddress(network).toString();
+    const selectedWalletUtxos: UtxoEntryReference[] = [];
+    let walletSelectedAmount = 0n;
+
+    if (useSenderFee) {
+      const targetRequired = spendOutputsSum + MAX_TRANSACTION_FEE + MINIMAL_AMOUNT_TO_SEND;
+      const shortfall = targetRequired > inputAmountSompi ? targetRequired - inputAmountSompi : 0n;
+
+      if (shortfall > 0n) {
+        console.log('[CovenantSDK] Shortfall detected, fetching fee UTXOs for', senderAddress, 'need:', shortfall.toString());
+        const walletUtxos = await getAddressUtxos(rpc, senderAddress);
+
+        for (const utxo of walletUtxos.sort((a, b) => Number(b.amount - a.amount))) {
+          selectedWalletUtxos.push(utxo);
+          walletSelectedAmount += utxo.amount;
+          if (walletSelectedAmount >= shortfall) break;
+        }
+
+        if (walletSelectedAmount < shortfall) {
+          throw new Error(`Insufficient wallet balance for transaction fee. Need at least ${shortfall} sompi from wallet, found ${walletSelectedAmount}`);
+        }
+      }
+
+      for (const utxoEntry of selectedWalletUtxos) {
+        txInputs.push({
+          previousOutpoint: utxoEntry.outpoint,
+          utxo: utxoEntry,
+          sequence: 0n,
+          ...buildInputMassFields({ version: 1, sigOpCount: 1, computeBudget: 30 }),
+        });
+      }
+    }
+
     // Build outputs, attaching CovenantBinding for continuation outputs
     const txOutputs: ITransactionOutput[] = outputs.map((output, idx) => {
       const spk = payToAddressScript(output.address);
@@ -579,6 +620,17 @@ export async function spendContract(
 
       return baseOutput;
     });
+
+    // Add temporary change output if we have a surplus or picked wallet UTXOs (and useSenderFee is true)
+    let changeOutputIdx = -1;
+    const totalInputsAmount = inputAmountSompi + walletSelectedAmount;
+    if (useSenderFee && totalInputsAmount > spendOutputsSum) {
+      changeOutputIdx = txOutputs.length;
+      txOutputs.push({
+        scriptPublicKey: payToAddressScript(senderAddress),
+        value: totalInputsAmount - spendOutputsSum, // Temporary value
+      });
+    }
 
     // Determine if this function uses a timelock by checking for time_op in AST body.
     // Kaspa's LOCK_TIME_THRESHOLD = 500,000,000,000:
@@ -621,6 +673,30 @@ export async function spendContract(
       gas: 0n,
       payload: "",
     });
+
+    // --- Dynamic Fee Adjustment ---
+    if (useSenderFee) {
+      const transactionFee = (calculateTransactionFee(network, unsignedTx) || 0n) + 8000n; // Currently calculateTransactionFee not working well for contract calls
+      if (!transactionFee) {
+        throw new Error("Transaction fee not calculated");
+      }
+      const totalFees = transactionFee + priorityFee;
+
+      if (changeOutputIdx !== -1) {
+        const finalChange = totalInputsAmount - spendOutputsSum - totalFees;
+        if (finalChange < MINIMAL_AMOUNT_TO_SEND) {
+          throw new Error(`NOT ENOUGH CHANGE (need ${MINIMAL_AMOUNT_TO_SEND}, have ${finalChange})`);
+        }
+        unsignedTx.outputs[changeOutputIdx].value = finalChange;
+        console.log('[CovenantSDK] Dynamic fee:', totalFees.toString(), 'change:', finalChange.toString());
+      } else {
+        // If no change output, ensure the surplus covers the fee
+        const surplus = totalInputsAmount - spendOutputsSum;
+        if (surplus < totalFees) {
+          throw new Error(`Insufficient funds for fee. Need ${totalFees}, have ${surplus}`);
+        }
+      }
+    }
 
     const signatureHex = createInputSignature(unsignedTx, 0, privateKey, SighashType.All);
     // createInputSignature returns: [length_prefix(1)] + [schnorr_sig(64)] + [sighash_type(1)] = 66 bytes

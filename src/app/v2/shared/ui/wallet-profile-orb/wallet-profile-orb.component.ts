@@ -10,14 +10,13 @@ interface AvatarConfig {
 }
 
 function computeAvatar(address: string): AvatarConfig {
-  console.log(address);
   const hex = address.replace(/^0x/i, '').toLowerCase().padEnd(40, '0');
   const bytes = Array.from(
     { length: 20 },
     (_, i) => parseInt(hex.slice(i * 2, i * 2 + 2), 16) || 0,
   );
 
-  const shapeIndex = 1 + (bytes[0] % 124);
+  const shapeIndex = 1 + (bytes[0] % 123);
 
   const bgHue = (bytes[1] / 255) * 360;
   const bgSat = 40 + (bytes[2] % 40);

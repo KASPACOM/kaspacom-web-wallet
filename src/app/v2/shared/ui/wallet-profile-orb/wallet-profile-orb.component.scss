@@ -1,3 +1,28 @@
+.wallet-avatar-orb {
+  width: 38px;
+  height: 38px;
+  border-radius: 100%;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 1.5px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 0.85;
+  }
+
+  img {
+    display: block;
+    width: 26px;
+    height: 26px;
+    transform-origin: center;
+  }
+}
+
 .wallet-profile-orb {
   width: 38px;
   height: 38px;

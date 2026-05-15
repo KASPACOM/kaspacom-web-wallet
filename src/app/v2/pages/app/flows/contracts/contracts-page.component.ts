@@ -332,6 +332,49 @@ export class ContractsPageComponent implements OnInit {
       const compiled = await firstValueFrom(this.http.get<any>(template.assetPath));
       const descriptor = this.templatePatcher.extractPatchDescriptor(compiled, template.placeholderArgs);
       const patched = this.templatePatcher.applyPatch(compiled, descriptor, newArgs);
+      
+      let argsPayload: any[] = [];
+      let tmplName = compiled.contract_name;
+
+      if (template.id === 'multi-sig-vault') {
+        tmplName = 'MultiSigVault';
+        argsPayload = [
+          { name: 'signer1', type: 'address', value: this.templateFormValues['key1'] },
+          { name: 'signer2', type: 'address', value: this.templateFormValues['key2'] },
+          { name: 'signer3', type: 'address', value: this.templateFormValues['key3'] },
+        ];
+      } else if (template.id === 'escrow-with-arbiter') {
+        tmplName = 'EscrowWithArbiter';
+        argsPayload = [
+          { name: 'buyer', type: 'address', value: this.templateFormValues['buyer'] },
+          { name: 'seller', type: 'address', value: this.templateFormValues['seller'] },
+          { name: 'arbiter', type: 'address', value: this.templateFormValues['arbiterHash'] },
+          { name: 'timeoutBlueScore', type: 'blueScore', value: this.templateFormValues['expiry'] },
+        ];
+      } else if (template.id === 'dead-mans-switch') {
+        tmplName = 'DeadManSwitch';
+        argsPayload = [
+          { name: 'owner', type: 'address', value: this.templateFormValues['owner'] },
+          { name: 'heir', type: 'address', value: this.templateFormValues['heir'] },
+          { name: 'checkInDeadline', type: 'blueScore', value: this.templateFormValues['expiry'] },
+        ];
+      } else if (template.id === 'time-lock-vault') {
+        tmplName = 'TimeLockVault';
+        argsPayload = [
+          { name: 'signer', type: 'address', value: this.templateFormValues['owner'] },
+          { name: 'recoveryKey', type: 'address', value: this.templateFormValues['recovery'] },
+          { name: 'unlockBlueScore', type: 'blueScore', value: this.templateFormValues['timeout'] },
+        ];
+      }
+
+      if (argsPayload.length > 0) {
+        patched.tn12 = {
+          v: 1,
+          tmpl: tmplName,
+          args: argsPayload
+        };
+      }
+
       this.generatedContractJson.set(JSON.stringify(patched, null, 2));
     } catch (error: any) {
       this.templateError.set(error?.message || 'Failed to generate contract from template');

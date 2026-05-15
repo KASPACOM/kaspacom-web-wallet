@@ -43,6 +43,7 @@ export interface CompiledContract {
   ast: CompiledContractAst;
   abi: CompiledContractAbiEntry[];
   without_selector: boolean;
+  tn12?: any;
 }
 
 export interface CovenantOutpoint {

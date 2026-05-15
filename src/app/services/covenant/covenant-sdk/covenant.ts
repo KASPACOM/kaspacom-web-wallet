@@ -370,6 +370,21 @@ export async function deployContract(
       throw new Error(`No spendable UTXOs found for ${senderAddress}`);
     }
 
+    let payload;
+
+    // Attach TN-12 envelope payload to the final transaction
+    if (compiled.tn12) {
+      try {
+        const payloadJson = JSON.stringify({ tn12: compiled.tn12 });
+        console.log('[CovenantSDK] payloadJson:', payloadJson);
+        const payloadBytes = new TextEncoder().encode(payloadJson);
+        payload = payloadBytes;
+        console.log('[CovenantSDK] Attached tn12 payload to deployment tx');
+      } catch (payloadErr) {
+        console.warn('[CovenantSDK] Failed to attach tn12 payload:', payloadErr);
+      }
+    }
+
     console.log('[CovenantSDK] Creating transactions...');
     const created = await createTransactions({
       entries,
@@ -377,6 +392,7 @@ export async function deployContract(
       changeAddress: senderAddress,
       priorityFee: 0n,
       networkId: network,
+      payload,
     } as never);
 
     console.log('[CovenantSDK] Transactions created:', created.transactions.length, 'tx(s)');
@@ -436,7 +452,7 @@ export async function deployContract(
 
       console.log(`[CovenantSDK] Signing tx ${i + 1}/${created.transactions.length}...`);
       pending.sign([privateKey]);
-      console.log(`[CovenantSDK] Submitting tx ${i + 1}...`);
+      console.log(`[CovenantSDK] Submitting tx ${i + 1}...`, pending.transaction.payload);
       finalTxId = await pending.submit(rpc);
       console.log(`[CovenantSDK] Submitted tx ${i + 1}:`, finalTxId);
       finalTransaction = pending.transaction;

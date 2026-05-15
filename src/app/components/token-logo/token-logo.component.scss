@@ -1,7 +1,7 @@
 .token-logo-wrapper {
   border-radius: 100%;
-  background-color: var(--kaspa-30);
-  border: 1px solid var(--kaspa-30);
+  background-color: var(--base-2);
+  border: 1px solid var(--base-4);
 
   &.skeleton {
     width: unset;
@@ -17,7 +17,7 @@
     background: linear-gradient(
       200deg,
       rgba(18, 22, 25, 1) 0%,
-      rgba(81, 200, 150, 1) 50%,
+      rgba(60, 68, 75, 1) 50%,
       rgba(18, 22, 25, 1) 100%
     );
   }

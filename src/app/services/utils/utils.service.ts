@@ -28,6 +28,12 @@ export class UtilsService {
     'WKAS',
     'USDT',
   ]);
+  isLogoCached(address: string, ticker: string): boolean {
+    const cacheKey = `${address.toLowerCase()}-${ticker.toUpperCase()}`;
+    const cached = this.imageUrlCache.get(cacheKey);
+    return !!(cached && Date.now() - cached.timestamp < this.IMG_CACHE_DURATION);
+  }
+
   async checkLogoImageUrl(
     address: string,
     ticker: string,
@@ -87,7 +93,7 @@ export class UtilsService {
       ticker = 'KAS';
     }
 
-    const fallbackUrl = './images/kc-all-black.png';
+    const fallbackUrl = './images/kc-logo-square.png';
     const localUrl = this.availableLocalTokensLogos.has(ticker.toUpperCase())
       ? `./images/tokens-logos/${ticker.toUpperCase()}.png`
       : '';
@@ -136,14 +142,12 @@ export class UtilsService {
       .then((r) => r || test(lfgTokenUrl))
       .then((r) => r || test(addressUrl)) //s3
       .then((r) => r || test(defaultUrl)) //default logo for metamask
-      .then((r) => r || fallbackUrl) // fallback logo
+      .then((r) => r || fallbackUrl)
       .then((finalUrl) => {
-        if (finalUrl !== fallbackUrl) {
-          this.imageUrlCache.set(cacheKey, {
-            url: finalUrl,
-            timestamp: Date.now(),
-          });
-        }
+        this.imageUrlCache.set(cacheKey, {
+          url: finalUrl,
+          timestamp: Date.now(),
+        });
         return finalUrl;
       });
   }

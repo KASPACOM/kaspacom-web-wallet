@@ -28,12 +28,6 @@ export class UtilsService {
     'WKAS',
     'USDT',
   ]);
-  isLogoCached(address: string, ticker: string): boolean {
-    const cacheKey = `${address.toLowerCase()}-${ticker.toUpperCase()}`;
-    const cached = this.imageUrlCache.get(cacheKey);
-    return !!(cached && Date.now() - cached.timestamp < this.IMG_CACHE_DURATION);
-  }
-
   async checkLogoImageUrl(
     address: string,
     ticker: string,

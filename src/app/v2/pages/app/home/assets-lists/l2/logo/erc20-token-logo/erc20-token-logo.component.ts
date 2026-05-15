@@ -1,11 +1,10 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input, resource } from '@angular/core';
 import { UtilsService } from '../../../../../../../../services/utils/utils.service';
 import { ComponentSize } from '../../../../../common/types/sizing.type';
 
 @Component({
   selector: 'erc20-token-logo',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './erc20-token-logo.component.html',
   styleUrl: './erc20-token-logo.component.scss',
 })

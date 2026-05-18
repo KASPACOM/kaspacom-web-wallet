@@ -2,10 +2,10 @@ import { Injectable, signal, WritableSignal } from '@angular/core';
 import { environment } from '../../environments/environment';
 
 export interface KaspaNetworkConfig {
-  id: string;           // e.g. 'mainnet', 'testnet-10', 'testnet-12'
-  name: string;         // Display name: 'Mainnet', 'Testnet 10', 'Testnet 12'
-  networkId: string;    // WASM SDK network id: 'mainnet', 'testnet-10', 'testnet-12'
-  wrpcUrl: string;      // '' = use Resolver (auto), or hostname like 'tn12-node.kaspa.com'
+  id: string;           // e.g. 'mainnet', 'testnet-10'
+  name: string;         // Display name: 'Mainnet', 'Testnet 10'
+  networkId: string;    // WASM SDK network id: 'mainnet', 'testnet-10'
+  wrpcUrl: string;      // '' = use Resolver (auto), or hostname like '65.108.107.30'
   useResolver: boolean; // true = auto-discover via Resolver, false = use wrpcUrl
   kaspaApiBaseurl: string;
   kaspaExplorerBaseurl: string;
@@ -35,28 +35,14 @@ const PRESET_NETWORKS: KaspaNetworkConfig[] = [
     id: 'testnet-10',
     name: 'Testnet 10',
     networkId: 'testnet-10',
-    wrpcUrl: '',
-    useResolver: true,
+    wrpcUrl: 'ws://65.108.107.30:17210',
+    useResolver: false,
     kaspaApiBaseurl: 'https://api-tn10.kaspa.org',
     kaspaExplorerBaseurl: 'https://explorer-tn10.kaspa.org',
     kasplexApiBaseurl: 'https://tn10api.kasplex.org/v1',
     krc721ApiBaseurl: 'https://testnet-10.krc721.stream/api/v1/krc721/testnet-10',
     krc721CacheStreamUrl: 'https://cache.krc721.stream/krc721/testnet-10',
     knsApiBaseurl: 'https://api.knsdomains.org/tn10',
-    isCustom: false,
-  },
-  {
-    id: 'testnet-12',
-    name: 'Testnet 12',
-    networkId: 'testnet-12',
-    wrpcUrl: 'ws://tn12-node.kaspa.com:17210',
-    useResolver: false,
-    kaspaApiBaseurl: 'https://api-tn12.kaspa.org',
-    kaspaExplorerBaseurl: 'https://tn12.kaspa.stream',
-    kasplexApiBaseurl: '',
-    krc721ApiBaseurl: '',
-    krc721CacheStreamUrl: '',
-    knsApiBaseurl: '',
     isCustom: false,
   },
 ];

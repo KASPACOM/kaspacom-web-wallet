@@ -372,16 +372,19 @@ export async function deployContract(
 
     let payload;
 
-    // Attach TN-12 envelope payload to the final transaction
-    if (compiled.tn12) {
+    // Attach deployment-claim metadata to the final transaction.
+    // The current indexer parser still accepts the legacy `tn12` envelope key,
+    // so include it alongside `tn10` for TN10 compatibility.
+    const deploymentClaim = compiled.tn10 || compiled.tn12;
+    if (deploymentClaim) {
       try {
-        const payloadJson = JSON.stringify({ tn12: compiled.tn12 });
+        const payloadJson = JSON.stringify({ tn10: deploymentClaim, tn12: deploymentClaim });
         console.log('[CovenantSDK] payloadJson:', payloadJson);
         const payloadBytes = new TextEncoder().encode(payloadJson);
         payload = payloadBytes;
-        console.log('[CovenantSDK] Attached tn12 payload to deployment tx');
+        console.log('[CovenantSDK] Attached deployment claim payload to deployment tx');
       } catch (payloadErr) {
-        console.warn('[CovenantSDK] Failed to attach tn12 payload:', payloadErr);
+        console.warn('[CovenantSDK] Failed to attach deployment claim payload:', payloadErr);
       }
     }
 

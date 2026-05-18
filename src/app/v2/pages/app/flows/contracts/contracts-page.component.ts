@@ -10,6 +10,7 @@ import { WalletService } from '../../../../../services/wallet.service';
 import { CovenantService } from '../../../../../services/covenant/covenant.service';
 import { RpcService } from '../../../../../services/kaspa-netwrok-services/rpc.service';
 import { ContractRegistryService, ContractRegistryEntry, ContractStatus } from '../../../../../services/covenant/contract-registry.service';
+import { NetworkConfigService } from '../../../../../services/network-config.service';
 import { CompiledContract, CovenantOutpoint, PartiallySignedSpend, SpendOutput } from '../../../../../services/covenant/covenant-sdk/types';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { CONTRACT_TEMPLATES, ContractTemplate, TemplateField } from '../../../../services/covenant/contract-templates';
@@ -40,6 +41,7 @@ export class ContractsPageComponent implements OnInit {
   private covenantService = inject(CovenantService);
   private rpcService = inject(RpcService);
   private registryService = inject(ContractRegistryService);
+  private networkConfigService = inject(NetworkConfigService);
   private templatePatcher = inject(TemplatePatcherService);
   private http = inject(HttpClient);
   private route = inject(ActivatedRoute);
@@ -368,7 +370,7 @@ export class ContractsPageComponent implements OnInit {
       }
 
       if (argsPayload.length > 0) {
-        patched.tn12 = {
+        patched.tn10 = {
           v: 1,
           tmpl: tmplName,
           args: argsPayload
@@ -894,14 +896,14 @@ export class ContractsPageComponent implements OnInit {
    * Get explorer link for address
    */
   getExplorerAddressLink(address: string): string {
-    return `https://tn12.kaspa.stream/addresses/${address}`;
+    return `${this.networkConfigService.getActiveNetwork().kaspaExplorerBaseurl}/addresses/${address}`;
   }
 
   /**
    * Get explorer link for transaction
    */
   getExplorerLink(txid: string): string {
-    return `https://tn12.kaspa.stream/transactions/${txid}`;
+    return `${this.networkConfigService.getActiveNetwork().kaspaExplorerBaseurl}/transactions/${txid}`;
   }
 
   /**

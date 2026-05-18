@@ -43,6 +43,7 @@ export interface CompiledContract {
   ast: CompiledContractAst;
   abi: CompiledContractAbiEntry[];
   without_selector: boolean;
+  tn10?: any;
   tn12?: any;
 }
 

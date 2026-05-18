@@ -54,7 +54,6 @@ export class WrapperHeaderComponent {
     const nameMap: Record<string, string> = {
       'mainnet': 'Kaspa L1',
       'testnet-10': 'Kaspa TN10',
-      'testnet-12': 'Kaspa TN12',
     };
     return nameMap[network.id] || network.name;
   });

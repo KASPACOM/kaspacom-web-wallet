@@ -11,7 +11,6 @@ export const LOCAL_STORAGE_KEYS = {
 export const KASPA_NETWORKS = {
   MAINNET: 'mainnet',
   TESTNET10: 'testnet-10',
-  TESTNET12: 'testnet-12',
 };
 
 export const DEFAULT_DERIVED_PATH = "m/44'/111111'/0'/0/0";

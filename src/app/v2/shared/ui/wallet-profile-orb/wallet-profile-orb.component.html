@@ -1,0 +1,16 @@
+@if (isL2()) {
+  <div
+    class="wallet-avatar-orb"
+    [style.background]="avatarConfig().bgColor"
+    [style.border-color]="avatarConfig().borderColor"
+  >
+    <img
+      src="svg/shapes/shape-{{ avatarConfig().shapeIndex }}.svg"
+      alt="Wallet avatar"
+      [style.filter]="avatarConfig().imgFilter"
+      [style.transform]="'rotate(' + avatarConfig().rotation + 'deg)'"
+    />
+  </div>
+} @else {
+  <div class="wallet-profile-orb"></div>
+}

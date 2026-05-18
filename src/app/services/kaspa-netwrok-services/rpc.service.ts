@@ -20,9 +20,17 @@ export class RpcService {
   }
 
   refreshRpc() {
-    if (localStorage.getItem(LOCAL_STORAGE_KEYS.RPC_URL)) {
+    const previousRpc = this.RPC;
+    let storedRpcUrl: string | null = null;
+    try {
+      storedRpcUrl = localStorage.getItem(LOCAL_STORAGE_KEYS.RPC_URL);
+    } catch (err) {
+      console.warn('Failed reading RPC URL from localStorage', err);
+    }
+
+    if (storedRpcUrl) {
       this.RPC = new RpcClient({
-        url: localStorage.getItem(LOCAL_STORAGE_KEYS.RPC_URL) || '',
+        url: storedRpcUrl,
         encoding: Encoding.Borsh,
         networkId: this.network,
       });
@@ -34,8 +42,19 @@ export class RpcService {
       });
     }
 
+    this.disconnectRpc(previousRpc);
 
     return this.getRpc();
+  }
+
+  private disconnectRpc(rpc: RpcClient | undefined): void {
+    if (!rpc || rpc === this.RPC) {
+      return;
+    }
+
+    rpc.disconnect().catch((err: unknown) => {
+      console.warn('Failed disconnecting previous RPC client', err);
+    });
   }
 
   getNetwork() {

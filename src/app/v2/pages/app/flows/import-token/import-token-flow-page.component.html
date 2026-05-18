@@ -26,11 +26,15 @@
       </kc-button>
     </div>
 
+    @if (showAddressError()) {
+      <div class="address-error typo-text-1 text-red">Invalid contract address format</div>
+    }
+
     <kc-button
       [variant]="'primary'"
       [size]="'md'"
       [text]="state() === 'loading' ? 'Looking up...' : 'Look Up Token'"
-      [isDisabled]="!contractAddress() || state() === 'loading'"
+      [isDisabled]="!isAddressValid() || state() === 'loading'"
       class="full-width"
       (buttonClick)="lookupToken()">
     </kc-button>

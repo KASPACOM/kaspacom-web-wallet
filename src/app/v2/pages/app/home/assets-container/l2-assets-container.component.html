@@ -14,4 +14,13 @@
   }
 </kc-labeled-tabs>
 
-
+@if (showImportTokenFab()) {
+  <div class="import-token-fab">
+    <kc-button
+      [variant]="'secondary'"
+      [size]="'sm'"
+      [text]="'+ Import Token'"
+      (buttonClick)="onImportToken()">
+    </kc-button>
+  </div>
+}

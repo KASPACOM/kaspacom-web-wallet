@@ -87,6 +87,15 @@ export class UtilsService {
       ticker = 'KAS';
     }
 
+    const fallbackUrl = './images/kc-logo-square.png';
+    const localUrl = this.availableLocalTokensLogos.has(ticker.toUpperCase())
+      ? `./images/tokens-logos/${ticker.toUpperCase()}.png`
+      : '';
+    if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
+      // Skip backend/S3 lookups for sentinel or invalid addresses.
+      return localUrl || fallbackUrl;
+    }
+
     let lfgTokenUrl = '';
 
     // Try to find logo in LFG tokens array
@@ -113,10 +122,6 @@ export class UtilsService {
     } catch {
       console.error('logo not found for address', address);
     }
-    const fallbackUrl = './images/kc-all-black.png';
-    const localUrl = this.availableLocalTokensLogos.has(ticker.toUpperCase())
-      ? `./images/tokens-logos/${ticker.toUpperCase()}.png`
-      : '';
     const test = (url: string) =>
       new Promise<string>((res) => {
         if (!url) return res('');
@@ -131,14 +136,12 @@ export class UtilsService {
       .then((r) => r || test(lfgTokenUrl))
       .then((r) => r || test(addressUrl)) //s3
       .then((r) => r || test(defaultUrl)) //default logo for metamask
-      .then((r) => r || fallbackUrl) // fallback logo
+      .then((r) => r || fallbackUrl)
       .then((finalUrl) => {
-        if (finalUrl !== fallbackUrl) {
-          this.imageUrlCache.set(cacheKey, {
-            url: finalUrl,
-            timestamp: Date.now(),
-          });
-        }
+        this.imageUrlCache.set(cacheKey, {
+          url: finalUrl,
+          timestamp: Date.now(),
+        });
         return finalUrl;
       });
   }

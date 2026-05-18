@@ -61,6 +61,13 @@ export class EthereumWalletActionsService {
             },
           );
 
+        if (!walletResponse.success) {
+          return createEIP1193Response<T>(undefined, {
+            code: walletResponse.errorCode ?? ERROR_CODES.EIP1193.INTERNAL_ERROR,
+            message: ERROR_CODES_MESSAGES[walletResponse.errorCode ?? ERROR_CODES.EIP1193.INTERNAL_ERROR] ?? 'Unknown error',
+          });
+        }
+
         return (walletResponse.result as EIP1193ProviderRequestActionResult<T>)
           .eip1193Response;
       }
@@ -130,20 +137,14 @@ export class EthereumWalletActionsService {
 
         case EIP1193RequestType.GET_ESTIMATE_GAS:
           const estimateGasTransaction = request.params?.[0] as any;
+          const provider = this.ethereumWalletChainManager.getCurrentWalletProvider()!;
           const wallet = await this.walletService
             .getCurrentWallet()
             ?.getL2Wallet();
 
-          if (!wallet) {
-            return createEIP1193Response<T>(undefined, {
-              code: ERROR_CODES.EIP1193.INTERNAL_ERROR,
-              message: 'Failed to get wallet',
-            });
-          }
-
-          const gas = await this.ethereumWalletChainManager
-            .getCurrentWalletProvider()!
-            .estimateGas(wallet, estimateGasTransaction as TransactionRequest);
+          const gas = wallet
+            ? await provider.estimateGas(wallet, estimateGasTransaction as TransactionRequest)
+            : BigInt(await provider.ethEstimateGas(estimateGasTransaction));
           return createEIP1193Response<T>(ethers.toQuantity(gas));
 
         case EIP1193RequestType.GET_TRANSACTION_BY_HASH:

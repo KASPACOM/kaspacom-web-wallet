@@ -18,14 +18,14 @@
     @if (isDevelopmentMode()) {
     <div class="network-info" (click)="onNetworkSelectionClick()">
       <div class="network-icon">
-        @if (currentNetworkInfo()?.icon) {
+        @if (currentNetworkInfo().icon) {
           <img [src]="currentNetworkInfo()!.icon!" alt="" class="chain-icon" />
         } @else {
           <span class="chain-icon" aria-label="Generic network icon" role="img">🌐</span>
         }
       </div>
       <div class="network-name">
-        {{ currentNetworkInfo()?.name || 'Kaspa L1' }}
+        {{ currentNetworkInfo().name || 'Kaspa L1' }}
       </div>
     </div>
     }

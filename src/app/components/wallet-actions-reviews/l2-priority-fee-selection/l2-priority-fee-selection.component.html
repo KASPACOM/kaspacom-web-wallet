@@ -43,7 +43,7 @@
 
       <!-- Fee Options Grid -->
       <div class="fee-options-grid">
-        <div class="fee-option-card" [class.selected]="selectedOption === 'low'" (click)="selectOption('low')">
+        <div class="fee-option-card" [class.selected]="selectedOption() === 'low'" (click)="selectOption('low')">
           <div class="option-title">Low</div>
           <div class="option-fee" *ngIf="gasFeeOptionToDisplay()">
             <span>{{ gasFeeOptionToDisplay()!['low'].display | number:'1.4-8' }}</span>
@@ -52,7 +52,7 @@
           <div class="option-gwei" *ngIf="gasFeeOtions()">{{ fromWeiToGwei(gasFeeOtions()!.low) }} Gwei</div>
         </div>
 
-        <div class="fee-option-card" [class.selected]="selectedOption === 'normal'" (click)="selectOption('normal')">
+        <div class="fee-option-card" [class.selected]="selectedOption() === 'normal'" (click)="selectOption('normal')">
           <div class="option-title">Normal</div>
           <div class="option-fee" *ngIf="gasFeeOptionToDisplay()">
             <span>{{ gasFeeOptionToDisplay()!['normal'].display | number:'1.4-8' }}</span>
@@ -61,7 +61,7 @@
           <div class="option-gwei" *ngIf="gasFeeOtions()">{{ fromWeiToGwei(gasFeeOtions()!.normal) }} Gwei</div>
         </div>
 
-        <div class="fee-option-card" [class.selected]="selectedOption === 'priority'" (click)="selectOption('priority')">
+        <div class="fee-option-card" [class.selected]="selectedOption() === 'priority'" (click)="selectOption('priority')">
           <div class="option-title">Priority</div>
           <div class="option-fee" *ngIf="gasFeeOptionToDisplay()">
             <span>{{ gasFeeOptionToDisplay()!['priority'].display | number:'1.4-8' }}</span>
@@ -74,8 +74,8 @@
       <!-- Custom Fee -->
       <div class="custom-fee-section">
         <div class="custom-fee-card"
-             [class.selected]="selectedOption === 'custom'"
-             [class.has-error]="selectedOption === 'custom' && !isCustomFeeValid()"
+             [class.selected]="selectedOption() === 'custom'"
+             [class.has-error]="selectedOption() === 'custom' && !isCustomFeeValid()"
              (click)="selectOption('custom')">
           <div class="custom-fee-header">
             <span class="custom-fee-title">Custom Fee</span>
@@ -89,7 +89,7 @@
               (valueChange)="selectOption('custom')">
             </kc-input>
           </div>
-          <div class="validation-error" *ngIf="selectedOption === 'custom' && !isCustomFeeValid()">
+          <div class="validation-error" *ngIf="selectedOption() === 'custom' && !isCustomFeeValid()">
             Minimum custom fee is 1 wei
           </div>
         </div>
@@ -128,7 +128,7 @@
         <div class="fee-detail-row" *ngIf="gasFeeOtions()">
           <span class="detail-label">Priority Fee</span>
           <div class="detail-value">
-            <span>{{ fromWeiToGwei(gasFeeOtions()![selectedOption]) }} Gwei</span>
+            <span>{{ fromWeiToGwei(gasFeeOtions()![selectedOption()]) }} Gwei</span>
           </div>
         </div>
 

@@ -64,7 +64,7 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
   @Output() gasLimitSelected = new EventEmitter<bigint | undefined>();
 
   protected customFee = signal<number>(0);
-  protected selectedOption: AvailableOption = 'normal';
+  protected selectedOption = signal<AvailableOption>('normal');
   protected hasGasLimitError = false;
   protected showFeeSelection = false;
 
@@ -84,15 +84,19 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
   });
 
   protected isCustomFeeValid = computed(() => {
-    if (this.selectedOption !== 'custom') return true;
+    if (this.selectedOption() !== 'custom') return true;
     return this.customFee() >= MIN_CUSTOM_FEE;
   });
 
   protected gasFeeOtions = computed(() => {
     if (!this.feeData) return undefined;
 
-    const baseFee = this.feeData.maxPriorityFeePerGas;
-    if (baseFee === null || baseFee === undefined) return undefined;
+    // EIP-1559 exposes maxPriorityFeePerGas; legacy chains only expose
+    // gasPrice. Require at least one to be present so we can render a
+    // sensible fee option list.
+    if (this.feeData.maxPriorityFeePerGas == null && this.feeData.gasPrice == null) {
+      return undefined;
+    }
 
     const maxPriorityFeePerGas = this.feeData.maxPriorityFeePerGas || 0n;
 
@@ -130,9 +134,9 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
   protected totalFeeDisplay = computed(() => {
     const displayOptions = this.gasFeeOptionToDisplay();
     if (!displayOptions) return undefined;
-    if (this.selectedOption === 'custom' && !this.isCustomFeeValid()) return undefined;
+    if (this.selectedOption() === 'custom' && !this.isCustomFeeValid()) return undefined;
     if (!this.isGasLimitValid()) return undefined;
-    return displayOptions[this.selectedOption]?.display;
+    return displayOptions[this.selectedOption()]?.display;
   });
 
   toggleFeeSelection() {
@@ -160,7 +164,7 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
   }
 
   selectOption(option: AvailableOption | string) {
-    this.selectedOption = option as AvailableOption;
+    this.selectedOption.set(option as AvailableOption);
 
     if (option !== 'custom' && this.gasFeeOtions() && option in this.gasFeeOtions()!) {
       const fee = this.gasFeeOtions()![option as 'low' | 'normal' | 'priority' | 'custom'];
@@ -210,7 +214,7 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
 
     this.feeData = await provider.getFeeData();
     this.customFee.set(Number(this.feeData.maxPriorityFeePerGas));
-    this.selectOption(this.selectedOption);
+    this.selectOption(this.selectedOption());
     this.updateGasLimit();
   }
 

@@ -4,9 +4,9 @@
 
 **kaspacom-ui** is an Angular UI Component Library for KaspaCom DeFi Applications. This guide provides comprehensive documentation for all available components, their properties, and usage examples.
 
-**Version:** 1.1.3  
-**Framework:** Angular 19.2.0+  
-**Dependencies:** PrimeNG 19.0.0+, PrimeIcons 7.0.0+
+- **Version:** 1.1.3
+- **Framework:** Angular 19.2.0+
+- **Dependencies:** PrimeNG 19.0.0+, PrimeIcons 7.0.0+
 
 ## Installation
 

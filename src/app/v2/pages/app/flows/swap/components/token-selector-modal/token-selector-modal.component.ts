@@ -12,7 +12,7 @@ import {
   DestroyRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcBaseModalComponent, KcInputComponent } from 'kaspacom-ui';
+import { KcBaseModalComponent, KcInputComponent, KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
 import { MessagePopupService } from '../../../../../../../services/message-popup.service';
 import type { Erc20Token } from '@kaspacom/swap-sdk';
 import { CommaFormatterPipe } from '../../../../../../../pipes/comma-formatter.pipe';
@@ -24,6 +24,7 @@ import {
 } from '../../../../../../../services/kaspacom-api/kaspacom-defi-api.service';
 import { EthereumWalletChainManager } from '../../../../../../../services/etherium-services/etherium-wallet-chain.manager';
 import { environment } from '../../../../../../../../environments/environment';
+import { VerifiedTokenInterface } from '../../../../../../../../environments/environment.interface';
 
 const HISTORY_STORAGE_KEY_PREFIX = 'swap-token-search-history';
 const DEFAULT_DECIMALS = 18;
@@ -53,6 +54,8 @@ function isLocalStorageAvailable(): boolean {
     CommonModule,
     KcBaseModalComponent,
     KcInputComponent,
+    KcIconComponent,
+    KcTooltipDirective,
     CommaFormatterPipe,
     TokenLogoComponent,
   ],
@@ -66,6 +69,27 @@ export class TokenSelectorModalComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   hasChain = computed(() => !!this.chainManager.getCurrentChainSignal()());
+
+  private verifiedTokensList = computed<VerifiedTokenInterface[]>(() => {
+    const chainId = this.chainManager.getCurrentChainSignal()();
+    if (!chainId) return [];
+    return this.chainManager.getChainEnvConfig(chainId)?.verifiedTokens ?? [];
+  });
+
+  isVerifiedToken(token: Erc20Token): boolean {
+    const addr = token.address.toLowerCase();
+    return this.verifiedTokensList().some((v) => v.address.toLowerCase() === addr);
+  }
+
+  isPotentialHarm(token: Erc20Token): boolean {
+    const verified = this.verifiedTokensList();
+    if (!verified.length) return false;
+    const symbol = token.symbol.toLowerCase();
+    const addr = token.address.toLowerCase();
+    return verified.some(
+      (v) => v.symbol.toLowerCase() === symbol && v.address.toLowerCase() !== addr,
+    );
+  }
 
   private historyStorageKey = computed(() => {
     const chainId = this.chainManager.getCurrentChainSignal()();

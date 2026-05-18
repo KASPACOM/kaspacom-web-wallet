@@ -108,6 +108,25 @@
   overflow: hidden;
 }
 
+.token-symbol-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  color: var(--primary, #6fc7ba);
+  flex-shrink: 0;
+}
+
+.harm-badge {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 .token-symbol {
   font-weight: 600;
   font-size: 15px;

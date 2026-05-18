@@ -1,3 +1,15 @@
+export interface VerifiedTokenExternalUsdPriceInterface {
+  provider: 'coingecko';
+  coinGeckoId: string;
+}
+
+export interface VerifiedTokenInterface {
+  symbol: string;
+  address: string;
+  decimals?: number;
+  externalUsdPrice?: VerifiedTokenExternalUsdPriceInterface;
+}
+
 export interface L2CustomChainConfig {
   chainId: number;
   name: string;
@@ -11,6 +23,11 @@ export interface L2CustomChainConfig {
   };
   defiApiNetworkName?: string;
   wrappedTokenAddress?: string;
+  swapContracts?: {
+    factoryAddress: string;
+    routerAddress: string;
+    proxyAddress?: string;
+  };
 }
 
 export interface L2ConfigInterface {
@@ -21,6 +38,7 @@ export interface L2ConfigInterface {
   /** One-word display name shown in the header (e.g. 'Kasplex', 'Galleon') */
   shortName: string;
   l1TransactionPrefix?: string;
+  verifiedTokens?: VerifiedTokenInterface[];
   /** Chain config for wallet operations (RPC, chain ID, explorer, native token). Required for all L2 chains. */
   customChainConfig: L2CustomChainConfig;
 }
@@ -39,7 +57,6 @@ export interface Environment {
   consentCssUrl?: string;
   kaspaComApiBaseurl: string;
   kaspaComDefiApiBaseurl: string;
-  geckoTerminalApiBaseurl: string;
   kasplexApiBaseurl: string;
   kaspaApiBaseurl: string;
   krc721ApiBaseurl: string;

@@ -94,7 +94,7 @@ export class L2TokenPricesService implements OnDestroy {
   }
 
   private contextByChain = new Map<string, ChainSwapContext>();
-  // Map value: 0 = permanent (definitively not LP), >0 = backoff expiry ms (transient error)
+  // Map value: backoff expiry timestamp ms — address is skipped until Date.now() exceeds it
   private readonly _nonLpAddresses = new Map<string, number>();
 
   async getPriceMap(
@@ -237,7 +237,7 @@ export class L2TokenPricesService implements OnDestroy {
     const addr = token.address.toLowerCase();
     const nonLpKey = `${chainId}:${addr}`;
     const nonLpExpiry = this._nonLpAddresses.get(nonLpKey);
-    if (nonLpExpiry !== undefined && (nonLpExpiry === 0 || Date.now() < nonLpExpiry)) return undefined;
+    if (nonLpExpiry !== undefined && Date.now() < nonLpExpiry) return undefined;
 
     try {
       const pair = new Contract(token.address, LP_PAIR_ABI, ctx.provider);
@@ -258,7 +258,7 @@ export class L2TokenPricesService implements OnDestroy {
       const reserve1 = parseFloat(formatUnits(reserves[1], t1Dec));
       const totalSupply = parseFloat(formatUnits(totalSupplyRaw, 18));
       if (totalSupply <= 0) {
-        this._nonLpAddresses.set(nonLpKey, 0);
+        this._nonLpAddresses.set(nonLpKey, Date.now() + NON_LP_ERROR_BACKOFF_MS);
         return undefined;
       }
 
@@ -427,7 +427,7 @@ export class L2TokenPricesService implements OnDestroy {
       };
     } else {
       // SDK doesn't know this network — build the config from the environment.
-      if (!cc.swapContracts || !cc.wrappedTokenAddress) return null;
+      if (!cc.swapContracts || !cc.wrappedTokenAddress || !cc.defiApiNetworkName) return null;
 
       networkConfig = {
         name: cc.name,
@@ -438,7 +438,7 @@ export class L2TokenPricesService implements OnDestroy {
         proxyAddress: cc.swapContracts.proxyAddress,
         badckendApiUrl: environment.kaspaComDefiApiBaseurl,
         blockExplorerUrl: cc.blockExplorerUrl,
-        defiApiNetworkName: cc.defiApiNetworkName ?? '',
+        defiApiNetworkName: cc.defiApiNetworkName,
         nativeToken: {
           address: cc.nativeToken.address,
           decimals: cc.nativeToken.decimals,

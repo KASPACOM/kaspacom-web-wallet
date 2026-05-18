@@ -5,7 +5,7 @@ export interface KaspaNetworkConfig {
   id: string;           // e.g. 'mainnet', 'testnet-10'
   name: string;         // Display name: 'Mainnet', 'Testnet 10'
   networkId: string;    // WASM SDK network id: 'mainnet', 'testnet-10'
-  wrpcUrl: string;      // '' = use Resolver (auto), or hostname like '65.108.107.30'
+  wrpcUrl: string;      // '' = use Resolver (auto), or hostname like 'tn10-node.kaspa.com'
   useResolver: boolean; // true = auto-discover via Resolver, false = use wrpcUrl
   kaspaApiBaseurl: string;
   kaspaExplorerBaseurl: string;
@@ -35,7 +35,7 @@ const PRESET_NETWORKS: KaspaNetworkConfig[] = [
     id: 'testnet-10',
     name: 'Testnet 10',
     networkId: 'testnet-10',
-    wrpcUrl: 'ws://65.108.107.30:17210',
+    wrpcUrl: 'ws://tn10-node.kaspa.com:17210',
     useResolver: false,
     kaspaApiBaseurl: 'https://api-tn10.kaspa.org',
     kaspaExplorerBaseurl: 'https://explorer-tn10.kaspa.org',

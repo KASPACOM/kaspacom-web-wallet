@@ -10,15 +10,7 @@ export class KaspaL1NetworkService {
   private readonly networks: L1NetworkConfigInterface[] =
     environment.l1Config.networks?.length
       ? environment.l1Config.networks
-      : [
-          {
-            network: environment.kaspaNetwork,
-            shortName: environment.l1Config.shortName,
-            icon: environment.l1Config.icon,
-            kaspaApiBaseurl: environment.kaspaApiBaseurl,
-            kaspaExplorerBaseurl: environment.kaspaExplorerBaseurl,
-          },
-        ];
+      : [];
 
   private readonly currentNetworkSignal: WritableSignal<L1NetworkConfigInterface> =
     signal(this.resolveInitialNetwork());
@@ -47,8 +39,44 @@ export class KaspaL1NetworkService {
     return this.getCurrentNetwork().kaspaApiBaseurl;
   }
 
+  getKaspaComApiBaseurl(): string {
+    return this.getCurrentNetwork().kaspaComApiBaseurl;
+  }
+
+  getKaspaComDefiApiBaseurl(): string {
+    return this.getCurrentNetwork().kaspaComDefiApiBaseurl;
+  }
+
+  getKasplexApiBaseurl(): string | undefined {
+    return this.getCurrentNetwork().kasplexApiBaseurl;
+  }
+
+  getKrc721ApiBaseurl(): string | undefined {
+    return this.getCurrentNetwork().krc721ApiBaseurl;
+  }
+
+  getKrc721CacheStreamUrl(): string | undefined {
+    return this.getCurrentNetwork().krc721CacheStreamUrl;
+  }
+
+  getKnsApiBaseurl(): string | undefined {
+    return this.getCurrentNetwork().knsApiBaseurl;
+  }
+
   getKaspaExplorerBaseurl(): string {
     return this.getCurrentNetwork().kaspaExplorerBaseurl;
+  }
+
+  supportsKrc20Assets(): boolean {
+    return !!this.getKasplexApiBaseurl();
+  }
+
+  supportsKrc721Assets(): boolean {
+    return !!this.getKrc721ApiBaseurl();
+  }
+
+  supportsKnsAssets(): boolean {
+    return !!this.getKnsApiBaseurl();
   }
 
   setCurrentNetwork(network: string): boolean {

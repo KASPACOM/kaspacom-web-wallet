@@ -9,6 +9,7 @@ import { KasplexKrc20Service } from "../../kasplex-api/kasplex-api.service";
 import { Krc721ApiService } from "../../krc721-api/krc721-api.service";
 import { KnsApiService } from "../../kns-api/kns-api.service";
 import { KaspaComApiService } from "../../kaspacom-api/kaspacom-api.service";
+import { KaspaL1NetworkService } from "../../kaspa-netwrok-services/kaspa-l1-network.service";
 import { L1AssetType } from "../enums/l1-asset-type.enum";
 import { L1_PAGINATION_CONFIG } from "../interfaces/pagination-state.interface";
 import _ from 'lodash';
@@ -44,6 +45,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
     protected krc721ApiService = inject(Krc721ApiService);
     protected knsApiService = inject(KnsApiService);
     protected kaspacomApiService = inject(KaspaComApiService);
+    protected kaspaL1NetworkService = inject(KaspaL1NetworkService);
 
     // Pagination state for KRC721
     private krc721NextCursor: WritableSignal<number | undefined> = signal(undefined);
@@ -93,6 +95,13 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
      * Smart auto-reload: Fetches as many items as user has already loaded
      */
     protected async getKrc20Info(walletAddress: string): Promise<GetTokenListDto[]> {
+        if (!this.kaspaL1NetworkService.supportsKrc20Assets()) {
+            this.krc20NextCursor.set(undefined);
+            this.krc20HasMore.set(false);
+            this.krc20LoadedPages.set(0);
+            return [];
+        }
+
         const existingData = this.data['krc20']() as GetTokenListDto[] | undefined;
         const isAutoReload = existingData !== undefined && existingData.length > 0;
 
@@ -291,6 +300,15 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
      * Called by Krc20ListService when scrolling
      */
     async loadMoreKrc20Tokens(): Promise<LoadMoreStoreResult> {
+        if (!this.kaspaL1NetworkService.supportsKrc20Assets()) {
+            return {
+                success: false,
+                itemsAdded: 0,
+                hasMore: false,
+                nextCursor: undefined
+            };
+        }
+
         const cursor = this.krc20NextCursor();
         const hasMore = this.krc20HasMore();
 
@@ -385,6 +403,18 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
      * Uses new Portfolio API
      */
     protected async getKrc721Info(walletAddress: string): Promise<Krc721Nft[]> {
+        if (!this.kaspaL1NetworkService.supportsKrc721Assets()) {
+            this.krc721PortfolioSummary = [];
+            this.krc721PortfolioIndex = 0;
+            this.krc721TokenQueue = [];
+            this.krc721CollectionCache.clear();
+            this.krc721AvailableTickers.set([]);
+            this.krc721NextCursor.set(undefined);
+            this.krc721HasMore.set(false);
+            this.krc721LoadedPages.set(0);
+            return [];
+        }
+
         const existingData = this.data[L1_ASSET_KEYS.krc721]() as Krc721Nft[] | undefined || [];
         const isAutoReload = existingData.length > 0;
 
@@ -583,6 +613,15 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
      * Called by Krc721ListService when scrolling
      */
     async loadMoreKrc721Nfts(): Promise<LoadMoreStoreResult> {
+        if (!this.kaspaL1NetworkService.supportsKrc721Assets()) {
+            return {
+                success: false,
+                itemsAdded: 0,
+                hasMore: false,
+                nextCursor: undefined
+            };
+        }
+
         if (!this.krc721HasMore()) {
             return {
                 success: false,
@@ -638,6 +677,14 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
      * Smart auto-reload: Fetches as many domains as user has already loaded
      */
     protected async getKnsInfo(walletAddress: string): Promise<KnsDomainAsset[]> {
+        if (!this.kaspaL1NetworkService.supportsKnsAssets()) {
+            this.knsCurrentPage.set(1);
+            this.knsTotalPages.set(0);
+            this.knsHasMore.set(false);
+            this.knsLoadedPages.set(0);
+            return [];
+        }
+
         const existingData = this.data['kns']() as KnsDomainAsset[] | undefined;
         const isAutoReload = existingData !== undefined && existingData.length > 0;
 
@@ -722,6 +769,15 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
      * Called by KnsListService when scrolling
      */
     async loadMoreKnsDomains(): Promise<LoadMoreStoreResult> {
+        if (!this.kaspaL1NetworkService.supportsKnsAssets()) {
+            return {
+                success: false,
+                itemsAdded: 0,
+                hasMore: false,
+                nextCursor: undefined
+            };
+        }
+
         const currentPage = this.knsCurrentPage();
         const totalPages = this.knsTotalPages();
         const hasMore = this.knsHasMore();

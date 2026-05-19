@@ -8,7 +8,7 @@ import { NftRankTagComponent } from './components/nft-rank-tag/nft-rank-tag.comp
 import { BaseAssetPageComponent } from '../../../../../common/base-asset-page/base-asset-page.component';
 import { Krc721ApiService } from '../../../../../../../../services/krc721-api/krc721-api.service';
 import { FlowPagesService } from '../../../../../../../services/flow-pages.service';
-import { environment } from '../../../../../../../../../environments/environment';
+import { KaspaL1NetworkService } from '../../../../../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
 
 interface NftMetadata {
   name?: string;
@@ -38,6 +38,7 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
   private route = inject(ActivatedRoute);
   private krc721Service = inject(Krc721ApiService);
   private flowPagesService = inject(FlowPagesService);
+  private kaspaL1NetworkService = inject(KaspaL1NetworkService);
 
   private tick: string = '';
   private tokenId: string = '';
@@ -247,13 +248,14 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
   }
 
   private buildCachedImageUrl(): string {
-    if (!this.tick || !this.tokenId || !environment.krc721CacheStreamUrl) {
+    const cacheStreamUrl = this.kaspaL1NetworkService.getKrc721CacheStreamUrl();
+    if (!this.tick || !this.tokenId || !cacheStreamUrl) {
       return '';
     }
 
     const normalizedTick = encodeURIComponent(this.tick.toUpperCase());
     const normalizedTokenId = encodeURIComponent(this.tokenId);
-    return `${environment.krc721CacheStreamUrl}/optimized/${normalizedTick}/${normalizedTokenId}`;
+    return `${cacheStreamUrl}/optimized/${normalizedTick}/${normalizedTokenId}`;
   }
 
   // Open NFT in explorer (currently not implemented as transaction ID is not readily available)

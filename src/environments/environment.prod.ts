@@ -1,5 +1,6 @@
 import { KASPA_NETWORKS } from '../app/config/consts';
 import { Environment } from './environment.interface';
+import { PRODUCTION_L1_NETWORKS } from './l1-network-configurations';
 
 export const environment: Environment = {
   isProduction: true,
@@ -8,43 +9,13 @@ export const environment: Environment = {
   segmentKey: 'VjcBOF7puALWzPyE19iNkCLseTTDfVga',
   clarityKey: 'v3s9mm1mn8',
   addressableKey: '2e716db8140e460fa988107810e59824',
-  kaspaComApiBaseurl: 'https://api.kaspa.com',
-  kaspaComDefiApiBaseurl: 'https://api-defi.kaspa.com',
-  kasplexApiBaseurl: 'https://api.kasplex.org/v1',
-  kaspaApiBaseurl: 'https://api.kaspa.org',
-  krc721ApiBaseurl: 'https://mainnet.krc721.stream/api/v1/krc721/mainnet',
-  krc721CacheStreamUrl: 'https://cache.krc721.stream/krc721/mainnet',
-  knsApiBaseurl: 'https://api.knsdomains.org/mainnet',
-  kaspaExplorerBaseurl: 'https://explorer.kaspa.org',
   kaspaNetwork: KASPA_NETWORKS.MAINNET,
   logosUrl: 'https://erc20-logo.s3.us-east-1.amazonaws.com/',
   allowedDomains: ['wallet.kaspa.com'],
   l1Config: {
     shortName: 'Kaspa L1',
     icon: 'images/tokens-logos/KAS.png',
-    networks: [
-      {
-        network: KASPA_NETWORKS.MAINNET,
-        shortName: 'Kaspa Mainnet',
-        icon: 'images/tokens-logos/KAS.png',
-        kaspaApiBaseurl: 'https://api.kaspa.org',
-        kaspaExplorerBaseurl: 'https://explorer.kaspa.org',
-      },
-      {
-        network: KASPA_NETWORKS.TESTNET10,
-        shortName: 'Kaspa TN10',
-        icon: 'images/tokens-logos/KAS.png',
-        kaspaApiBaseurl: 'https://api-tn10.kaspa.org',
-        kaspaExplorerBaseurl: 'https://explorer-tn10.kaspa.org',
-      },
-      {
-        network: KASPA_NETWORKS.TESTNET12,
-        shortName: 'Kaspa TN12',
-        icon: 'images/tokens-logos/KAS.png',
-        kaspaApiBaseurl: 'https://api-tn12.kaspa.org',
-        kaspaExplorerBaseurl: 'https://tn12.kaspa.stream',
-      },
-    ],
+    networks: PRODUCTION_L1_NETWORKS,
   },
   isL2Enabled: true,
   l2Configs: [

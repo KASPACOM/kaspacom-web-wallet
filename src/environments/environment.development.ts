@@ -1,18 +1,11 @@
 import { KASPA_NETWORKS } from '../app/config/consts';
 import { Environment } from './environment.interface';
+import { DEVELOPMENT_L1_NETWORKS } from './l1-network-configurations';
 
 export const environment: Environment = {
   isProduction: false,
   consentScriptUrl: 'https://dev.kaspa.com/js/modules/kaspa-consent.min.js',
   consentCssUrl: 'https://dev.kaspa.com/css/consent.min.css',
-  kaspaComApiBaseurl: 'https://dev-api.kaspa.com',
-  kaspaComDefiApiBaseurl: 'https://dev-api-defi.kaspa.com',
-  kasplexApiBaseurl: 'https://tn10api.kasplex.org/v1',
-  kaspaApiBaseurl: 'https://api-tn10.kaspa.org',
-  krc721ApiBaseurl: 'https://testnet-10.krc721.stream/api/v1/krc721/testnet-10',
-  krc721CacheStreamUrl: 'https://cache.krc721.stream/krc721/testnet-10',
-  knsApiBaseurl: 'https://api.knsdomains.org/tn10',
-  kaspaExplorerBaseurl: 'https://explorer-tn10.kaspa.org',
   logosUrl: 'https://erc20-logo-dev.s3.eu-central-1.amazonaws.com/',
   kaspaNetwork: KASPA_NETWORKS.TESTNET10,
   allowedDomains: [
@@ -24,29 +17,7 @@ export const environment: Environment = {
   l1Config: {
     shortName: 'Kaspa L1',
     icon: 'images/tokens-logos/KAS.png',
-    networks: [
-      {
-        network: KASPA_NETWORKS.TESTNET10,
-        shortName: 'Kaspa TN10',
-        icon: 'images/tokens-logos/KAS.png',
-        kaspaApiBaseurl: 'https://api-tn10.kaspa.org',
-        kaspaExplorerBaseurl: 'https://explorer-tn10.kaspa.org',
-      },
-      {
-        network: KASPA_NETWORKS.TESTNET12,
-        shortName: 'Kaspa TN12',
-        icon: 'images/tokens-logos/KAS.png',
-        kaspaApiBaseurl: 'https://api-tn12.kaspa.org',
-        kaspaExplorerBaseurl: 'https://tn12.kaspa.stream',
-      },
-      {
-        network: KASPA_NETWORKS.MAINNET,
-        shortName: 'Kaspa Mainnet',
-        icon: 'images/tokens-logos/KAS.png',
-        kaspaApiBaseurl: 'https://api.kaspa.org',
-        kaspaExplorerBaseurl: 'https://explorer.kaspa.org',
-      },
-    ],
+    networks: DEVELOPMENT_L1_NETWORKS,
   },
   isL2Enabled: true,
   l2Configs: [

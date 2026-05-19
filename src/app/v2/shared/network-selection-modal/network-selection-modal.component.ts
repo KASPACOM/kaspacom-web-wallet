@@ -10,6 +10,7 @@ import { L1NetworkConfigInterface } from '../../../../environments/environment.i
 import { RpcService } from '../../../services/kaspa-netwrok-services/rpc.service';
 import { KaspaNetworkConnectionManagerService } from '../../../services/kaspa-netwrok-services/kaspa-network-connection-manager.service';
 import { KaspaL1NetworkService } from '../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
+import { AppWallet } from '../../../classes/AppWallet';
 
 @Component({
   selector: 'network-selection-modal',
@@ -85,11 +86,17 @@ export class NetworkSelectionModalComponent {
 
   async setL1Network(network: L1NetworkConfigInterface): Promise<void> {
     const currentWallet = this.walletService.getCurrentWallet();
-    await currentWallet?.stopListiningToWalletActions();
+    currentWallet?.resetL1NetworkState();
 
     this.rpcService.setNetwork(network.network);
     this.walletService.setL2Display(false);
     this.ethereumWalletChainManager.setCurrentChain(undefined);
+    this.onCloseAfterNetworkChanged();
+    void this.reloadSelectedL1Network(currentWallet);
+  }
+
+  private async reloadSelectedL1Network(currentWallet?: AppWallet): Promise<void> {
+    await currentWallet?.stopListiningToWalletActions();
     await this.kaspaConnectionManagerService
       .waitForConnection(true)
       .catch((err) => {
@@ -97,7 +104,6 @@ export class NetworkSelectionModalComponent {
       });
     await currentWallet?.refreshUtxosBalance();
     currentWallet?.startListiningToWalletActions();
-    this.onCloseAfterNetworkChanged();
   }
 
   setL2Network(network: EIP1193ProviderChain): void {

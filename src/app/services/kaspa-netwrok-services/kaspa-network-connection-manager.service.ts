@@ -14,6 +14,7 @@ const MAX_RECONNECT_DELAY = 30 * 1000;
 export class KaspaNetworkConnectionManagerService implements OnDestroy {
   private connectionPromise?: Promise<void>;
   private connectionGeneration = 0;
+  private activeConnectingRpc?: RpcClient;
   private reconnectTimeout?: ReturnType<typeof setTimeout>;
   private reconnectScheduledFor?: number;
   private reconnectAttempts = 0;
@@ -155,6 +156,12 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
       throw new Error('RPC client is not initialized');
     }
 
+    if (generation !== this.connectionGeneration) {
+      await this.disconnectRpc(currentRpc);
+      throw new Error('RPC client was replaced before connecting');
+    }
+
+    this.activeConnectingRpc = currentRpc;
     this.attachDisconnectHandler(currentRpc);
 
     try {
@@ -171,6 +178,9 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
       }
     } catch (err) {
       await this.disconnectRpc(currentRpc);
+      if (this.activeConnectingRpc === currentRpc) {
+        this.activeConnectingRpc = undefined;
+      }
       if (generation === this.connectionGeneration) {
         this.setSignalStatusIfChanged(RpcConnectionStatus.DISCONNECTED);
         this.scheduleReconnect('connection-failure', undefined, generation);
@@ -180,9 +190,15 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
 
     if (generation !== this.connectionGeneration) {
       await this.disconnectRpc(currentRpc);
+      if (this.activeConnectingRpc === currentRpc) {
+        this.activeConnectingRpc = undefined;
+      }
       throw new Error('RPC client was replaced while connecting');
     }
 
+    if (this.activeConnectingRpc === currentRpc) {
+      this.activeConnectingRpc = undefined;
+    }
     this.reconnectAttempts = 0;
     this.setSignalStatusIfChanged(RpcConnectionStatus.CONNECTED);
     console.log('RPC Connected Successfully');
@@ -244,6 +260,12 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
 
     if (forceRefresh) {
       this.connectionGeneration++;
+      this.clearReconnectTimeout();
+      this.reconnectAttempts = 0;
+      if (this.activeConnectingRpc) {
+        void this.disconnectRpc(this.activeConnectingRpc);
+        this.activeConnectingRpc = undefined;
+      }
       this.connectionPromise = undefined;
     }
 

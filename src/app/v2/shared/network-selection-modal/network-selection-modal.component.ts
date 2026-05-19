@@ -31,6 +31,7 @@ export class NetworkSelectionModalComponent {
 
   protected networks: EIP1193ProviderChain[];
   protected l1Networks = this.kaspaL1NetworkService.getAvailableNetworks();
+  private l1NetworkSwitchGeneration = 0;
 
   isCurrentNetworkL2 = computed(() =>
     this.walletService.getIsL2DisplaySignal()(),
@@ -85,6 +86,7 @@ export class NetworkSelectionModalComponent {
   }
 
   async setL1Network(network: L1NetworkConfigInterface): Promise<void> {
+    const switchGeneration = ++this.l1NetworkSwitchGeneration;
     const currentWallet = this.walletService.getCurrentWallet();
     currentWallet?.resetL1NetworkState();
 
@@ -92,17 +94,32 @@ export class NetworkSelectionModalComponent {
     this.walletService.setL2Display(false);
     this.ethereumWalletChainManager.setCurrentChain(undefined);
     this.onCloseAfterNetworkChanged();
-    void this.reloadSelectedL1Network(currentWallet);
+    void this.reloadSelectedL1Network(currentWallet, switchGeneration);
   }
 
-  private async reloadSelectedL1Network(currentWallet?: AppWallet): Promise<void> {
+  private async reloadSelectedL1Network(
+    currentWallet: AppWallet | undefined,
+    switchGeneration: number,
+  ): Promise<void> {
     await currentWallet?.stopListiningToWalletActions();
+    if (switchGeneration !== this.l1NetworkSwitchGeneration) {
+      return;
+    }
+
     await this.kaspaConnectionManagerService
       .waitForConnection(true)
       .catch((err) => {
         console.warn('Failed connecting to selected Kaspa L1 network', err);
       });
+    if (switchGeneration !== this.l1NetworkSwitchGeneration) {
+      return;
+    }
+
     await currentWallet?.refreshUtxosBalance();
+    if (switchGeneration !== this.l1NetworkSwitchGeneration) {
+      return;
+    }
+
     currentWallet?.startListiningToWalletActions();
   }
 

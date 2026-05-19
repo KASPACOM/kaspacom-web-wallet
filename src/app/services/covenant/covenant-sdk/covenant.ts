@@ -391,7 +391,7 @@ export async function deployContract(
       entries,
       outputs: [{ address: contractAddress, amount: amountSompi }],
       changeAddress: senderAddress,
-      priorityFee: 0n,
+      priorityFee: 1000000n,
       networkId: network,
       payload,
     } as never);
@@ -647,6 +647,8 @@ export async function spendContract(
         scriptPublicKey: payToAddressScript(senderAddress),
         value: totalInputsAmount - spendOutputsSum, // Temporary value
       });
+    } else {
+      txOutputs[txOutputs.length - 1].value = txOutputs[0].value - 100000n;
     }
 
     // Determine if this function uses a timelock by checking for time_op in AST body.
@@ -689,6 +691,8 @@ export async function spendContract(
       subnetworkId: SUBNETWORK_ID_NATIVE,
       gas: 0n,
       payload: "",
+      
+      
     });
 
     // --- Dynamic Fee Adjustment ---

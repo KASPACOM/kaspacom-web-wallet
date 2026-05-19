@@ -903,7 +903,7 @@ export class ContractsPageComponent implements OnInit {
    * Get explorer link for transaction
    */
   getExplorerLink(txid: string): string {
-    return `${this.networkConfigService.getActiveNetwork().kaspaExplorerBaseurl}/transactions/${txid}`;
+    return `${this.networkConfigService.getActiveNetwork().kaspaExplorerBaseurl}/txs/${txid}`;
   }
 
   /**

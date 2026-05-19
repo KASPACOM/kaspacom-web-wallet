@@ -47,6 +47,15 @@ export class CryptoActionsComponent {
       });
     }
 
+    if (!this.walletService.getIsL2DisplaySignal()() && !environment.isProduction) {
+      baseActions.push({
+        title: 'contracts',
+        iconClass: 'icon-file-05',
+        iconColor: '',
+        action: () => this.openContractsPage(),
+      });
+    }
+
     return baseActions;
   });
 
@@ -70,6 +79,14 @@ export class CryptoActionsComponent {
     this.flowPagesService.openFlow({
       id: 'swap',
       title: 'Swap',
+      canNavigateBack: true,
+    });
+  }
+
+  private openContractsPage(): void {
+    this.flowPagesService.openFlow({
+      id: 'contracts',
+      title: 'Contracts',
       canNavigateBack: true,
     });
   }

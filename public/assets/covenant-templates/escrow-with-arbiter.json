@@ -1,0 +1,933 @@
+{
+  "contract_name": "Escrow",
+  "script": [
+    118,
+    0,
+    156,
+    99,
+    117,
+    81,
+    121,
+    32,
+    170,
+    171,
+    172,
+    173,
+    174,
+    175,
+    176,
+    177,
+    178,
+    179,
+    180,
+    181,
+    182,
+    183,
+    184,
+    185,
+    186,
+    187,
+    188,
+    189,
+    190,
+    191,
+    192,
+    193,
+    194,
+    195,
+    196,
+    197,
+    198,
+    199,
+    200,
+    201,
+    172,
+    105,
+    0,
+    121,
+    32,
+    187,
+    188,
+    189,
+    190,
+    191,
+    192,
+    193,
+    194,
+    195,
+    196,
+    197,
+    198,
+    199,
+    200,
+    201,
+    202,
+    203,
+    204,
+    205,
+    206,
+    207,
+    208,
+    209,
+    210,
+    211,
+    212,
+    213,
+    214,
+    215,
+    216,
+    217,
+    218,
+    172,
+    105,
+    0,
+    195,
+    32,
+    187,
+    188,
+    189,
+    190,
+    191,
+    192,
+    193,
+    194,
+    195,
+    196,
+    197,
+    198,
+    199,
+    200,
+    201,
+    202,
+    203,
+    204,
+    205,
+    206,
+    207,
+    208,
+    209,
+    210,
+    211,
+    212,
+    213,
+    214,
+    215,
+    216,
+    217,
+    218,
+    3,
+    0,
+    0,
+    32,
+    124,
+    126,
+    1,
+    172,
+    126,
+    135,
+    105,
+    117,
+    117,
+    81,
+    103,
+    118,
+    81,
+    156,
+    99,
+    117,
+    0,
+    121,
+    32,
+    170,
+    171,
+    172,
+    173,
+    174,
+    175,
+    176,
+    177,
+    178,
+    179,
+    180,
+    181,
+    182,
+    183,
+    184,
+    185,
+    186,
+    187,
+    188,
+    189,
+    190,
+    191,
+    192,
+    193,
+    194,
+    195,
+    196,
+    197,
+    198,
+    199,
+    200,
+    201,
+    172,
+    105,
+    6,
+    0,
+    16,
+    165,
+    212,
+    232,
+    0,
+    176,
+    0,
+    195,
+    32,
+    170,
+    171,
+    172,
+    173,
+    174,
+    175,
+    176,
+    177,
+    178,
+    179,
+    180,
+    181,
+    182,
+    183,
+    184,
+    185,
+    186,
+    187,
+    188,
+    189,
+    190,
+    191,
+    192,
+    193,
+    194,
+    195,
+    196,
+    197,
+    198,
+    199,
+    200,
+    201,
+    3,
+    0,
+    0,
+    32,
+    124,
+    126,
+    1,
+    172,
+    126,
+    135,
+    105,
+    117,
+    81,
+    103,
+    118,
+    82,
+    156,
+    99,
+    117,
+    82,
+    121,
+    170,
+    32,
+    204,
+    205,
+    206,
+    207,
+    208,
+    209,
+    210,
+    211,
+    212,
+    213,
+    214,
+    215,
+    216,
+    217,
+    218,
+    219,
+    220,
+    221,
+    222,
+    223,
+    224,
+    225,
+    226,
+    227,
+    228,
+    229,
+    230,
+    231,
+    232,
+    233,
+    234,
+    235,
+    135,
+    105,
+    81,
+    121,
+    83,
+    121,
+    172,
+    105,
+    0,
+    194,
+    81,
+    121,
+    156,
+    105,
+    81,
+    194,
+    185,
+    190,
+    82,
+    121,
+    148,
+    2,
+    232,
+    3,
+    148,
+    156,
+    105,
+    117,
+    117,
+    117,
+    81,
+    103,
+    117,
+    0,
+    105,
+    104,
+    104,
+    104
+  ],
+  "ast": {
+    "name": "Escrow",
+    "params": [
+      {
+        "type_ref": {
+          "base": "pubkey"
+        },
+        "name": "buyer",
+        "span": "pubkey buyer",
+        "type_span": "pubkey ",
+        "name_span": "buyer"
+      },
+      {
+        "type_ref": {
+          "base": "pubkey"
+        },
+        "name": "seller",
+        "span": "pubkey seller",
+        "type_span": "pubkey ",
+        "name_span": "seller"
+      },
+      {
+        "type_ref": {
+          "base": "byte",
+          "array_dims": [
+            {
+              "kind": "fixed",
+              "value": 32
+            }
+          ]
+        },
+        "name": "arbiterHash",
+        "span": "byte[32] arbiterHash",
+        "type_span": "byte[32]",
+        "name_span": "arbiterHash"
+      },
+      {
+        "type_ref": {
+          "base": "int"
+        },
+        "name": "expiry",
+        "span": "int expiry",
+        "type_span": "int ",
+        "name_span": "expiry"
+      }
+    ],
+    "constants": [],
+    "functions": [
+      {
+        "name": "release",
+        "params": [
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "buyerSig",
+            "span": "sig buyerSig",
+            "type_span": "sig ",
+            "name_span": "buyerSig"
+          },
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "sellerSig",
+            "span": "sig sellerSig",
+            "type_span": "sig ",
+            "name_span": "sellerSig"
+          }
+        ],
+        "entrypoint": true,
+        "return_types": [],
+        "body": [
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "buyerSig",
+                      "span": "buyerSig"
+                    },
+                    {
+                      "kind": "identifier",
+                      "data": "buyer",
+                      "span": "buyer"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(buyerSig, buyer)"
+              },
+              "message": null,
+              "span": "require(checkSig(buyerSig, buyer));",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "sellerSig",
+                      "span": "sellerSig"
+                    },
+                    {
+                      "kind": "identifier",
+                      "data": "seller",
+                      "span": "seller"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(sellerSig, seller)"
+              },
+              "message": null,
+              "span": "require(checkSig(sellerSig, seller));",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "variable_definition",
+            "data": {
+              "type_ref": {
+                "base": "byte",
+                "array_dims": [
+                  {
+                    "kind": "fixed",
+                    "value": 34
+                  }
+                ]
+              },
+              "modifiers": [],
+              "name": "sellerLock",
+              "expr": {
+                "kind": "new",
+                "data": {
+                  "name": "ScriptPubKeyP2PK",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "seller",
+                      "span": "seller"
+                    }
+                  ],
+                  "name_span": "ScriptPubKeyP2PK"
+                },
+                "span": "new ScriptPubKeyP2PK(seller)"
+              },
+              "span": "byte[34] sellerLock = new ScriptPubKeyP2PK(seller);",
+              "type_span": "byte[34]",
+              "modifier_spans": [],
+              "name_span": "sellerLock"
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_script_pub_key",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".scriptPubKey"
+                    },
+                    "span": "tx.outputs[0].scriptPubKey"
+                  },
+                  "right": {
+                    "kind": "identifier",
+                    "data": "sellerLock",
+                    "span": "sellerLock"
+                  }
+                },
+                "span": "tx.outputs[0].scriptPubKey == sellerLock"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].scriptPubKey == sellerLock);",
+              "message_span": null
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function release(sig buyerSig, sig sellerSig) {\n        // Both parties agree - release to seller\n        require(checkSig(buyerSig, buyer));\n        require(checkSig(sellerSig, seller));\n        \n        // Enforce output goes to seller\n        byte[34] sellerLock = new ScriptPubKeyP2PK(seller);\n        require(tx.outputs[0].scriptPubKey == sellerLock);\n    }",
+        "name_span": "release",
+        "body_span": "require(checkSig(buyerSig, buyer));\n        require(checkSig(sellerSig, seller));\n        \n        // Enforce output goes to seller\n        byte[34] sellerLock = new ScriptPubKeyP2PK(seller);\n        require(tx.outputs[0].scriptPubKey == sellerLock);"
+      },
+      {
+        "name": "refund",
+        "params": [
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "s",
+            "span": "sig s",
+            "type_span": "sig ",
+            "name_span": "s"
+          }
+        ],
+        "entrypoint": true,
+        "return_types": [],
+        "body": [
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "s",
+                      "span": "s"
+                    },
+                    {
+                      "kind": "identifier",
+                      "data": "buyer",
+                      "span": "buyer"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(s, buyer)"
+              },
+              "message": null,
+              "span": "require(checkSig(s, buyer));",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "time_op",
+            "data": {
+              "tx_var": "tx_time",
+              "expr": {
+                "kind": "identifier",
+                "data": "expiry",
+                "span": "expiry"
+              },
+              "message": null,
+              "span": "require(tx.time >= expiry);",
+              "tx_var_span": "tx.time",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "variable_definition",
+            "data": {
+              "type_ref": {
+                "base": "byte",
+                "array_dims": [
+                  {
+                    "kind": "fixed",
+                    "value": 34
+                  }
+                ]
+              },
+              "modifiers": [],
+              "name": "buyerLock",
+              "expr": {
+                "kind": "new",
+                "data": {
+                  "name": "ScriptPubKeyP2PK",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "buyer",
+                      "span": "buyer"
+                    }
+                  ],
+                  "name_span": "ScriptPubKeyP2PK"
+                },
+                "span": "new ScriptPubKeyP2PK(buyer)"
+              },
+              "span": "byte[34] buyerLock = new ScriptPubKeyP2PK(buyer);",
+              "type_span": "byte[34]",
+              "modifier_spans": [],
+              "name_span": "buyerLock"
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_script_pub_key",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".scriptPubKey"
+                    },
+                    "span": "tx.outputs[0].scriptPubKey"
+                  },
+                  "right": {
+                    "kind": "identifier",
+                    "data": "buyerLock",
+                    "span": "buyerLock"
+                  }
+                },
+                "span": "tx.outputs[0].scriptPubKey == buyerLock"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].scriptPubKey == buyerLock);",
+              "message_span": null
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function refund(sig s) {\n        // Buyer can refund after expiry\n        require(checkSig(s, buyer));\n        require(tx.time >= expiry);\n        \n        byte[34] buyerLock = new ScriptPubKeyP2PK(buyer);\n        require(tx.outputs[0].scriptPubKey == buyerLock);\n    }",
+        "name_span": "refund",
+        "body_span": "require(checkSig(s, buyer));\n        require(tx.time >= expiry);\n        \n        byte[34] buyerLock = new ScriptPubKeyP2PK(buyer);\n        require(tx.outputs[0].scriptPubKey == buyerLock);"
+      },
+      {
+        "name": "arbitrate",
+        "params": [
+          {
+            "type_ref": {
+              "base": "pubkey"
+            },
+            "name": "pk",
+            "span": "pubkey pk",
+            "type_span": "pubkey ",
+            "name_span": "pk"
+          },
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "s",
+            "span": "sig s",
+            "type_span": "sig ",
+            "name_span": "s"
+          },
+          {
+            "type_ref": {
+              "base": "int"
+            },
+            "name": "amountToSeller",
+            "span": "int amountToSeller",
+            "type_span": "int ",
+            "name_span": "amountToSeller"
+          }
+        ],
+        "entrypoint": true,
+        "return_types": [],
+        "body": [
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "call",
+                    "data": {
+                      "name": "blake2b",
+                      "args": [
+                        {
+                          "kind": "identifier",
+                          "data": "pk",
+                          "span": "pk"
+                        }
+                      ],
+                      "name_span": "blake2b"
+                    },
+                    "span": "blake2b(pk)"
+                  },
+                  "right": {
+                    "kind": "identifier",
+                    "data": "arbiterHash",
+                    "span": "arbiterHash"
+                  }
+                },
+                "span": "blake2b(pk) == arbiterHash"
+              },
+              "message": null,
+              "span": "require(blake2b(pk) == arbiterHash);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "s",
+                      "span": "s"
+                    },
+                    {
+                      "kind": "identifier",
+                      "data": "pk",
+                      "span": "pk"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(s, pk)"
+              },
+              "message": null,
+              "span": "require(checkSig(s, pk));",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "variable_definition",
+            "data": {
+              "type_ref": {
+                "base": "int"
+              },
+              "modifiers": [],
+              "name": "total",
+              "expr": {
+                "kind": "introspection",
+                "data": {
+                  "kind": "input_value",
+                  "index": {
+                    "kind": "nullary",
+                    "data": "active_input_index",
+                    "span": "this.activeInputIndex"
+                  },
+                  "field_span": ".value"
+                },
+                "span": "tx.inputs[this.activeInputIndex].value"
+              },
+              "span": "int total = tx.inputs[this.activeInputIndex].value;",
+              "type_span": "int ",
+              "modifier_spans": [],
+              "name_span": "total"
+            }
+          },
+          {
+            "kind": "variable_definition",
+            "data": {
+              "type_ref": {
+                "base": "int"
+              },
+              "modifiers": [],
+              "name": "fee",
+              "expr": {
+                "kind": "int",
+                "data": 1000,
+                "span": "1000"
+              },
+              "span": "int fee = 1000;",
+              "type_span": "int ",
+              "modifier_spans": [],
+              "name_span": "fee"
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_value",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".value"
+                    },
+                    "span": "tx.outputs[0].value"
+                  },
+                  "right": {
+                    "kind": "identifier",
+                    "data": "amountToSeller",
+                    "span": "amountToSeller"
+                  }
+                },
+                "span": "tx.outputs[0].value == amountToSeller"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].value == amountToSeller);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_value",
+                      "index": {
+                        "kind": "int",
+                        "data": 1,
+                        "span": "1"
+                      },
+                      "field_span": ".value"
+                    },
+                    "span": "tx.outputs[1].value"
+                  },
+                  "right": {
+                    "kind": "binary",
+                    "data": {
+                      "op": "sub",
+                      "left": {
+                        "kind": "binary",
+                        "data": {
+                          "op": "sub",
+                          "left": {
+                            "kind": "identifier",
+                            "data": "total",
+                            "span": "total"
+                          },
+                          "right": {
+                            "kind": "identifier",
+                            "data": "amountToSeller",
+                            "span": "amountToSeller"
+                          }
+                        },
+                        "span": "total - amountToSeller"
+                      },
+                      "right": {
+                        "kind": "identifier",
+                        "data": "fee",
+                        "span": "fee"
+                      }
+                    },
+                    "span": "total - amountToSeller - fee"
+                  }
+                },
+                "span": "tx.outputs[1].value == total - amountToSeller - fee"
+              },
+              "message": null,
+              "span": "require(tx.outputs[1].value == total - amountToSeller - fee);",
+              "message_span": null
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function arbitrate(pubkey pk, sig s, int amountToSeller) {\n        // Arbiter resolves dispute\n        require(blake2b(pk) == arbiterHash);\n        require(checkSig(s, pk));\n        \n        int total = tx.inputs[this.activeInputIndex].value;\n        int fee = 1000;\n        \n        // Verify splits\n        require(tx.outputs[0].value == amountToSeller);\n        require(tx.outputs[1].value == total - amountToSeller - fee);\n    }",
+        "name_span": "arbitrate",
+        "body_span": "require(blake2b(pk) == arbiterHash);\n        require(checkSig(s, pk));\n        \n        int total = tx.inputs[this.activeInputIndex].value;\n        int fee = 1000;\n        \n        // Verify splits\n        require(tx.outputs[0].value == amountToSeller);\n        require(tx.outputs[1].value == total - amountToSeller - fee);"
+      }
+    ],
+    "span": "contract Escrow(\n    pubkey buyer,\n    pubkey seller,\n    byte[32] arbiterHash,\n    int expiry\n) {\n    entrypoint function release(sig buyerSig, sig sellerSig) {\n        // Both parties agree - release to seller\n        require(checkSig(buyerSig, buyer));\n        require(checkSig(sellerSig, seller));\n        \n        // Enforce output goes to seller\n        byte[34] sellerLock = new ScriptPubKeyP2PK(seller);\n        require(tx.outputs[0].scriptPubKey == sellerLock);\n    }\n\n    entrypoint function refund(sig s) {\n        // Buyer can refund after expiry\n        require(checkSig(s, buyer));\n        require(tx.time >= expiry);\n        \n        byte[34] buyerLock = new ScriptPubKeyP2PK(buyer);\n        require(tx.outputs[0].scriptPubKey == buyerLock);\n    }\n\n    entrypoint function arbitrate(pubkey pk, sig s, int amountToSeller) {\n        // Arbiter resolves dispute\n        require(blake2b(pk) == arbiterHash);\n        require(checkSig(s, pk));\n        \n        int total = tx.inputs[this.activeInputIndex].value;\n        int fee = 1000;\n        \n        // Verify splits\n        require(tx.outputs[0].value == amountToSeller);\n        require(tx.outputs[1].value == total - amountToSeller - fee);\n    }\n}",
+    "name_span": "Escrow"
+  },
+  "abi": [
+    {
+      "name": "release",
+      "inputs": [
+        {
+          "name": "buyerSig",
+          "type_name": "sig"
+        },
+        {
+          "name": "sellerSig",
+          "type_name": "sig"
+        }
+      ]
+    },
+    {
+      "name": "refund",
+      "inputs": [
+        {
+          "name": "s",
+          "type_name": "sig"
+        }
+      ]
+    },
+    {
+      "name": "arbitrate",
+      "inputs": [
+        {
+          "name": "pk",
+          "type_name": "pubkey"
+        },
+        {
+          "name": "s",
+          "type_name": "sig"
+        },
+        {
+          "name": "amountToSeller",
+          "type_name": "int"
+        }
+      ]
+    }
+  ],
+  "without_selector": false
+}

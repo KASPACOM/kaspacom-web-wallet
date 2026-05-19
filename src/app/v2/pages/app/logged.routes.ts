@@ -6,6 +6,8 @@ import { TransactionsComponent } from './transactions/transactions.component';
 import { SettingsComponent } from './settings/settings.component';
 import { ActivityComponent } from './activity/activity.component';
 import { HomeRoutes } from './home/routes/home.routes';
+import { ContractsPageComponent } from './flows/contracts/contracts-page.component';
+import { DevelopGuard } from '../../guard/develop.guard';
 
 export const loggedRoutes: Routes = [
   {
@@ -37,6 +39,12 @@ export const loggedRoutes: Routes = [
         path: 'activity',
         component: ActivityComponent,
         data: { animation: 'Activity' },
+      },
+      {
+        path: 'contracts',
+        canActivate: [DevelopGuard],
+        component: ContractsPageComponent,
+        data: { animation: 'Contracts' },
       },
     ],
   },

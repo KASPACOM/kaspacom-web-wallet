@@ -127,6 +127,10 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
         return true;
     }
 
+    public supportsAssetType(assetType: L1AssetType): boolean {
+        return this.shouldLoadAsset(assetType as keyof L1AssetStoreData);
+    }
+
     /**
      * Load initial KRC20 tokens (first page only)
      * Smart auto-reload: Fetches as many items as user has already loaded

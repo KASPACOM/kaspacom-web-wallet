@@ -13,6 +13,7 @@ const MAX_RECONNECT_DELAY = 30 * 1000;
 })
 export class KaspaNetworkConnectionManagerService implements OnDestroy {
   private connectionPromise?: Promise<void>;
+  private connectionGeneration = 0;
   private reconnectTimeout?: ReturnType<typeof setTimeout>;
   private reconnectScheduledFor?: number;
   private reconnectAttempts = 0;
@@ -79,7 +80,15 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
     });
   }
 
-  private scheduleReconnect(reason: string, delay?: number): void {
+  private scheduleReconnect(
+    reason: string,
+    delay?: number,
+    generation = this.connectionGeneration,
+  ): void {
+    if (generation !== this.connectionGeneration) {
+      return;
+    }
+
     if (this.reconnectTimeout) {
       // Backoff retries (no explicit delay) yield to whatever is already scheduled.
       // Explicit-delay callers (online/visibility resume) preempt only if sooner.
@@ -99,6 +108,10 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
     const reconnectDelay = delay ?? this.getReconnectDelay();
     this.reconnectScheduledFor = Date.now() + reconnectDelay;
     this.reconnectTimeout = setTimeout(() => {
+      if (generation !== this.connectionGeneration) {
+        return;
+      }
+
       this.reconnectTimeout = undefined;
       this.reconnectScheduledFor = undefined;
 
@@ -128,7 +141,10 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
     return Math.min(exponentialDelay + jitter, MAX_RECONNECT_DELAY);
   }
 
-  private async handleConnection(forceRefresh = false): Promise<void> {
+  private async handleConnection(
+    forceRefresh = false,
+    generation = this.connectionGeneration,
+  ): Promise<void> {
     console.log('Trying to connect to RPC...');
 
     const currentRpc = forceRefresh
@@ -144,7 +160,7 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
     try {
       await this.withTimeout(currentRpc.connect(), CONNECTION_TIMEOUT, 'Rpc connection timeout');
 
-      if (this.rpcService.getRpc() !== currentRpc) {
+      if (generation !== this.connectionGeneration || this.rpcService.getRpc() !== currentRpc) {
         await this.disconnectRpc(currentRpc);
         throw new Error('RPC client was replaced while connecting');
       }
@@ -155,9 +171,16 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
       }
     } catch (err) {
       await this.disconnectRpc(currentRpc);
-      this.setSignalStatusIfChanged(RpcConnectionStatus.DISCONNECTED);
-      this.scheduleReconnect('connection-failure');
+      if (generation === this.connectionGeneration) {
+        this.setSignalStatusIfChanged(RpcConnectionStatus.DISCONNECTED);
+        this.scheduleReconnect('connection-failure', undefined, generation);
+      }
       throw err;
+    }
+
+    if (generation !== this.connectionGeneration) {
+      await this.disconnectRpc(currentRpc);
+      throw new Error('RPC client was replaced while connecting');
     }
 
     this.reconnectAttempts = 0;
@@ -219,21 +242,31 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
       return;
     }
 
+    if (forceRefresh) {
+      this.connectionGeneration++;
+      this.connectionPromise = undefined;
+    }
+
     if (this.connectionPromise) {
       return this.connectionPromise;
     }
 
+    const generation = this.connectionGeneration;
     this.clearReconnectTimeout();
 
     this.setSignalStatusIfChanged(RpcConnectionStatus.CONNECTING);
 
-    this.connectionPromise = this.handleConnection(forceRefresh)
+    this.connectionPromise = this.handleConnection(forceRefresh, generation)
       .catch((err) => {
-        this.setSignalStatusIfChanged(RpcConnectionStatus.DISCONNECTED);
+        if (generation === this.connectionGeneration) {
+          this.setSignalStatusIfChanged(RpcConnectionStatus.DISCONNECTED);
+        }
         throw err;
       })
       .finally(() => {
-        this.connectionPromise = undefined;
+        if (generation === this.connectionGeneration) {
+          this.connectionPromise = undefined;
+        }
       });
 
     return this.connectionPromise;

@@ -3,9 +3,8 @@ import { UtilsHelper } from './utils.service';
 import { KnsApiService } from './kns-api/kns-api.service';
 import { firstValueFrom } from 'rxjs';
 import { default as Graphemer } from 'graphemer';
-import { environment } from '../../environments/environment';
-import { KASPA_NETWORKS } from '../config/consts';
 import { WalletService } from './wallet.service';
+import { KaspaL1NetworkService } from './kaspa-netwrok-services/kaspa-l1-network.service';
 
 export interface AddressResolutionResult {
   effectiveAddress: string | null;
@@ -20,6 +19,7 @@ export class AddressResolutionService {
   private readonly knsApi = inject(KnsApiService);
   private readonly graphemer = new Graphemer();
   private readonly walletService = inject(WalletService);
+  private readonly kaspaL1NetworkService = inject(KaspaL1NetworkService);
 
   isKaspaAddress(input: string): boolean {
     return this.utils.isValidWalletAddress(input);
@@ -88,7 +88,7 @@ export class AddressResolutionService {
     }
 
     // Provide specific error based on network and address format
-    const isMainnet = environment.kaspaNetwork === KASPA_NETWORKS.MAINNET;
+    const isMainnet = this.kaspaL1NetworkService.isMainnet();
     const expectedPrefix = isMainnet ? 'kaspa:' : 'kaspatest:';
     const wrongPrefix = isMainnet ? 'kaspatest:' : 'kaspa:';
 

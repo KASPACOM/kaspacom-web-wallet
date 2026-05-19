@@ -6,7 +6,10 @@ import { EthereumWalletChainManager } from '../../../services/etherium-services/
 import { EIP1193ProviderChain } from '@kaspacom/wallet-messages';
 import { WalletService } from '../../../services/wallet.service';
 import { Router } from '@angular/router';
-import { environment } from '../../../../environments/environment';
+import { L1NetworkConfigInterface } from '../../../../environments/environment.interface';
+import { RpcService } from '../../../services/kaspa-netwrok-services/rpc.service';
+import { KaspaNetworkConnectionManagerService } from '../../../services/kaspa-netwrok-services/kaspa-network-connection-manager.service';
+import { KaspaL1NetworkService } from '../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
 
 @Component({
   selector: 'network-selection-modal',
@@ -19,15 +22,23 @@ export class NetworkSelectionModalComponent {
   private flowPagesService = inject(FlowPagesService);
   private walletService = inject(WalletService);
   private router = inject(Router);
+  private rpcService = inject(RpcService);
+  private kaspaConnectionManagerService = inject(
+    KaspaNetworkConnectionManagerService,
+  );
+  private kaspaL1NetworkService = inject(KaspaL1NetworkService);
 
   protected networks: EIP1193ProviderChain[];
-  protected l1Config = environment.l1Config;
+  protected l1Networks = this.kaspaL1NetworkService.getAvailableNetworks();
 
   isCurrentNetworkL2 = computed(() =>
     this.walletService.getIsL2DisplaySignal()(),
   );
   currentL2Network = computed(() =>
     this.ethereumWalletChainManager.getCurrentChainSignal()(),
+  );
+  currentL1Network = computed(() =>
+    this.kaspaL1NetworkService.getCurrentNetworkSignal()(),
   );
 
   constructor() {
@@ -65,9 +76,27 @@ export class NetworkSelectionModalComponent {
     );
   }
 
-  setL1Network(): void {
+  isCurrentL1Network(network: L1NetworkConfigInterface): boolean {
+    return (
+      !this.isCurrentNetworkL2() &&
+      this.currentL1Network().network === network.network
+    );
+  }
+
+  async setL1Network(network: L1NetworkConfigInterface): Promise<void> {
+    const currentWallet = this.walletService.getCurrentWallet();
+    await currentWallet?.stopListiningToWalletActions();
+
+    this.rpcService.setNetwork(network.network);
     this.walletService.setL2Display(false);
     this.ethereumWalletChainManager.setCurrentChain(undefined);
+    await this.kaspaConnectionManagerService
+      .waitForConnection(true)
+      .catch((err) => {
+        console.warn('Failed connecting to selected Kaspa L1 network', err);
+      });
+    await currentWallet?.refreshUtxosBalance();
+    currentWallet?.startListiningToWalletActions();
     this.onCloseAfterNetworkChanged();
   }
 

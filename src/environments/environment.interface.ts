@@ -46,6 +46,18 @@ export interface L2ConfigInterface {
 export interface L1ConfigInterface {
   shortName: string;
   icon: string;
+  network?: string;
+  kaspaApiBaseurl?: string;
+  kaspaExplorerBaseurl?: string;
+  networks?: L1NetworkConfigInterface[];
+}
+
+export interface L1NetworkConfigInterface {
+  network: string;
+  shortName: string;
+  icon: string;
+  kaspaApiBaseurl: string;
+  kaspaExplorerBaseurl: string;
 }
 
 export interface Environment {

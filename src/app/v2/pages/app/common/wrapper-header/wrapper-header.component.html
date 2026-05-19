@@ -15,7 +15,6 @@
       (click)="onCopyButtonClick($event)"></app-copy-button>
   </div>
   <div class="network-selection-section">
-    @if (isDevelopmentMode()) {
     <div class="network-info" (click)="onNetworkSelectionClick()">
       <div class="network-icon">
         @if (currentNetworkInfo().icon) {
@@ -28,7 +27,6 @@
         {{ currentNetworkInfo().name || 'Kaspa L1' }}
       </div>
     </div>
-    }
 
     <kc-icon class="settings-icon" [iconClass]="'icon-settings'" [size]="'md'" (click)="onSettingsClick()" kcTooltip="Settings" tooltipPosition="bottom"></kc-icon>
 

@@ -22,6 +22,29 @@ export const environment: Environment = {
   l1Config: {
     shortName: 'Kaspa L1',
     icon: 'images/tokens-logos/KAS.png',
+    networks: [
+      {
+        network: KASPA_NETWORKS.MAINNET,
+        shortName: 'Kaspa Mainnet',
+        icon: 'images/tokens-logos/KAS.png',
+        kaspaApiBaseurl: 'https://api.kaspa.org',
+        kaspaExplorerBaseurl: 'https://explorer.kaspa.org',
+      },
+      {
+        network: KASPA_NETWORKS.TESTNET10,
+        shortName: 'Kaspa TN10',
+        icon: 'images/tokens-logos/KAS.png',
+        kaspaApiBaseurl: 'https://api-tn10.kaspa.org',
+        kaspaExplorerBaseurl: 'https://explorer-tn10.kaspa.org',
+      },
+      {
+        network: KASPA_NETWORKS.TESTNET12,
+        shortName: 'Kaspa TN12',
+        icon: 'images/tokens-logos/KAS.png',
+        kaspaApiBaseurl: 'https://api-tn12.kaspa.org',
+        kaspaExplorerBaseurl: 'https://tn12.kaspa.stream',
+      },
+    ],
   },
   isL2Enabled: true,
   l2Configs: [

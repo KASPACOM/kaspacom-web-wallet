@@ -114,6 +114,19 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
         }
     }
 
+    protected override shouldLoadAsset(key: keyof L1AssetStoreData): boolean {
+        if (key === L1_ASSET_KEYS.krc20) {
+            return this.kaspaL1NetworkService.supportsKrc20Assets();
+        }
+        if (key === L1_ASSET_KEYS.krc721) {
+            return this.kaspaL1NetworkService.supportsKrc721Assets();
+        }
+        if (key === L1_ASSET_KEYS.kns) {
+            return this.kaspaL1NetworkService.supportsKnsAssets();
+        }
+        return true;
+    }
+
     /**
      * Load initial KRC20 tokens (first page only)
      * Smart auto-reload: Fetches as many items as user has already loaded

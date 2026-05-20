@@ -7,22 +7,17 @@ import { CompiledContract, CovenantOutpoint, CovenantUtxoInfo, SpendOutput, Depl
   providedIn: 'root',
 })
 export class CovenantService {
-  private readonly FALLBACK_RPC_URLS: Record<string, string> = {
-    'mainnet': '',  // empty = use Resolver
-    'testnet-10': 'ws://tn10-node.kaspa.com:17210',
-    'testnet-12': 'ws://tn12-node.kaspa.com:17210',
-  };
-
   constructor(
     private readonly rpcService: RpcService,
   ) { }
 
-  /**
-   * Get the wRPC URL for the current network
-   */
-  private getRpcUrl(): string {
-    const network = this.rpcService.getNetwork();
-    return this.FALLBACK_RPC_URLS[network] || '';
+  private getManagedRpc() {
+    const rpc = this.rpcService.getRpc();
+    if (!rpc) {
+      throw new Error('RPC is not available. Connect the wallet before using covenants.');
+    }
+
+    return rpc;
   }
 
   /**
@@ -40,29 +35,10 @@ export class CovenantService {
     compiled: CompiledContract,
     amountSompi: bigint,
     privateKeyHex: string,
+    priorityFee: bigint = 0n,
   ): Promise<DeployResult> {
     const network = this.rpcService.getNetwork();
-    const existingRpc = this.rpcService.getRpc();
-    const rpcUrl = this.getRpcUrl();
-
-    console.log('[CovenantService] deploy', {
-      network,
-      hasExistingRpc: !!existingRpc,
-      isConnected: existingRpc?.isConnected,
-      rpcUrl,
-    });
-
-    // Always try existing RPC first (even if isConnected is uncertain)
-    if (existingRpc) {
-      try {
-        return await deployContract(compiled, amountSompi, '', privateKeyHex, network, existingRpc);
-      } catch (err: any) {
-        console.warn('[CovenantService] Deploy with existing RPC failed, trying new connection:', err?.message);
-      }
-    }
-
-    // Fallback: create a new connection with the RPC URL
-    return deployContract(compiled, amountSompi, rpcUrl, privateKeyHex, network);
+    return deployContract(compiled, amountSompi, privateKeyHex, network, this.getManagedRpc(), priorityFee);
   }
 
   /**
@@ -81,19 +57,7 @@ export class CovenantService {
     useSenderFee: boolean = false,
   ): Promise<SpendResult> {
     const network = this.rpcService.getNetwork();
-    const existingRpc = this.rpcService.getRpc();
-
-    const rpcUrl = this.getRpcUrl();
-
-    if (existingRpc) {
-      try {
-        return await spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, '', privateKeyHex, network, existingRpc, covenantId, extraArgs, priorityFee, useSenderFee);
-      } catch (err: any) {
-        console.warn('[CovenantService] Spend with existing RPC failed, trying new connection:', err?.message);
-      }
-    }
-
-    return spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, rpcUrl, privateKeyHex, network, undefined, covenantId, extraArgs, priorityFee, useSenderFee);
+    return spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, privateKeyHex, network, this.getManagedRpc(), covenantId, extraArgs, priorityFee, useSenderFee);
   }
 
   /**
@@ -101,18 +65,7 @@ export class CovenantService {
    */
   async queryCovenantUtxos(compiled: CompiledContract): Promise<CovenantUtxoInfo[]> {
     const network = this.rpcService.getNetwork();
-    const existingRpc = this.rpcService.getRpc();
-    const rpcUrl = this.getRpcUrl();
-
-    if (existingRpc) {
-      try {
-        return await getCovenantUtxos(compiled, '', network, existingRpc);
-      } catch (err: any) {
-        console.warn('[CovenantService] queryCovenantUtxos with existing RPC failed:', err?.message);
-      }
-    }
-
-    return getCovenantUtxos(compiled, rpcUrl, network);
+    return getCovenantUtxos(compiled, network, this.getManagedRpc());
   }
 
   /**
@@ -128,18 +81,7 @@ export class CovenantService {
     privateKeyHex: string,
   ): Promise<PartiallySignedSpend> {
     const network = this.rpcService.getNetwork();
-    const existingRpc = this.rpcService.getRpc();
-    const rpcUrl = this.getRpcUrl();
-
-    if (existingRpc) {
-      try {
-        return await buildPartialSpend(compiled, functionName, outpoint, inputAmountSompi, outputs, privateKeyHex, network, '', existingRpc);
-      } catch (err: any) {
-        console.warn('[CovenantService] buildPartial with existing RPC failed:', err?.message);
-      }
-    }
-
-    return buildPartialSpend(compiled, functionName, outpoint, inputAmountSompi, outputs, privateKeyHex, network, rpcUrl);
+    return buildPartialSpend(compiled, functionName, outpoint, inputAmountSompi, outputs, privateKeyHex, network, this.getManagedRpc());
   }
 
   /**
@@ -150,18 +92,7 @@ export class CovenantService {
     partialSpend: PartiallySignedSpend,
     privateKeyHex: string,
   ): Promise<SpendResult> {
-    const existingRpc = this.rpcService.getRpc();
-    const rpcUrl = this.getRpcUrl();
-
-    if (existingRpc) {
-      try {
-        return await completePartialSpend(partialSpend, privateKeyHex, '', existingRpc);
-      } catch (err: any) {
-        console.warn('[CovenantService] completePartial with existing RPC failed:', err?.message);
-      }
-    }
-
-    return completePartialSpend(partialSpend, privateKeyHex, rpcUrl);
+    return completePartialSpend(partialSpend, privateKeyHex, this.getManagedRpc());
   }
 
   /**

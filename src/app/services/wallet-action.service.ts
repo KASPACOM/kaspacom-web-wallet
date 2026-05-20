@@ -3,6 +3,9 @@ import {
   SignPsktTransactionAction,
   WalletPsktSignInput,
   CommitRevealAction,
+  CovenantDeployAction,
+  CovenantSpendAction,
+  CovenantCompletePartialAction,
   SignMessage,
   TransferKasAction,
   WalletAction,
@@ -776,6 +779,24 @@ export class WalletActionService {
         );
         break;
 
+      case WalletActionType.COVENANT_DEPLOY:
+        validationResult = this.validateCovenantDeployAction(
+          action.data as CovenantDeployAction,
+        );
+        break;
+
+      case WalletActionType.COVENANT_SPEND:
+        validationResult = this.validateCovenantSpendAction(
+          action.data as CovenantSpendAction,
+        );
+        break;
+
+      case WalletActionType.COVENANT_COMPLETE_PARTIAL:
+        validationResult = this.validateCovenantCompletePartialAction(
+          action.data as CovenantCompletePartialAction,
+        );
+        break;
+
       case WalletActionType.SIGN_MESSAGE:
         if (
           this.utils.isNullOrEmptyString((action.data as SignMessage).message)
@@ -1034,6 +1055,72 @@ export class WalletActionService {
       default:
         return false;
     }
+  }
+
+  private validateCovenantDeployAction(
+    action: CovenantDeployAction,
+  ): { isValidated: boolean; errorCode?: number } {
+    if (!action.compiledContractJson || action.amountSompi <= 0n) {
+      return {
+        isValidated: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
+      };
+    }
+
+    return {
+      isValidated: true,
+    };
+  }
+
+  private validateCovenantSpendAction(
+    action: CovenantSpendAction,
+  ): { isValidated: boolean; errorCode?: number } {
+    if (
+      !action.compiledContractJson ||
+      !action.functionName ||
+      !action.outpoint.txid ||
+      action.outpoint.vout < 0 ||
+      action.inputAmountSompi <= 0n
+    ) {
+      return {
+        isValidated: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
+      };
+    }
+
+    return {
+      isValidated: true,
+    };
+  }
+
+  private validateCovenantCompletePartialAction(
+    action: CovenantCompletePartialAction,
+  ): { isValidated: boolean; errorCode?: number } {
+    if (!action.partialSpendJson) {
+      return {
+        isValidated: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
+      };
+    }
+
+    try {
+      const partial = JSON.parse(action.partialSpendJson);
+      if (!partial.compiledJson || !partial.functionName || !partial.outpoint?.txid) {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
+        };
+      }
+    } catch {
+      return {
+        isValidated: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
+      };
+    }
+
+    return {
+      isValidated: true,
+    };
   }
 
   private getActionSteps(action: WalletAction): number {

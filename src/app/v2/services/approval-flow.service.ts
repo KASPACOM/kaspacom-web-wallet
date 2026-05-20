@@ -310,6 +310,12 @@ export class ApprovalFlowService {
         return 'Send Kaspa';
       case WalletActionType.COMMIT_REVEAL:
         return 'Confirm Action';
+      case WalletActionType.COVENANT_DEPLOY:
+        return 'Deploy Covenant';
+      case WalletActionType.COVENANT_SPEND:
+        return 'Interact With Covenant';
+      case WalletActionType.COVENANT_COMPLETE_PARTIAL:
+        return 'Complete Covenant Interaction';
       case WalletActionType.SIGN_MESSAGE:
         return 'Sign Message';
       case WalletActionType.SIGN_PSKT_TRANSACTION:

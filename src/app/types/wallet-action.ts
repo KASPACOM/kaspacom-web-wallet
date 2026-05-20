@@ -9,6 +9,9 @@ export enum WalletActionType {
   SIGN_PSKT_TRANSACTION = 'buy-krc20-pskt',
   SIGN_MESSAGE = 'sign-message',
   COMMIT_REVEAL = 'commit-reveal',
+  COVENANT_DEPLOY = 'deploy-covenant',
+  COVENANT_SPEND = 'spend-covenant',
+  COVENANT_COMPLETE_PARTIAL = 'complete-covenant-partial',
   SUBMIT_TRANSACTION = 'submit-transaction',
   EIP1193_PROVIDER_REQUEST = 'eip-1193-provider-request',
   APPROVE_COMMUNICATION_APP = 'approve-communication-app',
@@ -21,6 +24,9 @@ type WalletActionDataMap = {
   [WalletActionType.SIGN_PSKT_TRANSACTION]: SignPsktTransactionAction;
   [WalletActionType.SIGN_MESSAGE]: SignMessage;
   [WalletActionType.COMMIT_REVEAL]: CommitRevealAction;
+  [WalletActionType.COVENANT_DEPLOY]: CovenantDeployAction;
+  [WalletActionType.COVENANT_SPEND]: CovenantSpendAction;
+  [WalletActionType.COVENANT_COMPLETE_PARTIAL]: CovenantCompletePartialAction;
   [WalletActionType.EIP1193_PROVIDER_REQUEST]: EIP1193RequestPayload<EIP1193RequestType>;
   [WalletActionType.APPROVE_COMMUNICATION_APP]: BaseCommunicationApp;
 };
@@ -102,6 +108,39 @@ export interface CommitRevealAction {
       script: ProtocolScriptDataAndAddress,
     }
   };
+}
+
+export interface CovenantOutpointActionData {
+  txid: string;
+  vout: number;
+}
+
+export interface CovenantSpendOutputActionData {
+  address: string;
+  amount: bigint;
+}
+
+export interface CovenantDeployAction {
+  compiledContractJson: string;
+  amountSompi: bigint;
+  contractName?: string;
+}
+
+export interface CovenantSpendAction {
+  compiledContractJson: string;
+  contractName?: string;
+  outpoint: CovenantOutpointActionData;
+  inputAmountSompi: bigint;
+  functionName: string;
+  outputs: CovenantSpendOutputActionData[];
+  extraArgs?: Record<string, bigint>;
+  covenantId?: string;
+  useSenderFee?: boolean;
+}
+
+export interface CovenantCompletePartialAction {
+  partialSpendJson: string;
+  contractName?: string;
 }
 
 export interface SubmitTransactionAction {

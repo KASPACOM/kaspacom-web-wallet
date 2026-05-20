@@ -34,6 +34,9 @@ import {
   TransferKasAction,
   WalletAction,
   WalletActionType,
+  CovenantDeployAction,
+  CovenantSpendAction,
+  CovenantCompletePartialAction,
 } from '../../types/wallet-action';
 import { AppWallet } from '../../classes/AppWallet';
 import {
@@ -46,8 +49,11 @@ import { MempoolTransactionManager } from '../../classes/MempoolTransactionManag
 import { TransactionRequest } from 'ethers';
 import { createEIP1193Response } from '../etherium-services/create-eip-1193-response';
 import { KaspaWalletMnemonicActionsService } from './kaspa-wallet-mnemonic-actions.service';
+import { CovenantService } from '../covenant/covenant.service';
+import { CovenantCompletePartialActionResult, CovenantDeployActionResult, CovenantSpendActionResult } from '../../types/wallet-action-result';
 
 const MINIMAL_TRANSACTION_MASS = 10000n;
+const COVENANT_ESTIMATED_TRANSACTION_MASS = 25000n;
 export const MINIMAL_AMOUNT_TO_SEND = 20000000n;
 export const MAX_TRANSACTION_FEE = 20000n;
 export const REVEAL_PSKT_AMOUNT = 105000000n;
@@ -61,6 +67,7 @@ export class KaspaNetworkActionsService {
     private readonly transactionsManager: KaspaNetworkTransactionsManagerService,
     private readonly utils: UtilsHelper,
     private readonly kaspaWalletMnemonicActions: KaspaWalletMnemonicActionsService,
+    private readonly covenantService: CovenantService,
   ) { }
 
   async connectAndDo<T>(
@@ -223,6 +230,14 @@ export class KaspaNetworkActionsService {
       ];
     }
 
+    if (
+      action.type === WalletActionType.COVENANT_DEPLOY ||
+      action.type === WalletActionType.COVENANT_SPEND ||
+      action.type === WalletActionType.COVENANT_COMPLETE_PARTIAL
+    ) {
+      return [COVENANT_ESTIMATED_TRANSACTION_MASS];
+    }
+
     throw new Error('No such action type');
   }
 
@@ -381,6 +396,85 @@ export class KaspaNetworkActionsService {
       };
     }
 
+    if (action.type === WalletActionType.COVENANT_DEPLOY) {
+      const actionData = action.data as CovenantDeployAction;
+      const compiled = this.covenantService.parseCompiledContract(actionData.compiledContractJson);
+      const result = await this.covenantService.deploy(
+        compiled,
+        actionData.amountSompi,
+        wallet.getPrivateKey().toString(),
+        action.priorityFee || 0n,
+      );
+      await notifyUpdate(result.txid);
+
+      const actionResult: CovenantDeployActionResult = {
+        type: 'deploy-covenant' as WalletActionResultType,
+        performedByWallet: wallet.getAddress(),
+        txid: result.txid,
+        contractAddress: result.contractAddress,
+        outpoint: result.outpoint,
+        covenantId: result.covenantId,
+      };
+
+      return {
+        success: true,
+        result: actionResult,
+      };
+    }
+
+    if (action.type === WalletActionType.COVENANT_SPEND) {
+      const actionData = action.data as CovenantSpendAction;
+      const compiled = this.covenantService.parseCompiledContract(actionData.compiledContractJson);
+      const result = await this.covenantService.spend(
+        compiled,
+        actionData.outpoint,
+        actionData.inputAmountSompi,
+        actionData.functionName,
+        actionData.outputs,
+        wallet.getPrivateKey().toString(),
+        actionData.extraArgs,
+        actionData.covenantId,
+        action.priorityFee || 0n,
+        actionData.useSenderFee,
+      );
+      await notifyUpdate(result.txid);
+
+      const actionResult: CovenantSpendActionResult = {
+        type: 'spend-covenant' as WalletActionResultType,
+        performedByWallet: wallet.getAddress(),
+        txid: result.txid,
+        functionName: result.functionName,
+        covenantId: result.covenantId,
+      };
+
+      return {
+        success: true,
+        result: actionResult,
+      };
+    }
+
+    if (action.type === WalletActionType.COVENANT_COMPLETE_PARTIAL) {
+      const actionData = action.data as CovenantCompletePartialAction;
+      const partialSpend = JSON.parse(actionData.partialSpendJson);
+      const result = await this.covenantService.completePartial(
+        partialSpend,
+        wallet.getPrivateKey().toString(),
+      );
+      await notifyUpdate(result.txid);
+
+      const actionResult: CovenantCompletePartialActionResult = {
+        type: 'complete-covenant-partial' as WalletActionResultType,
+        performedByWallet: wallet.getAddress(),
+        txid: result.txid,
+        functionName: result.functionName,
+      };
+
+      return {
+        success: true,
+        result: actionResult,
+      };
+    }
+
     if (action.type === WalletActionType.COMMIT_REVEAL) {
       const actionData: CommitRevealAction = action.data as CommitRevealAction;
       const revealPriorityFee = actionData.options?.revealPriorityFee || 0n;
@@ -507,6 +601,19 @@ export class KaspaNetworkActionsService {
         SUBMIT_REVEAL_MIN_UTXO_AMOUNT +
         additionalOutputsSum +
         additionalPriorityFee;
+    }
+
+    if (action.type === WalletActionType.COVENANT_DEPLOY) {
+      return action.data.amountSompi + (action.priorityFee || 0n) + COVENANT_ESTIMATED_TRANSACTION_MASS;
+    }
+
+    if (action.type === WalletActionType.COVENANT_SPEND) {
+      const senderFeeBuffer = action.data.useSenderFee ? MINIMAL_AMOUNT_TO_SEND : 0n;
+      return (action.priorityFee || 0n) + senderFeeBuffer + COVENANT_ESTIMATED_TRANSACTION_MASS;
+    }
+
+    if (action.type === WalletActionType.COVENANT_COMPLETE_PARTIAL) {
+      return (action.priorityFee || 0n) + COVENANT_ESTIMATED_TRANSACTION_MASS;
     }
 
     throw new Error('Invalid action type');

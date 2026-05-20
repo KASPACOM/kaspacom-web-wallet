@@ -6,7 +6,6 @@ import {
   createTransaction,
   createTransactions,
   CovenantBinding,
-  Encoding,
   Hash,
   payToAddressScript,
   payToScriptHashScript,
@@ -59,14 +58,6 @@ function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-}
-
-function connectRpc(rpcUrl: string, network: string): RpcClient {
-  return new RpcClient({
-    url: rpcUrl,
-    encoding: Encoding.Borsh,
-    networkId: network,
-  });
 }
 
 function requireAddress(value: Address | undefined, context: string): Address {
@@ -335,37 +326,17 @@ export function getCovenantAddress(compiled: CompiledContract, network: string):
 export async function deployContract(
   compiled: CompiledContract,
   amountSompi: bigint,
-  rpcUrl: string,
   privateKeyHex: string,
   network: string,
-  existingRpc?: RpcClient,
+  rpc: RpcClient,
+  priorityFee: bigint = 0n,
 ): Promise<DeployResult> {
-  console.log('[CovenantSDK] deployContract start', { network, rpcUrl: rpcUrl || '(using existing)', hasExistingRpc: !!existingRpc });
   const privateKey = new PrivateKey(privateKeyHex);
   const senderAddress = privateKey.toAddress(network).toString();
   const contractAddress = getCovenantAddress(compiled, network);
   const contractScriptPubKey = payToScriptHashScript(toScriptBytes(compiled));
-  console.log('[CovenantSDK] senderAddress:', senderAddress, 'contractAddress:', contractAddress);
 
-  const ownRpc = !existingRpc;
-  const rpc = existingRpc || connectRpc(rpcUrl, network);
-
-  try {
-    if (ownRpc) {
-      console.log('[CovenantSDK] Connecting new RPC client...');
-      const connectPromise = rpc.connect();
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('RPC connection timed out after 15 seconds')), 15000)
-      );
-      await Promise.race([connectPromise, timeoutPromise]);
-      console.log('[CovenantSDK] RPC connected');
-    } else {
-      console.log('[CovenantSDK] Using existing RPC, isConnected:', rpc.isConnected);
-    }
-
-    console.log('[CovenantSDK] Fetching UTXOs for', senderAddress);
     const entries = await getAddressUtxos(rpc, senderAddress);
-    console.log('[CovenantSDK] Found', entries.length, 'UTXOs');
     if (entries.length === 0) {
       throw new Error(`No spendable UTXOs found for ${senderAddress}`);
     }
@@ -377,26 +348,22 @@ export async function deployContract(
     if (deploymentClaim) {
       try {
         const payloadJson = JSON.stringify({ tn10: deploymentClaim });
-        console.log('[CovenantSDK] payloadJson:', payloadJson);
         const payloadBytes = new TextEncoder().encode(payloadJson);
         payload = payloadBytes;
-        console.log('[CovenantSDK] Attached deployment claim payload to deployment tx');
       } catch (payloadErr) {
         console.warn('[CovenantSDK] Failed to attach deployment claim payload:', payloadErr);
       }
     }
 
-    console.log('[CovenantSDK] Creating transactions...');
     const created = await createTransactions({
       entries,
       outputs: [{ address: contractAddress, amount: amountSompi }],
       changeAddress: senderAddress,
-      priorityFee: 1000000n,
+      priorityFee,
       networkId: network,
       payload,
     } as never);
 
-    console.log('[CovenantSDK] Transactions created:', created.transactions.length, 'tx(s)');
     let finalTxId = created.summary.finalTransactionId;
     let finalTransaction = created.transactions[created.transactions.length - 1]?.transaction;
 
@@ -431,8 +398,6 @@ export async function deployContract(
             }],
           );
 
-          console.log('[CovenantSDK] Genesis covenant ID:', covenantId);
-
           // Attach CovenantBinding to the covenant output
           try {
             const hashObj = new Hash(covenantId);
@@ -442,7 +407,6 @@ export async function deployContract(
             const newOutput = new TransactionOutput(existingOutput.value, existingOutput.scriptPublicKey, binding);
             // Replace the output
             pending.transaction.outputs[covenantOutputIdx] = newOutput;
-            console.log('[CovenantSDK] CovenantBinding attached to output', covenantOutputIdx);
           } catch (bindErr) {
             // If CovenantBinding attachment fails (e.g., API incompatibility),
             // fall back to standard deploy without binding — still works for P2SH
@@ -451,11 +415,8 @@ export async function deployContract(
         }
       }
 
-      console.log(`[CovenantSDK] Signing tx ${i + 1}/${created.transactions.length}...`);
       pending.sign([privateKey]);
-      console.log(`[CovenantSDK] Submitting tx ${i + 1}...`, pending.transaction.payload);
       finalTxId = await pending.submit(rpc);
-      console.log(`[CovenantSDK] Submitted tx ${i + 1}:`, finalTxId);
       finalTransaction = pending.transaction;
     }
 
@@ -491,9 +452,6 @@ export async function deployContract(
       },
       covenantId,
     };
-  } finally {
-    if (ownRpc) await rpc.disconnect().catch(() => undefined);
-  }
 }
 
 /**
@@ -516,10 +474,9 @@ export async function spendContract(
   inputAmountSompi: bigint,
   functionName: string,
   outputs: SpendOutput[],
-  rpcUrl: string,
   privateKeyHex: string,
   network: string,
-  existingRpc?: RpcClient,
+  rpc: RpcClient,
   covenantId?: string,
   extraArgs?: Record<string, bigint>,
   priorityFee: bigint = 0n,
@@ -527,11 +484,7 @@ export async function spendContract(
 ): Promise<SpendResult> {
   const privateKey = new PrivateKey(privateKeyHex);
   const covenantAddress = getCovenantAddress(compiled, network);
-  const ownRpc = !existingRpc;
-  const rpc = existingRpc || connectRpc(rpcUrl, network);
 
-  try {
-    if (ownRpc) await rpc.connect();
     const utxos = await getAddressUtxos(rpc, covenantAddress);
     const entry = utxos.find(
       (candidate) =>
@@ -555,7 +508,6 @@ export async function spendContract(
         const entryCovId = (entry as any).covenantId;
         if (entryCovId) {
           utxoCovenantId = entryCovId.toString();
-          console.log('[CovenantSDK] UTXO covenantId:', utxoCovenantId);
         }
       } catch {
         // covenantId not available on this UTXO
@@ -589,7 +541,6 @@ export async function spendContract(
       const shortfall = targetRequired > inputAmountSompi ? targetRequired - inputAmountSompi : 0n;
 
       if (shortfall > 0n) {
-        console.log('[CovenantSDK] Shortfall detected, fetching fee UTXOs for', senderAddress, 'need:', shortfall.toString());
         const walletUtxos = await getAddressUtxos(rpc, senderAddress);
 
         for (const utxo of walletUtxos.sort((a, b) => Number(b.amount - a.amount))) {
@@ -628,7 +579,6 @@ export async function spendContract(
           const hashObj = new Hash(utxoCovenantId);
           const binding = new CovenantBinding(0, hashObj); // authorizing_input = 0 (our covenant input)
           const txOutput = new TransactionOutput(output.amount, spk, binding);
-          console.log('[CovenantSDK] Continuation CovenantBinding on output', idx);
           return txOutput as any;
         } catch (err) {
           console.warn('[CovenantSDK] Failed to attach continuation binding:', err);
@@ -674,14 +624,12 @@ export async function spendContract(
         // Using pastMedianTime directly would fail since equal is NOT less than.
         // Subtract 1 to ensure the TX is accepted.
         lockTime = BigInt(dagInfo.pastMedianTime) - 1n;
-        console.log('[CovenantSDK] lockTime from pastMedianTime - 1:', lockTime.toString());
       } catch {
         // Fallback: use Date.now() - 10s buffer (less reliable)
         lockTime = BigInt(Date.now() - 10_000);
         console.warn('[CovenantSDK] lockTime fallback (Date.now - 10s):', lockTime.toString());
       }
     }
-    console.log('[CovenantSDK] lockTime:', lockTime.toString(), needsLockTime ? '(Unix ms — tx.time lock)' : '(no lockTime needed)');
 
     const unsignedTx = new Transaction({
       version: 1,
@@ -709,7 +657,6 @@ export async function spendContract(
           throw new Error(`NOT ENOUGH CHANGE (need ${MINIMAL_AMOUNT_TO_SEND}, have ${finalChange})`);
         }
         unsignedTx.outputs[changeOutputIdx].value = finalChange;
-        console.log('[CovenantSDK] Dynamic fee:', totalFees.toString(), 'change:', finalChange.toString());
       } else {
         // If no change output, ensure the surplus covers the fee
         const surplus = totalInputsAmount - spendOutputsSum;
@@ -728,7 +675,6 @@ export async function spendContract(
       // Strip the length prefix byte — 65 means "65 bytes of sig+sighash follow"
       signature = signature.slice(1);
     }
-    console.log('[CovenantSDK] signature bytes:', signature.length);
     const functionArgs = resolveSpendFunctionArgs(compiled, functionName, signature, privateKey, extraArgs);
     const sigPrefix = buildSigScript(compiled, functionName, functionArgs);
 
@@ -747,8 +693,6 @@ export async function spendContract(
       unsignedTx.inputs[i].signatureScript = new ScriptBuilder().addData(sigBytes).drain();
     }
 
-    console.log('Transaction to submit', unsignedTx);
-
     const submitted = await rpc.submitTransaction({
       transaction: unsignedTx,
       allowOrphan: false,
@@ -759,9 +703,6 @@ export async function spendContract(
       functionName,
       covenantId: utxoCovenantId,
     };
-  } finally {
-    if (ownRpc) await rpc.disconnect().catch(() => undefined);
-  }
 }
 
 function buildInputMassFields({ version, sigOpCount, computeBudget }: { version: number, sigOpCount: number, computeBudget: number | null }) {
@@ -800,9 +741,8 @@ function inputPreservesComputeBudget() {
  */
 export async function getCovenantUtxos(
   compiled: CompiledContract,
-  rpcUrl: string,
   network: string,
-  existingRpc?: RpcClient,
+  rpc: RpcClient,
 ): Promise<Array<{
   outpoint: CovenantOutpoint;
   amount: bigint;
@@ -810,17 +750,6 @@ export async function getCovenantUtxos(
   blockDaaScore: bigint;
 }>> {
   const covenantAddress = getCovenantAddress(compiled, network);
-  const ownRpc = !existingRpc;
-  const rpc = existingRpc || connectRpc(rpcUrl, network);
-
-  try {
-    if (ownRpc) {
-      const connectPromise = rpc.connect();
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('RPC connection timed out after 15 seconds')), 15000)
-      );
-      await Promise.race([connectPromise, timeoutPromise]);
-    }
 
     const utxos = await getAddressUtxos(rpc, covenantAddress);
 
@@ -843,9 +772,6 @@ export async function getCovenantUtxos(
         blockDaaScore: entry.blockDaaScore,
       };
     });
-  } finally {
-    if (ownRpc) await rpc.disconnect().catch(() => undefined);
-  }
 }
 
 // ── Two-Phase Signing ────────────────────────────────────────
@@ -866,8 +792,7 @@ export async function buildPartialSpend(
   outputs: SpendOutput[],
   privateKeyHex: string,
   network: string,
-  rpcUrl: string,
-  existingRpc?: any,
+  rpc: RpcClient,
 ): Promise<PartiallySignedSpend> {
   const covenantAddress = getCovenantAddress(compiled, network);
   const abiEntry = getAbiEntry(compiled, functionName);
@@ -875,13 +800,6 @@ export async function buildPartialSpend(
   // Determine which sig params this key can sign
   const privateKey = new PrivateKey(privateKeyHex);
   const pubkeyHex = privateKey.toPublicKey().toXOnlyPublicKey().toString();
-
-  // Connect to get UTXO
-  const ownRpc = !existingRpc;
-  const rpc = existingRpc || connectRpc(rpcUrl, network);
-
-  try {
-    if (ownRpc) await rpc.connect();
 
     const utxos = await getAddressUtxos(rpc, covenantAddress);
     const entry = utxos.find(
@@ -938,7 +856,6 @@ export async function buildPartialSpend(
     const sigHex = bytesToHex(signature);
 
     // Match this pubkey to contract params by scanning the compiled script bytes
-    const contractPubkeys = extractContractPubkeys(compiled);
     const signatures: Array<{ paramName: string; signatureHex: string }> = [];
     const pendingParams: string[] = [];
 
@@ -973,9 +890,6 @@ export async function buildPartialSpend(
       lockTime: lockTime.toString(),
       sigOpCount,
     };
-  } finally {
-    if (ownRpc) await rpc.disconnect().catch(() => undefined);
-  }
 }
 
 /**
@@ -985,18 +899,12 @@ export async function buildPartialSpend(
 export async function completePartialSpend(
   partialSpend: PartiallySignedSpend,
   privateKeyHex: string,
-  rpcUrl: string,
-  existingRpc?: any,
+  rpc: RpcClient,
 ): Promise<SpendResult> {
   const compiled: CompiledContract = JSON.parse(partialSpend.compiledJson);
   const covenantAddress = getCovenantAddress(compiled, partialSpend.network);
 
   const privateKey = new PrivateKey(privateKeyHex);
-  const ownRpc = !existingRpc;
-  const rpc = existingRpc || connectRpc(rpcUrl, partialSpend.network);
-
-  try {
-    if (ownRpc) await rpc.connect();
 
     const utxos = await getAddressUtxos(rpc, covenantAddress);
     const entry = utxos.find(
@@ -1075,9 +983,6 @@ export async function completePartialSpend(
       txid: submitted.transactionId,
       functionName: partialSpend.functionName,
     };
-  } finally {
-    if (ownRpc) await rpc.disconnect().catch(() => undefined);
-  }
 }
 
 // ── Helpers for Two-Phase Signing ────────────────────────────

@@ -7,6 +7,7 @@ import { firstValueFrom } from 'rxjs';
 import { KcButtonComponent, KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
 import { blake2b } from '@noble/hashes/blake2b';
 import { WalletService } from '../../../../../services/wallet.service';
+import { WalletActionService } from '../../../../../services/wallet-action.service';
 import { CovenantService } from '../../../../../services/covenant/covenant.service';
 import { RpcService } from '../../../../../services/kaspa-netwrok-services/rpc.service';
 import { ContractRegistryService, ContractRegistryEntry, ContractStatus } from '../../../../../services/covenant/contract-registry.service';
@@ -16,6 +17,8 @@ import { CONTRACT_TEMPLATES, ContractTemplate, TemplateField } from '../../../..
 import { CtorArg, TemplatePatcherService } from '../../../../services/covenant/template-patcher.service';
 import { PublicKey } from '../../../../../../../public/kaspa/kaspa';
 import { environment } from '../../../../../../environments/environment';
+import { WalletActionType } from '../../../../../types/wallet-action';
+import { CovenantCompletePartialActionResult, CovenantDeployActionResult, CovenantSpendActionResult } from '../../../../../types/wallet-action-result';
 
 type TabName = 'deploy' | 'my-contracts' | 'interact' | 'templates';
 
@@ -38,6 +41,7 @@ type TabName = 'deploy' | 'my-contracts' | 'interact' | 'templates';
 })
 export class ContractsPageComponent implements OnInit {
   private walletService = inject(WalletService);
+  private walletActionService = inject(WalletActionService);
   private covenantService = inject(CovenantService);
   private rpcService = inject(RpcService);
   private registryService = inject(ContractRegistryService);
@@ -549,14 +553,29 @@ export class ContractsPageComponent implements OnInit {
 
     try {
       this.isDeploying.set(true);
-      console.log('[Deploy] Starting deployment...');
 
       const compiled = this.covenantService.parseCompiledContract(contractJson);
       const amountSompi = BigInt(Math.floor(amountKas * 1e8));
-      console.log('[Deploy] Contract:', compiled.contract_name, 'Amount:', amountSompi.toString(), 'sompi');
-      const privateKey = wallet.getPrivateKey().toString();
 
-      const result = await this.covenantService.deploy(compiled, amountSompi, privateKey);
+      if (this.currentWallet()?.getIdWithAccount() !== wallet.getIdWithAccount()) {
+        this.walletService.selectCurrentWallet(wallet.getIdWithAccount());
+      }
+
+      const actionResult = await this.walletActionService.validateAndDoActionAfterApproval({
+        type: WalletActionType.COVENANT_DEPLOY,
+        data: {
+          compiledContractJson: contractJson,
+          contractName: compiled.contract_name || 'Covenant',
+          amountSompi,
+        },
+      });
+
+      if (!actionResult.success || !actionResult.result) {
+        this.deployError.set('Covenant deployment was rejected or failed');
+        return;
+      }
+
+      const result = actionResult.result as CovenantDeployActionResult;
 
       // Save to registry
       const entry: ContractRegistryEntry = {
@@ -688,18 +707,18 @@ export class ContractsPageComponent implements OnInit {
           { address: sellerAddress, amount: amountToSellerSompi },
           { address: buyerAddress, amount: amountToBuyerSompi },
         ];
-        console.log('[Interact] Arbitrate outputs:', outputs);
-
-        // Pass amountToSeller as extraArgs so the SDK can build the sigscript correctly.
-        // We also pass 5000n gasAmountSompi to add an extra input for network fees,
-        // as the Escrow contract's fixed 1000 fee is often too low for this complex TX.
-        const result = await this.covenantService.spend(
-          compiled, outpoint, inputAmount, functionName, outputs, privateKey,
+        const result = await this.runCovenantSpendAction(
+          compiled,
+          contractJson,
+          outpoint,
+          inputAmount,
+          functionName,
+          outputs,
           { amountToSeller: amountToSellerSompi },
           undefined,
-          0n, // priorityFee
-          true, // useSenderFee
+          true,
         );
+        if (!result) return;
         this.interactResult.set({ txid: result.txid, functionName: result.functionName });
         if (this.selectedContractId) {
           this.registryService.updateContract(this.selectedContractId, {
@@ -759,16 +778,17 @@ export class ContractsPageComponent implements OnInit {
       }
 
 
-      const result = await this.covenantService.spend(
+      const result = await this.runCovenantSpendAction(
         compiled,
+        contractJson,
         outpoint,
         inputAmount,
         functionName,
         outputs,
-        privateKey,
         Object.keys(extraArgs).length > 0 ? extraArgs : undefined,
         undefined,
       );
+      if (!result) return;
 
       this.interactResult.set({
         txid: result.txid,
@@ -802,6 +822,40 @@ export class ContractsPageComponent implements OnInit {
     } finally {
       this.isInteracting.set(false);
     }
+  }
+
+  private async runCovenantSpendAction(
+    compiled: CompiledContract,
+    contractJson: string,
+    outpoint: CovenantOutpoint,
+    inputAmountSompi: bigint,
+    functionName: string,
+    outputs: SpendOutput[],
+    extraArgs?: Record<string, bigint>,
+    covenantId?: string,
+    useSenderFee = false,
+  ): Promise<CovenantSpendActionResult | undefined> {
+    const actionResult = await this.walletActionService.validateAndDoActionAfterApproval({
+      type: WalletActionType.COVENANT_SPEND,
+      data: {
+        compiledContractJson: contractJson,
+        contractName: compiled.contract_name || 'Covenant',
+        outpoint,
+        inputAmountSompi,
+        functionName,
+        outputs,
+        extraArgs,
+        covenantId,
+        useSenderFee,
+      },
+    });
+
+    if (!actionResult.success || !actionResult.result) {
+      this.interactError.set('Covenant interaction was rejected or failed');
+      return undefined;
+    }
+
+    return actionResult.result as CovenantSpendActionResult;
   }
 
   /**
@@ -1280,8 +1334,20 @@ export class ContractsPageComponent implements OnInit {
     try {
       this.isCompletingPartial.set(true);
       const partial: PartiallySignedSpend = JSON.parse(this.importPartialJson);
-      const privateKey = wallet.getPrivateKey().toString();
-      const result = await this.covenantService.completePartial(partial, privateKey);
+      const actionResult = await this.walletActionService.validateAndDoActionAfterApproval({
+        type: WalletActionType.COVENANT_COMPLETE_PARTIAL,
+        data: {
+          partialSpendJson: this.importPartialJson,
+          contractName: this.getPartialContractName(partial),
+        },
+      });
+
+      if (!actionResult.success || !actionResult.result) {
+        this.partialCompleteError.set('Covenant interaction was rejected or failed');
+        return;
+      }
+
+      const result = actionResult.result as CovenantCompletePartialActionResult;
 
       this.partialCompleteResult.set({
         txid: result.txid,
@@ -1314,6 +1380,15 @@ export class ContractsPageComponent implements OnInit {
       () => alert('Partial spend JSON copied! Send it to the co-signer.'),
       () => prompt('Copy this partial spend JSON:', json),
     );
+  }
+
+  private getPartialContractName(partial: PartiallySignedSpend): string {
+    try {
+      const compiled = JSON.parse(partial.compiledJson) as CompiledContract;
+      return compiled.contract_name || 'Covenant';
+    } catch {
+      return 'Covenant';
+    }
   }
 
   // ─── Helpers for Escrow arbitrate ─────────────────────────────────

@@ -85,6 +85,7 @@ export class ApprovalFlowPageComponent implements OnDestroy {
       [
         WalletActionType.SIGN_MESSAGE,
         WalletActionType.APPROVE_COMMUNICATION_APP,
+        WalletActionType.COVENANT_COMPLETE_PARTIAL,
       ].includes(config.action.type)
     ) {
       return false;

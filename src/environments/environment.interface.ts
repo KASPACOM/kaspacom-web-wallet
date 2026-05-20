@@ -75,6 +75,5 @@ export interface Environment {
   logosUrl: string;
   allowedDomains: string[];
   l1Config: L1ConfigInterface;
-  isL2Enabled: boolean;
   l2Configs: L2ConfigInterface[];
 }

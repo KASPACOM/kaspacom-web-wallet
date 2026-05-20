@@ -45,13 +45,11 @@ export class CommunicationManagerService {
             this.onWalletSelected.bind(this)
         ));
 
-        if (environment.isL2Enabled) {
-            this.eventsSubscriptions.push(toObservable(this.ethereumWalletChainManager.getCurrentChainSignal()).subscribe(
-                () => {
-                    this.sendEtheriumWalletEvent(EIP1193ProviderEventEnum.CHAIN_CHANGED);
-                }
-            ));
-        }
+        this.eventsSubscriptions.push(toObservable(this.ethereumWalletChainManager.getCurrentChainSignal()).subscribe(
+            () => {
+                this.sendEtheriumWalletEvent(EIP1193ProviderEventEnum.CHAIN_CHANGED);
+            }
+        ));
     }
 
     protected stopEventsSenders() {
@@ -216,7 +214,6 @@ export class CommunicationManagerService {
             type: WalletMessageTypeEnum.WalletInfo,
             payload: undefined,
         });
-        if (environment.isL2Enabled) {
             await app.sendMessage({
                 type: WalletMessageTypeEnum.EIP1193Event,
                 payload: {
@@ -224,7 +221,6 @@ export class CommunicationManagerService {
                     data: [],
                 }
             });
-        }
     }
 
     protected async handleWalletActionRequest(
@@ -376,9 +372,6 @@ export class CommunicationManagerService {
     }
 
     async sendEtheriumWalletEvent(event: EIP1193ProviderEventEnum, specificApp?: BaseCommunicationApp) {
-        if (!environment.isL2Enabled) {
-            return;
-        }
         const eventData = await this.ethereumWalletActionsService.getEventData(event, undefined, specificApp?.getApplicationId());
 
         await this.sendMessageToConnectedApps({

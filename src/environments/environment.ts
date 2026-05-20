@@ -14,7 +14,6 @@ export const environment: Environment = {
     icon: 'images/tokens-logos/KAS.png',
     networks: PRODUCTION_L1_NETWORKS,
   },
-  isL2Enabled: true,
   l2Configs: [
     {
       sdkName: 'kasplex',

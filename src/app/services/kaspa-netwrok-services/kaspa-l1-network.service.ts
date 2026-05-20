@@ -96,6 +96,10 @@ export class KaspaL1NetworkService {
   }
 
   private resolveInitialNetwork(): L1NetworkConfigInterface {
+    if (!this.networks.length) {
+      throw new Error('No Kaspa L1 networks configured');
+    }
+
     const defaultNetwork =
       this.networks.find((item) => item.network === environment.kaspaNetwork) ??
       this.networks[0];

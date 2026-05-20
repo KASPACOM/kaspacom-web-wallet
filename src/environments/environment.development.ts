@@ -25,7 +25,6 @@ export const environment: Environment = {
     shortName: 'Kaspa L1',
     icon: 'images/tokens-logos/KAS.png',
   },
-  isL2Enabled: true,
   l2Configs: [
     {
       sdkName: 'kasplex-testnet',

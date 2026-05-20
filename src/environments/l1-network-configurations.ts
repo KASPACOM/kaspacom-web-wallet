@@ -3,7 +3,7 @@ import { L1NetworkConfigInterface } from './environment.interface';
 
 export const KASPA_MAINNET_L1_NETWORK_CONFIG: L1NetworkConfigInterface = {
   network: KASPA_NETWORKS.MAINNET,
-  shortName: 'Kaspa Mainnet',
+  shortName: 'Mainnet',
   icon: 'images/tokens-logos/KAS.png',
   kaspaComApiBaseurl: 'https://api.kaspa.com',
   kaspaComDefiApiBaseurl: 'https://api-defi.kaspa.com',

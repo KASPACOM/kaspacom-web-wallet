@@ -1,6 +1,8 @@
 import { Component, computed, inject } from '@angular/core';
 import { WalletService } from '../../../../services/wallet.service';
 
+const YONATOSHI_BASE_URL = 'https://cache.krc721.stream/krc721/mainnet/optimized/YONATOSHI';
+
 interface AvatarConfig {
   shapeIndex: number;
   bgColor: string;
@@ -36,6 +38,31 @@ function computeAvatar(address: string): AvatarConfig {
   };
 }
 
+function djb2(str: string): number {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
+    hash = hash | 0;
+  }
+  return Math.abs(hash);
+}
+
+interface L1AvatarConfig {
+  tokenId: string;
+  imgFilter: string;
+}
+
+function computeL1Avatar(address: string): L1AvatarConfig {
+  const h = djb2(address);
+  const hue = h % 360;
+  const saturate = 100 + ((h >> 4) % 60);
+  const contrast = 95 + ((h >> 8) % 20);
+  return {
+    tokenId: ((h % 10000) + 1).toString(),
+    imgFilter: `hue-rotate(${hue}deg) saturate(${saturate}%) contrast(${contrast}%)`,
+  };
+}
+
 @Component({
   selector: 'app-wallet-profile-orb',
   standalone: true,
@@ -46,8 +73,11 @@ function computeAvatar(address: string): AvatarConfig {
 export class WalletProfileOrbComponent {
   private walletService = inject(WalletService);
 
-  isL2 = this.walletService.getIsL2DisplaySignal();
-  l2Address = this.walletService.getCurrentDisplayWalletAddressAsString;
+  readonly yonatoshiBaseUrl = YONATOSHI_BASE_URL;
 
-  avatarConfig = computed((): AvatarConfig => computeAvatar(this.l2Address()));
+  isL2 = this.walletService.getIsL2DisplaySignal();
+  walletAddress = this.walletService.getCurrentDisplayWalletAddressAsString;
+
+  avatarConfig = computed((): AvatarConfig => computeAvatar(this.walletAddress()));
+  l1AvatarConfig = computed((): L1AvatarConfig => computeL1Avatar(this.walletAddress()));
 }

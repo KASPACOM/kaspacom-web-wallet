@@ -12,5 +12,11 @@
     />
   </div>
 } @else {
-  <div class="wallet-profile-orb"></div>
+  <div class="wallet-profile-orb">
+    <img
+      [src]="yonatoshiBaseUrl + '/' + l1AvatarConfig().tokenId"
+      alt="Wallet avatar"
+      [style.filter]="l1AvatarConfig().imgFilter"
+    />
+  </div>
 }

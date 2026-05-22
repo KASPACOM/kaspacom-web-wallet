@@ -523,7 +523,7 @@ export async function spendContract(
         previousOutpoint: entry.outpoint,
         utxo: entry,
         sequence: 0n,
-        ...buildInputMassFields({ version: 1, sigOpCount: 1, computeBudget: 30 }),
+        ...buildInputMassFields({ version: 0, sigOpCount: 1, computeBudget: null }),
       },
     ];
 
@@ -559,7 +559,7 @@ export async function spendContract(
           previousOutpoint: utxoEntry.outpoint,
           utxo: utxoEntry,
           sequence: 0n,
-          ...buildInputMassFields({ version: 1, sigOpCount: 1, computeBudget: 30 }),
+          ...buildInputMassFields({ version: 0, sigOpCount: 1, computeBudget: null }),
         });
       }
     }
@@ -632,7 +632,7 @@ export async function spendContract(
     }
 
     const unsignedTx = new Transaction({
-      version: 1,
+      version: 0,
       lockTime,
       inputs: txInputs,
       outputs: txOutputs,
@@ -809,7 +809,7 @@ export async function buildPartialSpend(
 
     // Count sig params for sigOpCount
     const sigParams = abiEntry.inputs.filter(inp => inp.type_name === 'sig');
-    const sigOpCount = sigParams.length;
+    const sigOpCount = sigParams.length || 1;
 
     // Detect timelock: only tx.time needs lockTime, this.age does not
     const astFn = compiled.ast?.functions?.find(f => f.name === functionName);
@@ -831,7 +831,7 @@ export async function buildPartialSpend(
       previousOutpoint: entry.outpoint,
       utxo: entry,
       sequence: 0n,
-      ...buildInputMassFields({ version: 1, sigOpCount, computeBudget: 30 }),
+      ...buildInputMassFields({ version: 0, sigOpCount, computeBudget: null }),
     }];
 
     const txOutputs: ITransactionOutput[] = outputs.map(o => ({
@@ -840,7 +840,7 @@ export async function buildPartialSpend(
     }));
 
     const unsignedTx = new Transaction({
-      version: 1,
+      version: 0,
       lockTime,
       inputs: txInputs,
       outputs: txOutputs,
@@ -919,7 +919,7 @@ export async function completePartialSpend(
       previousOutpoint: entry.outpoint,
       utxo: entry,
       sequence: 0n,
-      ...buildInputMassFields({ version: 1, sigOpCount, computeBudget: 30 }),
+      ...buildInputMassFields({ version: 0, sigOpCount, computeBudget: null }),
     }];
 
     const txOutputs: ITransactionOutput[] = partialSpend.outputs.map(o => ({
@@ -928,7 +928,7 @@ export async function completePartialSpend(
     }));
 
     const unsignedTx = new Transaction({
-      version: 1,
+      version: 0,
       lockTime: BigInt(partialSpend.lockTime),
       inputs: txInputs,
       outputs: txOutputs,

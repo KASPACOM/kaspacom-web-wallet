@@ -85,7 +85,7 @@ export const environment: Environment = {
     {
       sdkName: 'igra-testnet',
       icon: 'images/chains/igra.svg',
-      shortName: 'Galleon',
+      shortName: 'Igra',
       l1TransactionPrefix: 'igra',
       verifiedTokens: [
         {

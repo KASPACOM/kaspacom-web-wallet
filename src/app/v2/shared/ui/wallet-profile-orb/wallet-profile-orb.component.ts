@@ -49,6 +49,7 @@ function djb2(str: string): number {
 interface L1AvatarConfig {
   tokenId: string;
   imgFilter: string;
+  bgColor: string;
 }
 
 function computeL1Avatar(address: string): L1AvatarConfig {
@@ -56,9 +57,12 @@ function computeL1Avatar(address: string): L1AvatarConfig {
   const hue = h % 360;
   const saturate = 100 + ((h >>> 4) % 60);
   const contrast = 95 + ((h >>> 8) % 20);
+  const bgSat = 40 + ((h >>> 12) % 30);
+  const bgLight = 15 + ((h >>> 16) % 15);
   return {
     tokenId: ((h % 10000) + 1).toString(),
     imgFilter: `hue-rotate(${hue}deg) saturate(${saturate}%) contrast(${contrast}%)`,
+    bgColor: `hsl(${hue}, ${bgSat}%, ${bgLight}%)`,
   };
 }
 
@@ -72,7 +76,7 @@ function computeL1Avatar(address: string): L1AvatarConfig {
 export class WalletProfileOrbComponent {
   private walletService = inject(WalletService);
 
-  readonly yonatoshiBaseUrl = `${environment.krc721CacheStreamUrl}/optimized/YONATOSHI`;
+  readonly yonatoshiBaseUrl = environment.yonatoshiBaseUrl;
 
   isL2 = this.walletService.getIsL2DisplaySignal();
   walletAddress = this.walletService.getCurrentDisplayWalletAddressAsString;

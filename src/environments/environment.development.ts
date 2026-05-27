@@ -11,6 +11,7 @@ export const environment: Environment = {
   kaspaApiBaseurl: 'https://api-tn10.kaspa.org',
   krc721ApiBaseurl: 'https://testnet-10.krc721.stream/api/v1/krc721/testnet-10',
   krc721CacheStreamUrl: 'https://cache.krc721.stream/krc721/testnet-10',
+  yonatoshiBaseUrl: 'https://cache.krc721.stream/krc721/mainnet/optimized/YONATOSHI',
   knsApiBaseurl: 'https://api.knsdomains.org/tn10',
   kaspaExplorerBaseurl: 'https://explorer-tn10.kaspa.org',
   logosUrl: 'https://erc20-logo-dev.s3.eu-central-1.amazonaws.com/',

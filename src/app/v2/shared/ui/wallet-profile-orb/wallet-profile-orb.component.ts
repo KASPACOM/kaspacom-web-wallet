@@ -1,7 +1,6 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { WalletService } from '../../../../services/wallet.service';
-
-const YONATOSHI_BASE_URL = 'https://cache.krc721.stream/krc721/mainnet/optimized/YONATOSHI';
+import { environment } from '../../../../../environments/environment';
 
 interface AvatarConfig {
   shapeIndex: number;
@@ -55,8 +54,8 @@ interface L1AvatarConfig {
 function computeL1Avatar(address: string): L1AvatarConfig {
   const h = djb2(address);
   const hue = h % 360;
-  const saturate = 100 + ((h >> 4) % 60);
-  const contrast = 95 + ((h >> 8) % 20);
+  const saturate = 100 + ((h >>> 4) % 60);
+  const contrast = 95 + ((h >>> 8) % 20);
   return {
     tokenId: ((h % 10000) + 1).toString(),
     imgFilter: `hue-rotate(${hue}deg) saturate(${saturate}%) contrast(${contrast}%)`,
@@ -73,11 +72,16 @@ function computeL1Avatar(address: string): L1AvatarConfig {
 export class WalletProfileOrbComponent {
   private walletService = inject(WalletService);
 
-  readonly yonatoshiBaseUrl = YONATOSHI_BASE_URL;
+  readonly yonatoshiBaseUrl = `${environment.krc721CacheStreamUrl}/optimized/YONATOSHI`;
 
   isL2 = this.walletService.getIsL2DisplaySignal();
   walletAddress = this.walletService.getCurrentDisplayWalletAddressAsString;
 
   avatarConfig = computed((): AvatarConfig => computeAvatar(this.walletAddress()));
   l1AvatarConfig = computed((): L1AvatarConfig => computeL1Avatar(this.walletAddress()));
+  l1AvatarError = signal(false);
+
+  onL1AvatarError(): void {
+    this.l1AvatarError.set(true);
+  }
 }

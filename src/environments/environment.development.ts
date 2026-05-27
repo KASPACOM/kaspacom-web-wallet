@@ -25,7 +25,6 @@ export const environment: Environment = {
     shortName: 'Kaspa L1',
     icon: 'images/tokens-logos/KAS.png',
   },
-  isL2Enabled: true,
   l2Configs: [
     {
       sdkName: 'kasplex-testnet',
@@ -86,7 +85,7 @@ export const environment: Environment = {
     {
       sdkName: 'igra-testnet',
       icon: 'images/chains/igra.svg',
-      shortName: 'Galleon',
+      shortName: 'Igra',
       l1TransactionPrefix: 'igra',
       verifiedTokens: [
         {

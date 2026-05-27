@@ -61,7 +61,7 @@
 
 
 
-        <div *ngIf="isL2Enabled">
+        <div>
           <h3>L2:</h3>
 
           <div class="network-selector">
@@ -132,7 +132,7 @@
           <button class="tab-button" [class.active]="activeTab === 'deploy'" (click)="switchTab('deploy')">
             Deploy
           </button>
-          <button class="tab-button" [class.active]="activeTab === 'kasplex-l2'" (click)="switchTab('kasplex-l2')" *ngIf="isL2Enabled">
+          <button class="tab-button" [class.active]="activeTab === 'kasplex-l2'" (click)="switchTab('kasplex-l2')">
             L2 Transaction
           </button>
           <!-- This is for development -->

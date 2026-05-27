@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { WalletService } from '../../../../services/wallet.service';
 import { environment } from '../../../../../environments/environment';
 
@@ -76,7 +76,7 @@ function computeL1Avatar(address: string): L1AvatarConfig {
 export class WalletProfileOrbComponent {
   private walletService = inject(WalletService);
 
-  readonly yonatoshiBaseUrl = environment.yonatoshiBaseUrl;
+  readonly yonatoshiBaseUrl = `${environment.krc721CacheStreamUrl}/optimized/${environment.l1AvatarCollection}`;
 
   isL2 = this.walletService.getIsL2DisplaySignal();
   walletAddress = this.walletService.getCurrentDisplayWalletAddressAsString;
@@ -84,6 +84,13 @@ export class WalletProfileOrbComponent {
   avatarConfig = computed((): AvatarConfig => computeAvatar(this.walletAddress()));
   l1AvatarConfig = computed((): L1AvatarConfig => computeL1Avatar(this.walletAddress()));
   l1AvatarError = signal(false);
+
+  constructor() {
+    effect(() => {
+      this.walletAddress();
+      this.l1AvatarError.set(false);
+    });
+  }
 
   onL1AvatarError(): void {
     this.l1AvatarError.set(true);

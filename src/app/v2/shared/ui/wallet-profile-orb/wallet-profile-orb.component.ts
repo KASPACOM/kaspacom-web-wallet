@@ -76,7 +76,7 @@ function computeL1Avatar(address: string): L1AvatarConfig {
 export class WalletProfileOrbComponent {
   private walletService = inject(WalletService);
 
-  readonly yonatoshiBaseUrl = `${environment.krc721CacheStreamUrl}/optimized/${environment.l1AvatarCollection}`;
+  readonly l1AvatarBaseUrl = `${environment.krc721CacheStreamUrl}/optimized/${encodeURIComponent(environment.l1AvatarCollection.toUpperCase())}`;
 
   isL2 = this.walletService.getIsL2DisplaySignal();
   walletAddress = this.walletService.getCurrentDisplayWalletAddressAsString;

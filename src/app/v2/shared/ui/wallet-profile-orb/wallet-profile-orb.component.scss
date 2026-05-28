@@ -29,16 +29,22 @@
   width: 38px;
   height: 38px;
   border-radius: 100%;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  overflow: hidden;
   flex-shrink: 0;
   cursor: pointer;
   border: 2px solid transparent;
-  transition: border-color 0.2s ease;
-  background-image: url("https://cache.krc721.stream/krc721/mainnet/optimized/YONATOSHI/6464");
+  @media (prefers-reduced-motion: no-preference) {
+    transition: border-color 0.2s ease;
+  }
 
   &:hover {
     border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 }

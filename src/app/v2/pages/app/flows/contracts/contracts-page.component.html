@@ -585,7 +585,7 @@
     @if (parsedInteractContract()) {
     <div class="form-group flex align-items-center gap-8">
       <label class="flex align-items-center gap-8 cursor-pointer m-0">
-        <input type="checkbox" class="cursor-pointer" [(ngModel)]="useSenderFee" (ngModelChange)="onUseSenderFeeChange()" [disabled]="isInteracting()" />
+        <input type="checkbox" class="cursor-pointer" [(ngModel)]="useSenderFee" [disabled]="isInteracting()" />
         <span class="text-white typo-text-2">Use wallet to pay for fees</span>
       </label>
       <kc-icon [iconClass]="'icon-info'" [size]="'xs'"

@@ -688,9 +688,8 @@ export class ContractsPageComponent implements OnInit {
           return;
         }
         const amountToSellerSompi = BigInt(Math.floor(outputAmountKas * 1e8));
-        const feeSompi = this.useSenderFee ? 0n : 1000n;
-        const amountToBuyerSompi = inputAmount > amountToSellerSompi + feeSompi
-          ? inputAmount - amountToSellerSompi - feeSompi
+        const amountToBuyerSompi = inputAmount > amountToSellerSompi
+          ? inputAmount - amountToSellerSompi
           : 0n;
 
         // Derive seller/buyer addresses from pubkeys baked into the compiled script.
@@ -746,10 +745,9 @@ export class ContractsPageComponent implements OnInit {
       } else {
         // Redeploy function (keepAlive, increment) — send full balance minus fee back to covenant
         // IMPORTANT: DMS contract enforces tx.outputs[0].value >= tx.inputs[...].value - 1000
-        // Fee MUST be <= 1000 sompi (0.00001 KAS), NOT 1_000_000!
+        // We set it to full amount and the SDK will deduct the actual network fee from the output if useSenderFee is false
         const covenantAddress = this.covenantService.getContractAddress(compiled);
-        const feeSompi = this.useSenderFee ? 0n : 1000n; // 0.00001 KAS — matches contract's fee constant
-        const redeployAmount = inputAmount > feeSompi ? inputAmount - feeSompi : 0n;
+        const redeployAmount = inputAmount;
         outputs = [{
           address: covenantAddress,
           amount: redeployAmount,
@@ -808,11 +806,10 @@ export class ContractsPageComponent implements OnInit {
           });
         } else {
           // Redeploy (keepAlive/increment): update the outpoint to the new UTXO
-          const feeSompi = this.useSenderFee ? 0n : 1000n;
           this.registryService.updateContract(this.selectedContractId, {
             lastChecked: Date.now(),
             outpoint: { txid: result.txid, vout: 0 },
-            amountSompi: (inputAmount - feeSompi).toString(),
+            amountSompi: (inputAmount).toString(), // The registry doesn't accurately know the post-fee amount until refreshed, but setting inputAmount is close enough
           });
           // Update the interact form with the new outpoint
           this.interactOutpointTxid = result.txid;
@@ -1129,12 +1126,10 @@ export class ContractsPageComponent implements OnInit {
       if (contract) {
         this.interactOutputAddress = this.covenantService.getContractAddress(contract);
       }
-      // Use contract's fee constant (1000 sompi) or 0 if using sender fee, NOT fillMaxOutputAmount (which uses 1M)
       const inputSompi = this.interactInputAmount;
       if (inputSompi) {
         try {
-          const feeSompi = this.useSenderFee ? 0n : 1000n;
-          const outputSompi = BigInt(inputSompi) - feeSompi;
+          const outputSompi = BigInt(inputSompi);
           const outputKas = Number(outputSompi) / 1e8;
           this.interactOutputAmount = outputKas.toFixed(8).replace(/\.?0+$/, '');
         } catch { /* ignore */ }
@@ -1222,50 +1217,13 @@ export class ContractsPageComponent implements OnInit {
     if (!sompi) return;
     try {
       const inputSompi = BigInt(sompi);
-      // Reserve 0.01 KAS (1,000,000 sompi) for transaction fee if not using sender fee
-      const feeSompi = this.useSenderFee ? 0n : BigInt(1_000_000);
-      const outputSompi = inputSompi > feeSompi ? inputSompi - feeSompi : 0n;
-      const outputKas = Number(outputSompi) / 1e8;
+      const outputKas = Number(inputSompi) / 1e8;
       this.interactOutputAmount = outputKas.toFixed(8).replace(/\.?0+$/, '');
     } catch {
       // Invalid amount
     }
   }
 
-  /**
-   * Handle toggling the useSenderFee option
-   */
-  onUseSenderFeeChange() {
-    if (!this.selectedFunction) return;
-
-    if (!this.functionRequiresOutput(this.selectedFunction)) {
-      // Redeploy functions (keepAlive, increment): auto-fill exact amount based on the fee
-      const inputSompi = this.interactInputAmount;
-      if (inputSompi) {
-        try {
-          const feeSompi = this.useSenderFee ? 0n : 1000n;
-          const outputSompi = BigInt(inputSompi) - feeSompi;
-          const outputKas = Number(outputSompi) / 1e8;
-          this.interactOutputAmount = outputKas.toFixed(8).replace(/\.?0+$/, '');
-        } catch { /* ignore */ }
-      }
-    } else {
-      // Withdrawal functions: if amount was exactly the old max, update it to the new max
-      const sompi = this.interactInputAmount;
-      if (sompi) {
-        try {
-          const inputSompi = BigInt(sompi);
-          const oldFeeSompi = this.useSenderFee ? BigInt(1_000_000) : 0n; // fee before this toggle change
-          const expectedOldSompi = inputSompi > oldFeeSompi ? inputSompi - oldFeeSompi : 0n;
-          const expectedOldKasStr = (Number(expectedOldSompi) / 1e8).toFixed(8).replace(/\.?0+$/, '');
-
-          if (this.interactOutputAmount === expectedOldKasStr) {
-            this.fillMaxOutputAmount();
-          }
-        } catch { /* ignore */ }
-      }
-    }
-  }
 
   /**
    * Handle hash32 field input — if user pastes a 32-byte pubkey (64 hex chars),

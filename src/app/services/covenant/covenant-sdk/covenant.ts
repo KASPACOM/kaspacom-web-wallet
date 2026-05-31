@@ -597,8 +597,6 @@ export async function spendContract(
         scriptPublicKey: payToAddressScript(senderAddress),
         value: totalInputsAmount - spendOutputsSum, // Temporary value
       });
-    } else {
-      txOutputs[txOutputs.length - 1].value = txOutputs[0].value - 100000n;
     }
 
     // Determine if this function uses a timelock by checking for time_op in AST body.
@@ -644,13 +642,13 @@ export async function spendContract(
     });
 
     // --- Dynamic Fee Adjustment ---
-    if (useSenderFee) {
-      const transactionFee = (calculateTransactionFee(network, unsignedTx) || 0n) + 8000n; // Currently calculateTransactionFee not working well for contract calls
-      if (!transactionFee) {
-        throw new Error("Transaction fee not calculated");
-      }
-      const totalFees = transactionFee + priorityFee;
+    const transactionFee = (calculateTransactionFee(network, unsignedTx) || 0n) + 8000n; // Currently calculateTransactionFee not working well for contract calls
+    if (!transactionFee) {
+      throw new Error("Transaction fee not calculated");
+    }
+    const totalFees = transactionFee + priorityFee;
 
+    if (useSenderFee) {
       if (changeOutputIdx !== -1) {
         const finalChange = totalInputsAmount - spendOutputsSum - totalFees;
         if (finalChange < MINIMAL_AMOUNT_TO_SEND) {
@@ -662,6 +660,17 @@ export async function spendContract(
         const surplus = totalInputsAmount - spendOutputsSum;
         if (surplus < totalFees) {
           throw new Error(`Insufficient funds for fee. Need ${totalFees}, have ${surplus}`);
+        }
+      }
+    } else {
+      // Deduct fee from the outputs
+      const surplus = totalInputsAmount - spendOutputsSum;
+      if (surplus < totalFees) {
+        const deficit = totalFees - surplus;
+        const lastOutput = unsignedTx.outputs[unsignedTx.outputs.length - 1];
+        lastOutput.value -= deficit;
+        if (lastOutput.value <= 0n) {
+          throw new Error(`Last output value is too small to cover the fee. Need ${deficit} sompi.`);
         }
       }
     }

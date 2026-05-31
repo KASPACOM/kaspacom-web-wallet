@@ -315,6 +315,18 @@ export class ContractsPageComponent implements OnInit {
     this.generatedContractJson.set(null);
     this.templateError.set(null);
 
+    const address = this.currentWallet()?.getAddress();
+    if (address) {
+      for (const field of template.fields) {
+        if (
+          field.type === 'address' &&
+          (field.paramName === 'owner' || field.paramName === 'buyer' || field.paramName === 'key1')
+        ) {
+          this.templateFormValues[field.paramName] = address;
+        }
+      }
+    }
+
     // Clear any localStorage-cached template form values to prevent stale auto-fill
     try {
       localStorage.removeItem('kaspacom_template_form_' + template.id);

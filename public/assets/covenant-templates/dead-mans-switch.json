@@ -1,13 +1,15 @@
 {
   "contract_name": "DeadManSwitch",
+  "compiler_version": "0.1.0",
   "script": [
+    107,
+    108,
     118,
     0,
     156,
     99,
     117,
-    0,
-    121,
+    118,
     32,
     170,
     171,
@@ -47,10 +49,6 @@
     194,
     185,
     190,
-    2,
-    232,
-    3,
-    148,
     162,
     105,
     117,
@@ -61,8 +59,7 @@
     156,
     99,
     117,
-    0,
-    121,
+    118,
     32,
     204,
     205,
@@ -163,6 +160,7 @@
         ],
         "entrypoint": true,
         "return_types": [],
+        "returns_tuple": false,
         "body": [
           {
             "kind": "require",
@@ -213,43 +211,31 @@
                     "span": "tx.outputs[0].value"
                   },
                   "right": {
-                    "kind": "binary",
+                    "kind": "introspection",
                     "data": {
-                      "op": "sub",
-                      "left": {
-                        "kind": "introspection",
-                        "data": {
-                          "kind": "input_value",
-                          "index": {
-                            "kind": "nullary",
-                            "data": "active_input_index",
-                            "span": "this.activeInputIndex"
-                          },
-                          "field_span": ".value"
-                        },
-                        "span": "tx.inputs[this.activeInputIndex].value"
+                      "kind": "input_value",
+                      "index": {
+                        "kind": "nullary",
+                        "data": "active_input_index",
+                        "span": "this.activeInputIndex"
                       },
-                      "right": {
-                        "kind": "int",
-                        "data": 1000,
-                        "span": "1000"
-                      }
+                      "field_span": ".value"
                     },
-                    "span": "tx.inputs[this.activeInputIndex].value - 1000"
+                    "span": "tx.inputs[this.activeInputIndex].value"
                   }
                 },
-                "span": "tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - 1000"
+                "span": "tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value"
               },
               "message": null,
-              "span": "require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - 1000);",
+              "span": "require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);",
               "message_span": null
             }
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function keepAlive(sig s) {\n        require(checkSig(s, owner));\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - 1000);\n    }",
+        "span": "entrypoint function keepAlive(sig s) {\r\n        require(checkSig(s, owner));\r\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);\r\n    }",
         "name_span": "keepAlive",
-        "body_span": "require(checkSig(s, owner));\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - 1000);"
+        "body_span": "require(checkSig(s, owner));\r\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);"
       },
       {
         "name": "claim",
@@ -266,6 +252,7 @@
         ],
         "entrypoint": true,
         "return_types": [],
+        "returns_tuple": false,
         "body": [
           {
             "kind": "require",
@@ -312,12 +299,12 @@
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function claim(sig s) {\n        require(checkSig(s, heir));\n        require(tx.time >= expiry);\n    }",
+        "span": "entrypoint function claim(sig s) {\r\n        require(checkSig(s, heir));\r\n        require(tx.time >= expiry);\r\n    }",
         "name_span": "claim",
-        "body_span": "require(checkSig(s, heir));\n        require(tx.time >= expiry);"
+        "body_span": "require(checkSig(s, heir));\r\n        require(tx.time >= expiry);"
       }
     ],
-    "span": "contract DeadManSwitch(pubkey owner, pubkey heir, int expiry) {\n\n    entrypoint function keepAlive(sig s) {\n        require(checkSig(s, owner));\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - 1000);\n    }\n    \n    entrypoint function claim(sig s) {\n        require(checkSig(s, heir));\n        require(tx.time >= expiry);\n    }\n}",
+    "span": "contract DeadManSwitch(pubkey owner, pubkey heir, int expiry) {\r\n\r\n    entrypoint function keepAlive(sig s) {\r\n        require(checkSig(s, owner));\r\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);\r\n    }\r\n    \r\n    entrypoint function claim(sig s) {\r\n        require(checkSig(s, heir));\r\n        require(tx.time >= expiry);\r\n    }\r\n}",
     "name_span": "DeadManSwitch"
   },
   "abi": [
@@ -340,5 +327,10 @@
       ]
     }
   ],
-  "without_selector": false
+  "without_selector": false,
+  "state_layout": {
+    "start": 1,
+    "len": 0
+  },
+  "debug_info": null
 }

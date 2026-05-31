@@ -127,6 +127,7 @@ export class ContractsPageComponent implements OnInit {
   lookupContractJson = '';
   interactOutputAmount = '';
   selectedFunction = '';
+  useSenderFee = true;
   interactResult = signal<{ txid: string; functionName: string } | null>(null);
   interactError = signal<string | null>(null);
   isInteracting = signal(false);
@@ -337,7 +338,7 @@ export class ContractsPageComponent implements OnInit {
       const compiled = await firstValueFrom(this.http.get<any>(template.assetPath));
       const descriptor = this.templatePatcher.extractPatchDescriptor(compiled, template.placeholderArgs);
       const patched = this.templatePatcher.applyPatch(compiled, descriptor, newArgs);
-      
+
       let argsPayload: any[] = [];
       let tmplName = compiled.contract_name;
 
@@ -687,7 +688,7 @@ export class ContractsPageComponent implements OnInit {
           return;
         }
         const amountToSellerSompi = BigInt(Math.floor(outputAmountKas * 1e8));
-        const feeSompi = 1000n;
+        const feeSompi = this.useSenderFee ? 0n : 1000n;
         const amountToBuyerSompi = inputAmount > amountToSellerSompi + feeSompi
           ? inputAmount - amountToSellerSompi - feeSompi
           : 0n;
@@ -716,7 +717,7 @@ export class ContractsPageComponent implements OnInit {
           outputs,
           { amountToSeller: amountToSellerSompi },
           undefined,
-          true,
+          this.useSenderFee,
         );
         if (!result) return;
         this.interactResult.set({ txid: result.txid, functionName: result.functionName });
@@ -747,7 +748,7 @@ export class ContractsPageComponent implements OnInit {
         // IMPORTANT: DMS contract enforces tx.outputs[0].value >= tx.inputs[...].value - 1000
         // Fee MUST be <= 1000 sompi (0.00001 KAS), NOT 1_000_000!
         const covenantAddress = this.covenantService.getContractAddress(compiled);
-        const feeSompi = 1000n; // 0.00001 KAS — matches contract's fee constant
+        const feeSompi = this.useSenderFee ? 0n : 1000n; // 0.00001 KAS — matches contract's fee constant
         const redeployAmount = inputAmount > feeSompi ? inputAmount - feeSompi : 0n;
         outputs = [{
           address: covenantAddress,
@@ -787,6 +788,7 @@ export class ContractsPageComponent implements OnInit {
         outputs,
         Object.keys(extraArgs).length > 0 ? extraArgs : undefined,
         undefined,
+        this.useSenderFee
       );
       if (!result) return;
 
@@ -806,10 +808,11 @@ export class ContractsPageComponent implements OnInit {
           });
         } else {
           // Redeploy (keepAlive/increment): update the outpoint to the new UTXO
+          const feeSompi = this.useSenderFee ? 0n : 1000n;
           this.registryService.updateContract(this.selectedContractId, {
             lastChecked: Date.now(),
             outpoint: { txid: result.txid, vout: 0 },
-            amountSompi: (inputAmount - 1000n).toString(),
+            amountSompi: (inputAmount - feeSompi).toString(),
           });
           // Update the interact form with the new outpoint
           this.interactOutpointTxid = result.txid;
@@ -1126,11 +1129,12 @@ export class ContractsPageComponent implements OnInit {
       if (contract) {
         this.interactOutputAddress = this.covenantService.getContractAddress(contract);
       }
-      // Use contract's fee constant (1000 sompi), NOT fillMaxOutputAmount (which uses 1M)
+      // Use contract's fee constant (1000 sompi) or 0 if using sender fee, NOT fillMaxOutputAmount (which uses 1M)
       const inputSompi = this.interactInputAmount;
       if (inputSompi) {
         try {
-          const outputSompi = BigInt(inputSompi) - 1000n;
+          const feeSompi = this.useSenderFee ? 0n : 1000n;
+          const outputSompi = BigInt(inputSompi) - feeSompi;
           const outputKas = Number(outputSompi) / 1e8;
           this.interactOutputAmount = outputKas.toFixed(8).replace(/\.?0+$/, '');
         } catch { /* ignore */ }
@@ -1218,13 +1222,48 @@ export class ContractsPageComponent implements OnInit {
     if (!sompi) return;
     try {
       const inputSompi = BigInt(sompi);
-      // Reserve 0.01 KAS (1,000,000 sompi) for transaction fee
-      const feeSompi = BigInt(1_000_000);
+      // Reserve 0.01 KAS (1,000,000 sompi) for transaction fee if not using sender fee
+      const feeSompi = this.useSenderFee ? 0n : BigInt(1_000_000);
       const outputSompi = inputSompi > feeSompi ? inputSompi - feeSompi : 0n;
       const outputKas = Number(outputSompi) / 1e8;
       this.interactOutputAmount = outputKas.toFixed(8).replace(/\.?0+$/, '');
     } catch {
       // Invalid amount
+    }
+  }
+
+  /**
+   * Handle toggling the useSenderFee option
+   */
+  onUseSenderFeeChange() {
+    if (!this.selectedFunction) return;
+
+    if (!this.functionRequiresOutput(this.selectedFunction)) {
+      // Redeploy functions (keepAlive, increment): auto-fill exact amount based on the fee
+      const inputSompi = this.interactInputAmount;
+      if (inputSompi) {
+        try {
+          const feeSompi = this.useSenderFee ? 0n : 1000n;
+          const outputSompi = BigInt(inputSompi) - feeSompi;
+          const outputKas = Number(outputSompi) / 1e8;
+          this.interactOutputAmount = outputKas.toFixed(8).replace(/\.?0+$/, '');
+        } catch { /* ignore */ }
+      }
+    } else {
+      // Withdrawal functions: if amount was exactly the old max, update it to the new max
+      const sompi = this.interactInputAmount;
+      if (sompi) {
+        try {
+          const inputSompi = BigInt(sompi);
+          const oldFeeSompi = this.useSenderFee ? BigInt(1_000_000) : 0n; // fee before this toggle change
+          const expectedOldSompi = inputSompi > oldFeeSompi ? inputSompi - oldFeeSompi : 0n;
+          const expectedOldKasStr = (Number(expectedOldSompi) / 1e8).toFixed(8).replace(/\.?0+$/, '');
+
+          if (this.interactOutputAmount === expectedOldKasStr) {
+            this.fillMaxOutputAmount();
+          }
+        } catch { /* ignore */ }
+      }
     }
   }
 

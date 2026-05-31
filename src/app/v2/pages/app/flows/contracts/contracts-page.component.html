@@ -581,6 +581,19 @@
     </div>
     }
 
+    <!-- Sender Fee Toggle -->
+    @if (parsedInteractContract()) {
+    <div class="form-group flex align-items-center gap-8">
+      <label class="flex align-items-center gap-8 cursor-pointer m-0">
+        <input type="checkbox" class="cursor-pointer" [(ngModel)]="useSenderFee" (ngModelChange)="onUseSenderFeeChange()" [disabled]="isInteracting()" />
+        <span class="text-white typo-text-2">Use wallet to pay for fees</span>
+      </label>
+      <kc-icon [iconClass]="'icon-info'" [size]="'xs'"
+        kcTooltip="If enabled, transaction fees will be paid from your wallet balance instead of the contract funds."
+        tooltipPosition="top"></kc-icon>
+    </div>
+    }
+
     <!-- Execute button -->
     @if (parsedInteractContract()) {
     <kc-button

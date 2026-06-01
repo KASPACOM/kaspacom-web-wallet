@@ -23,6 +23,8 @@ export interface ContractRegistryEntry {
     description: string; // human readable like "Owner can spend"
   }>;
   covenantId?: string;
+  /** ID of the registry entry that this contract continues (keepAlive chain) */
+  predecessorId?: string;
 }
 
 @Injectable({

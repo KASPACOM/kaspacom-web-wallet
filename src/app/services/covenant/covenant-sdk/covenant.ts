@@ -572,11 +572,15 @@ export async function spendContract(
       value: output.amount,
     };
 
-    // If this output goes to the same covenant address and we have a covenant ID,
-    // attach a continuation CovenantBinding
-    if (utxoCovenantId && output.address === covenantAddress) {
+    // Determine which covenant ID to use for this output:
+    //   1. Prefer the per-output explicit covenantId (keepAlive → new DMS contract)
+    //   2. Fall back to the global utxoCovenantId if output goes to same covenant address
+    const bindingCovenantId = output.covenantId
+      ?? (utxoCovenantId && output.address === covenantAddress ? utxoCovenantId : undefined);
+
+    if (bindingCovenantId) {
       try {
-        const hashObj = new Hash(utxoCovenantId);
+        const hashObj = new Hash(bindingCovenantId);
         const binding = new CovenantBinding(0, hashObj); // authorizing_input = 0 (our covenant input)
         const txOutput = new TransactionOutput(output.amount, spk, binding);
         return txOutput as any;

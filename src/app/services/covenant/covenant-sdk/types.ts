@@ -54,6 +54,8 @@ export interface CovenantOutpoint {
 export interface SpendOutput {
   address: string;
   amount: bigint;
+  /** If set, attach a CovenantBinding with this covenant ID to this output (continuation to a different address). */
+  covenantId?: string;
 }
 
 export interface DeployResult {

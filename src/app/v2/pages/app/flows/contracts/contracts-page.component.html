@@ -434,8 +434,34 @@
       }
     </div>
 
-    <!-- Output address + amount (only for withdrawal functions) -->
-    @if (selectedFunction && functionRequiresOutput(selectedFunction)) {
+    <!-- DMS keepAlive: new expiry input -->
+    @if (isDmsKeepAlive()) {
+    <div class="form-group flex column gap-8">
+      <div class="flex align-items-center gap-4">
+        <label class="text-gray-60 typo-text-1">New Expiry Timestamp (Unix seconds)</label>
+        <kc-icon [iconClass]="'icon-info'" [size]="'xs'"
+          kcTooltip="The new deadline timestamp for the refreshed contract. Enter as Unix timestamp in seconds (e.g. from epochconverter.com). The same owner and heir are preserved automatically."
+          tooltipPosition="top"></kc-icon>
+      </div>
+      <input type="number" class="form-input p-12 rounded-lg text-white typo-text-2"
+        placeholder="e.g. 1780000000 (from epochconverter.com)"
+        [(ngModel)]="dmsNewExpiry" [disabled]="isInteracting()" step="1" min="0" />
+      <a href="https://www.epochconverter.com/" target="_blank" class="text-blue typo-text-2" style="font-size: 12px;">
+        🔗 Convert date to timestamp →
+      </a>
+    </div>
+
+    <div class="p-12 rounded-lg"
+      style="background: rgba(111, 199, 186, 0.08); border: 1px solid rgba(111, 199, 186, 0.2);">
+      <span class="text-gray-75 typo-text-2">
+        A new Dead Man's Switch contract will be generated with the same owner and heir but the updated expiry.
+        Funds will move to the new contract in the same transaction. The covenant lineage is preserved.
+      </span>
+    </div>
+    }
+
+    <!-- Output address + amount (only for withdrawal functions, NOT DMS keepAlive) -->
+    @if (selectedFunction && functionRequiresOutput(selectedFunction) && !isDmsKeepAlive()) {
     <div class="form-group flex column gap-8">
       <div class="flex align-items-center gap-4">
         <label class="text-gray-60 typo-text-1">Send To</label>
@@ -465,8 +491,8 @@
     </div>
     }
 
-    <!-- Info banner for redeploy functions (keepAlive, increment) -->
-    @if (selectedFunction && !functionRequiresOutput(selectedFunction)) {
+    <!-- Info banner for redeploy functions (keepAlive on non-DMS contracts, increment) -->
+    @if (selectedFunction && !functionRequiresOutput(selectedFunction) && !isDmsKeepAlive()) {
     <div class="p-12 rounded-lg"
       style="background: rgba(111, 199, 186, 0.08); border: 1px solid rgba(111, 199, 186, 0.2);">
       <span class="text-gray-75 typo-text-2">

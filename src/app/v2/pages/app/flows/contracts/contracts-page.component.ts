@@ -128,6 +128,10 @@ export class ContractsPageComponent implements OnInit {
   interactOutputAmount = '';
   selectedFunction = '';
   useSenderFee = true;
+
+  // DMS keepAlive specific state
+  dmsNewExpiry = '';  // new expiry timestamp (unix seconds) entered by user
+  dmsKeepAliveError = signal<string | null>(null);
   interactResult = signal<{ txid: string; functionName: string } | null>(null);
   interactError = signal<string | null>(null);
   isInteracting = signal(false);
@@ -754,9 +758,12 @@ export class ContractsPageComponent implements OnInit {
           address: outputAddress,
           amount: BigInt(Math.floor(outputAmountKas * 1e8)),
         }];
+      } else if (this.isDmsKeepAlive()) {
+        // DMS keepAlive — delegate to the dedicated method which handles new-contract generation
+        await this.executeDmsKeepAlive(compiled, contractJson, outpoint, inputAmount);
+        return;
       } else {
         // Redeploy function (keepAlive, increment) — send full balance minus fee back to covenant
-        // IMPORTANT: DMS contract enforces tx.outputs[0].value >= tx.inputs[...].value - 1000
         // We set it to full amount and the SDK will deduct the actual network fee from the output if useSenderFee is false
         const covenantAddress = this.covenantService.getContractAddress(compiled);
         const redeployAmount = inputAmount;
@@ -834,6 +841,168 @@ export class ContractsPageComponent implements OnInit {
     } finally {
       this.isInteracting.set(false);
     }
+  }
+
+  /**
+   * Execute a Dead Man's Switch keepAlive:
+   *   1. Validates the new expiry input.
+   *   2. Extracts owner + heir pubkeys from the current compiled script.
+   *   3. Generates a new DMS compiled JSON with the same owner/heir but new expiry.
+   *   4. Spends the old DMS UTXO via keepAlive, sending funds to the new DMS address.
+   *      The existing covenantId is attached via CovenantBinding to preserve lineage.
+   *   5. Marks old registry entry as spent, registers a new entry for the continuation.
+   */
+  private async executeDmsKeepAlive(
+    compiled: CompiledContract,
+    contractJson: string,
+    outpoint: CovenantOutpoint,
+    inputAmount: bigint,
+  ): Promise<void> {
+    this.dmsKeepAliveError.set(null);
+
+    // 1. Validate new expiry
+    const newExpiryRaw = this.dmsNewExpiry?.toString().trim();
+    if (!newExpiryRaw) {
+      this.interactError.set('Enter the new expiry timestamp for the refreshed contract.');
+      return;
+    }
+    let newExpiryMs: number;
+    try {
+      newExpiryMs = this.parseDateToUnixMs(newExpiryRaw, 'New Expiry');
+    } catch (e: any) {
+      this.interactError.set(e?.message || 'Invalid expiry timestamp.');
+      return;
+    }
+
+    // 2. Extract owner and heir pubkey bytes from the current compiled script.
+    //    The DMS constructor order is: owner (param 0), heir (param 1).
+    const pubkeys = this.extractPubkeysFromScript(compiled);
+    if (pubkeys.length < 2) {
+      this.interactError.set('Could not extract owner/heir pubkeys from the contract script.');
+      return;
+    }
+    const ownerPubkeyBytes = this.hexStringToBytes(pubkeys[0]);
+    const heirPubkeyBytes = this.hexStringToBytes(pubkeys[1]);
+
+    // 3. Generate new DMS compiled JSON with same owner/heir, new expiry.
+    let newCompiledJson: string;
+    let newCompiled: CompiledContract;
+    try {
+      const template = await firstValueFrom(
+        this.http.get<any>('assets/covenant-templates/dead-mans-switch.json')
+      );
+      const DMS_TEMPLATE = CONTRACT_TEMPLATES.find(t => t.id === 'dead-mans-switch')!;
+      const descriptor = this.templatePatcher.extractPatchDescriptor(template, DMS_TEMPLATE.placeholderArgs);
+
+      const newArgs: import('../../../../services/covenant/template-patcher.service').CtorArg[] = [
+        { kind: 'array', data: Array.from(ownerPubkeyBytes).map(b => ({ kind: 'byte' as const, data: b })) },
+        { kind: 'array', data: Array.from(heirPubkeyBytes).map(b => ({ kind: 'byte' as const, data: b })) },
+        { kind: 'int', data: newExpiryMs },
+      ];
+
+      const patched = this.templatePatcher.applyPatch(template, descriptor, newArgs);
+      // Attach TN10 metadata using the current registry entry's stored values
+      const currentEntry = this.registryContracts().find(c => c.id === this.selectedContractId);
+      const ownerAddress = currentEntry?.deployedBy?.address || this.currentWallet()?.getAddress() || '';
+      const heirAddress = this.pubkeyToAddress(pubkeys[1]);
+      patched.tn10 = {
+        v: 1,
+        tmpl: 'DeadManSwitch',
+        args: [
+          { name: 'owner', type: 'address', value: ownerAddress },
+          { name: 'heir', type: 'address', value: heirAddress },
+          { name: 'checkInDeadline', type: 'blueScore', value: String(newExpiryMs) },
+        ],
+      };
+      newCompiledJson = JSON.stringify(patched);
+      newCompiled = this.covenantService.parseCompiledContract(newCompiledJson);
+    } catch (e: any) {
+      this.interactError.set(e?.message || 'Failed to generate new DMS contract.');
+      return;
+    }
+
+    const newContractAddress = this.covenantService.getContractAddress(newCompiled);
+
+    // 4. Get the covenant ID from the registry for the old contract (for CovenantBinding)
+    const oldEntry = this.registryContracts().find(c => c.id === this.selectedContractId);
+    const oldCovenantId = oldEntry?.covenantId;
+
+    // Build spend output: full amount → new DMS address, with CovenantBinding if we have a covenantId
+    const spendOutputs: SpendOutput[] = [{
+      address: newContractAddress,
+      amount: inputAmount,
+      covenantId: oldCovenantId,  // attach binding to preserve lineage
+    }];
+
+    // 5. Execute the keepAlive spend on the old contract
+    const result = await this.runCovenantSpendAction(
+      compiled,
+      contractJson,
+      outpoint,
+      inputAmount,
+      'keepAlive',
+      spendOutputs,
+      undefined,
+      oldCovenantId,
+      this.useSenderFee,
+    );
+    if (!result) return;
+
+    this.interactResult.set({ txid: result.txid, functionName: 'keepAlive' });
+
+    // Update old registry entry as spent
+    if (this.selectedContractId) {
+      this.registryService.updateContract(this.selectedContractId, {
+        status: 'spent',
+        spendTxid: result.txid,
+        lastChecked: Date.now(),
+      });
+    }
+
+    // Register the new continuation contract
+    const wallet = this.currentWallet()!;
+    const newEntry: import('../../../../../services/covenant/contract-registry.service').ContractRegistryEntry = {
+      id: this.registryService.generateId(),
+      contractName: 'DeadManSwitch',
+      compiledJson: newCompiledJson,
+      deployTxid: result.txid,
+      contractAddress: newContractAddress,
+      outpoint: { txid: result.txid, vout: 0 },
+      amountSompi: inputAmount.toString(),
+      deployedBy: {
+        address: wallet.getAddress(),
+        pubkey: wallet.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString(),
+        accountName: wallet.getDisplayName(),
+      },
+      deployedAt: Date.now(),
+      network: this.network(),
+      status: 'active',
+      lastChecked: Date.now(),
+      accessRoles: this.parseAccessRoles(newCompiled),
+      covenantId: oldCovenantId ?? result.covenantId,
+      predecessorId: this.selectedContractId || undefined,
+    };
+    this.registryService.addContract(newEntry);
+
+    // Auto-select the new contract in the interact form
+    this.selectedContractId = newEntry.id;
+    this.interactContractJson = newCompiledJson;
+    this.interactOutpointTxid = result.txid;
+    this.interactOutpointVout = '0';
+    this.interactInputAmount = inputAmount.toString();
+    this.dmsNewExpiry = '';
+
+    this.loadContracts();
+  }
+
+  /** Convert a hex string to Uint8Array */
+  private hexStringToBytes(hex: string): Uint8Array {
+    const normalized = hex.replace(/^0x/i, '');
+    const bytes = new Uint8Array(normalized.length / 2);
+    for (let i = 0; i < normalized.length; i += 2) {
+      bytes[i / 2] = parseInt(normalized.slice(i, i + 2), 16);
+    }
+    return bytes;
   }
 
   private async runCovenantSpendAction(
@@ -1097,6 +1266,17 @@ export class ContractsPageComponent implements OnInit {
   private readonly REDEPLOY_FUNCTIONS = new Set(['keepAlive', 'increment']);
 
   /**
+   * Returns true when the current function is DMS keepAlive (requires special handling).
+   * DMS keepAlive must produce output to a *new* DMS contract (with updated expiry),
+   * not to the same contract address.
+   */
+  isDmsKeepAlive(): boolean {
+    const contract = this.parsedInteractContract();
+    if (!contract || this.selectedFunction !== 'keepAlive') return false;
+    return (contract.contract_name || '').toLowerCase().replace(/[\s_-]/g, '').includes('deadman');
+  }
+
+  /**
    * Check if the selected function requires multiple signers (two-phase signing)
    */
   isMultiSigFunction(fnName: string): boolean {
@@ -1127,13 +1307,19 @@ export class ContractsPageComponent implements OnInit {
     this.interactResult.set(null);
     this.partialSpendJson.set(null);
     this.extraArgValues = {};
+    this.dmsNewExpiry = '';
+    this.dmsKeepAliveError.set(null);
 
     if (this.functionRequiresOutput(name)) {
       // Withdrawal function: default output to user's wallet, clear amount
       this.interactOutputAddress = this.currentWallet()?.getAddress() || '';
       this.interactOutputAmount = '';
+    } else if (this.isDmsKeepAlive()) {
+      // DMS keepAlive — output address will be the new DMS contract, computed later
+      this.interactOutputAddress = '';
+      this.interactOutputAmount = '';
     } else {
-      // Redeploy function (keepAlive, increment): auto-fill covenant address + correct amount
+      // Redeploy function (keepAlive on other contracts, increment): auto-fill covenant address + correct amount
       const contract = this.parsedInteractContract();
       if (contract) {
         this.interactOutputAddress = this.covenantService.getContractAddress(contract);

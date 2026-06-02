@@ -378,7 +378,7 @@ export class ContractsPageComponent implements OnInit {
         argsPayload = [
           { name: 'owner', type: 'address', value: this.templateFormValues['owner'] },
           { name: 'heir', type: 'address', value: this.templateFormValues['heir'] },
-          { name: 'checkInDeadline', type: 'blueScore', value: this.templateFormValues['expiry'] },
+          { name: 'checkInDeadline', type: 'blueScore', value: String((Number(this.templateFormValues['expiry']) || 0) * 1000) },
         ];
       } else if (template.id === 'time-lock-vault') {
         tmplName = 'TimeLockVault';
@@ -934,6 +934,18 @@ export class ContractsPageComponent implements OnInit {
       covenantId: oldCovenantId,  // attach binding to preserve lineage
     }];
 
+    // Build the payload hex for the new contract
+    let newPayloadHex: string | undefined;
+    if (newCompiled.tn10) {
+      try {
+        const payloadJson = JSON.stringify({ tn10: newCompiled.tn10 });
+        const payloadBytes = new TextEncoder().encode(payloadJson);
+        newPayloadHex = Array.from(payloadBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (err) {
+        console.warn('Failed to encode new contract payload:', err);
+      }
+    }
+
     // 5. Execute the keepAlive spend on the old contract
     const result = await this.runCovenantSpendAction(
       compiled,
@@ -945,6 +957,7 @@ export class ContractsPageComponent implements OnInit {
       undefined,
       oldCovenantId,
       this.useSenderFee,
+      newPayloadHex,
     );
     if (!result) return;
 
@@ -1015,6 +1028,7 @@ export class ContractsPageComponent implements OnInit {
     extraArgs?: Record<string, bigint>,
     covenantId?: string,
     useSenderFee = false,
+    transactionPayloadHex?: string,
   ): Promise<CovenantSpendActionResult | undefined> {
     const actionResult = await this.walletActionService.validateAndDoActionAfterApproval({
       type: WalletActionType.COVENANT_SPEND,
@@ -1028,6 +1042,7 @@ export class ContractsPageComponent implements OnInit {
         extraArgs,
         covenantId,
         useSenderFee,
+        transactionPayloadHex,
       },
     });
 

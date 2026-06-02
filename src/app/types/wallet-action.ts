@@ -136,6 +136,7 @@ export interface CovenantSpendAction {
   extraArgs?: Record<string, bigint>;
   covenantId?: string;
   useSenderFee?: boolean;
+  transactionPayloadHex?: string;
 }
 
 export interface CovenantCompletePartialAction {

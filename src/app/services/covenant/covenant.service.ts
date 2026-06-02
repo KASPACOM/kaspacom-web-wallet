@@ -55,9 +55,10 @@ export class CovenantService {
     covenantId?: string,
     priorityFee: bigint = 0n,
     useSenderFee: boolean = false,
+    transactionPayloadHex?: string,
   ): Promise<SpendResult> {
     const network = this.rpcService.getNetwork();
-    return spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, privateKeyHex, network, this.getManagedRpc(), covenantId, extraArgs, priorityFee, useSenderFee);
+    return spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, privateKeyHex, network, this.getManagedRpc(), covenantId, extraArgs, priorityFee, useSenderFee, transactionPayloadHex);
   }
 
   /**

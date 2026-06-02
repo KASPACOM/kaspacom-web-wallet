@@ -436,6 +436,7 @@ export class KaspaNetworkActionsService {
         actionData.covenantId,
         action.priorityFee || 0n,
         actionData.useSenderFee,
+        actionData.transactionPayloadHex,
       );
       await notifyUpdate(result.txid);
 

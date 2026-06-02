@@ -481,6 +481,7 @@ export async function spendContract(
   extraArgs?: Record<string, bigint>,
   priorityFee: bigint = 0n,
   useSenderFee: boolean = false,
+  transactionPayloadHex?: string,
 ): Promise<SpendResult> {
   const privateKey = new PrivateKey(privateKeyHex);
   const covenantAddress = getCovenantAddress(compiled, network);
@@ -640,7 +641,7 @@ export async function spendContract(
     outputs: txOutputs,
     subnetworkId: SUBNETWORK_ID_NATIVE,
     gas: 0n,
-    payload: "",
+    payload: transactionPayloadHex || "",
 
 
   });

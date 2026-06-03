@@ -118,6 +118,8 @@ export interface CovenantOutpointActionData {
 export interface CovenantSpendOutputActionData {
   address: string;
   amount: bigint;
+  /** If set, attach a CovenantBinding with this covenant id to this output (continuation to a different address). */
+  covenantId?: string;
 }
 
 export interface CovenantDeployAction {

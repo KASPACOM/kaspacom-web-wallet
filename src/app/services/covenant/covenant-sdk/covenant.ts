@@ -13,14 +13,14 @@ import {
   RpcClient,
   ScriptBuilder,
   SighashType,
+  signTransaction,
   Transaction,
+  TransactionInput,
   TransactionOutput,
   type ITransactionInput,
   type ITransactionOutput,
   type UtxoEntryReference,
-  TransactionInput,
 } from "../../../../../public/kaspa/kaspa";
-import { blake2b } from "@noble/hashes/blake2b";
 import {
   type CompiledContract,
   type CovenantOutpoint,
@@ -31,9 +31,6 @@ import {
 } from "./types";
 
 const SUBNETWORK_ID_NATIVE = "0000000000000000000000000000000000000000";
-
-/** Domain separation key for covenant ID hashing — must match Rust `CovenantID` hasher */
-const COVENANT_ID_KEY = new TextEncoder().encode("CovenantID");
 
 type SupportedSigArg = Uint8Array | bigint;
 
@@ -211,95 +208,40 @@ function resolveSpendFunctionArgs(
   });
 }
 
-// ─── Little-endian encoding helpers ───────────────────────────────────
-function writeU16LE(value: number): Uint8Array {
-  const buf = new Uint8Array(2);
-  buf[0] = value & 0xff;
-  buf[1] = (value >>> 8) & 0xff;
-  return buf;
-}
-
-function writeU32LE(value: number): Uint8Array {
-  const buf = new Uint8Array(4);
-  buf[0] = value & 0xff;
-  buf[1] = (value >>> 8) & 0xff;
-  buf[2] = (value >>> 16) & 0xff;
-  buf[3] = (value >>> 24) & 0xff;
-  return buf;
-}
-
-function writeU64LE(value: bigint): Uint8Array {
-  const buf = new Uint8Array(8);
-  for (let i = 0; i < 8; i++) {
-    buf[i] = Number((value >> BigInt(i * 8)) & 0xffn);
-  }
-  return buf;
-}
-
 // ─── Covenant ID computation ──────────────────────────────────────────
+// The covenant id is no longer computed locally. It is derived at deploy time
+// by the kaspa library's tx.populateGenesisCovenants() and read back from the
+// bound output's covenant.covenantId field (see deployContract()).
 
 /**
- * Compute the genesis covenant ID matching Rust's `hashing::covenant_id::covenant_id()`.
+ * Build a v1-shape TransactionInput from a UtxoEntryReference.
  *
- * Uses Blake2b-256 with key "CovenantID" (domain-separated, matching kaspa-hashes).
- * Feeds:
- *   outpoint.transaction_id (32 bytes) +
- *   outpoint.index (u32 LE) +
- *   num_auth_outputs (u64 LE) +
- *   for each auth output: index (u32 LE) + value (u64 LE) +
- *     spk_version (u16 LE) + spk_script_len (u64 LE) + spk_script_bytes
+ * Mirrors the tn12-covenant-tools owner-marker example (new TransactionInput
+ * with an explicit utxo object and signatureScript: ""), but uses the
+ * v1-correct sigOpCount / computeBudget shape:
+ *   - sigOpCount: 0   (v1 carries the cost in computeBudget instead)
+ *   - computeBudget: 10
  *
- * @param outpointTxId - Transaction ID being spent (hex string, 64 chars)
- * @param outpointIndex - Output index in the spent transaction
- * @param authOutputs - Array of {index, value, scriptPublicKey} for authorized outputs
- * @returns 32-byte covenant ID as hex string
+ * The example uses `sigOpCount: 1, computeBudget: 10`, which is the v0
+ * shape. KIP-20 / v1 covenant txs are rejected by the node with
+ * "RpcTransactionInput.sig_op_count is inconsistent with transaction
+ * version 1" when sigOpCount is non-zero.
  */
-export function computeCovenantId(
-  outpointTxId: string,
-  outpointIndex: number,
-  authOutputs: Array<{
-    index: number;
-    value: bigint;
-    scriptVersion: number;
-    scriptBytes: Uint8Array;
-  }>,
-): string {
-  // Build the preimage matching the Rust hasher feed order
-  const parts: Uint8Array[] = [];
-
-  // outpoint.transaction_id (32 bytes raw)
-  parts.push(hexToBytes(outpointTxId));
-
-  // outpoint.index (u32 LE)
-  parts.push(writeU32LE(outpointIndex));
-
-  // write_len(auth_outputs.len()) — written as u64 LE
-  parts.push(writeU64LE(BigInt(authOutputs.length)));
-
-  for (const out of authOutputs) {
-    // write_u32(index)
-    parts.push(writeU32LE(out.index));
-    // write_u64(value)
-    parts.push(writeU64LE(out.value));
-    // write_u16(spk_version)
-    parts.push(writeU16LE(out.scriptVersion));
-    // write_var_bytes(spk_script) = write_len(len) + script_bytes
-    parts.push(writeU64LE(BigInt(out.scriptBytes.length)));
-    parts.push(out.scriptBytes);
-  }
-
-  // Concatenate all parts
-  const totalLength = parts.reduce((sum, p) => sum + p.length, 0);
-  const preimage = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const p of parts) {
-    preimage.set(p, offset);
-    offset += p.length;
-  }
-
-  // Blake2b-256 with key "CovenantID"
-  const hash = blake2b(preimage, { key: COVENANT_ID_KEY, dkLen: 32 });
-  return bytesToHex(hash);
+function buildCovenantInput(entry: UtxoEntryReference): TransactionInput {
+  // The ITransactionInput.utxo field is typed as UtxoEntryReference (a class
+  // with a private constructor) but the runtime accepts a plain object
+  // matching the same shape — this is what the working tn12-covenant-tools
+  // example does. Cast the class instance through unknown to silence TS
+  // without losing the type information for the rest of the call site.
+  const utxoRef = entry as unknown as ITransactionInput['utxo'];
+  return new TransactionInput({
+    previousOutpoint: entry.outpoint,
+    signatureScript: '',
+    sequence: 0n,
+    sigOpCount: 0,
+    computeBudget: 10,
+    utxo: utxoRef,
+  });
 }
 
 /**
@@ -334,7 +276,6 @@ export async function deployContract(
   const privateKey = new PrivateKey(privateKeyHex);
   const senderAddress = privateKey.toAddress(network).toString();
   const contractAddress = getCovenantAddress(compiled, network);
-  const contractScriptPubKey = payToScriptHashScript(toScriptBytes(compiled));
 
   const entries = await getAddressUtxos(rpc, senderAddress);
   if (entries.length === 0) {
@@ -356,6 +297,7 @@ export async function deployContract(
   }
 
   const created = await createTransactions({
+    version: 1,
     entries,
     outputs: [{ address: contractAddress, amount: amountSompi }],
     changeAddress: senderAddress,
@@ -367,57 +309,76 @@ export async function deployContract(
   let finalTxId = created.summary.finalTransactionId;
   let finalTransaction = created.transactions[created.transactions.length - 1]?.transaction;
 
+  // KIP-20: covenant genesis covenant id. Populated on the final tx via
+  // tx.populateGenesisCovenants + tx.finalize, then read back from the
+  // bound output's covenant.covenantId.
+  let covenantId: string | undefined;
+
   // For multi-tx batch, sign and submit all compound/consolidation TXs first
   for (let i = 0; i < created.transactions.length; i++) {
     const pending = created.transactions[i];
     const isLast = i === created.transactions.length - 1;
 
-    // Attach CovenantBinding to the covenant output in the FINAL transaction
     if (isLast) {
-      const covenantOutputIdx = findOutputIndex(pending.transaction, contractAddress, network);
+      // FINAL deploy tx: must be KIP-20 v1 with populateGenesisCovenants.
+      // Mutations to pending.transaction don't reliably survive the
+      // pending.submit() wrapper (the binding is written to the tx state but
+      // the wrapper's submit path may serialize before picking it up). Pull
+      // the underlying Transaction into a local, mutate, sign via the
+      // runtime's signTransaction, and submit via the raw RPC.
+      let tx = pending.transaction;
+      const covenantOutputIdx = findOutputIndex(tx, contractAddress, network);
       if (covenantOutputIdx !== -1) {
-        // Compute genesis covenant ID
-        // The authorizing input is input[0] of this final TX
-        const authInput = pending.transaction.inputs[0];
-        const outpointTxId = authInput.previousOutpoint.transactionId;
-        const outpointIdx = authInput.previousOutpoint.index;
+        tx.version = 1;
 
-        // ScriptPublicKey for the covenant output
-        const spk = contractScriptPubKey;
-        const spkScript = spk.script;
-        const spkVersion = spk.version;
+        // v1 inputs must declare sig_op_count + compute_budget in the
+        // wire form. createTransactions() builds inputs in v0 shape
+        // (sigOpCount: 1, no computeBudget), which the RPC rejects with
+        // "sig_op_count is inconsistent with transaction version 1".
+        // Mutate the inputs to the v1 shape before finalize/sign.
+        for (const input of tx.inputs) {
+          input.sigOpCount = 0;
+          input.computeBudget = 10;
+        }
 
-        const covenantId = computeCovenantId(
-          outpointTxId,
-          outpointIdx,
-          [{
-            index: covenantOutputIdx,
-            value: amountSompi,
-            scriptVersion: spkVersion,
-            scriptBytes: typeof spkScript === 'string' ? hexToBytes(spkScript) : spkScript,
-          }],
-        );
-
-        // Attach CovenantBinding to the covenant output
         try {
-          const hashObj = new Hash(covenantId);
-          const binding = new CovenantBinding(covenantOutputIdx, hashObj);
-          // Create new TransactionOutput with covenant binding
-          const existingOutput = pending.transaction.outputs[covenantOutputIdx];
-          const newOutput = new TransactionOutput(existingOutput.value, existingOutput.scriptPublicKey, binding);
-          // Replace the output
-          pending.transaction.outputs[covenantOutputIdx] = newOutput;
+          tx.populateGenesisCovenants(
+            [{ authorizingInput: 0, outputs: [covenantOutputIdx] }],
+          );
+          // finalize() recomputes the tx id from the post-binding state so
+          // the sighash + network-agreed id stay in sync.
+          tx.finalize();
+
+          console.log('covenant id:', tx.outputs[0]?.covenant?.covenantId.toString());
         } catch (bindErr) {
-          // If CovenantBinding attachment fails (e.g., API incompatibility),
-          // fall back to standard deploy without binding — still works for P2SH
+          // If the binding attachment fails (e.g., API incompatibility),
+          // fall back to standard deploy without binding — still works for P2SH.
           console.warn('[CovenantSDK] CovenantBinding attachment failed, deploying without binding:', bindErr);
         }
+      } else {
+        // No covenant output to bind, but the tx is still v1 (compound
+        // chain-finalize). Mutate the inputs to v1 shape so the RPC
+        // accepts the version.
+        for (const input of tx.inputs) {
+          input.sigOpCount = 0;
+          input.computeBudget = 10;
+        }
       }
-    }
 
-    pending.sign([privateKey]);
-    finalTxId = await pending.submit(rpc);
-    finalTransaction = pending.transaction;
+      const signed = signTransaction(tx, [privateKey], true);
+      const submitted = await rpc.submitTransaction({
+        transaction: signed,
+        allowOrphan: false,
+      });
+      finalTxId = submitted.transactionId;
+      finalTransaction = signed;
+    } else {
+      // Compound / consolidation tx: no covenant binding needed, use the
+      // standard pending path.
+      pending.sign([privateKey]);
+      finalTxId = await pending.submit(rpc);
+      finalTransaction = pending.transaction;
+    }
   }
 
   if (!finalTxId || !finalTransaction) {
@@ -429,18 +390,21 @@ export async function deployContract(
     throw new Error("Deployment transaction did not contain the covenant output");
   }
 
-  // Try to extract covenant ID from the output
-  let covenantId: string | undefined;
+  // Read the canonical covenant id from the serialized tx. The example pattern
+  // (serializeToSafeJSON → JSON.parse → read outputs[i].covenant.covenantId) is
+  // the most reliable — the in-memory binding object may not expose every
+  // field the wire form does.
   try {
-    const covOutput = finalTransaction.outputs[outputIndex];
-    if (covOutput && 'covenant' in covOutput) {
-      const cov = (covOutput as any).covenant;
-      if (cov?.covenant_id) {
-        covenantId = cov.covenant_id.toString();
-      }
+    const serialized = JSON.parse(finalTransaction.serializeToSafeJSON());
+    const covenant = serialized?.outputs?.[outputIndex]?.covenant;
+    if (covenant?.covenantId) {
+      covenantId = String(covenant.covenantId);
+          console.log('Covenant id after deployment:', covenantId.toString());
+
     }
+
   } catch {
-    // covenant ID extraction is best-effort
+    // best-effort; if serialization fails, fall back to whatever was already set
   }
 
   return {
@@ -515,17 +479,8 @@ export async function spendContract(
     }
   }
 
-  // Count sig ops from the ABI — multi-sig functions have > 1 checkSig
-  const abiEntry = getAbiEntry(compiled, functionName);
-  const sigOpCount = abiEntry.inputs.filter((inp: any) => inp.type_name === 'sig').length || 1;
-
   const txInputs: ITransactionInput[] = [
-    {
-      previousOutpoint: entry.outpoint,
-      utxo: entry,
-      sequence: 0n,
-      ...buildInputMassFields({ version: 0, sigOpCount: 1, computeBudget: null }),
-    },
+    buildCovenantInput(entry),
   ];
 
   // --- Fee and Change Logic (Dynamic) ---
@@ -556,12 +511,7 @@ export async function spendContract(
     }
 
     for (const utxoEntry of selectedWalletUtxos) {
-      txInputs.push({
-        previousOutpoint: utxoEntry.outpoint,
-        utxo: utxoEntry,
-        sequence: 0n,
-        ...buildInputMassFields({ version: 0, sigOpCount: 1, computeBudget: null }),
-      });
+      txInputs.push(buildCovenantInput(utxoEntry));
     }
   }
 
@@ -635,7 +585,7 @@ export async function spendContract(
   }
 
   const unsignedTx = new Transaction({
-    version: 0,
+    version: 1,
     lockTime,
     inputs: txInputs,
     outputs: txOutputs,
@@ -645,6 +595,12 @@ export async function spendContract(
 
 
   });
+
+  // KIP-20: recompute the tx id from the post-binding state so the sighash
+  // and the network-agreed id stay in sync with the bound outputs.
+  unsignedTx.finalize();
+
+  console.log('covenant id: ', unsignedTx.outputs[0].covenant?.covenantId.toString());
 
   // --- Dynamic Fee Adjustment ---
   const transactionFee = (calculateTransactionFee(network, unsignedTx) || 0n) + 8000n; // Currently calculateTransactionFee not working well for contract calls
@@ -717,35 +673,6 @@ export async function spendContract(
     functionName,
     covenantId: utxoCovenantId,
   };
-}
-
-function buildInputMassFields({ version, sigOpCount, computeBudget }: { version: number, sigOpCount: number, computeBudget: number | null }) {
-  if (Number(version || 0) >= 1 && computeBudget != null) {
-    return inputPreservesComputeBudget()
-      ? { sigOpCount: 0, computeBudget }
-      : { sigOpCount: computeBudget };
-  }
-  return { sigOpCount };
-}
-
-function inputPreservesComputeBudget() {
-  try {
-    const input = new TransactionInput({
-      previousOutpoint: {
-        transactionId: "0000000000000000000000000000000000000000000000000000000000000000",
-        index: 0
-      },
-      signatureScript: '',
-      sequence: 0n,
-      sigOpCount: 0,
-      computeBudget: 1
-    });
-    const result = Number((input.toJSON?.() as any)?.computeBudget || input.computeBudget || 0) === 1;
-    input.free?.();
-    return result;
-  } catch {
-    return false;
-  }
 }
 
 
@@ -841,12 +768,9 @@ export async function buildPartialSpend(
   }
 
   // Build unsigned TX
-  const txInputs: ITransactionInput[] = [{
-    previousOutpoint: entry.outpoint,
-    utxo: entry,
-    sequence: 0n,
-    ...buildInputMassFields({ version: 0, sigOpCount, computeBudget: null }),
-  }];
+  const txInputs: ITransactionInput[] = [
+    buildCovenantInput(entry),
+  ];
 
   const txOutputs: ITransactionOutput[] = outputs.map(o => ({
     scriptPublicKey: payToAddressScript(o.address),
@@ -854,7 +778,7 @@ export async function buildPartialSpend(
   }));
 
   const unsignedTx = new Transaction({
-    version: 0,
+    version: 1,
     lockTime,
     inputs: txInputs,
     outputs: txOutputs,
@@ -928,13 +852,9 @@ export async function completePartialSpend(
   if (!entry) throw new Error(`UTXO not found for completion`);
 
   // Rebuild the exact same unsigned TX
-  const sigOpCount = partialSpend.sigOpCount;
-  const txInputs: ITransactionInput[] = [{
-    previousOutpoint: entry.outpoint,
-    utxo: entry,
-    sequence: 0n,
-    ...buildInputMassFields({ version: 0, sigOpCount, computeBudget: null }),
-  }];
+  const txInputs: ITransactionInput[] = [
+    buildCovenantInput(entry),
+  ];
 
   const txOutputs: ITransactionOutput[] = partialSpend.outputs.map(o => ({
     scriptPublicKey: payToAddressScript(o.address),
@@ -942,7 +862,7 @@ export async function completePartialSpend(
   }));
 
   const unsignedTx = new Transaction({
-    version: 0,
+    version: 1,
     lockTime: BigInt(partialSpend.lockTime),
     inputs: txInputs,
     outputs: txOutputs,

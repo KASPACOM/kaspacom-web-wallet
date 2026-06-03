@@ -1,5 +1,7 @@
 <div class="network-selection-modal">
   <div class="modal-content">
+
+    <!-- L1 Network -->
     <h3 class="network-group-title">L1 Network</h3>
     <div class="networks-list">
       <div class="network-item" [class.selected]="!isCurrentNetworkL2()" (click)="setL1Network()">
@@ -14,25 +16,76 @@
         </div>
       </div>
     </div>
+
+    <!-- L2 Networks -->
     <h3 class="network-group-title">L2 Networks</h3>
     <div class="networks-list">
-      <div *ngFor="let network of networks" class="network-item" [class.selected]="isCurrentNetwork(network.chainId)"
+      <div
+        *ngFor="let network of networks()"
+        class="network-item"
+        [class.selected]="isCurrentNetwork(network.chainId)"
+        [class.confirming-delete]="deletingChainId === network.chainId"
         (click)="setL2Network(network)">
+
+        <!-- Icon -->
         <div class="network-icon">
           @let networkIcon = getNetworkIcon(network);
           @if (networkIcon) {
-            <img [src]="networkIcon!" alt="" class="chain-icon" />
+            <img [src]="networkIcon" alt="" class="chain-icon" />
           } @else {
-            <span role="img" aria-label="Network icon">🌐</span>
+            <div class="chain-icon-fallback">
+              <span>{{ network.nativeCurrency.symbol.charAt(0) || '?' }}</span>
+            </div>
           }
         </div>
+
+        <!-- Name + price -->
         <div class="network-info">
           <div class="network-name">{{ getNetworkShortName(network) }}</div>
+          @let price = getNativePrice(network.chainId);
+          @if (price !== null) {
+            <div class="network-price">
+              {{ network.nativeCurrency.symbol }} · {{ formatPrice(price) }}
+            </div>
+          }
         </div>
+
+        <!-- Status / delete -->
         <div class="network-status">
-          <kc-icon *ngIf="isCurrentNetwork(network.chainId)" [iconClass]="'icon-check'" [size]="'sm'"></kc-icon>
+          @if (deletingChainId === network.chainId) {
+            <div class="delete-confirm-row" (click)="$event.stopPropagation()">
+              <button class="btn-confirm-delete" (click)="confirmDelete($event, network.chainId)">
+                Delete
+              </button>
+              <button class="btn-cancel-delete" (click)="cancelDelete($event)">
+                Keep
+              </button>
+            </div>
+          } @else {
+            @if (isCurrentNetwork(network.chainId)) {
+              <kc-icon [iconClass]="'icon-check'" [size]="'sm'"></kc-icon>
+            }
+            @if (isCustomNetwork(network.chainId)) {
+              <button
+                class="btn-delete-network"
+                title="Remove network"
+                (click)="confirmDelete($event, network.chainId)">
+                <kc-icon [iconClass]="'icon-trash'" [size]="'sm'"></kc-icon>
+              </button>
+            }
+          }
         </div>
+
       </div>
     </div>
+
+    <!-- Add Network -->
+    <div class="add-network-row" (click)="onAddNetwork()">
+      <div class="add-network-icon">
+        <kc-icon [iconClass]="'icon-plus'" [size]="'sm'"></kc-icon>
+      </div>
+      <span class="add-network-label">Add custom network</span>
+    </div>
+
   </div>
 </div>

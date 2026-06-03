@@ -18,6 +18,7 @@ export class EthereumWalletChainManager {
     private currentProvider: BaseEthereumProvider | undefined = undefined;
     protected allChainsByChainId: { [chainId: string]: ExtendedEIP1193ProviderChain } = {};
     protected allChainsEnvConfigByChainId: { [chainId: string]: L2ConfigInterface } = {};
+    private customChainsSignal: WritableSignal<ExtendedEIP1193ProviderChain[]> = signal([]);
 
 
     constructor(
@@ -27,6 +28,7 @@ export class EthereumWalletChainManager {
             this.allChainsEnvConfigByChainId[this.convertChainIdToHex(chainId)] = config;
         });
         this.setAllChainsByChainId();
+        this.customChainsSignal.set(this.getCustomChainsFromStorage());
 
 
         let curentChain = localStorage.getItem(LOCAL_STORAGE_KEYS.CURRENT_ETHEREUM_CHAIN) || undefined;
@@ -126,8 +128,34 @@ export class EthereumWalletChainManager {
     }
 
     public addChain(chain: ExtendedEIP1193ProviderChain): void {
-        localStorage.setItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS, JSON.stringify([...JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS) || '[]'), chain]));
+        const existing = this.getCustomChainsFromStorage();
+        const updated = [...existing, chain];
+        localStorage.setItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS, JSON.stringify(updated));
         this.setAllChainsByChainId();
+        this.customChainsSignal.set(updated);
+    }
+
+    public removeChain(chainId: string): void {
+        const existing = this.getCustomChainsFromStorage();
+        const updated = existing.filter(c => c.chainId !== chainId);
+        localStorage.setItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS, JSON.stringify(updated));
+        this.setAllChainsByChainId();
+        this.customChainsSignal.set(updated);
+        if (this.getCurrentChainSignal()() === chainId) {
+            this.setCurrentChain(undefined);
+        }
+    }
+
+    public isCustomChain(chainId: string): boolean {
+        return !this.allChainsEnvConfigByChainId[chainId];
+    }
+
+    public getCustomChainsSignal() {
+        return this.customChainsSignal.asReadonly();
+    }
+
+    private getCustomChainsFromStorage(): ExtendedEIP1193ProviderChain[] {
+        return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS) || '[]');
     }
 
 

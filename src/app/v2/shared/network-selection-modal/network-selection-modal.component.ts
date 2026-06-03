@@ -1,5 +1,7 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { FlowPagesService } from '../../services/flow-pages.service';
 import { KcIconComponent } from 'kaspacom-ui';
 import { EthereumWalletChainManager } from '../../../services/etherium-services/etherium-wallet-chain.manager';
@@ -7,6 +9,41 @@ import { EIP1193ProviderChain } from '@kaspacom/wallet-messages';
 import { WalletService } from '../../../services/wallet.service';
 import { Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
+import { FlowPageId } from '../../pages/app/common/flow-page/flow-page.registry';
+import { CHAIN_ID_LOGOS } from './chain-id-logos';
+
+const COINGECKO_PRICE_URL = 'https://api.coingecko.com/api/v3/simple/price';
+const PRICE_CACHE_TTL_MS = 5 * 60 * 1000;
+
+// Well-known EVM native token symbol → CoinGecko ID mapping
+const NATIVE_TOKEN_COINGECKO_IDS: Record<string, string> = {
+  ETH: 'ethereum',
+  WETH: 'weth',
+  MATIC: 'matic-network',
+  POL: 'matic-network',
+  BNB: 'binancecoin',
+  AVAX: 'avalanche-2',
+  FTM: 'fantom',
+  CRO: 'crypto-com-chain',
+  ONE: 'harmony',
+  CELO: 'celo',
+  GLMR: 'moonbeam',
+  MOVR: 'moonriver',
+  METIS: 'metis-token',
+  OP: 'optimism',
+  ARB: 'arbitrum',
+  KAS: 'kaspa',
+  SOL: 'solana',
+  DAI: 'dai',
+  USDC: 'usd-coin',
+  USDT: 'tether',
+};
+
+
+interface PriceCacheEntry {
+  priceUsd: number;
+  fetchedAt: number;
+}
 
 @Component({
   selector: 'network-selection-modal',
@@ -14,14 +51,25 @@ import { environment } from '../../../../environments/environment';
   templateUrl: './network-selection-modal.component.html',
   styleUrl: './network-selection-modal.component.scss',
 })
-export class NetworkSelectionModalComponent {
+export class NetworkSelectionModalComponent implements OnInit {
   private ethereumWalletChainManager = inject(EthereumWalletChainManager);
   private flowPagesService = inject(FlowPagesService);
   private walletService = inject(WalletService);
   private router = inject(Router);
+  private http = inject(HttpClient);
 
-  protected networks: EIP1193ProviderChain[];
   protected l1Config = environment.l1Config;
+
+  // Reactive: re-derives whenever a custom chain is added or removed
+  protected networks = computed<EIP1193ProviderChain[]>(() => {
+    this.ethereumWalletChainManager.getCustomChainsSignal()(); // subscribe to changes
+    return Object.values(this.ethereumWalletChainManager.getAllChainsByChainId());
+  });
+
+  protected nativePrices = new Map<string, number>();
+  protected deletingChainId: string | null = null;
+
+  private priceCache = new Map<string, PriceCacheEntry>();
 
   isCurrentNetworkL2 = computed(() =>
     this.walletService.getIsL2DisplaySignal()(),
@@ -30,10 +78,61 @@ export class NetworkSelectionModalComponent {
     this.ethereumWalletChainManager.getCurrentChainSignal()(),
   );
 
-  constructor() {
-    this.networks = Object.values(
-      this.ethereumWalletChainManager.getAllChainsByChainId(),
-    );
+  ngOnInit(): void {
+    this.fetchAllNativePrices();
+  }
+
+  private async fetchAllNativePrices(): Promise<void> {
+    const symbolToChainIds = new Map<string, string[]>();
+    for (const network of this.networks()) {
+      const symbol = network.nativeCurrency?.symbol?.toUpperCase();
+      if (!symbol || !NATIVE_TOKEN_COINGECKO_IDS[symbol]) continue;
+      const ids = symbolToChainIds.get(symbol) ?? [];
+      ids.push(network.chainId);
+      symbolToChainIds.set(symbol, ids);
+    }
+
+    const uniqueSymbols = [...symbolToChainIds.keys()];
+    if (!uniqueSymbols.length) return;
+
+    const geckoIds = uniqueSymbols.map(s => NATIVE_TOKEN_COINGECKO_IDS[s]).join(',');
+    const now = Date.now();
+
+    // Check cache first — if all entries are fresh, skip the request
+    const geckoIdList = geckoIds.split(',');
+    const allCached = geckoIdList.every(id => {
+      const entry = this.priceCache.get(id);
+      return entry && now - entry.fetchedAt < PRICE_CACHE_TTL_MS;
+    });
+
+    if (!allCached) {
+      try {
+        const resp = await firstValueFrom(
+          this.http.get<Record<string, { usd?: number }>>(COINGECKO_PRICE_URL, {
+            params: { ids: geckoIds, vs_currencies: 'usd' },
+          }),
+        );
+        for (const geckoId of geckoIdList) {
+          const price = resp[geckoId]?.usd;
+          if (price !== undefined) {
+            this.priceCache.set(geckoId, { priceUsd: price, fetchedAt: Date.now() });
+          }
+        }
+      } catch {
+        // price fetch is best-effort
+      }
+    }
+
+    // Map prices back to chainIds
+    for (const [symbol, chainIds] of symbolToChainIds) {
+      const geckoId = NATIVE_TOKEN_COINGECKO_IDS[symbol];
+      const entry = this.priceCache.get(geckoId);
+      if (entry) {
+        for (const chainId of chainIds) {
+          this.nativePrices.set(chainId, entry.priceUsd);
+        }
+      }
+    }
   }
 
   onClose(): void {
@@ -47,8 +146,9 @@ export class NetworkSelectionModalComponent {
 
   getNetworkIcon(network: EIP1193ProviderChain): string | null {
     return (
-      this.ethereumWalletChainManager.getChainEnvConfig(network.chainId)
-        ?.icon || null
+      this.ethereumWalletChainManager.getChainEnvConfig(network.chainId)?.icon ||
+      CHAIN_ID_LOGOS[network.chainId.toLowerCase()] ||
+      null
     );
   }
 
@@ -65,6 +165,14 @@ export class NetworkSelectionModalComponent {
     );
   }
 
+  isCustomNetwork(networkId: string): boolean {
+    return this.ethereumWalletChainManager.isCustomChain(networkId);
+  }
+
+  getNativePrice(chainId: string): number | null {
+    return this.nativePrices.get(chainId) ?? null;
+  }
+
   setL1Network(): void {
     this.walletService.setL2Display(false);
     this.ethereumWalletChainManager.setCurrentChain(undefined);
@@ -72,8 +180,45 @@ export class NetworkSelectionModalComponent {
   }
 
   setL2Network(network: EIP1193ProviderChain): void {
+    if (this.deletingChainId === network.chainId) return;
     this.ethereumWalletChainManager.setCurrentChain(network.chainId);
     this.walletService.setL2Display(true);
     this.onCloseAfterNetworkChanged();
+  }
+
+  onAddNetwork(): void {
+    this.flowPagesService.navigateToPage({
+      id: 'add-custom-network' as FlowPageId,
+      title: 'Add Custom Network',
+      canNavigateBack: true,
+      canClose: true,
+      showTitle: true,
+      showBackground: true,
+    });
+  }
+
+  confirmDelete(event: MouseEvent, chainId: string): void {
+    event.stopPropagation();
+    if (this.deletingChainId === chainId) {
+      this.ethereumWalletChainManager.removeChain(chainId);
+      this.deletingChainId = null;
+    } else {
+      this.deletingChainId = chainId;
+    }
+  }
+
+  cancelDelete(event: MouseEvent): void {
+    event.stopPropagation();
+    this.deletingChainId = null;
+  }
+
+  formatPrice(price: number): string {
+    if (price >= 1000) {
+      return `$${price.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+    }
+    if (price >= 1) {
+      return `$${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    return `$${price.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 6 })}`;
   }
 }

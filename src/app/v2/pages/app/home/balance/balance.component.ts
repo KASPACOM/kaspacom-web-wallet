@@ -1,10 +1,12 @@
 import { CommonModule, DecimalPipe } from '@angular/common';
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import {
   KcIconComponent,
   KcSpinnerComponent,
   KcTooltipDirective,
 } from 'kaspacom-ui';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { WalletService } from '../../../../../services/wallet.service';
 import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { CommaFormatterPipe } from '../../../../../pipes/comma-formatter.pipe';
@@ -13,6 +15,25 @@ import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.compo
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { KaspaPriceService } from '../../../../../services/kaspa-price.service';
 import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';
+import { EthereumWalletChainManager } from '../../../../../services/etherium-services/etherium-wallet-chain.manager';
+import { CHAIN_ID_LOGOS } from '../../../../shared/network-selection-modal/chain-id-logos';
+
+const NATIVE_TOKEN_COINGECKO_IDS: Record<string, string> = {
+  ETH: 'ethereum',
+  WETH: 'weth',
+  MATIC: 'matic-network',
+  POL: 'matic-network',
+  BNB: 'binancecoin',
+  AVAX: 'avalanche-2',
+  FTM: 'fantom',
+  CRO: 'crypto-com-chain',
+  CELO: 'celo',
+  GLMR: 'moonbeam',
+  MOVR: 'moonriver',
+  METIS: 'metis-token',
+  OP: 'optimism',
+  ARB: 'arbitrum',
+};
 
 @Component({
   selector: 'app-balance',
@@ -37,23 +58,62 @@ export class BalanceComponent {
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private kaspaPriceService = inject(KaspaPriceService);
   private assetsManagerService = inject(AssetsManagerService);
+  private chainManager = inject(EthereumWalletChainManager);
+  private http = inject(HttpClient);
 
   protected readonly isRefreshing = signal(false);
+  protected readonly l2NativePrice = signal<number>(0);
+
+  isL2Display = computed(() => this.walletService.getIsL2DisplaySignal()());
+
+  currentChainConfig = computed(() => {
+    const chainId = this.chainManager.getCurrentChainSignal()();
+    return chainId ? this.chainManager.getChainConfig(chainId) : null;
+  });
+
+  nativeTokenSymbol = computed(() => {
+    if (!this.isL2Display()) return 'KAS';
+    return this.currentChainConfig()?.nativeCurrency?.symbol || '';
+  });
+
+  currentNetworkIcon = computed(() => {
+    if (!this.isL2Display()) return null;
+    const chainId = this.chainManager.getCurrentChainSignal()();
+    if (!chainId) return null;
+    return (
+      this.chainManager.getChainEnvConfig(chainId)?.icon ||
+      CHAIN_ID_LOGOS[chainId.toLowerCase()] ||
+      null
+    );
+  });
+
+  private _l2PriceEffect = effect(() => {
+    const chainId = this.chainManager.getCurrentChainSignal()();
+    const isL2 = this.walletService.getIsL2DisplaySignal()();
+    if (!isL2 || !chainId) {
+      this.l2NativePrice.set(0);
+      return;
+    }
+    const symbol = this.chainManager.getChainConfig(chainId)?.nativeCurrency?.symbol?.toUpperCase();
+    const geckoId = symbol ? NATIVE_TOKEN_COINGECKO_IDS[symbol] : undefined;
+    if (!geckoId) {
+      this.l2NativePrice.set(0);
+      return;
+    }
+    firstValueFrom(
+      this.http.get<Record<string, { usd?: number }>>('https://api.coingecko.com/api/v3/simple/price', {
+        params: { ids: geckoId, vs_currencies: 'usd' },
+      })
+    ).then(resp => this.l2NativePrice.set(resp[geckoId]?.usd ?? 0)).catch(() => this.l2NativePrice.set(0));
+  });
 
   walletAddress = this.walletService.getCurrentDisplayWalletAddressAsString;
 
-  // Calculate USD balance by multiplying kasBalance * kaspaPrice with max 3 decimal rounding
   usdBalance = computed(() => {
-    const kasBalance = this.kasBalance();
-    const kaspaPrice = this.kaspaPriceService.price();
-
-    if (kasBalance === 0 || kaspaPrice === 0) {
-      return 0;
-    }
-
-    const usdValue = kasBalance * kaspaPrice;
-    // Round to max 3 decimals
-    return Math.round(usdValue * 1000) / 1000;
+    const balance = this.kasBalance();
+    const price = this.isL2Display() ? this.l2NativePrice() : this.kaspaPriceService.price();
+    if (balance === 0 || price === 0) return 0;
+    return Math.round(balance * price * 1000) / 1000;
   });
 
   // Check if wallet data is loading

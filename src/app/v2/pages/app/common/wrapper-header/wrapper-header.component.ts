@@ -11,6 +11,7 @@ import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-butt
 import { WalletProfileOrbComponent } from '../../../../shared/ui/wallet-profile-orb/wallet-profile-orb.component';
 import { FlowPageId } from '../flow-page/flow-page.registry';
 import { DesktopViewService } from '../../../../services/desktop-view.service';
+import { CHAIN_ID_LOGOS } from '../../../../shared/network-selection-modal/chain-id-logos';
 
 @Component({
   selector: 'app-wrapper-header',
@@ -46,7 +47,9 @@ export class WrapperHeaderComponent {
 
       return {
         name: envConfig?.shortName || chainConfig?.chainName,
-        icon: envConfig?.icon || null,
+        icon: envConfig?.icon ||
+          CHAIN_ID_LOGOS[this.ethereumWalletChainManager.getCurrentChainSignal()()!.toLowerCase()] ||
+          null,
       };
     }
 

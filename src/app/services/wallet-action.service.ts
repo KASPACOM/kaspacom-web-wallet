@@ -316,6 +316,11 @@ export class WalletActionService {
       .getCurrentWallet()!
       .getAddress();
 
+    // Show loading state for legacy/iframe flow before executing
+    if (!isUsingV2Flow) {
+      await this.showTransactionLoaderToUser(0, currentWalletAddress);
+    }
+
     let actionResult: WalletActionResultWithError;
     try {
       actionResult = await this.doWalletAction(action, async (data) => {
@@ -347,6 +352,8 @@ export class WalletActionService {
             : (ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR] ??
               fallbackMessage);
         this.approvalFlowService.setErrorState(errorMessage);
+      } else {
+        this.clearActionResult();
       }
 
       return {
@@ -366,6 +373,8 @@ export class WalletActionService {
           ? ERROR_CODES_MESSAGES[actionResult.errorCode]
           : 'Transaction failed';
         this.approvalFlowService.setErrorState(errorMessage);
+      } else {
+        this.clearActionResult();
       }
       return { ...actionResult, isUsingV2Flow };
     }

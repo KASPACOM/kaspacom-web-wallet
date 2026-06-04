@@ -420,7 +420,7 @@ export class ReviewActionDataService {
   ): ActionDisplay {
     const l2AdressRow: ActionDisplayRow[] = [];
 
-    if (environment.isL2Enabled && wallet.getL2WalletStateSignal()()?.address) {
+    if (wallet.getL2WalletStateSignal()()?.address) {
       l2AdressRow.push({
         fieldName: 'L2 Wallet Address',
         fieldValue: wallet.getL2WalletStateSignal()()!.address!,

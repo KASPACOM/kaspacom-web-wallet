@@ -34,7 +34,19 @@
               <div class="token-info">
                 <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
                 <div class="token-details">
-                  <span class="token-symbol">{{ token.symbol }}</span>
+                  <div class="token-symbol-row">
+                    <span class="token-symbol">{{ token.symbol }}</span>
+                    @if (isVerifiedToken(token)) {
+                      <span class="verified-badge" kcTooltip="Verified token" role="img" aria-label="Verified token">
+                        <kc-icon [iconClass]="'icon-check-verified-02'" [size]="'xs'"></kc-icon>
+                      </span>
+                    }
+                    @if (isPotentialHarm(token)) {
+                      <span class="harm-badge" kcTooltip="This token uses the same symbol as a verified token but has a different address. It may be fraudulent." role="img" aria-label="Potentially fraudulent token">
+                        <kc-icon [iconClass]="'icon-warning'" [size]="'xs'" [color]="'var(--red-20)'"></kc-icon>
+                      </span>
+                    }
+                  </div>
                   <div class="token-meta">
                     <span class="token-name">{{ token.name }}</span>
                     <button
@@ -75,7 +87,19 @@
               <div class="token-info">
                 <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
                 <div class="token-details">
-                  <span class="token-symbol">{{ token.symbol }}</span>
+                  <div class="token-symbol-row">
+                    <span class="token-symbol">{{ token.symbol }}</span>
+                    @if (isVerifiedToken(token)) {
+                      <span class="verified-badge" kcTooltip="Verified token" role="img" aria-label="Verified token">
+                        <kc-icon [iconClass]="'icon-check-verified-02'" [size]="'xs'"></kc-icon>
+                      </span>
+                    }
+                    @if (isPotentialHarm(token)) {
+                      <span class="harm-badge" kcTooltip="This token uses the same symbol as a verified token but has a different address. It may be fraudulent." role="img" aria-label="Potentially fraudulent token">
+                        <kc-icon [iconClass]="'icon-warning'" [size]="'xs'" [color]="'var(--red-20)'"></kc-icon>
+                      </span>
+                    }
+                  </div>
                   <div class="token-meta">
                     <span class="token-name">{{ token.name }}</span>
                     <button
@@ -114,7 +138,19 @@
               <div class="token-info">
                 <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
                 <div class="token-details">
-                  <span class="token-symbol">{{ token.symbol }}</span>
+                  <div class="token-symbol-row">
+                    <span class="token-symbol">{{ token.symbol }}</span>
+                    @if (isVerifiedToken(token)) {
+                      <span class="verified-badge" kcTooltip="Verified token" role="img" aria-label="Verified token">
+                        <kc-icon [iconClass]="'icon-check-verified-02'" [size]="'xs'"></kc-icon>
+                      </span>
+                    }
+                    @if (isPotentialHarm(token)) {
+                      <span class="harm-badge" kcTooltip="This token uses the same symbol as a verified token but has a different address. It may be fraudulent." role="img" aria-label="Potentially fraudulent token">
+                        <kc-icon [iconClass]="'icon-warning'" [size]="'xs'" [color]="'var(--red-20)'"></kc-icon>
+                      </span>
+                    }
+                  </div>
                   <div class="token-meta">
                     <span class="token-name">{{ token.name }}</span>
                     <button
@@ -152,13 +188,27 @@
                 <div class="token-info">
                   <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
                   <div class="token-details">
-                    <span class="token-symbol">{{ token.symbol }}</span>
+                    <div class="token-symbol-row">
+                      <span class="token-symbol">{{ token.symbol }}</span>
+                      @if (isVerifiedToken(token)) {
+                        <span class="verified-badge" kcTooltip="Verified token" role="img" aria-label="Verified token">
+                          <kc-icon [iconClass]="'icon-check-verified-02'" [size]="'xs'"></kc-icon>
+                        </span>
+                      }
+                      @if (isPotentialHarm(token)) {
+                        <span class="harm-badge" kcTooltip="This token uses the same symbol as a verified token but has a different address. It may be fraudulent." role="img" aria-label="Potentially fraudulent token">
+                          <kc-icon [iconClass]="'icon-warning'" [size]="'xs'" [color]="'var(--red-20)'"></kc-icon>
+                        </span>
+                      }
+                    </div>
                     <div class="token-meta">
                       <span class="token-name">{{ token.name }}</span>
                       <button
                         type="button"
                         class="token-address"
                         (click)="copyAddress($event, token.address)"
+                        (keydown.enter)="$event.stopPropagation()"
+                        (keydown.space)="$event.stopPropagation()"
                         [attr.aria-label]="'Copy address for ' + token.symbol"
                       >
                         {{ shortenAddress(token.address) }}

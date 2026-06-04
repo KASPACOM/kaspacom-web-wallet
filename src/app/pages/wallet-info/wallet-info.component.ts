@@ -112,7 +112,6 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
 
   walletUtxoStateBalanceSignal = computed(() => this.wallet?.getCurrentWalletStateBalanceSignalValue());
   currentL2Chain = computed(() => this.ethereumWalletChainManager.getCurrentChainSignal()());
-  isL2Enabled = environment.isL2Enabled;
 
   l2WalletInfo = computed(() => this.wallet?.getL2WalletStateSignal()());
   l2WalletInfoFormatted = computed(() => {

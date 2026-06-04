@@ -1,12 +1,12 @@
 <div class="asset-card card-0 card-hover full-width flex align-items-center justify-content-between p-16 cursor-pointer"
   (click)="onClick()">
   <div class="asset-card__info flex align-items-center gap-16">
-    <kc-token-logo
+    <erc20-token-logo
       class="asset-card__logo"
       [ticker]="token()?.symbol || ''"
       [address]="token()?.address || ''"
       [size]="'lg'"
-    ></kc-token-logo>
+    ></erc20-token-logo>
   <div class="flex column gap-4">
       <div class="text-gray-90">{{ token()?.name || '' }}</div>
       <div class="text-gray-60 typo-text-1 asset-card__meta">

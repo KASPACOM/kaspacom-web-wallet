@@ -155,7 +155,11 @@ export class EthereumWalletChainManager {
     }
 
     private getCustomChainsFromStorage(): ExtendedEIP1193ProviderChain[] {
-        return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS) || '[]');
+        try {
+            return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS) || '[]');
+        } catch {
+            return [];
+        }
     }
 
 

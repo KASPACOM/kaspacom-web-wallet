@@ -71,7 +71,7 @@ export class AddCustomNetworkFlowPageComponent {
     const val = this.chainId().trim();
     if (!val) return false;
     const num = Number(val);
-    return Number.isInteger(num) && num > 0;
+    return Number.isSafeInteger(num) && num > 0;
   });
 
   isRpcUrlValid = computed(() => this.urlPattern.test(this.rpcUrl().trim()));
@@ -96,8 +96,9 @@ export class AddCustomNetworkFlowPageComponent {
   );
 
   chainIdError = computed(() => {
-    if (!this.submitted() || !this.chainId().trim()) return '';
-    return this.isChainIdValid() ? '' : 'Must be a positive integer';
+    if (!this.submitted()) return '';
+    if (!this.chainId().trim()) return 'Chain ID is required';
+    return this.isChainIdValid() ? '' : 'Must be a positive safe integer';
   });
 
   rpcUrlError = computed(() => {

@@ -95,11 +95,9 @@ export class NetworkSelectionModalComponent implements OnInit {
     const uniqueSymbols = [...symbolToChainIds.keys()];
     if (!uniqueSymbols.length) return;
 
-    const geckoIds = uniqueSymbols.map(s => NATIVE_TOKEN_COINGECKO_IDS[s]).join(',');
+    const geckoIdList = [...new Set(uniqueSymbols.map(s => NATIVE_TOKEN_COINGECKO_IDS[s]))];
+    const geckoIds = geckoIdList.join(',');
     const now = Date.now();
-
-    // Check cache first — if all entries are fresh, skip the request
-    const geckoIdList = geckoIds.split(',');
     const allCached = geckoIdList.every(id => {
       const entry = this.priceCache.get(id);
       return entry && now - entry.fetchedAt < PRICE_CACHE_TTL_MS;
@@ -184,6 +182,16 @@ export class NetworkSelectionModalComponent implements OnInit {
     this.ethereumWalletChainManager.setCurrentChain(network.chainId);
     this.walletService.setL2Display(true);
     this.onCloseAfterNetworkChanged();
+  }
+
+  onNetworkSpaceKey(event: KeyboardEvent, network: EIP1193ProviderChain): void {
+    event.preventDefault();
+    this.setL2Network(network);
+  }
+
+  onAddNetworkSpaceKey(event: KeyboardEvent): void {
+    event.preventDefault();
+    this.onAddNetwork();
   }
 
   onAddNetwork(): void {

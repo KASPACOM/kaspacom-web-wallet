@@ -29,7 +29,7 @@
         tabindex="0"
         (click)="setL2Network(network)"
         (keydown.enter)="setL2Network(network)"
-        (keydown.space)="setL2Network(network)">
+        (keydown.space)="onNetworkSpaceKey($event, network)">
 
         <!-- Icon -->
         <div class="network-icon">
@@ -85,7 +85,12 @@
     </div>
 
     <!-- Add Network -->
-    <div class="add-network-row" (click)="onAddNetwork()">
+    <div class="add-network-row"
+      role="button"
+      tabindex="0"
+      (click)="onAddNetwork()"
+      (keydown.enter)="onAddNetwork()"
+      (keydown.space)="onAddNetworkSpaceKey($event)">
       <div class="add-network-icon">
         <kc-icon [iconClass]="'icon-plus'" [size]="'sm'"></kc-icon>
       </div>

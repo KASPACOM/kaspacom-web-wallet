@@ -102,12 +102,12 @@ export class AddCustomNetworkFlowPageComponent {
 
   rpcUrlError = computed(() => {
     if (!this.submitted() || !this.rpcUrl().trim()) return '';
-    return this.isRpcUrlValid() ? '' : 'Must be a valid URL (https://...)';
+    return this.isRpcUrlValid() ? '' : 'Must be a valid URL (http:// or https://)';
   });
 
   explorerUrlError = computed(() => {
     if (!this.submitted() || !this.explorerUrl().trim()) return '';
-    return this.isExplorerUrlValid() ? '' : 'Must be a valid URL (https://...)';
+    return this.isExplorerUrlValid() ? '' : 'Must be a valid URL (http:// or https://)';
   });
 
   decimalsError = computed(() => {

@@ -157,7 +157,8 @@
           }
         }
 
-        &:hover .btn-delete-network {
+        &:hover .btn-delete-network,
+        &:focus-within .btn-delete-network {
           opacity: 1;
         }
       }

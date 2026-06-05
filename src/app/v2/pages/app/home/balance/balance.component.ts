@@ -100,11 +100,20 @@ export class BalanceComponent {
       this.l2NativePrice.set(0);
       return;
     }
+    const requestedChainId = chainId;
     firstValueFrom(
       this.http.get<Record<string, { usd?: number }>>('https://api.coingecko.com/api/v3/simple/price', {
         params: { ids: geckoId, vs_currencies: 'usd' },
       })
-    ).then(resp => this.l2NativePrice.set(resp[geckoId]?.usd ?? 0)).catch(() => this.l2NativePrice.set(0));
+    ).then(resp => {
+      if (this.chainManager.getCurrentChainSignal()() === requestedChainId) {
+        this.l2NativePrice.set(resp[geckoId]?.usd ?? 0);
+      }
+    }).catch(() => {
+      if (this.chainManager.getCurrentChainSignal()() === requestedChainId) {
+        this.l2NativePrice.set(0);
+      }
+    });
   });
 
   walletAddress = this.walletService.getCurrentDisplayWalletAddressAsString;

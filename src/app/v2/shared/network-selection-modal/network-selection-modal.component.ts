@@ -200,7 +200,11 @@ export class NetworkSelectionModalComponent implements OnInit {
   confirmDelete(event: MouseEvent, chainId: string): void {
     event.stopPropagation();
     if (this.deletingChainId === chainId) {
+      const wasCurrentChain = this.isCurrentNetwork(chainId);
       this.ethereumWalletChainManager.removeChain(chainId);
+      if (wasCurrentChain) {
+        this.walletService.setL2Display(false);
+      }
       this.deletingChainId = null;
     } else {
       this.deletingChainId = chainId;

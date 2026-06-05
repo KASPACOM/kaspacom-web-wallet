@@ -25,7 +25,11 @@
         class="network-item"
         [class.selected]="isCurrentNetwork(network.chainId)"
         [class.confirming-delete]="deletingChainId === network.chainId"
-        (click)="setL2Network(network)">
+        role="button"
+        tabindex="0"
+        (click)="setL2Network(network)"
+        (keydown.enter)="setL2Network(network)"
+        (keydown.space)="setL2Network(network)">
 
         <!-- Icon -->
         <div class="network-icon">
@@ -69,6 +73,7 @@
               <button
                 class="btn-delete-network"
                 title="Remove network"
+                [attr.aria-label]="'Remove ' + getNetworkShortName(network) + ' network'"
                 (click)="confirmDelete($event, network.chainId)">
                 <kc-icon [iconClass]="'icon-trash'" [size]="'sm'"></kc-icon>
               </button>

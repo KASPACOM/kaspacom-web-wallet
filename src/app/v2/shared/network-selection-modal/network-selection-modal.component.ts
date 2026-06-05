@@ -184,12 +184,12 @@ export class NetworkSelectionModalComponent implements OnInit {
     this.onCloseAfterNetworkChanged();
   }
 
-  onNetworkSpaceKey(event: KeyboardEvent, network: EIP1193ProviderChain): void {
+  onNetworkSpaceKey(event: Event, network: EIP1193ProviderChain): void {
     event.preventDefault();
     this.setL2Network(network);
   }
 
-  onAddNetworkSpaceKey(event: KeyboardEvent): void {
+  onAddNetworkSpaceKey(event: Event): void {
     event.preventDefault();
     this.onAddNetwork();
   }

@@ -73,7 +73,7 @@ export class BalanceComponent {
 
   nativeTokenSymbol = computed(() => {
     if (!this.isL2Display()) return 'KAS';
-    return this.currentChainConfig()?.nativeCurrency?.symbol || '';
+    return this.currentChainConfig()?.nativeCurrency?.symbol || '?';
   });
 
   currentNetworkIcon = computed(() => {

@@ -102,7 +102,8 @@ export class AddCustomNetworkFlowPageComponent {
   });
 
   rpcUrlError = computed(() => {
-    if (!this.submitted() || !this.rpcUrl().trim()) return '';
+    if (!this.submitted()) return '';
+    if (!this.rpcUrl().trim()) return 'RPC URL is required';
     return this.isRpcUrlValid() ? '' : 'Must be a valid URL (http:// or https://)';
   });
 

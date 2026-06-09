@@ -119,7 +119,7 @@ export class EthereumWalletChainManager {
                     defiApiNetworkName: c.defiApiNetworkName,
                 };
             })
-            .concat(JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS) || '[]'));
+            .concat(this.getCustomChainsFromStorage());
 
         this.allChainsByChainId = allChains.reduce((acc, chain) => {
             acc[chain.chainId] = chain;

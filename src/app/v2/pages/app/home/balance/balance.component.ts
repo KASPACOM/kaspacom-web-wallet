@@ -17,23 +17,7 @@ import { KaspaPriceService } from '../../../../../services/kaspa-price.service';
 import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';
 import { EthereumWalletChainManager } from '../../../../../services/etherium-services/etherium-wallet-chain.manager';
 import { CHAIN_ID_LOGOS } from '../../../../shared/network-selection-modal/chain-id-logos';
-
-const NATIVE_TOKEN_COINGECKO_IDS: Record<string, string> = {
-  ETH: 'ethereum',
-  WETH: 'weth',
-  MATIC: 'matic-network',
-  POL: 'matic-network',
-  BNB: 'binancecoin',
-  AVAX: 'avalanche-2',
-  FTM: 'fantom',
-  CRO: 'crypto-com-chain',
-  CELO: 'celo',
-  GLMR: 'moonbeam',
-  MOVR: 'moonriver',
-  METIS: 'metis-token',
-  OP: 'optimism',
-  ARB: 'arbitrum',
-};
+import { NATIVE_TOKEN_COINGECKO_IDS, COINGECKO_PRICE_URL } from '../../../../shared/network-selection-modal/coingecko-native-ids';
 
 @Component({
   selector: 'app-balance',
@@ -102,7 +86,7 @@ export class BalanceComponent {
     }
     const requestedChainId = chainId;
     firstValueFrom(
-      this.http.get<Record<string, { usd?: number }>>('https://api.coingecko.com/api/v3/simple/price', {
+      this.http.get<Record<string, { usd?: number }>>(COINGECKO_PRICE_URL, {
         params: { ids: geckoId, vs_currencies: 'usd' },
       })
     ).then(resp => {

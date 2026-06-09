@@ -11,33 +11,9 @@ import { Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { FlowPageId } from '../../pages/app/common/flow-page/flow-page.registry';
 import { CHAIN_ID_LOGOS } from './chain-id-logos';
+import { COINGECKO_PRICE_URL, NATIVE_TOKEN_COINGECKO_IDS } from './coingecko-native-ids';
 
-const COINGECKO_PRICE_URL = 'https://api.coingecko.com/api/v3/simple/price';
 const PRICE_CACHE_TTL_MS = 5 * 60 * 1000;
-
-// Well-known EVM native token symbol → CoinGecko ID mapping
-const NATIVE_TOKEN_COINGECKO_IDS: Record<string, string> = {
-  ETH: 'ethereum',
-  WETH: 'weth',
-  MATIC: 'matic-network',
-  POL: 'matic-network',
-  BNB: 'binancecoin',
-  AVAX: 'avalanche-2',
-  FTM: 'fantom',
-  CRO: 'crypto-com-chain',
-  ONE: 'harmony',
-  CELO: 'celo',
-  GLMR: 'moonbeam',
-  MOVR: 'moonriver',
-  METIS: 'metis-token',
-  OP: 'optimism',
-  ARB: 'arbitrum',
-  KAS: 'kaspa',
-  SOL: 'solana',
-  DAI: 'dai',
-  USDC: 'usd-coin',
-  USDT: 'tether',
-};
 
 
 interface PriceCacheEntry {

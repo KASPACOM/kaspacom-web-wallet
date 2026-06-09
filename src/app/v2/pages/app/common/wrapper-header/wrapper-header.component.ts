@@ -37,22 +37,15 @@ export class WrapperHeaderComponent {
   // Use signals for reactive updates
   currentWallet = this.walletService.getCurrentWalletSignal();
   currentNetworkInfo = computed(() => {
-    if (this.ethereumWalletChainManager.getCurrentChainSignal()()) {
-      const envConfig = this.ethereumWalletChainManager.getChainEnvConfig(
-        this.ethereumWalletChainManager.getCurrentChainSignal()()!,
-      );
-      const chainConfig = this.ethereumWalletChainManager.getChainConfig(
-        this.ethereumWalletChainManager.getCurrentChainSignal()()!,
-      );
-
+    const chainId = this.ethereumWalletChainManager.getCurrentChainSignal()();
+    if (chainId) {
+      const envConfig = this.ethereumWalletChainManager.getChainEnvConfig(chainId);
+      const chainConfig = this.ethereumWalletChainManager.getChainConfig(chainId);
       return {
         name: envConfig?.shortName || chainConfig?.chainName,
-        icon: envConfig?.icon ||
-          CHAIN_ID_LOGOS[this.ethereumWalletChainManager.getCurrentChainSignal()()!.toLowerCase()] ||
-          null,
+        icon: envConfig?.icon || CHAIN_ID_LOGOS[chainId.toLowerCase()] || null,
       };
     }
-
     return {
       name: environment.l1Config.shortName,
       icon: environment.l1Config.icon,

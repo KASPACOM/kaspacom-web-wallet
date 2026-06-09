@@ -161,6 +161,12 @@
         &:focus-within .btn-delete-network {
           opacity: 1;
         }
+
+        @media (hover: none) {
+          .btn-delete-network {
+            opacity: 1;
+          }
+        }
       }
     }
 

@@ -58,10 +58,10 @@ export class WalletActionService {
   }>({});
   private actionToApprove = signal<
     | {
-        action: WalletAction;
-        resolve: (data: { isApproved: boolean; priorityFee?: bigint }) => void;
-        additionalParams?: { [parmName: string]: any };
-      }
+      action: WalletAction;
+      resolve: (data: { isApproved: boolean; priorityFee?: bigint }) => void;
+      additionalParams?: { [parmName: string]: any };
+    }
     | undefined
   >(undefined);
 
@@ -213,11 +213,20 @@ export class WalletActionService {
     submitTransaction: boolean = false,
     protocol?: ProtocolType | string,
     type?: PsktActionsEnum | string,
-  ): WalletAction {
+  ): WalletAction {    // Temp fix so the wasm wouldn't crash
+
+    const transaction = JSON.parse(psktDataJson);
+
+    for (let input of transaction.inputs) {
+      if (!('computeBudget' in input)) {
+        input.computeBudget = 0;
+      }
+    }
+
     return {
       type: WalletActionType.SIGN_PSKT_TRANSACTION,
       data: {
-        psktTransactionJson: psktDataJson,
+        psktTransactionJson: JSON.stringify(transaction),
         submitTransaction,
         protocol,
         type,
@@ -464,13 +473,13 @@ export class WalletActionService {
 
   getActionToApproveSignal(): Signal<
     | {
-        action: WalletAction;
-        resolve: (data: {
-          isApproved: boolean;
-          priorityFee?: bigint;
-          additionalParams?: { [parmName: string]: any };
-        }) => void;
-      }
+      action: WalletAction;
+      resolve: (data: {
+        isApproved: boolean;
+        priorityFee?: bigint;
+        additionalParams?: { [parmName: string]: any };
+      }) => void;
+    }
     | undefined
   > {
     return this.actionToApprove.asReadonly();
@@ -895,9 +904,18 @@ export class WalletActionService {
     }
 
     for (const input of transaction.inputs) {
+      const utxoAddress = input.utxo.address || this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(input.utxo.scriptPublicKey);
+
+      if (!utxoAddress) {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
+        };
+      }
+
       const transactionInputWalletUtxos =
         await this.kaspaNetworkActionsService.getWalletBalanceAndUtxos(
-          input.utxo.address,
+          utxoAddress,
         );
 
       const transactionInputUtxo = transactionInputWalletUtxos.utxoEntries.find(

@@ -895,18 +895,9 @@ export class WalletActionService {
     }
 
     for (const input of transaction.inputs) {
-      const utxoAddress = input.utxo.address || this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(input.utxo.scriptPublicKey);
-
-      if (!utxoAddress) {
-        return {
-          isValidated: false,
-          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
-        };
-      }
-
       const transactionInputWalletUtxos =
         await this.kaspaNetworkActionsService.getWalletBalanceAndUtxos(
-          utxoAddress,
+          input.utxo.address,
         );
 
       const transactionInputUtxo = transactionInputWalletUtxos.utxoEntries.find(

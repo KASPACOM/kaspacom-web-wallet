@@ -108,7 +108,7 @@ export class EthereumWalletChainManager {
     }
     private setAllChainsByChainId(): void {
         const allChains: ExtendedEIP1193ProviderChain[] = Object.values(environment.l2Configs)
-            .map((config: L2ConfigInterface) => {
+            .map((config: L2ConfigInterface): ExtendedEIP1193ProviderChain => {
                 const c = config.customChainConfig;
                 return {
                     chainId: this.convertChainIdToHex(c.chainId),

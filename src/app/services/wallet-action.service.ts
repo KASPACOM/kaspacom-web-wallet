@@ -219,7 +219,7 @@ export class WalletActionService {
 
     for (let input of transaction.inputs) {
       if (!('computeBudget' in input)) {
-        input.computeBudget = 0;
+        input.computeBudget = undefined;
       }
     }
 

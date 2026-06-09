@@ -226,7 +226,7 @@ export class WalletActionService {
     return {
       type: WalletActionType.SIGN_PSKT_TRANSACTION,
       data: {
-        psktTransactionJson: JSON.stringify(transaction),,
+        psktTransactionJson: JSON.stringify(transaction),
         submitTransaction,
         protocol,
         type,

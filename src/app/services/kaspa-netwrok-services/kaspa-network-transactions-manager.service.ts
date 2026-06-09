@@ -15,6 +15,7 @@ import {
   ITransactionInput,
   ITransactionOutput,
   IUtxoEntry,
+  kaspaToSompi,
   Opcodes,
   payToAddressScript,
   PendingTransaction,
@@ -901,10 +902,10 @@ export class KaspaNetworkTransactionsManagerService {
         ...transaction.outputs.slice(1),
       ];
 
-      const transactionFee = calculateTransactionFee(
+      const transactionFee = (calculateTransactionFee(
         this.rpcService.getNetwork(),
         transaction
-      );
+      )) || kaspaToSompi('0.01');
 
       if (!transactionFee) {
         throw new Error('Transaction fee not calculated');

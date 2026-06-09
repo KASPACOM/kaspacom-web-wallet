@@ -4,7 +4,12 @@
     <!-- L1 Network -->
     <h3 class="network-group-title">L1 Network</h3>
     <div class="networks-list">
-      <div class="network-item" [class.selected]="!isCurrentNetworkL2()" (click)="setL1Network()">
+      <div class="network-item" [class.selected]="!isCurrentNetworkL2()"
+        role="button"
+        tabindex="0"
+        (click)="setL1Network()"
+        (keydown.enter)="setL1Network()"
+        (keydown.space)="onL1SpaceKey($event)">
         <div class="network-icon">
           <img [src]="l1Config.icon" [alt]="l1Config.shortName" class="chain-icon" />
         </div>
@@ -28,7 +33,7 @@
         role="button"
         tabindex="0"
         (click)="setL2Network(network)"
-        (keydown.enter)="setL2Network(network)"
+        (keydown.enter)="onNetworkEnterKey($event, network)"
         (keydown.space)="onNetworkSpaceKey($event, network)">
 
         <!-- Icon -->

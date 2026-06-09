@@ -128,8 +128,9 @@ export class EthereumWalletChainManager {
     }
 
     public addChain(chain: ExtendedEIP1193ProviderChain): void {
+        const normalized = { ...chain, chainId: chain.chainId.toLowerCase() };
         const existing = this.getCustomChainsFromStorage();
-        const updated = [...existing, chain];
+        const updated = [...existing, normalized];
         localStorage.setItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS, JSON.stringify(updated));
         this.setAllChainsByChainId();
         this.customChainsSignal.set(updated);
@@ -156,7 +157,10 @@ export class EthereumWalletChainManager {
 
     private getCustomChainsFromStorage(): ExtendedEIP1193ProviderChain[] {
         try {
-            return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS) || '[]');
+            const chains: ExtendedEIP1193ProviderChain[] = JSON.parse(
+                localStorage.getItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS) || '[]'
+            );
+            return chains.map(c => ({ ...c, chainId: c.chainId.toLowerCase() }));
         } catch {
             return [];
         }

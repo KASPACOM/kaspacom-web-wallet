@@ -248,26 +248,6 @@ export class WalletActionService {
     isFromIframe: boolean = false,
     onActionApproval: undefined | (() => Promise<void>) = undefined,
   ): Promise<WalletActionResultWithError & { isUsingV2Flow?: boolean }> {
-    // Temp fix so the wasm wouldn't crash
-    if (action.type === WalletActionType.SIGN_PSKT_TRANSACTION) {
-
-      const transaction = JSON.parse(action.data.psktTransactionJson);
-
-      for (let input of transaction.inputs) {
-        if (!('computeBudget' in input)) {
-          input.computeBudget = undefined;
-        }
-      }
-
-      action = {
-        ...action,
-        data: {
-          ...action.data,
-          psktTransactionJson: JSON.stringify(transaction),
-        },
-      }
-    }
-
     const validationResult = await this.validateAction(
       action,
       this.walletService.getCurrentWallet()!,

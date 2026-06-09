@@ -866,7 +866,8 @@ export class KaspaNetworkTransactionsManagerService {
         previousOutpoint: utxo.outpoint,
         utxo: utxo,
         sequence: 0n,
-        sigOpCount: 1,
+        sigOpCount: 0,
+        computeBudget: 30,
       }));
 
       let index = transaction.inputs.length;

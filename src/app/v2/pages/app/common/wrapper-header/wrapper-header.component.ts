@@ -39,11 +39,12 @@ export class WrapperHeaderComponent {
   currentNetworkInfo = computed(() => {
     const chainId = this.ethereumWalletChainManager.getCurrentChainSignal()();
     if (chainId) {
-      const envConfig = this.ethereumWalletChainManager.getChainEnvConfig(chainId);
-      const chainConfig = this.ethereumWalletChainManager.getChainConfig(chainId);
+      const normalizedId = chainId.toLowerCase();
+      const envConfig = this.ethereumWalletChainManager.getChainEnvConfig(normalizedId);
+      const chainConfig = this.ethereumWalletChainManager.getChainConfig(normalizedId);
       return {
         name: envConfig?.shortName || chainConfig?.chainName,
-        icon: envConfig?.icon || CHAIN_ID_LOGOS[chainId.toLowerCase()] || null,
+        icon: envConfig?.icon || CHAIN_ID_LOGOS[normalizedId] || null,
       };
     }
     return {

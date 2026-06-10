@@ -52,7 +52,7 @@ export class BalanceComponent {
 
   currentChainConfig = computed(() => {
     const chainId = this.chainManager.getCurrentChainSignal()();
-    return chainId ? this.chainManager.getChainConfig(chainId) : null;
+    return chainId ? this.chainManager.getChainConfig(chainId.toLowerCase()) : null;
   });
 
   nativeTokenSymbol = computed(() => {
@@ -64,9 +64,10 @@ export class BalanceComponent {
     if (!this.isL2Display()) return null;
     const chainId = this.chainManager.getCurrentChainSignal()();
     if (!chainId) return null;
+    const normalizedId = chainId.toLowerCase();
     return (
-      this.chainManager.getChainEnvConfig(chainId)?.icon ||
-      CHAIN_ID_LOGOS[chainId.toLowerCase()] ||
+      this.chainManager.getChainEnvConfig(normalizedId)?.icon ||
+      CHAIN_ID_LOGOS[normalizedId] ||
       null
     );
   });
@@ -78,7 +79,8 @@ export class BalanceComponent {
       this.l2NativePrice.set(0);
       return;
     }
-    const symbol = this.chainManager.getChainConfig(chainId)?.nativeCurrency?.symbol?.toUpperCase();
+    const normalizedId = chainId.toLowerCase();
+    const symbol = this.chainManager.getChainConfig(normalizedId)?.nativeCurrency?.symbol?.toUpperCase();
     const geckoId = symbol ? NATIVE_TOKEN_COINGECKO_IDS[symbol] : undefined;
     if (!geckoId) {
       this.l2NativePrice.set(0);

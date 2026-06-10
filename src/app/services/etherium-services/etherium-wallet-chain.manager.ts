@@ -137,18 +137,19 @@ export class EthereumWalletChainManager {
     }
 
     public removeChain(chainId: string): void {
+        const normalizedId = chainId.toLowerCase();
         const existing = this.getCustomChainsFromStorage();
-        const updated = existing.filter(c => c.chainId !== chainId);
+        const updated = existing.filter(c => c.chainId !== normalizedId);
         localStorage.setItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS, JSON.stringify(updated));
         this.setAllChainsByChainId();
         this.customChainsSignal.set(updated);
-        if (this.getCurrentChainSignal()() === chainId) {
+        if (this.getCurrentChainSignal()() === normalizedId) {
             this.setCurrentChain(undefined);
         }
     }
 
     public isCustomChain(chainId: string): boolean {
-        return !this.allChainsEnvConfigByChainId[chainId];
+        return !this.allChainsEnvConfigByChainId[chainId.toLowerCase()];
     }
 
     public getCustomChainsSignal() {

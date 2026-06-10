@@ -9,7 +9,6 @@ import { EIP1193ProviderChain } from '@kaspacom/wallet-messages';
 import { WalletService } from '../../../services/wallet.service';
 import { Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
-import { FlowPageId } from '../../pages/app/common/flow-page/flow-page.registry';
 import { CHAIN_ID_LOGOS } from './chain-id-logos';
 import { COINGECKO_PRICE_URL, NATIVE_TOKEN_COINGECKO_IDS } from './coingecko-native-ids';
 
@@ -38,7 +37,7 @@ export class NetworkSelectionModalComponent implements OnInit {
 
   // Reactive: re-derives whenever a custom chain is added or removed
   protected networks = computed<EIP1193ProviderChain[]>(() => {
-    this.ethereumWalletChainManager.getCustomChainsSignal()(); // subscribe to changes
+    void this.ethereumWalletChainManager.getCustomChainsSignal()();
     return Object.values(this.ethereumWalletChainManager.getAllChainsByChainId());
   });
 
@@ -135,7 +134,7 @@ export class NetworkSelectionModalComponent implements OnInit {
 
   isCurrentNetwork(networkId: string): boolean {
     return (
-      this.ethereumWalletChainManager.getCurrentChainSignal()() === networkId
+      this.ethereumWalletChainManager.getCurrentChainSignal()()?.toLowerCase() === networkId.toLowerCase()
     );
   }
 
@@ -183,7 +182,7 @@ export class NetworkSelectionModalComponent implements OnInit {
 
   onAddNetwork(): void {
     this.flowPagesService.navigateToPage({
-      id: 'add-custom-network' as FlowPageId,
+      id: 'add-custom-network',
       title: 'Add Custom Network',
       canNavigateBack: true,
       canClose: true,

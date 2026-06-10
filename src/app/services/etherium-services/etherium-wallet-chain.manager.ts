@@ -46,6 +46,11 @@ export class EthereumWalletChainManager {
                 curentChain = undefined;
             }
         }
+        if (curentChain && !this.allChainsByChainId[curentChain]) {
+            localStorage.removeItem(LOCAL_STORAGE_KEYS.CURRENT_ETHEREUM_CHAIN);
+            curentChain = undefined;
+        }
+
         this.currentChain = signal<string | undefined>(curentChain);
 
         this.setCurrentWalletProviderAndStopOldOne();
@@ -130,7 +135,7 @@ export class EthereumWalletChainManager {
     public addChain(chain: ExtendedEIP1193ProviderChain): void {
         const normalized = { ...chain, chainId: chain.chainId.toLowerCase() };
         const existing = this.getCustomChainsFromStorage();
-        const updated = [...existing, normalized];
+        const updated = [...existing.filter(c => c.chainId !== normalized.chainId), normalized];
         localStorage.setItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS, JSON.stringify(updated));
         this.setAllChainsByChainId();
         this.customChainsSignal.set(updated);
@@ -143,7 +148,7 @@ export class EthereumWalletChainManager {
         localStorage.setItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS, JSON.stringify(updated));
         this.setAllChainsByChainId();
         this.customChainsSignal.set(updated);
-        if (this.getCurrentChainSignal()() === normalizedId) {
+        if (this.getCurrentChainSignal()()?.toLowerCase() === normalizedId) {
             this.setCurrentChain(undefined);
         }
     }

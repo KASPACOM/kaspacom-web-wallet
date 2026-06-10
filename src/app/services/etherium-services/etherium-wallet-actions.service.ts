@@ -44,6 +44,7 @@ export class EthereumWalletActionsService {
             this.ethereumWalletChainManager.getAllChainsByChainId(),
           )[0].chainId,
         );
+        this.walletService.setL2Display(true);
       }
 
       if (

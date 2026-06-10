@@ -37,8 +37,9 @@ export class WrapperHeaderComponent {
   // Use signals for reactive updates
   currentWallet = this.walletService.getCurrentWalletSignal();
   currentNetworkInfo = computed(() => {
+    const isL2 = this.walletService.getIsL2DisplaySignal()();
     const chainId = this.ethereumWalletChainManager.getCurrentChainSignal()();
-    if (chainId) {
+    if (isL2 && chainId) {
       const normalizedId = chainId.toLowerCase();
       const envConfig = this.ethereumWalletChainManager.getChainEnvConfig(normalizedId);
       const chainConfig = this.ethereumWalletChainManager.getChainConfig(normalizedId);

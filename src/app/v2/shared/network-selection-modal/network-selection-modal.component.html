@@ -63,10 +63,10 @@
         <div class="network-status">
           @if (deletingChainId === network.chainId) {
             <div class="delete-confirm-row" (click)="$event.stopPropagation()">
-              <button class="btn-confirm-delete" (click)="confirmDelete($event, network.chainId)">
+              <button type="button" class="btn-confirm-delete" (click)="confirmDelete($event, network.chainId)">
                 Delete
               </button>
-              <button class="btn-cancel-delete" (click)="cancelDelete($event)">
+              <button type="button" class="btn-cancel-delete" (click)="cancelDelete($event)">
                 Keep
               </button>
             </div>
@@ -76,6 +76,7 @@
             }
             @if (isCustomNetwork(network.chainId)) {
               <button
+                type="button"
                 class="btn-delete-network"
                 title="Remove network"
                 [attr.aria-label]="'Remove ' + getNetworkShortName(network) + ' network'"

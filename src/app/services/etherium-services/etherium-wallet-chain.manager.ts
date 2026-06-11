@@ -31,10 +31,10 @@ export class EthereumWalletChainManager {
         this.customChainsSignal.set(this.getCustomChainsFromStorage());
 
 
-        let curentChain = localStorage.getItem(LOCAL_STORAGE_KEYS.CURRENT_ETHEREUM_CHAIN) || undefined;
+        let curentChain = (localStorage.getItem(LOCAL_STORAGE_KEYS.CURRENT_ETHEREUM_CHAIN) || undefined)?.toLowerCase();
         const urlParams = new URLSearchParams(window.location.search);
         const viewTypeParam = urlParams.get('view');
-        const chainIdTypeParam = urlParams.get('chain');
+        const chainIdTypeParam = urlParams.get('chain')?.toLowerCase();
         if (viewTypeParam) {
             if (viewTypeParam === VIEW_METHOD.L2) {
                 if (chainIdTypeParam && this.allChainsByChainId[chainIdTypeParam]) {

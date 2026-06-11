@@ -46,6 +46,11 @@ export class WalletService {
       isL2View = viewTypeParam === VIEW_METHOD.L2;
     }
 
+    if (isL2View && !this.etheriumChainManager.getCurrentChainSignal()()) {
+      isL2View = false;
+      localStorage.setItem(LOCAL_STORAGE_KEYS.IS_L2_DISPLAY, 'false');
+    }
+
     this.isL2DisplaySignal = signal<boolean>(isL2View);
   }
 

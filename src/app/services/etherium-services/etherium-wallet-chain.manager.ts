@@ -18,6 +18,7 @@ export class EthereumWalletChainManager {
     private currentProvider: BaseEthereumProvider | undefined = undefined;
     protected allChainsByChainId: { [chainId: string]: ExtendedEIP1193ProviderChain } = {};
     protected allChainsEnvConfigByChainId: { [chainId: string]: L2ConfigInterface } = {};
+    private customChainsSignal: WritableSignal<ExtendedEIP1193ProviderChain[]> = signal([]);
 
 
     constructor(
@@ -27,12 +28,13 @@ export class EthereumWalletChainManager {
             this.allChainsEnvConfigByChainId[this.convertChainIdToHex(chainId)] = config;
         });
         this.setAllChainsByChainId();
+        this.customChainsSignal.set(this.getCustomChainsFromStorage());
 
 
-        let curentChain = localStorage.getItem(LOCAL_STORAGE_KEYS.CURRENT_ETHEREUM_CHAIN) || undefined;
+        let curentChain = (localStorage.getItem(LOCAL_STORAGE_KEYS.CURRENT_ETHEREUM_CHAIN) || undefined)?.toLowerCase();
         const urlParams = new URLSearchParams(window.location.search);
         const viewTypeParam = urlParams.get('view');
-        const chainIdTypeParam = urlParams.get('chain');
+        const chainIdTypeParam = urlParams.get('chain')?.toLowerCase();
         if (viewTypeParam) {
             if (viewTypeParam === VIEW_METHOD.L2) {
                 if (chainIdTypeParam && this.allChainsByChainId[chainIdTypeParam]) {
@@ -44,6 +46,11 @@ export class EthereumWalletChainManager {
                 curentChain = undefined;
             }
         }
+        if (curentChain && !this.allChainsByChainId[curentChain]) {
+            localStorage.removeItem(LOCAL_STORAGE_KEYS.CURRENT_ETHEREUM_CHAIN);
+            curentChain = undefined;
+        }
+
         this.currentChain = signal<string | undefined>(curentChain);
 
         this.setCurrentWalletProviderAndStopOldOne();
@@ -106,7 +113,7 @@ export class EthereumWalletChainManager {
     }
     private setAllChainsByChainId(): void {
         const allChains: ExtendedEIP1193ProviderChain[] = Object.values(environment.l2Configs)
-            .map((config: L2ConfigInterface) => {
+            .map((config: L2ConfigInterface): ExtendedEIP1193ProviderChain => {
                 const c = config.customChainConfig;
                 return {
                     chainId: this.convertChainIdToHex(c.chainId),
@@ -117,7 +124,7 @@ export class EthereumWalletChainManager {
                     defiApiNetworkName: c.defiApiNetworkName,
                 };
             })
-            .concat(JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS) || '[]'));
+            .concat(this.getCustomChainsFromStorage());
 
         this.allChainsByChainId = allChains.reduce((acc, chain) => {
             acc[chain.chainId] = chain;
@@ -126,8 +133,43 @@ export class EthereumWalletChainManager {
     }
 
     public addChain(chain: ExtendedEIP1193ProviderChain): void {
-        localStorage.setItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS, JSON.stringify([...JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS) || '[]'), chain]));
+        const normalized = { ...chain, chainId: chain.chainId.toLowerCase() };
+        const existing = this.getCustomChainsFromStorage();
+        const updated = [...existing.filter(c => c.chainId !== normalized.chainId), normalized];
+        localStorage.setItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS, JSON.stringify(updated));
         this.setAllChainsByChainId();
+        this.customChainsSignal.set(updated);
+    }
+
+    public removeChain(chainId: string): void {
+        const normalizedId = chainId.toLowerCase();
+        const existing = this.getCustomChainsFromStorage();
+        const updated = existing.filter(c => c.chainId !== normalizedId);
+        localStorage.setItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS, JSON.stringify(updated));
+        this.setAllChainsByChainId();
+        this.customChainsSignal.set(updated);
+        if (this.getCurrentChainSignal()()?.toLowerCase() === normalizedId) {
+            this.setCurrentChain(undefined);
+        }
+    }
+
+    public isCustomChain(chainId: string): boolean {
+        return !this.allChainsEnvConfigByChainId[chainId.toLowerCase()];
+    }
+
+    public getCustomChainsSignal() {
+        return this.customChainsSignal.asReadonly();
+    }
+
+    private getCustomChainsFromStorage(): ExtendedEIP1193ProviderChain[] {
+        try {
+            const chains: ExtendedEIP1193ProviderChain[] = JSON.parse(
+                localStorage.getItem(LOCAL_STORAGE_KEYS.ETHEREUM_CHAINS) || '[]'
+            );
+            return chains.map(c => ({ ...c, chainId: c.chainId.toLowerCase() }));
+        } catch {
+            return [];
+        }
     }
 
 

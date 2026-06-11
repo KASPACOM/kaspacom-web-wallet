@@ -56,6 +56,10 @@ export class AddCustomNetworkFlowPageComponent {
   currencyDecimals = signal('18');
   explorerUrl = signal('');
 
+  protected coerceToString(val: unknown): string {
+    return val != null ? String(val) : '';
+  }
+
   isSaving = signal(false);
   submitted = signal(false);
   selectedPresetChainId = signal<number | null>(null);

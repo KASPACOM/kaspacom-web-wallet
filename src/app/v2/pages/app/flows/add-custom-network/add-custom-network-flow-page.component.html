@@ -46,7 +46,7 @@
       [isValid]="!chainIdError()"
       [invalidReason]="chainIdError()"
       [ngModel]="chainId()"
-      (valueChange)="chainId.set($event || '')">
+      (valueChange)="chainId.set(coerceToString($event))">
     </kc-input>
 
     <kc-input
@@ -77,7 +77,7 @@
       [isValid]="!decimalsError()"
       [invalidReason]="decimalsError()"
       [ngModel]="currencyDecimals()"
-      (valueChange)="currencyDecimals.set($event || '18')">
+      (valueChange)="currencyDecimals.set(coerceToString($event))">
     </kc-input>
 
     <kc-input

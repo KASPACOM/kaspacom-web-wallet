@@ -1,0 +1,17 @@
+export const CHAIN_ID_LOGOS: Record<string, string> = {
+  '0x1':    'images/chains/ethereum.png',
+  '0x2105': 'images/chains/base.png',
+  '0x89':   'images/chains/polygon.png',
+  '0xa4b1': 'images/chains/arbitrum.png',
+  '0xa':    'images/chains/optimism.png',
+  '0x38':   'images/chains/bnb.png',
+  '0xa86a': 'images/chains/avalanche.png',
+  '0xfa':   'images/chains/fantom.png',
+  '0xa4ec': 'images/chains/celo.png',
+  '0x504':  'images/chains/moonbeam.png',
+  '0x505':  'images/chains/moonriver.png',
+  '0x19':   'images/chains/cronos.png',
+  '0x440':  'images/chains/metis.png',
+  '0x144':  'images/chains/zksync.png',
+  '0xe708': 'images/chains/linea.png',
+};

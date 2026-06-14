@@ -27,10 +27,19 @@
       class="kas-balance flex gap-8 align-items-center typo-title-4 fade-in"
       style="color: var(--gray-80)"
     >
-      <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'md'"></kc-icon>
+      @if (isL2Display()) {
+        @if (currentNetworkIcon()) {
+          <img [src]="currentNetworkIcon()!" alt="" class="native-token-icon" />
+        } @else {
+          <div class="native-token-fallback">{{ nativeTokenSymbol().charAt(0) }}</div>
+        }
+      } @else {
+        <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'md'"></kc-icon>
+      }
       <span class="balance-amount">
         {{ kasBalance() | commaFormatter }}
       </span>
+      <span class="native-token-symbol">{{ nativeTokenSymbol() }}</span>
       <div
         class="refresh-action"
         [class.refresh-action--disabled]="isLoading() || isRefreshing()"

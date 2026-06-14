@@ -1,0 +1,114 @@
+<div class="add-network-container full-width full-height flex column p-16 gap-16">
+
+  <kc-dropdown-select
+    [options]="presetOptions"
+    [placeholder]="'Load a well-known network'"
+    [isFullWidth]="true"
+    [isSearchable]="true"
+    [value]="selectedPresetChainId()"
+    (valueChange)="onPresetSelected($event)">
+
+    <ng-template #prefixTemplate>
+      @if (selectedPresetChainId() && getPresetNetworkIcon(selectedPresetChainId()!)) {
+        <img [src]="getPresetNetworkIcon(selectedPresetChainId()!)!" alt="" class="preset-trigger-icon" />
+      }
+    </ng-template>
+
+    <ng-template #optionTemplate let-option>
+      <div class="preset-option">
+        @if (getPresetNetworkIcon(option.value)) {
+          <img [src]="getPresetNetworkIcon(option.value)!" alt="" class="preset-option-icon" />
+        } @else {
+          <div class="preset-option-fallback">{{ option.label.charAt(0) }}</div>
+        }
+        <span>{{ option.label }}</span>
+      </div>
+    </ng-template>
+
+  </kc-dropdown-select>
+
+  <div class="fields-section flex column gap-12">
+
+    <kc-input
+      [label]="'Network Name'"
+      [placeholder]="'e.g. Base, Polygon, Arbitrum'"
+      [type]="'text'"
+      [isFullWidth]="true"
+      [ngModel]="networkName()"
+      (valueChange)="networkName.set($event || '')">
+    </kc-input>
+
+    <kc-input
+      [label]="'Chain ID'"
+      [placeholder]="'e.g. 8453'"
+      [type]="'number'"
+      [isFullWidth]="true"
+      [isValid]="!chainIdError()"
+      [invalidReason]="chainIdError()"
+      [ngModel]="chainId()"
+      (valueChange)="chainId.set(coerceToString($event))">
+    </kc-input>
+
+    <kc-input
+      [label]="'RPC URL'"
+      [placeholder]="'https://rpc.example.com'"
+      [type]="'text'"
+      [isFullWidth]="true"
+      [isValid]="!rpcUrlError()"
+      [invalidReason]="rpcUrlError()"
+      [ngModel]="rpcUrl()"
+      (valueChange)="rpcUrl.set($event || '')">
+    </kc-input>
+
+    <kc-input
+      [label]="'Currency Symbol'"
+      [placeholder]="'ETH'"
+      [type]="'text'"
+      [isFullWidth]="true"
+      [ngModel]="currencySymbol()"
+      (valueChange)="currencySymbol.set($event || '')">
+    </kc-input>
+
+    <kc-input
+      [label]="'Decimals'"
+      [placeholder]="'18'"
+      [type]="'number'"
+      [isFullWidth]="true"
+      [isValid]="!decimalsError()"
+      [invalidReason]="decimalsError()"
+      [ngModel]="currencyDecimals()"
+      (valueChange)="currencyDecimals.set(coerceToString($event))">
+    </kc-input>
+
+    <kc-input
+      [label]="'Block Explorer URL (optional)'"
+      [placeholder]="'https://explorer.example.com'"
+      [type]="'text'"
+      [isFullWidth]="true"
+      [isValid]="!explorerUrlError()"
+      [invalidReason]="explorerUrlError()"
+      [ngModel]="explorerUrl()"
+      (valueChange)="explorerUrl.set($event || '')">
+    </kc-input>
+
+  </div>
+
+  <div class="action-buttons flex gap-12 mt-auto">
+    <kc-button
+      [variant]="'secondary'"
+      [size]="'md'"
+      [text]="'Cancel'"
+      class="flex-1"
+      (buttonClick)="onCancel()">
+    </kc-button>
+    <kc-button
+      [variant]="'primary'"
+      [size]="'md'"
+      [text]="isSaving() ? 'Adding...' : 'Add Network'"
+      [isDisabled]="isSaving()"
+      class="flex-1"
+      (buttonClick)="onSave()">
+    </kc-button>
+  </div>
+
+</div>

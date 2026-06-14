@@ -26,6 +26,7 @@ import { NetworkSelectionModalComponent } from '../../../../shared/network-selec
 import { SendErc20Component } from '../../flows/transaction/send-page/components/send-asset/l2/send-erc20/send-erc20.component';
 import { SwapFlowPageComponent } from '../../flows/swap/swap-flow-page.component';
 import { ImportTokenFlowPageComponent } from '../../flows/import-token/import-token-flow-page.component';
+import { AddCustomNetworkFlowPageComponent } from '../../flows/add-custom-network/add-custom-network-flow-page.component';
 
 export type FlowPageRegistryEntry =
   | Type<unknown>
@@ -62,6 +63,7 @@ export const FLOW_PAGE_IDS = [
   'network-selection',
   'swap',
   'import-token',
+  'add-custom-network',
 ] as const;
 
 export type FlowPageId = (typeof FLOW_PAGE_IDS)[number];
@@ -102,4 +104,5 @@ export const FLOW_PAGE_REGISTRY: Record<FlowPageId, FlowPageRegistryEntry> = {
   'network-selection': NetworkSelectionModalComponent,
   'swap': SwapFlowPageComponent,
   'import-token': ImportTokenFlowPageComponent,
+  'add-custom-network': AddCustomNetworkFlowPageComponent,
 } as const;

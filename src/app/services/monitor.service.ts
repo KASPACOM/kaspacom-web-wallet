@@ -31,7 +31,9 @@ export class MonitorService {
    * post-consent path instead of loading a second Segment instance.
    */
   private get analytics(): any {
-    return typeof window !== 'undefined' ? window.analytics : undefined;
+    return typeof window !== 'undefined'
+      ? (window as any).analytics
+      : undefined;
   }
 
   trackPageView(route: string) {

@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
-import { AnalyticsBrowser } from '@segment/analytics-next';
 import { filter } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
@@ -8,15 +7,12 @@ import { environment } from '../../environments/environment';
   providedIn: 'root',
 })
 export class MonitorService {
-  private analytics: AnalyticsBrowser | undefined;
+  private readonly trackingEnabled = this.isTrackingEnabled();
   private readonly disallowedPropertyPattern =
     /address|wallet|email|ip|device|session|token|secret|private|mnemonic|seed|signature|authorization|tx|transaction|hash/i;
 
   constructor(private router: Router) {
-    if (this.isTrackingEnabled() && environment.segmentKey) {
-      this.analytics = AnalyticsBrowser.load({
-        writeKey: environment.segmentKey,
-      });
+    if (this.trackingEnabled) {
       this.trackPageView(window.location.pathname);
       this.router.events
         .pipe(
@@ -28,6 +24,16 @@ export class MonitorService {
     }
   }
 
+  /**
+   * The Segment instance is loaded once by KaspaConsentManager (see
+   * ConsentService) only after the user grants consent, exposed as
+   * `window.analytics`. Reading it here keeps tracking behind that single
+   * post-consent path instead of loading a second Segment instance.
+   */
+  private get analytics(): any {
+    return typeof window !== 'undefined' ? window.analytics : undefined;
+  }
+
   trackPageView(route: string) {
     this.track('Page Viewed', {
       route: this.sanitizeRoute(route),
@@ -36,7 +42,7 @@ export class MonitorService {
   }
 
   track(event: string, properties?: Record<string, unknown>) {
-    if (!this.analytics) return;
+    if (!this.trackingEnabled || !this.analytics) return;
 
     try {
       this.analytics.track(event, {
@@ -87,13 +93,10 @@ export class MonitorService {
   }
 
   private isTrackingEnabled(): boolean {
+    if (typeof window === 'undefined') return false;
     if (!environment.segmentKey) return false;
     if (!environment.isProduction) return false;
-    const hostname = window.location.hostname;
-    return (
-      !['localhost', '127.0.0.1', '0.0.0.0'].includes(hostname) &&
-      !hostname.endsWith('.local')
-    );
+    return environment.allowedDomains.includes(window.location.hostname);
   }
 
   private sanitizeRoute(route: string): string {

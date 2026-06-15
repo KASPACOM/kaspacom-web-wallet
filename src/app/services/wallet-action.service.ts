@@ -344,7 +344,8 @@ export class WalletActionService {
       this.monitorService.track('Transaction Failed', {
         action_type: action.type,
         error_category: 'unknown',
-        error_code: error instanceof Error ? error.name : 'UnknownError',
+        error_code: ERROR_CODES.GENERAL.UNKNOWN_ERROR,
+        error_name: error instanceof Error ? error.name : 'UnknownError',
       });
 
       if (isUsingV2Flow) {

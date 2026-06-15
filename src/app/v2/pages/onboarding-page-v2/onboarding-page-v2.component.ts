@@ -257,7 +257,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
       }
 
       this.monitorService.track('Wallet Logged In', {
-        isIframe: IFrameCommunicationApp.isIframe(),
+        is_iframe: IFrameCommunicationApp.isIframe(),
       });
 
       await this.router.navigate(['./app/home']);

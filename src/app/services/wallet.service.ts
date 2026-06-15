@@ -141,12 +141,6 @@ export class WalletService {
 
     const result = await this.saveWalletData(walletData);
 
-    const wallet = this.createAppWalletFromSavedWalletData(
-      walletData,
-      true,
-      walletData.accounts?.[0],
-    );
-
     this.monitorService.track(
       isNewWallet ? 'Wallet Created' : 'Wallet Imported',
       {

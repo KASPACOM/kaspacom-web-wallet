@@ -80,7 +80,7 @@ export class MonitorService {
     if (typeof value === 'bigint') return Number(value);
     if (value instanceof Error) {
       return {
-        error_code: value.name || 'Error',
+        error_name: value.name || 'Error',
         error_category: 'unknown',
       };
     }

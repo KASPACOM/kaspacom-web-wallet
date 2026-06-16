@@ -141,14 +141,13 @@ export class WalletService {
 
     const result = await this.saveWalletData(walletData);
 
-    this.monitorService.track(
-      isNewWallet ? 'Wallet Created' : 'Wallet Imported',
-      {
-        action_source: 'wallet_onboarding',
-      },
-    );
-
     if (result) {
+      this.monitorService.track(
+        isNewWallet ? 'Wallet Created' : 'Wallet Imported',
+        {
+          action_source: 'wallet_onboarding',
+        },
+      );
       return { sucess: true };
     } else {
       return { sucess: false, error: 'Error adding wallet' };
@@ -228,7 +227,7 @@ export class WalletService {
       newAccount,
     ]);
 
-    this.monitorService.track('Wallet Imported', {
+    this.monitorService.track('Wallet Account Added', {
       action_source: 'add_wallet_account',
     });
 

@@ -9,11 +9,11 @@ import { environment } from '../../environments/environment';
 export class MonitorService {
   private readonly trackingEnabled = this.isTrackingEnabled();
   private readonly disallowedPropertyPattern =
-    /address|wallet|email|ip|device|session|token|secret|private|mnemonic|seed|signature|authorization|tx|transaction|hash/i;
+    /address|wallet|email|ip|device|session|token|secret|private|mnemonic|seed|signature|auth|password|tx|transaction|hash/i;
 
   constructor(private router: Router) {
     if (this.trackingEnabled) {
-      this.trackPageView(window.location.pathname);
+      this.trackInitialPageView();
       this.router.events
         .pipe(
           filter(
@@ -22,6 +22,23 @@ export class MonitorService {
         )
         .subscribe((event) => this.trackPageView(event.urlAfterRedirects));
     }
+  }
+
+  /**
+   * `window.analytics` is attached by KaspaConsentManager only after the user
+   * grants consent (the consent script loads asynchronously), so tracking the
+   * initial page view immediately would drop it. Wait until analytics is
+   * available, then emit the current page view once. Capped so it stops if
+   * consent is never granted.
+   */
+  private trackInitialPageView(attemptsLeft = 60): void {
+    if (typeof window === 'undefined') return;
+    if (this.analytics) {
+      this.trackPageView(window.location.pathname);
+      return;
+    }
+    if (attemptsLeft <= 0) return;
+    setTimeout(() => this.trackInitialPageView(attemptsLeft - 1), 1000);
   }
 
   /**

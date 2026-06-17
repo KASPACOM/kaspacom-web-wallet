@@ -234,3 +234,18 @@ button {
   color: var(--primary);
   filter: drop-shadow(0 6px 18px rgba(111, 199, 186, 0.4));
 }
+
+// SEO/a11y: page heading present in the DOM for crawlers + screen readers,
+// kept out of the visual layout.
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

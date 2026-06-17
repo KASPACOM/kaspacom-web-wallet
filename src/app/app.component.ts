@@ -9,6 +9,7 @@ import {
   Renderer2,
   inject,
 } from '@angular/core';
+import { Meta } from '@angular/platform-browser';
 import { RouterOutlet } from '@angular/router';
 import { KaspaNetworkActionsService } from './services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { environment } from '../environments/environment';
@@ -46,6 +47,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   ethereumWalletChainManager = inject(EthereumWalletChainManager);
   assetsManager = inject(AssetsManagerService);
   consentService = inject(ConsentService);
+  private readonly meta = inject(Meta);
   private referralService = inject(ReferralService);
   private teardownLoader?: VoidFunction;
 
@@ -58,6 +60,8 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async ngOnInit() {
     console.log('App component initialized');
+
+    this.applyIndexingPolicy();
 
     if (!this.isAllowedDomain()) {
       return;
@@ -102,6 +106,17 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
   isAllowedDomain(): boolean {
     return environment.allowedDomains.includes(window.location.hostname);
+  }
+
+  // Only the canonical production host should be indexed by search engines.
+  // dev-wallet.kaspa.com, localhost and preview hosts get noindex,nofollow.
+  private applyIndexingPolicy(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    if (window.location.hostname !== 'wallet.kaspa.com') {
+      this.meta.updateTag({ name: 'robots', content: 'noindex, nofollow' });
+    }
   }
 
   incompatibleBrowserReason(): string | undefined {

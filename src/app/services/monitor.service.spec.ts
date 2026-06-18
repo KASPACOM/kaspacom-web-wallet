@@ -79,6 +79,30 @@ describe('MonitorService', () => {
     }
   });
 
+  it('drops `ip` as a whole token but keeps safe keys containing the substring', () => {
+    enableTracking();
+    service.track('Wallet Created', {
+      client_ip: '1.2.3.4',
+      userIp: '5.6.7.8',
+      tip_amount: 10,
+      zip_code: '90210',
+      ship_method: 'air',
+    });
+
+    const props = lastTrackedProps();
+    expect(props['client_ip']).toBeUndefined();
+    expect(props['userIp']).toBeUndefined();
+    expect(props['tip_amount']).toBe(10);
+    expect(props['zip_code']).toBe('90210');
+    expect(props['ship_method']).toBe('air');
+  });
+
+  it('does not track when analytics is a stub without a callable track', () => {
+    (service as any).trackingEnabled = true;
+    (window as any).analytics = {}; // attached but not ready yet
+    expect(() => service.track('Wallet Created')).not.toThrow();
+  });
+
   it('converts bigint values to numbers', () => {
     enableTracking();
     service.track('Transaction Succeeded', { amount: BigInt(5) });

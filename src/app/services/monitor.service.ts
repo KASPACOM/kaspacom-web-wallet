@@ -8,8 +8,12 @@ import { environment } from '../../environments/environment';
 })
 export class MonitorService {
   private readonly trackingEnabled = this.isTrackingEnabled();
+  // Substring match for unambiguous sensitive fragments.
   private readonly disallowedPropertyPattern =
-    /address|wallet|email|ip|device|session|token|secret|private|mnemonic|seed|signature|auth|password|tx|transaction|hash/i;
+    /address|wallet|email|device|session|token|secret|private|mnemonic|seed|signature|auth|password|tx|transaction|hash/i;
+  // Short, ambiguous fragments matched only as whole tokens, so safe keys
+  // like `tip_amount` / `zip_code` / `ship_method` are not dropped.
+  private readonly disallowedTokens = new Set(['ip']);
 
   constructor(private router: Router) {
     if (this.trackingEnabled) {
@@ -33,7 +37,7 @@ export class MonitorService {
    */
   private trackInitialPageView(attemptsLeft = 60): void {
     if (typeof window === 'undefined') return;
-    if (this.analytics) {
+    if (this.isAnalyticsReady()) {
       this.trackPageView(window.location.pathname);
       return;
     }
@@ -53,6 +57,15 @@ export class MonitorService {
       : undefined;
   }
 
+  /**
+   * `window.analytics` may briefly be a stub/queue without a callable `track`
+   * before Segment finishes attaching, so check the method exists before
+   * emitting (and before stopping the initial-page-view retry loop).
+   */
+  private isAnalyticsReady(): boolean {
+    return typeof this.analytics?.track === 'function';
+  }
+
   trackPageView(route: string) {
     this.track('Page Viewed', {
       route: this.sanitizeRoute(route),
@@ -61,7 +74,7 @@ export class MonitorService {
   }
 
   track(event: string, properties?: Record<string, unknown>) {
-    if (!this.trackingEnabled || !this.analytics) return;
+    if (!this.trackingEnabled || !this.isAnalyticsReady()) return;
 
     try {
       this.analytics.track(event, {
@@ -91,12 +104,20 @@ export class MonitorService {
       return Object.entries(value as Record<string, unknown>).reduce<
         Record<string, unknown>
       >((safe, [key, entry]) => {
-        if (this.disallowedPropertyPattern.test(key)) return safe;
+        if (this.isDisallowedKey(key)) return safe;
         safe[key] = this.normalizeProperties(entry);
         return safe;
       }, {});
     }
     return value;
+  }
+
+  private isDisallowedKey(key: string): boolean {
+    if (this.disallowedPropertyPattern.test(key)) return true;
+    return key
+      .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+      .split(/[^a-zA-Z0-9]+/)
+      .some((token) => this.disallowedTokens.has(token.toLowerCase()));
   }
 
   private getCommonProperties(): Record<string, unknown> {

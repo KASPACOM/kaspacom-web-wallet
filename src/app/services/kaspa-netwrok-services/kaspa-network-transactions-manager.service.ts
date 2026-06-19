@@ -3,6 +3,7 @@ import {
   Address,
   addressFromScriptPublicKey,
   calculateTransactionFee,
+  calculateTransactionMass,
   createInputSignature,
   createTransactions,
   FeeSource,
@@ -189,7 +190,7 @@ export class KaspaNetworkTransactionsManagerService {
       result?: ICreateTransactions;
     }>(async () => {
       const context = utxoProcessonManager.getContext()!;
-      
+
 
       if (sendAll) {
         const remeaingAmountToSend =
@@ -821,13 +822,55 @@ export class KaspaNetworkTransactionsManagerService {
     wallet: AppWallet,
     transactionJson: string,
     priorityFee: bigint = 0n,
-    submitTransaction: boolean = false
+    submitTransaction: boolean = false,
+    signOnly: boolean = false
   ): Promise<{
     psktTransaction: string;
     transactionId?: string;
     transactionFee?: bigint;
   }> {
     const transaction = Transaction.deserializeFromSafeJSON(transactionJson);
+
+    if (signOnly) {
+      for (let i = 0; i < transaction.inputs.length; i++) {
+        if (!transaction.inputs[i].signatureScript) {
+
+          if (transaction.inputs[i].utxo?.scriptPublicKey) {
+            if (this.getWalletAddressFromScriptPublicKey(transaction.inputs[i].utxo!.scriptPublicKey) != wallet.getAddress()) {
+              continue;
+            }
+          }
+
+          const signature = createInputSignature(
+            transaction,
+            i,
+            wallet.getPrivateKey(),
+            SighashType.All
+          );
+
+          transaction.inputs[i].signatureScript = signature;
+        }
+      }
+
+      const result: {
+        psktTransaction: string;
+        transactionFee?: bigint;
+        transactionId?: string;
+      } = {
+        psktTransaction: transaction.serializeToSafeJSON(),
+      };
+
+      if (submitTransaction) {
+        const transactionResult = await this.rpcService
+          .getRpc()!
+          .submitTransaction({ transaction });
+
+        result.transactionId = transactionResult.transactionId;
+      }
+
+      return result;
+
+    }
 
     return await this.connectAndDo(async () => {
       const totalOutputs = transaction.outputs.reduce(
@@ -906,6 +949,8 @@ export class KaspaNetworkTransactionsManagerService {
         this.rpcService.getNetwork(),
         transaction
       )) || kaspaToSompi('0.01');
+
+      console.log('Mass',  transaction.mass.toString(), calculateTransactionMass(this.rpcService.getNetwork(), transaction));
 
       if (!transactionFee) {
         throw new Error('Transaction fee not calculated');

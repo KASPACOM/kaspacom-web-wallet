@@ -64,6 +64,7 @@ export interface ActionWithPsktGenerationData {
 export interface SignPsktTransactionAction {
   psktTransactionJson: string;
   submitTransaction?: boolean;
+  signOnly?: boolean;
   protocol?: ProtocolType | string;
   type?: PsktActionsEnum | string;
 }

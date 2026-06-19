@@ -364,6 +364,7 @@ export class CommunicationManagerService {
                     actionData.data.submitTransaction,
                     actionData.data.protocol,
                     actionData.data.protocolAction,
+                    actionData.data.signOnly,
                 );
 
         }

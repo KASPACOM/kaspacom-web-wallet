@@ -213,6 +213,7 @@ export class WalletActionService {
     submitTransaction: boolean = false,
     protocol?: ProtocolType | string,
     type?: PsktActionsEnum | string,
+    signOnly?: boolean
   ): WalletAction {    // Temp fix so the wasm wouldn't crash
 
     const transaction = JSON.parse(psktDataJson);
@@ -227,6 +228,7 @@ export class WalletActionService {
       type: WalletActionType.SIGN_PSKT_TRANSACTION,
       data: {
         psktTransactionJson: JSON.stringify(transaction),
+        signOnly,
         submitTransaction,
         protocol,
         type,
@@ -329,6 +331,12 @@ export class WalletActionService {
     if (!isUsingV2Flow) {
       await this.showTransactionLoaderToUser(0, currentWalletAddress);
     }
+    const isTransaction = this.isTransactionAction(action);
+    if (isTransaction) {
+      this.monitorService.track('Transaction Started', {
+        action_type: action.type,
+      });
+    }
 
     let actionResult: WalletActionResultWithError;
     try {
@@ -347,10 +355,14 @@ export class WalletActionService {
     } catch (error) {
       console.error('Error executing wallet action:', error);
 
-      this.monitorService.track('Transaction Failed', {
-        action,
-        error: error,
-      });
+      if (isTransaction) {
+        this.monitorService.track('Transaction Failed', {
+          action_type: action.type,
+          error_category: 'unknown',
+          error_code: ERROR_CODES.GENERAL.UNKNOWN_ERROR,
+          error_name: error instanceof Error ? error.name : 'UnknownError',
+        });
+      }
 
       if (isUsingV2Flow) {
         const fallbackMessage =
@@ -372,10 +384,13 @@ export class WalletActionService {
     }
 
     if (!actionResult.success) {
-      this.monitorService.track('Transaction Failed', {
-        action,
-        actionResult,
-      });
+      if (isTransaction) {
+        this.monitorService.track('Transaction Failed', {
+          action_type: action.type,
+          error_code: actionResult.errorCode,
+          error_category: 'wallet_action',
+        });
+      }
 
       if (isUsingV2Flow) {
         const errorMessage = actionResult.errorCode
@@ -399,10 +414,11 @@ export class WalletActionService {
       );
     }
 
-    this.monitorService.track('Transaction Success', {
-      action,
-      actionResult,
-    });
+    if (isTransaction) {
+      this.monitorService.track('Transaction Succeeded', {
+        action_type: action.type,
+      });
+    }
 
     return { ...actionResult, isUsingV2Flow };
   }
@@ -904,7 +920,11 @@ export class WalletActionService {
     }
 
     for (const input of transaction.inputs) {
-      const utxoAddress = input.utxo.address || this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(input.utxo.scriptPublicKey);
+      const utxoAddress =
+        input.utxo.address ||
+        this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(
+          input.utxo.scriptPublicKey,
+        );
 
       if (!utxoAddress) {
         return {
@@ -933,6 +953,29 @@ export class WalletActionService {
     return {
       isValidated: true,
     };
+  }
+
+  /**
+   * Whether an action produces an on-chain transaction, so the `Transaction *`
+   * analytics events stay scoped to true transaction outcomes. Non-transaction
+   * actions (sign message, app approval, non-send EIP-1193 methods like
+   * add/switch chain) are excluded to avoid polluting transaction metrics.
+   */
+  private isTransactionAction(action: WalletAction): boolean {
+    switch (action.type) {
+      case WalletActionType.TRANSFER_KAS:
+      case WalletActionType.COMPOUND_UTXOS:
+      case WalletActionType.SIGN_PSKT_TRANSACTION:
+      case WalletActionType.COMMIT_REVEAL:
+        return true;
+      case WalletActionType.EIP1193_PROVIDER_REQUEST:
+        return (
+          action.data.method === EIP1193RequestType.SEND_TRANSACTION ||
+          action.data.method === EIP1193RequestType.KAS_SEND_TRANSACTION
+        );
+      default:
+        return false;
+    }
   }
 
   private getActionSteps(action: WalletAction): number {

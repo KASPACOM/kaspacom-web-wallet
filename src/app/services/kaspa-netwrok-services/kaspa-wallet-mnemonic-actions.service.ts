@@ -52,6 +52,10 @@ export class KaspaWalletMnemonicActionsService {
       .toString();
   }
 
+  getPublicKey(privateKey: string): string {
+    return new PrivateKey(privateKey).toPublicKey().toString();
+  }
+
 
   validatePrivateKey(privateKey: string) {
     try {

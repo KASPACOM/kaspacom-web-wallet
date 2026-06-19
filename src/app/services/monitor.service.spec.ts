@@ -103,10 +103,33 @@ describe('MonitorService', () => {
     expect(() => service.track('Wallet Created')).not.toThrow();
   });
 
-  it('converts bigint values to numbers', () => {
+  it('converts safe bigints to numbers and large ones to strings', () => {
     enableTracking();
-    service.track('Transaction Succeeded', { amount: BigInt(5) });
-    expect(lastTrackedProps()['amount']).toBe(5);
+    service.track('Transaction Succeeded', {
+      small: BigInt(5),
+      huge: BigInt('9007199254740993'), // > Number.MAX_SAFE_INTEGER
+    });
+    const props = lastTrackedProps();
+    expect(props['small']).toBe(5);
+    expect(props['huge']).toBe('9007199254740993');
+  });
+
+  it('masks sensitive route params but keeps static segments', () => {
+    enableTracking();
+    service.trackPageView(
+      '/app/home/asset/erc20/0xabcdef0123456789abcdef0123456789abcdef01',
+    );
+    expect(lastTrackedProps()['route']).toBe('/app/home/asset/erc20/:id');
+
+    service.trackPageView(
+      '/app/home/transaction/kaspa/' + 'a'.repeat(64),
+    );
+    expect(lastTrackedProps()['route']).toBe(
+      '/app/home/transaction/kaspa/:id',
+    );
+
+    service.trackPageView('/app/home/asset/krc20/KASPER');
+    expect(lastTrackedProps()['route']).toBe('/app/home/asset/krc20/KASPER');
   });
 
   it('normalizes Error values to error_name, not a string error_code', () => {

@@ -90,7 +90,14 @@ export class MonitorService {
   }
 
   private normalizeProperties(value: unknown): unknown {
-    if (typeof value === 'bigint') return Number(value);
+    if (typeof value === 'bigint') {
+      // Crypto amounts/fees can exceed Number.MAX_SAFE_INTEGER; keep a number
+      // only when it round-trips safely, otherwise serialize as a string.
+      return value <= BigInt(Number.MAX_SAFE_INTEGER) &&
+        value >= BigInt(Number.MIN_SAFE_INTEGER)
+        ? Number(value)
+        : value.toString();
+    }
     if (value instanceof Error) {
       return {
         error_name: value.name || 'Error',
@@ -140,7 +147,23 @@ export class MonitorService {
   }
 
   private sanitizeRoute(route: string): string {
-    return (route || '/').split('?')[0].split('#')[0] || '/';
+    const path = (route || '/').split('?')[0].split('#')[0] || '/';
+    // Mask likely-sensitive path params (addresses, tx ids, long hex/opaque
+    // ids) so they don't leak via the `route` attached to every event, while
+    // keeping static segments and short public ones (e.g. tickers).
+    const masked = path
+      .split('/')
+      .map((segment) => (this.isSensitiveSegment(segment) ? ':id' : segment))
+      .join('/');
+    return masked || '/';
+  }
+
+  private isSensitiveSegment(segment: string): boolean {
+    if (!segment) return false;
+    if (segment.includes(':')) return true; // kaspa:... addresses
+    if (/^0x[0-9a-fA-F]{6,}$/.test(segment)) return true; // evm address / hash
+    if (/^[0-9a-fA-F]{16,}$/.test(segment)) return true; // long hex tx ids
+    return segment.length >= 24; // long opaque ids / addresses
   }
 
   private getPageCategory(route: string): string {

@@ -213,11 +213,13 @@ export class WalletActionService {
     submitTransaction: boolean = false,
     protocol?: ProtocolType | string,
     type?: PsktActionsEnum | string,
+    signOnly?: boolean
   ): WalletAction {
     return {
       type: WalletActionType.SIGN_PSKT_TRANSACTION,
       data: {
         psktTransactionJson: psktDataJson,
+        signOnly,
         submitTransaction,
         protocol,
         type,

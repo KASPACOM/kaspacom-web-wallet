@@ -2,6 +2,7 @@ import { Component, computed } from '@angular/core';
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
+  SignPsktTransactionAction,
   WalletAction,
   WalletActionType,
 } from '../../../types/wallet-action';
@@ -131,6 +132,13 @@ export class ReviewActionComponent {
       if (actionData.method != EIP1193RequestType.KAS_SEND_TRANSACTION) {
         return false;
       }
+    }
+
+    if (
+      this.currentActionSignal()!.action.type === WalletActionType.SIGN_PSKT_TRANSACTION &&
+      (this.currentActionSignal()!.action.data as SignPsktTransactionAction).signOnly
+    ) {
+      return false;
     }
 
     return true;

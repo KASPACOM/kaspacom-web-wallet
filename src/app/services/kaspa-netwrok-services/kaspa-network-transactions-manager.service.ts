@@ -834,12 +834,10 @@ export class KaspaNetworkTransactionsManagerService {
     const transaction = Transaction.deserializeFromSafeJSON(transactionJson);
 
     if (signOnly) {
-      const inputsToSign = signInputs?.length
-        ? signInputs
-        : transaction.inputs.map((_, index) => ({
-          index,
-          sighashType: SighashType.All,
-        }));
+      const inputsToSign = signInputs ?? this.getWalletOwnedPsktSignInputs(
+        transaction,
+        wallet,
+      );
 
       for (const input of inputsToSign) {
         const i = input.index;
@@ -1040,6 +1038,26 @@ export class KaspaNetworkTransactionsManagerService {
   //   // ================================================================
   //   // OTHER
   //   // ================================================================
+
+  private getWalletOwnedPsktSignInputs(
+    transaction: Transaction,
+    wallet: AppWallet,
+  ): WalletPsktSignInput[] {
+    return transaction.inputs.reduce<WalletPsktSignInput[]>(
+      (inputsToSign, input, index) => {
+        const utxoAddress =
+          (input.utxo as { address?: string } | undefined)?.address ||
+          this.getWalletAddressFromScriptPublicKey(input.utxo!.scriptPublicKey);
+
+        if (utxoAddress === wallet.getAddress()) {
+          inputsToSign.push({ index });
+        }
+
+        return inputsToSign;
+      },
+      [],
+    );
+  }
 
   async getEstimateFeeRates(): Promise<IFeeEstimate> {
     const fees = await this.rpcService.getRpc()!.getFeeEstimate({});

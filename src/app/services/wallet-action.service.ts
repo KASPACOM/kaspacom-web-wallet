@@ -216,20 +216,30 @@ export class WalletActionService {
     type?: PsktActionsEnum | string,
     signOnly?: boolean,
     signInputs?: WalletPsktSignInput[],
-  ): WalletAction {    // Temp fix so the wasm wouldn't crash
+  ): WalletAction {
+    let psktTransactionJson = psktDataJson;
 
-    const transaction = JSON.parse(psktDataJson);
+    try {
+      const transaction = JSON.parse(psktDataJson);
 
-    for (let input of transaction.inputs) {
-      if (!('computeBudget' in input)) {
-        input.computeBudget = 0;
+      // Temp fix so the wasm wouldn't crash
+      if (Array.isArray(transaction.inputs)) {
+        for (let input of transaction.inputs) {
+          if (!('computeBudget' in input)) {
+            input.computeBudget = 0;
+          }
+        }
+
+        psktTransactionJson = JSON.stringify(transaction);
       }
+    } catch {
+      psktTransactionJson = psktDataJson;
     }
 
     return {
       type: WalletActionType.SIGN_PSKT_TRANSACTION,
       data: {
-        psktTransactionJson: JSON.stringify(transaction),
+        psktTransactionJson,
         signOnly,
         signInputs,
         submitTransaction,
@@ -915,7 +925,14 @@ export class WalletActionService {
 
     try {
       transaction = JSON.parse(action.psktTransactionJson);
-    } catch (error) {
+    } catch {
+      return {
+        isValidated: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
+      };
+    }
+
+    if (!Array.isArray(transaction.inputs)) {
       return {
         isValidated: false,
         errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
@@ -945,11 +962,27 @@ export class WalletActionService {
     }
 
     for (const input of transaction.inputs) {
-      const utxoAddress =
-        input.utxo.address ||
-        this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(
-          input.utxo.scriptPublicKey,
-        );
+      if (!input?.utxo || this.utils.isNullOrEmptyString(input.transactionId)) {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
+        };
+      }
+
+      let utxoAddress: string;
+
+      try {
+        utxoAddress =
+          input.utxo.address ||
+          this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(
+            input.utxo.scriptPublicKey,
+          );
+      } catch {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
+        };
+      }
 
       if (!utxoAddress) {
         return {

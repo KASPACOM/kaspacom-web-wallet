@@ -1,6 +1,7 @@
 import { Injectable, Signal, signal } from '@angular/core';
 import {
   SignPsktTransactionAction,
+  WalletPsktSignInput,
   CommitRevealAction,
   SignMessage,
   TransferKasAction,
@@ -213,7 +214,8 @@ export class WalletActionService {
     submitTransaction: boolean = false,
     protocol?: ProtocolType | string,
     type?: PsktActionsEnum | string,
-    signOnly?: boolean
+    signOnly?: boolean,
+    signInputs?: WalletPsktSignInput[],
   ): WalletAction {    // Temp fix so the wasm wouldn't crash
 
     const transaction = JSON.parse(psktDataJson);
@@ -229,6 +231,7 @@ export class WalletActionService {
       data: {
         psktTransactionJson: JSON.stringify(transaction),
         signOnly,
+        signInputs,
         submitTransaction,
         protocol,
         type,
@@ -917,6 +920,28 @@ export class WalletActionService {
         isValidated: false,
         errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
       };
+    }
+
+    if (action.signInputs) {
+      const signedInputIndexes = new Set<number>();
+
+      for (const input of action.signInputs) {
+        if (
+          !Number.isInteger(input.index) ||
+          input.index < 0 ||
+          input.index >= transaction.inputs.length ||
+          signedInputIndexes.has(input.index) ||
+          (input.sighashType !== undefined &&
+            ![0, 1, 2, 3, 4, 5].includes(input.sighashType))
+        ) {
+          return {
+            isValidated: false,
+            errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
+          };
+        }
+
+        signedInputIndexes.add(input.index);
+      }
     }
 
     for (const input of transaction.inputs) {

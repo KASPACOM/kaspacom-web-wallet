@@ -174,7 +174,8 @@ export class KaspaNetworkActionsService {
           (action.data as SignPsktTransactionAction).psktTransactionJson,
           action.priorityFee || 0n,
           false,
-          (action.data as SignPsktTransactionAction).signOnly
+          (action.data as SignPsktTransactionAction).signOnly,
+          (action.data as SignPsktTransactionAction).signInputs,
         );
 
       if (!result.transactionFee) {
@@ -313,7 +314,8 @@ export class KaspaNetworkActionsService {
           action.data.psktTransactionJson,
           action.priorityFee || 0n,
           action.data.submitTransaction,
-          (action.data as SignPsktTransactionAction).signOnly
+          (action.data as SignPsktTransactionAction).signOnly,
+          (action.data as SignPsktTransactionAction).signInputs,
 
         );
 

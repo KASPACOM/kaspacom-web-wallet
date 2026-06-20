@@ -36,6 +36,7 @@ import { TotalBalanceWithUtxosInterface } from '../../types/kaspa-network/total-
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
 import { ERROR_CODES, KasTransactionParams, ProtocolScriptDataAndAddress, ProtocolType } from '@kaspacom/wallet-messages';
+import type { WalletPsktSignInput } from '../../types/wallet-action';
 import {
   MAX_TRANSACTION_FEE,
   MINIMAL_AMOUNT_TO_SEND,
@@ -823,7 +824,8 @@ export class KaspaNetworkTransactionsManagerService {
     transactionJson: string,
     priorityFee: bigint = 0n,
     submitTransaction: boolean = false,
-    signOnly: boolean = false
+    signOnly: boolean = false,
+    signInputs?: WalletPsktSignInput[],
   ): Promise<{
     psktTransaction: string;
     transactionId?: string;
@@ -832,7 +834,16 @@ export class KaspaNetworkTransactionsManagerService {
     const transaction = Transaction.deserializeFromSafeJSON(transactionJson);
 
     if (signOnly) {
-      for (let i = 0; i < transaction.inputs.length; i++) {
+      const inputsToSign = signInputs?.length
+        ? signInputs
+        : transaction.inputs.map((_, index) => ({
+          index,
+          sighashType: SighashType.All,
+        }));
+
+      for (const input of inputsToSign) {
+        const i = input.index;
+
         if (!transaction.inputs[i].signatureScript) {
 
 
@@ -840,7 +851,7 @@ export class KaspaNetworkTransactionsManagerService {
             transaction,
             i,
             wallet.getPrivateKey(),
-            SighashType.All
+            (input.sighashType ?? SighashType.All) as SighashType
           );
 
           transaction.inputs[i].signatureScript = signature;
@@ -957,6 +968,21 @@ export class KaspaNetworkTransactionsManagerService {
 
       if (transaction.outputs[feePayerIndex].value < MINIMAL_AMOUNT_TO_SEND) {
         throw new Error('NOT ENOUGH CHANGE');
+      }
+
+      if (signInputs?.length) {
+        for (const input of signInputs) {
+          if (!transaction.inputs[input.index].signatureScript) {
+            const signature = createInputSignature(
+              transaction,
+              input.index,
+              wallet.getPrivateKey(),
+              (input.sighashType ?? SighashType.All) as SighashType
+            );
+
+            transaction.inputs[input.index].signatureScript = signature;
+          }
+        }
       }
 
       for (let i = index; i < transaction.inputs.length; i++) {

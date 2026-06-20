@@ -835,11 +835,6 @@ export class KaspaNetworkTransactionsManagerService {
       for (let i = 0; i < transaction.inputs.length; i++) {
         if (!transaction.inputs[i].signatureScript) {
 
-          if (transaction.inputs[i].utxo?.scriptPublicKey) {
-            if (this.getWalletAddressFromScriptPublicKey(transaction.inputs[i].utxo!.scriptPublicKey) != wallet.getAddress()) {
-              continue;
-            }
-          }
 
           const signature = createInputSignature(
             transaction,

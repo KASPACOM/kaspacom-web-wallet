@@ -16,6 +16,7 @@ import {
   ITransactionInput,
   ITransactionOutput,
   IUtxoEntry,
+  kaspaToSompi,
   Opcodes,
   payToAddressScript,
   PendingTransaction,
@@ -35,6 +36,7 @@ import { TotalBalanceWithUtxosInterface } from '../../types/kaspa-network/total-
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
 import { ERROR_CODES, KasTransactionParams, ProtocolScriptDataAndAddress, ProtocolType } from '@kaspacom/wallet-messages';
+import type { WalletPsktSignInput } from '../../types/wallet-action';
 import {
   MAX_TRANSACTION_FEE,
   MINIMAL_AMOUNT_TO_SEND,
@@ -822,7 +824,8 @@ export class KaspaNetworkTransactionsManagerService {
     transactionJson: string,
     priorityFee: bigint = 0n,
     submitTransaction: boolean = false,
-    signOnly: boolean = false
+    signOnly: boolean = false,
+    signInputs?: WalletPsktSignInput[],
   ): Promise<{
     psktTransaction: string;
     transactionId?: string;
@@ -831,20 +834,22 @@ export class KaspaNetworkTransactionsManagerService {
     const transaction = Transaction.deserializeFromSafeJSON(transactionJson);
 
     if (signOnly) {
-      for (let i = 0; i < transaction.inputs.length; i++) {
+      const inputsToSign = signInputs ?? this.getWalletOwnedPsktSignInputs(
+        transaction,
+        wallet,
+      );
+
+      for (const input of inputsToSign) {
+        const i = input.index;
+
         if (!transaction.inputs[i].signatureScript) {
 
-          if (transaction.inputs[i].utxo?.scriptPublicKey) {
-            if (this.getWalletAddressFromScriptPublicKey(transaction.inputs[i].utxo!.scriptPublicKey) != wallet.getAddress()) {
-              continue;
-            }
-          }
 
           const signature = createInputSignature(
             transaction,
             i,
             wallet.getPrivateKey(),
-            SighashType.All
+            (input.sighashType ?? SighashType.All) as SighashType
           );
 
           transaction.inputs[i].signatureScript = signature;
@@ -909,7 +914,8 @@ export class KaspaNetworkTransactionsManagerService {
         previousOutpoint: utxo.outpoint,
         utxo: utxo,
         sequence: 0n,
-        sigOpCount: 1,
+        sigOpCount: 0,
+        computeBudget: 30,
       }));
 
       let index = transaction.inputs.length;
@@ -943,10 +949,10 @@ export class KaspaNetworkTransactionsManagerService {
         ...transaction.outputs.slice(1),
       ];
 
-      const transactionFee = calculateTransactionFee(
+      const transactionFee = (calculateTransactionFee(
         this.rpcService.getNetwork(),
         transaction
-      );
+      )) || kaspaToSompi('0.01');
 
       console.log('Mass',  transaction.mass.toString(), calculateTransactionMass(this.rpcService.getNetwork(), transaction));
 
@@ -960,6 +966,21 @@ export class KaspaNetworkTransactionsManagerService {
 
       if (transaction.outputs[feePayerIndex].value < MINIMAL_AMOUNT_TO_SEND) {
         throw new Error('NOT ENOUGH CHANGE');
+      }
+
+      if (signInputs?.length) {
+        for (const input of signInputs) {
+          if (!transaction.inputs[input.index].signatureScript) {
+            const signature = createInputSignature(
+              transaction,
+              input.index,
+              wallet.getPrivateKey(),
+              (input.sighashType ?? SighashType.All) as SighashType
+            );
+
+            transaction.inputs[input.index].signatureScript = signature;
+          }
+        }
       }
 
       for (let i = index; i < transaction.inputs.length; i++) {
@@ -1017,6 +1038,26 @@ export class KaspaNetworkTransactionsManagerService {
   //   // ================================================================
   //   // OTHER
   //   // ================================================================
+
+  private getWalletOwnedPsktSignInputs(
+    transaction: Transaction,
+    wallet: AppWallet,
+  ): WalletPsktSignInput[] {
+    return transaction.inputs.reduce<WalletPsktSignInput[]>(
+      (inputsToSign, input, index) => {
+        const utxoAddress =
+          (input.utxo as { address?: string } | undefined)?.address ||
+          this.getWalletAddressFromScriptPublicKey(input.utxo!.scriptPublicKey);
+
+        if (utxoAddress === wallet.getAddress()) {
+          inputsToSign.push({ index });
+        }
+
+        return inputsToSign;
+      },
+      [],
+    );
+  }
 
   async getEstimateFeeRates(): Promise<IFeeEstimate> {
     const fees = await this.rpcService.getRpc()!.getFeeEstimate({});

@@ -212,14 +212,17 @@ export class ReviewActionDataService {
       0n,
     );
 
-    let transactionFee = 0n;
+
+    const outputsSum = transactionData.outputs.reduce(
+      (sum, input) => sum + input.value,
+      0n,
+    );
 
     if (inputsSum > 0n && transactionData.outputs.length) {
 
       for (let i = 0; i < transactionData.outputs.length; i++) {
         if (transactionData.outputs[i].scriptPublicKey.script === transactionData.inputs[0].utxo!.scriptPublicKey.script) {
           if (transactionData.outputs[i].value - inputsSum < 0n) {
-            transactionFee = inputsSum - transactionData.outputs[i].value;
 
             const outputs = transactionData.outputs;
             outputs.splice(i, 1);
@@ -234,6 +237,8 @@ export class ReviewActionDataService {
         }
       }
     }
+
+    const transactionFee = inputsSum - outputsSum;
 
     const feeRow = transactionFee > 0n ? [{
       fieldName: 'Transaction Fee',

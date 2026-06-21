@@ -29,6 +29,8 @@ type BucketFeeRate = {
 
 type AvailableOption = 'low' | 'normal' | 'priority' | 'custom';
 
+const MINIMUM_FEE_MULTIPLIER = 100n;
+
 @Component({
     selector: 'priority-fee-selection',
     templateUrl: './priority-fee-selection.component.html',
@@ -69,6 +71,7 @@ export class PriorityFeeSelectionComponent implements OnChanges {
   @Input() wallet!: AppWallet;
   @Output() priorityFeeSelected = new EventEmitter<bigint | undefined>();
 
+  protected minimumFeeMultiplier = MINIMUM_FEE_MULTIPLIER;
   protected totalTransactionsMass: undefined | bigint[] = undefined;
   protected currentFeeRates: undefined | IFeeEstimate = undefined;
   protected transactionMass: undefined | bigint = undefined;

@@ -1,6 +1,7 @@
 import { Injectable, Signal, signal } from '@angular/core';
 import {
   SignPsktTransactionAction,
+  WalletPsktSignInput,
   CommitRevealAction,
   SignMessage,
   TransferKasAction,
@@ -58,10 +59,10 @@ export class WalletActionService {
   }>({});
   private actionToApprove = signal<
     | {
-        action: WalletAction;
-        resolve: (data: { isApproved: boolean; priorityFee?: bigint }) => void;
-        additionalParams?: { [parmName: string]: any };
-      }
+      action: WalletAction;
+      resolve: (data: { isApproved: boolean; priorityFee?: bigint }) => void;
+      additionalParams?: { [parmName: string]: any };
+    }
     | undefined
   >(undefined);
 
@@ -213,13 +214,34 @@ export class WalletActionService {
     submitTransaction: boolean = false,
     protocol?: ProtocolType | string,
     type?: PsktActionsEnum | string,
-    signOnly?: boolean
+    signOnly?: boolean,
+    signInputs?: WalletPsktSignInput[],
   ): WalletAction {
+    let psktTransactionJson = psktDataJson;
+
+    try {
+      const transaction = JSON.parse(psktDataJson);
+
+      // Temp fix so the wasm wouldn't crash
+      if (Array.isArray(transaction.inputs)) {
+        for (let input of transaction.inputs) {
+          if (!('computeBudget' in input)) {
+            input.computeBudget = 0;
+          }
+        }
+
+        psktTransactionJson = JSON.stringify(transaction);
+      }
+    } catch {
+      psktTransactionJson = psktDataJson;
+    }
+
     return {
       type: WalletActionType.SIGN_PSKT_TRANSACTION,
       data: {
-        psktTransactionJson: psktDataJson,
+        psktTransactionJson,
         signOnly,
+        signInputs,
         submitTransaction,
         protocol,
         type,
@@ -480,13 +502,13 @@ export class WalletActionService {
 
   getActionToApproveSignal(): Signal<
     | {
-        action: WalletAction;
-        resolve: (data: {
-          isApproved: boolean;
-          priorityFee?: bigint;
-          additionalParams?: { [parmName: string]: any };
-        }) => void;
-      }
+      action: WalletAction;
+      resolve: (data: {
+        isApproved: boolean;
+        priorityFee?: bigint;
+        additionalParams?: { [parmName: string]: any };
+      }) => void;
+    }
     | undefined
   > {
     return this.actionToApprove.asReadonly();
@@ -903,19 +925,64 @@ export class WalletActionService {
 
     try {
       transaction = JSON.parse(action.psktTransactionJson);
-    } catch (error) {
+    } catch {
       return {
         isValidated: false,
         errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
       };
     }
 
+    if (!Array.isArray(transaction.inputs)) {
+      return {
+        isValidated: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
+      };
+    }
+
+    if (action.signInputs) {
+      const signedInputIndexes = new Set<number>();
+
+      for (const input of action.signInputs) {
+        if (
+          !Number.isInteger(input.index) ||
+          input.index < 0 ||
+          input.index >= transaction.inputs.length ||
+          signedInputIndexes.has(input.index) ||
+          (input.sighashType !== undefined &&
+            ![0, 1, 2, 3, 4, 5].includes(input.sighashType))
+        ) {
+          return {
+            isValidated: false,
+            errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
+          };
+        }
+
+        signedInputIndexes.add(input.index);
+      }
+    }
+
     for (const input of transaction.inputs) {
-      const utxoAddress =
-        input.utxo.address ||
-        this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(
-          input.utxo.scriptPublicKey,
-        );
+      if (!input?.utxo || this.utils.isNullOrEmptyString(input.transactionId)) {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
+        };
+      }
+
+      let utxoAddress: string;
+
+      try {
+        utxoAddress =
+          input.utxo.address ||
+          this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(
+            input.utxo.scriptPublicKey,
+          );
+      } catch {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
+        };
+      }
 
       if (!utxoAddress) {
         return {

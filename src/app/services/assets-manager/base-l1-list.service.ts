@@ -250,6 +250,16 @@ export abstract class BaseL1ListService<TAsset> {
   }
 
   private handleItemsUpdated(items: TAsset[] | undefined): void {
+    // The store emits `undefined` only when it is cleared (e.g. on an L1
+    // network switch). Reset pagination so the new network starts from a clean
+    // state instead of inheriting the previous network's hasMore/cursor/
+    // initialLoadComplete flags, which would otherwise block load-more when the
+    // address prefix is unchanged across the switch (e.g. TN10 -> TN12).
+    if (items === undefined) {
+      this.reset();
+      return;
+    }
+
     const currentState = this.paginationStateSignal();
     const hasItems = Array.isArray(items);
     const currentLength = hasItems ? items!.length : 0;

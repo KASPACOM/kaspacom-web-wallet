@@ -9,9 +9,9 @@ import { FlowPagesService } from '../../../../../../../services/flow-pages.servi
 import { KnsApiService } from '../../../../../../../../services/kns-api/kns-api.service';
 import { KnsDomainAsset } from '../../../../../../../../services/kns-api/dtos/kns-domain.dto';
 import { CopyButtonComponent } from '../../../../../../../shared/ui/copy-button/copy-button.component';
-import { environment } from '../../../../../../../../../environments/environment';
 import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
 import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
+import { KaspaL1NetworkService } from '../../../../../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
 
 @Component({
   selector: 'app-kns-asset',
@@ -30,6 +30,7 @@ export class KnsAssetComponent extends BaseAssetPageComponent implements OnInit 
   private knsService = inject(KnsApiService);
   private flowPagesService = inject(FlowPagesService);
   private assetsManagerService = inject(AssetsManagerService);
+  private kaspaL1NetworkService = inject(KaspaL1NetworkService);
 
   private assetId: string = '';
 
@@ -197,7 +198,7 @@ export class KnsAssetComponent extends BaseAssetPageComponent implements OnInit 
     const detail = this.knsDetail();
     if (!detail?.transactionId) return;
 
-    const explorerUrl = `${environment.kaspaExplorerBaseurl}/txs/${detail.transactionId}`;
+    const explorerUrl = `${this.kaspaL1NetworkService.getKaspaExplorerBaseurl()}/txs/${detail.transactionId}`;
     window.open(explorerUrl, '_blank');
   }
 

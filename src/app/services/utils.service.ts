@@ -1,6 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { environment } from '../../environments/environment';
-import { KASPA_NETWORKS } from '../config/consts';
+import { KaspaL1NetworkService } from './kaspa-netwrok-services/kaspa-l1-network.service';
 
 const WALLET_ADDRESS_VALIDATION_REGEX_MAINNET = /^kaspa:(q|p)[a-z0-9]{54,90}$/;
 const WALLET_ADDRESS_VALIDATION_REGEX_TESTNET =
@@ -10,6 +9,8 @@ const WALLET_ADDRESS_VALIDATION_REGEX_TESTNET =
   providedIn: 'root',
 })
 export class UtilsHelper {
+  private readonly kaspaL1NetworkService = inject(KaspaL1NetworkService);
+
   async retryOnError<T>(
     fn: () => Promise<T>,
     times: number = 5,
@@ -57,7 +58,7 @@ export class UtilsHelper {
 
   isValidWalletAddress(address: string) {
     const regex =
-      environment.kaspaNetwork == KASPA_NETWORKS.MAINNET
+      this.kaspaL1NetworkService.isMainnet()
         ? WALLET_ADDRESS_VALIDATION_REGEX_MAINNET
         : WALLET_ADDRESS_VALIDATION_REGEX_TESTNET;
 
@@ -98,9 +99,7 @@ export class UtilsHelper {
     } else {
       if (!this.isValidWalletAddress(address)) {
         const expectedPrefix =
-          environment.kaspaNetwork === KASPA_NETWORKS.MAINNET
-            ? 'kaspa:'
-            : 'kaspatest:';
+          this.kaspaL1NetworkService.isMainnet() ? 'kaspa:' : 'kaspatest:';
         return `Invalid Kaspa address format. Expected format: ${expectedPrefix}[address]`;
       }
     }

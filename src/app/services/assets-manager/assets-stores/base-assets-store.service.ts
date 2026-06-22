@@ -64,11 +64,15 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
         };
     }
 
-    private notifyAssetListeners<K extends keyof T>(
+    protected notifyAssetListeners<K extends keyof T>(
         key: K,
         items: T[K][] | undefined,
     ): void {
         this.assetListeners[key]?.forEach((listener) => listener(items));
+    }
+
+    protected shouldLoadAsset(key: keyof T): boolean {
+        return true;
     }
 
     protected clearAllAssets(): void {
@@ -143,6 +147,13 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
             return;
         }
 
+        if (!this.shouldLoadAsset(key)) {
+            this.data[key].set([]);
+            this.notifyAssetListeners(key, []);
+            this.assetsLoaderInfo[key].loading.set(false);
+            return;
+        }
+
         this.assetsLoaderInfo[key].loading.set(true);
 
         try {
@@ -169,6 +180,13 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
         token = this.loadAssetTokens[key],
     ) {
         if (!this.isActiveLoad(key, generation, token)) {
+            return;
+        }
+
+        if (!this.shouldLoadAsset(key)) {
+            this.data[key].set([]);
+            this.notifyAssetListeners(key, []);
+            this.assetsLoaderInfo[key].loading.set(false);
             return;
         }
 

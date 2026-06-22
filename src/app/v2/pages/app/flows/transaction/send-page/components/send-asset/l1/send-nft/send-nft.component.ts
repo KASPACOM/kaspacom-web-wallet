@@ -12,10 +12,10 @@ import { Router } from '@angular/router';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { KcButtonComponent, KcCheckboxComponent } from 'kaspacom-ui';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../../../../../../../../../../environments/environment';
 import { AddressResolutionResult } from '../../../../../../../../../../services/address-resolution.service';
 import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
 import { L1_ASSET_KEYS } from '../../../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
+import { KaspaL1NetworkService } from '../../../../../../../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
 import { Krc721ApiService } from '../../../../../../../../../../services/krc721-api/krc721-api.service';
 import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
 import { Krc721WalletActionService } from '../../../../../../../../../../services/protocols/krc721/krc721-wallet-actions.service';
@@ -58,6 +58,7 @@ export class SendNftComponent
   private qrScannerService = inject(QrScannerService);
   private router = inject(Router);
   private assetsManagerService = inject(AssetsManagerService);
+  private kaspaL1NetworkService = inject(KaspaL1NetworkService);
 
   nft = signal<INft | undefined>(undefined);
   loading = signal<boolean>(true);
@@ -416,12 +417,13 @@ export class SendNftComponent
   }
 
   private buildCachedImageUrl(tick?: string, tokenId?: string): string {
-    if (!tick || !tokenId || !environment.krc721CacheStreamUrl) {
+    const cacheStreamUrl = this.kaspaL1NetworkService.getKrc721CacheStreamUrl();
+    if (!tick || !tokenId || !cacheStreamUrl) {
       return '';
     }
 
     const normalizedTick = encodeURIComponent(tick.toUpperCase());
     const normalizedTokenId = encodeURIComponent(tokenId);
-    return `${environment.krc721CacheStreamUrl}/optimized/${normalizedTick}/${normalizedTokenId}`;
+    return `${cacheStreamUrl}/optimized/${normalizedTick}/${normalizedTokenId}`;
   }
 }

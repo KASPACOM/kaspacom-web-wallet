@@ -7,6 +7,7 @@ export const LOCAL_STORAGE_KEYS = {
   ALLOWED_APPLICATIONS: 'allowedApplications',
   IS_L2_DISPLAY: 'isL2Display',
   RPC_URL: 'rpcUrl',
+  KASPA_L1_NETWORK: 'kaspaL1Network',
   REFERRAL_CODE: 'referralCode',
 };
 

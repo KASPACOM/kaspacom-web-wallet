@@ -6,7 +6,7 @@ import { BaseAssetPageComponent, AssetDetail } from '../../common/base-asset-pag
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { UtxoEntryReference } from '../../../../../../../public/kaspa/kaspa';
-import { environment } from '../../../../../../environments/environment';
+import { KaspaL1NetworkService } from '../../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
 
 @Component({
   selector: 'app-utxo-asset',
@@ -21,6 +21,7 @@ import { environment } from '../../../../../../environments/environment';
 })
 export class UtxoAssetComponent extends BaseAssetPageComponent implements OnInit {
   protected route = inject(ActivatedRoute);
+  private kaspaL1NetworkService = inject(KaspaL1NetworkService);
 
   private transactionId: string = '';
   protected utxo = computed<UtxoEntryReference | null>(() => {
@@ -122,7 +123,7 @@ export class UtxoAssetComponent extends BaseAssetPageComponent implements OnInit
     const utxoData = this.utxo();
     if (!utxoData?.outpoint?.transactionId) return;
 
-    const explorerUrl = `${environment.kaspaExplorerBaseurl}/txs/${utxoData.outpoint.transactionId}`;
+    const explorerUrl = `${this.kaspaL1NetworkService.getKaspaExplorerBaseurl()}/txs/${utxoData.outpoint.transactionId}`;
     window.open(explorerUrl, '_blank');
   }
 

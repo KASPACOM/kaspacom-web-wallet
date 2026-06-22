@@ -12,6 +12,7 @@ import { WalletProfileOrbComponent } from '../../../../shared/ui/wallet-profile-
 import { FlowPageId } from '../flow-page/flow-page.registry';
 import { DesktopViewService } from '../../../../services/desktop-view.service';
 import { CHAIN_ID_LOGOS } from '../../../../shared/network-selection-modal/chain-id-logos';
+import { KaspaL1NetworkService } from '../../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
 
 @Component({
   selector: 'app-wrapper-header',
@@ -33,6 +34,7 @@ export class WrapperHeaderComponent {
   flowPagesService = inject(FlowPagesService);
   ethereumWalletChainManager = inject(EthereumWalletChainManager);
   desktopViewService = inject(DesktopViewService);
+  kaspaL1NetworkService = inject(KaspaL1NetworkService);
 
   // Use signals for reactive updates
   currentWallet = this.walletService.getCurrentWalletSignal();
@@ -48,9 +50,12 @@ export class WrapperHeaderComponent {
         icon: envConfig?.icon || CHAIN_ID_LOGOS[normalizedId] || null,
       };
     }
+
+    const l1Network = this.kaspaL1NetworkService.getCurrentNetworkSignal()();
+
     return {
-      name: environment.l1Config.shortName,
-      icon: environment.l1Config.icon,
+      name: l1Network.shortName,
+      icon: l1Network.icon,
     };
   });
 

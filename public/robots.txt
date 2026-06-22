@@ -1,5 +1,5 @@
 User-agent: *
-Allow: /
+Disallow:
 
 # Sitemap location
 Sitemap: https://wallet.kaspa.com/sitemap.xml

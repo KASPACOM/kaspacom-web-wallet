@@ -179,7 +179,11 @@ export class NetworkSelectionModalComponent implements OnInit {
     this.walletService.setL2Display(false);
     this.ethereumWalletChainManager.setCurrentChain(undefined);
     this.onCloseAfterNetworkChanged();
-    void this.reloadSelectedL1Network(currentWallet, switchGeneration);
+    void this.reloadSelectedL1Network(currentWallet, switchGeneration).catch(
+      (err) => {
+        console.warn('Failed reloading selected Kaspa L1 network', err);
+      },
+    );
   }
 
   private async reloadSelectedL1Network(
@@ -205,7 +209,7 @@ export class NetworkSelectionModalComponent implements OnInit {
       return;
     }
 
-    currentWallet?.startListiningToWalletActions();
+    await currentWallet?.startListiningToWalletActions();
   }
 
   setL2Network(network: EIP1193ProviderChain): void {

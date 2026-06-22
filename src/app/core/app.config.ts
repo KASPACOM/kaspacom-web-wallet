@@ -19,6 +19,12 @@ const defaultL1Network =
     (network) => network.network === environment.kaspaNetwork,
   ) ?? environment.l1Config.networks?.[0];
 
+if (!defaultL1Network) {
+  throw new Error(
+    'No Kaspa L1 networks configured. Check environment.l1Config.networks.',
+  );
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
@@ -37,7 +43,7 @@ export const appConfig: ApplicationConfig = {
     },
     {
       provide: DEFI_API_BASE_URL,
-      useValue: defaultL1Network?.kaspaComDefiApiBaseurl,
+      useValue: defaultL1Network.kaspaComDefiApiBaseurl,
     },
     {
       provide: LOGOS_URL,

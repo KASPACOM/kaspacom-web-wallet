@@ -118,7 +118,9 @@ export class Krc721ApiService {
   // NFTs / Tokens
   getTokenDetails(tick: string, tokenId: string): Observable<Krc721NftResponse> {
     if (!this.baseUrl) {
-      return of({ message: 'error', result: null as any });
+      return throwError(
+        () => new Error('KRC721 is not supported on the current network'),
+      );
     }
 
     return this.httpClient
@@ -227,7 +229,9 @@ export class Krc721ApiService {
 
   getOperationByScore(score: string): Observable<{ message: string; result: Krc721Operation }> {
     if (!this.baseUrl) {
-      return of({ message: 'error', result: null as any });
+      return throwError(
+        () => new Error('KRC721 is not supported on the current network'),
+      );
     }
 
     return this.httpClient
@@ -242,7 +246,9 @@ export class Krc721ApiService {
 
   getOperationByTxId(txId: string): Observable<{ message: string; result: Krc721Operation }> {
     if (!this.baseUrl) {
-      return of({ message: 'error', result: null as any });
+      return throwError(
+        () => new Error('KRC721 is not supported on the current network'),
+      );
     }
 
     return this.httpClient

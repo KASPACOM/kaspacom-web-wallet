@@ -100,7 +100,9 @@ export class Krc721ApiService {
 
   getCollectionDetails(tick: string): Observable<Krc721CollectionResponse> {
     if (!this.baseUrl) {
-      return of({ message: 'error', result: null as any });
+      return throwError(
+        () => new Error('KRC721 is not supported on the current network'),
+      );
     }
 
     return this.httpClient

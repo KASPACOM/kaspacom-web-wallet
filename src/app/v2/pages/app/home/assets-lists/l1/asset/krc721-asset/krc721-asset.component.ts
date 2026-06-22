@@ -113,14 +113,19 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
       console.log('Loading rarity info for', this.tick, this.tokenId, 'address:', address);
 
       // 1. Get Collection details for total supply
-      this.krc721Service.getCollectionDetails(this.tick).subscribe(response => {
-        console.log('Collection details response:', response);
-        if (response.message === 'success') {
-          // Use max supply if totalSupply is missing, or minted if available
-          const supply = response.result.totalSupply || response.result.max || response.result.minted;
-          this.totalSupply.set(parseInt(supply));
-          console.log('Total supply set to:', parseInt(supply));
-        }
+      this.krc721Service.getCollectionDetails(this.tick).subscribe({
+        next: (response) => {
+          console.log('Collection details response:', response);
+          if (response.message === 'success') {
+            // Use max supply if totalSupply is missing, or minted if available
+            const supply = response.result.totalSupply || response.result.max || response.result.minted;
+            this.totalSupply.set(parseInt(supply));
+            console.log('Total supply set to:', parseInt(supply));
+          }
+        },
+        error: (err) => {
+          console.warn('Failed loading KRC721 collection details', err);
+        },
       });
 
       // 2. Get Portfolio details for rarity rank

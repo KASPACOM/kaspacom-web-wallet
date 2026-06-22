@@ -16,7 +16,7 @@ export class KaspaL1NetworkService {
     signal(this.resolveInitialNetwork());
 
   getAvailableNetworks(): L1NetworkConfigInterface[] {
-    return this.networks;
+    return [...this.networks];
   }
 
   getCurrentNetworkSignal(): Signal<L1NetworkConfigInterface> {

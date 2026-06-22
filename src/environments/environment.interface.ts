@@ -46,8 +46,7 @@ export interface L2ConfigInterface {
 export interface L1ConfigInterface {
   shortName: string;
   icon: string;
-  network?: string;
-  networks?: L1NetworkConfigInterface[];
+  networks: L1NetworkConfigInterface[];
 }
 
 export interface L1NetworkConfigInterface {

@@ -109,8 +109,14 @@ export class Krc721ApiService {
       .get<Krc721CollectionResponse>(`${this.baseUrl}/nfts/${tick}`)
       .pipe(
         catchError((error) => {
+          // Only a 404 means "ticker not found"; surface other failures
+          // (transient 5xx/network) so callers' try/catch can react rather
+          // than misclassifying them as an available ticker.
+          if (error?.status === 404) {
+            return of({ message: 'error', result: null as any });
+          }
           console.error(`Error fetching collection details for ${tick}:`, error);
-          return of({ message: 'error', result: null as any });
+          return throwError(() => error);
         })
       );
   }
@@ -127,8 +133,13 @@ export class Krc721ApiService {
       .get<Krc721NftResponse>(`${this.baseUrl}/nfts/${tick}/${tokenId}`)
       .pipe(
         catchError((error) => {
+          // Only a 404 means "token not found"; surface other failures so
+          // ownership validation doesn't treat a transient error as not-found.
+          if (error?.status === 404) {
+            return of({ message: 'error', result: null as any });
+          }
           console.error(`Error fetching token details for ${tick}/${tokenId}:`, error);
-          return of({ message: 'error', result: null as any });
+          return throwError(() => error);
         })
       );
   }

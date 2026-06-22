@@ -171,11 +171,15 @@ export class NetworkSelectionModalComponent implements OnInit {
       return;
     }
 
+    if (!this.rpcService.setNetwork(network.network)) {
+      console.warn('Failed switching to Kaspa L1 network', network.network);
+      return;
+    }
+
     const switchGeneration = ++this.l1NetworkSwitchGeneration;
     const currentWallet = this.walletService.getCurrentWallet();
     currentWallet?.resetL1NetworkState();
 
-    this.rpcService.setNetwork(network.network);
     this.walletService.setL2Display(false);
     this.ethereumWalletChainManager.setCurrentChain(undefined);
     this.onCloseAfterNetworkChanged();
@@ -195,12 +199,14 @@ export class NetworkSelectionModalComponent implements OnInit {
       return;
     }
 
-    await this.kaspaConnectionManagerService
+    const connected = await this.kaspaConnectionManagerService
       .waitForConnection(true)
+      .then(() => true)
       .catch((err) => {
         console.warn('Failed connecting to selected Kaspa L1 network', err);
+        return false;
       });
-    if (switchGeneration !== this.l1NetworkSwitchGeneration) {
+    if (!connected || switchGeneration !== this.l1NetworkSwitchGeneration) {
       return;
     }
 

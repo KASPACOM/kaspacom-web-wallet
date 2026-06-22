@@ -53,8 +53,14 @@ export class KnsApiService {
       .get<KnsDomainResponse>(`${this.baseUrl}/api/v1/asset/${assetId}/detail`)
       .pipe(
         catchError((error) => {
+          // Only a 404 means "asset not found"; surface other failures
+          // (transient 5xx/network) so callers' try/catch can distinguish an
+          // API error from a missing asset.
+          if (error?.status === 404) {
+            return of({ data: null as any });
+          }
           console.error(`Error fetching asset by ID ${assetId}:`, error);
-          return of({ data: null as any });
+          return throwError(() => error);
         })
       );
   }

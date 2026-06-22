@@ -8,9 +8,13 @@ import { EthereumWalletChainManager } from '../../../services/etherium-services/
 import { EIP1193ProviderChain } from '@kaspacom/wallet-messages';
 import { WalletService } from '../../../services/wallet.service';
 import { Router } from '@angular/router';
-import { environment } from '../../../../environments/environment';
 import { CHAIN_ID_LOGOS } from './chain-id-logos';
 import { COINGECKO_PRICE_URL, NATIVE_TOKEN_COINGECKO_IDS } from './coingecko-native-ids';
+import { L1NetworkConfigInterface } from '../../../../environments/environment.interface';
+import { RpcService } from '../../../services/kaspa-netwrok-services/rpc.service';
+import { KaspaNetworkConnectionManagerService } from '../../../services/kaspa-netwrok-services/kaspa-network-connection-manager.service';
+import { KaspaL1NetworkService } from '../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
+import { AppWallet } from '../../../classes/AppWallet';
 
 const PRICE_CACHE_TTL_MS = 5 * 60 * 1000;
 
@@ -32,8 +36,14 @@ export class NetworkSelectionModalComponent implements OnInit {
   private walletService = inject(WalletService);
   private router = inject(Router);
   private http = inject(HttpClient);
+  private rpcService = inject(RpcService);
+  private kaspaConnectionManagerService = inject(
+    KaspaNetworkConnectionManagerService,
+  );
+  private kaspaL1NetworkService = inject(KaspaL1NetworkService);
 
-  protected l1Config = environment.l1Config;
+  protected l1Networks = this.kaspaL1NetworkService.getAvailableNetworks();
+  private l1NetworkSwitchGeneration = 0;
 
   // Reactive: re-derives whenever a custom chain is added or removed
   protected networks = computed<EIP1193ProviderChain[]>(() => {
@@ -51,6 +61,9 @@ export class NetworkSelectionModalComponent implements OnInit {
   );
   currentL2Network = computed(() =>
     this.ethereumWalletChainManager.getCurrentChainSignal()(),
+  );
+  currentL1Network = computed(() =>
+    this.kaspaL1NetworkService.getCurrentNetworkSignal()(),
   );
 
   ngOnInit(): void {
@@ -146,10 +159,49 @@ export class NetworkSelectionModalComponent implements OnInit {
     return this.nativePrices.get(chainId) ?? null;
   }
 
-  setL1Network(): void {
+  isCurrentL1Network(network: L1NetworkConfigInterface): boolean {
+    return (
+      !this.isCurrentNetworkL2() &&
+      this.currentL1Network().network === network.network
+    );
+  }
+
+  async setL1Network(network: L1NetworkConfigInterface): Promise<void> {
+    const switchGeneration = ++this.l1NetworkSwitchGeneration;
+    const currentWallet = this.walletService.getCurrentWallet();
+    currentWallet?.resetL1NetworkState();
+
+    this.rpcService.setNetwork(network.network);
     this.walletService.setL2Display(false);
     this.ethereumWalletChainManager.setCurrentChain(undefined);
     this.onCloseAfterNetworkChanged();
+    void this.reloadSelectedL1Network(currentWallet, switchGeneration);
+  }
+
+  private async reloadSelectedL1Network(
+    currentWallet: AppWallet | undefined,
+    switchGeneration: number,
+  ): Promise<void> {
+    await currentWallet?.stopListiningToWalletActions();
+    if (switchGeneration !== this.l1NetworkSwitchGeneration) {
+      return;
+    }
+
+    await this.kaspaConnectionManagerService
+      .waitForConnection(true)
+      .catch((err) => {
+        console.warn('Failed connecting to selected Kaspa L1 network', err);
+      });
+    if (switchGeneration !== this.l1NetworkSwitchGeneration) {
+      return;
+    }
+
+    await currentWallet?.refreshUtxosBalance();
+    if (switchGeneration !== this.l1NetworkSwitchGeneration) {
+      return;
+    }
+
+    currentWallet?.startListiningToWalletActions();
   }
 
   setL2Network(network: EIP1193ProviderChain): void {
@@ -159,9 +211,9 @@ export class NetworkSelectionModalComponent implements OnInit {
     this.onCloseAfterNetworkChanged();
   }
 
-  onL1SpaceKey(event: Event): void {
+  onL1SpaceKey(event: Event, network: L1NetworkConfigInterface): void {
     event.preventDefault();
-    this.setL1Network();
+    this.setL1Network(network);
   }
 
   onNetworkEnterKey(event: Event, network: EIP1193ProviderChain): void {

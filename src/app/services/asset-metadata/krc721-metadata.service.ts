@@ -5,7 +5,7 @@ import { Krc721ApiService } from '../krc721-api/krc721-api.service';
 import { Krc721Nft, Krc721Metadata } from '../krc721-api/dtos/krc721-nft.dto';
 import { L1_ASSET_KEYS } from '../assets-manager/assets-stores/l1-assets-store.service';
 import { AssetsManagerService } from '../assets-manager/assets-manager.service';
-import { environment } from '../../../environments/environment';
+import { KaspaL1NetworkService } from '../kaspa-netwrok-services/kaspa-l1-network.service';
 
 export interface Krc721NftWithMetadata extends Krc721Nft {
   metadataLoaded?: boolean;
@@ -16,6 +16,7 @@ export interface Krc721NftWithMetadata extends Krc721Nft {
 })
 export class Krc721MetadataService extends BaseAssetMetadataService<Krc721Nft, Krc721Metadata> {
   private krc721Service = inject(Krc721ApiService);
+  private kaspaL1NetworkService = inject(KaspaL1NetworkService);
   
   constructor(protected assetsManager: AssetsManagerService) {
     super(assetsManager.getAllAssetStores().l1, L1_ASSET_KEYS.krc721);
@@ -103,12 +104,13 @@ export class Krc721MetadataService extends BaseAssetMetadataService<Krc721Nft, K
   }
 
   private buildCachedImageUrl(tick?: string, tokenId?: string): string {
-    if (!tick || !tokenId || !environment.krc721CacheStreamUrl) {
+    const cacheStreamUrl = this.kaspaL1NetworkService.getKrc721CacheStreamUrl();
+    if (!tick || !tokenId || !cacheStreamUrl) {
       return '';
     }
 
     const normalizedTick = encodeURIComponent(tick.toUpperCase());
     const normalizedTokenId = encodeURIComponent(tokenId);
-    return `${environment.krc721CacheStreamUrl}/optimized/${normalizedTick}/${normalizedTokenId}`;
+    return `${cacheStreamUrl}/optimized/${normalizedTick}/${normalizedTokenId}`;
   }
-} 
+}

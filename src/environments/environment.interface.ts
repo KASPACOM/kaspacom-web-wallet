@@ -46,6 +46,23 @@ export interface L2ConfigInterface {
 export interface L1ConfigInterface {
   shortName: string;
   icon: string;
+  network?: string;
+  networks?: L1NetworkConfigInterface[];
+}
+
+export interface L1NetworkConfigInterface {
+  network: string;
+  shortName: string;
+  icon: string;
+  kaspaComApiBaseurl: string;
+  kaspaComDefiApiBaseurl: string;
+  kasplexApiBaseurl?: string;
+  kaspaApiBaseurl: string;
+  krc721ApiBaseurl?: string;
+  krc721CacheStreamUrl?: string;
+  knsApiBaseurl?: string;
+  kaspaExplorerBaseurl: string;
+  l1AvatarCollection: string;
 }
 
 export interface Environment {
@@ -55,15 +72,6 @@ export interface Environment {
   addressableKey?: string;
   consentScriptUrl?: string;
   consentCssUrl?: string;
-  kaspaComApiBaseurl: string;
-  kaspaComDefiApiBaseurl: string;
-  kasplexApiBaseurl: string;
-  kaspaApiBaseurl: string;
-  krc721ApiBaseurl: string;
-  krc721CacheStreamUrl: string;
-  l1AvatarCollection: string;
-  knsApiBaseurl: string;
-  kaspaExplorerBaseurl: string;
   kaspaNetwork: string;
   logosUrl: string;
   allowedDomains: string[];

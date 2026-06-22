@@ -23,6 +23,7 @@ import { EthereumWalletChainManager } from './etherium-services/etherium-wallet-
 import { KaspaNetworkConnectionManagerService } from './kaspa-netwrok-services/kaspa-network-connection-manager.service';
 import { KaspaWalletMnemonicActionsService } from './kaspa-netwrok-services/kaspa-wallet-mnemonic-actions.service';
 import { MonitorService } from './monitor.service';
+import { KaspaL1NetworkService } from './kaspa-netwrok-services/kaspa-l1-network.service';
 
 export enum VIEW_METHOD {
   L1 = 'l1',
@@ -47,6 +48,7 @@ export class WalletService {
     private readonly injector: EnvironmentInjector,
     private readonly etheriumChainManager: EthereumWalletChainManager,
     private readonly monitorService: MonitorService,
+    private readonly kaspaL1NetworkService: KaspaL1NetworkService,
   ) {
     let isL2View =
       localStorage.getItem(LOCAL_STORAGE_KEYS.IS_L2_DISPLAY) === 'true';
@@ -782,6 +784,7 @@ export class WalletService {
   }
 
   public getCurrentDisplayWalletAddress = computed(() => {
+    this.kaspaL1NetworkService.getCurrentNetworkSignal()();
     return this.isL2DisplaySignal()
       ? this.currentWalletSignal()?.getL2WalletAddress()
       : this.currentWalletSignal()?.getAddress();

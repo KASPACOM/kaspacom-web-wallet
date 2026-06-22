@@ -88,12 +88,13 @@ export abstract class BaseL1ListService<TAsset> {
   }
 
   reset(): void {
+    const shouldLoad = this.shouldLoadCurrentAsset();
     this.paginationStateSignal.set({
       cursor: undefined,
-      hasMore: true,
+      hasMore: shouldLoad,
       isLoading: false,
       pageSize: this.config.pageSize,
-      initialLoadComplete: false,
+      initialLoadComplete: !shouldLoad,
     });
     if (this.mergeFlagResetTimeout) {
       clearTimeout(this.mergeFlagResetTimeout);
@@ -109,6 +110,11 @@ export abstract class BaseL1ListService<TAsset> {
   }
 
   async loadInitial(): Promise<void> {
+    if (!this.shouldLoadCurrentAsset()) {
+      this.markUnsupportedAssetComplete();
+      return;
+    }
+
     if (this.paginationStateSignal().initialLoadComplete) {
       return;
     }
@@ -135,6 +141,17 @@ export abstract class BaseL1ListService<TAsset> {
 
   async loadMore(): Promise<LoadMoreResult> {
     const stateSnapshot = this.paginationStateSignal();
+
+    if (!this.shouldLoadCurrentAsset()) {
+      this.markUnsupportedAssetComplete();
+      return {
+        success: false,
+        itemsAdded: 0,
+        totalItems: this.itemsSignal().length,
+        hasMore: false,
+        status: PaginationStatus.IDLE,
+      };
+    }
 
     if (stateSnapshot.isLoading || !stateSnapshot.hasMore) {
       return {
@@ -198,6 +215,26 @@ export abstract class BaseL1ListService<TAsset> {
     return this.itemsSignal;
   }
 
+  private shouldLoadCurrentAsset(): boolean {
+    return this.l1AssetsStore.supportsAssetType(this.assetType);
+  }
+
+  private markUnsupportedAssetComplete(): void {
+    this.paginationStateSignal.set({
+      cursor: undefined,
+      hasMore: false,
+      isLoading: false,
+      pageSize: this.config.pageSize,
+      initialLoadComplete: true,
+    });
+    if (this.mergeFlagResetTimeout) {
+      clearTimeout(this.mergeFlagResetTimeout);
+      this.mergeFlagResetTimeout = undefined;
+    }
+    this.dataGrewFromMergeSignal.set(false);
+    this.previousLength = 0;
+  }
+
   private setupWalletWatcher(): void {
     effect(() => {
       const wallet = this.walletService.getCurrentWallet();
@@ -255,4 +292,3 @@ export abstract class BaseL1ListService<TAsset> {
     this.previousLength = currentLength;
   }
 }
-

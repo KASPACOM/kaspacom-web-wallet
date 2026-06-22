@@ -7,8 +7,8 @@ import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.compo
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { KasplexKrc20Service } from '../../../../../services/kasplex-api/kasplex-api.service';
 import { OperationDetails } from '../../../../../services/kasplex-api/dtos/operation-details-response';
-import { environment } from '../../../../../../environments/environment';
 import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
+import { KaspaL1NetworkService } from '../../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
 
 @Component({
   selector: 'app-krc20-transaction-details',
@@ -26,6 +26,7 @@ export class Krc20TransactionDetailsComponent implements OnInit {
   private router = inject(Router);
   private kasplexService = inject(KasplexKrc20Service);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  private kaspaL1NetworkService = inject(KaspaL1NetworkService);
 
   protected ticker: string | null = null;
   protected transactionId: string | null = null;
@@ -123,7 +124,7 @@ export class Krc20TransactionDetailsComponent implements OnInit {
   protected openTransactionInExplorer(): void {
     const operation = this.operationDetails();
     if (operation) {
-      const explorerUrl = `${environment.kaspaExplorerBaseurl}/txs/${operation.hashRev}`;
+      const explorerUrl = `${this.kaspaL1NetworkService.getKaspaExplorerBaseurl()}/txs/${operation.hashRev}`;
       window.open(explorerUrl, '_blank');
     }
   }

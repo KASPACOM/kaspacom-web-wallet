@@ -830,6 +830,7 @@ export class KaspaNetworkTransactionsManagerService {
     psktTransaction: string;
     transactionId?: string;
     transactionFee?: bigint;
+    transactionMass?: bigint;
   }> {
     const transaction = Transaction.deserializeFromSafeJSON(transactionJson);
 
@@ -859,6 +860,7 @@ export class KaspaNetworkTransactionsManagerService {
       const result: {
         psktTransaction: string;
         transactionFee?: bigint;
+        transactionMass?: bigint;
         transactionId?: string;
       } = {
         psktTransaction: transaction.serializeToSafeJSON(),
@@ -914,8 +916,8 @@ export class KaspaNetworkTransactionsManagerService {
         previousOutpoint: utxo.outpoint,
         utxo: utxo,
         sequence: 0n,
-        sigOpCount: 0,
-        computeBudget: 30,
+        sigOpCount: 1,
+        // computeBudget: 10,
       }));
 
       let index = transaction.inputs.length;
@@ -954,7 +956,10 @@ export class KaspaNetworkTransactionsManagerService {
         transaction
       )) || kaspaToSompi('0.01');
 
-      console.log('Mass',  transaction.mass.toString(), calculateTransactionMass(this.rpcService.getNetwork(), transaction));
+      const transactionMass = calculateTransactionMass(
+        this.rpcService.getNetwork(),
+        transaction
+      );
 
       if (!transactionFee) {
         throw new Error('Transaction fee not calculated');
@@ -1016,10 +1021,12 @@ export class KaspaNetworkTransactionsManagerService {
       const result: {
         psktTransaction: string;
         transactionFee?: bigint;
+        transactionMass?: bigint;
         transactionId?: string;
       } = {
         psktTransaction: transaction.serializeToSafeJSON(),
         transactionFee: transactionFee,
+        transactionMass,
       };
 
       if (submitTransaction) {

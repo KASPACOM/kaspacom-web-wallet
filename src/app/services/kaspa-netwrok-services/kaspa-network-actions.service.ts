@@ -178,11 +178,11 @@ export class KaspaNetworkActionsService {
           (action.data as SignPsktTransactionAction).signInputs,
         );
 
-      if (!result.transactionFee) {
+      if (!result.transactionMass) {
         throw new Error('Failed to estimate transaction mass');
       }
 
-      return [result.transactionFee];
+      return [result.transactionMass];
     }
 
     if (action.type === WalletActionType.EIP1193_PROVIDER_REQUEST) {

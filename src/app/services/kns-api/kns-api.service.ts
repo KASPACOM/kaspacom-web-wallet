@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, of, map } from 'rxjs';
+import { Observable, catchError, of, map, throwError } from 'rxjs';
 import {
   KnsDomainAsset,
   KnsDomainsResponse,
@@ -44,7 +44,9 @@ export class KnsApiService {
    */
   fetchAssetByAssetId(assetId: string): Observable<KnsDomainResponse> {
     if (!this.baseUrl) {
-      return of({ data: null as any });
+      return throwError(
+        () => new Error('KNS is not supported on the current network'),
+      );
     }
 
     return this.httpClient

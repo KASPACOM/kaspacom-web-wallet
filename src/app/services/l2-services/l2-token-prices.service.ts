@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, OnDestroy, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, OnDestroy, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { Contract, formatUnits, JsonRpcProvider } from 'ethers';
@@ -98,6 +98,16 @@ export class L2TokenPricesService implements OnDestroy {
   private contextByChain = new Map<string, ChainSwapContext>();
   // Map value: backoff expiry timestamp ms — address is skipped until Date.now() exceeds it
   private readonly _nonLpAddresses = new Map<string, number>();
+
+  constructor() {
+    // Cached swap contexts bake in the L1-derived DeFi base URL, so rebuild
+    // them whenever the selected L1 network changes — otherwise swap/pairs
+    // requests keep hitting the previous network's DeFi endpoint.
+    effect(() => {
+      this.kaspaL1NetworkService.getCurrentNetworkSignal()();
+      this.contextByChain.clear();
+    });
+  }
 
   async getPriceMap(
     tokens: Erc20Token[],

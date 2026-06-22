@@ -167,6 +167,10 @@ export class NetworkSelectionModalComponent implements OnInit {
   }
 
   async setL1Network(network: L1NetworkConfigInterface): Promise<void> {
+    if (this.isCurrentL1Network(network)) {
+      return;
+    }
+
     const switchGeneration = ++this.l1NetworkSwitchGeneration;
     const currentWallet = this.walletService.getCurrentWallet();
     currentWallet?.resetL1NetworkState();

@@ -44,7 +44,6 @@ export const KASPA_TN12_L1_NETWORK_CONFIG: L1NetworkConfigInterface = {
 
 export const PRODUCTION_L1_NETWORKS: L1NetworkConfigInterface[] = [
   KASPA_MAINNET_L1_NETWORK_CONFIG,
-  KASPA_TN10_L1_NETWORK_CONFIG,
 ];
 
 export const DEVELOPMENT_L1_NETWORKS: L1NetworkConfigInterface[] = [

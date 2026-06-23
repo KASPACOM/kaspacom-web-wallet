@@ -1178,7 +1178,8 @@ export class ContractsPageComponent implements OnInit {
    * Format sompi to KAS
    */
   formatSompiToKas(sompi: string): string {
-    return (BigInt(sompi) / BigInt(1e8)).toString();
+    const kas = Number(BigInt(sompi)) / 1e8;
+    return kas.toFixed(8).replace(/\.?0+$/, '');
   }
 
   private fieldToCtorArg(field: TemplateField, rawValue: string | number | undefined): CtorArg {

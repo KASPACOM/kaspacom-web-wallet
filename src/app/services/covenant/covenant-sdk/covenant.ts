@@ -43,6 +43,9 @@ function hexToBytes(hex: string): Uint8Array {
   if (normalized.length === 0 || normalized.length % 2 !== 0) {
     throw new Error(`Invalid hex string length: "${hex}"`);
   }
+  if (!/^[0-9a-fA-F]+$/.test(normalized)) {
+    throw new Error(`Invalid hex string: "${hex}"`);
+  }
 
   const out = new Uint8Array(normalized.length / 2);
   for (let index = 0; index < normalized.length; index += 2) {

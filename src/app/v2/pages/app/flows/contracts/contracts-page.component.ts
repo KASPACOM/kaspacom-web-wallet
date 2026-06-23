@@ -1,4 +1,5 @@
-import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -49,6 +50,7 @@ export class ContractsPageComponent implements OnInit {
   private http = inject(HttpClient);
   private route = inject(ActivatedRoute);
   private kaspaL1NetworkService = inject(KaspaL1NetworkService);
+  private destroyRef = inject(DestroyRef);
 
   // Current active tab
   activeTab = signal<TabName>('deploy');
@@ -235,16 +237,20 @@ export class ContractsPageComponent implements OnInit {
     }
 
     // Also check live URL query params / fragments (in case already logged in)
-    this.route.queryParams.subscribe((params) => {
-      if (params['contract']) {
-        this.importFromEncoded(params['contract']);
-      }
-    });
-    this.route.fragment.subscribe((fragment) => {
-      if (fragment && fragment.startsWith('contract=')) {
-        this.importFromEncoded(fragment.substring('contract='.length));
-      }
-    });
+    this.route.queryParams
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => {
+        if (params['contract']) {
+          this.importFromEncoded(params['contract']);
+        }
+      });
+    this.route.fragment
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((fragment) => {
+        if (fragment && fragment.startsWith('contract=')) {
+          this.importFromEncoded(fragment.substring('contract='.length));
+        }
+      });
   }
 
   /**

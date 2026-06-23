@@ -348,8 +348,6 @@ export async function deployContract(
           // finalize() recomputes the tx id from the post-binding state so
           // the sighash + network-agreed id stay in sync.
           tx.finalize();
-
-          console.log('covenant id:', tx.outputs[0]?.covenant?.covenantId.toString());
         } catch (bindErr) {
           // If the binding attachment fails (e.g., API incompatibility),
           // fall back to standard deploy without binding — still works for P2SH.
@@ -399,8 +397,6 @@ export async function deployContract(
     const covenant = serialized?.outputs?.[outputIndex]?.covenant;
     if (covenant?.covenantId) {
       covenantId = String(covenant.covenantId);
-          console.log('Covenant id after deployment:', covenantId.toString());
-
     }
 
   } catch {
@@ -600,8 +596,6 @@ export async function spendContract(
   // and the network-agreed id stay in sync with the bound outputs.
   unsignedTx.finalize();
 
-  console.log('covenant id: ', unsignedTx.outputs[0].covenant?.covenantId.toString());
-
   // --- Dynamic Fee Adjustment ---
   const transactionFee = (calculateTransactionFee(network, unsignedTx) || 0n) + 8000n; // Currently calculateTransactionFee not working well for contract calls
   if (!transactionFee) {
@@ -613,7 +607,7 @@ export async function spendContract(
     if (changeOutputIdx !== -1) {
       const finalChange = totalInputsAmount - spendOutputsSum - totalFees;
       if (finalChange < MINIMAL_AMOUNT_TO_SEND) {
-        throw new Error(`NOT ENOUGH CHANGE (need ${MINIMAL_AMOUNT_TO_SEND}, have ${finalChange})`);
+        throw new Error(`Insufficient change to cover the fee. Need ${MINIMAL_AMOUNT_TO_SEND}, have ${finalChange}`);
       }
       unsignedTx.outputs[changeOutputIdx].value = finalChange;
     } else {

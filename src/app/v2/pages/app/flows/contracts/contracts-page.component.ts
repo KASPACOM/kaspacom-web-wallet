@@ -16,7 +16,7 @@ import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-butt
 import { CONTRACT_TEMPLATES, ContractTemplate, TemplateField } from '../../../../services/covenant/contract-templates';
 import { CtorArg, TemplatePatcherService } from '../../../../services/covenant/template-patcher.service';
 import { PublicKey } from '../../../../../../../public/kaspa/kaspa';
-import { environment } from '../../../../../../environments/environment';
+import { KaspaL1NetworkService } from '../../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
 import { WalletActionType } from '../../../../../types/wallet-action';
 import { CovenantCompletePartialActionResult, CovenantDeployActionResult, CovenantSpendActionResult } from '../../../../../types/wallet-action-result';
 
@@ -48,6 +48,7 @@ export class ContractsPageComponent implements OnInit {
   private templatePatcher = inject(TemplatePatcherService);
   private http = inject(HttpClient);
   private route = inject(ActivatedRoute);
+  private kaspaL1NetworkService = inject(KaspaL1NetworkService);
 
   // Current active tab
   activeTab = signal<TabName>('deploy');
@@ -117,7 +118,6 @@ export class ContractsPageComponent implements OnInit {
   // Interact form - plain properties for ngModel
   selectedContractId = '';
   interactContractJson = '';
-  interactContractJson1 = '';
   interactOutpointTxid = '';
   interactOutpointVout = '';
   interactInputAmount = '';
@@ -252,8 +252,10 @@ export class ContractsPageComponent implements OnInit {
    */
   private importFromEncoded(encoded: string) {
     try {
-      const padded = encoded.replace(/-/g, '+').replace(/_/g, '/');
-      const json = decodeURIComponent(escape(atob(padded)));
+      const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+      const paddedBase64 = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
+      const bytes = Uint8Array.from(atob(paddedBase64), (ch) => ch.charCodeAt(0));
+      const json = new TextDecoder().decode(bytes);
       const parsed = JSON.parse(json);
 
       if (!parsed.compiledJson) {
@@ -290,7 +292,10 @@ export class ContractsPageComponent implements OnInit {
       name: contract.contractName,
     };
     const json = JSON.stringify(shareData);
-    const encoded = btoa(unescape(encodeURIComponent(json))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const bytes = new TextEncoder().encode(json);
+    let binary = '';
+    bytes.forEach((b) => (binary += String.fromCharCode(b)));
+    const encoded = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     const url = `${window.location.origin}/app/contracts?contract=${encoded}`;
 
     navigator.clipboard.writeText(url).then(
@@ -371,21 +376,21 @@ export class ContractsPageComponent implements OnInit {
           { name: 'buyer', type: 'address', value: this.templateFormValues['buyer'] },
           { name: 'seller', type: 'address', value: this.templateFormValues['seller'] },
           { name: 'arbiter', type: 'address', value: this.templateFormValues['arbiterHash'] },
-          { name: 'timeoutBlueScore', type: 'blueScore', value: this.templateFormValues['expiry'] },
+          { name: 'timeoutBlueScore', type: 'blueScore', value: String(this.parseDateToUnixMs(String(this.templateFormValues['expiry'] ?? '').trim(), 'Refund Expiry Timestamp')) },
         ];
       } else if (template.id === 'dead-mans-switch') {
         tmplName = 'DeadManSwitch';
         argsPayload = [
           { name: 'owner', type: 'address', value: this.templateFormValues['owner'] },
           { name: 'heir', type: 'address', value: this.templateFormValues['heir'] },
-          { name: 'checkInDeadline', type: 'blueScore', value: String((Number(this.templateFormValues['expiry']) || 0) * 1000) },
+          { name: 'checkInDeadline', type: 'blueScore', value: String(this.parseDateToUnixMs(String(this.templateFormValues['expiry'] ?? '').trim(), 'Initial Expiry (Unix timestamp)')) },
         ];
       } else if (template.id === 'time-lock-vault') {
         tmplName = 'TimeLockVault';
         argsPayload = [
           { name: 'signer', type: 'address', value: this.templateFormValues['owner'] },
           { name: 'recoveryKey', type: 'address', value: this.templateFormValues['recovery'] },
-          { name: 'unlockBlueScore', type: 'blueScore', value: this.templateFormValues['timeout'] },
+          { name: 'unlockBlueScore', type: 'blueScore', value: String(this.parseDateToUnixMs(String(this.templateFormValues['timeout'] ?? '').trim(), 'Unlock Timestamp')) },
         ];
       }
 
@@ -1145,14 +1150,14 @@ export class ContractsPageComponent implements OnInit {
    * Get explorer link for address
    */
   getExplorerAddressLink(address: string): string {
-    return `${environment.kaspaExplorerBaseurl}/addresses/${address}`;
+    return `${this.kaspaL1NetworkService.getKaspaExplorerBaseurl()}/addresses/${address}`;
   }
 
   /**
    * Get explorer link for transaction
    */
   getExplorerLink(txid: string): string {
-    return `${environment.kaspaExplorerBaseurl}/txs/${txid}`;
+    return `${this.kaspaL1NetworkService.getKaspaExplorerBaseurl()}/txs/${txid}`;
   }
 
   /**

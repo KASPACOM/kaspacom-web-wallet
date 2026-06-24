@@ -3,7 +3,6 @@ import {
   addressFromScriptPublicKey,
   calculateTransactionFee,
   createInputSignature,
-  createTransaction,
   createTransactions,
   CovenantBinding,
   Hash,

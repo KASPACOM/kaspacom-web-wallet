@@ -332,8 +332,8 @@
     <!-- Contract selector from registry -->
     <div class="form-group flex column gap-8">
       <label class="text-gray-60 typo-text-1">Select Contract</label>
-      <select class="form-input p-12 rounded-lg text-white typo-text-2" [ngModel]="selectedContractId()" (ngModelChange)="selectedContractId.set($event)"
-        (ngModelChange)="selectContractFromRegistry()" [disabled]="isInteracting()">
+      <select class="form-input p-12 rounded-lg text-white typo-text-2" [ngModel]="selectedContractId()" (ngModelChange)="selectedContractId.set($event); selectContractFromRegistry()"
+        [disabled]="isInteracting()">
         <option value="">-- Select a deployed contract --</option>
         @for (contract of registryContracts(); track contract.id) {
         <option [value]="contract.id">

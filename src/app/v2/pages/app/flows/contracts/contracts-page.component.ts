@@ -197,7 +197,9 @@ export class ContractsPageComponent implements OnInit {
     // For Escrow arbitrate, amountToSeller is collected via the standard
     // "Withdraw Amount (KAS)" field, so we don't render a separate input for it.
     if (this.selectedFunction === 'arbitrate' && contract.contract_name === 'Escrow') return [];
-    return abiEntry.inputs.filter(i => i.type_name !== 'sig' && i.type_name !== 'pubkey');
+    // Only render extra-arg inputs the interact flow can actually collect/pass
+    // (collectExtraArgs + completePartialSpend handle int/bool only).
+    return abiEntry.inputs.filter(i => i.type_name === 'int' || i.type_name === 'bool');
   }
 
   // Current network

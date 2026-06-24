@@ -39,7 +39,23 @@ export class ContractRegistryService {
   getAllContracts(): ContractRegistryEntry[] {
     try {
       const data = localStorage.getItem(this.STORAGE_KEY);
-      return data ? JSON.parse(data) : [];
+      if (!data) return [];
+      const parsed = JSON.parse(data);
+      if (!Array.isArray(parsed)) return [];
+      // Drop entries missing fields the consumers dereference, so a corrupt or
+      // older-schema record can't crash the contracts UI.
+      return parsed.filter(
+        (c: any) =>
+          c &&
+          typeof c === 'object' &&
+          typeof c.id === 'string' &&
+          typeof c.compiledJson === 'string' &&
+          c.outpoint &&
+          typeof c.outpoint.txid === 'string' &&
+          c.deployedBy &&
+          typeof c.deployedBy.pubkey === 'string' &&
+          typeof c.network === 'string',
+      );
     } catch (error) {
       console.error('Error reading contracts registry:', error);
       return [];
@@ -63,6 +79,7 @@ export class ContractRegistryService {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(contracts));
     } catch (error) {
       console.error('Error saving contract to registry:', error);
+      throw error;
     }
   }
 
@@ -79,6 +96,7 @@ export class ContractRegistryService {
       }
     } catch (error) {
       console.error('Error updating contract in registry:', error);
+      throw error;
     }
   }
 
@@ -91,6 +109,7 @@ export class ContractRegistryService {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(contracts));
     } catch (error) {
       console.error('Error deleting contract from registry:', error);
+      throw error;
     }
   }
 

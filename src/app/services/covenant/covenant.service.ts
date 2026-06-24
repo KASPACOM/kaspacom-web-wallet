@@ -100,6 +100,24 @@ export class CovenantService {
    * Parse a compiled contract JSON file
    */
   parseCompiledContract(jsonString: string): CompiledContract {
-    return JSON.parse(jsonString) as CompiledContract;
+    let parsed: any;
+    try {
+      parsed = JSON.parse(jsonString);
+    } catch {
+      throw new Error('Invalid compiled contract: not valid JSON');
+    }
+
+    if (
+      !parsed ||
+      typeof parsed !== 'object' ||
+      !Array.isArray(parsed.script) ||
+      !Array.isArray(parsed.abi) ||
+      typeof parsed.ast !== 'object' ||
+      parsed.ast === null
+    ) {
+      throw new Error('Invalid compiled contract: missing script/abi/ast');
+    }
+
+    return parsed as CompiledContract;
   }
 }

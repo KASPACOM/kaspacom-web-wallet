@@ -272,6 +272,7 @@ export class ReviewActionDataService {
   ): ActionDisplay {
     let functionName = '-';
     let outpoint = '-';
+    let outputsDisplay = '-';
 
     try {
       const partial = JSON.parse(actionData.partialSpendJson);
@@ -279,6 +280,14 @@ export class ReviewActionDataService {
       outpoint = partial.outpoint
         ? partial.outpoint.txid + ':' + partial.outpoint.vout
         : '-';
+      if (Array.isArray(partial.outputs) && partial.outputs.length) {
+        outputsDisplay = partial.outputs
+          .map(
+            (o: { address: string; amountSompi: string }) =>
+              `${this.kaspaNetworkActionsService.sompiToNumber(BigInt(o.amountSompi))} KAS to ${o.address}`,
+          )
+          .join('\n');
+      }
     } catch {
       // Validation will reject invalid JSON before execution.
     }
@@ -301,6 +310,11 @@ export class ReviewActionDataService {
         {
           fieldName: 'Outpoint',
           fieldValue: outpoint,
+          isCodeBlock: true,
+        },
+        {
+          fieldName: 'Outputs',
+          fieldValue: outputsDisplay,
           isCodeBlock: true,
         },
       ],

@@ -352,9 +352,12 @@ export async function deployContract(
           // the sighash + network-agreed id stay in sync.
           tx.finalize();
         } catch (bindErr) {
-          // If the binding attachment fails (e.g., API incompatibility),
-          // fall back to standard deploy without binding — still works for P2SH.
-          console.warn('[CovenantSDK] CovenantBinding attachment failed, deploying without binding:', bindErr);
+          // A covenant deploy MUST be bound — broadcasting an unbound P2SH UTXO
+          // would lock funds in something the spend path cannot treat as a
+          // covenant. Abort instead of silently downgrading the deploy.
+          throw new Error(
+            `Covenant binding failed; aborting deploy to avoid locking funds in a non-covenant UTXO: ${bindErr instanceof Error ? bindErr.message : String(bindErr)}`,
+          );
         }
       } else {
         // No covenant output to bind, but the tx is still v1 (compound

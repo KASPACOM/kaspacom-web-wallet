@@ -31,7 +31,7 @@
     <!-- Account selector -->
     <div class="form-group flex column gap-8">
       <label class="text-gray-60 typo-text-1">Select Account</label>
-      <select class="form-input p-12 rounded-lg text-white typo-text-2" [(ngModel)]="selectedAccountId"
+      <select class="form-input p-12 rounded-lg text-white typo-text-2" [ngModel]="selectedAccountId()" (ngModelChange)="selectedAccountId.set($event)"
         [disabled]="isDeploying()">
         <option value="">-- Select Account --</option>
         @for (wallet of allWallets(); track wallet.getIdWithAccount()) {
@@ -57,7 +57,7 @@
     <div class="form-group flex column gap-8">
       <label class="text-gray-60 typo-text-1">Compiled Contract JSON</label>
       <textarea class="contract-input p-12 rounded-lg text-white typo-text-2" rows="8"
-        placeholder="Paste compiled contract JSON from kascov" [(ngModel)]="deployContractJson"
+        placeholder="Paste compiled contract JSON from kascov" [ngModel]="deployContractJson()" (ngModelChange)="deployContractJson.set($event)"
         [disabled]="isDeploying()">
         </textarea>
     </div>
@@ -145,7 +145,7 @@
 
     <!-- Deploy button -->
     <kc-button [text]="isDeploying() ? 'Deploying...' : 'Deploy Contract'"
-      [isDisabled]="isDeploying() || !selectedAccountId || !deployContractJson || !deployAmount" [isFullWidth]="true"
+      [isDisabled]="isDeploying() || !selectedAccountId() || !deployContractJson() || !deployAmount" [isFullWidth]="true"
       (buttonClick)="deployContract()">
     </kc-button>
   </div>
@@ -314,7 +314,7 @@
       <div class="flex gap-8">
         @if (contract.status !== 'spent') {
         <kc-button [text]="'💰 Withdraw'" [isFullWidth]="true"
-          (buttonClick)="selectedContractId = contract.id; selectContractFromRegistry(); switchTab('interact')">
+          (buttonClick)="selectedContractId.set(contract.id); selectContractFromRegistry(); switchTab('interact')">
         </kc-button>
         }
         <kc-button [text]="'🔗 Share'" [isFullWidth]="contract.status === 'spent'"
@@ -332,7 +332,7 @@
     <!-- Contract selector from registry -->
     <div class="form-group flex column gap-8">
       <label class="text-gray-60 typo-text-1">Select Contract</label>
-      <select class="form-input p-12 rounded-lg text-white typo-text-2" [(ngModel)]="selectedContractId"
+      <select class="form-input p-12 rounded-lg text-white typo-text-2" [ngModel]="selectedContractId()" (ngModelChange)="selectedContractId.set($event)"
         (ngModelChange)="selectContractFromRegistry()" [disabled]="isInteracting()">
         <option value="">-- Select a deployed contract --</option>
         @for (contract of registryContracts(); track contract.id) {
@@ -351,7 +351,7 @@
       </summary>
       <div class="form-group flex column gap-8 mt-8">
         <textarea class="contract-input p-12 rounded-lg text-white typo-text-2" rows="4"
-          placeholder="Paste compiled contract JSON here" [(ngModel)]="interactContractJson"
+          placeholder="Paste compiled contract JSON here" [ngModel]="interactContractJson()" (ngModelChange)="interactContractJson.set($event)"
           [disabled]="isInteracting()">
           </textarea>
       </div>
@@ -419,7 +419,7 @@
       </div>
       }
 
-      @if (availableFunctions().length === 0 && interactContractJson) {
+      @if (availableFunctions().length === 0 && interactContractJson()) {
       <span class="text-gray-60 typo-text-2">No callable functions found in this contract</span>
       }
 
@@ -624,7 +624,7 @@
     @if (parsedInteractContract()) {
     <kc-button
       [text]="isInteracting() ? 'Processing...' : (selectedFunction ? getFunctionLabel(selectedFunction) : 'Select an action')"
-      [isDisabled]="isInteracting() || !interactContractJson || !interactOutpointTxid || !selectedFunction"
+      [isDisabled]="isInteracting() || !interactContractJson() || !interactOutpointTxid || !selectedFunction"
       [isFullWidth]="true" (buttonClick)="interactContract()">
     </kc-button>
     }

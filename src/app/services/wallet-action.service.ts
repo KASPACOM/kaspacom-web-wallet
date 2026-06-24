@@ -1088,6 +1088,27 @@ export class WalletActionService {
       };
     }
 
+    if (
+      !Array.isArray(action.outputs) ||
+      action.outputs.length === 0 ||
+      action.outputs.some((o) => !o.address || o.amount <= 0n)
+    ) {
+      return {
+        isValidated: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
+      };
+    }
+
+    if (action.transactionPayloadHex !== undefined) {
+      const hex = action.transactionPayloadHex;
+      if (hex.length % 2 !== 0 || !/^[0-9a-fA-F]*$/.test(hex)) {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
+        };
+      }
+    }
+
     return {
       isValidated: true,
     };

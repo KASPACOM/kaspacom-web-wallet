@@ -600,7 +600,7 @@ export async function spendContract(
   unsignedTx.finalize();
 
   // --- Dynamic Fee Adjustment ---
-  const transactionFee = (calculateTransactionFee(network, unsignedTx) || 0n) + 8000n; // Currently calculateTransactionFee not working well for contract calls
+  const transactionFee = calculateTransactionFee(network, unsignedTx);
   if (!transactionFee) {
     throw new Error("Transaction fee not calculated");
   }

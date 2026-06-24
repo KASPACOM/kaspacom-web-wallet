@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, OnInit, DestroyRef } from '@angular/core';
+import { Component, computed, inject, signal, OnInit, DestroyRef, effect } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -62,13 +62,13 @@ export class ContractsPageComponent implements OnInit {
   allWallets = this.walletService.getAllWallets();
 
   // Selected account for deploy (plain property for ngModel)
-  selectedAccountId = '';
+  selectedAccountId = signal('');
 
   // Computed selected account wallet
   selectedAccount = computed(() => {
     const wallets = this.allWallets();
-    if (!wallets || !this.selectedAccountId) return undefined;
-    return wallets.find((w) => w.getIdWithAccount() === this.selectedAccountId);
+    if (!wallets || !this.selectedAccountId()) return undefined;
+    return wallets.find((w) => w.getIdWithAccount() === this.selectedAccountId());
   });
 
   // Computed pubkey for selected account
@@ -79,7 +79,7 @@ export class ContractsPageComponent implements OnInit {
   });
 
   // Deploy form - plain properties for ngModel
-  deployContractJson = '';
+  deployContractJson = signal('');
   deployAmount = '';
   deployResult = signal<{ address: string; txid: string } | null>(null);
   deployError = signal<string | null>(null);
@@ -88,8 +88,8 @@ export class ContractsPageComponent implements OnInit {
   // Computed parsed contract from deploy JSON
   parsedDeployContract = computed(() => {
     try {
-      if (!this.deployContractJson) return null;
-      return this.covenantService.parseCompiledContract(this.deployContractJson);
+      if (!this.deployContractJson()) return null;
+      return this.covenantService.parseCompiledContract(this.deployContractJson());
     } catch {
       return null;
     }
@@ -118,8 +118,8 @@ export class ContractsPageComponent implements OnInit {
   templateError = signal<string | null>(null);
 
   // Interact form - plain properties for ngModel
-  selectedContractId = '';
-  interactContractJson = '';
+  selectedContractId = signal('');
+  interactContractJson = signal('');
   interactOutpointTxid = '';
   interactOutpointVout = '';
   interactInputAmount = '';
@@ -150,14 +150,14 @@ export class ContractsPageComponent implements OnInit {
 
   // Computed selected contract from registry
   selectedContract = computed(() => {
-    if (!this.selectedContractId) return null;
-    return this.registryContracts().find((c) => c.id === this.selectedContractId);
+    if (!this.selectedContractId()) return null;
+    return this.registryContracts().find((c) => c.id === this.selectedContractId());
   });
 
   // Computed parsed contract from interact JSON
   parsedInteractContract = computed(() => {
     try {
-      const json = this.interactContractJson || this.selectedContract()?.compiledJson;
+      const json = this.interactContractJson() || this.selectedContract()?.compiledJson;
       if (!json) return null;
       return this.covenantService.parseCompiledContract(json);
     } catch {
@@ -197,7 +197,9 @@ export class ContractsPageComponent implements OnInit {
     // For Escrow arbitrate, amountToSeller is collected via the standard
     // "Withdraw Amount (KAS)" field, so we don't render a separate input for it.
     if (this.selectedFunction === 'arbitrate' && contract.contract_name === 'Escrow') return [];
-    return abiEntry.inputs.filter(i => i.type_name !== 'sig' && i.type_name !== 'pubkey');
+    // Only render extra-arg inputs the interact flow can actually collect/pass
+    // (collectExtraArgs + completePartialSpend handle int/bool only).
+    return abiEntry.inputs.filter(i => i.type_name === 'int' || i.type_name === 'bool');
   }
 
   // Current network
@@ -219,24 +221,18 @@ export class ContractsPageComponent implements OnInit {
     // Initialize with current wallet if available
     const current = this.currentWallet();
     if (current) {
-      this.selectedAccountId = current.getIdWithAccount();
+      this.selectedAccountId.set(current.getIdWithAccount());
     }
 
-    // Load contracts from registry
-    this.loadContracts();
+    // Reload My-Contracts whenever the active network changes (also runs once now).
+    effect(() => {
+      this.network();
+      this.loadContracts();
+    });
   }
 
   ngOnInit() {
-    // Check for pending contract import from localStorage
-    // (Saved in main.ts before Angular bootstrap, survives login redirect)
-    const pending = localStorage.getItem('kaspacom_pending_contract_import');
-    if (pending) {
-      localStorage.removeItem('kaspacom_pending_contract_import');
-      this.importFromEncoded(pending);
-      return;
-    }
-
-    // Also check live URL query params / fragments (in case already logged in)
+    // Check URL query params / fragment for a shared-contract import link
     this.route.queryParams
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((params) => {
@@ -270,7 +266,7 @@ export class ContractsPageComponent implements OnInit {
       }
 
       // Auto-fill the interact tab
-      this.interactContractJson = parsed.compiledJson;
+      this.interactContractJson.set(parsed.compiledJson);
       if (parsed.txid) this.interactOutpointTxid = parsed.txid;
       if (parsed.vout !== undefined) this.interactOutpointVout = String(parsed.vout);
       if (parsed.amount) this.interactInputAmount = parsed.amount;
@@ -421,7 +417,7 @@ export class ContractsPageComponent implements OnInit {
       return;
     }
 
-    this.deployContractJson = generated;
+    this.deployContractJson.set(generated);
     this.activeTab.set('deploy');
   }
 
@@ -566,7 +562,7 @@ export class ContractsPageComponent implements OnInit {
       return;
     }
 
-    const contractJson = this.deployContractJson;
+    const contractJson = this.deployContractJson();
     const amountKas = parseFloat(this.deployAmount);
 
     if (!contractJson) {
@@ -621,16 +617,24 @@ export class ContractsPageComponent implements OnInit {
         },
         deployedAt: Date.now(),
         network: this.network(),
+        status: 'active',
         accessRoles: this.parseAccessRoles(compiled),
         covenantId: result.covenantId,
       };
-
-      this.registryService.addContract(entry);
 
       this.deployResult.set({
         address: result.contractAddress,
         txid: result.txid,
       });
+
+      try {
+        this.registryService.addContract(entry);
+      } catch (e) {
+        console.error('[Deploy] Contract deployed but failed to save to registry:', e);
+        this.deployError.set(
+          `Contract deployed (txid ${result.txid}), but saving it locally failed. Record the outpoint to interact later: ${result.outpoint.txid}:${result.outpoint.vout}.`,
+        );
+      }
     } catch (error: any) {
       console.error('[Deploy] Failed:', error);
       this.deployError.set(error?.message || 'Failed to deploy contract');
@@ -643,12 +647,10 @@ export class ContractsPageComponent implements OnInit {
    * Select a contract from registry for interaction
    */
   selectContractFromRegistry() {
-    // Look up directly from registry — don't use the computed signal
-    // because selectedContractId is a plain property (ngModel), not a signal,
-    // so the computed may be stale when this fires.
-    const contract = this.registryContracts().find((c) => c.id === this.selectedContractId);
+    // Look up the selected entry from the loaded registry list.
+    const contract = this.registryContracts().find((c) => c.id === this.selectedContractId());
     if (contract) {
-      this.interactContractJson = contract.compiledJson;
+      this.interactContractJson.set(contract.compiledJson);
       this.interactOutpointTxid = contract.outpoint.txid;
       this.interactOutpointVout = contract.outpoint.vout.toString();
       this.interactInputAmount = contract.amountSompi;
@@ -669,7 +671,7 @@ export class ContractsPageComponent implements OnInit {
       return;
     }
 
-    const contractJson = this.interactContractJson;
+    const contractJson = this.interactContractJson();
     const txid = this.interactOutpointTxid;
     const vout = parseInt(this.interactOutpointVout, 10);
     const inputAmountSompi = this.interactInputAmount;
@@ -747,8 +749,8 @@ export class ContractsPageComponent implements OnInit {
         );
         if (!result) return;
         this.interactResult.set({ txid: result.txid, functionName: result.functionName });
-        if (this.selectedContractId) {
-          this.registryService.updateContract(this.selectedContractId, {
+        if (this.selectedContractId()) {
+          this.registryService.updateContract(this.selectedContractId(), {
             status: 'spent', spendTxid: result.txid, lastChecked: Date.now(),
           });
           this.loadContracts();
@@ -826,17 +828,17 @@ export class ContractsPageComponent implements OnInit {
       });
 
       // Update registry based on function type
-      if (this.selectedContractId) {
+      if (this.selectedContractId()) {
         if (this.functionRequiresOutput(functionName)) {
           // Withdrawal: funds left the covenant
-          this.registryService.updateContract(this.selectedContractId, {
+          this.registryService.updateContract(this.selectedContractId(), {
             status: 'spent',
             spendTxid: result.txid,
             lastChecked: Date.now(),
           });
         } else {
           // Redeploy (keepAlive/increment): update the outpoint to the new UTXO
-          this.registryService.updateContract(this.selectedContractId, {
+          this.registryService.updateContract(this.selectedContractId(), {
             lastChecked: Date.now(),
             outpoint: { txid: result.txid, vout: 0 },
             amountSompi: (inputAmount).toString(), // The registry doesn't accurately know the post-fee amount until refreshed, but setting inputAmount is close enough
@@ -913,7 +915,7 @@ export class ContractsPageComponent implements OnInit {
 
       const patched = this.templatePatcher.applyPatch(template, descriptor, newArgs);
       // Attach TN10 metadata using the current registry entry's stored values
-      const currentEntry = this.registryContracts().find(c => c.id === this.selectedContractId);
+      const currentEntry = this.registryContracts().find(c => c.id === this.selectedContractId());
       const ownerAddress = currentEntry?.deployedBy?.address || this.currentWallet()?.getAddress() || '';
       const heirAddress = this.pubkeyToAddress(pubkeys[1]);
       patched.tn10 = {
@@ -935,7 +937,7 @@ export class ContractsPageComponent implements OnInit {
     const newContractAddress = this.covenantService.getContractAddress(newCompiled);
 
     // 4. Get the covenant ID from the registry for the old contract (for CovenantBinding)
-    const oldEntry = this.registryContracts().find(c => c.id === this.selectedContractId);
+    const oldEntry = this.registryContracts().find(c => c.id === this.selectedContractId());
     const oldCovenantId = oldEntry?.covenantId;
 
     // Build spend output: full amount → new DMS address, with CovenantBinding if we have a covenantId
@@ -975,8 +977,8 @@ export class ContractsPageComponent implements OnInit {
     this.interactResult.set({ txid: result.txid, functionName: 'keepAlive' });
 
     // Update old registry entry as spent
-    if (this.selectedContractId) {
-      this.registryService.updateContract(this.selectedContractId, {
+    if (this.selectedContractId()) {
+      this.registryService.updateContract(this.selectedContractId(), {
         status: 'spent',
         spendTxid: result.txid,
         lastChecked: Date.now(),
@@ -1004,13 +1006,13 @@ export class ContractsPageComponent implements OnInit {
       lastChecked: Date.now(),
       accessRoles: this.parseAccessRoles(newCompiled),
       covenantId: oldCovenantId ?? result.covenantId,
-      predecessorId: this.selectedContractId || undefined,
+      predecessorId: this.selectedContractId() || undefined,
     };
     this.registryService.addContract(newEntry);
 
     // Auto-select the new contract in the interact form
-    this.selectedContractId = newEntry.id;
-    this.interactContractJson = newCompiledJson;
+    this.selectedContractId.set(newEntry.id);
+    this.interactContractJson.set(newCompiledJson);
     this.interactOutpointTxid = result.txid;
     this.interactOutpointVout = '0';
     this.interactInputAmount = inputAmount.toString();
@@ -1144,7 +1146,7 @@ export class ContractsPageComponent implements OnInit {
     if (!this.lookupContractJson) return;
 
     // Switch to interact tab with UTXO + contract JSON pre-filled
-    this.interactContractJson = this.lookupContractJson;
+    this.interactContractJson.set(this.lookupContractJson);
     this.interactOutpointTxid = result.utxos[0].txid;
     this.interactOutpointVout = String(result.utxos[0].vout);
     this.interactInputAmount = result.utxos[0].amount;
@@ -1577,8 +1579,8 @@ export class ContractsPageComponent implements OnInit {
       });
 
       // Update registry if we know the contract
-      if (this.selectedContractId) {
-        this.registryService.updateContract(this.selectedContractId, {
+      if (this.selectedContractId()) {
+        this.registryService.updateContract(this.selectedContractId(), {
           status: 'spent',
           spendTxid: result.txid,
           lastChecked: Date.now(),

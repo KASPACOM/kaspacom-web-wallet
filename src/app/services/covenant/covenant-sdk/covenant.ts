@@ -3,7 +3,6 @@ import {
   addressFromScriptPublicKey,
   calculateTransactionFee,
   createInputSignature,
-  createTransaction,
   createTransactions,
   CovenantBinding,
   Hash,
@@ -352,9 +351,12 @@ export async function deployContract(
           // the sighash + network-agreed id stay in sync.
           tx.finalize();
         } catch (bindErr) {
-          // If the binding attachment fails (e.g., API incompatibility),
-          // fall back to standard deploy without binding — still works for P2SH.
-          console.warn('[CovenantSDK] CovenantBinding attachment failed, deploying without binding:', bindErr);
+          // A covenant deploy MUST be bound — broadcasting an unbound P2SH UTXO
+          // would lock funds in something the spend path cannot treat as a
+          // covenant. Abort instead of silently downgrading the deploy.
+          throw new Error(
+            `Covenant binding failed; aborting deploy to avoid locking funds in a non-covenant UTXO: ${bindErr instanceof Error ? bindErr.message : String(bindErr)}`,
+          );
         }
       } else {
         // No covenant output to bind, but the tx is still v1 (compound
@@ -621,15 +623,13 @@ export async function spendContract(
       }
     }
   } else {
-    // Deduct fee from the outputs
+    // When fees are paid from the covenant itself, callers must pre-subtract fees from the requested outputs.
+    // Auto-deducting from an output can violate covenant constraints that require exact output values.
     const surplus = totalInputsAmount - spendOutputsSum;
     if (surplus < totalFees) {
-      const deficit = totalFees - surplus;
-      const lastOutput = unsignedTx.outputs[unsignedTx.outputs.length - 1];
-      lastOutput.value -= deficit;
-      if (lastOutput.value <= 0n) {
-        throw new Error(`Last output value is too small to cover the fee. Need ${deficit} sompi.`);
-      }
+      throw new Error(
+        `Insufficient covenant funds to cover fees (${totalFees} sompi). Enable "Use wallet to pay for fees" or reduce output amounts.`,
+      );
     }
   }
 

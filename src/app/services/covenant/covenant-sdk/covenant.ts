@@ -621,15 +621,13 @@ export async function spendContract(
       }
     }
   } else {
-    // Deduct fee from the outputs
+    // When fees are paid from the covenant itself, callers must pre-subtract fees from the requested outputs.
+    // Auto-deducting from an output can violate covenant constraints that require exact output values.
     const surplus = totalInputsAmount - spendOutputsSum;
     if (surplus < totalFees) {
-      const deficit = totalFees - surplus;
-      const lastOutput = unsignedTx.outputs[unsignedTx.outputs.length - 1];
-      lastOutput.value -= deficit;
-      if (lastOutput.value <= 0n) {
-        throw new Error(`Last output value is too small to cover the fee. Need ${deficit} sompi.`);
-      }
+      throw new Error(
+        `Insufficient covenant funds to cover fees (${totalFees} sompi). Enable "Use wallet to pay for fees" or reduce output amounts.`,
+      );
     }
   }
 

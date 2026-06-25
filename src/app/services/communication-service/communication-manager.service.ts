@@ -6,6 +6,7 @@ import { KaspaNetworkActionsService } from '../kaspa-netwrok-services/kaspa-netw
 import { AppWallet } from '../../classes/AppWallet';
 import { BalanceData } from '../../types/kaspa-network/balance-event.interface';
 import { Subscription } from 'rxjs';
+import { TotalBalanceWithUtxosInterface } from '../../types/kaspa-network/total-balance-with-utxos.interface';
 import { CommitRevealAction, WalletAction, WalletPsktSignInput } from '../../types/wallet-action';
 import { WalletActionResultWithError } from '../../types/wallet-action-result';
 import { EIP1193ProviderEventEnum, EIP1193ProviderRequestActionResult, EIP1193RequestType, ERROR_CODES, WalletActionRequestPayloadInterface, WalletActionResultType, WalletActionTypeEnum, WalletMessageInterface, WalletMessageTypeEnum } from '@kaspacom/wallet-messages';
@@ -21,8 +22,7 @@ import { ApprovalFlowService } from '../../v2/services/approval-flow.service';
     providedIn: 'root',
 })
 export class CommunicationManagerService {
-    protected walletBalanceObservableSubscription: undefined | Subscription =
-        undefined;
+    protected walletBalanceObservableSubscriptions: Subscription[] = [];
     protected currentWalletIdWithAccount: string | undefined = undefined;
 
     protected walletActionsService: WalletActionService = inject(WalletActionService);
@@ -162,18 +162,26 @@ export class CommunicationManagerService {
 
     protected async onWalletSelected(wallet: AppWallet | undefined) {
         if (wallet?.getIdWithAccount() != this.currentWalletIdWithAccount) {
-            this.walletBalanceObservableSubscription?.unsubscribe();
-            this.walletBalanceObservableSubscription = undefined;
+            this.walletBalanceObservableSubscriptions.forEach(subscription => subscription.unsubscribe());
+            this.walletBalanceObservableSubscriptions = [];
         }
 
         this.currentWalletIdWithAccount = wallet?.getIdWithAccount();
 
 
-        if (wallet && !this.walletBalanceObservableSubscription) {
-            this.walletBalanceObservableSubscription = toObservable(
-                wallet.getWalletUtxoStateBalanceSignal(),
-                { injector: this.injector }
-            ).subscribe(this.onWalletBalanceUpdated.bind(this));
+        if (wallet && !this.walletBalanceObservableSubscriptions.length) {
+            this.walletBalanceObservableSubscriptions.push(
+                toObservable(
+                    wallet.getWalletUtxoStateBalanceSignal(),
+                    { injector: this.injector }
+                ).subscribe(this.onWalletBalanceUpdated.bind(this))
+            );
+            this.walletBalanceObservableSubscriptions.push(
+                toObservable(
+                    wallet.getBalanceSignal(),
+                    { injector: this.injector }
+                ).subscribe(this.onWalletTotalBalanceUpdated.bind(this))
+            );
         }
 
         await this.resetAllowedAppsAndAskForPermission();
@@ -183,6 +191,34 @@ export class CommunicationManagerService {
         await this.sendUpdateWalletInfoEvent(this.walletService.getCurrentWallet());
     }
 
+    protected async onWalletTotalBalanceUpdated(balance: undefined | TotalBalanceWithUtxosInterface) {
+        await this.sendUpdateWalletInfoEvent(this.walletService.getCurrentWallet());
+    }
+
+    protected getWalletInfoBalance(wallet: AppWallet) {
+        const processorBalance = wallet.getUtxoProcessorManager()?.getContext()?.balance;
+
+        if (processorBalance?.mature !== undefined) {
+            return {
+                current: this.kaspaNetworkActionsService.sompiToNumber(processorBalance.mature),
+                pending: this.kaspaNetworkActionsService.sompiToNumber(processorBalance.pending),
+                outgoing: this.kaspaNetworkActionsService.sompiToNumber(processorBalance.outgoing),
+            };
+        }
+
+        const loadedBalance = wallet.getBalanceSignal()();
+
+        if (loadedBalance?.totalBalance !== undefined) {
+            return {
+                current: this.kaspaNetworkActionsService.sompiToNumber(loadedBalance.totalBalance),
+                pending: 0,
+                outgoing: 0,
+            };
+        }
+
+        return null;
+    }
+
     protected async sendUpdateWalletInfoEvent(wallet: AppWallet | undefined, specificApp?: BaseCommunicationApp) {
         const message: WalletMessageInterface = {
             type: WalletMessageTypeEnum.WalletInfo,
@@ -190,19 +226,10 @@ export class CommunicationManagerService {
         };
 
         if (wallet) {
-            const balance = wallet.getUtxoProcessorManager()?.getContext()
-                ?.balance;
             message.payload = {
                 walletAddress: wallet.getAddress(),
                 kasplexL2Address: wallet.getL2WalletStateSignal()()?.address,
-                balance:
-                    balance?.mature === undefined
-                        ? null
-                        : {
-                            current: this.kaspaNetworkActionsService.sompiToNumber(balance.mature),
-                            pending: this.kaspaNetworkActionsService.sompiToNumber(balance.pending),
-                            outgoing: this.kaspaNetworkActionsService.sompiToNumber(balance.outgoing),
-                        },
+                balance: this.getWalletInfoBalance(wallet),
             };
         }
 

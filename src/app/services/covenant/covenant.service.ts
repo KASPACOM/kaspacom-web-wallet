@@ -80,9 +80,11 @@ export class CovenantService {
     inputAmountSompi: bigint,
     outputs: SpendOutput[],
     privateKeyHex: string,
+    priorityFee: bigint = 0n,
+    extraArgs?: Record<string, bigint>,
   ): Promise<PartiallySignedSpend> {
     const network = this.rpcService.getNetwork();
-    return buildPartialSpend(compiled, functionName, outpoint, inputAmountSompi, outputs, privateKeyHex, network, this.getManagedRpc());
+    return buildPartialSpend(compiled, functionName, outpoint, inputAmountSompi, outputs, privateKeyHex, network, this.getManagedRpc(), priorityFee, extraArgs);
   }
 
   /**

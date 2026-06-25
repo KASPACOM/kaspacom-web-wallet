@@ -736,6 +736,8 @@ export async function buildPartialSpend(
   privateKeyHex: string,
   network: string,
   rpc: RpcClient,
+  priorityFee: bigint = 0n,
+  extraArgs?: Record<string, bigint>,
 ): Promise<PartiallySignedSpend> {
   const covenantAddress = getCovenantAddress(compiled, network);
   const abiEntry = getAbiEntry(compiled, functionName);
@@ -774,7 +776,8 @@ export async function buildPartialSpend(
     buildCovenantInput(entry, 30),
   ];
 
-  const txOutputs: ITransactionOutput[] = outputs.map(o => ({
+  const adjustedOutputs = outputs.map(o => ({ ...o }));
+  const txOutputs: ITransactionOutput[] = adjustedOutputs.map(o => ({
     scriptPublicKey: payToAddressScript(o.address),
     value: o.amount,
   }));
@@ -788,6 +791,27 @@ export async function buildPartialSpend(
     gas: 0n,
     payload: "",
   });
+
+  unsignedTx.finalize();
+
+  const transactionFee = calculateTransactionFee(network, unsignedTx);
+  if (!transactionFee) {
+    throw new Error("Transaction fee not calculated");
+  }
+
+  const totalFees = transactionFee + priorityFee;
+  const feeOutputIndex = txOutputs.length - 1;
+  if (feeOutputIndex < 0) {
+    throw new Error('At least one output is required to pay covenant fees');
+  }
+
+  if (unsignedTx.outputs[feeOutputIndex].value <= totalFees) {
+    throw new Error(`Insufficient contract output to cover fees. Need ${totalFees} sompi, have ${unsignedTx.outputs[feeOutputIndex].value}`);
+  }
+
+  unsignedTx.outputs[feeOutputIndex].value -= totalFees;
+  adjustedOutputs[feeOutputIndex].amount = unsignedTx.outputs[feeOutputIndex].value;
+  unsignedTx.finalize();
 
   // Sign this key's params
   const signatureHex = createInputSignature(unsignedTx, 0, privateKey, SighashType.All);
@@ -818,17 +842,24 @@ export async function buildPartialSpend(
     }
   }
 
+  if (signatures.length === 0) {
+    throw new Error('Current wallet does not match any required signer for this contract function');
+  }
+
   return {
     compiledJson: JSON.stringify(compiled),
     functionName,
     network,
     outpoint,
     inputAmountSompi: inputAmountSompi.toString(),
-    outputs: outputs.map(o => ({ address: o.address, amountSompi: o.amount.toString() })),
+    outputs: adjustedOutputs.map(o => ({ address: o.address, amountSompi: o.amount.toString() })),
     signatures,
     pendingParams,
     lockTime: lockTime.toString(),
     sigOpCount,
+    extraArgs: extraArgs
+      ? Object.fromEntries(Object.entries(extraArgs).map(([key, value]) => [key, value.toString()]))
+      : undefined,
   };
 }
 
@@ -845,6 +876,7 @@ export async function completePartialSpend(
   const covenantAddress = getCovenantAddress(compiled, partialSpend.network);
 
   const privateKey = new PrivateKey(privateKeyHex);
+  const pubkeyHex = privateKey.toPublicKey().toXOnlyPublicKey().toString();
 
   const utxos = await getAddressUtxos(rpc, covenantAddress);
   const entry = utxos.find(
@@ -873,6 +905,8 @@ export async function completePartialSpend(
     payload: "",
   });
 
+  unsignedTx.finalize();
+
   // Sign our params
   const signatureHex = createInputSignature(unsignedTx, 0, privateKey, SighashType.All);
   let signature = hexToBytes(String(signatureHex));
@@ -881,8 +915,25 @@ export async function completePartialSpend(
 
   // Merge signatures
   const allSigs = [...partialSpend.signatures];
+  const myPubkeyBytes = hexToBytes(pubkeyHex);
+  const scriptBytes = toScriptBytes(compiled);
+
+  const remainingParams: string[] = [];
   for (const paramName of partialSpend.pendingParams) {
-    allSigs.push({ paramName, signatureHex: newSigHex });
+    const pubkeyParamName = findMatchingPubkeyParamName(compiled, partialSpend.functionName, paramName);
+    const myKeyMatchesThisParam = pubkeyParamName
+      ? scriptContainsPubkeyForParam(compiled, pubkeyParamName, myPubkeyBytes, scriptBytes)
+      : false;
+
+    if (myKeyMatchesThisParam) {
+      allSigs.push({ paramName, signatureHex: newSigHex });
+    } else {
+      remainingParams.push(paramName);
+    }
+  }
+
+  if (remainingParams.length > 0) {
+    throw new Error(`Current wallet cannot sign pending param(s): ${remainingParams.join(', ')}`);
   }
 
   // Build the complete sigscript in ABI order

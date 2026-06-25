@@ -439,6 +439,25 @@ export class WalletActionService {
     return { ...actionResult, isUsingV2Flow };
   }
 
+  async validateAndApproveAction(
+    action: WalletAction,
+    isFromIframe: boolean = false,
+  ): Promise<ApprovalPageResultParams> {
+    const validationResult = await this.validateAction(
+      action,
+      this.walletService.getCurrentWallet()!,
+    );
+    if (!validationResult.isValidated) {
+      return {
+        isApproved: false,
+      };
+    }
+
+    const result = await this.showApprovalDialogToUser(action, isFromIframe);
+
+    return result;
+  }
+
   async showCommunicationAppApprovalDialogToUser(
     app: BaseCommunicationApp,
     isFromIframe: boolean = false,

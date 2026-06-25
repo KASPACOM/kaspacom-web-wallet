@@ -20,8 +20,22 @@ import { PublicKey } from '../../../../../../../public/kaspa/kaspa';
 import { KaspaL1NetworkService } from '../../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
 import { WalletActionType } from '../../../../../types/wallet-action';
 import { CovenantCompletePartialActionResult, CovenantDeployActionResult, CovenantSpendActionResult } from '../../../../../types/wallet-action-result';
+import { FlowPagesService } from '../../../../services/flow-pages.service';
+import { ApprovalFlowService } from '../../../../services/approval-flow.service';
 
 type TabName = 'deploy' | 'my-contracts' | 'interact' | 'templates';
+type ContractsTransientState = {
+  activeTab?: TabName;
+  selectedFunction?: string;
+  interactContractJson?: string;
+  interactOutpointTxid?: string;
+  interactOutpointVout?: string;
+  interactInputAmount?: string;
+  interactOutputAddress?: string;
+  interactOutputAmount?: string;
+  partialSpendJson?: string;
+  interactResult?: { txid: string; functionName: string };
+};
 
 @Component({
   selector: 'app-contracts-page',
@@ -51,6 +65,8 @@ export class ContractsPageComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private kaspaL1NetworkService = inject(KaspaL1NetworkService);
   private destroyRef = inject(DestroyRef);
+  private flowPagesService = inject(FlowPagesService);
+  private approvalFlowService = inject(ApprovalFlowService);
 
   // Current active tab
   activeTab = signal<TabName>('deploy');
@@ -232,6 +248,8 @@ export class ContractsPageComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.restoreTransientState();
+
     // Check URL query params / fragment for a shared-contract import link
     this.route.queryParams
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -247,6 +265,24 @@ export class ContractsPageComponent implements OnInit {
           this.importFromEncoded(fragment.substring('contract='.length));
         }
       });
+  }
+
+  private restoreTransientState() {
+    const state = this.flowPagesService.getTransientState<ContractsTransientState>('contracts');
+    if (!state) return;
+
+    if (state.activeTab) this.activeTab.set(state.activeTab);
+    if (state.selectedFunction !== undefined) this.selectedFunction = state.selectedFunction;
+    if (state.interactContractJson !== undefined) this.interactContractJson.set(state.interactContractJson);
+    if (state.interactOutpointTxid !== undefined) this.interactOutpointTxid = state.interactOutpointTxid;
+    if (state.interactOutpointVout !== undefined) this.interactOutpointVout = state.interactOutpointVout;
+    if (state.interactInputAmount !== undefined) this.interactInputAmount = state.interactInputAmount;
+    if (state.interactOutputAddress !== undefined) this.interactOutputAddress = state.interactOutputAddress;
+    if (state.interactOutputAmount !== undefined) this.interactOutputAmount = state.interactOutputAmount;
+    if (state.partialSpendJson !== undefined) this.partialSpendJson.set(state.partialSpendJson);
+    if (state.interactResult !== undefined) this.interactResult.set(state.interactResult);
+
+    this.flowPagesService.saveTransientState('contracts', undefined);
   }
 
   /**
@@ -709,6 +745,7 @@ export class ContractsPageComponent implements OnInit {
 
       // Build outputs based on function type
       let outputs: SpendOutput[];
+      let extraArgsOverride: Record<string, bigint> | undefined;
 
       if (functionName === 'arbitrate' && compiled.contract_name === 'Escrow') {
         // Escrow arbitrate: the "Withdraw Amount (KAS)" field is reused as amountToSeller.
@@ -736,6 +773,9 @@ export class ContractsPageComponent implements OnInit {
           { address: sellerAddress, amount: amountToSellerSompi },
           { address: buyerAddress, amount: amountToBuyerSompi },
         ];
+        extraArgsOverride = { amountToSeller: amountToSellerSompi };
+
+        if (!this.isMultiSigFunction(functionName)) {
         const result = await this.runCovenantSpendAction(
           compiled,
           contractJson,
@@ -743,7 +783,7 @@ export class ContractsPageComponent implements OnInit {
           inputAmount,
           functionName,
           outputs,
-          { amountToSeller: amountToSellerSompi },
+            extraArgsOverride,
           undefined,
           this.useSenderFee,
         );
@@ -756,6 +796,7 @@ export class ContractsPageComponent implements OnInit {
           this.loadContracts();
         }
         return;
+        }
 
       } else if (this.functionRequiresOutput(functionName)) {
         // Withdrawal function — validate user-provided output
@@ -788,15 +829,50 @@ export class ContractsPageComponent implements OnInit {
 
 
       // Collect extra args (int, bool params like escrow arbitrate's amountToSeller)
-      const extraArgs = this.collectExtraArgs(compiled, functionName);
+      const extraArgs = extraArgsOverride || this.collectExtraArgs(compiled, functionName);
 
       // Multi-sig functions: build partial spend instead of broadcasting
       if (this.isMultiSigFunction(functionName)) {
+        const approvalResult = await this.walletActionService.validateAndApproveAction({
+          type: WalletActionType.COVENANT_SPEND,
+          data: {
+            compiledContractJson: contractJson,
+            contractName: compiled.contract_name || 'Covenant',
+            outpoint,
+            inputAmountSompi: inputAmount,
+            functionName,
+            outputs,
+            extraArgs: Object.keys(extraArgs).length > 0 ? extraArgs : undefined,
+            useSenderFee: false,
+          },
+        });
+
+        if (!approvalResult.isApproved || approvalResult.priorityFee === undefined) {
+          this.interactError.set('Covenant partial signing was rejected or failed');
+          return;
+        }
+
         const partial = await this.covenantService.buildPartial(
-          compiled, functionName, outpoint, inputAmount, outputs, privateKey,
+          compiled, functionName, outpoint, inputAmount, outputs, privateKey, approvalResult.priorityFee, extraArgs,
         );
         const partialJson = JSON.stringify(partial, null, 2);
         this.partialSpendJson.set(partialJson);
+        this.flowPagesService.saveTransientState('contracts', {
+          activeTab: 'interact',
+          selectedFunction: functionName,
+          interactContractJson: contractJson,
+          interactOutpointTxid: this.interactOutpointTxid,
+          interactOutpointVout: this.interactOutpointVout,
+          interactInputAmount: this.interactInputAmount,
+          interactOutputAddress: this.interactOutputAddress,
+          interactOutputAmount: this.interactOutputAmount,
+          partialSpendJson: partialJson,
+          interactResult: {
+            txid: '(partial - share with co-signer)',
+            functionName,
+          },
+        } satisfies ContractsTransientState);
+        this.approvalFlowService.closeApproval();
         navigator.clipboard.writeText(partialJson).then(
           () => { },
           () => { } // Clipboard may not be available
@@ -1330,6 +1406,7 @@ export class ContractsPageComponent implements OnInit {
    */
   selectFunction(name: string) {
     this.selectedFunction = name;
+    this.useSenderFee = !this.isMultiSigFunction(name);
 
     // Clear stale interaction state
     this.interactError.set(null);

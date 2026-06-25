@@ -181,6 +181,14 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
       if (this.activeConnectingRpc === currentRpc) {
         this.activeConnectingRpc = undefined;
       }
+
+      if (generation === this.connectionGeneration && this.rpcService.isUsingStoredRpcUrl()) {
+        console.warn('Stored Kaspa RPC failed; falling back to resolver', err);
+        this.rpcService.clearStoredRpcUrl();
+        this.rpcService.refreshRpc();
+        return await this.handleConnection(false, generation);
+      }
+
       if (generation === this.connectionGeneration) {
         this.setSignalStatusIfChanged(RpcConnectionStatus.DISCONNECTED);
         this.scheduleReconnect('connection-failure', undefined, generation);

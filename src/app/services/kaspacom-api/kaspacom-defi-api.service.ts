@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom, map, catchError, of } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import { DexApiWalletToken } from './dtos/dex-api-wallet-tokens.interface';
 import { EthereumWalletChainManager } from '../etherium-services/etherium-wallet-chain.manager';
+import { KaspaL1NetworkService } from '../kaspa-netwrok-services/kaspa-l1-network.service';
 
 export interface DexTokenSearchResult {
   id: string;
@@ -76,12 +76,15 @@ const EXPLORER_CONTROLLER = 'explorer';
 
 @Injectable({ providedIn: 'root' })
 export class KaspaComDefiApiService {
-  baseurl = environment.kaspaComDefiApiBaseurl;
-
   constructor(
     private readonly httpClient: HttpClient,
     private readonly ethereumWalletChainManager: EthereumWalletChainManager,
+    private readonly kaspaL1NetworkService: KaspaL1NetworkService,
   ) {}
+
+  get baseurl(): string {
+    return this.kaspaL1NetworkService.getKaspaComDefiApiBaseurl();
+  }
 
   private buildHttpParamsWithNetwork(params?: Record<string, any>): HttpParams {
     const chainId = this.ethereumWalletChainManager.getCurrentChainSignal()();

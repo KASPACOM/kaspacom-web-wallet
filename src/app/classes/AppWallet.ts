@@ -296,6 +296,12 @@ export class AppWallet {
     this.mempoolTransactionsSignal.set(undefined);
   }
 
+  resetL1NetworkState(): void {
+    this.balanceSignal.set(undefined);
+    this.walletStateBalance.set(undefined);
+    this.mempoolTransactionsSignal.set(undefined);
+  }
+
   isCurrentlyActive(): boolean {
     return this.isCurrentlyActiveSingal();
   }

@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, OnDestroy, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, OnDestroy, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { Contract, formatUnits, JsonRpcProvider } from 'ethers';
@@ -16,6 +16,7 @@ import type {
   VerifiedTokenExternalUsdPriceInterface,
   VerifiedTokenInterface,
 } from '../../../environments/environment.interface';
+import { KaspaL1NetworkService } from '../kaspa-netwrok-services/kaspa-l1-network.service';
 
 const NATIVE_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000000';
 const LP_PAIR_ABI = [
@@ -57,6 +58,7 @@ export class L2TokenPricesService implements OnDestroy {
   private chainManager = inject(EthereumWalletChainManager);
   private kaspaPrice = inject(KaspaPriceService);
   private http = inject(HttpClient);
+  private kaspaL1NetworkService = inject(KaspaL1NetworkService);
 
   // Cache stores KAS amounts (the expensive on-chain part), keyed by `chainId:address`
   private _kasAmounts = signal<Map<string, CachedKasAmount>>(new Map());
@@ -96,6 +98,16 @@ export class L2TokenPricesService implements OnDestroy {
   private contextByChain = new Map<string, ChainSwapContext>();
   // Map value: backoff expiry timestamp ms — address is skipped until Date.now() exceeds it
   private readonly _nonLpAddresses = new Map<string, number>();
+
+  constructor() {
+    // Cached swap contexts bake in the L1-derived DeFi base URL, so rebuild
+    // them whenever the selected L1 network changes — otherwise swap/pairs
+    // requests keep hitting the previous network's DeFi endpoint.
+    effect(() => {
+      this.kaspaL1NetworkService.getCurrentNetworkSignal()();
+      this.contextByChain.clear();
+    });
+  }
 
   async getPriceMap(
     tokens: Erc20Token[],
@@ -436,7 +448,7 @@ export class L2TokenPricesService implements OnDestroy {
         routerAddress: cc.swapContracts.routerAddress,
         factoryAddress: cc.swapContracts.factoryAddress,
         proxyAddress: cc.swapContracts.proxyAddress,
-        badckendApiUrl: environment.kaspaComDefiApiBaseurl,
+        badckendApiUrl: this.kaspaL1NetworkService.getKaspaComDefiApiBaseurl(),
         blockExplorerUrl: cc.blockExplorerUrl,
         defiApiNetworkName: cc.defiApiNetworkName,
         nativeToken: {

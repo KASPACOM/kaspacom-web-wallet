@@ -22,7 +22,7 @@
             <span>Not selected</span>
           </ng-container>
           <ng-container *ngIf="additionalPriorityFee !== undefined">
-            <span>{{ (additionalPriorityFee + transactionMass!) | sompiToNumber }}</span>
+            <span>{{ getEstimatedTotalFees() | sompiToNumber }}</span>
             <!-- Always show kaspa icon for fees -->
             <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
           </ng-container>
@@ -86,7 +86,7 @@
         <div class="fee-detail-row">
           <span class="detail-label">Minimum transaction fee:</span>
           <div class="detail-value">
-            <span>{{ transactionMass! | sompiToNumber }}</span>
+            <span>{{ transactionMass! * minimumFeeMultiplier | sompiToNumber }}</span>
             <!-- Always show kaspa icon for fees -->
             <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
           </div>

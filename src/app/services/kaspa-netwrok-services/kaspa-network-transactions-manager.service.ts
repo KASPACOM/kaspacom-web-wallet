@@ -3,6 +3,7 @@ import {
   Address,
   addressFromScriptPublicKey,
   calculateTransactionFee,
+  calculateTransactionMass,
   createInputSignature,
   createTransactions,
   FeeSource,
@@ -15,6 +16,7 @@ import {
   ITransactionInput,
   ITransactionOutput,
   IUtxoEntry,
+  kaspaToSompi,
   Opcodes,
   payToAddressScript,
   PendingTransaction,
@@ -34,6 +36,7 @@ import { TotalBalanceWithUtxosInterface } from '../../types/kaspa-network/total-
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
 import { ERROR_CODES, KasTransactionParams, ProtocolScriptDataAndAddress, ProtocolType } from '@kaspacom/wallet-messages';
+import type { WalletPsktSignInput } from '../../types/wallet-action';
 import {
   MAX_TRANSACTION_FEE,
   MINIMAL_AMOUNT_TO_SEND,
@@ -188,7 +191,7 @@ export class KaspaNetworkTransactionsManagerService {
       result?: ICreateTransactions;
     }>(async () => {
       const context = utxoProcessonManager.getContext()!;
-      
+
 
       if (sendAll) {
         const remeaingAmountToSend =
@@ -388,11 +391,8 @@ export class KaspaNetworkTransactionsManagerService {
     }
 
     if (!entry) {
-      // not support to happen
-      console.log(entry,)
       throw new Error(
-        `Commit UTXO not found, revealTransactionId: ${commitUtxoTransactionId}, scriptAddress: ${operationScript.scriptAddress
-        }, wallet address: ${wallet.getAddress()}`
+        `Reveal-only commit UTXO not found. The listing commit may already be spent or is not available at the derived script address. commitTransactionId: ${commitUtxoTransactionId || 'not provided'}, scriptAddress: ${operationScript.scriptAddress}, walletAddress: ${wallet.getAddress()}`
       );
     }
 
@@ -820,13 +820,60 @@ export class KaspaNetworkTransactionsManagerService {
     wallet: AppWallet,
     transactionJson: string,
     priorityFee: bigint = 0n,
-    submitTransaction: boolean = false
+    submitTransaction: boolean = false,
+    signOnly: boolean = false,
+    signInputs?: WalletPsktSignInput[],
   ): Promise<{
     psktTransaction: string;
     transactionId?: string;
     transactionFee?: bigint;
+    transactionMass?: bigint;
   }> {
     const transaction = Transaction.deserializeFromSafeJSON(transactionJson);
+
+    if (signOnly) {
+      const inputsToSign = signInputs ?? this.getWalletOwnedPsktSignInputs(
+        transaction,
+        wallet,
+      );
+
+      for (const input of inputsToSign) {
+        const i = input.index;
+
+        if (!transaction.inputs[i].signatureScript) {
+
+
+          const signature = createInputSignature(
+            transaction,
+            i,
+            wallet.getPrivateKey(),
+            (input.sighashType ?? SighashType.All) as SighashType
+          );
+
+          transaction.inputs[i].signatureScript = signature;
+        }
+      }
+
+      const result: {
+        psktTransaction: string;
+        transactionFee?: bigint;
+        transactionMass?: bigint;
+        transactionId?: string;
+      } = {
+        psktTransaction: transaction.serializeToSafeJSON(),
+      };
+
+      if (submitTransaction) {
+        const transactionResult = await this.rpcService
+          .getRpc()!
+          .submitTransaction({ transaction });
+
+        result.transactionId = transactionResult.transactionId;
+      }
+
+      return result;
+
+    }
 
     return await this.connectAndDo(async () => {
       const totalOutputs = transaction.outputs.reduce(
@@ -867,6 +914,7 @@ export class KaspaNetworkTransactionsManagerService {
         utxo: utxo,
         sequence: 0n,
         sigOpCount: 1,
+        // computeBudget: 10,
       }));
 
       let index = transaction.inputs.length;
@@ -900,7 +948,12 @@ export class KaspaNetworkTransactionsManagerService {
         ...transaction.outputs.slice(1),
       ];
 
-      const transactionFee = calculateTransactionFee(
+      const transactionFee = (calculateTransactionFee(
+        this.rpcService.getNetwork(),
+        transaction
+      )) || kaspaToSompi('0.01');
+
+      const transactionMass = calculateTransactionMass(
         this.rpcService.getNetwork(),
         transaction
       );
@@ -915,6 +968,21 @@ export class KaspaNetworkTransactionsManagerService {
 
       if (transaction.outputs[feePayerIndex].value < MINIMAL_AMOUNT_TO_SEND) {
         throw new Error('NOT ENOUGH CHANGE');
+      }
+
+      if (signInputs?.length) {
+        for (const input of signInputs) {
+          if (!transaction.inputs[input.index].signatureScript) {
+            const signature = createInputSignature(
+              transaction,
+              input.index,
+              wallet.getPrivateKey(),
+              (input.sighashType ?? SighashType.All) as SighashType
+            );
+
+            transaction.inputs[input.index].signatureScript = signature;
+          }
+        }
       }
 
       for (let i = index; i < transaction.inputs.length; i++) {
@@ -950,10 +1018,12 @@ export class KaspaNetworkTransactionsManagerService {
       const result: {
         psktTransaction: string;
         transactionFee?: bigint;
+        transactionMass?: bigint;
         transactionId?: string;
       } = {
         psktTransaction: transaction.serializeToSafeJSON(),
         transactionFee: transactionFee,
+        transactionMass,
       };
 
       if (submitTransaction) {
@@ -972,6 +1042,26 @@ export class KaspaNetworkTransactionsManagerService {
   //   // ================================================================
   //   // OTHER
   //   // ================================================================
+
+  private getWalletOwnedPsktSignInputs(
+    transaction: Transaction,
+    wallet: AppWallet,
+  ): WalletPsktSignInput[] {
+    return transaction.inputs.reduce<WalletPsktSignInput[]>(
+      (inputsToSign, input, index) => {
+        const utxoAddress =
+          (input.utxo as { address?: string } | undefined)?.address ||
+          this.getWalletAddressFromScriptPublicKey(input.utxo!.scriptPublicKey);
+
+        if (utxoAddress === wallet.getAddress()) {
+          inputsToSign.push({ index });
+        }
+
+        return inputsToSign;
+      },
+      [],
+    );
+  }
 
   async getEstimateFeeRates(): Promise<IFeeEstimate> {
     const fees = await this.rpcService.getRpc()!.getFeeEstimate({});

@@ -11,6 +11,8 @@ import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-butt
 import { WalletProfileOrbComponent } from '../../../../shared/ui/wallet-profile-orb/wallet-profile-orb.component';
 import { FlowPageId } from '../flow-page/flow-page.registry';
 import { DesktopViewService } from '../../../../services/desktop-view.service';
+import { CHAIN_ID_LOGOS } from '../../../../shared/network-selection-modal/chain-id-logos';
+import { KaspaL1NetworkService } from '../../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
 
 @Component({
   selector: 'app-wrapper-header',
@@ -32,27 +34,28 @@ export class WrapperHeaderComponent {
   flowPagesService = inject(FlowPagesService);
   ethereumWalletChainManager = inject(EthereumWalletChainManager);
   desktopViewService = inject(DesktopViewService);
+  kaspaL1NetworkService = inject(KaspaL1NetworkService);
 
   // Use signals for reactive updates
   currentWallet = this.walletService.getCurrentWalletSignal();
   currentNetworkInfo = computed(() => {
-    if (this.ethereumWalletChainManager.getCurrentChainSignal()()) {
-      const envConfig = this.ethereumWalletChainManager.getChainEnvConfig(
-        this.ethereumWalletChainManager.getCurrentChainSignal()()!,
-      );
-      const chainConfig = this.ethereumWalletChainManager.getChainConfig(
-        this.ethereumWalletChainManager.getCurrentChainSignal()()!,
-      );
-
+    const isL2 = this.walletService.getIsL2DisplaySignal()();
+    const chainId = this.ethereumWalletChainManager.getCurrentChainSignal()();
+    if (isL2 && chainId) {
+      const normalizedId = chainId.toLowerCase();
+      const envConfig = this.ethereumWalletChainManager.getChainEnvConfig(normalizedId);
+      const chainConfig = this.ethereumWalletChainManager.getChainConfig(normalizedId);
       return {
         name: envConfig?.shortName || chainConfig?.chainName,
-        icon: envConfig?.icon || null,
+        icon: envConfig?.icon || CHAIN_ID_LOGOS[normalizedId] || null,
       };
     }
 
+    const l1Network = this.kaspaL1NetworkService.getCurrentNetworkSignal()();
+
     return {
-      name: environment.l1Config.shortName,
-      icon: environment.l1Config.icon,
+      name: l1Network.shortName,
+      icon: l1Network.icon,
     };
   });
 

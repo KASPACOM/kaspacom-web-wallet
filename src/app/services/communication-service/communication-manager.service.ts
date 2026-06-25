@@ -6,7 +6,7 @@ import { KaspaNetworkActionsService } from '../kaspa-netwrok-services/kaspa-netw
 import { AppWallet } from '../../classes/AppWallet';
 import { BalanceData } from '../../types/kaspa-network/balance-event.interface';
 import { Subscription } from 'rxjs';
-import { CommitRevealAction, WalletAction } from '../../types/wallet-action';
+import { CommitRevealAction, WalletAction, WalletPsktSignInput } from '../../types/wallet-action';
 import { WalletActionResultWithError } from '../../types/wallet-action-result';
 import { EIP1193ProviderEventEnum, EIP1193ProviderRequestActionResult, EIP1193RequestType, ERROR_CODES, WalletActionRequestPayloadInterface, WalletActionResultType, WalletActionTypeEnum, WalletMessageInterface, WalletMessageTypeEnum } from '@kaspacom/wallet-messages';
 import { Router } from '@angular/router';
@@ -364,6 +364,8 @@ export class CommunicationManagerService {
                     actionData.data.submitTransaction,
                     actionData.data.protocol,
                     actionData.data.protocolAction,
+                    actionData.data.signOnly,
+                    (actionData.data as { signInputs?: WalletPsktSignInput[] }).signInputs,
                 );
 
         }

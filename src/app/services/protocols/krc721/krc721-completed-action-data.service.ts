@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { ActionDisplay } from "../../../types/action-display.type";
-import { Krc721OperationType, Krc721Deploy, Krc721Mint, Krc721Transfer } from "../../../types/kaspa-network/krc721-operations-data.interface";
+import { Krc721OperationType, Krc721Deploy, Krc721Mint, Krc721Transfer, Krc721List, Krc721Send } from "../../../types/kaspa-network/krc721-operations-data.interface";
 import { ProtocolCompletedActionDataInterface } from "../interfaces/protocol-completed-action-data.interface";
 import { CompletedActionDisplay } from "../../../types/completed-action-display.type";
 import { CommitRevealActionResult } from "@kaspacom/wallet-messages";
@@ -15,7 +15,7 @@ export class Krc721CompletedActionDataService implements ProtocolCompletedAction
     getActionDisplay(action: CommitRevealActionResult): CompletedActionDisplay | undefined {
 
         try {
-            const operationData: Krc721Deploy | Krc721Mint | Krc721Transfer = JSON.parse(action.protocolAction);
+            const operationData: Krc721Deploy | Krc721Mint | Krc721Transfer | Krc721List | Krc721Send = JSON.parse(action.protocolAction);
 
             switch (operationData.op) {
                 case Krc721OperationType.TRANSFER:
@@ -24,6 +24,10 @@ export class Krc721CompletedActionDataService implements ProtocolCompletedAction
                     return this.getKrc721MintActionDisplay(action, operationData as Krc721Mint);
                 case Krc721OperationType.DEPLOY:
                     return this.getKrc721DeployActionDisplay(action, operationData as Krc721Deploy);
+                case Krc721OperationType.LIST:
+                    return this.getKrc721ListActionDisplay(action, operationData as Krc721List);
+                case Krc721OperationType.SEND:
+                    return this.getKrc721CancelListActionDisplay(action, operationData as Krc721Send);
             }
 
         } catch (error) {
@@ -130,6 +134,50 @@ export class Krc721CompletedActionDataService implements ProtocolCompletedAction
         return {
             title: "Deploy KRC721 Collection Transaction",
             rows: rows
+        }
+    }
+
+    private getKrc721ListActionDisplay(action: CommitRevealActionResult, operationData: Krc721List): ActionDisplay {
+        return {
+            title: "List KRC721 NFT Transaction",
+            rows: [
+                {
+                    fieldName: "Collection",
+                    fieldValue: operationData.tick.toUpperCase()
+                },
+                {
+                    fieldName: "Token ID",
+                    fieldValue: operationData.tokenId
+                },
+                {
+                    fieldName: "Listed By",
+                    fieldValue: action.performedByWallet
+                }
+            ]
+        }
+    }
+
+    private getKrc721CancelListActionDisplay(action: CommitRevealActionResult, operationData: Krc721Send): ActionDisplay {
+        return {
+            title: "Cancel KRC721 NFT Listing Transaction",
+            rows: [
+                {
+                    fieldName: "Collection",
+                    fieldValue: operationData.tick.toUpperCase()
+                },
+                {
+                    fieldName: "Token ID",
+                    fieldValue: operationData.tokenId
+                },
+                {
+                    fieldName: "Wallet",
+                    fieldValue: action.performedByWallet
+                },
+                {
+                    fieldName: "Reveal Transaction Id",
+                    fieldValue: action.revealTransactionId
+                }
+            ]
         }
     }
 }

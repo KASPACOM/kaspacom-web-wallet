@@ -14,6 +14,17 @@ import { V2TMP_ROUTES } from '../v2/v2.routes';
 import { environment } from '../../environments/environment';
 import { DEFI_API_BASE_URL, LOGOS_URL } from '../config/injection-tokens';
 
+const defaultL1Network =
+  environment.l1Config.networks?.find(
+    (network) => network.network === environment.kaspaNetwork,
+  ) ?? environment.l1Config.networks?.[0];
+
+if (!defaultL1Network) {
+  throw new Error(
+    'No Kaspa L1 networks configured. Check environment.l1Config.networks.',
+  );
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
@@ -32,7 +43,7 @@ export const appConfig: ApplicationConfig = {
     },
     {
       provide: DEFI_API_BASE_URL,
-      useValue: environment.kaspaComDefiApiBaseurl,
+      useValue: defaultL1Network.kaspaComDefiApiBaseurl,
     },
     {
       provide: LOGOS_URL,

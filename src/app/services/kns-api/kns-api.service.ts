@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, of, map } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { Observable, catchError, of, map, throwError } from 'rxjs';
 import {
   KnsDomainAsset,
   KnsDomainsResponse,
@@ -13,23 +12,55 @@ import {
   KnsWalletAssetsStatus,
   KnsDomainCollection
 } from './dtos/kns-domain.dto';
+import { KaspaL1NetworkService } from '../kaspa-netwrok-services/kaspa-l1-network.service';
 
 @Injectable({ providedIn: 'root' })
 export class KnsApiService {
-  private baseUrl = environment.knsApiBaseurl;
+  constructor(
+    private readonly httpClient: HttpClient,
+    private readonly kaspaL1NetworkService: KaspaL1NetworkService,
+  ) {}
 
-  constructor(private readonly httpClient: HttpClient) {}
+  private get baseUrl(): string | undefined {
+    return this.kaspaL1NetworkService.getKnsApiBaseurl();
+  }
+
+  private emptyDomainsResponse(page = 1, pageSize = 20): KnsDomainsResponse {
+    return {
+      data: {
+        assets: [],
+        pagination: {
+          currentPage: page,
+          totalPages: 0,
+          totalItems: 0,
+          itemsPerPage: pageSize,
+        },
+      },
+    };
+  }
 
   /**
    * Fetch asset details by asset ID
    */
   fetchAssetByAssetId(assetId: string): Observable<KnsDomainResponse> {
+    if (!this.baseUrl) {
+      return throwError(
+        () => new Error('KNS is not supported on the current network'),
+      );
+    }
+
     return this.httpClient
       .get<KnsDomainResponse>(`${this.baseUrl}/api/v1/asset/${assetId}/detail`)
       .pipe(
         catchError((error) => {
+          // Only a 404 means "asset not found"; surface other failures
+          // (transient 5xx/network) so callers' try/catch can distinguish an
+          // API error from a missing asset.
+          if (error?.status === 404) {
+            return of({ data: null as any });
+          }
           console.error(`Error fetching asset by ID ${assetId}:`, error);
-          return of({ data: null as any });
+          return throwError(() => error);
         })
       );
   }
@@ -44,6 +75,10 @@ export class KnsApiService {
     asset?: string,
     status?: KnsWalletAssetsStatus
   ): Observable<KnsDomainsResponse> {
+    if (!this.baseUrl) {
+      return of(this.emptyDomainsResponse(page, pageSize));
+    }
+
     if (pageSize > 100) {
       throw new Error('Max page size is 100');
     }
@@ -93,6 +128,10 @@ export class KnsApiService {
     asset?: string,
     owner?: string
   ): Observable<KnsDomainsResponse> {
+    if (!this.baseUrl) {
+      return of(this.emptyDomainsResponse(page, pageSize));
+    }
+
     let params = new HttpParams()
       .set('page', page.toString())
       .set('pageSize', pageSize.toString())
@@ -138,6 +177,10 @@ export class KnsApiService {
    * Expects domain to be URL-encoded as per KNS documentation requirements
    */
   fetchDomainInfo(domain: string): Observable<KnsDomainAsset | undefined> {
+    if (!this.baseUrl) {
+      return of(undefined);
+    }
+
     // Decode the domain to get the original form for comparison
     const decodedDomain = decodeURIComponent(domain);
     const decodedDomainWithoutSuffix = decodedDomain.replace('.kas', '');
@@ -167,6 +210,10 @@ export class KnsApiService {
     assetId: string,
     textRecords: { [key: string]: string }
   ): Observable<{ success: boolean; message?: string }> {
+    if (!this.baseUrl) {
+      return of({ success: false, message: 'KNS is not supported on the selected network' });
+    }
+
     return this.httpClient
       .post<{ success: boolean; message?: string }>(
         `${this.baseUrl}/api/v1/asset/${assetId}/text`,
@@ -187,6 +234,10 @@ export class KnsApiService {
     assetId: string,
     toAddress: string
   ): Observable<{ success: boolean; txId?: string; message?: string }> {
+    if (!this.baseUrl) {
+      return of({ success: false, message: 'KNS is not supported on the selected network' });
+    }
+
     return this.httpClient
       .post<{ success: boolean; txId?: string; message?: string }>(
         `${this.baseUrl}/api/v1/asset/${assetId}/transfer`,

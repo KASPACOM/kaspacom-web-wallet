@@ -9,6 +9,7 @@ import { KasplexKrc20Service } from "../../kasplex-api/kasplex-api.service";
 import { Krc721ApiService } from "../../krc721-api/krc721-api.service";
 import { KnsApiService } from "../../kns-api/kns-api.service";
 import { KaspaComApiService } from "../../kaspacom-api/kaspacom-api.service";
+import { KaspaL1NetworkService } from "../../kaspa-netwrok-services/kaspa-l1-network.service";
 import { L1AssetType } from "../enums/l1-asset-type.enum";
 import { L1_PAGINATION_CONFIG } from "../interfaces/pagination-state.interface";
 import _ from 'lodash';
@@ -44,6 +45,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
     protected krc721ApiService = inject(Krc721ApiService);
     protected knsApiService = inject(KnsApiService);
     protected kaspacomApiService = inject(KaspaComApiService);
+    protected kaspaL1NetworkService = inject(KaspaL1NetworkService);
 
     // Pagination state for KRC721
     private krc721NextCursor: WritableSignal<number | undefined> = signal(undefined);
@@ -75,9 +77,33 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
     private krc20LoadedPages: WritableSignal<number> = signal(0); // Track pages loaded
 
     private readonly KRC20_PAGE_SIZE = L1_PAGINATION_CONFIG.krc20.pageSize;
+    private assetRequestGeneration = 0;
 
     constructor() {
         super();
+    }
+
+    public override startLoadingAllAssets(): void {
+        this.assetRequestGeneration++;
+        super.startLoadingAllAssets();
+    }
+
+    public override stopLoadingAllAssetsAndClear(): void {
+        this.assetRequestGeneration++;
+        super.stopLoadingAllAssetsAndClear();
+    }
+
+    private isCurrentAssetRequest(generation: number): boolean {
+        return generation === this.assetRequestGeneration;
+    }
+
+    private staleLoadMoreResult(nextCursor?: number | string): LoadMoreStoreResult {
+        return {
+            success: false,
+            itemsAdded: 0,
+            hasMore: false,
+            nextCursor,
+        };
     }
 
     protected override getLoadFunctionAssetsNames(): { [K in keyof L1AssetStoreData]: string } {
@@ -88,11 +114,36 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
         }
     }
 
+    protected override shouldLoadAsset(key: keyof L1AssetStoreData): boolean {
+        if (key === L1_ASSET_KEYS.krc20) {
+            return this.kaspaL1NetworkService.supportsKrc20Assets();
+        }
+        if (key === L1_ASSET_KEYS.krc721) {
+            return this.kaspaL1NetworkService.supportsKrc721Assets();
+        }
+        if (key === L1_ASSET_KEYS.kns) {
+            return this.kaspaL1NetworkService.supportsKnsAssets();
+        }
+        return true;
+    }
+
+    public supportsAssetType(assetType: L1AssetType): boolean {
+        return this.shouldLoadAsset(assetType as keyof L1AssetStoreData);
+    }
+
     /**
      * Load initial KRC20 tokens (first page only)
      * Smart auto-reload: Fetches as many items as user has already loaded
      */
     protected async getKrc20Info(walletAddress: string): Promise<GetTokenListDto[]> {
+        const requestGeneration = this.assetRequestGeneration;
+        if (!this.kaspaL1NetworkService.supportsKrc20Assets()) {
+            this.krc20NextCursor.set(undefined);
+            this.krc20HasMore.set(false);
+            this.krc20LoadedPages.set(0);
+            return [];
+        }
+
         const existingData = this.data['krc20']() as GetTokenListDto[] | undefined;
         const isAutoReload = existingData !== undefined && existingData.length > 0;
 
@@ -109,6 +160,9 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                     null,
                 ),
             );
+            if (!this.isCurrentAssetRequest(requestGeneration)) {
+                return existingData;
+            }
 
             if (response.result && response.result.length > 0) {
                 const freshTokens: GetTokenListDto[] = response.result.map(
@@ -133,6 +187,9 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                     });
                 } catch (error) {
                     console.error('Error fetching token prices during auto-reload:', error);
+                }
+                if (!this.isCurrentAssetRequest(requestGeneration)) {
+                    return existingData;
                 }
 
                 // Smart merge with deduplication
@@ -168,6 +225,9 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                     null,
                 ),
             );
+            if (!this.isCurrentAssetRequest(requestGeneration)) {
+                return [];
+            }
 
             if (response.result && response.result.length > 0) {
                 const tokens: GetTokenListDto[] = response.result.map(
@@ -201,6 +261,9 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                     });
                 } catch (error) {
                     console.error('Error fetching token prices:', error);
+                }
+                if (!this.isCurrentAssetRequest(requestGeneration)) {
+                    return [];
                 }
 
                 return tokens;
@@ -291,6 +354,16 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
      * Called by Krc20ListService when scrolling
      */
     async loadMoreKrc20Tokens(): Promise<LoadMoreStoreResult> {
+        const requestGeneration = this.assetRequestGeneration;
+        if (!this.kaspaL1NetworkService.supportsKrc20Assets()) {
+            return {
+                success: false,
+                itemsAdded: 0,
+                hasMore: false,
+                nextCursor: undefined
+            };
+        }
+
         const cursor = this.krc20NextCursor();
         const hasMore = this.krc20HasMore();
 
@@ -313,6 +386,9 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                     'next',
                 ),
             );
+            if (!this.isCurrentAssetRequest(requestGeneration)) {
+                return this.staleLoadMoreResult(cursor ?? undefined);
+            }
 
             if (response.result && response.result.length > 0) {
                 const newTokens: GetTokenListDto[] = response.result.map(
@@ -342,6 +418,9 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                     });
                 } catch (error) {
                     console.error('Error fetching token prices:', error);
+                }
+                if (!this.isCurrentAssetRequest(requestGeneration)) {
+                    return this.staleLoadMoreResult(cursor ?? undefined);
                 }
 
                 // Append to existing data
@@ -385,17 +464,37 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
      * Uses new Portfolio API
      */
     protected async getKrc721Info(walletAddress: string): Promise<Krc721Nft[]> {
+        const requestGeneration = this.assetRequestGeneration;
+        if (!this.kaspaL1NetworkService.supportsKrc721Assets()) {
+            this.krc721PortfolioSummary = [];
+            this.krc721PortfolioIndex = 0;
+            this.krc721TokenQueue = [];
+            this.krc721CollectionCache.clear();
+            this.krc721AvailableTickers.set([]);
+            this.krc721NextCursor.set(undefined);
+            this.krc721HasMore.set(false);
+            this.krc721LoadedPages.set(0);
+            return [];
+        }
+
         const existingData = this.data[L1_ASSET_KEYS.krc721]() as Krc721Nft[] | undefined || [];
         const isAutoReload = existingData.length > 0;
 
         try {
             // 1. Fetch summary
-            this.krc721PortfolioSummary = await firstValueFrom(this.krc721ApiService.getPortfolio(walletAddress));
+            const portfolioSummary = await firstValueFrom(this.krc721ApiService.getPortfolio(walletAddress));
+            if (!this.isCurrentAssetRequest(requestGeneration)) {
+                return existingData;
+            }
+            this.krc721PortfolioSummary = portfolioSummary;
 
             // Update available tickers
             this.krc721AvailableTickers.set(this.krc721PortfolioSummary.map(item => item.ticker));
         } catch (e) {
             console.error('Error fetching portfolio summary', e);
+            if (!this.isCurrentAssetRequest(requestGeneration)) {
+                return existingData;
+            }
             if (!isAutoReload) {
                 this.krc721PortfolioSummary = [];
             }
@@ -407,17 +506,20 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
         }
 
         // Initial fetch logic
-        return this.fetchInitialKrc721Data(walletAddress);
+        return this.fetchInitialKrc721Data(walletAddress, requestGeneration);
     }
 
-    private async fetchInitialKrc721Data(walletAddress: string): Promise<Krc721Nft[]> {
+    private async fetchInitialKrc721Data(walletAddress: string, requestGeneration: number): Promise<Krc721Nft[]> {
         // Reset internal state for fresh load
         this.krc721PortfolioIndex = 0;
         this.krc721TokenQueue = [];
         this.krc721CollectionCache.clear();
 
         // 2. Fetch first batch
-        const nfts = await this.fetchNextKrc721Batch(walletAddress);
+        const nfts = await this.fetchNextKrc721Batch(walletAddress, this.KRC721_PAGE_SIZE, requestGeneration);
+        if (!this.isCurrentAssetRequest(requestGeneration)) {
+            return [];
+        }
 
         // Update pagination
         this.krc721NextCursor.set(this.krc721PortfolioIndex);
@@ -583,6 +685,16 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
      * Called by Krc721ListService when scrolling
      */
     async loadMoreKrc721Nfts(): Promise<LoadMoreStoreResult> {
+        const requestGeneration = this.assetRequestGeneration;
+        if (!this.kaspaL1NetworkService.supportsKrc721Assets()) {
+            return {
+                success: false,
+                itemsAdded: 0,
+                hasMore: false,
+                nextCursor: undefined
+            };
+        }
+
         if (!this.krc721HasMore()) {
             return {
                 success: false,
@@ -594,7 +706,10 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
 
         try {
             const walletAddress = this.getWalletAddress();
-            const newNfts = await this.fetchNextKrc721Batch(walletAddress);
+            const newNfts = await this.fetchNextKrc721Batch(walletAddress, this.KRC721_PAGE_SIZE, requestGeneration);
+            if (!this.isCurrentAssetRequest(requestGeneration)) {
+                return this.staleLoadMoreResult(this.krc721PortfolioIndex);
+            }
 
             if (newNfts.length > 0) {
                 // Append to existing data
@@ -638,6 +753,15 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
      * Smart auto-reload: Fetches as many domains as user has already loaded
      */
     protected async getKnsInfo(walletAddress: string): Promise<KnsDomainAsset[]> {
+        const requestGeneration = this.assetRequestGeneration;
+        if (!this.kaspaL1NetworkService.supportsKnsAssets()) {
+            this.knsCurrentPage.set(1);
+            this.knsTotalPages.set(0);
+            this.knsHasMore.set(false);
+            this.knsLoadedPages.set(0);
+            return [];
+        }
+
         const existingData = this.data['kns']() as KnsDomainAsset[] | undefined;
         const isAutoReload = existingData !== undefined && existingData.length > 0;
 
@@ -657,6 +781,9 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                         this.KNS_PAGE_SIZE
                     )
                 );
+                if (!this.isCurrentAssetRequest(requestGeneration)) {
+                    return existingData;
+                }
 
                 if (response.data) {
                     allFreshDomains.push(...(response.data.assets || []));
@@ -700,6 +827,9 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                     this.KNS_PAGE_SIZE
                 )
             );
+            if (!this.isCurrentAssetRequest(requestGeneration)) {
+                return [];
+            }
 
             if (response.data) {
                 const domains = response.data.assets || [];
@@ -722,6 +852,16 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
      * Called by KnsListService when scrolling
      */
     async loadMoreKnsDomains(): Promise<LoadMoreStoreResult> {
+        const requestGeneration = this.assetRequestGeneration;
+        if (!this.kaspaL1NetworkService.supportsKnsAssets()) {
+            return {
+                success: false,
+                itemsAdded: 0,
+                hasMore: false,
+                nextCursor: undefined
+            };
+        }
+
         const currentPage = this.knsCurrentPage();
         const totalPages = this.knsTotalPages();
         const hasMore = this.knsHasMore();
@@ -746,6 +886,9 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                     this.KNS_PAGE_SIZE
                 )
             );
+            if (!this.isCurrentAssetRequest(requestGeneration)) {
+                return this.staleLoadMoreResult(currentPage);
+            }
 
             if (response.data) {
                 const newDomains = response.data.assets || [];
@@ -791,16 +934,26 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
     /**
      * Helper to fetch next batch of KRC721 tokens from portfolio
      */
-    private async fetchNextKrc721Batch(walletAddress: string, targetCount = this.KRC721_PAGE_SIZE): Promise<Krc721Nft[]> {
+    private async fetchNextKrc721Batch(
+        walletAddress: string,
+        targetCount = this.KRC721_PAGE_SIZE,
+        requestGeneration = this.assetRequestGeneration,
+    ): Promise<Krc721Nft[]> {
         const results: Krc721Nft[] = [];
 
         // 1. Drain queue first
         while (this.krc721TokenQueue.length > 0 && results.length < targetCount) {
+            if (!this.isCurrentAssetRequest(requestGeneration)) {
+                return [];
+            }
             results.push(this.krc721TokenQueue.shift()!);
         }
 
         // 2. Fetch more if needed
         while (results.length < targetCount && this.krc721PortfolioIndex < this.krc721PortfolioSummary.length) {
+            if (!this.isCurrentAssetRequest(requestGeneration)) {
+                return [];
+            }
             const item = this.krc721PortfolioSummary[this.krc721PortfolioIndex];
             this.krc721PortfolioIndex++;
 
@@ -810,6 +963,9 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                 if (totalSupply === undefined) {
                     try {
                         const collectionDetails = await firstValueFrom(this.krc721ApiService.getCollectionDetails(item.ticker));
+                        if (!this.isCurrentAssetRequest(requestGeneration)) {
+                            return [];
+                        }
                         if (collectionDetails && collectionDetails.message === 'success') {
                             // Use max supply if totalSupply is missing, or minted if available
                             const supply = collectionDetails.result.totalSupply || collectionDetails.result.max || collectionDetails.result.minted;
@@ -825,6 +981,9 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
                 let details;
                 try {
                     details = await firstValueFrom(this.krc721ApiService.getPortfolioDetails(walletAddress, item.ticker));
+                    if (!this.isCurrentAssetRequest(requestGeneration)) {
+                        return [];
+                    }
                 } catch (e) {
                     // ignore error
                 }

@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, of, throwError } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import { 
   Krc721Collection, 
   Krc721CollectionResponse, 
@@ -19,16 +18,33 @@ import {
   Krc721OperationsResponse 
 } from './dtos/krc721-operations.dto';
 import { Krc721PortfolioDetailResponse, Krc721PortfolioResponse } from './dtos/krc721-portfolio.dto';
+import { KaspaL1NetworkService } from '../kaspa-netwrok-services/kaspa-l1-network.service';
 
 @Injectable({ providedIn: 'root' })
 export class Krc721ApiService {
-  private baseUrl = environment.krc721ApiBaseurl;
-  private kaspaComBaseUrl = environment.kaspaComApiBaseurl;
+  constructor(
+    private readonly httpClient: HttpClient,
+    private readonly kaspaL1NetworkService: KaspaL1NetworkService,
+  ) {}
 
-  constructor(private readonly httpClient: HttpClient) {}
+  private get baseUrl(): string | undefined {
+    return this.kaspaL1NetworkService.getKrc721ApiBaseurl();
+  }
+
+  private get kaspaComBaseUrl(): string | undefined {
+    return this.kaspaL1NetworkService.getKaspaComApiBaseurl();
+  }
+
+  private get cacheStreamUrl(): string | undefined {
+    return this.kaspaL1NetworkService.getKrc721CacheStreamUrl();
+  }
 
   // Portfolio
   getPortfolio(address: string): Observable<Krc721PortfolioResponse> {
+    if (!this.baseUrl || !this.kaspaComBaseUrl) {
+      return of([]);
+    }
+
     const params = new HttpParams().set('walletAddress', address);
     return this.httpClient.get<Krc721PortfolioResponse>(`${this.kaspaComBaseUrl}/krc721/portfolio`, { params })
       .pipe(
@@ -40,6 +56,10 @@ export class Krc721ApiService {
   }
 
   getPortfolioDetails(address: string, ticker: string): Observable<Krc721PortfolioDetailResponse> {
+    if (!this.baseUrl || !this.kaspaComBaseUrl) {
+      return of([]);
+    }
+
     const params = new HttpParams()
       .set('walletAddress', address)
       .set('ticker', ticker.toUpperCase()); // Ensure ticker is uppercase
@@ -59,6 +79,10 @@ export class Krc721ApiService {
     limit: number = 50,
     direction: 'forward' | 'backward' = 'forward'
   ): Observable<Krc721CollectionsResponse> {
+    if (!this.baseUrl) {
+      return of({ message: 'success', result: [] });
+    }
+
     const params = new HttpParams()
       .set('offset', offset.toString())
       .set('limit', limit.toString())
@@ -75,24 +99,47 @@ export class Krc721ApiService {
   }
 
   getCollectionDetails(tick: string): Observable<Krc721CollectionResponse> {
+    if (!this.baseUrl) {
+      return throwError(
+        () => new Error('KRC721 is not supported on the current network'),
+      );
+    }
+
     return this.httpClient
       .get<Krc721CollectionResponse>(`${this.baseUrl}/nfts/${tick}`)
       .pipe(
         catchError((error) => {
+          // Only a 404 means "ticker not found"; surface other failures
+          // (transient 5xx/network) so callers' try/catch can react rather
+          // than misclassifying them as an available ticker.
+          if (error?.status === 404) {
+            return of({ message: 'error', result: null as any });
+          }
           console.error(`Error fetching collection details for ${tick}:`, error);
-          return of({ message: 'error', result: null as any });
+          return throwError(() => error);
         })
       );
   }
 
   // NFTs / Tokens
   getTokenDetails(tick: string, tokenId: string): Observable<Krc721NftResponse> {
+    if (!this.baseUrl) {
+      return throwError(
+        () => new Error('KRC721 is not supported on the current network'),
+      );
+    }
+
     return this.httpClient
       .get<Krc721NftResponse>(`${this.baseUrl}/nfts/${tick}/${tokenId}`)
       .pipe(
         catchError((error) => {
+          // Only a 404 means "token not found"; surface other failures so
+          // ownership validation doesn't treat a transient error as not-found.
+          if (error?.status === 404) {
+            return of({ message: 'error', result: null as any });
+          }
           console.error(`Error fetching token details for ${tick}/${tokenId}:`, error);
-          return of({ message: 'error', result: null as any });
+          return throwError(() => error);
         })
       );
   }
@@ -104,6 +151,10 @@ export class Krc721ApiService {
     limit?: number,
     direction: 'forward' | 'backward' = 'forward'
   ): Observable<Krc721NftsResponse> {
+    if (!this.baseUrl) {
+      return of({ message: 'success', result: [] });
+    }
+
     let params = new HttpParams();
     if (offset !== undefined) params = params.set('offset', offset.toString());
     if (limit !== undefined) params = params.set('limit', limit.toString());
@@ -123,6 +174,10 @@ export class Krc721ApiService {
     address: string,
     tick: string
   ): Observable<Krc721NftsResponse> {
+    if (!this.baseUrl) {
+      return of({ message: 'success', result: [] });
+    }
+
     return this.httpClient
       .get<Krc721NftsResponse>(`${this.baseUrl}/address/${address}/${tick}`)
       .pipe(
@@ -142,6 +197,10 @@ export class Krc721ApiService {
     offset?: number,
     limit?: number
   ): Observable<Krc721TokenOwnersResponse> {
+    if (!this.baseUrl) {
+      return of({ message: 'success', result: [] });
+    }
+
     let params = new HttpParams();
     if (offset !== undefined) params = params.set('offset', offset.toString());
     if (limit !== undefined) params = params.set('limit', limit.toString());
@@ -161,6 +220,10 @@ export class Krc721ApiService {
     offset?: string,
     direction: 'forward' | 'backward' = 'forward'
   ): Observable<Krc721OperationsResponse> {
+    if (!this.baseUrl) {
+      return of({ message: 'success', result: [] });
+    }
+
     let params = new HttpParams();
     if (offset) params = params.set('offset', offset);
     params = params.set('direction', direction);
@@ -176,6 +239,12 @@ export class Krc721ApiService {
   }
 
   getOperationByScore(score: string): Observable<{ message: string; result: Krc721Operation }> {
+    if (!this.baseUrl) {
+      return throwError(
+        () => new Error('KRC721 is not supported on the current network'),
+      );
+    }
+
     return this.httpClient
       .get<{ message: string; result: Krc721Operation }>(`${this.baseUrl}/ops/score/${score}`)
       .pipe(
@@ -187,6 +256,12 @@ export class Krc721ApiService {
   }
 
   getOperationByTxId(txId: string): Observable<{ message: string; result: Krc721Operation }> {
+    if (!this.baseUrl) {
+      return throwError(
+        () => new Error('KRC721 is not supported on the current network'),
+      );
+    }
+
     return this.httpClient
       .get<{ message: string; result: Krc721Operation }>(`${this.baseUrl}/ops/txid/${txId}`)
       .pipe(
@@ -202,6 +277,10 @@ export class Krc721ApiService {
     address: string,
     tick: string
   ): Observable<{ message: string; result: string }> {
+    if (!this.baseUrl) {
+      return of({ message: 'error', result: '0' });
+    }
+
     return this.httpClient
       .get<{ message: string; result: string }>(`${this.baseUrl}/royalties/${address}/${tick}`)
       .pipe(
@@ -219,6 +298,10 @@ export class Krc721ApiService {
   getRejectionReason(
     txId: string
   ): Observable<{ message: string; result: string }> {
+    if (!this.baseUrl) {
+      return of({ message: 'error', result: '' });
+    }
+
     return this.httpClient
       .get<{ message: string; result: string }>(`${this.baseUrl}/rejections/txid/${txId}`)
       .pipe(
@@ -235,6 +318,10 @@ export class Krc721ApiService {
     tokenId: string,
     offset?: string
   ): Observable<Krc721TokenOwnersResponse> {
+    if (!this.baseUrl) {
+      return of({ message: 'success', result: [] });
+    }
+
     let params = new HttpParams();
     if (offset) params = params.set('offset', offset);
 
@@ -279,7 +366,11 @@ export class Krc721ApiService {
   // Load NFT metadata from cache
   getNftMetadata(tick: string, tokenId: string): Observable<any> {
 
-    const metadataUrl = `${environment.krc721CacheStreamUrl}/metadata/${tick}/${tokenId}`;
+    if (!this.cacheStreamUrl) {
+      return of(null);
+    }
+
+    const metadataUrl = `${this.cacheStreamUrl}/metadata/${tick}/${tokenId}`;
     
     return this.httpClient
       .get<any>(metadataUrl)

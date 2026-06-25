@@ -94,6 +94,10 @@ export class KaspaNetworkActionsService {
     return this.kaspaWalletMnemonicActions.convertPrivateKeyToAddress(privateKey);
   }
 
+  getPublicKey(privateKey: string): string {
+    return this.kaspaWalletMnemonicActions.getPublicKey(privateKey);
+  }
+
   async initUtxoProcessorManager(
     address: string,
   ): Promise<UtxoProcessorManager> {
@@ -170,13 +174,15 @@ export class KaspaNetworkActionsService {
           (action.data as SignPsktTransactionAction).psktTransactionJson,
           action.priorityFee || 0n,
           false,
+          (action.data as SignPsktTransactionAction).signOnly,
+          (action.data as SignPsktTransactionAction).signInputs,
         );
 
-      if (!result.transactionFee) {
+      if (!result.transactionMass) {
         throw new Error('Failed to estimate transaction mass');
       }
 
-      return [result.transactionFee];
+      return [result.transactionMass];
     }
 
     if (action.type === WalletActionType.EIP1193_PROVIDER_REQUEST) {
@@ -307,7 +313,10 @@ export class KaspaNetworkActionsService {
           wallet,
           action.data.psktTransactionJson,
           action.priorityFee || 0n,
-          action.data.submitTransaction
+          action.data.submitTransaction,
+          (action.data as SignPsktTransactionAction).signOnly,
+          (action.data as SignPsktTransactionAction).signInputs,
+
         );
 
       const resultData: SignPsktTransactionActionResult = {

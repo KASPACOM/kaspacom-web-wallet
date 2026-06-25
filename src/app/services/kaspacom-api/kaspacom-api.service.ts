@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import { Krc20PortfolioResponse } from './dtos/krc20-prortfolio';
+import { KaspaL1NetworkService } from '../kaspa-netwrok-services/kaspa-l1-network.service';
 
 
 export type TokenLogoResult = { ticker: string, logo: string };
@@ -10,9 +10,14 @@ export type TokenLogosResult = TokenLogoResult[];
 
 @Injectable({ providedIn: 'root' })
 export class KaspaComApiService {
-  baseurl = environment.kaspaComApiBaseurl;
+  constructor(
+    private readonly httpClient: HttpClient,
+    private readonly kaspaL1NetworkService: KaspaL1NetworkService,
+  ) { }
 
-  constructor(private readonly httpClient: HttpClient) { }
+  get baseurl(): string {
+    return this.kaspaL1NetworkService.getKaspaComApiBaseurl();
+  }
 
 
   async getTokensPrices(

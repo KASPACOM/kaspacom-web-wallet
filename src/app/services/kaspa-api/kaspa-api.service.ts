@@ -1,14 +1,19 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, map, Observable, of } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import { FullTransactionResponse } from './dtos/full-transaction-response.dto';
+import { KaspaL1NetworkService } from '../kaspa-netwrok-services/kaspa-l1-network.service';
 
 @Injectable({ providedIn: 'root' })
 export class KaspaApiService {
-  baseurl = environment.kaspaApiBaseurl;
+  constructor(
+    private readonly httpClient: HttpClient,
+    private readonly kaspaL1NetworkService: KaspaL1NetworkService,
+  ) {}
 
-  constructor(private readonly httpClient: HttpClient) {}
+  get baseurl(): string {
+    return this.kaspaL1NetworkService.getKaspaApiBaseurl();
+  }
 
   getFullTransactions(walletAddress: string, resolvePreviousOutputs: string = 'light', limit: number = 10): Observable<FullTransactionResponse> {
     const url = `${this.baseurl}/addresses/${walletAddress}/full-transactions?resolve_previous_outpoints=${resolvePreviousOutputs}&limit=${limit}`;

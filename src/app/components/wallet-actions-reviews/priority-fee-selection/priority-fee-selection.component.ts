@@ -29,46 +29,49 @@ type BucketFeeRate = {
 
 type AvailableOption = 'low' | 'normal' | 'priority' | 'custom';
 
+const MINIMUM_FEE_MULTIPLIER = 100n;
+
 @Component({
-    selector: 'priority-fee-selection',
-    templateUrl: './priority-fee-selection.component.html',
-    styleUrls: ['./priority-fee-selection.component.scss'],
-    imports: [
-        NgIf,
-        NgFor,
-        SompiToNumberPipe,
-        FormsModule,
-        TitleCasePipe,
-        CommonModule,
-        KcIconComponent,
-        KcInputComponent,
-    ],
-    animations: [
-        trigger('slideDown', [
-            state('closed', style({
-                height: '0px',
-                opacity: 0,
-                overflow: 'hidden'
-            })),
-            state('open', style({
-                height: '*',
-                opacity: 1,
-                overflow: 'visible'
-            })),
-            transition('closed => open', [
-                animate('400ms ease-out')
-            ]),
-            transition('open => closed', [
-                animate('300ms ease-in')
-            ])
-        ])
-    ]
+  selector: 'priority-fee-selection',
+  templateUrl: './priority-fee-selection.component.html',
+  styleUrls: ['./priority-fee-selection.component.scss'],
+  imports: [
+    NgIf,
+    NgFor,
+    SompiToNumberPipe,
+    FormsModule,
+    TitleCasePipe,
+    CommonModule,
+    KcIconComponent,
+    KcInputComponent,
+  ],
+  animations: [
+    trigger('slideDown', [
+      state('closed', style({
+        height: '0px',
+        opacity: 0,
+        overflow: 'hidden'
+      })),
+      state('open', style({
+        height: '*',
+        opacity: 1,
+        overflow: 'visible'
+      })),
+      transition('closed => open', [
+        animate('400ms ease-out')
+      ]),
+      transition('open => closed', [
+        animate('300ms ease-in')
+      ])
+    ])
+  ]
 })
 export class PriorityFeeSelectionComponent implements OnChanges {
   @Input() action!: WalletAction;
   @Input() wallet!: AppWallet;
   @Output() priorityFeeSelected = new EventEmitter<bigint | undefined>();
 
+  protected minimumFeeMultiplier = MINIMUM_FEE_MULTIPLIER;
   protected totalTransactionsMass: undefined | bigint[] = undefined;
   protected currentFeeRates: undefined | IFeeEstimate = undefined;
   protected transactionMass: undefined | bigint = undefined;
@@ -181,10 +184,11 @@ export class PriorityFeeSelectionComponent implements OnChanges {
   feeSelected(amount: bigint | undefined) {
     this.additionalPriorityFee =
       amount !== undefined
-        ? amount - this.transactionMass! < 0n
+        ? amount - (this.transactionMass! * MINIMUM_FEE_MULTIPLIER) < 0n
           ? 0n
-          : amount - this.transactionMass!
+          : amount - (this.transactionMass! * MINIMUM_FEE_MULTIPLIER)
         : undefined;
+
     this.priorityFeeSelected.emit(this.additionalPriorityFee);
   }
 
@@ -216,7 +220,7 @@ export class PriorityFeeSelectionComponent implements OnChanges {
     }
 
     return (
-      this.totalTransactionsMass.reduce((a, b) => a + b, 0n) +
+      (this.totalTransactionsMass.reduce((a, b) => a + b, 0n) * MINIMUM_FEE_MULTIPLIER) +
       this.additionalPriorityFee * BigInt(this.totalTransactionsMass.length) +
       this.getAdditionalCommitActionPrice()
     );

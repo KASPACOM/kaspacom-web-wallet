@@ -1,6 +1,16 @@
-import { computed, EnvironmentInjector, Injectable, Signal, signal, WritableSignal } from '@angular/core';
+import {
+  computed,
+  EnvironmentInjector,
+  Injectable,
+  Signal,
+  signal,
+  WritableSignal,
+} from '@angular/core';
 import { PasswordManagerService } from './password-manager.service';
-import { SavedWalletAccount, SavedWalletData, } from '../types/saved-wallet-data';
+import {
+  SavedWalletAccount,
+  SavedWalletData,
+} from '../types/saved-wallet-data';
 import { AppWallet } from '../classes/AppWallet';
 import { LOCAL_STORAGE_KEYS } from '../config/consts';
 import { AssetType, TransferableAsset } from '../types/transferable-asset';
@@ -8,11 +18,12 @@ import { KasplexKrc20Service } from './kasplex-api/kasplex-api.service';
 import { firstValueFrom } from 'rxjs';
 import { UtilsHelper } from './utils.service';
 import { RpcConnectionStatus } from '../types/kaspa-network/rpc-connection-status.enum';
-import { cloneDeep } from "lodash";
+import { cloneDeep } from 'lodash';
 import { EthereumWalletChainManager } from './etherium-services/etherium-wallet-chain.manager';
 import { KaspaNetworkConnectionManagerService } from './kaspa-netwrok-services/kaspa-network-connection-manager.service';
 import { KaspaWalletMnemonicActionsService } from './kaspa-netwrok-services/kaspa-wallet-mnemonic-actions.service';
 import { MonitorService } from './monitor.service';
+import { KaspaL1NetworkService } from './kaspa-netwrok-services/kaspa-l1-network.service';
 
 export enum VIEW_METHOD {
   L1 = 'l1',
@@ -37,13 +48,20 @@ export class WalletService {
     private readonly injector: EnvironmentInjector,
     private readonly etheriumChainManager: EthereumWalletChainManager,
     private readonly monitorService: MonitorService,
+    private readonly kaspaL1NetworkService: KaspaL1NetworkService,
   ) {
-    let isL2View = localStorage.getItem(LOCAL_STORAGE_KEYS.IS_L2_DISPLAY) === 'true';
+    let isL2View =
+      localStorage.getItem(LOCAL_STORAGE_KEYS.IS_L2_DISPLAY) === 'true';
 
     const urlParams = new URLSearchParams(window.location.search);
     const viewTypeParam = urlParams.get('view');
     if (viewTypeParam) {
       isL2View = viewTypeParam === VIEW_METHOD.L2;
+    }
+
+    if (isL2View && !this.etheriumChainManager.getCurrentChainSignal()()) {
+      isL2View = false;
+      localStorage.setItem(LOCAL_STORAGE_KEYS.IS_L2_DISPLAY, 'false');
     }
 
     this.isL2DisplaySignal = signal<boolean>(isL2View);
@@ -121,24 +139,17 @@ export class WalletService {
       password: passphrase,
       version: 1,
       accounts: accountData ? [accountData] : undefined,
-    }
+    };
 
     const result = await this.saveWalletData(walletData);
 
-    const wallet = this.createAppWalletFromSavedWalletData(
-      walletData,
-      true,
-      walletData.accounts?.[0],
-    );
-
-
-    this.monitorService.track('Wallet Added', {
-      walletAddressL1: wallet?.getAddress(),
-      walletAddressL2: wallet?.getL2WalletAddress(),
-      isNew: isNewWallet,
-    });
-
     if (result) {
+      this.monitorService.track(
+        isNewWallet ? 'Wallet Created' : 'Wallet Imported',
+        {
+          action_source: 'wallet_onboarding',
+        },
+      );
       return { sucess: true };
     } else {
       return { sucess: false, error: 'Error adding wallet' };
@@ -153,10 +164,17 @@ export class WalletService {
     passphrase?: string,
     isNewWallet?: boolean,
   ): Promise<{ sucess: boolean; error?: string }> {
-    return await this.addWallet(name, undefined, mnemonic, passphrase, {
-      name: accountName,
-      derivedPath: derivedPath,
-    }, isNewWallet);
+    return await this.addWallet(
+      name,
+      undefined,
+      mnemonic,
+      passphrase,
+      {
+        name: accountName,
+        derivedPath: derivedPath,
+      },
+      isNewWallet,
+    );
   }
 
   async addWalletAccount(
@@ -212,8 +230,7 @@ export class WalletService {
     ]);
 
     this.monitorService.track('Wallet Account Added', {
-      walletAddressL1: newAccount?.getAddress(),
-      walletAddressL2: newAccount?.getL2WalletAddress(),
+      action_source: 'add_wallet_account',
     });
 
     return {
@@ -374,7 +391,9 @@ export class WalletService {
   async loadWallets(loadBalance: boolean = false): Promise<void> {
     // If wallets are already loaded, don't reload them to prevent state corruption
     if (this.isWalletLoaded) {
-      console.warn('loadWallets() called but wallets are already loaded. Ignoring to prevent state corruption.');
+      console.warn(
+        'loadWallets() called but wallets are already loaded. Ignoring to prevent state corruption.',
+      );
       return;
     }
 
@@ -631,7 +650,7 @@ export class WalletService {
       // Update all wallet instances in allWalletsSignal
       this.allWalletsSignal.update((wallets) => {
         if (!wallets) return wallets;
-        return wallets.map(w => {
+        return wallets.map((w) => {
           if (w.getId() === walletData.id) {
             w.setName(walletData.name);
             return cloneDeep(w);
@@ -740,7 +759,6 @@ export class WalletService {
     );
   }
 
-
   setL2Display(value: boolean) {
     localStorage.setItem(LOCAL_STORAGE_KEYS.IS_L2_DISPLAY, value.toString());
     this.isL2DisplaySignal.set(value);
@@ -756,18 +774,23 @@ export class WalletService {
 
   getCurrentDisplayNativeTokenName(): string {
     if (this.isL2DisplaySignal()) {
-      return this.etheriumChainManager.getCurrentWalletProvider()?.getConfig().nativeCurrency.symbol || 'KAS';
+      return (
+        this.etheriumChainManager.getCurrentWalletProvider()?.getConfig()
+          .nativeCurrency.symbol || 'KAS'
+      );
     } else {
       return 'KAS';
     }
   }
 
   public getCurrentDisplayWalletAddress = computed(() => {
-    return this.isL2DisplaySignal() ? this.currentWalletSignal()?.getL2WalletAddress() : this.currentWalletSignal()?.getAddress();
+    this.kaspaL1NetworkService.getCurrentNetworkSignal()();
+    return this.isL2DisplaySignal()
+      ? this.currentWalletSignal()?.getL2WalletAddress()
+      : this.currentWalletSignal()?.getAddress();
   });
 
   public getCurrentDisplayWalletAddressAsString = computed(() => {
     return this.getCurrentDisplayWalletAddress() || '';
-  })
-
+  });
 }

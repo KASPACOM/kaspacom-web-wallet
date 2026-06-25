@@ -1,6 +1,7 @@
 import { Injectable, Signal, signal } from '@angular/core';
 import {
   SignPsktTransactionAction,
+  WalletPsktSignInput,
   CommitRevealAction,
   SignMessage,
   TransferKasAction,
@@ -58,10 +59,10 @@ export class WalletActionService {
   }>({});
   private actionToApprove = signal<
     | {
-        action: WalletAction;
-        resolve: (data: { isApproved: boolean; priorityFee?: bigint }) => void;
-        additionalParams?: { [parmName: string]: any };
-      }
+      action: WalletAction;
+      resolve: (data: { isApproved: boolean; priorityFee?: bigint }) => void;
+      additionalParams?: { [parmName: string]: any };
+    }
     | undefined
   >(undefined);
 
@@ -213,11 +214,34 @@ export class WalletActionService {
     submitTransaction: boolean = false,
     protocol?: ProtocolType | string,
     type?: PsktActionsEnum | string,
+    signOnly?: boolean,
+    signInputs?: WalletPsktSignInput[],
   ): WalletAction {
+    let psktTransactionJson = psktDataJson;
+
+    try {
+      const transaction = JSON.parse(psktDataJson);
+
+      // Temp fix so the wasm wouldn't crash
+      if (Array.isArray(transaction.inputs)) {
+        for (let input of transaction.inputs) {
+          if (!('computeBudget' in input)) {
+            input.computeBudget = 0;
+          }
+        }
+
+        psktTransactionJson = JSON.stringify(transaction);
+      }
+    } catch {
+      psktTransactionJson = psktDataJson;
+    }
+
     return {
       type: WalletActionType.SIGN_PSKT_TRANSACTION,
       data: {
-        psktTransactionJson: psktDataJson,
+        psktTransactionJson,
+        signOnly,
+        signInputs,
         submitTransaction,
         protocol,
         type,
@@ -320,6 +344,12 @@ export class WalletActionService {
     if (!isUsingV2Flow) {
       await this.showTransactionLoaderToUser(0, currentWalletAddress);
     }
+    const isTransaction = this.isTransactionAction(action);
+    if (isTransaction) {
+      this.monitorService.track('Transaction Started', {
+        action_type: action.type,
+      });
+    }
 
     let actionResult: WalletActionResultWithError;
     try {
@@ -338,10 +368,14 @@ export class WalletActionService {
     } catch (error) {
       console.error('Error executing wallet action:', error);
 
-      this.monitorService.track('Transaction Failed', {
-        action,
-        error: error,
-      });
+      if (isTransaction) {
+        this.monitorService.track('Transaction Failed', {
+          action_type: action.type,
+          error_category: 'unknown',
+          error_code: ERROR_CODES.GENERAL.UNKNOWN_ERROR,
+          error_name: error instanceof Error ? error.name : 'UnknownError',
+        });
+      }
 
       if (isUsingV2Flow) {
         const fallbackMessage =
@@ -363,10 +397,13 @@ export class WalletActionService {
     }
 
     if (!actionResult.success) {
-      this.monitorService.track('Transaction Failed', {
-        action,
-        actionResult,
-      });
+      if (isTransaction) {
+        this.monitorService.track('Transaction Failed', {
+          action_type: action.type,
+          error_code: actionResult.errorCode,
+          error_category: 'wallet_action',
+        });
+      }
 
       if (isUsingV2Flow) {
         const errorMessage = actionResult.errorCode
@@ -390,10 +427,11 @@ export class WalletActionService {
       );
     }
 
-    this.monitorService.track('Transaction Success', {
-      action,
-      actionResult,
-    });
+    if (isTransaction) {
+      this.monitorService.track('Transaction Succeeded', {
+        action_type: action.type,
+      });
+    }
 
     return { ...actionResult, isUsingV2Flow };
   }
@@ -464,13 +502,13 @@ export class WalletActionService {
 
   getActionToApproveSignal(): Signal<
     | {
-        action: WalletAction;
-        resolve: (data: {
-          isApproved: boolean;
-          priorityFee?: bigint;
-          additionalParams?: { [parmName: string]: any };
-        }) => void;
-      }
+      action: WalletAction;
+      resolve: (data: {
+        isApproved: boolean;
+        priorityFee?: bigint;
+        additionalParams?: { [parmName: string]: any };
+      }) => void;
+    }
     | undefined
   > {
     return this.actionToApprove.asReadonly();
@@ -887,17 +925,75 @@ export class WalletActionService {
 
     try {
       transaction = JSON.parse(action.psktTransactionJson);
-    } catch (error) {
+    } catch {
       return {
         isValidated: false,
         errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
       };
     }
 
+    if (!Array.isArray(transaction.inputs)) {
+      return {
+        isValidated: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
+      };
+    }
+
+    if (action.signInputs) {
+      const signedInputIndexes = new Set<number>();
+
+      for (const input of action.signInputs) {
+        if (
+          !Number.isInteger(input.index) ||
+          input.index < 0 ||
+          input.index >= transaction.inputs.length ||
+          signedInputIndexes.has(input.index) ||
+          (input.sighashType !== undefined &&
+            ![0, 1, 2, 3, 4, 5].includes(input.sighashType))
+        ) {
+          return {
+            isValidated: false,
+            errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
+          };
+        }
+
+        signedInputIndexes.add(input.index);
+      }
+    }
+
     for (const input of transaction.inputs) {
+      if (!input?.utxo || this.utils.isNullOrEmptyString(input.transactionId)) {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
+        };
+      }
+
+      let utxoAddress: string;
+
+      try {
+        utxoAddress =
+          input.utxo.address ||
+          this.kaspaNetworkActionsService.getWalletAddressFromScriptPublicKey(
+            input.utxo.scriptPublicKey,
+          );
+      } catch {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
+        };
+      }
+
+      if (!utxoAddress) {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
+        };
+      }
+
       const transactionInputWalletUtxos =
         await this.kaspaNetworkActionsService.getWalletBalanceAndUtxos(
-          input.utxo.address,
+          utxoAddress,
         );
 
       const transactionInputUtxo = transactionInputWalletUtxos.utxoEntries.find(
@@ -915,6 +1011,29 @@ export class WalletActionService {
     return {
       isValidated: true,
     };
+  }
+
+  /**
+   * Whether an action produces an on-chain transaction, so the `Transaction *`
+   * analytics events stay scoped to true transaction outcomes. Non-transaction
+   * actions (sign message, app approval, non-send EIP-1193 methods like
+   * add/switch chain) are excluded to avoid polluting transaction metrics.
+   */
+  private isTransactionAction(action: WalletAction): boolean {
+    switch (action.type) {
+      case WalletActionType.TRANSFER_KAS:
+      case WalletActionType.COMPOUND_UTXOS:
+      case WalletActionType.SIGN_PSKT_TRANSACTION:
+      case WalletActionType.COMMIT_REVEAL:
+        return true;
+      case WalletActionType.EIP1193_PROVIDER_REQUEST:
+        return (
+          action.data.method === EIP1193RequestType.SEND_TRANSACTION ||
+          action.data.method === EIP1193RequestType.KAS_SEND_TRANSACTION
+        );
+      default:
+        return false;
+    }
   }
 
   private getActionSteps(action: WalletAction): number {

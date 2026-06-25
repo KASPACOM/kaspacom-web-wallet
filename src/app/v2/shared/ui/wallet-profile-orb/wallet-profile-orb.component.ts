@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { WalletService } from '../../../../services/wallet.service';
-import { environment } from '../../../../../environments/environment';
+import { KaspaL1NetworkService } from '../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
 
 interface AvatarConfig {
   shapeIndex: number;
@@ -75,8 +75,17 @@ function computeL1Avatar(address: string): L1AvatarConfig {
 })
 export class WalletProfileOrbComponent {
   private walletService = inject(WalletService);
+  private l1NetworkService = inject(KaspaL1NetworkService);
 
-  readonly l1AvatarBaseUrl = `${environment.krc721CacheStreamUrl}/optimized/${encodeURIComponent(environment.l1AvatarCollection.toUpperCase())}`;
+  // Reactive: re-derives on L1 network switch; null when the selected
+  // network has no KRC721 cache stream (e.g. TN12) so no broken URL is built.
+  readonly l1AvatarBaseUrl = computed<string | null>(() => {
+    const network = this.l1NetworkService.getCurrentNetworkSignal()();
+    if (!network.krc721CacheStreamUrl) {
+      return null;
+    }
+    return `${network.krc721CacheStreamUrl}/optimized/${encodeURIComponent(network.l1AvatarCollection.toUpperCase())}`;
+  });
 
   isL2 = this.walletService.getIsL2DisplaySignal();
   walletAddress = this.walletService.getCurrentDisplayWalletAddressAsString;
@@ -88,6 +97,7 @@ export class WalletProfileOrbComponent {
   constructor() {
     effect(() => {
       this.walletAddress();
+      this.l1NetworkService.getCurrentNetworkSignal()();
       this.l1AvatarError.set(false);
     });
   }

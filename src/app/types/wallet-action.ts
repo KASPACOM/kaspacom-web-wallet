@@ -61,9 +61,25 @@ export interface ActionWithPsktGenerationData {
   };
 }
 
+export enum WalletPsktSighashTypeEnum {
+  All = 0,
+  None = 1,
+  Single = 2,
+  AllAnyOneCanPay = 3,
+  NoneAnyOneCanPay = 4,
+  SingleAnyOneCanPay = 5,
+}
+
+export interface WalletPsktSignInput {
+  index: number;
+  sighashType?: WalletPsktSighashTypeEnum;
+}
+
 export interface SignPsktTransactionAction {
   psktTransactionJson: string;
   submitTransaction?: boolean;
+  signOnly?: boolean;
+  signInputs?: WalletPsktSignInput[];
   protocol?: ProtocolType | string;
   type?: PsktActionsEnum | string;
 }

@@ -229,7 +229,7 @@ function resolveSpendFunctionArgs(
  * "RpcTransactionInput.sig_op_count is inconsistent with transaction
  * version 1" when sigOpCount is non-zero.
  */
-function buildCovenantInput(entry: UtxoEntryReference): TransactionInput {
+function buildCovenantInput(entry: UtxoEntryReference, computeBudget: number = 10): TransactionInput {
   // The ITransactionInput.utxo field is typed as UtxoEntryReference (a class
   // with a private constructor) but the runtime accepts a plain object
   // matching the same shape — this is what the working tn12-covenant-tools
@@ -241,7 +241,7 @@ function buildCovenantInput(entry: UtxoEntryReference): TransactionInput {
     signatureScript: '',
     sequence: 0n,
     sigOpCount: 0,
-    computeBudget: 10,
+    computeBudget,
     utxo: utxoRef,
   });
 }
@@ -603,6 +603,7 @@ export async function spendContract(
 
   // --- Dynamic Fee Adjustment ---
   const transactionFee = calculateTransactionFee(network, unsignedTx);
+  
   if (!transactionFee) {
     throw new Error("Transaction fee not calculated");
   }
@@ -623,14 +624,18 @@ export async function spendContract(
       }
     }
   } else {
+    const newOutputSum = spendOutputsSum - totalFees;
+
     // When fees are paid from the covenant itself, callers must pre-subtract fees from the requested outputs.
     // Auto-deducting from an output can violate covenant constraints that require exact output values.
-    const surplus = totalInputsAmount - spendOutputsSum;
+    const surplus = totalInputsAmount - newOutputSum;
     if (surplus < totalFees) {
       throw new Error(
         `Insufficient covenant funds to cover fees (${totalFees} sompi). Enable "Use wallet to pay for fees" or reduce output amounts.`,
       );
     }
+
+    unsignedTx.outputs[unsignedTx.outputs.length - 1].value = unsignedTx.outputs[unsignedTx.outputs.length - 1].value - totalFees;
   }
 
   const signatureHex = createInputSignature(unsignedTx, 0, privateKey, SighashType.All);
@@ -766,7 +771,7 @@ export async function buildPartialSpend(
 
   // Build unsigned TX
   const txInputs: ITransactionInput[] = [
-    buildCovenantInput(entry),
+    buildCovenantInput(entry, 30),
   ];
 
   const txOutputs: ITransactionOutput[] = outputs.map(o => ({
@@ -850,7 +855,7 @@ export async function completePartialSpend(
 
   // Rebuild the exact same unsigned TX
   const txInputs: ITransactionInput[] = [
-    buildCovenantInput(entry),
+    buildCovenantInput(entry, 30),
   ];
 
   const txOutputs: ITransactionOutput[] = partialSpend.outputs.map(o => ({

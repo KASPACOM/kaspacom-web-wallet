@@ -391,11 +391,8 @@ export class KaspaNetworkTransactionsManagerService {
     }
 
     if (!entry) {
-      // not support to happen
-      console.log(entry,)
       throw new Error(
-        `Commit UTXO not found, revealTransactionId: ${commitUtxoTransactionId}, scriptAddress: ${operationScript.scriptAddress
-        }, wallet address: ${wallet.getAddress()}`
+        `Reveal-only commit UTXO not found. The listing commit may already be spent or is not available at the derived script address. commitTransactionId: ${commitUtxoTransactionId || 'not provided'}, scriptAddress: ${operationScript.scriptAddress}, walletAddress: ${wallet.getAddress()}`
       );
     }
 

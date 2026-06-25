@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { ProtocolActionsValidatorInterface } from "../interfaces/protocol-actions-validator.interface";
 import { AppWallet } from "../../../classes/AppWallet";
 import { CommitRevealAction } from "../../../types/wallet-action";
-import { Krc721OperationType, Krc721Deploy, Krc721Mint, Krc721Transfer } from "../../../types/kaspa-network/krc721-operations-data.interface";
+import { Krc721OperationType, Krc721Deploy, Krc721Mint, Krc721Transfer, Krc721List, Krc721Send } from "../../../types/kaspa-network/krc721-operations-data.interface";
 import { ERROR_CODES } from "@kaspacom/wallet-messages";
 import { UtilsHelper } from "../../utils.service";
 import { firstValueFrom } from "rxjs";
@@ -19,7 +19,7 @@ export class Krc721ActionsValidatorService implements ProtocolActionsValidatorIn
 
     async validateCommitRevealAction(action: CommitRevealAction, wallet: AppWallet): Promise<{ isValidated: boolean; errorCode?: number; }> {
         try {
-            const data = JSON.parse(action.actionScript.stringifyAction) as Krc721Deploy | Krc721Mint | Krc721Transfer;
+            const data = JSON.parse(action.actionScript.stringifyAction) as Krc721Deploy | Krc721Mint | Krc721Transfer | Krc721List | Krc721Send;
 
             switch (data.op) {
                 case Krc721OperationType.TRANSFER:
@@ -28,6 +28,10 @@ export class Krc721ActionsValidatorService implements ProtocolActionsValidatorIn
                     return await this.validateMintKrc721Action(data as Krc721Mint, wallet);
                 case Krc721OperationType.DEPLOY:
                     return await this.validateDeployKrc721Action(data as Krc721Deploy, wallet);
+                case Krc721OperationType.LIST:
+                    return await this.validateListKrc721Action(data as Krc721List, wallet);
+                case Krc721OperationType.SEND:
+                    return this.validateSendKrc721Action(data as Krc721Send, action);
             }
         } catch (error) {
             console.error(error);
@@ -156,6 +160,51 @@ export class Krc721ActionsValidatorService implements ProtocolActionsValidatorIn
                 errorCode: ERROR_CODES.WALLET_ACTION.KASPLEX_API_ERROR,
             };
         }
+    }
+
+    private async validateListKrc721Action(krc721Command: Krc721List, wallet: AppWallet): Promise<{ isValidated: boolean; errorCode?: number; }> {
+        const baseValidation = this.validateTickerAndTokenId(krc721Command);
+
+        if (!baseValidation.isValidated) {
+            return baseValidation;
+        }
+
+        return await this.checkNftOwnership(krc721Command.tick, krc721Command.tokenId, wallet);
+    }
+
+    private validateSendKrc721Action(krc721Command: Krc721Send, action: CommitRevealAction): { isValidated: boolean; errorCode?: number; } {
+        const baseValidation = this.validateTickerAndTokenId(krc721Command);
+
+        if (!baseValidation.isValidated) {
+            return baseValidation;
+        }
+
+        if (this.utils.isNullOrEmptyString(action.options?.commitTransactionId)) {
+            return {
+                isValidated: false,
+                errorCode: ERROR_CODES.WALLET_ACTION.REVEAL_WITH_NO_COMMIT_ACTION,
+            };
+        }
+
+        return { isValidated: true };
+    }
+
+    private validateTickerAndTokenId(krc721Command: Krc721List | Krc721Send): { isValidated: boolean; errorCode?: number; } {
+        if (this.utils.isNullOrEmptyString(krc721Command.tick)) {
+            return {
+                isValidated: false,
+                errorCode: ERROR_CODES.WALLET_ACTION.INVALID_TICKER,
+            };
+        }
+
+        if (this.utils.isNullOrEmptyString(krc721Command.tokenId)) {
+            return {
+                isValidated: false,
+                errorCode: ERROR_CODES.WALLET_ACTION.INVALID_AMOUNT, // Reusing this for invalid token ID
+            };
+        }
+
+        return { isValidated: true };
     }
 
     private async checkNftOwnership(ticker: string, tokenId: string, wallet: AppWallet): Promise<{ isValidated: boolean; errorCode?: number; }> {

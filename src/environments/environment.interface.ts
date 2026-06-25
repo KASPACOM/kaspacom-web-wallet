@@ -53,6 +53,7 @@ export interface L1NetworkConfigInterface {
   network: string;
   shortName: string;
   icon: string;
+  kaspaWrpcUrls?: string[];
   kaspaComApiBaseurl: string;
   kaspaComDefiApiBaseurl: string;
   kasplexApiBaseurl?: string;

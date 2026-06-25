@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { Encoding, Resolver, RpcClient } from '../../../../public/kaspa/kaspa';
-import { LOCAL_STORAGE_KEYS } from '../../config/consts';
 import { KaspaL1NetworkService } from './kaspa-l1-network.service';
 
 @Injectable({
@@ -9,6 +8,9 @@ import { KaspaL1NetworkService } from './kaspa-l1-network.service';
 export class RpcService {
   private RPC?: RpcClient;
   private network: string;
+  private usingConfiguredRpcUrl = false;
+  private usingResolver = false;
+  private configuredRpcUrlIndex = 0;
 
   constructor(private readonly kaspaL1NetworkService: KaspaL1NetworkService) {
     this.network = this.kaspaL1NetworkService.getNetworkId();
@@ -19,23 +21,26 @@ export class RpcService {
     return this.RPC;
   }
 
-  refreshRpc() {
+  refreshRpc(options?: { resetConfiguredRpcUrl?: boolean }) {
     const previousRpc = this.RPC;
     this.network = this.kaspaL1NetworkService.getNetworkId();
-    let storedRpcUrl: string | null = null;
-    try {
-      storedRpcUrl = localStorage.getItem(LOCAL_STORAGE_KEYS.RPC_URL);
-    } catch (err) {
-      console.warn('Failed reading RPC URL from localStorage', err);
+    this.usingConfiguredRpcUrl = false;
+    this.usingResolver = false;
+    if (options?.resetConfiguredRpcUrl) {
+      this.configuredRpcUrlIndex = 0;
     }
 
-    if (storedRpcUrl) {
+    const configuredRpcUrls = this.getConfiguredRpcUrls();
+    if (configuredRpcUrls.length) {
+      const url = configuredRpcUrls[this.configuredRpcUrlIndex] ?? configuredRpcUrls[0];
+      this.usingConfiguredRpcUrl = true;
       this.RPC = new RpcClient({
-        url: storedRpcUrl,
+        url,
         encoding: Encoding.Borsh,
         networkId: this.network,
       });
     } else {
+      this.usingResolver = true;
       this.RPC = new RpcClient({
         resolver: new Resolver(),
         encoding: Encoding.Borsh,
@@ -48,18 +53,50 @@ export class RpcService {
     return this.getRpc();
   }
 
+  private getConfiguredRpcUrls(): string[] {
+    return this.kaspaL1NetworkService.getCurrentNetwork().kaspaWrpcUrls ?? [];
+  }
+
+  isUsingConfiguredRpcUrl(): boolean {
+    return this.usingConfiguredRpcUrl;
+  }
+
+  isUsingResolver(): boolean {
+    return this.usingResolver;
+  }
+
+  useNextConfiguredRpcUrl(): boolean {
+    const urls = this.getConfiguredRpcUrls();
+    if (this.configuredRpcUrlIndex + 1 >= urls.length) {
+      return false;
+    }
+
+    this.configuredRpcUrlIndex++;
+    this.refreshRpc();
+    return true;
+  }
+
+  useResolver(): void {
+    const previousRpc = this.RPC;
+    this.network = this.kaspaL1NetworkService.getNetworkId();
+    this.usingConfiguredRpcUrl = false;
+    this.usingResolver = true;
+    this.RPC = new RpcClient({
+      resolver: new Resolver(),
+      encoding: Encoding.Borsh,
+      networkId: this.network,
+    });
+
+    this.disconnectRpc(previousRpc);
+  }
+
   setNetwork(network: string): boolean {
     if (!this.kaspaL1NetworkService.setCurrentNetwork(network)) {
       return false;
     }
 
     this.network = this.kaspaL1NetworkService.getNetworkId();
-
-    try {
-      localStorage.removeItem(LOCAL_STORAGE_KEYS.RPC_URL);
-    } catch (err) {
-      console.warn('Failed clearing custom RPC URL from localStorage', err);
-    }
+    this.configuredRpcUrlIndex = 0;
 
     this.refreshRpc();
     return true;

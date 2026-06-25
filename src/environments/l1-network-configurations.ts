@@ -5,6 +5,9 @@ export const KASPA_MAINNET_L1_NETWORK_CONFIG: L1NetworkConfigInterface = {
   network: KASPA_NETWORKS.MAINNET,
   shortName: 'Kaspa Mainnet',
   icon: 'images/tokens-logos/KAS.png',
+  kaspaWrpcUrls: [
+    'wss://mainnet-node.kaspa.com/kaspa/mainnet/wrpc/borsh',
+  ],
   kaspaComApiBaseurl: 'https://api.kaspa.com',
   kaspaComDefiApiBaseurl: 'https://api-defi.kaspa.com',
   kasplexApiBaseurl: 'https://api.kasplex.org/v1',
@@ -20,6 +23,10 @@ export const KASPA_TN10_L1_NETWORK_CONFIG: L1NetworkConfigInterface = {
   network: KASPA_NETWORKS.TESTNET10,
   shortName: 'Kaspa TN10',
   icon: 'images/tokens-logos/KAS.png',
+  kaspaWrpcUrls: [
+    'wss://tn10-node.kaspa.com/kaspa/testnet-10/wrpc/borsh',
+    'wss://tn10-node.kaspa.com/testnet-10',
+  ],
   kaspaComApiBaseurl: 'https://dev-api.kaspa.com',
   kaspaComDefiApiBaseurl: 'https://dev-api-defi.kaspa.com',
   kasplexApiBaseurl: 'https://tn10api.kasplex.org/v1',

@@ -1,7 +1,7 @@
 import { Injectable, OnDestroy, Signal, signal, WritableSignal } from '@angular/core';
 import { RpcService } from './rpc.service';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
-import { RpcClient } from '../../../../public/kaspa/kaspa';
+import { ConnectStrategy, RpcClient } from '../../../../public/kaspa/kaspa';
 
 const CONNECTION_TIMEOUT = 10 * 1000;
 const SERVER_INFO_TIMEOUT = 5 * 1000;
@@ -149,7 +149,7 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
     console.log('Trying to connect to RPC...');
 
     const currentRpc = forceRefresh
-      ? this.rpcService.refreshRpc()
+      ? this.rpcService.refreshRpc({ resetConfiguredRpcUrl: true })
       : this.rpcService.getRpc() ?? this.rpcService.refreshRpc();
 
     if (!currentRpc) {
@@ -165,7 +165,14 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
     this.attachDisconnectHandler(currentRpc);
 
     try {
-      await this.withTimeout(currentRpc.connect(), CONNECTION_TIMEOUT, 'Rpc connection timeout');
+      await this.withTimeout(
+        currentRpc.connect({
+          strategy: ConnectStrategy.Fallback,
+          timeoutDuration: CONNECTION_TIMEOUT,
+        }),
+        CONNECTION_TIMEOUT,
+        'Rpc connection timeout',
+      );
 
       if (generation !== this.connectionGeneration || this.rpcService.getRpc() !== currentRpc) {
         await this.disconnectRpc(currentRpc);
@@ -181,6 +188,18 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
       if (this.activeConnectingRpc === currentRpc) {
         this.activeConnectingRpc = undefined;
       }
+
+      if (generation === this.connectionGeneration && this.rpcService.isUsingConfiguredRpcUrl()) {
+        if (this.rpcService.useNextConfiguredRpcUrl()) {
+          console.warn('Configured Kaspa RPC failed; trying next configured RPC', err);
+        } else {
+          console.warn('Configured Kaspa RPCs failed; falling back to resolver', err);
+          this.rpcService.useResolver();
+        }
+
+        return await this.handleConnection(false, generation);
+      }
+
       if (generation === this.connectionGeneration) {
         this.setSignalStatusIfChanged(RpcConnectionStatus.DISCONNECTED);
         this.scheduleReconnect('connection-failure', undefined, generation);

@@ -608,16 +608,28 @@
     }
 
     <!-- Sender Fee Toggle -->
-    @if (parsedInteractContract() && !(selectedFunction && isMultiSigFunction(selectedFunction))) {
+    @if (parsedInteractContract()) {
     <div class="form-group flex align-items-center gap-8">
       <label class="flex align-items-center gap-8 cursor-pointer m-0">
-        <input type="checkbox" class="cursor-pointer" [(ngModel)]="useSenderFee" [disabled]="isInteracting()" />
+        <input type="checkbox" class="cursor-pointer" [(ngModel)]="useSenderFee"
+          [disabled]="isInteracting() || (selectedFunction && isMultiSigFunction(selectedFunction))" />
         <span class="text-white typo-text-2">Use wallet to pay for fees</span>
       </label>
       <kc-icon [iconClass]="'icon-info'" [size]="'xs'"
-        kcTooltip="If enabled, transaction fees will be paid from your wallet balance instead of the contract funds."
+        [kcTooltip]="selectedFunction && isMultiSigFunction(selectedFunction)
+          ? 'Disabled for multi-sig signing. The contract must pay fees because wallet fee inputs would change the transaction after signatures are created.'
+          : 'If enabled, transaction fees will be paid from your wallet balance instead of the contract funds.'"
         tooltipPosition="top"></kc-icon>
     </div>
+    @if (selectedFunction && isMultiSigFunction(selectedFunction)) {
+    <div class="p-12 rounded-lg"
+      style="background: rgba(255, 193, 7, 0.08); border: 1px solid rgba(255, 193, 7, 0.2);">
+      <span class="text-yellow typo-text-2">
+        Multi-sig transactions must pay fees from the contract funds. Wallet-paid fees add inputs and would invalidate
+        the partial signatures.
+      </span>
+    </div>
+    }
     }
 
     <!-- Execute button -->

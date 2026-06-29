@@ -1,15 +1,17 @@
 import { Injectable } from '@angular/core';
 import {
   KnsCreate,
+  KnsList,
+  KnsSend,
   KnsTransfer,
-  KnsUpdate,
   KnsOperationType
 } from '../../../types/kaspa-network/kns-operations-data.interface';
 
 export const KNS_TRANSACTIONS_PRICE = {
-  INSCRIBE: 300000n,
-  TRANSFER: 100000n,
-  UPDATE: 100000n,
+  CREATE: 300000n,
+  TRANSFER: 0n,
+  LIST: 0n,
+  SEND: 0n,
 };
 
 @Injectable({
@@ -17,26 +19,26 @@ export const KNS_TRANSACTIONS_PRICE = {
 })
 export class KnsOperationDataService {
   
-  getInscribeData(
-    assetId: string,
+  getCreateData(
+    domain: string,
     isDomain: boolean,
     textRecords?: { [key: string]: string }
   ): KnsCreate {
-    const inscribeData: KnsCreate = {
+    const createData: KnsCreate = {
       op: KnsOperationType.CREATE,
-      v: assetId,
+      v: domain,
     };
 
     // Only include 'p' field if it's a domain
     if (isDomain) {
-      inscribeData.p = 'domain';
+      createData.p = 'domain';
     }
 
     if (textRecords && Object.keys(textRecords).length > 0) {
-      inscribeData.text = textRecords;
+      createData.text = textRecords;
     }
 
-    return inscribeData;
+    return createData;
   }
 
   getTransferData(assetId: string, isDomain: boolean, toAddress: string): KnsTransfer {
@@ -54,22 +56,18 @@ export class KnsOperationDataService {
     return transferData;
   }
 
-  getUpdateData(
-    assetId: string,
-    isDomain: boolean,
-    textRecords: { [key: string]: string }
-  ): KnsUpdate {
-    const updateData: KnsUpdate = {
-      op: KnsOperationType.UPDATE,
+  getListData(assetId: string): KnsList {
+    return {
+      op: KnsOperationType.LIST,
+      p: 'domain',
       id: assetId,
-      text: textRecords,
     };
+  }
 
-    // Only include 'p' field if it's a domain
-    if (isDomain) {
-      updateData.p = 'domain';
-    }
-
-    return updateData;
+  getSendData(assetId: string): KnsSend {
+    return {
+      op: KnsOperationType.SEND,
+      id: assetId,
+    };
   }
 }

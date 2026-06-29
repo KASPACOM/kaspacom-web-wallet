@@ -1,13 +1,13 @@
 export enum KnsOperationType {
-  INSCRIBE = 'create',
+  CREATE = 'create',
   TRANSFER = 'transfer',
   UPDATE = 'update'
 }
 
-export interface KnsInscribe {
+export interface KnsCreate {
   p?: 'domain'; // Only included if it's a domain
-  op: KnsOperationType.INSCRIBE;
-  id: string;   // Asset ID instead of name
+  op: KnsOperationType.CREATE;
+  v: string;   // Domain/name value being created
   text?: {
     [key: string]: string;
   };

@@ -51,7 +51,7 @@ import { KaspaWalletMnemonicActionsService } from './kaspa-wallet-mnemonic-actio
 const MIN_TRANSACTION_FEE = 1817n;
 export const SUBMIT_REVEAL_MIN_UTXO_AMOUNT = 300000000n
 export const MIN_FOR_SUBMIT_REVEAL_OUTPUT = 100000000n
-const REVEAL_WASM_FIX_AMOUNT = 20000n;
+const REVEAL_WASM_FIX_AMOUNT = 25000n;
 
 
 type DoTransactionOptions = {

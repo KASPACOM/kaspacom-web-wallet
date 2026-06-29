@@ -11,7 +11,7 @@ import {
 export const KRC721_TRANSACTIONS_PRICE = {
   DEPLOY: 500000n,
   MINT: 200000n,
-  TRANSFER: 100000n,
+  TRANSFER: 0n,
 };
 
 @Injectable({

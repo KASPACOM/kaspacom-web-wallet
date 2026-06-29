@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import {
-  KnsInscribe,
+  KnsCreate,
   KnsTransfer,
   KnsUpdate,
   KnsOperationType
@@ -21,10 +21,10 @@ export class KnsOperationDataService {
     assetId: string,
     isDomain: boolean,
     textRecords?: { [key: string]: string }
-  ): KnsInscribe {
-    const inscribeData: KnsInscribe = {
-      op: KnsOperationType.INSCRIBE,
-      id: assetId,
+  ): KnsCreate {
+    const inscribeData: KnsCreate = {
+      op: KnsOperationType.CREATE,
+      v: assetId,
     };
 
     // Only include 'p' field if it's a domain

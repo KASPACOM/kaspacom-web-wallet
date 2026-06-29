@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { ActionDisplay } from "../../../types/action-display.type";
-import { KnsOperationType, KnsInscribe, KnsTransfer, KnsUpdate } from "../../../types/kaspa-network/kns-operations-data.interface";
+import { KnsOperationType, KnsCreate, KnsTransfer, KnsUpdate } from "../../../types/kaspa-network/kns-operations-data.interface";
 import { ProtocolCompletedActionDataInterface } from "../interfaces/protocol-completed-action-data.interface";
 import { CompletedActionDisplay } from "../../../types/completed-action-display.type";
 import { CommitRevealActionResult } from "@kaspacom/wallet-messages";
@@ -15,13 +15,13 @@ export class KnsCompletedActionDataService implements ProtocolCompletedActionDat
     getActionDisplay(action: CommitRevealActionResult): CompletedActionDisplay | undefined {
 
         try {
-            const operationData: KnsInscribe | KnsTransfer | KnsUpdate = JSON.parse(action.protocolAction);
+            const operationData: KnsCreate | KnsTransfer | KnsUpdate = JSON.parse(action.protocolAction);
 
             switch (operationData.op) {
                 case KnsOperationType.TRANSFER:
                     return this.getKnsTransferActionDisplay(action, operationData as KnsTransfer);
-                case KnsOperationType.INSCRIBE:
-                    return this.getKnsInscribeActionDisplay(action, operationData as KnsInscribe);
+                case KnsOperationType.CREATE:
+                    return this.getKnsCreateActionDisplay(action, operationData as KnsCreate);
                 case KnsOperationType.UPDATE:
                     return this.getKnsUpdateActionDisplay(action, operationData as KnsUpdate);
             }
@@ -53,11 +53,11 @@ export class KnsCompletedActionDataService implements ProtocolCompletedActionDat
         }
     }
 
-    private getKnsInscribeActionDisplay(action: CommitRevealActionResult, operationData: KnsInscribe): ActionDisplay {
+    private getKnsCreateActionDisplay(action: CommitRevealActionResult, operationData: KnsCreate): ActionDisplay {
         const rows = [
             {
                 fieldName: "Asset",
-                fieldValue: operationData.id
+                fieldValue: operationData.v
             },
             {
                 fieldName: "Inscribed By",

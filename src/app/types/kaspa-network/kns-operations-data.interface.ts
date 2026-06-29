@@ -1,5 +1,5 @@
 export enum KnsOperationType {
-  INSCRIBE = 'inscribe',
+  INSCRIBE = 'create',
   TRANSFER = 'transfer',
   UPDATE = 'update'
 }

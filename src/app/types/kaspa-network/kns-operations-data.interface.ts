@@ -1,7 +1,8 @@
 export enum KnsOperationType {
   CREATE = 'create',
   TRANSFER = 'transfer',
-  UPDATE = 'update'
+  LIST = 'list',
+  SEND = 'send'
 }
 
 export interface KnsCreate {
@@ -20,11 +21,13 @@ export interface KnsTransfer {
   to: string;
 }
 
-export interface KnsUpdate {
-  p?: 'domain'; // Only included if it's a domain
-  op: KnsOperationType.UPDATE;
+export interface KnsList {
+  p: 'domain';
+  op: KnsOperationType.LIST;
+  id: string;   // Asset ID
+}
+
+export interface KnsSend {
+  op: KnsOperationType.SEND;
   id: string;   // Asset ID instead of name
-  text: {
-    [key: string]: string;
-  };
 }

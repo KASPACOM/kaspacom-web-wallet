@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { WalletAction, WalletActionType } from "../../../types/wallet-action";
 import { KNS_TRANSACTIONS_PRICE, KnsOperationDataService } from "./kns-operation-data.service";
-import { KaspaNetworkActionsService } from "../../kaspa-netwrok-services/kaspa-network-actions.service";
+import { KaspaNetworkActionsService, REVEAL_PSKT_AMOUNT } from "../../kaspa-netwrok-services/kaspa-network-actions.service";
 import { UtilsHelper } from "../../utils.service";
 import { ProtocolType } from "@kaspacom/wallet-messages/dist/types/protocol-type.enum";
 
@@ -17,8 +17,8 @@ export class KnsWalletActionService {
         private utils: UtilsHelper,
     ) { }
 
-    createInscribeWalletAction(
-        assetId: string,
+    createCreateWalletAction(
+        domain: string,
         isDomain: boolean,
         textRecords?: { [key: string]: string }
     ): WalletAction {
@@ -28,11 +28,11 @@ export class KnsWalletActionService {
                 actionScript: {
                     type: CURRENT_PROTOCOL,
                     stringifyAction: this.utils.stringifyProtocolAction(
-                        this.knsOperationDataService.getInscribeData(assetId, isDomain, textRecords)
+                        this.knsOperationDataService.getCreateData(domain, isDomain, textRecords)
                     ),
                 },
                 options: {
-                    revealPriorityFee: KNS_TRANSACTIONS_PRICE.INSCRIBE,
+                    revealPriorityFee: KNS_TRANSACTIONS_PRICE.CREATE,
                 }
             },
         };
@@ -55,22 +55,57 @@ export class KnsWalletActionService {
         };
     }
 
-    createUpdateWalletAction(
+    createListKnsAction(
+        walletAddress: string,
         assetId: string,
-        isDomain: boolean,
-        textRecords: { [key: string]: string }
+        psktOutputs: {
+            address: string;
+            amount: bigint;
+        }[],
     ): WalletAction {
+        const sendData = this.knsOperationDataService.getSendData(assetId);
+
+        const sendScript = this.kaspaNetworkActionsService.createGenericScriptFromString(
+            CURRENT_PROTOCOL,
+            this.utils.stringifyProtocolAction(sendData),
+            walletAddress,
+        );
+
         return {
             type: WalletActionType.COMMIT_REVEAL,
             data: {
                 actionScript: {
                     type: CURRENT_PROTOCOL,
                     stringifyAction: this.utils.stringifyProtocolAction(
-                        this.knsOperationDataService.getUpdateData(assetId, isDomain, textRecords)
+                        this.knsOperationDataService.getListData(assetId)
                     ),
                 },
                 options: {
-                    revealPriorityFee: KNS_TRANSACTIONS_PRICE.UPDATE,
+                    additionalOutputs: [{
+                        address: sendScript.scriptAddress,
+                        amount: REVEAL_PSKT_AMOUNT,
+                    }],
+                    revealPskt: {
+                        outputs: psktOutputs,
+                        script: sendScript,
+                    }
+                }
+            },
+        };
+    }
+
+    createCancelListingKnsAction(assetId: string, transactionId: string): WalletAction {
+        return {
+            type: WalletActionType.COMMIT_REVEAL,
+            data: {
+                actionScript: {
+                    type: CURRENT_PROTOCOL,
+                    stringifyAction: this.utils.stringifyProtocolAction(
+                        this.knsOperationDataService.getSendData(assetId)
+                    ),
+                },
+                options: {
+                    commitTransactionId: transactionId
                 }
             },
         };

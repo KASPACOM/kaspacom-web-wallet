@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { AppWallet } from "../../../classes/AppWallet";
 import { CommitRevealAction } from "../../../types/wallet-action";
 import { ActionDisplay } from "../../../types/action-display.type";
-import { KnsOperationType, KnsInscribe, KnsTransfer, KnsUpdate } from "../../../types/kaspa-network/kns-operations-data.interface";
+import { KnsOperationType, KnsCreate, KnsTransfer, KnsUpdate } from "../../../types/kaspa-network/kns-operations-data.interface";
 import { ProtocolReviewActionDataInterface } from "../interfaces/protocol-review-action-data.interface";
 
 @Injectable({
@@ -19,13 +19,13 @@ export class KnsReviewActionDataService implements ProtocolReviewActionDataInter
         }
 
         try {
-            const operationData: KnsInscribe | KnsTransfer | KnsUpdate = JSON.parse(action.actionScript.stringifyAction);
+            const operationData: KnsCreate | KnsTransfer | KnsUpdate = JSON.parse(action.actionScript.stringifyAction);
 
             switch (operationData.op) {
                 case KnsOperationType.TRANSFER:
                     return this.getKnsTransferActionDisplay(operationData as KnsTransfer, wallet);
-                case KnsOperationType.INSCRIBE:
-                    return this.getKnsInscribeActionDisplay(operationData as KnsInscribe, wallet);
+                case KnsOperationType.CREATE:
+                    return this.getKnsCreateActionDisplay(operationData as KnsCreate, wallet);
                 case KnsOperationType.UPDATE:
                     return this.getKnsUpdateActionDisplay(operationData as KnsUpdate, wallet);
             }
@@ -57,11 +57,11 @@ export class KnsReviewActionDataService implements ProtocolReviewActionDataInter
         }
     }
 
-    private getKnsInscribeActionDisplay(operationData: KnsInscribe, wallet: AppWallet): ActionDisplay {
+    private getKnsCreateActionDisplay(operationData: KnsCreate, wallet: AppWallet): ActionDisplay {
         const rows = [
             {
                 fieldName: "Asset",
-                fieldValue: operationData.id
+                fieldValue: operationData.v
             },
             {
                 fieldName: "Owner",

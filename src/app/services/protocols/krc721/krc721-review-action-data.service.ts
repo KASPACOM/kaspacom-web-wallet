@@ -2,15 +2,16 @@ import { Injectable } from "@angular/core";
 import { AppWallet } from "../../../classes/AppWallet";
 import { CommitRevealAction } from "../../../types/wallet-action";
 import { ActionDisplay } from "../../../types/action-display.type";
-import { Krc721OperationType, Krc721Deploy, Krc721Mint, Krc721Transfer } from "../../../types/kaspa-network/krc721-operations-data.interface";
+import { Krc721OperationType, Krc721Deploy, Krc721Mint, Krc721Transfer, Krc721List, Krc721Send } from "../../../types/kaspa-network/krc721-operations-data.interface";
 import { ProtocolReviewActionDataInterface } from "../interfaces/protocol-review-action-data.interface";
+import { KaspaNetworkActionsService } from "../../kaspa-netwrok-services/kaspa-network-actions.service";
 
 @Injectable({
     providedIn: 'root',
 })
 export class Krc721ReviewActionDataService implements ProtocolReviewActionDataInterface {
 
-    constructor() { }
+    constructor(private readonly kaspaNetworkActionsService: KaspaNetworkActionsService) { }
 
     getActionDisplay(action: CommitRevealAction | undefined, wallet: AppWallet): ActionDisplay | undefined {
 
@@ -19,7 +20,7 @@ export class Krc721ReviewActionDataService implements ProtocolReviewActionDataIn
         }
 
         try {
-            const operationData: Krc721Deploy | Krc721Mint | Krc721Transfer = JSON.parse(action.actionScript.stringifyAction);
+            const operationData: Krc721Deploy | Krc721Mint | Krc721Transfer | Krc721List | Krc721Send = JSON.parse(action.actionScript.stringifyAction);
 
             switch (operationData.op) {
                 case Krc721OperationType.TRANSFER:
@@ -28,6 +29,12 @@ export class Krc721ReviewActionDataService implements ProtocolReviewActionDataIn
                     return this.getKrc721MintActionDisplay(operationData as Krc721Mint, wallet);
                 case Krc721OperationType.DEPLOY:
                     return this.getKrc721DeployActionDisplay(operationData as Krc721Deploy, wallet);
+                case Krc721OperationType.LIST:
+                    return this.getKrc721ListActionDisplay(operationData as Krc721List, wallet, action);
+                case Krc721OperationType.SEND:
+                    if (action.options?.commitTransactionId) {
+                        return this.getKrc721CancelListActionDisplay(operationData as Krc721Send, wallet, action);
+                    }
             }
 
         } catch (error) {
@@ -134,6 +141,66 @@ export class Krc721ReviewActionDataService implements ProtocolReviewActionDataIn
         return {
             title: "Deploy KRC721 Collection",
             rows: rows
+        }
+    }
+
+    private getKrc721ListActionDisplay(operationData: Krc721List, wallet: AppWallet, action: CommitRevealAction): ActionDisplay {
+        let totalPrice = "Unknown";
+
+        if (action.options?.revealPskt) {
+            const totalAmount = action.options.revealPskt.outputs
+                ?.filter(output => output.address === wallet.getAddress())
+                .reduce((acc, output) => acc + output.amount, 0n);
+
+            totalPrice = totalAmount && totalAmount > 0n
+                ? this.kaspaNetworkActionsService.sompiToNumber(totalAmount).toString()
+                : totalPrice;
+        }
+
+        return {
+            title: "List KRC721 NFT",
+            rows: [
+                {
+                    fieldName: "Collection",
+                    fieldValue: operationData.tick.toUpperCase()
+                },
+                {
+                    fieldName: "Token ID",
+                    fieldValue: operationData.tokenId
+                },
+                {
+                    fieldName: "Wallet",
+                    fieldValue: wallet.getAddress()
+                },
+                {
+                    fieldName: "Price",
+                    fieldValue: totalPrice + ' KAS'
+                }
+            ]
+        }
+    }
+
+    private getKrc721CancelListActionDisplay(operationData: Krc721Send, wallet: AppWallet, action: CommitRevealAction): ActionDisplay {
+        return {
+            title: "Cancel KRC721 NFT Listing",
+            rows: [
+                {
+                    fieldName: "Collection",
+                    fieldValue: operationData.tick.toUpperCase()
+                },
+                {
+                    fieldName: "Token ID",
+                    fieldValue: operationData.tokenId
+                },
+                {
+                    fieldName: "Wallet",
+                    fieldValue: wallet.getAddress()
+                },
+                {
+                    fieldName: "List Transaction Id",
+                    fieldValue: action.options!.commitTransactionId!
+                }
+            ]
         }
     }
 }

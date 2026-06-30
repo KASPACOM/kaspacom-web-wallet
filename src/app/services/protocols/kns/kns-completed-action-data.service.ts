@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { ActionDisplay } from "../../../types/action-display.type";
-import { KnsOperationType, KnsInscribe, KnsTransfer, KnsUpdate } from "../../../types/kaspa-network/kns-operations-data.interface";
+import { KnsOperationType, KnsCreate, KnsList, KnsSend, KnsTransfer } from "../../../types/kaspa-network/kns-operations-data.interface";
 import { ProtocolCompletedActionDataInterface } from "../interfaces/protocol-completed-action-data.interface";
 import { CompletedActionDisplay } from "../../../types/completed-action-display.type";
 import { CommitRevealActionResult } from "@kaspacom/wallet-messages";
@@ -15,15 +15,17 @@ export class KnsCompletedActionDataService implements ProtocolCompletedActionDat
     getActionDisplay(action: CommitRevealActionResult): CompletedActionDisplay | undefined {
 
         try {
-            const operationData: KnsInscribe | KnsTransfer | KnsUpdate = JSON.parse(action.protocolAction);
+            const operationData: KnsCreate | KnsTransfer | KnsList | KnsSend = JSON.parse(action.protocolAction);
 
             switch (operationData.op) {
                 case KnsOperationType.TRANSFER:
                     return this.getKnsTransferActionDisplay(action, operationData as KnsTransfer);
-                case KnsOperationType.INSCRIBE:
-                    return this.getKnsInscribeActionDisplay(action, operationData as KnsInscribe);
-                case KnsOperationType.UPDATE:
-                    return this.getKnsUpdateActionDisplay(action, operationData as KnsUpdate);
+                case KnsOperationType.CREATE:
+                    return this.getKnsCreateActionDisplay(action, operationData as KnsCreate);
+                case KnsOperationType.LIST:
+                    return this.getKnsListActionDisplay(action, operationData as KnsList);
+                case KnsOperationType.SEND:
+                    return this.getKnsSendActionDisplay(action, operationData as KnsSend);
             }
 
         } catch (error) {
@@ -53,11 +55,11 @@ export class KnsCompletedActionDataService implements ProtocolCompletedActionDat
         }
     }
 
-    private getKnsInscribeActionDisplay(action: CommitRevealActionResult, operationData: KnsInscribe): ActionDisplay {
+    private getKnsCreateActionDisplay(action: CommitRevealActionResult, operationData: KnsCreate): ActionDisplay {
         const rows = [
             {
                 fieldName: "Asset",
-                fieldValue: operationData.id
+                fieldValue: operationData.v
             },
             {
                 fieldName: "Inscribed By",
@@ -76,36 +78,44 @@ export class KnsCompletedActionDataService implements ProtocolCompletedActionDat
         }
 
         return {
-            title: "Inscribe KNS Asset Transaction",
+            title: "Create KNS Domain Transaction",
             rows: rows
         }
     }
 
-    private getKnsUpdateActionDisplay(action: CommitRevealActionResult, operationData: KnsUpdate): ActionDisplay {
-        const rows = [
-            {
-                fieldName: "Asset",
-                fieldValue: operationData.id
-            },
-            {
-                fieldName: "Updated By",
-                fieldValue: action.performedByWallet
-            }
-        ];
-
-        // Add text records being updated
-        if (operationData.text) {
-            Object.entries(operationData.text).forEach(([key, value]) => {
-                rows.push({
-                    fieldName: `Updated: ${key}`,
-                    fieldValue: value
-                });
-            });
-        }
-
+    private getKnsListActionDisplay(action: CommitRevealActionResult, operationData: KnsList): ActionDisplay {
         return {
-            title: "Update KNS Asset Transaction",
-            rows: rows
+            title: "List KNS Domain Transaction",
+            rows: [
+                {
+                    fieldName: "Asset",
+                    fieldValue: operationData.id
+                },
+                {
+                    fieldName: "Listed By",
+                    fieldValue: action.performedByWallet
+                }
+            ]
+        }
+    }
+
+    private getKnsSendActionDisplay(action: CommitRevealActionResult, operationData: KnsSend): ActionDisplay {
+        return {
+            title: "Send KNS Domain Listing Transaction",
+            rows: [
+                {
+                    fieldName: "Asset",
+                    fieldValue: operationData.id
+                },
+                {
+                    fieldName: "Wallet",
+                    fieldValue: action.performedByWallet
+                },
+                {
+                    fieldName: "Reveal Transaction Id",
+                    fieldValue: action.revealTransactionId
+                }
+            ]
         }
     }
 }

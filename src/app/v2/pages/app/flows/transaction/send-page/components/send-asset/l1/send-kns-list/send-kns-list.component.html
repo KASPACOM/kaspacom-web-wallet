@@ -3,31 +3,55 @@
     @if (loading()) {
       <!-- Skeleton loading states -->
       <div class="skeleton-loading-container flex column gap-16 full-width">
-        @for (item of [1,2,3,4,5]; track item) {
-          <app-skeleton class="full-width" [height]="'75px'" [width]="'auto'" [fullRound]="false"></app-skeleton>
+        @for (item of [1, 2, 3, 4, 5]; track item) {
+          <app-skeleton
+            class="full-width"
+            [height]="'75px'"
+            [width]="'auto'"
+            [fullRound]="false"
+          ></app-skeleton>
         }
       </div>
     } @else if (domains().length === 0) {
       <!-- Empty state -->
-      <div class="empty-state flex column align-items-center justify-content-center gap-16 p-32">
-        <div class="text-gray-60 typo-text-2 text-center">No KNS domains found</div>
-        <div class="text-gray-50 typo-text-1 text-center">You need to have KNS domains in your wallet to send them.</div>
+      <div
+        class="empty-state flex column align-items-center justify-content-center gap-16 p-32"
+      >
+        <div class="text-gray-60 typo-text-2 text-center">
+          No KNS domains found
+        </div>
+        <div class="text-gray-50 typo-text-1 text-center">
+          You need to have KNS domains in your wallet to send them.
+        </div>
       </div>
     } @else {
       <!-- Domain list -->
       @for (domain of domains(); track domain.id) {
-        <div class="kns-domain-card  card-0 card-hover flex full-width align-items-center justify-content-between p-16 fade-in cursor-pointer"
-             (click)="onDomainClick(domain)">
+        <div
+          class="kns-domain-card card-0 card-hover flex full-width align-items-center justify-content-between p-16 fade-in"
+          [class.cursor-pointer]="!isListed(domain)"
+          [class.kns-domain-card--disabled]="isListed(domain)"
+          [attr.aria-disabled]="isListed(domain)"
+          [kcTooltip]="getTransferDisabledReason(domain)"
+          tooltipPosition="top"
+          (click)="onDomainClick(domain)"
+        >
           <!-- Domain info section -->
           <div class="kns-domain-card__info flex align-items-center gap-16">
-            <div class="kns-domain-card__placeholder flex align-items-center justify-content-center">
-              <span class="text-gray-40 typo-text-1">{{ getDomainType(domain) }}</span>
+            <div
+              class="kns-domain-card__placeholder flex align-items-center justify-content-center"
+            >
+              <span class="text-gray-40 typo-text-1">{{
+                getDomainType(domain)
+              }}</span>
             </div>
             <div class="flex column gap-4">
               <div class="flex align-items-center gap-8">
                 <div class="text-gray-90 typo-text-2">{{ domain.asset }}</div>
                 @if (domain.isVerifiedDomain) {
-                  <div class="verified-badge flex align-items-center justify-content-center">
+                  <div
+                    class="verified-badge flex align-items-center justify-content-center"
+                  >
                     <span class="text-green typo-text-1">✓</span>
                   </div>
                 }
@@ -45,7 +69,9 @@
           <!-- Status section -->
           <div class="kns-domain-card__status flex column align-items-end">
             <div class="text-gray-90 typo-text-2">{{ domain.status }}</div>
-            <div class="text-gray-60 typo-text-1">Available</div>
+            <div class="text-gray-60 typo-text-1">
+              {{ isListed(domain) ? "Cancel listing to send" : "Available" }}
+            </div>
           </div>
         </div>
       }

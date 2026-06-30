@@ -15,7 +15,10 @@ import { firstValueFrom } from 'rxjs';
 import { AddressResolutionResult } from '../../../../../../../../../../services/address-resolution.service';
 import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
 import { L1_ASSET_KEYS } from '../../../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
-import { KnsDomainAsset } from '../../../../../../../../../../services/kns-api/dtos/kns-domain.dto';
+import {
+  KnsDomainAsset,
+  KnsWalletAssetsStatus,
+} from '../../../../../../../../../../services/kns-api/dtos/kns-domain.dto';
 import { KnsApiService } from '../../../../../../../../../../services/kns-api/kns-api.service';
 import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
 import { KnsWalletActionService } from '../../../../../../../../../../services/protocols/kns/kns-wallet-actions.service';
@@ -116,7 +119,11 @@ export class SendKnsComponent
   }
 
   get isFormValid(): boolean {
-    return this.walletAddress.trim().length > 0 && this.isAddressValid;
+    return (
+      this.walletAddress.trim().length > 0 &&
+      this.isAddressValid &&
+      !this.isListed()
+    );
   }
 
   onWalletAddressChange(value: string): void {
@@ -323,6 +330,12 @@ export class SendKnsComponent
   getStatus(): string {
     const currentDomain = this.domain();
     return currentDomain?.status || 'Unknown';
+  }
+
+  isListed(): boolean {
+    return (
+      this.domain()?.status?.toLowerCase() === KnsWalletAssetsStatus.LISTED
+    );
   }
 
   isVerified(): boolean {

@@ -1,13 +1,14 @@
 export enum KnsOperationType {
-  INSCRIBE = 'inscribe',
+  CREATE = 'create',
   TRANSFER = 'transfer',
-  UPDATE = 'update'
+  LIST = 'list',
+  SEND = 'send'
 }
 
-export interface KnsInscribe {
+export interface KnsCreate {
   p?: 'domain'; // Only included if it's a domain
-  op: KnsOperationType.INSCRIBE;
-  id: string;   // Asset ID instead of name
+  op: KnsOperationType.CREATE;
+  v: string;   // Domain/name value being created
   text?: {
     [key: string]: string;
   };
@@ -20,11 +21,13 @@ export interface KnsTransfer {
   to: string;
 }
 
-export interface KnsUpdate {
-  p?: 'domain'; // Only included if it's a domain
-  op: KnsOperationType.UPDATE;
+export interface KnsList {
+  p: 'domain';
+  op: KnsOperationType.LIST;
+  id: string;   // Asset ID
+}
+
+export interface KnsSend {
+  op: KnsOperationType.SEND;
   id: string;   // Asset ID instead of name
-  text: {
-    [key: string]: string;
-  };
 }

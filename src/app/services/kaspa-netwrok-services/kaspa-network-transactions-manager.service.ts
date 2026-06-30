@@ -51,6 +51,8 @@ import { KaspaWalletMnemonicActionsService } from './kaspa-wallet-mnemonic-actio
 const MIN_TRANSACTION_FEE = 1817n;
 export const SUBMIT_REVEAL_MIN_UTXO_AMOUNT = 300000000n
 export const MIN_FOR_SUBMIT_REVEAL_OUTPUT = 100000000n
+const REVEAL_WASM_FIX_AMOUNT = 25000n;
+
 
 type DoTransactionOptions = {
   notifyCreatedTransactions?: (transactionId: string) => Promise<any>;
@@ -58,6 +60,7 @@ type DoTransactionOptions = {
     transaction: PendingTransaction
   ) => Promise<any>;
   additionalProtocolPaymentAmount?: bigint;
+  minPriorityFeeFix?: bigint;
   priorityEntries?: IUtxoEntry[];
   sendAll?: boolean;
   estimateOnly?: boolean;
@@ -220,7 +223,11 @@ export class KaspaNetworkTransactionsManagerService {
 
       let finalPriorityFee = priorityFee;
 
-      if (additionalProtocolPaymentAmount > priorityFee) {
+      if (additionalOptions.minPriorityFeeFix && finalPriorityFee < additionalOptions.minPriorityFeeFix) {
+        finalPriorityFee = additionalOptions.minPriorityFeeFix;
+      }
+
+      if (additionalProtocolPaymentAmount > finalPriorityFee) {
         finalPriorityFee = additionalProtocolPaymentAmount;
       }
 
@@ -391,11 +398,8 @@ export class KaspaNetworkTransactionsManagerService {
     }
 
     if (!entry) {
-      // not support to happen
-      console.log(entry,)
       throw new Error(
-        `Commit UTXO not found, revealTransactionId: ${commitUtxoTransactionId}, scriptAddress: ${operationScript.scriptAddress
-        }, wallet address: ${wallet.getAddress()}`
+        `Reveal-only commit UTXO not found. The listing commit may already be spent or is not available at the derived script address. commitTransactionId: ${commitUtxoTransactionId || 'not provided'}, scriptAddress: ${operationScript.scriptAddress}, walletAddress: ${wallet.getAddress()}`
       );
     }
 
@@ -632,6 +636,7 @@ export class KaspaNetworkTransactionsManagerService {
         await notifyUpdate({ ...resultTransactions });
       },
       additionalProtocolPaymentAmount: minimalOperationCost,
+      minPriorityFeeFix: REVEAL_WASM_FIX_AMOUNT,
       ...(baseTransactionOptions || {}),
       ...(revealTransactioAdditionalOptions || {}),
     };
@@ -726,7 +731,7 @@ export class KaspaNetworkTransactionsManagerService {
             success: true,
             result: {
               reveal: revealTransactionResult.result?.summary.finalTransactionId,
-              revealMass: revealTransactionResult.result?.transactions.map(t => t.mass)
+              revealMass: revealTransactionResult.result?.transactions.map(t => t.mass + (REVEAL_WASM_FIX_AMOUNT / 100n))
             },
           };
         }

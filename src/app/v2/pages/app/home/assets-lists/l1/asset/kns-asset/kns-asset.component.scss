@@ -12,6 +12,18 @@
     kc-button {
       flex: 1;
     }
+
+    .transfer-action {
+      display: flex;
+    }
+  }
+
+  .listing-warning {
+    padding: 12px;
+    border: 1px solid rgba(230, 162, 35, 0.35);
+    border-radius: 8px;
+    background: rgba(230, 162, 35, 0.08);
+    color: var(--gray-70);
   }
 
   .kns-details {
@@ -73,7 +85,9 @@
 
 // Monospace font for technical fields
 .font-mono {
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Droid Sans Mono', 'Source Code Pro', monospace;
+  font-family:
+    "SF Mono", "Monaco", "Inconsolata", "Fira Code", "Droid Sans Mono",
+    "Source Code Pro", monospace;
 }
 
 // Utility classes
@@ -87,7 +101,7 @@
 
 .hover-opacity {
   transition: opacity 0.2s ease;
-  
+
   &:hover {
     opacity: 0.7;
   }
@@ -124,4 +138,4 @@
     opacity: 1;
     transform: translateY(0);
   }
-} 
+}

@@ -1,12 +1,18 @@
-<div class="kns-page-container flex column full-width gap-8" [class.loading]="loading() || detailLoading()">
+<div
+  class="kns-page-container flex column full-width gap-8"
+  [class.loading]="loading() || detailLoading()"
+>
   <!-- Header with back button and name -->
-  <div class="asset-header flex align-items-center justify-content-between mb-24">
+  <div
+    class="asset-header flex align-items-center justify-content-between mb-24"
+  >
     <div class="header-left flex align-items-center gap-16">
-      <kc-icon 
+      <kc-icon
         [iconClass]="'icon-arrow-left'"
         [size]="'md'"
         (click)="goBack()"
-        class="cursor-pointer hover-opacity">
+        class="cursor-pointer hover-opacity"
+      >
       </kc-icon>
       <h1 class="asset-title text-gray-90">{{ getDisplayName() }}</h1>
     </div>
@@ -14,23 +20,41 @@
 
   <!-- Action Buttons -->
   <div class="action-buttons flex gap-12 mb-24">
-    <kc-button 
-      [variant]="'primary'"
-      [size]="'md'"
-      [text]="'Send'"
-      class="flex-1"
-      (click)="onSendAction()">
-    </kc-button>
+    <div
+      class="transfer-action flex-1"
+      [kcTooltip]="getTransferDisabledReason()"
+      tooltipPosition="top"
+    >
+      <kc-button
+        [variant]="'primary'"
+        [size]="'md'"
+        [text]="'Send'"
+        [isFullWidth]="true"
+        [isDisabled]="isListed()"
+        (buttonClick)="onSendAction()"
+      >
+      </kc-button>
+    </div>
   </div>
+
+  @if (isListed()) {
+    <div class="listing-warning text-gray-60 typo-text-1 mb-24">
+      Cancel the listing before sending this domain.
+    </div>
+  }
 
   <!-- Domain Details -->
   <div class="kns-details">
     @if (detailLoading()) {
       <!-- Details skeleton -->
       <div class="detail-section mb-24">
-        <app-skeleton [height]="'24px'" [width]="'120px'" class="mb-16"></app-skeleton>
+        <app-skeleton
+          [height]="'24px'"
+          [width]="'120px'"
+          class="mb-16"
+        ></app-skeleton>
         <div class="details-grid gap-12">
-          @for (item of [1,2,3,4,5,6]; track item) {
+          @for (item of [1, 2, 3, 4, 5, 6]; track item) {
             <app-skeleton [height]="'60px'" [width]="'100%'"></app-skeleton>
           }
         </div>
@@ -39,25 +63,35 @@
       <!-- Domain Details Section -->
       <div class="details-section flex column gap-16">
         <h3 class="section-title text-gray-90">Domain Details</h3>
-        
+
         <div class="details-grid">
           <!-- Asset Name -->
           <div class="detail-card">
             <div class="detail-label text-gray-60 typo-text-1">Asset Name</div>
-            <div class="detail-value text-gray-90 typo-text-2 font-weight-medium">{{ knsDetail()?.asset || 'N/A' }}</div>
+            <div
+              class="detail-value text-gray-90 typo-text-2 font-weight-medium"
+            >
+              {{ knsDetail()?.asset || "N/A" }}
+            </div>
           </div>
 
           <!-- Domain Type -->
           <div class="detail-card">
             <div class="detail-label text-gray-60 typo-text-1">Type</div>
-            <div class="detail-value text-gray-90 typo-text-2 font-weight-medium">{{ getDomainTypeLabel() }}</div>
+            <div
+              class="detail-value text-gray-90 typo-text-2 font-weight-medium"
+            >
+              {{ getDomainTypeLabel() }}
+            </div>
           </div>
 
           <!-- Status -->
           <div class="detail-card">
             <div class="detail-label text-gray-60 typo-text-1">Status</div>
             <div class="detail-value flex align-items-center gap-8">
-              <span class="text-gray-90 typo-text-2 font-weight-medium">{{ getStatus() }}</span>
+              <span class="text-gray-90 typo-text-2 font-weight-medium">{{
+                getStatus()
+              }}</span>
               @if (isVerified()) {
                 <span class="verified-badge">✓ Verified</span>
               }
@@ -68,10 +102,12 @@
           <div class="detail-card">
             <div class="detail-label text-gray-60 typo-text-1">Owner</div>
             <div class="detail-value-container flex align-items-center gap-12">
-              <div class="detail-value text-gray-90 typo-text-1 font-mono break-all">
+              <div
+                class="detail-value text-gray-90 typo-text-1 font-mono break-all"
+              >
                 {{ getOwnerAddress() }}
               </div>
-              @if (getOwnerAddress() !== 'N/A') {
+              @if (getOwnerAddress() !== "N/A") {
                 <app-copy-button
                   [value]="getOwnerAddress()"
                   [size]="'xs'"
@@ -82,12 +118,16 @@
 
           <!-- Transaction ID -->
           <div class="detail-card">
-            <div class="detail-label text-gray-60 typo-text-1">Transaction ID</div>
+            <div class="detail-label text-gray-60 typo-text-1">
+              Transaction ID
+            </div>
             <div class="detail-value-container flex align-items-center gap-12">
-              <div class="detail-value text-gray-90 typo-text-1 font-mono break-all">
+              <div
+                class="detail-value text-gray-90 typo-text-1 font-mono break-all"
+              >
                 {{ getTransactionId() }}
               </div>
-              @if (getTransactionId() !== 'N/A') {
+              @if (getTransactionId() !== "N/A") {
                 <app-copy-button
                   [value]="getTransactionId()"
                   [size]="'xs'"
@@ -106,7 +146,9 @@
           <!-- Creation Date -->
           <div class="detail-card">
             <div class="detail-label text-gray-60 typo-text-1">Created</div>
-            <div class="detail-value text-gray-90 typo-text-2 font-weight-medium">
+            <div
+              class="detail-value text-gray-90 typo-text-2 font-weight-medium"
+            >
               {{ formatDate(knsDetail()?.creationBlockTime) }}
             </div>
           </div>
@@ -114,7 +156,9 @@
           <!-- MIME Type -->
           <div class="detail-card">
             <div class="detail-label text-gray-60 typo-text-1">MIME Type</div>
-            <div class="detail-value text-gray-90 typo-text-2 font-weight-medium font-mono">
+            <div
+              class="detail-value text-gray-90 typo-text-2 font-weight-medium font-mono"
+            >
               {{ getMimeType() }}
             </div>
           </div>
@@ -123,8 +167,10 @@
           <div class="detail-card">
             <div class="detail-label text-gray-60 typo-text-1">Asset ID</div>
             <div class="detail-value-container flex align-items-center gap-12">
-              <div class="detail-value text-gray-90 typo-text-1 font-mono break-all">
-                {{ knsDetail()?.assetId || 'N/A' }}
+              <div
+                class="detail-value text-gray-90 typo-text-1 font-mono break-all"
+              >
+                {{ knsDetail()?.assetId || "N/A" }}
               </div>
               @if (knsDetail()?.assetId) {
                 <app-copy-button
@@ -138,4 +184,4 @@
       </div>
     }
   </div>
-</div> 
+</div>

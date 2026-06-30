@@ -1,6 +1,8 @@
 export interface Krc721PortfolioItem {
   ticker: string;
   tokenIds: string[];
+  listedTokenIds?: string[];
+  unlistedTokenIds?: string[];
 }
 
 export type Krc721PortfolioResponse = Krc721PortfolioItem[];
@@ -18,7 +20,8 @@ export interface Krc721PortfolioTokenDetail {
 export interface Krc721PortfolioDetailItem {
   ticker: string;
   tokenIds: Krc721PortfolioTokenDetail[];
+  listedTokenIds?: string[];
+  unlistedTokenIds?: string[];
 }
 
 export type Krc721PortfolioDetailResponse = Krc721PortfolioDetailItem[];
-

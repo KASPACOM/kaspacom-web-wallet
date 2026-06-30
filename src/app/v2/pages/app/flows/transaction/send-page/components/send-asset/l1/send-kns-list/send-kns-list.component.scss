@@ -9,20 +9,20 @@
   flex: 1;
   overflow-y: auto;
   min-height: 0;
-  
+
   &::-webkit-scrollbar {
     width: 6px;
   }
-  
+
   &::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 3px;
   }
-  
+
   &::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 3px;
-    
+
     &:hover {
       background: rgba(255, 255, 255, 0.3);
     }
@@ -32,7 +32,12 @@
 .kns-domain-card {
   border: none;
   cursor: pointer;
-  
+
+  &--disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
   &__placeholder {
     width: 48px;
     height: 48px;
@@ -41,11 +46,11 @@
     font-weight: 600;
     font-size: 12px;
   }
-  
+
   &__info {
     flex: 1;
   }
-  
+
   &__status {
     // Additional styling for status container if needed
   }

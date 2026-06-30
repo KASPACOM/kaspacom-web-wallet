@@ -55,6 +55,7 @@ export class SendNftListComponent
         description: metadata?.description,
         attributes: metadata?.attributes,
         image: metadata?.image,
+        isListed: nft.isListed,
         isLoadingMetadata: item.isLoadingMetadata,
       };
     });
@@ -133,6 +134,10 @@ export class SendNftListComponent
   }
 
   onNftClick(nft: INftWithMetadata): void {
+    if (this.isListed(nft)) {
+      return;
+    }
+
     // Navigate to send nft page with selected nft
     this.navigateToNextPage({
       id: 'send-nft',
@@ -150,6 +155,10 @@ export class SendNftListComponent
   // Helper method to get image URL
   getImageUrl(nft: INftWithMetadata): string {
     return this.krc721MetadataService.getImageUrl(nft, nft as any);
+  }
+
+  isListed(nft: INftWithMetadata): boolean {
+    return nft.isListed === true;
   }
 
   // Handle image loading errors

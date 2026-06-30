@@ -119,7 +119,11 @@ export class SendNftComponent
   }
 
   get isFormValid(): boolean {
-    return this.walletAddress.trim().length > 0 && this.isAddressValid;
+    return (
+      this.walletAddress.trim().length > 0 &&
+      this.isAddressValid &&
+      !this.isListed()
+    );
   }
 
   onWalletAddressChange(value: string): void {
@@ -197,6 +201,13 @@ export class SendNftComponent
     }
 
     const currentNft = this.nft()!;
+    if (this.isListed()) {
+      this.messagePopupService.showError(
+        'Cancel the listing before sending this NFT.',
+      );
+      return;
+    }
+
     if (!currentNft.tick || !currentNft.tokenId) {
       this.messagePopupService.showError('Invalid NFT data');
       return;
@@ -230,7 +241,7 @@ export class SendNftComponent
         // Only show success message and navigate if not using v2 flow
         // v2 flow handles success display in the approval flow
         if (!result.isUsingV2Flow) {
-          this.messagePopupService.showSuccess('KNS domain sent successfully!');
+          this.messagePopupService.showSuccess('NFT sent successfully!');
           this.navigateBack();
         } else {
           // For v2 flow, wait for approval flow completion
@@ -270,16 +281,17 @@ export class SendNftComponent
 
       if (nftData) {
         // Use NFT data from navigation (which comes from assets store)
-        this.nft.set(nftData);
+        this.nft.set({
+          ...nftData,
+          isListed:
+            nftData.isListed ??
+            this.findStoredNft(nftData.tick, nftData.tokenId)?.isListed,
+        });
       } else if (navigationData?.tick && navigationData?.tokenId) {
         // Fallback: try to find NFT in assets store
-        const krc721Assets = this.assetsManagerService
-          .getAllAssetStores()
-          .l1.getAssets(L1_ASSET_KEYS.krc721);
-        const storedNft = krc721Assets.find(
-          (nft) =>
-            nft.tick === navigationData.tick &&
-            nft.tokenId === navigationData.tokenId,
+        const storedNft = this.findStoredNft(
+          navigationData.tick,
+          navigationData.tokenId,
         );
 
         if (storedNft) {
@@ -290,6 +302,7 @@ export class SendNftComponent
             name: storedNft.metadata?.name,
             description: storedNft.metadata?.description,
             attributes: storedNft.metadata?.attributes,
+            isListed: storedNft.isListed,
             image:
               this.buildCachedImageUrl(storedNft.tick, storedNft.tokenId) ||
               this.processImageUrl(storedNft.metadata?.image),
@@ -338,6 +351,7 @@ export class SendNftComponent
           name: metadata.name,
           description: metadata.description,
           attributes: metadata.attributes,
+          isListed: nft.isListed,
           image:
             this.buildCachedImageUrl(nft.tick, nft.tokenId) ||
             this.processImageUrl(metadata.image),
@@ -365,6 +379,21 @@ export class SendNftComponent
     }
 
     return imageUrl;
+  }
+
+  private findStoredNft(tick?: string, tokenId?: string) {
+    if (!tick || !tokenId) {
+      return undefined;
+    }
+
+    return this.assetsManagerService
+      .getAllAssetStores()
+      .l1.getAssets(L1_ASSET_KEYS.krc721)
+      .find(
+        (nft) =>
+          nft.tick.toUpperCase() === tick.toUpperCase() &&
+          nft.tokenId.toString() === tokenId.toString(),
+      );
   }
 
   // Helper method to get display name
@@ -397,6 +426,10 @@ export class SendNftComponent
       }
     }
     return '';
+  }
+
+  isListed(): boolean {
+    return this.nft()?.isListed === true;
   }
 
   onImageError(event: Event): void {

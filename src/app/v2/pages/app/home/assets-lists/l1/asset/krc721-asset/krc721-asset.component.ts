@@ -9,6 +9,8 @@ import { BaseAssetPageComponent } from '../../../../../common/base-asset-page/ba
 import { Krc721ApiService } from '../../../../../../../../services/krc721-api/krc721-api.service';
 import { FlowPagesService } from '../../../../../../../services/flow-pages.service';
 import { KaspaL1NetworkService } from '../../../../../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
+import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
+import { L1_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 
 interface NftMetadata {
   name?: string;
@@ -29,16 +31,20 @@ interface NftMetadata {
     KcButtonComponent,
     KcIconComponent,
     SkeletonComponent,
-    NftRankTagComponent
+    NftRankTagComponent,
   ],
   templateUrl: './krc721-asset.component.html',
-  styleUrl: './krc721-asset.component.scss'
+  styleUrl: './krc721-asset.component.scss',
 })
-export class Krc721AssetComponent extends BaseAssetPageComponent implements OnInit {
+export class Krc721AssetComponent
+  extends BaseAssetPageComponent
+  implements OnInit
+{
   private route = inject(ActivatedRoute);
   private krc721Service = inject(Krc721ApiService);
   private flowPagesService = inject(FlowPagesService);
   private kaspaL1NetworkService = inject(KaspaL1NetworkService);
+  private assetsManagerService = inject(AssetsManagerService);
 
   private tick: string = '';
   private tokenId: string = '';
@@ -49,10 +55,11 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
   protected rarityRank = signal<number | undefined>(undefined);
   protected legendary = signal<boolean | undefined>(undefined);
   protected totalSupply = signal<number | undefined>(undefined);
+  protected isListed = signal<boolean>(false);
 
   override async ngOnInit() {
     // Get the tick and tokenId from route params
-    this.route.params.subscribe(params => {
+    this.route.params.subscribe((params) => {
       this.tick = params['tick'];
       this.tokenId = params['tokenId'];
       if (this.tick && this.tokenId) {
@@ -74,11 +81,14 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
       this.loading.set(true);
 
       // Set basic asset details
+      const storedNft = this.getStoredNft();
+      this.isListed.set(storedNft?.isListed === true);
+
       const assetDetail = {
         name: this.tick.toUpperCase(),
         symbol: this.tick.toUpperCase(),
         balance: '1', // NFTs always have a balance of 1
-        decimals: 0
+        decimals: 0,
       };
 
       this.assetDetail.set(assetDetail);
@@ -94,7 +104,7 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
       this.metadataLoading.set(true);
 
       const metadata = await firstValueFrom(
-        this.krc721Service.getNftMetadata(this.tick, this.tokenId)
+        this.krc721Service.getNftMetadata(this.tick, this.tokenId),
       );
 
       if (metadata) {
@@ -110,7 +120,13 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
   protected async loadRarityInfo(): Promise<void> {
     try {
       const address = this.getCurrentWalletAddress();
-      console.log('Loading rarity info for', this.tick, this.tokenId, 'address:', address);
+      console.log(
+        'Loading rarity info for',
+        this.tick,
+        this.tokenId,
+        'address:',
+        address,
+      );
 
       // 1. Get Collection details for total supply
       this.krc721Service.getCollectionDetails(this.tick).subscribe({
@@ -118,7 +134,10 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
           console.log('Collection details response:', response);
           if (response.message === 'success') {
             // Use max supply if totalSupply is missing, or minted if available
-            const supply = response.result.totalSupply || response.result.max || response.result.minted;
+            const supply =
+              response.result.totalSupply ||
+              response.result.max ||
+              response.result.minted;
             this.totalSupply.set(parseInt(supply));
             console.log('Total supply set to:', parseInt(supply));
           }
@@ -129,25 +148,40 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
       });
 
       // 2. Get Portfolio details for rarity rank
-      const details = await firstValueFrom(this.krc721Service.getPortfolioDetails(address, this.tick));
+      const details = await firstValueFrom(
+        this.krc721Service.getPortfolioDetails(address, this.tick),
+      );
       console.log('Portfolio details response:', details);
 
       if (details && details.length > 0) {
         // Compare tickers case-insensitively
-        const detailItem = details.find(d => d.ticker.toUpperCase() === this.tick.toUpperCase());
+        const detailItem = details.find(
+          (d) => d.ticker.toUpperCase() === this.tick.toUpperCase(),
+        );
         console.log('Found detail item:', detailItem);
+        this.isListed.set(
+          detailItem?.listedTokenIds?.some(
+            (tokenId) => tokenId.toString() === this.tokenId.toString(),
+          ) ?? this.isListed(),
+        );
 
         if (detailItem && detailItem.tokenIds) {
           // Handle both object and string formats
           const token = detailItem.tokenIds.find((t: any) => {
-            const id = (typeof t === 'object' && t.tokenId !== undefined) ? t.tokenId : t;
+            const id =
+              typeof t === 'object' && t.tokenId !== undefined ? t.tokenId : t;
             return id.toString() === this.tokenId.toString();
           });
 
           console.log('Found token:', token);
 
           if (token && typeof token === 'object') {
-            console.log('Setting rarity rank:', token.rarityRank, 'legendary:', token.legendary);
+            console.log(
+              'Setting rarity rank:',
+              token.rarityRank,
+              'legendary:',
+              token.legendary,
+            );
             this.rarityRank.set(token.rarityRank);
             this.legendary.set(token.legendary);
           } else {
@@ -164,8 +198,6 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
     }
   }
 
-
-
   protected override async loadTransactionHistory(): Promise<void> {
     // For now, we'll skip transaction history for NFTs
     // This could be implemented later if needed
@@ -179,6 +211,10 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
       return;
     }
 
+    if (this.isListed()) {
+      return;
+    }
+
     const nftMetadata = this.nftMetadata();
 
     // Create NFT data for the send form
@@ -189,7 +225,8 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
       name: nftMetadata?.name,
       description: nftMetadata?.description,
       attributes: nftMetadata?.attributes,
-      image: nftMetadata?.image
+      image: nftMetadata?.image,
+      isListed: this.isListed(),
     };
 
     // Navigate directly to the send NFT form with NFT pre-selected
@@ -197,7 +234,7 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
       id: 'send-nft',
       title: `Send ${this.getDisplayName()}`,
       canNavigateBack: true,
-      data: { nft: nftData }
+      data: { nft: nftData },
     });
   }
 
@@ -248,7 +285,8 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
   onImageError(event: Event): void {
     const target = event.target as HTMLImageElement;
     if (target) {
-      target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgdmlld0JveD0iMCAwIDI1NiAyNTYiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiBmaWxsPSIjMzMzIiByeD0iMTIiLz4KPHN2ZyB4PSI5NiIgeT0iOTYiIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2NjYiIHN0cm9rZS13aWR0aD0iMiI+CjxyZWN0IHg9IjMiIHk9IjMiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgcng9IjIiIHJ5PSIyIi8+CjxjaXJjbGUgY3g9Ijg1IiBjeT0iOC41IiByPSIxLjUiLz4KPGR5bGluZSB4MT0iMjEiIHkxPSIxNSIgeDI9IjEyIiB5Mj0iNiIvPgo8L3N2Zz4KPC9zdmc+';
+      target.src =
+        'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgdmlld0JveD0iMCAwIDI1NiAyNTYiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiBmaWxsPSIjMzMzIiByeD0iMTIiLz4KPHN2ZyB4PSI5NiIgeT0iOTYiIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2NjYiIHN0cm9rZS13aWR0aD0iMiI+CjxyZWN0IHg9IjMiIHk9IjMiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgcng9IjIiIHJ5PSIyIi8+CjxjaXJjbGUgY3g9Ijg1IiBjeT0iOC41IiByPSIxLjUiLz4KPGR5bGluZSB4MT0iMjEiIHkxPSIxNSIgeDI9IjEyIiB5Mj0iNiIvPgo8L3N2Zz4KPC9zdmc+';
     }
   }
 
@@ -263,11 +301,24 @@ export class Krc721AssetComponent extends BaseAssetPageComponent implements OnIn
     return `${cacheStreamUrl}/optimized/${normalizedTick}/${normalizedTokenId}`;
   }
 
+  private getStoredNft() {
+    return this.assetsManagerService
+      .getAllAssetStores()
+      .l1.getAssets(L1_ASSET_KEYS.krc721)
+      .find(
+        (nft) =>
+          nft.tick.toUpperCase() === this.tick.toUpperCase() &&
+          nft.tokenId.toString() === this.tokenId.toString(),
+      );
+  }
+
   // Open NFT in explorer (currently not implemented as transaction ID is not readily available)
   // This could be enhanced in the future by loading ownership history or operations
   protected openInExplorer(): void {
     // For now, we could search for the NFT by tick and tokenId
     // or implement a method to get the transaction ID from operations
-    console.log('Explorer functionality for KRC721 needs transaction ID from operations');
+    console.log(
+      'Explorer functionality for KRC721 needs transaction ID from operations',
+    );
   }
 }

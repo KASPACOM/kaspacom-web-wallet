@@ -12,7 +12,8 @@
         [value]="walletAddress"
         (valueChange)="onWalletAddressChange($event)"
         (resolved)="onAddressResolved($event)"
-        (qrClick)="onQrScanClick()">
+        (qrClick)="onQrScanClick()"
+      >
       </app-address-smart-input>
     </div>
 
@@ -23,11 +24,18 @@
         [isChecked]="replaceByFee"
         [isDisabled]="isLoading"
         (checkedChange)="onRbfChange($event)"
-        size="md">
+        size="md"
+      >
       </kc-checkbox>
     </div>
 
     <!-- Send Button -->
+    @if (isListed()) {
+      <div class="listing-warning text-gray-60 typo-text-1">
+        Cancel the listing before sending this domain.
+      </div>
+    }
+
     <div class="form-field">
       <kc-button
         [text]="isLoading ? 'Sending...' : 'Send Domain'"
@@ -35,7 +43,8 @@
         [isFullWidth]="true"
         [isLoading]="isLoading"
         [isDisabled]="!isFormValid"
-        (buttonClick)="onSendClick()">
+        (buttonClick)="onSendClick()"
+      >
       </kc-button>
     </div>
   </div>

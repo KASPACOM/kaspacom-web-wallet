@@ -20,6 +20,7 @@ export interface Krc721Nft {
   legendary?: boolean;
   totalSupply?: number;
   rawTraits?: Record<string, any>;
+  isListed?: boolean;
 }
 
 export interface Krc721NftResponse {

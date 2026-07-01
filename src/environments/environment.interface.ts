@@ -61,6 +61,7 @@ export interface L1NetworkConfigInterface {
   krc721ApiBaseurl?: string;
   krc721CacheStreamUrl?: string;
   knsApiBaseurl?: string;
+  covenantIndexerApiBaseurl?: string;
   kaspaExplorerBaseurl: string;
   l1AvatarCollection: string;
 }

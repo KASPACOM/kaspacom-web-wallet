@@ -1,9 +1,7 @@
-import { Component, computed, inject, signal, OnInit, DestroyRef, effect } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, computed, inject, signal, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { KcButtonComponent, KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
 import { blake2b } from '@noble/hashes/blake2b';
@@ -12,6 +10,7 @@ import { WalletActionService } from '../../../../../services/wallet-action.servi
 import { CovenantService } from '../../../../../services/covenant/covenant.service';
 import { RpcService } from '../../../../../services/kaspa-netwrok-services/rpc.service';
 import { ContractRegistryService, ContractRegistryEntry, ContractStatus } from '../../../../../services/covenant/contract-registry.service';
+import { CovenantIndexerService, IndexerCovenantAction, IndexerCovenantArg, IndexerCovenantDetails } from '../../../../../services/covenant/covenant-indexer.service';
 import { CompiledContract, CovenantOutpoint, PartiallySignedSpend, SpendOutput } from '../../../../../services/covenant/covenant-sdk/types';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { CONTRACT_TEMPLATES, ContractTemplate, TemplateField } from '../../../../services/covenant/contract-templates';
@@ -23,7 +22,7 @@ import { CovenantCompletePartialActionResult, CovenantDeployActionResult, Covena
 import { FlowPagesService } from '../../../../services/flow-pages.service';
 import { ApprovalFlowService } from '../../../../services/approval-flow.service';
 
-type TabName = 'deploy' | 'my-contracts' | 'interact' | 'templates';
+type TabName = 'deploy' | 'my-contracts' | 'lookup-import' | 'interact' | 'templates';
 type ContractsTransientState = {
   activeTab?: TabName;
   selectedFunction?: string;
@@ -35,6 +34,22 @@ type ContractsTransientState = {
   interactOutputAmount?: string;
   partialSpendJson?: string;
   interactResult?: { txid: string; functionName: string };
+};
+
+type IndexerImportPreview = {
+  action: IndexerCovenantAction;
+  args: IndexerCovenantArg[];
+  compiledJson: string;
+  contractAddress: string;
+  covenantId: string;
+  deployTxid: string;
+  error?: string;
+  fieldValues: Record<string, string>;
+  outpoint: { txid: string; vout: number };
+  template: ContractTemplate;
+  templateName: string;
+  amountSompi: string;
+  deployedAt: number;
 };
 
 @Component({
@@ -58,13 +73,12 @@ export class ContractsPageComponent implements OnInit {
   private walletService = inject(WalletService);
   private walletActionService = inject(WalletActionService);
   private covenantService = inject(CovenantService);
+  private covenantIndexerService = inject(CovenantIndexerService);
   private rpcService = inject(RpcService);
   private registryService = inject(ContractRegistryService);
   private templatePatcher = inject(TemplatePatcherService);
   private http = inject(HttpClient);
-  private route = inject(ActivatedRoute);
   private kaspaL1NetworkService = inject(KaspaL1NetworkService);
-  private destroyRef = inject(DestroyRef);
   private flowPagesService = inject(FlowPagesService);
   private approvalFlowService = inject(ApprovalFlowService);
 
@@ -146,6 +160,11 @@ export class ContractsPageComponent implements OnInit {
   interactOutputAmount = '';
   selectedFunction = '';
   useSenderFee = true;
+
+  indexerImportQuery = '';
+  indexerImportLoading = signal(false);
+  indexerImportError = signal<string | null>(null);
+  indexerImportPreview = signal<IndexerImportPreview | null>(null);
 
   // DMS keepAlive specific state
   dmsNewExpiry = '';  // new expiry timestamp (unix seconds) entered by user
@@ -249,22 +268,6 @@ export class ContractsPageComponent implements OnInit {
 
   ngOnInit() {
     this.restoreTransientState();
-
-    // Check URL query params / fragment for a shared-contract import link
-    this.route.queryParams
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((params) => {
-        if (params['contract']) {
-          this.importFromEncoded(params['contract']);
-        }
-      });
-    this.route.fragment
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((fragment) => {
-        if (fragment && fragment.startsWith('contract=')) {
-          this.importFromEncoded(fragment.substring('contract='.length));
-        }
-      });
   }
 
   private restoreTransientState() {
@@ -283,66 +286,6 @@ export class ContractsPageComponent implements OnInit {
     if (state.interactResult !== undefined) this.interactResult.set(state.interactResult);
 
     this.flowPagesService.saveTransientState('contracts', undefined);
-  }
-
-  /**
-   * Import a shared contract from base64url-encoded data
-   */
-  private importFromEncoded(encoded: string) {
-    try {
-      const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
-      const paddedBase64 = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
-      const bytes = Uint8Array.from(atob(paddedBase64), (ch) => ch.charCodeAt(0));
-      const json = new TextDecoder().decode(bytes);
-      const parsed = JSON.parse(json);
-
-      if (!parsed.compiledJson) {
-        console.warn('[Contracts] Shared contract missing compiledJson');
-        return;
-      }
-
-      // Auto-fill the interact tab
-      this.interactContractJson.set(parsed.compiledJson);
-      if (parsed.txid) this.interactOutpointTxid = parsed.txid;
-      if (parsed.vout !== undefined) this.interactOutpointVout = String(parsed.vout);
-      if (parsed.amount) this.interactInputAmount = parsed.amount;
-      this.interactOutputAddress = this.currentWallet()?.getAddress() || '';
-      this.activeTab.set('interact');
-
-      // Clean the URL
-      history.replaceState(null, '', window.location.pathname);
-      console.log('[Contracts] Auto-imported shared contract:', parsed.address || parsed.name);
-    } catch (e) {
-      console.warn('[Contracts] Failed to parse shared contract:', e);
-    }
-  }
-
-  /**
-   * Generate a shareable link for a contract
-   */
-  shareContract(contract: ContractRegistryEntry) {
-    const shareData = {
-      compiledJson: contract.compiledJson,
-      address: contract.contractAddress,
-      txid: contract.outpoint.txid,
-      vout: contract.outpoint.vout,
-      amount: contract.amountSompi,
-      name: contract.contractName,
-    };
-    const json = JSON.stringify(shareData);
-    const bytes = new TextEncoder().encode(json);
-    let binary = '';
-    bytes.forEach((b) => (binary += String.fromCharCode(b)));
-    const encoded = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    const url = `${window.location.origin}/app/contracts?contract=${encoded}`;
-
-    navigator.clipboard.writeText(url).then(
-      () => alert('Share link copied to clipboard! Send it to the other wallet.'),
-      () => {
-        // Fallback: show the link
-        prompt('Copy this share link:', url);
-      }
-    );
   }
 
   /**
@@ -512,6 +455,218 @@ export class ContractsPageComponent implements OnInit {
     // Reload with updated statuses
     const updated = this.registryService.getAllContracts().filter((c) => c.network === this.network());
     this.registryContracts.set(updated);
+  }
+
+  async lookupIndexerImport() {
+    const query = this.indexerImportQuery.trim();
+    this.indexerImportError.set(null);
+    this.indexerImportPreview.set(null);
+
+    if (!/^[0-9a-fA-F]{64}$/.test(query)) {
+      this.indexerImportError.set('Enter a 64-character deploy transaction ID or covenant ID.');
+      return;
+    }
+
+    try {
+      this.indexerImportLoading.set(true);
+      const response = await this.fetchIndexerCovenant(query);
+      const preview = await this.buildIndexerImportPreview(response);
+      this.indexerImportPreview.set(preview);
+    } catch (error: any) {
+      console.warn('[Contracts] Indexer import lookup failed:', error);
+      this.indexerImportError.set(error?.message || 'Failed to load covenant from indexer');
+    } finally {
+      this.indexerImportLoading.set(false);
+    }
+  }
+
+  importIndexerPreview() {
+    const preview = this.indexerImportPreview();
+    if (!preview) {
+      this.indexerImportError.set('Look up a covenant before importing it.');
+      return;
+    }
+
+    const existing = this.registryService.getAllContracts().find((entry) => {
+      if (entry.network !== this.network()) return false;
+      if (entry.covenantId && entry.covenantId === preview.covenantId) return true;
+      if (entry.deployTxid === preview.deployTxid) return true;
+      if (entry.contractAddress === preview.contractAddress) return true;
+      return entry.outpoint.txid === preview.outpoint.txid && entry.outpoint.vout === preview.outpoint.vout;
+    });
+    if (existing) {
+      this.indexerImportError.set('This covenant is already in My Contracts.');
+      this.indexerImportPreview.set(null);
+      this.activeTab.set('my-contracts');
+      return;
+    }
+
+    const wallet = this.currentWallet();
+    const compiled = this.covenantService.parseCompiledContract(preview.compiledJson);
+    const entry: ContractRegistryEntry = {
+      id: this.registryService.generateId(),
+      contractName: compiled.contract_name || preview.template.name,
+      compiledJson: preview.compiledJson,
+      deployTxid: preview.deployTxid,
+      contractAddress: preview.contractAddress,
+      outpoint: preview.outpoint,
+      amountSompi: preview.amountSompi,
+      deployedBy: {
+        address: wallet?.getAddress() || '',
+        pubkey: wallet?.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString() || '',
+        accountName: wallet?.getDisplayName() || 'Imported',
+      },
+      deployedAt: preview.deployedAt,
+      network: this.network(),
+      status: 'active',
+      accessRoles: this.parseAccessRoles(compiled),
+      covenantId: preview.covenantId,
+    };
+
+    this.registryService.addContract(entry);
+    this.indexerImportQuery = '';
+    this.indexerImportPreview.set(null);
+    this.activeTab.set('my-contracts');
+    this.loadContracts();
+  }
+
+  private async fetchIndexerCovenant(identifier: string): Promise<{
+    action: IndexerCovenantAction;
+    covenant?: IndexerCovenantDetails;
+  }> {
+    try {
+      const byCovenant = await this.covenantIndexerService.getCovenant(identifier);
+      const deployAction = (byCovenant.actions || []).find((action) => action.action === 'deploy') || byCovenant.actions?.[0];
+      if (deployAction) {
+        return { action: deployAction, covenant: byCovenant.covenant };
+      }
+    } catch {
+      // Try tx lookup below; the identifier may be a deploy transaction id.
+    }
+
+    const byTx = await this.covenantIndexerService.getTransactionActions(identifier);
+    const deployAction = byTx.find((action) => action.action === 'deploy') || byTx[0];
+    if (!deployAction) {
+      throw new Error('No covenant deploy action found for that identifier.');
+    }
+
+    if (deployAction.covenantIdHex) {
+      try {
+        const byCovenant = await this.covenantIndexerService.getCovenant(deployAction.covenantIdHex);
+        const canonicalDeploy = (byCovenant.actions || []).find((action) => action.action === 'deploy') || deployAction;
+        return { action: canonicalDeploy, covenant: byCovenant.covenant };
+      } catch {
+        return { action: deployAction };
+      }
+    }
+
+    return { action: deployAction };
+  }
+
+  private async buildIndexerImportPreview(response: {
+    action: IndexerCovenantAction;
+    covenant?: IndexerCovenantDetails;
+  }): Promise<IndexerImportPreview> {
+    const { action, covenant } = response;
+    const covenantId = covenant?.covenantIdHex || action.covenantIdHex;
+    const deployTxid = covenant?.genesisTxidHex || action.txidHex;
+    const contractAddress = covenant?.address || action.address || action.outputs?.address;
+    const amountSompi = String(covenant?.totalAmountSompi ?? action.outputs?.amountSompi ?? '');
+    const vout = Number(action.outputs?.vout ?? 0);
+    const templateName = covenant?.claimedTemplate || covenant?.claimedArgs?.tmpl;
+    const args = covenant?.claimedArgs?.args || [];
+
+    if (!covenantId || !deployTxid || !contractAddress || !amountSompi) {
+      throw new Error('Indexer response is missing covenant id, deploy transaction, address, or amount.');
+    }
+    if (!templateName || args.length === 0) {
+      throw new Error('This covenant has no revealed template claim, so it cannot be imported.');
+    }
+
+    const template = this.templateForIndexerName(templateName);
+    if (!template) {
+      throw new Error(`Unsupported covenant template "${templateName}". Only local wallet templates can be imported.`);
+    }
+
+    const fieldValues = this.indexerArgsToTemplateValues(template, args);
+    const compiled = await this.compileTemplateWithFieldValues(template, fieldValues);
+    const computedAddress = this.covenantService.getContractAddress(compiled);
+    if (computedAddress !== contractAddress) {
+      throw new Error('Template parameters do not match the covenant address reported by the indexer.');
+    }
+
+    return {
+      action,
+      args,
+      compiledJson: JSON.stringify(compiled, null, 2),
+      contractAddress,
+      covenantId,
+      deployTxid,
+      fieldValues,
+      outpoint: { txid: deployTxid, vout },
+      template,
+      templateName,
+      amountSompi,
+      deployedAt: covenant?.createdAtMs || action.blockTimeMs || Date.now(),
+    };
+  }
+
+  private templateForIndexerName(templateName: string): ContractTemplate | undefined {
+    const normalized = templateName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const aliases: Record<string, string> = {
+      timelockvault: 'time-lock-vault',
+      multisigvault: 'multi-sig-vault',
+      escrowwitharbiter: 'escrow-with-arbiter',
+      deadmansswitch: 'dead-mans-switch',
+    };
+    const templateId = aliases[normalized];
+    return templateId ? this.contractTemplates.find((template) => template.id === templateId) : undefined;
+  }
+
+  private indexerArgsToTemplateValues(template: ContractTemplate, args: IndexerCovenantArg[]): Record<string, string> {
+    const byName = new Map(args.map((arg) => [arg.name, String(arg.value)]));
+    const requireArg = (name: string): string => {
+      const value = byName.get(name);
+      if (!value) throw new Error(`Indexer response is missing "${name}" for ${template.name}.`);
+      return value;
+    };
+
+    switch (template.id) {
+      case 'time-lock-vault':
+        return {
+          owner: requireArg('signer'),
+          recovery: requireArg('recoveryKey'),
+          timeout: requireArg('unlockBlueScore'),
+        };
+      case 'multi-sig-vault':
+        return {
+          key1: requireArg('signer1'),
+          key2: requireArg('signer2'),
+          key3: requireArg('signer3'),
+        };
+      case 'escrow-with-arbiter':
+        return {
+          buyer: requireArg('buyer'),
+          seller: requireArg('seller'),
+          arbiterHash: requireArg('arbiter'),
+          expiry: requireArg('timeoutBlueScore'),
+        };
+      case 'dead-mans-switch':
+        return {
+          owner: requireArg('owner'),
+          heir: requireArg('heir'),
+          expiry: requireArg('checkInDeadline'),
+        };
+      default:
+        throw new Error(`Unsupported covenant template "${template.name}".`);
+    }
+  }
+
+  private async compileTemplateWithFieldValues(template: ContractTemplate, fieldValues: Record<string, string>): Promise<CompiledContract> {
+    const newArgs = template.fields.map((field) => this.fieldToCtorArg(field, fieldValues[field.paramName]));
+    const compiled = await firstValueFrom(this.http.get<any>(template.assetPath));
+    const descriptor = this.templatePatcher.extractPatchDescriptor(compiled, template.placeholderArgs);
+    return this.templatePatcher.applyPatch(compiled, descriptor, newArgs) as CompiledContract;
   }
 
   /**

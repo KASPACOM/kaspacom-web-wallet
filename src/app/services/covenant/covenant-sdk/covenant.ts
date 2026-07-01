@@ -402,6 +402,7 @@ export async function deployContract(
     const covenant = serialized?.outputs?.[outputIndex]?.covenant;
     if (covenant?.covenantId) {
       covenantId = String(covenant.covenantId);
+      console.log('covenantId', covenantId);
     }
 
   } catch {

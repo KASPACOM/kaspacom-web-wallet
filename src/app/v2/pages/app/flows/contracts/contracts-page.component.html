@@ -15,6 +15,10 @@
       (click)="switchTab('my-contracts')">
       My Contracts
     </button>
+    <button class="tab-button p-12 rounded-lg typo-text-2" [class.active]="activeTab() === 'lookup-import'"
+      (click)="switchTab('lookup-import')">
+      Lookup / Import
+    </button>
     <button class="tab-button p-12 rounded-lg typo-text-2" [class.active]="activeTab() === 'interact'"
       (click)="switchTab('interact')">
       Interact
@@ -151,8 +155,8 @@
   </div>
   }
 
-  <!-- Tab 2: My Contracts -->
-  @if (activeTab() === 'my-contracts') {
+  <!-- Tab 2: Lookup / Import -->
+  @if (activeTab() === 'lookup-import') {
   <div class="contracts-list flex column gap-16">
     <!-- Address Lookup -->
     <div class="panel flex column gap-16 p-20 rounded-lg">
@@ -242,6 +246,88 @@
       }
     </div>
 
+    <!-- Indexer Import -->
+    <div class="panel flex column gap-16 p-20 rounded-lg">
+      <h3 class="text-white typo-text-1 fw-bold">Import from Indexer</h3>
+      <p class="text-gray-60 typo-text-2">Enter a deploy transaction ID or covenant ID. Only wallet-supported templates can be imported.</p>
+      <div class="flex gap-8 align-items-end">
+        <div class="form-group flex column gap-8 flex-1">
+          <label class="text-gray-60 typo-text-1">Deploy TX or Covenant ID</label>
+          <input type="text" class="form-input p-12 rounded-lg text-white typo-text-2"
+            placeholder="32c30c5f... or 5bff84f6..." [(ngModel)]="indexerImportQuery"
+            [disabled]="indexerImportLoading()" />
+        </div>
+        <kc-button [text]="indexerImportLoading() ? 'Loading...' : 'Find'"
+          [isDisabled]="indexerImportLoading() || !indexerImportQuery.trim()" (buttonClick)="lookupIndexerImport()">
+        </kc-button>
+      </div>
+
+      @if (indexerImportError()) {
+      <div class="error-message p-12 rounded-lg text-red typo-text-2">
+        {{ indexerImportError() }}
+      </div>
+      }
+
+      @if (indexerImportPreview()) {
+      <div class="lookup-result flex column gap-12 p-16 rounded-lg">
+        <div class="flex justify-content-between align-items-center">
+          <h4 class="text-white typo-text-1 fw-bold">{{ indexerImportPreview()!.template.name }}</h4>
+          <span class="text-gray-60 typo-text-2">{{ formatSompiToKas(indexerImportPreview()!.amountSompi) }} KAS</span>
+        </div>
+
+        <div class="flex column gap-4">
+          <span class="text-gray-60 typo-text-1">Covenant ID</span>
+          <div class="flex align-items-center gap-8">
+            <span class="text-white typo-text-2 text-mono">{{ truncate(indexerImportPreview()!.covenantId, 28) }}</span>
+            <app-copy-button [value]="indexerImportPreview()!.covenantId" [size]="'sm'"></app-copy-button>
+          </div>
+        </div>
+
+        <div class="flex column gap-4">
+          <span class="text-gray-60 typo-text-1">Contract Address</span>
+          <div class="flex align-items-center gap-8">
+            <a [href]="getExplorerAddressLink(indexerImportPreview()!.contractAddress)" target="_blank"
+              class="text-blue typo-text-2">
+              {{ truncate(indexerImportPreview()!.contractAddress, 34) }}
+            </a>
+            <app-copy-button [value]="indexerImportPreview()!.contractAddress" [size]="'sm'"></app-copy-button>
+          </div>
+        </div>
+
+        <div class="flex column gap-4">
+          <span class="text-gray-60 typo-text-1">Deploy TX</span>
+          <div class="flex align-items-center gap-8">
+            <a [href]="getExplorerLink(indexerImportPreview()!.deployTxid)" target="_blank" class="text-blue typo-text-2">
+              {{ truncate(indexerImportPreview()!.deployTxid, 24) }}
+            </a>
+            <app-copy-button [value]="indexerImportPreview()!.deployTxid" [size]="'sm'"></app-copy-button>
+          </div>
+        </div>
+
+        <div class="flex column gap-8">
+          <span class="text-gray-60 typo-text-1">Parameters</span>
+          @for (field of indexerImportPreview()!.template.fields; track field.paramName) {
+          <div class="param-item p-8 rounded flex column gap-4">
+            <span class="text-white typo-text-2">{{ field.label }}</span>
+            <span class="text-gray-60 typo-text-2 text-mono">
+              {{ indexerImportPreview()!.fieldValues[field.paramName] }}
+            </span>
+          </div>
+          }
+        </div>
+
+        <kc-button [text]="'Import Covenant'" [isFullWidth]="true" (buttonClick)="importIndexerPreview()">
+        </kc-button>
+      </div>
+      }
+    </div>
+  </div>
+  }
+
+  <!-- Tab 3: My Contracts -->
+  @if (activeTab() === 'my-contracts') {
+  <div class="contracts-list flex column gap-16">
+
     <!-- Deployed Contracts Registry -->
     @if (registryContracts().length === 0) {
     <div class="empty-state p-32 rounded-lg text-center">
@@ -287,6 +373,16 @@
         </div>
       </div>
 
+      @if (contract.covenantId) {
+      <div class="flex column gap-4">
+        <span class="text-gray-60 typo-text-2">Covenant ID</span>
+        <div class="flex align-items-center gap-8">
+          <span class="text-white typo-text-2 text-mono">{{ truncate(contract.covenantId, 24) }}</span>
+          <app-copy-button [value]="contract.covenantId" [size]="'sm'"></app-copy-button>
+        </div>
+      </div>
+      }
+
       <!-- Deploy TX -->
       <div class="flex column gap-4">
         <span class="text-gray-60 typo-text-2">Deploy TX</span>
@@ -317,9 +413,6 @@
           (buttonClick)="selectedContractId.set(contract.id); selectContractFromRegistry(); switchTab('interact')">
         </kc-button>
         }
-        <kc-button [text]="'🔗 Share'" [isFullWidth]="contract.status === 'spent'"
-          (buttonClick)="shareContract(contract)">
-        </kc-button>
       </div>
     </div>
     }

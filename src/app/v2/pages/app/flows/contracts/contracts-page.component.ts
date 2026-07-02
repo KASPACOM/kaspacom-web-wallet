@@ -491,10 +491,13 @@ export class ContractsPageComponent implements OnInit {
 
     const existing = this.registryService.getAllContracts().find((entry) => {
       if (entry.network !== this.network()) return false;
-      if (entry.covenantId && entry.covenantId === preview.covenantId) return true;
-      if (entry.deployTxid === preview.deployTxid) return true;
-      if (entry.contractAddress === preview.contractAddress) return true;
-      return entry.outpoint.txid === preview.outpoint.txid && entry.outpoint.vout === preview.outpoint.vout;
+      const sameOutpoint = entry.outpoint.txid === preview.outpoint.txid && entry.outpoint.vout === preview.outpoint.vout;
+      if (sameOutpoint) return true;
+
+      const sameAddress = entry.contractAddress === preview.contractAddress;
+      if (!sameAddress) return false;
+
+      return entry.covenantId === preview.covenantId || entry.deployTxid === preview.deployTxid;
     });
     if (existing) {
       this.indexerImportError.set('This covenant is already in My Contracts.');

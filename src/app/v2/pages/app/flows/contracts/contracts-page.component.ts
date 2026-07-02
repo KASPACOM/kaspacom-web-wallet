@@ -38,6 +38,7 @@ type ContractsTransientState = {
 
 type IndexerImportPreview = {
   action: IndexerCovenantAction;
+  activeAction: IndexerCovenantAction;
   args: IndexerCovenantArg[];
   compiledJson: string;
   contractAddress: string;
@@ -50,6 +51,7 @@ type IndexerImportPreview = {
   templateName: string;
   amountSompi: string;
   deployedAt: number;
+  isLatestContinuation: boolean;
 };
 
 @Component({
@@ -532,13 +534,18 @@ export class ContractsPageComponent implements OnInit {
 
   private async fetchIndexerCovenant(identifier: string): Promise<{
     action: IndexerCovenantAction;
+    actions: IndexerCovenantAction[];
     covenant?: IndexerCovenantDetails;
   }> {
     try {
       const byCovenant = await this.covenantIndexerService.getCovenant(identifier);
       const deployAction = (byCovenant.actions || []).find((action) => action.action === 'deploy') || byCovenant.actions?.[0];
       if (deployAction) {
-        return { action: deployAction, covenant: byCovenant.covenant };
+        return await this.resolveLatestIndexerCovenant({
+          action: deployAction,
+          actions: byCovenant.actions || [deployAction],
+          covenant: byCovenant.covenant,
+        });
       }
     } catch {
       // Try tx lookup below; the identifier may be a deploy transaction id.
@@ -554,25 +561,63 @@ export class ContractsPageComponent implements OnInit {
       try {
         const byCovenant = await this.covenantIndexerService.getCovenant(deployAction.covenantIdHex);
         const canonicalDeploy = (byCovenant.actions || []).find((action) => action.action === 'deploy') || deployAction;
-        return { action: canonicalDeploy, covenant: byCovenant.covenant };
+        return await this.resolveLatestIndexerCovenant({
+          action: canonicalDeploy,
+          actions: byCovenant.actions || [canonicalDeploy],
+          covenant: byCovenant.covenant,
+        });
       } catch {
-        return { action: deployAction };
+        return { action: deployAction, actions: byTx };
       }
     }
 
-    return { action: deployAction };
+    return { action: deployAction, actions: byTx };
+  }
+
+  private async resolveLatestIndexerCovenant(response: {
+    action: IndexerCovenantAction;
+    actions: IndexerCovenantAction[];
+    covenant?: IndexerCovenantDetails;
+  }): Promise<{
+    action: IndexerCovenantAction;
+    actions: IndexerCovenantAction[];
+    covenant?: IndexerCovenantDetails;
+  }> {
+    const latestAction = this.getLatestCovenantOutputAction(response.actions);
+    const latestScriptHash = this.extractScriptHashFromScriptPubKey(latestAction?.outputs?.scriptPubKeyHex);
+    if (!latestScriptHash || latestScriptHash === response.covenant?.scriptHashHex) {
+      return response;
+    }
+
+    try {
+      const latest = await this.covenantIndexerService.getCovenant(latestScriptHash);
+      const latestDeploy = (latest.actions || []).find((action) => action.action === 'deploy') || latest.actions?.[0];
+      if (latestDeploy && (latest.covenant?.claimedTemplate || latest.covenant?.claimedArgs?.tmpl)) {
+        return {
+          action: latestDeploy,
+          actions: latest.actions || [latestDeploy],
+          covenant: latest.covenant,
+        };
+      }
+    } catch {
+      // Fall back to the canonical response; the preview will explain if it cannot be reconstructed.
+    }
+
+    return response;
   }
 
   private async buildIndexerImportPreview(response: {
     action: IndexerCovenantAction;
+    actions: IndexerCovenantAction[];
     covenant?: IndexerCovenantDetails;
   }): Promise<IndexerImportPreview> {
-    const { action, covenant } = response;
+    const { action, actions, covenant } = response;
+    const activeAction = this.getLatestCovenantOutputAction(actions) || action;
     const covenantId = covenant?.covenantIdHex || action.covenantIdHex;
-    const deployTxid = covenant?.genesisTxidHex || action.txidHex;
-    const contractAddress = covenant?.address || action.address || action.outputs?.address;
-    const amountSompi = String(covenant?.totalAmountSompi ?? action.outputs?.amountSompi ?? '');
-    const vout = Number(action.outputs?.vout ?? 0);
+    const deployTxid = activeAction.txidHex || covenant?.genesisTxidHex || action.txidHex;
+    const contractAddress = activeAction.outputs?.address || activeAction.address || covenant?.address || action.address || action.outputs?.address;
+    const amountSompi = String(activeAction.outputs?.amountSompi ?? covenant?.totalAmountSompi ?? action.outputs?.amountSompi ?? '');
+    const vout = Number(activeAction.outputs?.vout ?? action.outputs?.vout ?? 0);
     const templateName = covenant?.claimedTemplate || covenant?.claimedArgs?.tmpl;
     const args = covenant?.claimedArgs?.args || [];
 
@@ -583,7 +628,7 @@ export class ContractsPageComponent implements OnInit {
       throw new Error('This covenant has no revealed template claim, so it cannot be imported.');
     }
 
-    const template = this.templateForIndexerName(templateName);
+    const template = this.templateForIndexerName(templateName) || this.templateForIndexerArgs(args);
     if (!template) {
       throw new Error(`Unsupported covenant template "${templateName}". Only local wallet templates can be imported.`);
     }
@@ -591,12 +636,14 @@ export class ContractsPageComponent implements OnInit {
     const fieldValues = this.indexerArgsToTemplateValues(template, args);
     const compiled = await this.compileTemplateWithFieldValues(template, fieldValues);
     const computedAddress = this.covenantService.getContractAddress(compiled);
+    const isLatestContinuation = !!activeAction.outputs?.address && activeAction.outputs.address !== computedAddress;
     if (computedAddress !== contractAddress) {
       throw new Error('Template parameters do not match the covenant address reported by the indexer.');
     }
 
     return {
       action,
+      activeAction,
       args,
       compiledJson: JSON.stringify(compiled, null, 2),
       contractAddress,
@@ -607,20 +654,82 @@ export class ContractsPageComponent implements OnInit {
       template,
       templateName,
       amountSompi,
-      deployedAt: covenant?.createdAtMs || action.blockTimeMs || Date.now(),
+      deployedAt: activeAction.blockTimeMs || covenant?.createdAtMs || action.blockTimeMs || Date.now(),
+      isLatestContinuation,
     };
   }
 
+  private getLatestCovenantOutputAction(actions: IndexerCovenantAction[]): IndexerCovenantAction | undefined {
+    return actions
+      .filter((action) => !!action.outputs && (action.action === 'continuation' || action.action === 'deploy'))
+      .sort((a, b) => (b.blockTimeMs || 0) - (a.blockTimeMs || 0))[0];
+  }
+
+  private extractScriptHashFromScriptPubKey(scriptPubKeyHex: string | undefined): string | undefined {
+    const normalized = scriptPubKeyHex?.trim().toLowerCase();
+    if (!normalized) return undefined;
+
+    // P2SH covenant output: OP_0/OP_PUSHDATA-ish prefix + 32-byte script hash + suffix.
+    const match = normalized.match(/^aa20([0-9a-f]{64})87$/);
+    return match?.[1];
+  }
+
   private templateForIndexerName(templateName: string): ContractTemplate | undefined {
-    const normalized = templateName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const normalized = this.normalizeTemplateName(templateName);
+    if (normalized.includes('deadman')) {
+      return this.templateById('dead-mans-switch');
+    }
+    if (normalized.includes('timelock')) {
+      return this.templateById('time-lock-vault');
+    }
+    if (normalized.includes('multisig')) {
+      return this.templateById('multi-sig-vault');
+    }
+    if (normalized.includes('escrow')) {
+      return this.templateById('escrow-with-arbiter');
+    }
+
     const aliases: Record<string, string> = {
       timelockvault: 'time-lock-vault',
       multisigvault: 'multi-sig-vault',
+      multisig: 'multi-sig-vault',
       escrowwitharbiter: 'escrow-with-arbiter',
+      escrow: 'escrow-with-arbiter',
       deadmansswitch: 'dead-mans-switch',
+      deadmans: 'dead-mans-switch',
+      deadman: 'dead-mans-switch',
     };
     const templateId = aliases[normalized];
-    return templateId ? this.contractTemplates.find((template) => template.id === templateId) : undefined;
+    return CONTRACT_TEMPLATES.find((template) =>
+      template.id === templateId ||
+      this.normalizeTemplateName(template.id) === normalized ||
+      this.normalizeTemplateName(template.name) === normalized,
+    );
+  }
+
+  private templateForIndexerArgs(args: IndexerCovenantArg[]): ContractTemplate | undefined {
+    const names = new Set(args.map((arg) => arg.name));
+    if (names.has('owner') && names.has('heir') && names.has('checkInDeadline')) {
+      return this.templateById('dead-mans-switch');
+    }
+    if (names.has('signer') && names.has('recoveryKey') && names.has('unlockBlueScore')) {
+      return this.templateById('time-lock-vault');
+    }
+    if (names.has('signer1') && names.has('signer2') && names.has('signer3')) {
+      return this.templateById('multi-sig-vault');
+    }
+    if (names.has('buyer') && names.has('seller') && names.has('arbiter')) {
+      return this.templateById('escrow-with-arbiter');
+    }
+    return undefined;
+  }
+
+  private templateById(id: string): ContractTemplate | undefined {
+    return CONTRACT_TEMPLATES.find((template) => template.id === id);
+  }
+
+  private normalizeTemplateName(value: string): string {
+    return String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
   }
 
   private indexerArgsToTemplateValues(template: ContractTemplate, args: IndexerCovenantArg[]): Record<string, string> {

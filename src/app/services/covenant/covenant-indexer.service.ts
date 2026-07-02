@@ -17,6 +17,7 @@ export interface IndexerCovenantAction {
   outputs?: {
     address?: string;
     amountSompi?: number | string;
+    scriptPubKeyHex?: string;
     vout?: number;
   } | null;
   txidHex?: string;
@@ -33,6 +34,7 @@ export interface IndexerCovenantDetails {
   createdAtMs?: number;
   genesisTxidHex?: string;
   totalAmountSompi?: number | string;
+  scriptHashHex?: string;
 }
 
 export interface IndexerCovenantResponse {

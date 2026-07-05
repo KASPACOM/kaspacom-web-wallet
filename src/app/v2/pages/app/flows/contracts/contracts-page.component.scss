@@ -89,6 +89,10 @@
   resize: vertical;
   min-height: 120px;
   font-size: 13px;
+
+  &.invalid {
+    border-color: var(--red-20);
+  }
 }
 
 select.form-input {
@@ -203,6 +207,58 @@ select.form-input {
   flex: 1;
 }
 
+.text-left {
+  text-align: left;
+}
+
+.wizard-header,
+.wizard-section {
+  min-width: 0;
+}
+
+.max-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 100%;
+  min-width: 46px;
+  padding-right: 2px;
+
+  span {
+    color: var(--gray-30);
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 1;
+    padding: 5px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  &.clickable {
+    cursor: pointer;
+
+    span:hover {
+      color: white;
+      background: rgba(255, 255, 255, 0.15);
+    }
+  }
+
+  &.disabled {
+    cursor: not-allowed;
+
+    span {
+      opacity: 0.5;
+    }
+  }
+}
+
+.field-error {
+  color: var(--red-20);
+}
+
 // Template list (compact cards)
 .template-list {
   display: flex;
@@ -212,9 +268,12 @@ select.form-input {
 .template-card-compact {
   background: var(--gray-10);
   border: 1px solid var(--border-secondary);
+  color: inherit;
   cursor: pointer;
   transition: all 0.2s;
   min-height: 72px;
+  width: 100%;
+  text-align: left;
 
   &:hover {
     background: rgba(255, 255, 255, 0.06);
@@ -224,6 +283,22 @@ select.form-input {
 
   &:active {
     transform: translateX(0);
+  }
+}
+
+.custom-contract-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed var(--border-secondary);
+  color: inherit;
+  cursor: pointer;
+  min-height: 72px;
+  text-align: left;
+  transition: all 0.2s;
+  width: 100%;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--kaspa-20);
   }
 }
 
@@ -251,7 +326,7 @@ select.form-input {
 
 .template-chevron {
   color: var(--gray-60);
-  min-width: 20px;
+  min-width: max-content;
   transition: color 0.2s, transform 0.2s;
 }
 

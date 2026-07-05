@@ -3,10 +3,12 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { KcButtonComponent, KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
+import { DropdownOption, KcButtonComponent, KcDropdownSelectComponent, KcIconComponent, KcInputComponent, KcTooltipDirective } from 'kaspacom-ui';
 import { blake2b } from '@noble/hashes/blake2b';
 import { WalletService } from '../../../../../services/wallet.service';
 import { WalletActionService } from '../../../../../services/wallet-action.service';
+import { QrScannerService } from '../../../../../services/qr-scanner.service';
+import { UtilsHelper } from '../../../../../services/utils.service';
 import { CovenantService } from '../../../../../services/covenant/covenant.service';
 import { RpcService } from '../../../../../services/kaspa-netwrok-services/rpc.service';
 import { ContractRegistryService, ContractRegistryEntry, ContractStatus } from '../../../../../services/covenant/contract-registry.service';
@@ -21,8 +23,11 @@ import { WalletActionType } from '../../../../../types/wallet-action';
 import { CovenantCompletePartialActionResult, CovenantDeployActionResult, CovenantSpendActionResult } from '../../../../../types/wallet-action-result';
 import { FlowPagesService } from '../../../../services/flow-pages.service';
 import { ApprovalFlowService } from '../../../../services/approval-flow.service';
+import { AddressSmartInputComponent } from '../../../../shared/ui/input/address-smart-input/address-smart-input.component';
+import { CovenantDateTimeInputComponent } from './covenant-date-time-input.component';
 
 type TabName = 'deploy' | 'my-contracts' | 'lookup-import' | 'interact' | 'templates';
+type CreateMode = 'template' | 'custom';
 type ContractsTransientState = {
   activeTab?: TabName;
   selectedFunction?: string;
@@ -60,9 +65,13 @@ type IndexerImportPreview = {
     CommonModule,
     FormsModule,
     KcButtonComponent,
+    KcDropdownSelectComponent,
     KcIconComponent,
+    KcInputComponent,
     KcTooltipDirective,
     CopyButtonComponent,
+    AddressSmartInputComponent,
+    CovenantDateTimeInputComponent,
   ],
   templateUrl: './contracts-page.component.html',
   styleUrl: './contracts-page.component.scss',
@@ -74,6 +83,8 @@ type IndexerImportPreview = {
 export class ContractsPageComponent implements OnInit {
   private walletService = inject(WalletService);
   private walletActionService = inject(WalletActionService);
+  private qrScannerService = inject(QrScannerService);
+  private utilsHelper = inject(UtilsHelper);
   private covenantService = inject(CovenantService);
   private covenantIndexerService = inject(CovenantIndexerService);
   private rpcService = inject(RpcService);
@@ -90,17 +101,14 @@ export class ContractsPageComponent implements OnInit {
   // Current wallet
   currentWallet = computed(() => this.walletService.getCurrentWallet());
 
-  // All wallets for multi-account dropdown
-  allWallets = this.walletService.getAllWallets();
+  // Deployment always uses the currently selected wallet.
+  selectedAccount = computed(() => this.currentWallet() || undefined);
 
-  // Selected account for deploy (plain property for ngModel)
-  selectedAccountId = signal('');
-
-  // Computed selected account wallet
-  selectedAccount = computed(() => {
-    const wallets = this.allWallets();
-    if (!wallets || !this.selectedAccountId()) return undefined;
-    return wallets.find((w) => w.getIdWithAccount() === this.selectedAccountId());
+  deployAvailableBalance = computed(() => {
+    const currentWallet = this.currentWallet();
+    if (!currentWallet) return 0;
+    const mature = currentWallet.getCurrentWalletStateBalanceSignalValue()?.mature || 0n;
+    return Math.floor(Number(mature) / 1e8);
   });
 
   // Computed pubkey for selected account
@@ -112,7 +120,11 @@ export class ContractsPageComponent implements OnInit {
 
   // Deploy form - plain properties for ngModel
   deployContractJson = signal('');
+  deployContractTouched = false;
+  deployContractError = signal('');
   deployAmount = '';
+  deployAmountTouched = false;
+  deployAmountError = signal('');
   deployResult = signal<{ address: string; txid: string } | null>(null);
   deployError = signal<string | null>(null);
   isDeploying = signal(false);
@@ -144,8 +156,12 @@ export class ContractsPageComponent implements OnInit {
   registryContracts = signal<ContractRegistryEntry[]>([]);
 
   contractTemplates = CONTRACT_TEMPLATES;
+  createMode = signal<CreateMode>('template');
   activeTemplate = signal<ContractTemplate | null>(null);
   templateFormValues: { [paramName: string]: string } = {};
+  templateFieldTouched: { [paramName: string]: boolean } = {};
+  templateFieldErrors: { [paramName: string]: string } = {};
+  templateResolvedAddresses: { [paramName: string]: string } = {};
   generatedContractJson = signal<string | null>(null);
   templateError = signal<string | null>(null);
 
@@ -156,6 +172,7 @@ export class ContractsPageComponent implements OnInit {
   interactOutpointVout = '';
   interactInputAmount = '';
   interactOutputAddress = '';
+  interactResolvedOutputAddress: string | null = null;
 
   // Lookup form
   lookupContractJson = '';
@@ -190,6 +207,14 @@ export class ContractsPageComponent implements OnInit {
     if (!this.selectedContractId()) return null;
     return this.registryContracts().find((c) => c.id === this.selectedContractId());
   });
+
+  registryContractOptions = computed<DropdownOption[]>(() =>
+    this.registryContracts().map((contract) => ({
+      value: contract.id,
+      label: `${contract.contractName} (${this.truncate(contract.contractAddress, 20)})`,
+      disabled: contract.status === 'spent',
+    })),
+  );
 
   // Computed parsed contract from interact JSON
   parsedInteractContract = computed(() => {
@@ -255,16 +280,16 @@ export class ContractsPageComponent implements OnInit {
   } | null>(null);
 
   constructor() {
-    // Initialize with current wallet if available
-    const current = this.currentWallet();
-    if (current) {
-      this.selectedAccountId.set(current.getIdWithAccount());
-    }
-
     // Reload My-Contracts whenever the active network changes (also runs once now).
     effect(() => {
       this.network();
       this.loadContracts();
+    });
+
+    effect(() => {
+      this.currentWallet();
+      this.syncWalletOwnedTemplateFields();
+      this.validateDeployAmount(false);
     });
   }
 
@@ -301,23 +326,17 @@ export class ContractsPageComponent implements OnInit {
   }
 
   selectTemplate(template: ContractTemplate) {
+    this.createMode.set('template');
     this.activeTemplate.set(template);
     // Clear all form values — prevents stale data from previous template or localStorage
     this.templateFormValues = {};
+    this.templateFieldTouched = {};
+    this.templateFieldErrors = {};
+    this.templateResolvedAddresses = {};
     this.generatedContractJson.set(null);
     this.templateError.set(null);
 
-    const address = this.currentWallet()?.getAddress();
-    if (address) {
-      for (const field of template.fields) {
-        if (
-          field.type === 'address' &&
-          (field.paramName === 'owner' || field.paramName === 'buyer' || field.paramName === 'key1')
-        ) {
-          this.templateFormValues[field.paramName] = address;
-        }
-      }
-    }
+    this.syncWalletOwnedTemplateFields();
 
     // Clear any localStorage-cached template form values to prevent stale auto-fill
     try {
@@ -327,6 +346,43 @@ export class ContractsPageComponent implements OnInit {
     }
   }
 
+  private syncWalletOwnedTemplateFields() {
+    const template = this.activeTemplate();
+    const address = this.selectedAccount()?.getAddress() || this.currentWallet()?.getAddress();
+    if (!template || !address) return;
+
+    for (const field of template.fields) {
+      if (this.isWalletOwnedField(field)) {
+        this.templateFormValues[field.paramName] = address;
+      }
+    }
+  }
+
+  selectCustomContract() {
+    this.createMode.set('custom');
+    this.activeTemplate.set(null);
+    this.generatedContractJson.set(null);
+    this.templateError.set(null);
+    this.deployError.set(null);
+    this.deployResult.set(null);
+    this.deployContractTouched = false;
+    this.deployContractError.set('');
+    this.validateDeployAmount(false);
+  }
+
+  resetTemplateSelection() {
+    this.activeTemplate.set(null);
+    this.generatedContractJson.set(null);
+    this.templateError.set(null);
+    this.deployError.set(null);
+    this.deployResult.set(null);
+    this.deployContractTouched = false;
+    this.deployContractError.set('');
+    this.templateFieldTouched = {};
+    this.templateFieldErrors = {};
+    this.templateResolvedAddresses = {};
+  }
+
   async generateContract() {
     const template = this.activeTemplate();
     if (!template) {
@@ -334,11 +390,16 @@ export class ContractsPageComponent implements OnInit {
       return;
     }
 
+    if (!this.validateAllTemplateFields(true)) {
+      this.templateError.set('Please complete the highlighted fields before deploying.');
+      return;
+    }
+
     this.templateError.set(null);
     this.generatedContractJson.set(null);
 
     try {
-      const newArgs = template.fields.map((field) => this.fieldToCtorArg(field, this.templateFormValues[field.paramName]));
+      const newArgs = template.fields.map((field) => this.fieldToCtorArg(field, this.getTemplateFieldValue(field)));
       const compiled = await firstValueFrom(this.http.get<any>(template.assetPath));
       const descriptor = this.templatePatcher.extractPatchDescriptor(compiled, template.placeholderArgs);
       const patched = this.templatePatcher.applyPatch(compiled, descriptor, newArgs);
@@ -349,30 +410,30 @@ export class ContractsPageComponent implements OnInit {
       if (template.id === 'multi-sig-vault') {
         tmplName = 'MultiSigVault';
         argsPayload = [
-          { name: 'signer1', type: 'address', value: this.templateFormValues['key1'] },
-          { name: 'signer2', type: 'address', value: this.templateFormValues['key2'] },
-          { name: 'signer3', type: 'address', value: this.templateFormValues['key3'] },
+          { name: 'signer1', type: 'address', value: this.getTemplateValueByName('key1') },
+          { name: 'signer2', type: 'address', value: this.getTemplateValueByName('key2') },
+          { name: 'signer3', type: 'address', value: this.getTemplateValueByName('key3') },
         ];
       } else if (template.id === 'escrow-with-arbiter') {
         tmplName = 'EscrowWithArbiter';
         argsPayload = [
-          { name: 'buyer', type: 'address', value: this.templateFormValues['buyer'] },
-          { name: 'seller', type: 'address', value: this.templateFormValues['seller'] },
+          { name: 'buyer', type: 'address', value: this.getTemplateValueByName('buyer') },
+          { name: 'seller', type: 'address', value: this.getTemplateValueByName('seller') },
           { name: 'arbiter', type: 'address', value: this.templateFormValues['arbiterHash'] },
           { name: 'timeoutBlueScore', type: 'blueScore', value: String(this.parseDateToUnixMs(String(this.templateFormValues['expiry'] ?? '').trim(), 'Refund Expiry Timestamp')) },
         ];
       } else if (template.id === 'dead-mans-switch') {
         tmplName = 'DeadManSwitch';
         argsPayload = [
-          { name: 'owner', type: 'address', value: this.templateFormValues['owner'] },
-          { name: 'heir', type: 'address', value: this.templateFormValues['heir'] },
+          { name: 'owner', type: 'address', value: this.getTemplateValueByName('owner') },
+          { name: 'heir', type: 'address', value: this.getTemplateValueByName('heir') },
           { name: 'checkInDeadline', type: 'blueScore', value: String(this.parseDateToUnixMs(String(this.templateFormValues['expiry'] ?? '').trim(), 'Initial Expiry (Unix timestamp)')) },
         ];
       } else if (template.id === 'time-lock-vault') {
         tmplName = 'TimeLockVault';
         argsPayload = [
-          { name: 'signer', type: 'address', value: this.templateFormValues['owner'] },
-          { name: 'recoveryKey', type: 'address', value: this.templateFormValues['recovery'] },
+          { name: 'signer', type: 'address', value: this.getTemplateValueByName('owner') },
+          { name: 'recoveryKey', type: 'address', value: this.getTemplateValueByName('recovery') },
           { name: 'unlockBlueScore', type: 'blueScore', value: String(this.parseDateToUnixMs(String(this.templateFormValues['timeout'] ?? '').trim(), 'Unlock Timestamp')) },
         ];
       }
@@ -391,6 +452,27 @@ export class ContractsPageComponent implements OnInit {
     }
   }
 
+  async deployTemplateContract() {
+    this.deployError.set(null);
+    this.deployResult.set(null);
+    this.templateError.set(null);
+
+    if (!this.validateAllTemplateFields(true) || !this.validateDeployAmount(true)) {
+      this.templateError.set('Please complete the highlighted fields before deploying.');
+      return;
+    }
+
+    try {
+      await this.generateContract();
+      const generated = this.generatedContractJson();
+      if (!generated) return;
+      this.deployContractJson.set(generated);
+      await this.deployContract();
+    } catch (error: any) {
+      this.templateError.set(error?.message || 'Failed to prepare contract for deployment');
+    }
+  }
+
   useGeneratedContract() {
     const generated = this.generatedContractJson();
     if (!generated) {
@@ -400,6 +482,232 @@ export class ContractsPageComponent implements OnInit {
 
     this.deployContractJson.set(generated);
     this.activeTab.set('deploy');
+  }
+
+  isWalletOwnedField(field: TemplateField): boolean {
+    return field.type === 'address' && ['owner', 'buyer', 'key1'].includes(field.paramName);
+  }
+
+  getFieldHelp(field: TemplateField): string {
+    if (this.isWalletOwnedField(field)) {
+      return 'This is set to your currently selected wallet so the covenant remains controlled from this account.';
+    }
+
+    const help: Record<string, string> = {
+      recovery: 'A backup wallet that can recover the funds after the unlock date.',
+      key2: 'A second signer. Any two configured signers can authorize a withdrawal.',
+      key3: 'A third signer. Any two configured signers can authorize a withdrawal.',
+      seller: 'The seller receives funds when the buyer and seller both approve release.',
+      heir: 'The beneficiary who can claim the funds if the owner misses the deadline.',
+      arbiterHash: 'Paste the arbiter address or public key. The wallet stores the required blake2b-256 hash in the covenant.',
+      timeout: 'The earliest date when the recovery wallet can use the backup withdrawal path.',
+      expiry: 'The deadline used by this covenant. The wallet converts this date to the timestamp format required by Kaspa.',
+    };
+
+    return help[field.paramName] || field.description;
+  }
+
+  getTemplateStepNumber(): number {
+    return this.activeTemplate() ? 2 : 1;
+  }
+
+  private getTemplateFieldValue(field: TemplateField): string {
+    return this.templateResolvedAddresses[field.paramName] || this.templateFormValues[field.paramName] || '';
+  }
+
+  private getTemplateValueByName(paramName: string): string {
+    return this.templateResolvedAddresses[paramName] || this.templateFormValues[paramName] || '';
+  }
+
+  onDeployAmountChange(value: any) {
+    this.deployAmount = value === null || value === undefined ? '' : String(value);
+    this.deployAmountTouched = true;
+    this.validateDeployAmount(false);
+  }
+
+  onDeployContractJsonChange(value: string) {
+    this.deployContractJson.set(value || '');
+    this.deployContractTouched = true;
+    this.validateDeployContractJson(false);
+  }
+
+  validateDeployContractJson(markTouched = false): boolean {
+    if (markTouched) this.deployContractTouched = true;
+
+    const value = this.deployContractJson().trim();
+    if (!value) {
+      this.deployContractError.set(this.deployContractTouched ? 'Compiled contract JSON is required' : '');
+      return false;
+    }
+
+    try {
+      this.covenantService.parseCompiledContract(value);
+      this.deployContractError.set('');
+      return true;
+    } catch {
+      this.deployContractError.set('Invalid compiled contract JSON');
+      return false;
+    }
+  }
+
+  onMaxDeployAmountClick() {
+    if (this.isDeploying()) return;
+    this.deployAmount = String(this.deployAvailableBalance());
+    this.deployAmountTouched = true;
+    this.validateDeployAmount(false);
+  }
+
+  validateDeployAmount(markTouched = false): boolean {
+    if (markTouched) this.deployAmountTouched = true;
+
+    const raw = String(this.deployAmount ?? '').trim();
+    if (!raw) {
+      this.deployAmountError.set(this.deployAmountTouched ? 'Amount is required' : '');
+      return false;
+    }
+
+    const amount = Number(raw);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      this.deployAmountError.set('Amount must be greater than 0');
+      return false;
+    }
+
+    if (!Number.isInteger(amount)) {
+      this.deployAmountError.set('Use whole KAS increments only');
+      return false;
+    }
+
+    if (amount > this.deployAvailableBalance()) {
+      this.deployAmountError.set('Insufficient balance');
+      return false;
+    }
+
+    this.deployAmountError.set('');
+    return true;
+  }
+
+  onTemplateFieldChange(field: TemplateField, value: string) {
+    this.templateFormValues[field.paramName] = value || '';
+    this.templateFieldTouched[field.paramName] = true;
+    if (field.type === 'hash32') {
+      this.onHash32Input(field.paramName, value || '');
+    }
+    this.validateTemplateField(field);
+    this.templateError.set(null);
+  }
+
+  onTemplateAddressResolved(field: TemplateField, result: any) {
+    if (result?.effectiveAddress) {
+      this.templateResolvedAddresses[field.paramName] = result.effectiveAddress;
+      this.templateFieldErrors[field.paramName] = '';
+    } else {
+      delete this.templateResolvedAddresses[field.paramName];
+      this.validateTemplateField(field);
+    }
+  }
+
+  onTemplateAddressQrClick(field: TemplateField) {
+    if (this.qrScannerService.isCurrentlyScanning()) {
+      this.qrScannerService.stopScanning();
+      return;
+    }
+
+    this.qrScannerService.startScanning({
+      scannerId: `qr-scanner-covenant-${field.paramName}`,
+      title: `Scan ${field.label}`,
+      onSuccess: (address: string) => this.onTemplateFieldChange(field, address),
+      onError: (error: string) => console.error('[Contracts] QR scanning error:', error),
+    });
+  }
+
+  validateAllTemplateFields(markTouched = false): boolean {
+    const template = this.activeTemplate();
+    if (!template) return false;
+
+    let valid = true;
+    for (const field of template.fields) {
+      if (markTouched) this.templateFieldTouched[field.paramName] = true;
+      valid = this.validateTemplateField(field) && valid;
+    }
+    return valid;
+  }
+
+  validateTemplateField(field: TemplateField): boolean {
+    if (this.isWalletOwnedField(field)) {
+      this.syncWalletOwnedTemplateFields();
+    }
+
+    const value = String(this.templateFormValues[field.paramName] ?? '').trim();
+    let error = '';
+
+    if (!value) {
+      error = `${field.label} is required`;
+    } else if (field.type === 'address') {
+      const resolvedAddress = this.templateResolvedAddresses[field.paramName];
+      if (!this.utilsHelper.isValidWalletAddress(value) && !resolvedAddress) {
+        error = 'Invalid wallet address';
+      }
+    } else if (field.type === 'hash32') {
+      const normalized = value.replace(/^0x/i, '');
+      if (!/^[0-9a-fA-F]{64}$/.test(normalized)) {
+        error = 'Enter a Kaspa address, public key, or 32-byte hex hash';
+      }
+    } else if (field.type === 'int_timestamp') {
+      if (!Number.isFinite(new Date(value).getTime())) {
+        error = 'Select a valid date and time';
+      }
+    } else if (field.type === 'int_days' || field.type === 'int_count') {
+      const numeric = Number(value);
+      if (!Number.isInteger(numeric) || numeric < 0) {
+        error = 'Enter a non-negative whole number';
+      }
+    }
+
+    this.templateFieldErrors[field.paramName] = error;
+    return !error;
+  }
+
+  getTemplateFieldError(field: TemplateField): string {
+    return this.templateFieldTouched[field.paramName] ? (this.templateFieldErrors[field.paramName] || '') : '';
+  }
+
+  isTemplateFieldValid(field: TemplateField): boolean {
+    return !this.getTemplateFieldError(field);
+  }
+
+  isCreateDeployDisabled(): boolean {
+    if (this.isDeploying() || !this.currentWallet()) return true;
+    if (!this.isDeployAmountCompleteValid()) return true;
+
+    if (this.createMode() === 'custom') {
+      return !this.isDeployContractJsonCompleteValid();
+    }
+
+    const template = this.activeTemplate();
+    if (!template) return true;
+
+    return template.fields.some((field) => {
+      const value = String(this.templateFormValues[field.paramName] ?? '').trim();
+      return !value || !!this.templateFieldErrors[field.paramName];
+    });
+  }
+
+  private isDeployAmountCompleteValid(): boolean {
+    const raw = String(this.deployAmount ?? '').trim();
+    if (!raw) return false;
+    const amount = Number(raw);
+    return Number.isInteger(amount) && amount > 0 && amount <= this.deployAvailableBalance();
+  }
+
+  private isDeployContractJsonCompleteValid(): boolean {
+    const value = this.deployContractJson().trim();
+    if (!value) return false;
+    try {
+      this.covenantService.parseCompiledContract(value);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -861,20 +1169,23 @@ export class ContractsPageComponent implements OnInit {
 
     const wallet = this.selectedAccount();
     if (!wallet) {
-      this.deployError.set('Please select an account');
+      this.deployError.set('No wallet selected');
       return;
     }
 
     const contractJson = this.deployContractJson();
-    const amountKas = parseFloat(this.deployAmount);
+    const amountKas = Number(this.deployAmount);
 
     if (!contractJson) {
-      this.deployError.set('Contract JSON is required');
+      this.validateDeployContractJson(true);
       return;
     }
 
-    if (isNaN(amountKas) || amountKas <= 0) {
-      this.deployError.set('Amount must be greater than 0');
+    if (!this.validateDeployContractJson(true)) {
+      return;
+    }
+
+    if (!this.validateDeployAmount(true)) {
       return;
     }
 
@@ -958,6 +1269,7 @@ export class ContractsPageComponent implements OnInit {
       this.interactOutpointVout = contract.outpoint.vout.toString();
       this.interactInputAmount = contract.amountSompi;
       this.interactOutputAddress = this.currentWallet()?.getAddress() || '';
+      this.interactResolvedOutputAddress = null;
     }
   }
 
@@ -979,7 +1291,7 @@ export class ContractsPageComponent implements OnInit {
     const vout = parseInt(this.interactOutpointVout, 10);
     const inputAmountSompi = this.interactInputAmount;
     const functionName = this.selectedFunction;
-    const outputAddress = this.interactOutputAddress;
+    const outputAddress = this.interactResolvedOutputAddress || this.interactOutputAddress;
     const outputAmountKas = parseFloat(this.interactOutputAmount);
 
     if (!contractJson) {
@@ -1597,7 +1909,7 @@ export class ContractsPageComponent implements OnInit {
     // Fallback: try parsing as date string
     const timestampMs = new Date(value).getTime();
     if (!Number.isFinite(timestampMs)) {
-      throw new Error(`${label} must be a valid Unix timestamp in seconds (e.g. from epochconverter.com).`);
+      throw new Error(`${label} must be a valid date and time.`);
     }
 
     return timestampMs;
@@ -1793,6 +2105,39 @@ export class ContractsPageComponent implements OnInit {
     } catch {
       // Invalid amount
     }
+  }
+
+  onInteractOutputAddressChange(value: string) {
+    this.interactOutputAddress = value || '';
+    this.interactResolvedOutputAddress = null;
+    this.interactError.set(null);
+  }
+
+  onInteractOutputAddressResolved(result: any) {
+    if (result?.effectiveAddress) {
+      this.interactResolvedOutputAddress = result.effectiveAddress;
+    } else {
+      this.interactResolvedOutputAddress = null;
+    }
+  }
+
+  onInteractOutputQrClick() {
+    if (this.qrScannerService.isCurrentlyScanning()) {
+      this.qrScannerService.stopScanning();
+      return;
+    }
+
+    this.qrScannerService.startScanning({
+      scannerId: 'qr-scanner-covenant-interact-output',
+      title: 'Scan recipient address',
+      onSuccess: (address: string) => this.onInteractOutputAddressChange(address),
+      onError: (error: string) => console.error('[Contracts] QR scanning error:', error),
+    });
+  }
+
+  onInteractOutputAmountChange(value: any) {
+    this.interactOutputAmount = value === null || value === undefined ? '' : String(value);
+    this.interactError.set(null);
   }
 
 

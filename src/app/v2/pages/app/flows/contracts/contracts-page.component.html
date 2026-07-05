@@ -9,7 +9,7 @@
   <div class="tabs flex gap-8">
     <button class="tab-button p-12 rounded-lg typo-text-2" [class.active]="activeTab() === 'deploy'"
       (click)="switchTab('deploy')">
-      Deploy
+      Create
     </button>
     <button class="tab-button p-12 rounded-lg typo-text-2" [class.active]="activeTab() === 'my-contracts'"
       (click)="switchTab('my-contracts')">
@@ -19,31 +19,55 @@
       (click)="switchTab('lookup-import')">
       Lookup / Import
     </button>
-    <button class="tab-button p-12 rounded-lg typo-text-2" [class.active]="activeTab() === 'interact'"
-      (click)="switchTab('interact')">
-      Interact
-    </button>
-    <button class="tab-button p-12 rounded-lg typo-text-2" [class.active]="activeTab() === 'templates'"
-      (click)="switchTab('templates')">
-      Templates
-    </button>
   </div>
 
-  <!-- Tab 1: Deploy -->
+  <!-- Tab 1: Create / Deploy -->
   @if (activeTab() === 'deploy') {
   <div class="panel flex column gap-20 p-24 rounded-lg">
-    <!-- Account selector -->
-    <div class="form-group flex column gap-8">
-      <label class="text-gray-60 typo-text-1">Select Account</label>
-      <select class="form-input p-12 rounded-lg text-white typo-text-2" [ngModel]="selectedAccountId()" (ngModelChange)="selectedAccountId.set($event)"
-        [disabled]="isDeploying()">
-        <option value="">-- Select Account --</option>
-        @for (wallet of allWallets(); track wallet.getIdWithAccount()) {
-        <option [value]="wallet.getIdWithAccount()">
-          {{ wallet.getDisplayName() }} ({{ truncate(wallet.getAddress(), 20) }})
-        </option>
+    <div class="wizard-header flex column gap-8">
+      <span class="text-gray-60 typo-text-2">Step {{ getTemplateStepNumber() }} of 3</span>
+      <h3 class="text-white typo-title-3">Create a covenant</h3>
+      <p class="text-gray-60 typo-text-2">Start with a guided template or use custom compiled JSON when you already have one.</p>
+    </div>
+
+    @if (!activeTemplate() && createMode() !== 'custom') {
+    <div class="template-list flex column gap-12">
+      @for (template of contractTemplates; track template.id) {
+      <button type="button" class="template-card-compact p-16 rounded-lg flex align-items-center gap-12"
+        (click)="selectTemplate(template)">
+        <div class="template-icon-compact">{{ template.icon }}</div>
+        <div class="flex column gap-4 flex-1 text-left">
+          <h4 class="text-white typo-text-1 fw-bold">{{ template.name }}</h4>
+          <p class="text-gray-60 typo-text-2 template-description">{{ template.description }}</p>
+        </div>
+        <span class="template-chevron">Next</span>
+      </button>
+      }
+
+      <button type="button" class="custom-contract-card p-16 rounded-lg flex align-items-center gap-12"
+        (click)="selectCustomContract()">
+        <div class="template-icon-compact">JSON</div>
+        <div class="flex column gap-4 flex-1 text-left">
+          <h4 class="text-white typo-text-1 fw-bold">Custom covenant</h4>
+          <p class="text-gray-60 typo-text-2 template-description">Paste compiled SilverScript JSON manually.</p>
+        </div>
+        <span class="template-chevron">Use custom</span>
+      </button>
+    </div>
+    } @else {
+    <div class="flex justify-content-between align-items-center gap-12 flex-wrap">
+      <div class="flex column gap-4">
+        @if (activeTemplate()) {
+        <h3 class="text-white typo-title-3">{{ activeTemplate()!.icon }} {{ activeTemplate()!.name }}</h3>
+        <p class="text-gray-60 typo-text-2">{{ activeTemplate()!.description }}</p>
+        } @else {
+        <h3 class="text-white typo-title-3">Custom covenant</h3>
+        <p class="text-gray-60 typo-text-2">Paste deploy-ready compiled JSON and choose how much KAS to lock.</p>
         }
-      </select>
+      </div>
+      <button class="back-button p-8 rounded typo-text-2" (click)="resetTemplateSelection(); createMode.set('template')">
+        Change
+      </button>
     </div>
 
     <!-- Show selected pubkey -->
@@ -57,13 +81,79 @@
     </div>
     }
 
-    <!-- Contract JSON input -->
+    @if (activeTemplate()) {
+    <div class="wizard-section flex column gap-16">
+      <div class="flex column gap-4">
+        <span class="text-gray-60 typo-text-2">Step 2 of 3</span>
+        <h4 class="text-white typo-text-1 fw-bold">Set covenant parameters</h4>
+      </div>
+
+      @for (field of activeTemplate()!.fields; track field.paramName) {
+      <div class="form-group flex column gap-8">
+        @if (field.type === 'address') {
+        <app-address-smart-input [label]="field.label" [placeholder]="field.placeholder" [isFullWidth]="true"
+          [isValid]="isTemplateFieldValid(field)" [invalidReason]="getTemplateFieldError(field)"
+          [isDisabled]="isDeploying() || isWalletOwnedField(field)"
+          [showQrButton]="!isWalletOwnedField(field)" [value]="templateFormValues[field.paramName] || ''"
+          (valueChange)="onTemplateFieldChange(field, $event)" (resolved)="onTemplateAddressResolved(field, $event)"
+          (qrClick)="onTemplateAddressQrClick(field)">
+        </app-address-smart-input>
+        }
+
+        @if (field.type === 'hash32') {
+        <div class="flex column gap-4">
+          <kc-input [label]="field.label" [placeholder]="'Paste address, public key, or 32-byte hash'" [type]="'text'"
+            [isFullWidth]="true" [isValid]="isTemplateFieldValid(field)" [invalidReason]="getTemplateFieldError(field)"
+            [isDisabled]="isDeploying()" [ngModel]="templateFormValues[field.paramName] || ''"
+            (valueChange)="onTemplateFieldChange(field, $event)">
+          </kc-input>
+          @if (templateFormValues[field.paramName + '_isAutoHashed']) {
+          <span class="text-green typo-text-2">Hash computed automatically.</span>
+          }
+          @if (!templateFormValues[field.paramName + '_isAutoHashed'] && (templateFormValues[field.paramName] || '').length ===
+          64) {
+          <div class="flex gap-8 align-items-center">
+            <span class="text-gray-60 typo-text-2">If this is a public key,</span>
+            <span class="text-blue typo-text-2 cursor-pointer" (click)="computeBlake2bHash(field.paramName)">
+              compute its hash
+            </span>
+          </div>
+          }
+        </div>
+        }
+
+        @if (field.type === 'int_days' || field.type === 'int_count') {
+        <kc-input [label]="field.label" [placeholder]="field.placeholder" [type]="'number'" [min]="0"
+          [isFullWidth]="true" [isValid]="isTemplateFieldValid(field)" [invalidReason]="getTemplateFieldError(field)"
+          [isDisabled]="isDeploying()" [ngModel]="templateFormValues[field.paramName] || ''"
+          (valueChange)="onTemplateFieldChange(field, $event)">
+        </kc-input>
+        }
+
+        @if (field.type === 'int_timestamp') {
+        <app-covenant-date-time-input [label]="field.label" [value]="templateFormValues[field.paramName] || ''"
+          [isDisabled]="isDeploying()" [isValid]="isTemplateFieldValid(field)"
+          [invalidReason]="getTemplateFieldError(field)" (valueChange)="onTemplateFieldChange(field, $event)">
+        </app-covenant-date-time-input>
+        }
+
+        <span class="text-gray-60 typo-text-2">{{ getFieldHelp(field) }}</span>
+      </div>
+      }
+    </div>
+    }
+
+    @if (createMode() === 'custom') {
     <div class="form-group flex column gap-8">
       <label class="text-gray-60 typo-text-1">Compiled Contract JSON</label>
-      <textarea class="contract-input p-12 rounded-lg text-white typo-text-2" rows="8"
-        placeholder="Paste compiled contract JSON from kascov" [ngModel]="deployContractJson()" (ngModelChange)="deployContractJson.set($event)"
-        [disabled]="isDeploying()">
+      <textarea class="contract-input p-12 rounded-lg text-white typo-text-2" [class.invalid]="!!deployContractError()" rows="8"
+        placeholder="Paste compiled contract JSON from kascov" [ngModel]="deployContractJson()"
+        (ngModelChange)="onDeployContractJsonChange($event)" [disabled]="isDeploying()">
         </textarea>
+      @if (deployContractError()) {
+      <span class="field-error typo-text-2">{{ deployContractError() }}</span>
+      }
+      <span class="text-gray-60 typo-text-2">Templates are safer for common flows because the wallet explains and validates each parameter.</span>
     </div>
 
     <!-- Contract summary -->
@@ -109,12 +199,20 @@
       </div>
     </div>
     }
+    }
 
     <!-- Amount input -->
     <div class="form-group flex column gap-8">
-      <label class="text-gray-60 typo-text-1">Amount (KAS)</label>
-      <input type="number" class="form-input p-12 rounded-lg text-white typo-text-2" placeholder="Amount to lock"
-        [(ngModel)]="deployAmount" [disabled]="isDeploying()" step="0.00000001" min="0" />
+      <kc-input [label]="'Amount to lock (KAS)'" [placeholder]="'0'" [type]="'number'" [min]="0"
+        [max]="deployAvailableBalance()" [isFullWidth]="true" [isValid]="!deployAmountError()"
+        [invalidReason]="deployAmountError()" [isDisabled]="isDeploying()" [ngModel]="deployAmount"
+        (valueChange)="onDeployAmountChange($event)">
+        <div (click)="!isDeploying() && onMaxDeployAmountClick()"
+          [class]="isDeploying() ? 'max-text disabled' : 'max-text clickable'" rightSideSlot>
+          <span>Max</span>
+        </div>
+      </kc-input>
+      <span class="text-gray-60 typo-text-2">This amount is sent into the covenant. It can only move later by following the covenant rules.</span>
     </div>
 
     <!-- Error message -->
@@ -147,11 +245,11 @@
     </div>
     }
 
-    <!-- Deploy button -->
-    <kc-button [text]="isDeploying() ? 'Deploying...' : 'Deploy Contract'"
-      [isDisabled]="isDeploying() || !selectedAccountId() || !deployContractJson() || !deployAmount" [isFullWidth]="true"
-      (buttonClick)="deployContract()">
+    <kc-button [text]="isDeploying() ? 'Deploying...' : 'Review and deploy covenant'"
+      [isDisabled]="isCreateDeployDisabled()"
+      [isFullWidth]="true" (buttonClick)="createMode() === 'custom' ? deployContract() : deployTemplateContract()">
     </kc-button>
+    }
   </div>
   }
 
@@ -164,9 +262,10 @@
       <p class="text-gray-60 typo-text-2">Enter a contract address to check its on-chain state (balance, UTXOs).</p>
       <div class="flex gap-8 align-items-end">
         <div class="form-group flex column gap-8 flex-1">
-          <label class="text-gray-60 typo-text-1">Contract Address</label>
-          <input type="text" class="form-input p-12 rounded-lg text-white typo-text-2" placeholder="kaspatest:pr..."
-            [(ngModel)]="lookupAddress" [disabled]="lookupLoading()" />
+          <kc-input [label]="'Contract Address'" [placeholder]="'kaspatest:pr...'" [type]="'text'"
+            [isFullWidth]="true" [isDisabled]="lookupLoading()" [ngModel]="lookupAddress"
+            (valueChange)="lookupAddress = $event || ''">
+          </kc-input>
         </div>
         <kc-button [text]="lookupLoading() ? 'Querying...' : 'Look Up'"
           [isDisabled]="lookupLoading() || !lookupAddress.trim()" (buttonClick)="lookupContract()">
@@ -252,10 +351,10 @@
       <p class="text-gray-60 typo-text-2">Enter a deploy transaction ID or covenant ID. Only wallet-supported templates can be imported.</p>
       <div class="flex gap-8 align-items-end">
         <div class="form-group flex column gap-8 flex-1">
-          <label class="text-gray-60 typo-text-1">Deploy TX or Covenant ID</label>
-          <input type="text" class="form-input p-12 rounded-lg text-white typo-text-2"
-            placeholder="32c30c5f... or 5bff84f6..." [(ngModel)]="indexerImportQuery"
-            [disabled]="indexerImportLoading()" />
+          <kc-input [label]="'Deploy TX or Covenant ID'" [placeholder]="'32c30c5f... or 5bff84f6...'"
+            [type]="'text'" [isFullWidth]="true" [isDisabled]="indexerImportLoading()"
+            [ngModel]="indexerImportQuery" (valueChange)="indexerImportQuery = $event || ''">
+          </kc-input>
         </div>
         <kc-button [text]="indexerImportLoading() ? 'Loading...' : 'Find'"
           [isDisabled]="indexerImportLoading() || !indexerImportQuery.trim()" (buttonClick)="lookupIndexerImport()">
@@ -425,15 +524,10 @@
     <!-- Contract selector from registry -->
     <div class="form-group flex column gap-8">
       <label class="text-gray-60 typo-text-1">Select Contract</label>
-      <select class="form-input p-12 rounded-lg text-white typo-text-2" [ngModel]="selectedContractId()" (ngModelChange)="selectedContractId.set($event); selectContractFromRegistry()"
-        [disabled]="isInteracting()">
-        <option value="">-- Select a deployed contract --</option>
-        @for (contract of registryContracts(); track contract.id) {
-        <option [value]="contract.id">
-          {{ contract.contractName }} ({{ truncate(contract.contractAddress, 20) }})
-        </option>
-        }
-      </select>
+      <kc-dropdown-select [options]="registryContractOptions()" [placeholder]="'Select a deployed contract'"
+        [isFullWidth]="true" [isDisabled]="isInteracting()" [value]="selectedContractId()"
+        (valueChange)="selectedContractId.set($event); selectContractFromRegistry()">
+      </kc-dropdown-select>
     </div>
 
     <!-- Advanced: Manual contract JSON (collapsed by default) -->
@@ -530,18 +624,13 @@
     <!-- DMS keepAlive: new expiry input -->
     @if (isDmsKeepAlive()) {
     <div class="form-group flex column gap-8">
-      <div class="flex align-items-center gap-4">
-        <label class="text-gray-60 typo-text-1">New Expiry Timestamp (Unix seconds)</label>
-        <kc-icon [iconClass]="'icon-info'" [size]="'xs'"
-          kcTooltip="The new deadline timestamp for the refreshed contract. Enter as Unix timestamp in seconds (e.g. from epochconverter.com). The same owner and heir are preserved automatically."
-          tooltipPosition="top"></kc-icon>
-      </div>
-      <input type="number" class="form-input p-12 rounded-lg text-white typo-text-2"
-        placeholder="e.g. 1780000000 (from epochconverter.com)"
-        [(ngModel)]="dmsNewExpiry" [disabled]="isInteracting()" step="1" min="0" />
-      <a href="https://www.epochconverter.com/" target="_blank" class="text-blue typo-text-2" style="font-size: 12px;">
+      <app-covenant-date-time-input [label]="'New check-in deadline'" [value]="dmsNewExpiry"
+        [isDisabled]="isInteracting()" [isValid]="true" (valueChange)="dmsNewExpiry = $event">
+      </app-covenant-date-time-input>
+      <!--
         🔗 Convert date to timestamp →
-      </a>
+      -->
+      <span class="text-gray-60 typo-text-2">Pick when the heir should become able to claim if you do not refresh again.</span>
     </div>
 
     <div class="p-12 rounded-lg"
@@ -556,31 +645,22 @@
     <!-- Output address + amount (only for withdrawal functions, NOT DMS keepAlive) -->
     @if (selectedFunction && functionRequiresOutput(selectedFunction) && !isDmsKeepAlive()) {
     <div class="form-group flex column gap-8">
-      <div class="flex align-items-center gap-4">
-        <label class="text-gray-60 typo-text-1">Send To</label>
-        <kc-icon [iconClass]="'icon-info'" [size]="'xs'"
-          kcTooltip="The Kaspa address where funds will be sent when you withdraw" tooltipPosition="top"></kc-icon>
-      </div>
-      <input type="text" class="form-input p-12 rounded-lg text-white typo-text-2"
-        placeholder="Kaspa address (defaults to your wallet)" [(ngModel)]="interactOutputAddress"
-        [disabled]="isInteracting()" />
+      <app-address-smart-input [label]="'Send To'" [placeholder]="'Enter recipient wallet address or KNS domain'"
+        [isFullWidth]="true" [isValid]="true" [invalidReason]="''" [isDisabled]="isInteracting()"
+        [value]="interactOutputAddress" (valueChange)="onInteractOutputAddressChange($event)"
+        (resolved)="onInteractOutputAddressResolved($event)" (qrClick)="onInteractOutputQrClick()">
+      </app-address-smart-input>
     </div>
 
     <div class="form-group flex column gap-8">
-      <div class="flex justify-content-between align-items-center">
-        <div class="flex align-items-center gap-4">
-          <label class="text-gray-60 typo-text-1">Withdraw Amount (KAS)</label>
-          <kc-icon [iconClass]="'icon-info'" [size]="'xs'"
-            kcTooltip="Amount to withdraw. A small fee (~0.01 KAS) is deducted for the transaction. Use 'Max' to withdraw everything."
-            tooltipPosition="top"></kc-icon>
+      <kc-input [label]="'Withdraw Amount (KAS)'" [placeholder]="'0'" [type]="'number'" [min]="0"
+        [isFullWidth]="true" [isDisabled]="isInteracting()" [ngModel]="interactOutputAmount"
+        (valueChange)="onInteractOutputAmountChange($event)">
+        <div (click)="!isInteracting() && fillMaxOutputAmount()"
+          [class]="isInteracting() ? 'max-text disabled' : 'max-text clickable'" rightSideSlot>
+          <span>Max</span>
         </div>
-        <span class="text-blue typo-text-2 cursor-pointer" (click)="fillMaxOutputAmount()"
-          kcTooltip="Withdraw full balance minus transaction fee" tooltipPosition="left">
-          Max
-        </span>
-      </div>
-      <input type="number" class="form-input p-12 rounded-lg text-white typo-text-2" placeholder="Amount in KAS"
-        [(ngModel)]="interactOutputAmount" [disabled]="isInteracting()" step="0.01" min="0" />
+      </kc-input>
     </div>
     }
 
@@ -597,15 +677,10 @@
     <!-- Extra args (int/bool params, e.g. escrow arbitrate amountToSeller) -->
     @for (arg of extraArgsForFunction(); track arg.name) {
     <div class="form-group flex column gap-8">
-      <div class="flex align-items-center gap-4">
-        <label class="text-gray-60 typo-text-1">{{ arg.name }} ({{ arg.type_name }})</label>
-        <kc-icon [iconClass]="'icon-info'" [size]="'xs'"
-          [kcTooltip]="'Value for ' + arg.name + ' parameter (type: ' + arg.type_name + ')'"
-          tooltipPosition="top"></kc-icon>
-      </div>
-      <input type="number" class="form-input p-12 rounded-lg text-white typo-text-2"
-        [placeholder]="'Enter ' + arg.name + ' value (sompi)'" [(ngModel)]="extraArgValues[arg.name]"
-        [disabled]="isInteracting()" />
+      <kc-input [label]="arg.name + ' (' + arg.type_name + ')'" [placeholder]="'Enter ' + arg.name + ' value'"
+        [type]="'number'" [isFullWidth]="true" [isDisabled]="isInteracting()"
+        [ngModel]="extraArgValues[arg.name] || ''" (valueChange)="extraArgValues[arg.name] = $event || ''">
+      </kc-input>
     </div>
     }
 

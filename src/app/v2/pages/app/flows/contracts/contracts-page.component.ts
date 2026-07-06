@@ -209,6 +209,58 @@ export class ContractsPageComponent implements OnInit {
   selectedDetailError = signal<string | null>(null);
   private readonly supportedIndexerTemplates = ['DeadManSwitch', 'TimeLockVault', 'MultiSigVault', 'EscrowWithArbiter'];
 
+  // ── Redesign: My Contracts template filter ──────────────────────────────
+  dashboardFilter = signal<'all' | 'deadman' | 'timelock' | 'multisig' | 'escrow'>('all');
+
+  setDashboardFilter(key: 'all' | 'deadman' | 'timelock' | 'multisig' | 'escrow') {
+    this.dashboardFilter.set(key);
+  }
+
+  filteredDashboardContracts = computed(() => {
+    const key = this.dashboardFilter();
+    const all = this.dashboardContracts();
+    if (key === 'all') return all;
+    return all.filter((c) => this.getTemplateKey(c) === key);
+  });
+
+  /**
+   * Maps a contract to one of the four v1 template keys — drives card accent,
+   * icon, role labels, and which action UI is shown. Presentation-only.
+   * Reuses the canonical name already computed by normalizeContractName()
+   * (indexer label + argument-name fallback, resolved upstream in #257 and
+   * stored as contractName on every ContractDashboardEntry); unresolved
+   * (custom / tracking-incomplete) → 'default' (neutral UI).
+   */
+  getTemplateKey(
+    input: any,
+  ): 'deadman' | 'timelock' | 'multisig' | 'escrow' | 'default' {
+    // ContractTemplate.id on the Create / Templates tabs.
+    switch (input?.id) {
+      case 'dead-mans-switch':
+        return 'deadman';
+      case 'time-lock-vault':
+        return 'timelock';
+      case 'multi-sig-vault':
+        return 'multisig';
+      case 'escrow-with-arbiter':
+        return 'escrow';
+    }
+    switch (
+      this.normalizeContractName(input?.contractName ?? input?.name ?? '')
+    ) {
+      case 'DeadManSwitch':
+        return 'deadman';
+      case 'TimeLockVault':
+        return 'timelock';
+      case 'MultiSigVault':
+        return 'multisig';
+      case 'EscrowWithArbiter':
+        return 'escrow';
+      default:
+        return 'default';
+    }
+  }
+
   contractTemplates = CONTRACT_TEMPLATES;
   createMode = signal<CreateMode>('template');
   activeTemplate = signal<ContractTemplate | null>(null);

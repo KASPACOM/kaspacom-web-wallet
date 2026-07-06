@@ -2,6 +2,7 @@ import { Component, computed, inject, signal, OnInit, effect } from '@angular/co
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { DropdownOption, KcButtonComponent, KcDropdownSelectComponent, KcIconComponent, KcInputComponent, KcTooltipDirective } from 'kaspacom-ui';
 import { blake2b } from '@noble/hashes/blake2b';
@@ -96,6 +97,13 @@ type ContractDetailState = {
   utxos: IndexerCovenantUtxo[];
 };
 
+type DeployIndexerState = {
+  txid: string;
+  status: 'checking' | 'indexed' | 'not-indexed' | 'unavailable';
+  message: string;
+  covenantId?: string;
+};
+
 @Component({
   selector: 'app-contracts-page',
   imports: [
@@ -131,6 +139,7 @@ export class ContractsPageComponent implements OnInit {
   private kaspaL1NetworkService = inject(KaspaL1NetworkService);
   private flowPagesService = inject(FlowPagesService);
   private approvalFlowService = inject(ApprovalFlowService);
+  private route = inject(ActivatedRoute);
 
   // Current active tab
   activeTab = signal<TabName>('deploy');
@@ -162,7 +171,8 @@ export class ContractsPageComponent implements OnInit {
   deployAmount = '';
   deployAmountTouched = false;
   deployAmountError = signal('');
-  deployResult = signal<{ address: string; txid: string } | null>(null);
+  deployResult = signal<{ address: string; txid: string; covenantId?: string } | null>(null);
+  deployIndexerState = signal<DeployIndexerState | null>(null);
   deployError = signal<string | null>(null);
   isDeploying = signal(false);
 
@@ -339,6 +349,7 @@ export class ContractsPageComponent implements OnInit {
 
   ngOnInit() {
     this.restoreTransientState();
+    void this.applyInboundContractLink();
   }
 
   private restoreTransientState() {
@@ -357,6 +368,80 @@ export class ContractsPageComponent implements OnInit {
     if (state.interactResult !== undefined) this.interactResult.set(state.interactResult);
 
     this.flowPagesService.saveTransientState('contracts', undefined);
+  }
+
+  private async applyInboundContractLink() {
+    const params = this.route.snapshot.queryParamMap;
+    const contractId = params.get('contract')?.trim();
+    if (!contractId) return;
+
+    const requestedNetwork = params.get('network')?.trim();
+    if (requestedNetwork && requestedNetwork !== this.network() && !this.rpcService.setNetwork(requestedNetwork)) {
+      this.activeTab.set('lookup-import');
+      this.indexerImportError.set(`This contract link targets unsupported network "${requestedNetwork}".`);
+      return;
+    }
+
+    this.activeTab.set('lookup-import');
+    this.indexerImportQuery = contractId;
+    await this.lookupIndexerImport();
+
+    const preview = this.indexerImportPreview();
+    if (!preview) return;
+
+    await this.loadContracts();
+    const existing = this.findDashboardEntryForPreview(preview);
+    if (existing) {
+      this.activeTab.set('my-contracts');
+      await this.openContractDetail(existing);
+    }
+  }
+
+  private findDashboardEntryForPreview(preview: IndexerImportPreview): ContractDashboardEntry | undefined {
+    return this.dashboardContracts().find((entry) =>
+      entry.covenantId === preview.covenantId ||
+      entry.scriptHash === preview.action.scriptHashHex ||
+      entry.deployTxid === preview.deployTxid ||
+      entry.currentAddress === preview.contractAddress,
+    );
+  }
+
+  private async resolveIndexerImportQuery(query: string): Promise<{
+    action: IndexerCovenantAction;
+    actions: IndexerCovenantAction[];
+    covenant?: IndexerCovenantDetails;
+  }> {
+    const isHexIdentifier = /^[0-9a-fA-F]{64}$/.test(query);
+    if (isHexIdentifier) {
+      try {
+        return await this.fetchIndexerCovenant(query);
+      } catch {
+        // Fall through to search/list fallback; the input may be indexed only
+        // through a newer canonical/script-hash/search path.
+      }
+    }
+
+    // `/covenants?q=` is the broad import fallback for covenant addresses and
+    // fuzzy user input. `/explorer/search` can return template/category hits
+    // that are not importable by themselves.
+    const rows = await this.covenantIndexerService.listCovenants({ q: query, sort: 'recent', limit: 10 });
+    const row = rows.find((item) => this.supportedIndexerTemplates.includes(this.getIndexerTemplateName(item)));
+    const identifier = row?.covenantIdHex || row?.scriptHashHex || row?.genesisTxidHex;
+    if (identifier) {
+      return await this.fetchIndexerCovenant(identifier);
+    }
+
+    const searchResults = await this.covenantIndexerService.search(query, 10);
+    const concrete = searchResults.find((result) =>
+      (result.kind === 'covenant' || result.kind === 'transaction') &&
+      !!result.id &&
+      /^[0-9a-fA-F]{64}$/.test(result.id),
+    );
+    if (concrete?.id) {
+      return await this.fetchIndexerCovenant(concrete.id);
+    }
+
+    throw new Error('No importable wallet-supported covenant found for that query.');
   }
 
   /**
@@ -409,6 +494,7 @@ export class ContractsPageComponent implements OnInit {
     this.templateError.set(null);
     this.deployError.set(null);
     this.deployResult.set(null);
+    this.deployIndexerState.set(null);
     this.deployContractTouched = false;
     this.deployContractError.set('');
     this.validateDeployAmount(false);
@@ -420,6 +506,7 @@ export class ContractsPageComponent implements OnInit {
     this.templateError.set(null);
     this.deployError.set(null);
     this.deployResult.set(null);
+    this.deployIndexerState.set(null);
     this.deployContractTouched = false;
     this.deployContractError.set('');
     this.templateFieldTouched = {};
@@ -499,6 +586,7 @@ export class ContractsPageComponent implements OnInit {
   async deployTemplateContract() {
     this.deployError.set(null);
     this.deployResult.set(null);
+    this.deployIndexerState.set(null);
     this.templateError.set(null);
 
     if (!this.validateAllTemplateFields(true) || !this.validateDeployAmount(true)) {
@@ -1085,7 +1173,7 @@ export class ContractsPageComponent implements OnInit {
 
     try {
       const [response, actions, utxos] = await Promise.all([
-        this.covenantIndexerService.getCovenant(identifier),
+        this.fetchIndexerCovenantByIdOrHash(identifier),
         this.covenantIndexerService.getCovenantActions(identifier),
         this.covenantIndexerService.getCovenantUtxos(identifier),
       ]);
@@ -1165,14 +1253,14 @@ export class ContractsPageComponent implements OnInit {
     this.indexerImportError.set(null);
     this.indexerImportPreview.set(null);
 
-    if (!/^[0-9a-fA-F]{64}$/.test(query)) {
-      this.indexerImportError.set('Enter a 64-character deploy transaction ID or covenant ID.');
+    if (!query) {
+      this.indexerImportError.set('Enter a covenant ID, script hash, transaction ID, contract address, or share-link value.');
       return;
     }
 
     try {
       this.indexerImportLoading.set(true);
-      const response = await this.fetchIndexerCovenant(query);
+      const response = await this.resolveIndexerImportQuery(query);
       const preview = await this.buildIndexerImportPreview(response);
       this.indexerImportPreview.set(preview);
     } catch (error: any) {
@@ -1242,7 +1330,7 @@ export class ContractsPageComponent implements OnInit {
     covenant?: IndexerCovenantDetails;
   }> {
     try {
-      const byCovenant = await this.covenantIndexerService.getCovenant(identifier);
+      const byCovenant = await this.fetchIndexerCovenantByIdOrHash(identifier);
       const deployAction = (byCovenant.actions || []).find((action) => action.action === 'deploy') || byCovenant.actions?.[0];
       if (deployAction) {
         return await this.resolveLatestIndexerCovenant({
@@ -1263,7 +1351,7 @@ export class ContractsPageComponent implements OnInit {
 
     if (deployAction.covenantIdHex) {
       try {
-        const byCovenant = await this.covenantIndexerService.getCovenant(deployAction.covenantIdHex);
+        const byCovenant = await this.fetchIndexerCovenantByIdOrHash(deployAction.covenantIdHex);
         const canonicalDeploy = (byCovenant.actions || []).find((action) => action.action === 'deploy') || deployAction;
         return await this.resolveLatestIndexerCovenant({
           action: canonicalDeploy,
@@ -1276,6 +1364,14 @@ export class ContractsPageComponent implements OnInit {
     }
 
     return { action: deployAction, actions: byTx };
+  }
+
+  private async fetchIndexerCovenantByIdOrHash(identifier: string): Promise<IndexerCovenantResponse> {
+    try {
+      return await this.covenantIndexerService.getCovenantByCanonicalId(identifier);
+    } catch {
+      return await this.covenantIndexerService.getCovenant(identifier);
+    }
   }
 
   private async resolveLatestIndexerCovenant(response: {
@@ -1294,7 +1390,7 @@ export class ContractsPageComponent implements OnInit {
     }
 
     try {
-      const latest = await this.covenantIndexerService.getCovenant(latestScriptHash);
+      const latest = await this.fetchIndexerCovenantByIdOrHash(latestScriptHash);
       const latestDeploy = (latest.actions || []).find((action) => action.action === 'deploy') || latest.actions?.[0];
       if (latestDeploy && (latest.covenant?.claimedTemplate || latest.covenant?.claimedArgs?.tmpl)) {
         return {
@@ -1559,6 +1655,7 @@ export class ContractsPageComponent implements OnInit {
   async deployContract() {
     this.deployError.set(null);
     this.deployResult.set(null);
+    this.deployIndexerState.set(null);
 
     const wallet = this.selectedAccount();
     if (!wallet) {
@@ -1632,15 +1729,18 @@ export class ContractsPageComponent implements OnInit {
       this.deployResult.set({
         address: result.contractAddress,
         txid: result.txid,
+        covenantId: result.covenantId,
       });
 
       try {
         this.registryService.addContract(entry);
+        void this.trackDeployIndexing(result.txid, entry.id, result.covenantId);
       } catch (e) {
         console.error('[Deploy] Contract deployed but failed to save to registry:', e);
         this.deployError.set(
           `Contract deployed (txid ${result.txid}), but saving it locally failed. Record the outpoint to interact later: ${result.outpoint.txid}:${result.outpoint.vout}.`,
         );
+        void this.trackDeployIndexing(result.txid, undefined, result.covenantId);
       }
     } catch (error: any) {
       console.error('[Deploy] Failed:', error);
@@ -1648,6 +1748,63 @@ export class ContractsPageComponent implements OnInit {
     } finally {
       this.isDeploying.set(false);
     }
+  }
+
+  private async trackDeployIndexing(txid: string, registryEntryId?: string, initialCovenantId?: string) {
+    this.deployIndexerState.set({
+      txid,
+      status: 'checking',
+      covenantId: initialCovenantId,
+      message: 'Waiting for the indexer to see this deployment...',
+    });
+
+    for (let attempt = 1; attempt <= 8; attempt++) {
+      try {
+        const status = await this.covenantIndexerService.getTransactionSettlementStatus(txid);
+        const actions = status.actions || [];
+        const indexedCovenantId = initialCovenantId || actions.find((action) => action.covenantIdHex)?.covenantIdHex;
+
+        if (status.indexed) {
+          if (registryEntryId && indexedCovenantId) {
+            this.registryService.updateContract(registryEntryId, { covenantId: indexedCovenantId });
+          }
+          this.deployResult.update((current) => current ? { ...current, covenantId: indexedCovenantId } : current);
+          this.deployIndexerState.set({
+            txid,
+            status: 'indexed',
+            covenantId: indexedCovenantId,
+            message: 'Indexed. This contract can now be shared and tracked from My Contracts.',
+          });
+          await this.loadContracts();
+          return;
+        }
+
+        this.deployIndexerState.set({
+          txid,
+          status: 'checking',
+          covenantId: indexedCovenantId,
+          message: `Waiting for indexer confirmation (${attempt}/8)...`,
+        });
+      } catch (error: any) {
+        console.warn('[Contracts] Deploy indexing check failed:', error);
+        this.deployIndexerState.set({
+          txid,
+          status: 'unavailable',
+          covenantId: initialCovenantId,
+          message: error?.message || 'Indexer status is unavailable. The deployment tx was still returned by the wallet.',
+        });
+        return;
+      }
+
+      await this.delay(2500);
+    }
+
+    this.deployIndexerState.set({
+      txid,
+      status: 'not-indexed',
+      covenantId: initialCovenantId,
+      message: 'Deployment broadcasted, but the indexer has not confirmed it yet. Refresh My Contracts in a moment.',
+    });
   }
 
   /**
@@ -2275,7 +2432,7 @@ export class ContractsPageComponent implements OnInit {
   }
 
   copyContractShareLink(contract: ContractDashboardEntry) {
-    const id = contract.covenantId || contract.scriptHash;
+    const id = contract.covenantId;
     if (!id) return;
 
     // Share links intentionally carry only public lookup state. The receiving
@@ -2287,6 +2444,23 @@ export class ContractsPageComponent implements OnInit {
       () => alert('Contract share link copied.'),
       () => prompt('Copy this contract link:', url.toString()),
     );
+  }
+
+  copyDeployedContractShareLink() {
+    const id = this.deployIndexerState()?.covenantId || this.deployResult()?.covenantId;
+    if (!id) return;
+
+    const url = new URL(window.location.origin + '/app/contracts');
+    url.searchParams.set('network', this.network());
+    url.searchParams.set('contract', id);
+    navigator.clipboard.writeText(url.toString()).then(
+      () => alert('Contract share link copied.'),
+      () => prompt('Copy this contract link:', url.toString()),
+    );
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private fieldToCtorArg(field: TemplateField, rawValue: string | number | undefined): CtorArg {

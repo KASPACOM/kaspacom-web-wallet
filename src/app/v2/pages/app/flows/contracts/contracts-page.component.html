@@ -242,6 +242,22 @@
           <app-copy-button [value]="deployResult()!.txid" [size]="'sm'"></app-copy-button>
         </div>
       </div>
+      @if (deployIndexerState()) {
+      <div class="result-row flex column gap-4">
+        <span class="text-gray-60 typo-text-1">Indexer Status</span>
+        <span class="text-white typo-text-2">{{ deployIndexerState()!.message }}</span>
+        @if (deployIndexerState()!.covenantId) {
+        <div class="flex align-items-center gap-8">
+          <span class="text-gray-60 typo-text-2 text-mono">{{ truncate(deployIndexerState()!.covenantId || '', 28) }}</span>
+          <app-copy-button [value]="deployIndexerState()!.covenantId || ''" [size]="'sm'"></app-copy-button>
+          @if (deployIndexerState()!.status === 'indexed') {
+          <kc-button [text]="'Copy Share Link'" (buttonClick)="copyDeployedContractShareLink()">
+          </kc-button>
+          }
+        </div>
+        }
+      </div>
+      }
     </div>
     }
 
@@ -348,10 +364,10 @@
     <!-- Indexer Import -->
     <div class="panel flex column gap-16 p-20 rounded-lg">
       <h3 class="text-white typo-text-1 fw-bold">Import from Indexer</h3>
-      <p class="text-gray-60 typo-text-2">Enter a deploy transaction ID or covenant ID. Only wallet-supported templates can be imported.</p>
+      <p class="text-gray-60 typo-text-2">Enter a covenant ID, script hash, deploy transaction, contract address, or shared contract link value. Only wallet-supported templates can be imported.</p>
       <div class="flex gap-8 align-items-end">
         <div class="form-group flex column gap-8 flex-1">
-          <kc-input [label]="'Deploy TX or Covenant ID'" [placeholder]="'32c30c5f... or 5bff84f6...'"
+          <kc-input [label]="'Contract Lookup'" [placeholder]="'covenant ID, txid, or kaspatest:...'"
             [type]="'text'" [isFullWidth]="true" [isDisabled]="indexerImportLoading()"
             [ngModel]="indexerImportQuery" (valueChange)="indexerImportQuery = $event || ''">
           </kc-input>
@@ -553,7 +569,7 @@
         <kc-button [text]="contract.nextActionLabel" (buttonClick)="openDashboardAction(contract)">
         </kc-button>
         }
-        @if (contract.covenantId || contract.scriptHash) {
+        @if (contract.covenantId) {
         <kc-button [text]="'Copy Share Link'" (buttonClick)="copyContractShareLink(contract)">
         </kc-button>
         }

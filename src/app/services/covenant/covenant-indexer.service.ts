@@ -99,10 +99,17 @@ export interface IndexerSearchResult {
 }
 
 export interface IndexerTxSettlementStatus {
+  actionCount?: number;
+  actions?: IndexerCovenantAction[];
+  blockTimeMs?: number;
+  continuationCount?: number;
+  decoded?: boolean;
   indexed: boolean;
   indexedAtMs?: string | null;
   indexerStatus?: string | null;
+  matchedCovenantCount?: number;
   scanner?: Record<string, any>;
+  spendCount?: number;
   txidHex: string;
 }
 

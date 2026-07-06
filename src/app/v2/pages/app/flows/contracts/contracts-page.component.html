@@ -427,48 +427,92 @@
   @if (activeTab() === 'my-contracts') {
   <div class="contracts-list flex column gap-16">
 
-    <!-- Deployed Contracts Registry -->
-    @if (registryContracts().length === 0) {
+    <div class="panel flex column gap-12 p-20 rounded-lg">
+      <div class="flex justify-content-between align-items-center gap-12 flex-wrap">
+        <div class="flex column gap-4">
+          <h3 class="text-white typo-text-1 fw-bold">My Contracts</h3>
+          <p class="text-gray-60 typo-text-2">Tracked by wallet address, role args, active UTXOs, and covenant timeline from the indexer.</p>
+        </div>
+        <kc-button [text]="dashboardLoading() ? 'Refreshing...' : 'Refresh'" [isDisabled]="dashboardLoading()"
+          (buttonClick)="loadContracts()">
+        </kc-button>
+      </div>
+
+      @if (dashboardError()) {
+      <div class="error-message p-12 rounded-lg text-red typo-text-2">
+        {{ dashboardError() }}
+      </div>
+      }
+
+      @if (dashboardLoading()) {
+      <div class="p-12 rounded text-gray-60 typo-text-2">
+        Loading indexer-backed contract tracking...
+      </div>
+      }
+    </div>
+
+    @if (!dashboardLoading() && dashboardContracts().length === 0) {
     <div class="empty-state p-32 rounded-lg text-center">
-      <p class="text-gray-60 typo-text-1">No contracts deployed yet on {{ network() }}</p>
+      <p class="text-gray-60 typo-text-1">No contracts found for this wallet on {{ network() }}</p>
     </div>
     }
 
-    @for (contract of registryContracts(); track contract.id) {
+    @for (contract of dashboardContracts(); track contract.id) {
     <div class="contract-card p-20 rounded-lg flex column gap-16"
       [style.opacity]="contract.status === 'spent' ? '0.5' : '1'">
-      <!-- Contract header -->
       <div class="flex justify-content-between align-items-start">
         <div class="flex column gap-4">
-          <h3 class="text-white typo-title-3">{{ contract.contractName }}</h3>
+          <div class="flex align-items-center gap-8 flex-wrap">
+            <h3 class="text-white typo-title-3">{{ contract.displayName }}</h3>
+            <span class="source-badge p-6 rounded typo-text-2">{{ getSourceLabel(contract) }}</span>
+          </div>
           <span class="text-gray-60 typo-text-2">
             {{ formatSompiToKas(contract.amountSompi) }} KAS
           </span>
         </div>
         <div class="flex align-items-center gap-8">
           @if (contract.status === 'spent') {
-          <div class="status-badge inactive p-8 rounded" kcTooltip="This contract has been spent — funds withdrawn"
+          <div class="status-badge inactive p-8 rounded" kcTooltip="No active covenant UTXO is currently indexed"
             tooltipPosition="left">
             <span class="typo-text-2">Spent</span>
+          </div>
+          } @else if (contract.status === 'unknown' || contract.status === 'tracking-incomplete') {
+          <div class="status-badge unknown p-8 rounded" kcTooltip="The wallet has a local entry, but indexer tracking is incomplete"
+            tooltipPosition="left">
+            <span class="typo-text-2">Tracking</span>
           </div>
           } @else {
           <div class="status-badge active p-8 rounded">
             <span class="typo-text-2">Active</span>
           </div>
           }
-          <span class="text-gray-60 typo-text-2 cursor-pointer" (click)="deleteContract(contract.id)"
-            kcTooltip="Remove from list" tooltipPosition="left">✕</span>
+          @if (contract.registryEntry) {
+          <span class="text-gray-60 typo-text-2 cursor-pointer" (click)="deleteContract(contract.registryEntry.id)"
+            kcTooltip="Remove local copy from list" tooltipPosition="left">✕</span>
+          }
         </div>
       </div>
 
-      <!-- Contract address -->
+      @if (contract.participants.length > 0) {
+      <div class="participant-grid">
+        @for (participant of contract.participants.slice(0, 4); track participant.label + participant.value) {
+        <div class="participant-item p-8 rounded">
+          <span class="text-gray-60 typo-text-2">{{ participant.label }}</span>
+          <span class="text-white typo-text-2 text-mono">{{ truncate(participant.value, 22) }}</span>
+        </div>
+        }
+      </div>
+      }
+
       <div class="flex column gap-4">
-        <span class="text-gray-60 typo-text-2">Contract Address</span>
+        <span class="text-gray-60 typo-text-2">Current Address</span>
         <div class="flex align-items-center gap-8">
-          <a [href]="getExplorerAddressLink(contract.contractAddress)" target="_blank" class="text-blue typo-text-2">
-            {{ truncate(contract.contractAddress, 30) }}
+          <a [href]="getExplorerAddressLink(contract.currentAddress || '')" target="_blank" class="text-blue typo-text-2">
+            {{ truncate(contract.currentAddress || 'Unknown', 30) }}
           </a>
-          <app-copy-button [value]="contract.contractAddress" [size]="'sm'"></app-copy-button>
+          @if (contract.currentAddress) {
+          <app-copy-button [value]="contract.currentAddress" [size]="'sm'"></app-copy-button>
+          }
         </div>
       </div>
 
@@ -482,37 +526,126 @@
       </div>
       }
 
-      <!-- Deploy TX -->
+      @if (contract.deadlineMs) {
       <div class="flex column gap-4">
-        <span class="text-gray-60 typo-text-2">Deploy TX</span>
-        <div class="flex align-items-center gap-8">
-          <a [href]="getExplorerLink(contract.deployTxid)" target="_blank" class="text-blue typo-text-2">
-            {{ truncate(contract.deployTxid, 20) }}
-          </a>
-          <app-copy-button [value]="contract.deployTxid" [size]="'sm'"></app-copy-button>
-        </div>
-      </div>
-
-      @if (contract.spendTxid) {
-      <div class="flex column gap-4">
-        <span class="text-gray-60 typo-text-2">Spend TX</span>
-        <div class="flex align-items-center gap-8">
-          <a [href]="getExplorerLink(contract.spendTxid)" target="_blank" class="text-blue typo-text-2">
-            {{ truncate(contract.spendTxid, 20) }}
-          </a>
-          <app-copy-button [value]="contract.spendTxid" [size]="'sm'"></app-copy-button>
-        </div>
+        <span class="text-gray-60 typo-text-2">Deadline</span>
+        <span class="text-white typo-text-2">{{ formatTimestamp(contract.deadlineMs) }}</span>
       </div>
       }
 
-      <!-- Action buttons -->
-      <div class="flex gap-8">
+      <div class="flex column gap-4">
+        <span class="text-gray-60 typo-text-2">Latest Action</span>
+        <div class="flex align-items-center gap-8">
+          <span class="text-white typo-text-2">{{ formatActionName(contract.latestAction || 'deploy') }}</span>
+          @if (contract.latestTxid) {
+          <a [href]="getExplorerLink(contract.latestTxid)" target="_blank" class="text-blue typo-text-2">
+            {{ truncate(contract.latestTxid, 20) }}
+          </a>
+          <app-copy-button [value]="contract.latestTxid" [size]="'sm'"></app-copy-button>
+          }
+        </div>
+      </div>
+
+      <div class="flex gap-8 flex-wrap">
+        <kc-button [text]="'View Details'" (buttonClick)="openContractDetail(contract)">
+        </kc-button>
         @if (contract.status !== 'spent') {
-        <kc-button [text]="'💰 Withdraw'" [isFullWidth]="true"
-          (buttonClick)="selectedContractId.set(contract.id); selectContractFromRegistry(); switchTab('interact')">
+        <kc-button [text]="contract.nextActionLabel" (buttonClick)="openDashboardAction(contract)">
+        </kc-button>
+        }
+        @if (contract.covenantId || contract.scriptHash) {
+        <kc-button [text]="'Copy Share Link'" (buttonClick)="copyContractShareLink(contract)">
         </kc-button>
         }
       </div>
+    </div>
+    }
+
+    @if (selectedDetail()) {
+    <div class="panel flex column gap-16 p-20 rounded-lg">
+      <div class="flex justify-content-between align-items-start gap-12">
+        <div class="flex column gap-4">
+          <h3 class="text-white typo-title-3">{{ selectedDetail()!.entry.displayName }}</h3>
+          <p class="text-gray-60 typo-text-2">Current state from covenant detail, active UTXOs, and action timeline.</p>
+        </div>
+        <button class="back-button p-8 rounded typo-text-2" (click)="selectedDetail.set(null)">
+          Close
+        </button>
+      </div>
+
+      @if (selectedDetailLoading()) {
+      <div class="p-12 rounded text-gray-60 typo-text-2">Loading current indexer state...</div>
+      }
+
+      @if (selectedDetailError()) {
+      <div class="error-message p-12 rounded-lg text-red typo-text-2">
+        {{ selectedDetailError() }}
+      </div>
+      }
+
+      <div class="detail-grid">
+        <div class="detail-item p-12 rounded">
+          <span class="text-gray-60 typo-text-2">Status</span>
+          <span class="text-white typo-text-1 fw-bold">{{ getStatusLabel(selectedDetail()!.entry) }}</span>
+        </div>
+        <div class="detail-item p-12 rounded">
+          <span class="text-gray-60 typo-text-2">Locked</span>
+          <span class="text-white typo-text-1 fw-bold">{{ formatSompiToKas(selectedDetail()!.entry.amountSompi) }} KAS</span>
+        </div>
+        <div class="detail-item p-12 rounded">
+          <span class="text-gray-60 typo-text-2">Active UTXOs</span>
+          <span class="text-white typo-text-1 fw-bold">{{ selectedDetail()!.utxos.length }}</span>
+        </div>
+      </div>
+
+      @if (selectedDetail()!.utxos.length > 0) {
+      <div class="flex column gap-8">
+        <span class="text-gray-60 typo-text-1">Current UTXO</span>
+        @for (utxo of selectedDetail()!.utxos; track (utxo.txidHex || '') + ':' + utxo.vout) {
+        <div class="utxo-row p-12 rounded-lg flex justify-content-between align-items-center gap-12">
+          <a [href]="getExplorerLink(utxo.txidHex || '')" target="_blank" class="text-blue typo-text-2">
+            {{ truncate(utxo.txidHex || 'Unknown', 24) }}:{{ utxo.vout || 0 }}
+          </a>
+          <span class="text-white typo-text-2 fw-bold">{{ formatSompiToKas(utxo.amountSompi?.toString() || '0') }} KAS</span>
+        </div>
+        }
+      </div>
+      }
+
+      <div class="flex column gap-8">
+        <span class="text-gray-60 typo-text-1">Timeline</span>
+        @for (action of selectedDetail()!.actions.slice(0, 8); track (action.txidHex || '') + (action.action || '') + (action.entrypoint || '')) {
+        <div class="timeline-row p-12 rounded-lg flex justify-content-between align-items-start gap-12">
+          <div class="flex column gap-4">
+            <span class="text-white typo-text-2">{{ formatActionName(action.entrypoint || action.action || 'action') }}</span>
+            <span class="text-gray-60 typo-text-2">{{ formatTimestamp(action.blockTimeMs) }}</span>
+          </div>
+          @if (action.txidHex) {
+          <a [href]="getExplorerLink(action.txidHex)" target="_blank" class="text-blue typo-text-2">
+            {{ truncate(action.txidHex, 20) }}
+          </a>
+          }
+        </div>
+        }
+      </div>
+
+      <details class="advanced-section">
+        <summary class="text-gray-60 typo-text-2 cursor-pointer">Advanced technical data</summary>
+        <div class="flex column gap-8 mt-8">
+          @if (selectedDetail()!.entry.covenantId) {
+          <div class="flex column gap-4">
+            <span class="text-gray-60 typo-text-2">Covenant ID</span>
+            <span class="text-white typo-text-2 text-mono">{{ selectedDetail()!.entry.covenantId }}</span>
+          </div>
+          }
+          @if (selectedDetail()!.entry.scriptHash) {
+          <div class="flex column gap-4">
+            <span class="text-gray-60 typo-text-2">Script Hash</span>
+            <span class="text-white typo-text-2 text-mono">{{ selectedDetail()!.entry.scriptHash }}</span>
+          </div>
+          }
+        </div>
+      </details>
     </div>
     }
   </div>

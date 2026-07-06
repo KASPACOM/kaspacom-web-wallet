@@ -117,6 +117,12 @@ select.form-input {
     border: 1px solid var(--border-secondary);
     color: var(--gray-60);
   }
+
+  &.unknown {
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.35);
+    color: var(--yellow-20);
+  }
 }
 
 // Messages
@@ -142,6 +148,34 @@ select.form-input {
 .param-item {
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.source-badge {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-secondary);
+  color: var(--gray-60);
+}
+
+.participant-grid,
+.detail-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.participant-item,
+.detail-item,
+.timeline-row {
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  min-width: 0;
+}
+
+.participant-item,
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 // Access roles

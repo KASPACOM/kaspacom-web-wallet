@@ -72,13 +72,13 @@
   background: var(--gray-10);
   border: 1px solid var(--border-secondary);
   outline: none;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   transition: border-color 0.2s;
-  
+
   &:focus {
     border-color: var(--kaspa-20);
   }
-  
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -289,7 +289,7 @@ select.form-input {
 
 // Utilities
 .text-mono {
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   font-size: 13px;
 }
 
@@ -445,7 +445,9 @@ select.form-input {
 .template-chevron {
   color: var(--gray-60);
   min-width: max-content;
-  transition: color 0.2s, transform 0.2s;
+  transition:
+    color 0.2s,
+    transform 0.2s;
 }
 
 .template-card-compact:hover .template-chevron {
@@ -510,12 +512,12 @@ select.form-input {
   summary {
     user-select: none;
     padding: 8px 0;
-    
+
     &:hover {
       color: var(--kaspa-20);
     }
   }
-  
+
   .mt-8 {
     margin-top: 8px;
   }
@@ -563,7 +565,7 @@ select.form-input {
   .contracts-container {
     padding: 0 24px;
   }
-  
+
   .contracts-list {
     display: grid;
     grid-template-columns: 1fr;

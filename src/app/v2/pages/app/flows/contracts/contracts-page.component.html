@@ -50,6 +50,8 @@
   <div class="seg-tabs" role="tablist">
     <button
       class="seg-tab"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'deploy'"
       [class.active]="activeTab() === 'deploy'"
       (click)="switchTab('deploy')"
     >
@@ -57,6 +59,8 @@
     </button>
     <button
       class="seg-tab"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'my-contracts'"
       [class.active]="activeTab() === 'my-contracts'"
       (click)="switchTab('my-contracts')"
     >
@@ -64,6 +68,8 @@
     </button>
     <button
       class="seg-tab"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'lookup-import'"
       [class.active]="activeTab() === 'lookup-import'"
       (click)="switchTab('lookup-import')"
     >
@@ -592,6 +598,7 @@
                 <a
                   [href]="getExplorerLink(deployResult()!.txid)"
                   target="_blank"
+                  rel="noopener noreferrer"
                   class="text-blue typo-text-2 text-truncate"
                   >{{ deployResult()!.txid }}</a
                 >
@@ -975,6 +982,7 @@
                       class="push text-blue"
                       [href]="getExplorerLink(contract.latestTxid)"
                       target="_blank"
+                      rel="noopener noreferrer"
                       >{{ truncate(contract.latestTxid, 12) }}</a
                     >
                   }
@@ -1324,6 +1332,7 @@
                           <a
                             [href]="getExplorerLink(utxo.txidHex)"
                             target="_blank"
+                            rel="noopener noreferrer"
                             class="text-blue typo-text-2"
                             >{{ truncate(utxo.txidHex, 24) }}:{{
                               utxo.vout || 0
@@ -1385,6 +1394,7 @@
                               class="tl-tx"
                               [href]="getExplorerLink(action.txidHex)"
                               target="_blank"
+                              rel="noopener noreferrer"
                               >{{ truncate(action.txidHex, 16) }}</a
                             >
                           }
@@ -1527,6 +1537,7 @@
                     )
                   "
                   target="_blank"
+                  rel="noopener noreferrer"
                   class="text-blue typo-text-2"
                   >{{
                     truncate(indexerImportPreview()!.contractAddress, 34)
@@ -1604,6 +1615,7 @@
               <a
                 [href]="getExplorerAddressLink(lookupResult()!.address)"
                 target="_blank"
+                rel="noopener noreferrer"
                 class="text-blue typo-text-2"
                 >View in explorer ↗</a
               >
@@ -1639,6 +1651,7 @@
                     <a
                       [href]="getExplorerLink(utxo.txid)"
                       target="_blank"
+                      rel="noopener noreferrer"
                       class="text-blue typo-text-2"
                       >{{ truncate(utxo.txid, 20) }}:{{ utxo.vout }}</a
                     >
@@ -1729,6 +1742,7 @@
                 <a
                   [href]="getExplorerLink(interactOutpointTxid)"
                   target="_blank"
+                  rel="noopener noreferrer"
                   class="text-blue typo-text-2 text-truncate"
                   >{{ truncate(interactOutpointTxid, 24) }}</a
                 ><app-copy-button
@@ -1977,6 +1991,7 @@
                     <a
                       [href]="getExplorerLink(partialCompleteResult()!.txid)"
                       target="_blank"
+                      rel="noopener noreferrer"
                       class="text-blue typo-text-2 text-truncate"
                       >{{ partialCompleteResult()!.txid }}</a
                     ><app-copy-button
@@ -2009,6 +2024,7 @@
               <a
                 [href]="getExplorerLink(interactResult()!.txid)"
                 target="_blank"
+                rel="noopener noreferrer"
                 class="text-blue typo-text-2 text-truncate"
                 >{{ interactResult()!.txid }}</a
               ><app-copy-button

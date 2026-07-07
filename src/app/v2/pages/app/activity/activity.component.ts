@@ -92,6 +92,10 @@ export class ActivityComponent
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private router = inject(Router);
   private destroy$ = new Subject<void>();
+  private currentTimeMs = signal(Date.now());
+  private timestampRefreshInterval?: ReturnType<typeof setInterval>;
+  private timeAgoPipe = new TimeAgoPipe();
+  private formattedTimestampCache = new Map<number, string>();
 
   // Signals for reactive state
   private kaspaTransactions = signal<FullTransactionResponseItem[]>([]);
@@ -211,9 +215,16 @@ export class ActivityComponent
 
   ngOnInit() {
     // Initial load is handled by the effect in constructor
+    this.timestampRefreshInterval = setInterval(() => {
+      this.formattedTimestampCache.clear();
+      this.currentTimeMs.set(Date.now());
+    }, 60_000);
   }
 
   ngOnDestroy() {
+    if (this.timestampRefreshInterval) {
+      clearInterval(this.timestampRefreshInterval);
+    }
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -536,16 +547,27 @@ export class ActivityComponent
 
   // Template helper methods
   formatTimestamp(timestamp: number): string {
-    const timeAgo = new TimeAgoPipe().transform(timestamp);
+    this.currentTimeMs();
+
+    const cachedTimestamp = this.formattedTimestampCache.get(timestamp);
+
+    if (cachedTimestamp) {
+      return cachedTimestamp;
+    }
+
+    const timeAgo = this.timeAgoPipe.transform(timestamp);
     const date = new Date(timestamp);
+    const nowDate = new Date();
     const formattedDate = date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year:
-        date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
+      year: date.getFullYear() !== nowDate.getFullYear() ? 'numeric' : undefined,
     });
 
-    return `${timeAgo} • ${formattedDate}`;
+    const formattedTimestamp = `${timeAgo} • ${formattedDate}`;
+    this.formattedTimestampCache.set(timestamp, formattedTimestamp);
+
+    return formattedTimestamp;
   }
 
   shortenAddress(address: string): string {

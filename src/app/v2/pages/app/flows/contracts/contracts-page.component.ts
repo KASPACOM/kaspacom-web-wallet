@@ -1,9 +1,9 @@
-import { Component, computed, inject, signal, OnInit, effect } from '@angular/core';
+import { Component, computed, inject, signal, OnInit, OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { firstValueFrom, Subscription } from 'rxjs';
 import { DropdownOption, KcButtonComponent, KcDropdownSelectComponent, KcIconComponent, KcInputComponent, KcTooltipDirective } from 'kaspacom-ui';
 import { blake2b } from '@noble/hashes/blake2b';
 import { WalletService } from '../../../../../services/wallet.service';
@@ -34,7 +34,8 @@ import { ApprovalFlowService } from '../../../../services/approval-flow.service'
 import { AddressSmartInputComponent } from '../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { CovenantDateTimeInputComponent } from './covenant-date-time-input.component';
 
-type TabName = 'deploy' | 'my-contracts' | 'lookup-import' | 'interact' | 'templates';
+type TabName = 'deploy' | 'my-contracts' | 'lookup-import' | 'interact' | 'templates' | 'detail';
+type ContractDetailTab = 'details' | 'action';
 type CreateMode = 'template' | 'custom';
 type ContractsTransientState = {
   activeTab?: TabName;
@@ -67,7 +68,8 @@ type IndexerImportPreview = {
   isLatestContinuation: boolean;
 };
 
-type ContractDashboardSource = 'indexer' | 'local';
+type ContractDashboardSource = 'indexer' | 'local' | 'both';
+type ContractDashboardFilter = 'active' | 'history';
 
 type ContractDashboardEntry = {
   id: string;
@@ -125,7 +127,7 @@ type DeployIndexerState = {
     '[class.full-height]': 'true',
   },
 })
-export class ContractsPageComponent implements OnInit {
+export class ContractsPageComponent implements OnInit, OnDestroy {
   private walletService = inject(WalletService);
   private walletActionService = inject(WalletActionService);
   private qrScannerService = inject(QrScannerService);
@@ -140,6 +142,8 @@ export class ContractsPageComponent implements OnInit {
   private flowPagesService = inject(FlowPagesService);
   private approvalFlowService = inject(ApprovalFlowService);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private routeSubscription?: Subscription;
 
   // Current active tab
   activeTab = signal<TabName>('deploy');
@@ -202,11 +206,20 @@ export class ContractsPageComponent implements OnInit {
   // Contract registry (my contracts tab)
   registryContracts = signal<ContractRegistryEntry[]>([]);
   dashboardContracts = signal<ContractDashboardEntry[]>([]);
+  dashboardFilter = signal<ContractDashboardFilter>('active');
+  activeDashboardContracts = computed(() => this.dashboardContracts().filter((contract) => contract.status !== 'spent'));
+  historyDashboardContracts = computed(() => this.dashboardContracts().filter((contract) => contract.status === 'spent'));
+  filteredDashboardContracts = computed(() =>
+    this.dashboardFilter() === 'history' ? this.historyDashboardContracts() : this.activeDashboardContracts(),
+  );
   dashboardLoading = signal(false);
   dashboardError = signal<string | null>(null);
   selectedDetail = signal<ContractDetailState | null>(null);
   selectedDetailLoading = signal(false);
   selectedDetailError = signal<string | null>(null);
+  detailPanelTab = signal<ContractDetailTab>('details');
+  detailRouteId = signal<string | null>(null);
+  detailRouteNotFound = signal(false);
   private readonly supportedIndexerTemplates = ['DeadManSwitch', 'TimeLockVault', 'MultiSigVault', 'EscrowWithArbiter'];
 
   contractTemplates = CONTRACT_TEMPLATES;
@@ -348,8 +361,31 @@ export class ContractsPageComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.routeSubscription = this.route.paramMap.subscribe((params) => {
+      const contractId = params.get('contractId');
+      this.detailRouteId.set(contractId);
+      this.detailRouteNotFound.set(false);
+      if (contractId) {
+        const requestedNetwork = this.route.snapshot.queryParamMap.get('network')?.trim();
+        if (requestedNetwork && requestedNetwork !== this.network()) {
+          if (!this.rpcService.setNetwork(requestedNetwork)) {
+            this.selectedDetailError.set(`This contract link targets unsupported network "${requestedNetwork}".`);
+            return;
+          }
+          this.activeTab.set('my-contracts');
+          return;
+        }
+        this.detailPanelTab.set('details');
+        this.activeTab.set('detail');
+        void this.openDetailFromRoute(contractId);
+      }
+    });
     this.restoreTransientState();
     void this.applyInboundContractLink();
+  }
+
+  ngOnDestroy() {
+    this.routeSubscription?.unsubscribe();
   }
 
   private restoreTransientState() {
@@ -392,7 +428,8 @@ export class ContractsPageComponent implements OnInit {
     await this.loadContracts();
     const existing = this.findDashboardEntryForPreview(preview);
     if (existing) {
-      this.activeTab.set('my-contracts');
+      this.detailPanelTab.set('details');
+      this.activeTab.set('detail');
       await this.openContractDetail(existing);
     }
   }
@@ -851,15 +888,13 @@ export class ContractsPageComponent implements OnInit {
     this.selectedDetail.set(null);
     this.selectedDetailError.set(null);
 
-    const allContracts = this.registryService.getAllContracts();
-    const currentNetwork = this.network();
-    const filtered = allContracts.filter((c) => c.network === currentNetwork);
+    const filtered = this.getCurrentWalletLocalContracts();
     this.registryContracts.set(filtered);
 
     // Check on-chain status for each contract
     await this.refreshContractStatuses(filtered);
 
-    const updatedLocal = this.registryService.getAllContracts().filter((c) => c.network === this.network());
+    const updatedLocal = this.getCurrentWalletLocalContracts();
     this.registryContracts.set(updatedLocal);
 
     try {
@@ -874,6 +909,11 @@ export class ContractsPageComponent implements OnInit {
       this.dashboardContracts.set(updatedLocal.map((entry) => this.localEntryToDashboard(entry)));
     } finally {
       this.dashboardLoading.set(false);
+    }
+
+    const routeId = this.detailRouteId();
+    if (routeId) {
+      await this.openDetailFromRoute(routeId);
     }
   }
 
@@ -917,8 +957,21 @@ export class ContractsPageComponent implements OnInit {
     }
 
     // Reload with updated statuses
-    const updated = this.registryService.getAllContracts().filter((c) => c.network === this.network());
+    const updated = this.getCurrentWalletLocalContracts();
     this.registryContracts.set(updated);
+  }
+
+  private getCurrentWalletLocalContracts(): ContractRegistryEntry[] {
+    const wallet = this.currentWallet();
+    const address = wallet?.getAddress()?.toLowerCase();
+    const pubkey = wallet?.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString()?.toLowerCase();
+
+    return this.registryService.getAllContracts().filter((contract) => {
+      if (contract.network !== this.network()) return false;
+      const deployedAddress = contract.deployedBy?.address?.toLowerCase();
+      const deployedPubkey = contract.deployedBy?.pubkey?.toLowerCase();
+      return (!!address && deployedAddress === address) || (!!pubkey && deployedPubkey === pubkey);
+    });
   }
 
   private async loadIndexerDashboardEntries(): Promise<ContractDashboardEntry[]> {
@@ -944,7 +997,7 @@ export class ContractsPageComponent implements OnInit {
       });
 
       const supportedRows = rows.filter((row) => this.supportedIndexerTemplates.includes(this.getIndexerTemplateName(row)));
-      const entries = await Promise.all(supportedRows.map((row) => this.indexerSummaryToDashboard(row)));
+      const entries = supportedRows.map((row) => this.indexerSummaryToDashboard(row));
       for (const entry of entries) {
         byKey.set(entry.covenantId || entry.scriptHash || entry.id, entry);
       }
@@ -963,11 +1016,13 @@ export class ContractsPageComponent implements OnInit {
       const local = Array.from(merged.values()).find((candidate) =>
         (!!entry.covenantId && candidate.covenantId === entry.covenantId) ||
         (!!entry.scriptHash && candidate.scriptHash === entry.scriptHash) ||
+        (!!entry.deployTxid && candidate.deployTxid === entry.deployTxid) ||
         (!!entry.currentAddress && candidate.currentAddress === entry.currentAddress),
       );
 
       merged.set(local?.id || key, {
         ...entry,
+        source: local ? 'both' : entry.source,
         registryEntry: local?.registryEntry,
       });
     }
@@ -997,11 +1052,10 @@ export class ContractsPageComponent implements OnInit {
     };
   }
 
-  private async indexerSummaryToDashboard(summary: IndexerCovenantDetails): Promise<ContractDashboardEntry> {
+  private indexerSummaryToDashboard(summary: IndexerCovenantDetails): ContractDashboardEntry {
     const contractName = this.getIndexerTemplateName(summary);
     const participants = this.indexerParticipants(summary);
     const status = (summary.activeUtxos ?? 0) > 0 ? 'active' : 'spent';
-    const latestAction = await this.getLatestActionForSummary(summary);
     return {
       id: `indexer:${summary.covenantIdHex || summary.scriptHashHex}`,
       source: 'indexer',
@@ -1013,28 +1067,14 @@ export class ContractsPageComponent implements OnInit {
       covenantId: summary.covenantIdHex,
       scriptHash: summary.scriptHashHex,
       deployTxid: summary.genesisTxidHex,
-      latestTxid: latestAction?.txidHex || summary.genesisTxidHex,
-      latestAction: latestAction?.entrypoint || latestAction?.action || 'deploy',
+      latestTxid: summary.genesisTxidHex,
+      latestAction: 'deploy',
       deadlineMs: this.extractDeadlineMs(summary),
       participants,
       nextActionLabel: this.getNextActionLabel(contractName, status, participants),
       actionHint: summary.claimVerified === false ? 'Template claim is not verified on-chain yet' : 'Open current covenant state',
       indexerSummary: summary,
     };
-  }
-
-  private async getLatestActionForSummary(summary: IndexerCovenantDetails): Promise<IndexerCovenantAction | undefined> {
-    const identifier = summary.covenantIdHex || summary.scriptHashHex;
-    if (!identifier) return undefined;
-
-    try {
-      const actions = await this.covenantIndexerService.getCovenantActions(identifier);
-      return this.latestAction(actions);
-    } catch {
-      // Card rendering should survive indexer action lookup failures; detail
-      // view will surface the precise error if the user opens this contract.
-      return undefined;
-    }
   }
 
   private latestAction(actions: IndexerCovenantAction[]): IndexerCovenantAction | undefined {
@@ -1122,13 +1162,13 @@ export class ContractsPageComponent implements OnInit {
     const currentRole = this.currentWalletRole(participants);
     if (normalized === 'DeadManSwitch') return currentRole === 'Owner' ? 'Keep Alive' : 'Claim';
     if (normalized === 'TimeLockVault') return currentRole === 'Recovery' ? 'Recover' : 'Withdraw';
-    if (normalized === 'MultiSigVault') return currentRole.startsWith('Signer') ? 'Sign / Complete' : 'View details';
+    if (normalized === 'MultiSigVault') return currentRole.startsWith('Signer') ? 'Sign / Complete' : 'Open Actions';
     if (normalized === 'EscrowWithArbiter') {
       if (currentRole === 'Arbiter') return 'Arbitrate';
       if (currentRole === 'Buyer') return 'Release / Refund';
       if (currentRole === 'Seller') return 'Release';
     }
-    return 'View details';
+    return 'Open Actions';
   }
 
   private currentWalletRole(participants: Array<{ label: string; value: string }>): string {
@@ -1163,6 +1203,10 @@ export class ContractsPageComponent implements OnInit {
     this.selectedDetailLoading.set(true);
     this.selectedDetailError.set(null);
     this.selectedDetail.set({ entry, actions: [], utxos: [] });
+    if (this.detailRouteId() || this.activeTab() === 'detail') {
+      this.clearInteractContractSelection();
+    }
+    this.scrollContractsContentToTop();
 
     const identifier = entry.covenantId || entry.scriptHash;
     if (!identifier) {
@@ -1187,20 +1231,29 @@ export class ContractsPageComponent implements OnInit {
         amountSompi: lockedSompi.toString(),
       };
       this.selectedDetail.set({ entry: updatedEntry, response, actions, utxos });
+      if ((this.detailRouteId() || this.activeTab() === 'detail') && updatedEntry.status !== 'spent') {
+        await this.prepareDashboardAction(updatedEntry);
+      }
     } catch (error: any) {
       this.selectedDetailError.set(error?.message || 'Failed to load indexer detail for this contract.');
     } finally {
       this.selectedDetailLoading.set(false);
+      this.scrollContractsContentToTop();
     }
   }
 
   async openDashboardAction(entry: ContractDashboardEntry) {
+    this.detailPanelTab.set('action');
+    this.activeTab.set('detail');
+    await this.openContractDetail(entry);
+  }
+
+  private async prepareDashboardAction(entry: ContractDashboardEntry): Promise<boolean> {
     if (entry.registryEntry) {
       this.selectedContractId.set(entry.registryEntry.id);
       this.selectContractFromRegistry();
-      this.switchTab('interact');
       this.selectDefaultFunctionForContract(entry.contractName);
-      return;
+      return true;
     }
 
     this.dashboardError.set(null);
@@ -1208,7 +1261,7 @@ export class ContractsPageComponent implements OnInit {
     const identifier = entry.covenantId || entry.scriptHash;
     if (!identifier) {
       this.dashboardError.set('This contract cannot be opened for actions until it has an indexer covenant id or script hash.');
-      return;
+      return false;
     }
 
     try {
@@ -1227,13 +1280,89 @@ export class ContractsPageComponent implements OnInit {
       if (imported) {
         this.selectedContractId.set(imported.id);
         this.selectContractFromRegistry();
-        this.switchTab('interact');
         this.selectDefaultFunctionForContract(entry.contractName);
+        return true;
       }
     } catch (error: any) {
       this.dashboardError.set(error?.message || 'Import this contract before using wallet actions.');
     } finally {
+      this.selectedDetailLoading.set(false);
     }
+    return false;
+  }
+
+  setDashboardFilter(filter: ContractDashboardFilter) {
+    this.dashboardFilter.set(filter);
+    this.selectedDetail.set(null);
+    this.selectedDetailError.set(null);
+  }
+
+  private scrollContractsContentToTop() {
+    setTimeout(() => {
+      document.querySelector<HTMLElement>('.contracts-container')?.scrollTo({ top: 0, behavior: 'auto' });
+      document.querySelector<HTMLElement>('.flow-page-body')?.scrollTo({ top: 0, behavior: 'auto' });
+    });
+  }
+
+  navigateToContractDetail(entry: ContractDashboardEntry) {
+    this.detailPanelTab.set('details');
+    this.activeTab.set('detail');
+    void this.openContractDetail(entry);
+  }
+
+  setContractDetailTab(tab: ContractDetailTab) {
+    if (tab === 'action' && this.selectedDetail()?.entry.status === 'spent') return;
+    this.detailPanelTab.set(tab);
+    this.scrollContractsContentToTop();
+  }
+
+  backToContractsList() {
+    const wasRouteDetail = !!this.detailRouteId();
+    if (wasRouteDetail) {
+      void this.router.navigate(['/app/contracts']);
+    }
+    this.selectedDetail.set(null);
+    this.selectedDetailError.set(null);
+    this.detailRouteId.set(null);
+    this.detailRouteNotFound.set(false);
+    this.activeTab.set('my-contracts');
+  }
+
+  private async openDetailFromRoute(routeId: string) {
+    if (this.dashboardLoading()) return;
+
+    const entry = this.findDashboardEntryByRouteId(routeId);
+    if (!entry) {
+      if (this.dashboardContracts().length === 0) return;
+      this.detailRouteNotFound.set(true);
+      this.selectedDetail.set(null);
+      return;
+    }
+
+    this.detailRouteNotFound.set(false);
+    await this.openContractDetail(entry);
+  }
+
+  private findDashboardEntryByRouteId(routeId: string): ContractDashboardEntry | undefined {
+    return this.dashboardContracts().find((entry) => this.getContractRouteId(entry) === routeId);
+  }
+
+  private getContractRouteId(entry: ContractDashboardEntry): string {
+    return entry.covenantId || entry.scriptHash || entry.deployTxid || entry.id;
+  }
+
+  private clearInteractContractSelection() {
+    this.selectedContractId.set('');
+    this.interactContractJson.set('');
+    this.interactOutpointTxid = '';
+    this.interactOutpointVout = '';
+    this.interactInputAmount = '';
+    this.selectedFunction = '';
+    this.interactError.set(null);
+    this.interactResult.set(null);
+    this.partialSpendJson.set(null);
+    this.partialCompleteError.set(null);
+    this.partialCompleteResult.set(null);
   }
 
   private selectDefaultFunctionForContract(contractName: string) {
@@ -2395,7 +2524,12 @@ export class ContractsPageComponent implements OnInit {
   }
 
   getSourceLabel(contract: ContractDashboardEntry): string {
-    return contract.source === 'indexer' ? 'Indexer' : 'Local';
+    return this.getSourceLabels(contract).join(' + ');
+  }
+
+  getSourceLabels(contract: ContractDashboardEntry): string[] {
+    if (contract.source === 'both') return ['Local', 'Indexer'];
+    return [contract.source === 'indexer' ? 'Indexer' : 'Local'];
   }
 
   getStatusLabel(contract: ContractDashboardEntry): string {
@@ -2438,9 +2572,8 @@ export class ContractsPageComponent implements OnInit {
 
     // Share links intentionally carry only public lookup state. The receiving
     // wallet still imports/loads current state from the indexer.
-    const url = new URL(window.location.origin + '/app/contracts');
+    const url = new URL(`${window.location.origin}/app/contracts/${id}`);
     url.searchParams.set('network', this.network());
-    url.searchParams.set('contract', id);
     navigator.clipboard.writeText(url.toString()).then(
       () => alert('Contract share link copied.'),
       () => prompt('Copy this contract link:', url.toString()),
@@ -2451,9 +2584,8 @@ export class ContractsPageComponent implements OnInit {
     const id = this.deployIndexerState()?.covenantId || this.deployResult()?.covenantId;
     if (!id) return;
 
-    const url = new URL(window.location.origin + '/app/contracts');
+    const url = new URL(`${window.location.origin}/app/contracts/${id}`);
     url.searchParams.set('network', this.network());
-    url.searchParams.set('contract', id);
     navigator.clipboard.writeText(url.toString()).then(
       () => alert('Contract share link copied.'),
       () => prompt('Copy this contract link:', url.toString()),

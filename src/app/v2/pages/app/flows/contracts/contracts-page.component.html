@@ -6,6 +6,7 @@
   </div>
 
   <!-- Tabs -->
+  @if (!detailRouteId() && activeTab() !== 'detail') {
   <div class="tabs flex gap-8">
     <button class="tab-button p-12 rounded-lg typo-text-2" [class.active]="activeTab() === 'deploy'"
       (click)="switchTab('deploy')">
@@ -20,6 +21,7 @@
       Lookup / Import
     </button>
   </div>
+  }
 
   <!-- Tab 1: Create / Deploy -->
   @if (activeTab() === 'deploy') {
@@ -65,7 +67,7 @@
         <p class="text-gray-60 typo-text-2">Paste deploy-ready compiled JSON and choose how much KAS to lock.</p>
         }
       </div>
-      <button class="back-button p-8 rounded typo-text-2" (click)="resetTemplateSelection(); createMode.set('template')">
+      <button class="back-button template-change-button p-8 rounded typo-text-2" (click)="resetTemplateSelection(); createMode.set('template')">
         Change
       </button>
     </div>
@@ -443,15 +445,28 @@
   @if (activeTab() === 'my-contracts') {
   <div class="contracts-list flex column gap-16">
 
+    @if (!detailRouteId()) {
     <div class="panel flex column gap-12 p-20 rounded-lg">
-      <div class="flex justify-content-between align-items-center gap-12 flex-wrap">
+      <div class="flex column align-items-start gap-12">
+        <div class="flex align-items-center gap-8 flex-wrap">
+          <div class="contract-filter flex gap-4 rounded">
+            <button class="filter-button p-8 rounded typo-text-2" [class.active]="dashboardFilter() === 'active'"
+              (click)="setDashboardFilter('active')">
+              Active ({{ activeDashboardContracts().length }})
+            </button>
+            <button class="filter-button p-8 rounded typo-text-2" [class.active]="dashboardFilter() === 'history'"
+              (click)="setDashboardFilter('history')">
+              History ({{ historyDashboardContracts().length }})
+            </button>
+          </div>
+          <button class="refresh-button p-8 rounded typo-text-2" [disabled]="dashboardLoading()" (click)="loadContracts()">
+            {{ dashboardLoading() ? 'Refreshing...' : 'Refresh' }}
+          </button>
+        </div>
         <div class="flex column gap-4">
           <h3 class="text-white typo-text-1 fw-bold">My Contracts</h3>
           <p class="text-gray-60 typo-text-2">Tracked by wallet address, role args, active UTXOs, and covenant timeline from the indexer.</p>
         </div>
-        <kc-button [text]="dashboardLoading() ? 'Refreshing...' : 'Refresh'" [isDisabled]="dashboardLoading()"
-          (buttonClick)="loadContracts()">
-        </kc-button>
       </div>
 
       @if (dashboardError()) {
@@ -466,21 +481,52 @@
       </div>
       }
     </div>
+    } @else {
+    <div class="detail-route-header flex justify-content-between align-items-center gap-12 flex-wrap">
+      <button class="back-button p-8 rounded typo-text-2" (click)="backToContractsList()">
+        Back to Contracts
+      </button>
+      @if (selectedDetail() && selectedDetail()!.entry.status !== 'spent') {
+      <span class="text-gray-60 typo-text-2">Actions are available below</span>
+      }
+    </div>
 
-    @if (!dashboardLoading() && dashboardContracts().length === 0) {
+    @if (detailRouteNotFound()) {
     <div class="empty-state p-32 rounded-lg text-center">
-      <p class="text-gray-60 typo-text-1">No contracts found for this wallet on {{ network() }}</p>
+      <p class="text-gray-60 typo-text-1">Contract not found for this wallet on {{ network() }}</p>
     </div>
     }
 
-    @for (contract of dashboardContracts(); track contract.id) {
+    @if (dashboardError()) {
+    <div class="error-message p-12 rounded-lg text-red typo-text-2">
+      {{ dashboardError() }}
+    </div>
+    }
+    }
+
+    @if (!detailRouteId()) {
+    @if (!dashboardLoading() && filteredDashboardContracts().length === 0) {
+    <div class="empty-state p-32 rounded-lg text-center">
+      <p class="text-gray-60 typo-text-1">
+        @if (dashboardFilter() === 'history') {
+        No spent contracts found for this wallet on {{ network() }}
+        } @else {
+        No active contracts found for this wallet on {{ network() }}
+        }
+      </p>
+    </div>
+    }
+
+    @for (contract of filteredDashboardContracts(); track contract.id) {
     <div class="contract-card p-20 rounded-lg flex column gap-16"
       [style.opacity]="contract.status === 'spent' ? '0.5' : '1'">
       <div class="flex justify-content-between align-items-start">
         <div class="flex column gap-4">
           <div class="flex align-items-center gap-8 flex-wrap">
             <h3 class="text-white typo-title-3">{{ contract.displayName }}</h3>
-            <span class="source-badge p-6 rounded typo-text-2">{{ getSourceLabel(contract) }}</span>
+            @for (sourceLabel of getSourceLabels(contract); track sourceLabel) {
+            <span class="source-badge p-6 rounded typo-text-2">{{ sourceLabel }}</span>
+            }
           </div>
           <span class="text-gray-60 typo-text-2">
             {{ formatSompiToKas(contract.amountSompi) }} KAS
@@ -523,11 +569,13 @@
       <div class="flex column gap-4">
         <span class="text-gray-60 typo-text-2">Current Address</span>
         <div class="flex align-items-center gap-8">
-          <a [href]="getExplorerAddressLink(contract.currentAddress || '')" target="_blank" class="text-blue typo-text-2">
-            {{ truncate(contract.currentAddress || 'Unknown', 30) }}
-          </a>
           @if (contract.currentAddress) {
+          <a [href]="getExplorerAddressLink(contract.currentAddress || '')" target="_blank" class="text-blue typo-text-2">
+            {{ truncate(contract.currentAddress, 30) }}
+          </a>
           <app-copy-button [value]="contract.currentAddress" [size]="'sm'"></app-copy-button>
+          } @else {
+          <span class="text-white typo-text-2">Unknown</span>
           }
         </div>
       </div>
@@ -563,7 +611,7 @@
       </div>
 
       <div class="flex gap-8 flex-wrap">
-        <kc-button [text]="'View Details'" (buttonClick)="openContractDetail(contract)">
+        <kc-button [text]="'View Details'" (buttonClick)="navigateToContractDetail(contract)">
         </kc-button>
         @if (contract.status !== 'spent') {
         <kc-button [text]="contract.nextActionLabel" (buttonClick)="openDashboardAction(contract)">
@@ -576,18 +624,36 @@
       </div>
     </div>
     }
+    }
+  </div>
+  }
 
+  @if (activeTab() === 'detail') {
+  <div class="contracts-list flex column gap-16">
     @if (selectedDetail()) {
-    <div class="panel flex column gap-16 p-20 rounded-lg">
+    <div id="contract-detail-panel" class="panel flex column gap-16 p-20 rounded-lg">
       <div class="flex justify-content-between align-items-start gap-12">
         <div class="flex column gap-4">
           <h3 class="text-white typo-title-3">{{ selectedDetail()!.entry.displayName }}</h3>
           <p class="text-gray-60 typo-text-2">Current state from covenant detail, active UTXOs, and action timeline.</p>
         </div>
-        <button class="back-button p-8 rounded typo-text-2" (click)="selectedDetail.set(null)">
+        <button class="back-button detail-close-button p-8 rounded typo-text-2" (click)="backToContractsList()">
           Close
         </button>
       </div>
+
+      @if (selectedDetail()!.entry.status !== 'spent') {
+      <div class="contract-detail-tabs flex gap-4 rounded">
+        <button class="detail-tab-button p-8 rounded typo-text-2" [class.active]="detailPanelTab() === 'details'"
+          (click)="setContractDetailTab('details')">
+          Details
+        </button>
+        <button class="detail-tab-button p-8 rounded typo-text-2" [class.active]="detailPanelTab() === 'action'"
+          (click)="setContractDetailTab('action')">
+          Action
+        </button>
+      </div>
+      }
 
       @if (selectedDetailLoading()) {
       <div class="p-12 rounded text-gray-60 typo-text-2">Loading current indexer state...</div>
@@ -599,6 +665,7 @@
       </div>
       }
 
+      @if (detailPanelTab() === 'details' || selectedDetail()!.entry.status === 'spent') {
       <div class="detail-grid">
         <div class="detail-item p-12 rounded">
           <span class="text-gray-60 typo-text-2">Status</span>
@@ -666,15 +733,28 @@
           }
         </div>
       </details>
+      }
     </div>
     }
   </div>
   }
 
   <!-- Tab 3: Interact -->
-  @if (activeTab() === 'interact') {
+  @if (activeTab() === 'interact' || (activeTab() === 'detail' && detailPanelTab() === 'action' && selectedDetail() && selectedDetail()!.entry.status !== 'spent' && interactContractJson())) {
   <div class="panel flex column gap-20 p-24 rounded-lg">
     <!-- Contract selector from registry -->
+    @if (selectedContract()) {
+    <div class="contract-summary p-16 rounded-lg flex column gap-8">
+      <span class="text-gray-60 typo-text-2">Current Contract</span>
+      <div class="flex justify-content-between align-items-center gap-12 flex-wrap">
+        <div class="flex column gap-4">
+          <span class="text-white typo-text-1 fw-bold">{{ selectedContract()!.contractName }}</span>
+          <span class="text-gray-60 typo-text-2">{{ truncate(selectedContract()!.contractAddress, 30) }}</span>
+        </div>
+        <span class="text-gray-60 typo-text-2">{{ formatSompiToKas(selectedContract()!.amountSompi) }} KAS</span>
+      </div>
+    </div>
+    } @else if (activeTab() !== 'detail' && !detailRouteId() && !interactContractJson()) {
     <div class="form-group flex column gap-8">
       <label class="text-gray-60 typo-text-1">Select Contract</label>
       <kc-dropdown-select [options]="registryContractOptions()" [placeholder]="'Select a deployed contract'"
@@ -682,6 +762,7 @@
         (valueChange)="selectedContractId.set($event); selectContractFromRegistry()">
       </kc-dropdown-select>
     </div>
+    }
 
     <!-- Advanced: Manual contract JSON (collapsed by default) -->
     <details class="advanced-section">

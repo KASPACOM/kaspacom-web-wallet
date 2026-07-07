@@ -1203,9 +1203,11 @@ export class ContractsPageComponent implements OnInit {
       return;
     }
 
+    this.dashboardError.set(null);
+
     const identifier = entry.covenantId || entry.scriptHash;
     if (!identifier) {
-      this.selectedDetailError.set('This contract cannot be opened for actions until it has an indexer covenant id or script hash.');
+      this.dashboardError.set('This contract cannot be opened for actions until it has an indexer covenant id or script hash.');
       return;
     }
 

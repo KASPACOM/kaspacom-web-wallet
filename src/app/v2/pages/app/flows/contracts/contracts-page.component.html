@@ -2,868 +2,1901 @@
   <!-- Header -->
   <div class="contracts-header flex column gap-8">
     <h1 class="text-white typo-title-1">Contracts</h1>
-    <p class="text-gray-75 typo-text-1">Deploy and interact with SilverScript covenants</p>
+    <p class="text-gray-75 typo-text-1">
+      Deploy and interact with SilverScript covenants
+    </p>
   </div>
 
   <!-- Tabs -->
-  <div class="tabs flex gap-8">
-    <button class="tab-button p-12 rounded-lg typo-text-2" [class.active]="activeTab() === 'deploy'"
-      (click)="switchTab('deploy')">
-      Deploy
-    </button>
-    <button class="tab-button p-12 rounded-lg typo-text-2" [class.active]="activeTab() === 'my-contracts'"
-      (click)="switchTab('my-contracts')">
-      My Contracts
-    </button>
-    <button class="tab-button p-12 rounded-lg typo-text-2" [class.active]="activeTab() === 'lookup-import'"
-      (click)="switchTab('lookup-import')">
-      Lookup / Import
-    </button>
-    <button class="tab-button p-12 rounded-lg typo-text-2" [class.active]="activeTab() === 'interact'"
-      (click)="switchTab('interact')">
-      Interact
-    </button>
-    <button class="tab-button p-12 rounded-lg typo-text-2" [class.active]="activeTab() === 'templates'"
-      (click)="switchTab('templates')">
-      Templates
-    </button>
-  </div>
-
-  <!-- Tab 1: Deploy -->
-  @if (activeTab() === 'deploy') {
-  <div class="panel flex column gap-20 p-24 rounded-lg">
-    <!-- Account selector -->
-    <div class="form-group flex column gap-8">
-      <label class="text-gray-60 typo-text-1">Select Account</label>
-      <select class="form-input p-12 rounded-lg text-white typo-text-2" [ngModel]="selectedAccountId()" (ngModelChange)="selectedAccountId.set($event)"
-        [disabled]="isDeploying()">
-        <option value="">-- Select Account --</option>
-        @for (wallet of allWallets(); track wallet.getIdWithAccount()) {
-        <option [value]="wallet.getIdWithAccount()">
-          {{ wallet.getDisplayName() }} ({{ truncate(wallet.getAddress(), 20) }})
-        </option>
-        }
-      </select>
+  @if (!detailRouteId() && activeTab() !== "detail") {
+    <div class="tabs flex gap-8">
+      <button
+        class="tab-button p-12 rounded-lg typo-text-2"
+        [class.active]="activeTab() === 'deploy'"
+        (click)="switchTab('deploy')"
+      >
+        Create
+      </button>
+      <button
+        class="tab-button p-12 rounded-lg typo-text-2"
+        [class.active]="activeTab() === 'my-contracts'"
+        (click)="switchTab('my-contracts')"
+      >
+        My Contracts
+      </button>
+      <button
+        class="tab-button p-12 rounded-lg typo-text-2"
+        [class.active]="activeTab() === 'lookup-import'"
+        (click)="switchTab('lookup-import')"
+      >
+        Lookup / Import
+      </button>
     </div>
+  }
 
-    <!-- Show selected pubkey -->
-    @if (selectedPubkey()) {
-    <div class="pubkey-display p-12 rounded-lg flex column gap-4">
-      <span class="text-gray-60 typo-text-1">Account Public Key (x-only)</span>
-      <div class="flex align-items-center gap-8">
-        <span class="text-white typo-text-2 text-mono">{{ truncate(selectedPubkey(), 24) }}</span>
-        <app-copy-button [value]="selectedPubkey()" [size]="'sm'"></app-copy-button>
+  <!-- Tab 1: Create / Deploy -->
+  @if (activeTab() === "deploy") {
+    <div class="panel flex column gap-20 p-24 rounded-lg">
+      <div class="wizard-header flex column gap-8">
+        <span class="text-gray-60 typo-text-2"
+          >Step {{ getTemplateStepNumber() }} of 3</span
+        >
+        <h3 class="text-white typo-title-3">Create a covenant</h3>
+        <p class="text-gray-60 typo-text-2">
+          Start with a guided template or use custom compiled JSON when you
+          already have one.
+        </p>
       </div>
-    </div>
-    }
 
-    <!-- Contract JSON input -->
-    <div class="form-group flex column gap-8">
-      <label class="text-gray-60 typo-text-1">Compiled Contract JSON</label>
-      <textarea class="contract-input p-12 rounded-lg text-white typo-text-2" rows="8"
-        placeholder="Paste compiled contract JSON from kascov" [ngModel]="deployContractJson()" (ngModelChange)="deployContractJson.set($event)"
-        [disabled]="isDeploying()">
-        </textarea>
-    </div>
+      @if (!activeTemplate() && createMode() !== "custom") {
+        <div class="template-list flex column gap-12">
+          @for (template of contractTemplates; track template.id) {
+            <button
+              type="button"
+              class="template-card-compact p-16 rounded-lg flex align-items-center gap-12"
+              (click)="selectTemplate(template)"
+            >
+              <div class="template-icon-compact">{{ template.icon }}</div>
+              <div class="flex column gap-4 flex-1 text-left">
+                <h4 class="text-white typo-text-1 fw-bold">
+                  {{ template.name }}
+                </h4>
+                <p class="text-gray-60 typo-text-2 template-description">
+                  {{ template.description }}
+                </p>
+              </div>
+              <span class="template-chevron">Next</span>
+            </button>
+          }
 
-    <!-- Contract summary -->
-    @if (parsedDeployContract()) {
-    <div class="contract-summary p-16 rounded-lg flex column gap-12">
-      <h3 class="text-white typo-text-1 fw-bold">Contract Summary</h3>
-      <div class="flex column gap-8">
-        <div class="flex column gap-4">
-          <span class="text-gray-60 typo-text-1">Name</span>
-          <span class="text-white typo-text-2">{{ parsedDeployContract()!.contract_name || 'Unnamed' }}</span>
+          <button
+            type="button"
+            class="custom-contract-card p-16 rounded-lg flex align-items-center gap-12"
+            (click)="selectCustomContract()"
+          >
+            <div class="template-icon-compact">JSON</div>
+            <div class="flex column gap-4 flex-1 text-left">
+              <h4 class="text-white typo-text-1 fw-bold">Custom covenant</h4>
+              <p class="text-gray-60 typo-text-2 template-description">
+                Paste compiled SilverScript JSON manually.
+              </p>
+            </div>
+            <span class="template-chevron">Use custom</span>
+          </button>
         </div>
-
-        @if (deployConstructorParams().length > 0) {
-        <div class="flex column gap-4">
-          <span class="text-gray-60 typo-text-1">Constructor Parameters</span>
-          @for (param of deployConstructorParams(); track param.name) {
-          <div class="param-item p-8 rounded">
-            <span class="text-white typo-text-2">{{ param.name }}</span>
-            <span class="text-gray-60 typo-text-2 ml-8">({{ param.type_ref.base }})</span>
-            @if (param.type_ref.base === 'pubkey') {
-            <span class="text-green ml-8 typo-text-2">🔑</span>
+      } @else {
+        <div
+          class="flex justify-content-between align-items-center gap-12 flex-wrap"
+        >
+          <div class="flex column gap-4">
+            @if (activeTemplate()) {
+              <h3 class="text-white typo-title-3">
+                {{ activeTemplate()!.icon }} {{ activeTemplate()!.name }}
+              </h3>
+              <p class="text-gray-60 typo-text-2">
+                {{ activeTemplate()!.description }}
+              </p>
+            } @else {
+              <h3 class="text-white typo-title-3">Custom covenant</h3>
+              <p class="text-gray-60 typo-text-2">
+                Paste deploy-ready compiled JSON and choose how much KAS to
+                lock.
+              </p>
             }
           </div>
-          }
+          <button
+            class="back-button template-change-button p-8 rounded typo-text-2"
+            (click)="resetTemplateSelection(); createMode.set('template')"
+          >
+            Change
+          </button>
         </div>
+
+        <!-- Show selected pubkey -->
+        @if (selectedPubkey()) {
+          <div class="pubkey-display p-12 rounded-lg flex column gap-4">
+            <span class="text-gray-60 typo-text-1"
+              >Account Public Key (x-only)</span
+            >
+            <div class="flex align-items-center gap-8">
+              <span class="text-white typo-text-2 text-mono">{{
+                truncate(selectedPubkey(), 24)
+              }}</span>
+              <app-copy-button
+                [value]="selectedPubkey()"
+                [size]="'sm'"
+              ></app-copy-button>
+            </div>
+          </div>
         }
 
-        @if (deployEntrypointFunctions().length > 0) {
-        <div class="flex column gap-4">
-          <span class="text-gray-60 typo-text-1">Entrypoint Functions</span>
-          @for (fn of deployEntrypointFunctions(); track fn.name) {
-          <div class="param-item p-8 rounded">
-            <span class="text-white typo-text-2">{{ fn.name }}()</span>
-            @if (fn.params.length > 0) {
-            <span class="text-gray-60 typo-text-2 ml-8">
-              params: {{ getParamTypes(fn.params) }}
-            </span>
+        @if (activeTemplate()) {
+          <div class="wizard-section flex column gap-16">
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-2">Step 2 of 3</span>
+              <h4 class="text-white typo-text-1 fw-bold">
+                Set covenant parameters
+              </h4>
+            </div>
+
+            @for (field of activeTemplate()!.fields; track field.paramName) {
+              <div class="form-group flex column gap-8">
+                @if (field.type === "address") {
+                  <app-address-smart-input
+                    [label]="field.label"
+                    [placeholder]="field.placeholder"
+                    [isFullWidth]="true"
+                    [isValid]="isTemplateFieldValid(field)"
+                    [invalidReason]="getTemplateFieldError(field)"
+                    [isDisabled]="isDeploying() || isWalletOwnedField(field)"
+                    [showQrButton]="!isWalletOwnedField(field)"
+                    [value]="templateFormValues[field.paramName] || ''"
+                    (valueChange)="onTemplateFieldChange(field, $event)"
+                    (resolved)="onTemplateAddressResolved(field, $event)"
+                    (qrClick)="onTemplateAddressQrClick(field)"
+                  >
+                  </app-address-smart-input>
+                }
+
+                @if (field.type === "hash32") {
+                  <div class="flex column gap-4">
+                    <kc-input
+                      [label]="field.label"
+                      [placeholder]="'Paste address, public key, or 32-byte hash'"
+                      [type]="'text'"
+                      [isFullWidth]="true"
+                      [isValid]="isTemplateFieldValid(field)"
+                      [invalidReason]="getTemplateFieldError(field)"
+                      [isDisabled]="isDeploying()"
+                      [ngModel]="templateFormValues[field.paramName] || ''"
+                      (valueChange)="onTemplateFieldChange(field, $event)"
+                    >
+                    </kc-input>
+                    @if (
+                      templateFormValues[field.paramName + "_isAutoHashed"]
+                    ) {
+                      <span class="text-green typo-text-2"
+                        >Hash computed automatically.</span
+                      >
+                    }
+                    @if (
+                      !templateFormValues[field.paramName + "_isAutoHashed"] &&
+                      (templateFormValues[field.paramName] || "").length === 64
+                    ) {
+                      <div class="flex gap-8 align-items-center">
+                        <span class="text-gray-60 typo-text-2"
+                          >If this is a public key,</span
+                        >
+                        <span
+                          class="text-blue typo-text-2 cursor-pointer"
+                          (click)="computeBlake2bHash(field.paramName)"
+                        >
+                          compute its hash
+                        </span>
+                      </div>
+                    }
+                  </div>
+                }
+
+                @if (field.type === "int_days" || field.type === "int_count") {
+                  <kc-input
+                    [label]="field.label"
+                    [placeholder]="field.placeholder"
+                    [type]="'number'"
+                    [min]="0"
+                    [isFullWidth]="true"
+                    [isValid]="isTemplateFieldValid(field)"
+                    [invalidReason]="getTemplateFieldError(field)"
+                    [isDisabled]="isDeploying()"
+                    [ngModel]="templateFormValues[field.paramName] || ''"
+                    (valueChange)="onTemplateFieldChange(field, $event)"
+                  >
+                  </kc-input>
+                }
+
+                @if (field.type === "int_timestamp") {
+                  <app-covenant-date-time-input
+                    [label]="field.label"
+                    [value]="templateFormValues[field.paramName] || ''"
+                    [isDisabled]="isDeploying()"
+                    [isValid]="isTemplateFieldValid(field)"
+                    [invalidReason]="getTemplateFieldError(field)"
+                    (valueChange)="onTemplateFieldChange(field, $event)"
+                  >
+                  </app-covenant-date-time-input>
+                }
+
+                <span class="text-gray-60 typo-text-2">{{
+                  getFieldHelp(field)
+                }}</span>
+              </div>
             }
           </div>
-          }
-        </div>
         }
-      </div>
-    </div>
-    }
 
-    <!-- Amount input -->
-    <div class="form-group flex column gap-8">
-      <label class="text-gray-60 typo-text-1">Amount (KAS)</label>
-      <input type="number" class="form-input p-12 rounded-lg text-white typo-text-2" placeholder="Amount to lock"
-        [(ngModel)]="deployAmount" [disabled]="isDeploying()" step="0.00000001" min="0" />
-    </div>
+        @if (createMode() === "custom") {
+          <div class="form-group flex column gap-8">
+            <label class="text-gray-60 typo-text-1"
+              >Compiled Contract JSON</label
+            >
+            <textarea
+              class="contract-input p-12 rounded-lg text-white typo-text-2"
+              [class.invalid]="!!deployContractError()"
+              rows="8"
+              placeholder="Paste compiled contract JSON from kascov"
+              [ngModel]="deployContractJson()"
+              (ngModelChange)="onDeployContractJsonChange($event)"
+              [disabled]="isDeploying()"
+            >
+            </textarea>
+            @if (deployContractError()) {
+              <span class="field-error typo-text-2">{{
+                deployContractError()
+              }}</span>
+            }
+            <span class="text-gray-60 typo-text-2"
+              >Templates are safer for common flows because the wallet explains
+              and validates each parameter.</span
+            >
+          </div>
 
-    <!-- Error message -->
-    @if (deployError()) {
-    <div class="error-message p-12 rounded-lg text-red typo-text-2">
-      {{ deployError() }}
-    </div>
-    }
+          <!-- Contract summary -->
+          @if (parsedDeployContract()) {
+            <div class="contract-summary p-16 rounded-lg flex column gap-12">
+              <h3 class="text-white typo-text-1 fw-bold">Contract Summary</h3>
+              <div class="flex column gap-8">
+                <div class="flex column gap-4">
+                  <span class="text-gray-60 typo-text-1">Name</span>
+                  <span class="text-white typo-text-2">{{
+                    parsedDeployContract()!.contract_name || "Unnamed"
+                  }}</span>
+                </div>
 
-    <!-- Success result -->
-    @if (deployResult()) {
-    <div class="result-panel flex column gap-12 p-16 rounded-lg">
-      <h3 class="text-white typo-text-1 fw-bold">✅ Contract Deployed!</h3>
-      <div class="result-row flex column gap-4">
-        <span class="text-gray-60 typo-text-1">Contract Address</span>
-        <div class="flex align-items-center gap-8">
-          <span class="text-white typo-text-2 text-truncate">{{ deployResult()!.address }}</span>
-          <app-copy-button [value]="deployResult()!.address" [size]="'sm'"></app-copy-button>
+                @if (deployConstructorParams().length > 0) {
+                  <div class="flex column gap-4">
+                    <span class="text-gray-60 typo-text-1"
+                      >Constructor Parameters</span
+                    >
+                    @for (
+                      param of deployConstructorParams();
+                      track param.name
+                    ) {
+                      <div class="param-item p-8 rounded">
+                        <span class="text-white typo-text-2">{{
+                          param.name
+                        }}</span>
+                        <span class="text-gray-60 typo-text-2 ml-8"
+                          >({{ param.type_ref.base }})</span
+                        >
+                        @if (param.type_ref.base === "pubkey") {
+                          <span class="text-green ml-8 typo-text-2">🔑</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+
+                @if (deployEntrypointFunctions().length > 0) {
+                  <div class="flex column gap-4">
+                    <span class="text-gray-60 typo-text-1"
+                      >Entrypoint Functions</span
+                    >
+                    @for (fn of deployEntrypointFunctions(); track fn.name) {
+                      <div class="param-item p-8 rounded">
+                        <span class="text-white typo-text-2"
+                          >{{ fn.name }}()</span
+                        >
+                        @if (fn.params.length > 0) {
+                          <span class="text-gray-60 typo-text-2 ml-8">
+                            params: {{ getParamTypes(fn.params) }}
+                          </span>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        }
+
+        <!-- Amount input -->
+        <div class="form-group flex column gap-8">
+          <kc-input
+            [label]="'Amount to lock (KAS)'"
+            [placeholder]="'0.5'"
+            [type]="'number'"
+            [min]="MIN_DEPLOY_AMOUNT_KAS"
+            [max]="deployAvailableBalance()"
+            [isFullWidth]="true"
+            [isValid]="!deployAmountError()"
+            [invalidReason]="deployAmountError()"
+            [isDisabled]="isDeploying()"
+            [ngModel]="deployAmount"
+            (valueChange)="onDeployAmountChange($event)"
+          >
+            <div
+              (click)="!isDeploying() && onMaxDeployAmountClick()"
+              [class]="
+                isDeploying() ? 'max-text disabled' : 'max-text clickable'
+              "
+              rightSideSlot
+            >
+              <span>Max</span>
+            </div>
+          </kc-input>
+          <span class="text-gray-60 typo-text-2"
+            >This amount is sent into the covenant. It can only move later by
+            following the covenant rules.</span
+          >
         </div>
-      </div>
-      <div class="result-row flex column gap-4">
-        <span class="text-gray-60 typo-text-1">Transaction ID</span>
-        <div class="flex align-items-center gap-8">
-          <a [href]="getExplorerLink(deployResult()!.txid)" target="_blank" class="text-blue typo-text-2 text-truncate">
-            {{ deployResult()!.txid }}
-          </a>
-          <app-copy-button [value]="deployResult()!.txid" [size]="'sm'"></app-copy-button>
-        </div>
-      </div>
-    </div>
-    }
 
-    <!-- Deploy button -->
-    <kc-button [text]="isDeploying() ? 'Deploying...' : 'Deploy Contract'"
-      [isDisabled]="isDeploying() || !selectedAccountId() || !deployContractJson() || !deployAmount" [isFullWidth]="true"
-      (buttonClick)="deployContract()">
-    </kc-button>
-  </div>
+        <!-- Error message -->
+        @if (deployError()) {
+          <div class="error-message p-12 rounded-lg text-red typo-text-2">
+            {{ deployError() }}
+          </div>
+        }
+
+        <!-- Success result -->
+        @if (deployResult()) {
+          <div class="result-panel flex column gap-12 p-16 rounded-lg">
+            <h3 class="text-white typo-text-1 fw-bold">
+              ✅ Contract Deployed!
+            </h3>
+            <div class="result-row flex column gap-4">
+              <span class="text-gray-60 typo-text-1">Contract Address</span>
+              <div class="flex align-items-center gap-8">
+                <span class="text-white typo-text-2 text-truncate">{{
+                  deployResult()!.address
+                }}</span>
+                <app-copy-button
+                  [value]="deployResult()!.address"
+                  [size]="'sm'"
+                ></app-copy-button>
+              </div>
+            </div>
+            <div class="result-row flex column gap-4">
+              <span class="text-gray-60 typo-text-1">Transaction ID</span>
+              <div class="flex align-items-center gap-8">
+                <a
+                  [href]="getExplorerLink(deployResult()!.txid)"
+                  target="_blank"
+                  class="text-blue typo-text-2 text-truncate"
+                >
+                  {{ deployResult()!.txid }}
+                </a>
+                <app-copy-button
+                  [value]="deployResult()!.txid"
+                  [size]="'sm'"
+                ></app-copy-button>
+              </div>
+            </div>
+            @if (deployIndexerState()) {
+              <div class="result-row flex column gap-4">
+                <span class="text-gray-60 typo-text-1">Indexer Status</span>
+                <span class="text-white typo-text-2">{{
+                  deployIndexerState()!.message
+                }}</span>
+                @if (deployIndexerState()!.covenantId) {
+                  <div class="flex align-items-center gap-8">
+                    <span class="text-gray-60 typo-text-2 text-mono">{{
+                      truncate(deployIndexerState()!.covenantId || "", 28)
+                    }}</span>
+                    <app-copy-button
+                      [value]="deployIndexerState()!.covenantId || ''"
+                      [size]="'sm'"
+                    ></app-copy-button>
+                    @if (deployIndexerState()!.status === "indexed") {
+                      <kc-button
+                        [text]="'Copy Share Link'"
+                        (buttonClick)="copyDeployedContractShareLink()"
+                      >
+                      </kc-button>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <kc-button
+          [text]="isDeploying() ? 'Deploying...' : 'Review and deploy covenant'"
+          [isDisabled]="isCreateDeployDisabled()"
+          [isFullWidth]="true"
+          (buttonClick)="
+            createMode() === 'custom'
+              ? deployContract()
+              : deployTemplateContract()
+          "
+        >
+        </kc-button>
+      }
+    </div>
   }
 
   <!-- Tab 2: Lookup / Import -->
-  @if (activeTab() === 'lookup-import') {
-  <div class="contracts-list flex column gap-16">
-    <!-- Address Lookup -->
-    <div class="panel flex column gap-16 p-20 rounded-lg">
-      <h3 class="text-white typo-text-1 fw-bold">🔍 Look Up Contract</h3>
-      <p class="text-gray-60 typo-text-2">Enter a contract address to check its on-chain state (balance, UTXOs).</p>
-      <div class="flex gap-8 align-items-end">
-        <div class="form-group flex column gap-8 flex-1">
-          <label class="text-gray-60 typo-text-1">Contract Address</label>
-          <input type="text" class="form-input p-12 rounded-lg text-white typo-text-2" placeholder="kaspatest:pr..."
-            [(ngModel)]="lookupAddress" [disabled]="lookupLoading()" />
-        </div>
-        <kc-button [text]="lookupLoading() ? 'Querying...' : 'Look Up'"
-          [isDisabled]="lookupLoading() || !lookupAddress.trim()" (buttonClick)="lookupContract()">
-        </kc-button>
-      </div>
-
-      @if (lookupError()) {
-      <div class="error-message p-12 rounded-lg text-red typo-text-2">
-        {{ lookupError() }}
-      </div>
-      }
-
-      @if (lookupResult()) {
-      <div class="lookup-result flex column gap-12 p-16 rounded-lg">
-        <div class="flex justify-content-between align-items-center">
-          <h4 class="text-white typo-text-1 fw-bold">Contract State</h4>
-          <a [href]="getExplorerAddressLink(lookupResult()!.address)" target="_blank" class="text-blue typo-text-2">
-            View in Explorer ↗
-          </a>
-        </div>
-
-        <div class="flex column gap-4">
-          <span class="text-gray-60 typo-text-1">Address</span>
-          <div class="flex align-items-center gap-8">
-            <span class="text-white typo-text-2 text-mono">{{ truncate(lookupResult()!.address, 40) }}</span>
-            <app-copy-button [value]="lookupResult()!.address" [size]="'sm'"></app-copy-button>
+  @if (activeTab() === "lookup-import") {
+    <div class="contracts-list flex column gap-16">
+      <!-- Address Lookup -->
+      <div class="panel flex column gap-16 p-20 rounded-lg">
+        <h3 class="text-white typo-text-1 fw-bold">🔍 Look Up Contract</h3>
+        <p class="text-gray-60 typo-text-2">
+          Enter a contract address to check its on-chain state (balance, UTXOs).
+        </p>
+        <div class="flex gap-8 align-items-end">
+          <div class="form-group flex column gap-8 flex-1">
+            <kc-input
+              [label]="'Contract Address'"
+              [placeholder]="'kaspatest:pr...'"
+              [type]="'text'"
+              [isFullWidth]="true"
+              [isDisabled]="lookupLoading()"
+              [ngModel]="lookupAddress"
+              (valueChange)="lookupAddress = $event || ''"
+            >
+            </kc-input>
           </div>
+          <kc-button
+            [text]="lookupLoading() ? 'Querying...' : 'Look Up'"
+            [isDisabled]="lookupLoading() || !lookupAddress.trim()"
+            (buttonClick)="lookupContract()"
+          >
+          </kc-button>
         </div>
 
-        <div class="flex gap-24">
-          <div class="flex column gap-4">
-            <span class="text-gray-60 typo-text-1">Balance</span>
-            <span class="text-white typo-title-3 fw-bold">{{ formatSompiToKas(lookupResult()!.balanceSompi) }}
-              KAS</span>
+        @if (lookupError()) {
+          <div class="error-message p-12 rounded-lg text-red typo-text-2">
+            {{ lookupError() }}
           </div>
-          <div class="flex column gap-4">
-            <span class="text-gray-60 typo-text-1">UTXOs</span>
-            <span class="text-white typo-title-3 fw-bold">{{ lookupResult()!.utxoCount }}</span>
-          </div>
-        </div>
-
-        @if (lookupResult()!.utxoCount === 0) {
-        <div class="p-12 rounded text-gray-60 typo-text-2">
-          No UTXOs found — contract may have been spent or address is empty.
-        </div>
         }
 
-        @if (lookupResult()!.utxos.length > 0) {
-        <div class="flex column gap-8">
-          <span class="text-gray-60 typo-text-1">UTXOs</span>
-          @for (utxo of lookupResult()!.utxos; track utxo.txid + ':' + utxo.vout) {
-          <div class="utxo-row p-12 rounded-lg flex column gap-4">
+        @if (lookupResult()) {
+          <div class="lookup-result flex column gap-12 p-16 rounded-lg">
             <div class="flex justify-content-between align-items-center">
-              <div class="flex align-items-center gap-8">
-                <a [href]="getExplorerLink(utxo.txid)" target="_blank" class="text-blue typo-text-2">
-                  {{ truncate(utxo.txid, 20) }}:{{ utxo.vout }}
-                </a>
-                <app-copy-button [value]="utxo.txid" [size]="'sm'"></app-copy-button>
-              </div>
-              <span class="text-white typo-text-2 fw-bold">{{ formatSompiToKas(utxo.amount) }} KAS</span>
+              <h4 class="text-white typo-text-1 fw-bold">Contract State</h4>
+              <a
+                [href]="getExplorerAddressLink(lookupResult()!.address)"
+                target="_blank"
+                class="text-blue typo-text-2"
+              >
+                View in Explorer ↗
+              </a>
             </div>
-          </div>
-          }
-        </div>
 
-        <div class="form-group flex column gap-8">
-          <label class="text-gray-60 typo-text-2">Paste the compiled contract JSON to interact:</label>
-          <textarea class="form-input p-12 rounded-lg text-white typo-text-2" [(ngModel)]="lookupContractJson" rows="3"
-            placeholder='Paste the contract JSON here (from the deployer)...'
-            style="resize: vertical; font-family: 'Courier New', monospace; font-size: 11px;"></textarea>
-        </div>
-        <kc-button [text]="'Interact with this Contract'" [isFullWidth]="true" [isDisabled]="!lookupContractJson"
-          (buttonClick)="importLookupContract()">
-        </kc-button>
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-1">Address</span>
+              <div class="flex align-items-center gap-8">
+                <span class="text-white typo-text-2 text-mono">{{
+                  truncate(lookupResult()!.address, 40)
+                }}</span>
+                <app-copy-button
+                  [value]="lookupResult()!.address"
+                  [size]="'sm'"
+                ></app-copy-button>
+              </div>
+            </div>
+
+            <div class="flex gap-24">
+              <div class="flex column gap-4">
+                <span class="text-gray-60 typo-text-1">Balance</span>
+                <span class="text-white typo-title-3 fw-bold"
+                  >{{
+                    formatSompiToKas(lookupResult()!.balanceSompi)
+                  }}
+                  KAS</span
+                >
+              </div>
+              <div class="flex column gap-4">
+                <span class="text-gray-60 typo-text-1">UTXOs</span>
+                <span class="text-white typo-title-3 fw-bold">{{
+                  lookupResult()!.utxoCount
+                }}</span>
+              </div>
+            </div>
+
+            @if (lookupResult()!.utxoCount === 0) {
+              <div class="p-12 rounded text-gray-60 typo-text-2">
+                No UTXOs found — contract may have been spent or address is
+                empty.
+              </div>
+            }
+
+            @if (lookupResult()!.utxos.length > 0) {
+              <div class="flex column gap-8">
+                <span class="text-gray-60 typo-text-1">UTXOs</span>
+                @for (
+                  utxo of lookupResult()!.utxos;
+                  track utxo.txid + ":" + utxo.vout
+                ) {
+                  <div class="utxo-row p-12 rounded-lg flex column gap-4">
+                    <div
+                      class="flex justify-content-between align-items-center"
+                    >
+                      <div class="flex align-items-center gap-8">
+                        <a
+                          [href]="getExplorerLink(utxo.txid)"
+                          target="_blank"
+                          class="text-blue typo-text-2"
+                        >
+                          {{ truncate(utxo.txid, 20) }}:{{ utxo.vout }}
+                        </a>
+                        <app-copy-button
+                          [value]="utxo.txid"
+                          [size]="'sm'"
+                        ></app-copy-button>
+                      </div>
+                      <span class="text-white typo-text-2 fw-bold"
+                        >{{ formatSompiToKas(utxo.amount) }} KAS</span
+                      >
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <div class="form-group flex column gap-8">
+                <label class="text-gray-60 typo-text-2"
+                  >Paste the compiled contract JSON to interact:</label
+                >
+                <textarea
+                  class="form-input p-12 rounded-lg text-white typo-text-2"
+                  [(ngModel)]="lookupContractJson"
+                  rows="3"
+                  placeholder="Paste the contract JSON here (from the deployer)..."
+                  style="
+                    resize: vertical;
+                    font-family: &quot;Courier New&quot;, monospace;
+                    font-size: 11px;
+                  "
+                ></textarea>
+              </div>
+              <kc-button
+                [text]="'Interact with this Contract'"
+                [isFullWidth]="true"
+                [isDisabled]="!lookupContractJson"
+                (buttonClick)="importLookupContract()"
+              >
+              </kc-button>
+            }
+          </div>
         }
       </div>
-      }
+
+      <!-- Indexer Import -->
+      <div class="panel flex column gap-16 p-20 rounded-lg">
+        <h3 class="text-white typo-text-1 fw-bold">Import from Indexer</h3>
+        <p class="text-gray-60 typo-text-2">
+          Enter a covenant ID, script hash, deploy transaction, contract
+          address, or shared contract link value. Only wallet-supported
+          templates can be imported.
+        </p>
+        <div class="flex gap-8 align-items-end">
+          <div class="form-group flex column gap-8 flex-1">
+            <kc-input
+              [label]="'Contract Lookup'"
+              [placeholder]="'covenant ID, txid, or kaspatest:...'"
+              [type]="'text'"
+              [isFullWidth]="true"
+              [isDisabled]="indexerImportLoading()"
+              [ngModel]="indexerImportQuery"
+              (valueChange)="indexerImportQuery = $event || ''"
+            >
+            </kc-input>
+          </div>
+          <kc-button
+            [text]="indexerImportLoading() ? 'Loading...' : 'Find'"
+            [isDisabled]="indexerImportLoading() || !indexerImportQuery.trim()"
+            (buttonClick)="lookupIndexerImport()"
+          >
+          </kc-button>
+        </div>
+
+        @if (indexerImportError()) {
+          <div class="error-message p-12 rounded-lg text-red typo-text-2">
+            {{ indexerImportError() }}
+          </div>
+        }
+
+        @if (indexerImportPreview()) {
+          <div class="lookup-result flex column gap-12 p-16 rounded-lg">
+            <div class="flex justify-content-between align-items-center">
+              <h4 class="text-white typo-text-1 fw-bold">
+                {{ indexerImportPreview()!.template.name }}
+              </h4>
+              <span class="text-gray-60 typo-text-2"
+                >{{
+                  formatSompiToKas(indexerImportPreview()!.amountSompi)
+                }}
+                KAS</span
+              >
+            </div>
+
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-1">Covenant ID</span>
+              <div class="flex align-items-center gap-8">
+                <span class="text-white typo-text-2 text-mono">{{
+                  truncate(indexerImportPreview()!.covenantId, 28)
+                }}</span>
+                <app-copy-button
+                  [value]="indexerImportPreview()!.covenantId"
+                  [size]="'sm'"
+                ></app-copy-button>
+              </div>
+            </div>
+
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-1">Contract Address</span>
+              <div class="flex align-items-center gap-8">
+                <a
+                  [href]="
+                    getExplorerAddressLink(
+                      indexerImportPreview()!.contractAddress
+                    )
+                  "
+                  target="_blank"
+                  class="text-blue typo-text-2"
+                >
+                  {{ truncate(indexerImportPreview()!.contractAddress, 34) }}
+                </a>
+                <app-copy-button
+                  [value]="indexerImportPreview()!.contractAddress"
+                  [size]="'sm'"
+                ></app-copy-button>
+              </div>
+            </div>
+
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-1">Deploy TX</span>
+              <div class="flex align-items-center gap-8">
+                <a
+                  [href]="getExplorerLink(indexerImportPreview()!.deployTxid)"
+                  target="_blank"
+                  class="text-blue typo-text-2"
+                >
+                  {{ truncate(indexerImportPreview()!.deployTxid, 24) }}
+                </a>
+                <app-copy-button
+                  [value]="indexerImportPreview()!.deployTxid"
+                  [size]="'sm'"
+                ></app-copy-button>
+              </div>
+            </div>
+
+            <div class="flex column gap-8">
+              <span class="text-gray-60 typo-text-1">Parameters</span>
+              @for (
+                field of indexerImportPreview()!.template.fields;
+                track field.paramName
+              ) {
+                <div class="param-item p-8 rounded flex column gap-4">
+                  <span class="text-white typo-text-2">{{ field.label }}</span>
+                  <span class="text-gray-60 typo-text-2 text-mono">
+                    {{ indexerImportPreview()!.fieldValues[field.paramName] }}
+                  </span>
+                </div>
+              }
+            </div>
+
+            <kc-button
+              [text]="'Import Covenant'"
+              [isFullWidth]="true"
+              (buttonClick)="importIndexerPreview()"
+            >
+            </kc-button>
+          </div>
+        }
+      </div>
     </div>
-
-    <!-- Indexer Import -->
-    <div class="panel flex column gap-16 p-20 rounded-lg">
-      <h3 class="text-white typo-text-1 fw-bold">Import from Indexer</h3>
-      <p class="text-gray-60 typo-text-2">Enter a deploy transaction ID or covenant ID. Only wallet-supported templates can be imported.</p>
-      <div class="flex gap-8 align-items-end">
-        <div class="form-group flex column gap-8 flex-1">
-          <label class="text-gray-60 typo-text-1">Deploy TX or Covenant ID</label>
-          <input type="text" class="form-input p-12 rounded-lg text-white typo-text-2"
-            placeholder="32c30c5f... or 5bff84f6..." [(ngModel)]="indexerImportQuery"
-            [disabled]="indexerImportLoading()" />
-        </div>
-        <kc-button [text]="indexerImportLoading() ? 'Loading...' : 'Find'"
-          [isDisabled]="indexerImportLoading() || !indexerImportQuery.trim()" (buttonClick)="lookupIndexerImport()">
-        </kc-button>
-      </div>
-
-      @if (indexerImportError()) {
-      <div class="error-message p-12 rounded-lg text-red typo-text-2">
-        {{ indexerImportError() }}
-      </div>
-      }
-
-      @if (indexerImportPreview()) {
-      <div class="lookup-result flex column gap-12 p-16 rounded-lg">
-        <div class="flex justify-content-between align-items-center">
-          <h4 class="text-white typo-text-1 fw-bold">{{ indexerImportPreview()!.template.name }}</h4>
-          <span class="text-gray-60 typo-text-2">{{ formatSompiToKas(indexerImportPreview()!.amountSompi) }} KAS</span>
-        </div>
-
-        <div class="flex column gap-4">
-          <span class="text-gray-60 typo-text-1">Covenant ID</span>
-          <div class="flex align-items-center gap-8">
-            <span class="text-white typo-text-2 text-mono">{{ truncate(indexerImportPreview()!.covenantId, 28) }}</span>
-            <app-copy-button [value]="indexerImportPreview()!.covenantId" [size]="'sm'"></app-copy-button>
-          </div>
-        </div>
-
-        <div class="flex column gap-4">
-          <span class="text-gray-60 typo-text-1">Contract Address</span>
-          <div class="flex align-items-center gap-8">
-            <a [href]="getExplorerAddressLink(indexerImportPreview()!.contractAddress)" target="_blank"
-              class="text-blue typo-text-2">
-              {{ truncate(indexerImportPreview()!.contractAddress, 34) }}
-            </a>
-            <app-copy-button [value]="indexerImportPreview()!.contractAddress" [size]="'sm'"></app-copy-button>
-          </div>
-        </div>
-
-        <div class="flex column gap-4">
-          <span class="text-gray-60 typo-text-1">Deploy TX</span>
-          <div class="flex align-items-center gap-8">
-            <a [href]="getExplorerLink(indexerImportPreview()!.deployTxid)" target="_blank" class="text-blue typo-text-2">
-              {{ truncate(indexerImportPreview()!.deployTxid, 24) }}
-            </a>
-            <app-copy-button [value]="indexerImportPreview()!.deployTxid" [size]="'sm'"></app-copy-button>
-          </div>
-        </div>
-
-        <div class="flex column gap-8">
-          <span class="text-gray-60 typo-text-1">Parameters</span>
-          @for (field of indexerImportPreview()!.template.fields; track field.paramName) {
-          <div class="param-item p-8 rounded flex column gap-4">
-            <span class="text-white typo-text-2">{{ field.label }}</span>
-            <span class="text-gray-60 typo-text-2 text-mono">
-              {{ indexerImportPreview()!.fieldValues[field.paramName] }}
-            </span>
-          </div>
-          }
-        </div>
-
-        <kc-button [text]="'Import Covenant'" [isFullWidth]="true" (buttonClick)="importIndexerPreview()">
-        </kc-button>
-      </div>
-      }
-    </div>
-  </div>
   }
 
   <!-- Tab 3: My Contracts -->
-  @if (activeTab() === 'my-contracts') {
-  <div class="contracts-list flex column gap-16">
-
-    <!-- Deployed Contracts Registry -->
-    @if (registryContracts().length === 0) {
-    <div class="empty-state p-32 rounded-lg text-center">
-      <p class="text-gray-60 typo-text-1">No contracts deployed yet on {{ network() }}</p>
-    </div>
-    }
-
-    @for (contract of registryContracts(); track contract.id) {
-    <div class="contract-card p-20 rounded-lg flex column gap-16"
-      [style.opacity]="contract.status === 'spent' ? '0.5' : '1'">
-      <!-- Contract header -->
-      <div class="flex justify-content-between align-items-start">
-        <div class="flex column gap-4">
-          <h3 class="text-white typo-title-3">{{ contract.contractName }}</h3>
-          <span class="text-gray-60 typo-text-2">
-            {{ formatSompiToKas(contract.amountSompi) }} KAS
-          </span>
-        </div>
-        <div class="flex align-items-center gap-8">
-          @if (contract.status === 'spent') {
-          <div class="status-badge inactive p-8 rounded" kcTooltip="This contract has been spent — funds withdrawn"
-            tooltipPosition="left">
-            <span class="typo-text-2">Spent</span>
+  @if (activeTab() === "my-contracts") {
+    <div class="contracts-list flex column gap-16">
+      @if (!detailRouteId()) {
+        <div class="panel flex column gap-12 p-20 rounded-lg">
+          <div class="flex column align-items-start gap-12">
+            <div class="flex align-items-center gap-8 flex-wrap">
+              <div class="contract-filter flex gap-4 rounded">
+                <button
+                  class="filter-button p-8 rounded typo-text-2"
+                  [class.active]="dashboardFilter() === 'active'"
+                  (click)="setDashboardFilter('active')"
+                >
+                  Active ({{ activeDashboardContracts().length }})
+                </button>
+                <button
+                  class="filter-button p-8 rounded typo-text-2"
+                  [class.active]="dashboardFilter() === 'history'"
+                  (click)="setDashboardFilter('history')"
+                >
+                  History ({{ historyDashboardContracts().length }})
+                </button>
+              </div>
+              <button
+                class="refresh-button p-8 rounded typo-text-2"
+                [disabled]="dashboardLoading()"
+                (click)="loadContracts()"
+              >
+                {{ dashboardLoading() ? "Refreshing..." : "Refresh" }}
+              </button>
+            </div>
+            <div class="flex column gap-4">
+              <h3 class="text-white typo-text-1 fw-bold">My Contracts</h3>
+              <p class="text-gray-60 typo-text-2">
+                Tracked by wallet address, role args, active UTXOs, and covenant
+                timeline from the indexer.
+              </p>
+            </div>
           </div>
-          } @else {
-          <div class="status-badge active p-8 rounded">
-            <span class="typo-text-2">Active</span>
-          </div>
+
+          @if (dashboardError()) {
+            <div class="error-message p-12 rounded-lg text-red typo-text-2">
+              {{ dashboardError() }}
+            </div>
           }
-          <span class="text-gray-60 typo-text-2 cursor-pointer" (click)="deleteContract(contract.id)"
-            kcTooltip="Remove from list" tooltipPosition="left">✕</span>
-        </div>
-      </div>
 
-      <!-- Contract address -->
-      <div class="flex column gap-4">
-        <span class="text-gray-60 typo-text-2">Contract Address</span>
-        <div class="flex align-items-center gap-8">
-          <a [href]="getExplorerAddressLink(contract.contractAddress)" target="_blank" class="text-blue typo-text-2">
-            {{ truncate(contract.contractAddress, 30) }}
-          </a>
-          <app-copy-button [value]="contract.contractAddress" [size]="'sm'"></app-copy-button>
+          @if (dashboardLoading()) {
+            <div class="p-12 rounded text-gray-60 typo-text-2">
+              Loading indexer-backed contract tracking...
+            </div>
+          }
         </div>
-      </div>
-
-      @if (contract.covenantId) {
-      <div class="flex column gap-4">
-        <span class="text-gray-60 typo-text-2">Covenant ID</span>
-        <div class="flex align-items-center gap-8">
-          <span class="text-white typo-text-2 text-mono">{{ truncate(contract.covenantId, 24) }}</span>
-          <app-copy-button [value]="contract.covenantId" [size]="'sm'"></app-copy-button>
+      } @else {
+        <div
+          class="detail-route-header flex justify-content-between align-items-center gap-12 flex-wrap"
+        >
+          <button
+            class="back-button p-8 rounded typo-text-2"
+            (click)="backToContractsList()"
+          >
+            Back to Contracts
+          </button>
+          @if (selectedDetail() && selectedDetail()!.entry.status !== "spent") {
+            <span class="text-gray-60 typo-text-2"
+              >Actions are available below</span
+            >
+          }
         </div>
-      </div>
-      }
 
-      <!-- Deploy TX -->
-      <div class="flex column gap-4">
-        <span class="text-gray-60 typo-text-2">Deploy TX</span>
-        <div class="flex align-items-center gap-8">
-          <a [href]="getExplorerLink(contract.deployTxid)" target="_blank" class="text-blue typo-text-2">
-            {{ truncate(contract.deployTxid, 20) }}
-          </a>
-          <app-copy-button [value]="contract.deployTxid" [size]="'sm'"></app-copy-button>
-        </div>
-      </div>
-
-      @if (contract.spendTxid) {
-      <div class="flex column gap-4">
-        <span class="text-gray-60 typo-text-2">Spend TX</span>
-        <div class="flex align-items-center gap-8">
-          <a [href]="getExplorerLink(contract.spendTxid)" target="_blank" class="text-blue typo-text-2">
-            {{ truncate(contract.spendTxid, 20) }}
-          </a>
-          <app-copy-button [value]="contract.spendTxid" [size]="'sm'"></app-copy-button>
-        </div>
-      </div>
-      }
-
-      <!-- Action buttons -->
-      <div class="flex gap-8">
-        @if (contract.status !== 'spent') {
-        <kc-button [text]="'💰 Withdraw'" [isFullWidth]="true"
-          (buttonClick)="selectedContractId.set(contract.id); selectContractFromRegistry(); switchTab('interact')">
-        </kc-button>
+        @if (detailRouteNotFound()) {
+          <div class="empty-state p-32 rounded-lg text-center">
+            <p class="text-gray-60 typo-text-1">
+              Contract not found for this wallet on {{ network() }}
+            </p>
+          </div>
         }
-      </div>
+
+        @if (selectedDetailError()) {
+          <div class="error-message p-12 rounded-lg text-red typo-text-2">
+            {{ selectedDetailError() }}
+          </div>
+        }
+
+        @if (dashboardError()) {
+          <div class="error-message p-12 rounded-lg text-red typo-text-2">
+            {{ dashboardError() }}
+          </div>
+        }
+      }
+
+      @if (!detailRouteId()) {
+        @if (!dashboardLoading() && filteredDashboardContracts().length === 0) {
+          <div class="empty-state p-32 rounded-lg text-center">
+            <p class="text-gray-60 typo-text-1">
+              @if (dashboardFilter() === "history") {
+                No spent contracts found for this wallet on {{ network() }}
+              } @else {
+                No active contracts found for this wallet on {{ network() }}
+              }
+            </p>
+          </div>
+        }
+
+        @for (contract of filteredDashboardContracts(); track contract.id) {
+          <div
+            class="contract-card p-20 rounded-lg flex column gap-16"
+            [style.opacity]="contract.status === 'spent' ? '0.5' : '1'"
+          >
+            <div class="flex justify-content-between align-items-start">
+              <div class="flex column gap-4">
+                <div class="flex align-items-center gap-8 flex-wrap">
+                  <h3 class="text-white typo-title-3">
+                    {{ contract.displayName }}
+                  </h3>
+                  @for (
+                    sourceLabel of getSourceLabels(contract);
+                    track sourceLabel
+                  ) {
+                    <span class="source-badge p-6 rounded typo-text-2">{{
+                      sourceLabel
+                    }}</span>
+                  }
+                </div>
+                <span class="text-gray-60 typo-text-2">
+                  {{ formatSompiToKas(contract.amountSompi) }} KAS
+                </span>
+              </div>
+              <div class="flex align-items-center gap-8">
+                @if (contract.status === "spent") {
+                  <div
+                    class="status-badge inactive p-8 rounded"
+                    kcTooltip="No active covenant UTXO is currently indexed"
+                    tooltipPosition="left"
+                  >
+                    <span class="typo-text-2">Spent</span>
+                  </div>
+                } @else if (
+                  contract.status === "unknown" ||
+                  contract.status === "tracking-incomplete"
+                ) {
+                  <div
+                    class="status-badge unknown p-8 rounded"
+                    kcTooltip="The wallet has a local entry, but indexer tracking is incomplete"
+                    tooltipPosition="left"
+                  >
+                    <span class="typo-text-2">Tracking</span>
+                  </div>
+                } @else {
+                  <div class="status-badge active p-8 rounded">
+                    <span class="typo-text-2">Active</span>
+                  </div>
+                }
+                @if (contract.registryEntry) {
+                  <span
+                    class="text-gray-60 typo-text-2 cursor-pointer"
+                    (click)="deleteContract(contract.registryEntry.id)"
+                    kcTooltip="Remove local copy from list"
+                    tooltipPosition="left"
+                    >✕</span
+                  >
+                }
+              </div>
+            </div>
+
+            @if (contract.participants.length > 0) {
+              <div class="participant-grid">
+                @for (
+                  participant of contract.participants.slice(0, 4);
+                  track participant.label + participant.value
+                ) {
+                  <div class="participant-item p-8 rounded">
+                    <span class="text-gray-60 typo-text-2">{{
+                      participant.label
+                    }}</span>
+                    <span class="text-white typo-text-2 text-mono">{{
+                      truncate(participant.value, 22)
+                    }}</span>
+                  </div>
+                }
+              </div>
+            }
+
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-2">Current Address</span>
+              <div class="flex align-items-center gap-8">
+                @if (contract.currentAddress) {
+                  <a
+                    [href]="getExplorerAddressLink(contract.currentAddress)"
+                    target="_blank"
+                    class="text-blue typo-text-2"
+                  >
+                    {{ truncate(contract.currentAddress, 30) }}
+                  </a>
+                  <app-copy-button
+                    [value]="contract.currentAddress"
+                    [size]="'sm'"
+                  ></app-copy-button>
+                } @else {
+                  <span class="text-white typo-text-2">Unknown</span>
+                }
+              </div>
+            </div>
+
+            @if (contract.covenantId) {
+              <div class="flex column gap-4">
+                <span class="text-gray-60 typo-text-2">Covenant ID</span>
+                <div class="flex align-items-center gap-8">
+                  <span class="text-white typo-text-2 text-mono">{{
+                    truncate(contract.covenantId, 24)
+                  }}</span>
+                  <app-copy-button
+                    [value]="contract.covenantId"
+                    [size]="'sm'"
+                  ></app-copy-button>
+                </div>
+              </div>
+            }
+
+            @if (contract.deadlineMs) {
+              <div class="flex column gap-4">
+                <span class="text-gray-60 typo-text-2">Deadline</span>
+                <span class="text-white typo-text-2">{{
+                  formatTimestamp(contract.deadlineMs)
+                }}</span>
+              </div>
+            }
+
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-2">Latest Action</span>
+              <div class="flex align-items-center gap-8">
+                <span class="text-white typo-text-2">{{
+                  formatActionName(contract.latestAction || "deploy")
+                }}</span>
+                @if (contract.latestTxid) {
+                  <a
+                    [href]="getExplorerLink(contract.latestTxid)"
+                    target="_blank"
+                    class="text-blue typo-text-2"
+                  >
+                    {{ truncate(contract.latestTxid, 20) }}
+                  </a>
+                  <app-copy-button
+                    [value]="contract.latestTxid"
+                    [size]="'sm'"
+                  ></app-copy-button>
+                }
+              </div>
+            </div>
+
+            <div class="flex gap-8 flex-wrap">
+              <kc-button
+                [text]="'View Details'"
+                (buttonClick)="navigateToContractDetail(contract)"
+              >
+              </kc-button>
+              @if (contract.status === "active") {
+                <kc-button
+                  [text]="contract.nextActionLabel"
+                  (buttonClick)="openDashboardAction(contract)"
+                >
+                </kc-button>
+              }
+              @if (contract.covenantId) {
+                <kc-button
+                  [text]="'Copy Share Link'"
+                  (buttonClick)="copyContractShareLink(contract)"
+                >
+                </kc-button>
+              }
+            </div>
+          </div>
+        }
+      }
     </div>
-    }
-  </div>
+  }
+
+  @if (activeTab() === "detail") {
+    <div class="contracts-list flex column gap-16">
+      @if (selectedDetail()) {
+        <div
+          id="contract-detail-panel"
+          class="panel flex column gap-16 p-20 rounded-lg"
+        >
+          <div class="flex justify-content-between align-items-start gap-12">
+            <div class="flex column gap-4">
+              <h3 class="text-white typo-title-3">
+                {{ selectedDetail()!.entry.displayName }}
+              </h3>
+              <p class="text-gray-60 typo-text-2">
+                Current state from covenant detail, active UTXOs, and action
+                timeline.
+              </p>
+            </div>
+            <button
+              class="back-button detail-close-button p-8 rounded typo-text-2"
+              (click)="backToContractsList()"
+            >
+              Close
+            </button>
+          </div>
+
+          @if (selectedDetail()!.entry.status === "active") {
+            <div class="contract-detail-tabs flex gap-4 rounded">
+              <button
+                class="detail-tab-button p-8 rounded typo-text-2"
+                [class.active]="detailPanelTab() === 'details'"
+                (click)="setContractDetailTab('details')"
+              >
+                Details
+              </button>
+              <button
+                class="detail-tab-button p-8 rounded typo-text-2"
+                [class.active]="detailPanelTab() === 'action'"
+                (click)="setContractDetailTab('action')"
+              >
+                Action
+              </button>
+            </div>
+          }
+
+          @if (selectedDetailLoading()) {
+            <div class="p-12 rounded text-gray-60 typo-text-2">
+              Loading current indexer state...
+            </div>
+          }
+
+          @if (selectedDetailError()) {
+            <div class="error-message p-12 rounded-lg text-red typo-text-2">
+              {{ selectedDetailError() }}
+            </div>
+          }
+
+          @if (
+            detailPanelTab() === "details" ||
+            selectedDetail()!.entry.status === "spent"
+          ) {
+            <div class="detail-grid">
+              <div class="detail-item p-12 rounded">
+                <span class="text-gray-60 typo-text-2">Status</span>
+                <span class="text-white typo-text-1 fw-bold">{{
+                  getStatusLabel(selectedDetail()!.entry)
+                }}</span>
+              </div>
+              <div class="detail-item p-12 rounded">
+                <span class="text-gray-60 typo-text-2">Locked</span>
+                <span class="text-white typo-text-1 fw-bold"
+                  >{{
+                    formatSompiToKas(selectedDetail()!.entry.amountSompi)
+                  }}
+                  KAS</span
+                >
+              </div>
+              <div class="detail-item p-12 rounded">
+                <span class="text-gray-60 typo-text-2">Active UTXOs</span>
+                <span class="text-white typo-text-1 fw-bold">{{
+                  selectedDetail()!.utxos.length
+                }}</span>
+              </div>
+            </div>
+
+            @if (selectedDetail()!.utxos.length > 0) {
+              <div class="flex column gap-8">
+                <span class="text-gray-60 typo-text-1">Current UTXO</span>
+                @for (
+                  utxo of selectedDetail()!.utxos;
+                  track (utxo.txidHex || "") + ":" + utxo.vout
+                ) {
+                  <div
+                    class="utxo-row p-12 rounded-lg flex justify-content-between align-items-center gap-12"
+                  >
+                    @if (utxo.txidHex) {
+                      <a
+                        [href]="getExplorerLink(utxo.txidHex)"
+                        target="_blank"
+                        class="text-blue typo-text-2"
+                      >
+                        {{ truncate(utxo.txidHex, 24) }}:{{ utxo.vout ?? 0 }}
+                      </a>
+                    } @else {
+                      <span class="text-gray-60 typo-text-2">Unknown</span>
+                    }
+                    <span class="text-white typo-text-2 fw-bold"
+                      >{{
+                        formatSompiToKas(utxo.amountSompi?.toString() || "0")
+                      }}
+                      KAS</span
+                    >
+                  </div>
+                }
+              </div>
+            }
+
+            <div class="flex column gap-8">
+              <span class="text-gray-60 typo-text-1">Timeline</span>
+              @for (
+                action of selectedDetail()!.actions.slice(0, 8);
+                track (action.txidHex || "") +
+                  (action.action || "") +
+                  (action.entrypoint || "")
+              ) {
+                <div
+                  class="timeline-row p-12 rounded-lg flex justify-content-between align-items-start gap-12"
+                >
+                  <div class="flex column gap-4">
+                    <span class="text-white typo-text-2">{{
+                      formatActionName(
+                        action.entrypoint || action.action || "action"
+                      )
+                    }}</span>
+                    <span class="text-gray-60 typo-text-2">{{
+                      formatTimestamp(action.blockTimeMs)
+                    }}</span>
+                  </div>
+                  @if (action.txidHex) {
+                    <a
+                      [href]="getExplorerLink(action.txidHex)"
+                      target="_blank"
+                      class="text-blue typo-text-2"
+                    >
+                      {{ truncate(action.txidHex, 20) }}
+                    </a>
+                  }
+                </div>
+              }
+            </div>
+
+            <details class="advanced-section">
+              <summary class="text-gray-60 typo-text-2 cursor-pointer">
+                Advanced technical data
+              </summary>
+              <div class="flex column gap-8 mt-8">
+                @if (selectedDetail()!.entry.covenantId) {
+                  <div class="flex column gap-4">
+                    <span class="text-gray-60 typo-text-2">Covenant ID</span>
+                    <span class="text-white typo-text-2 text-mono">{{
+                      selectedDetail()!.entry.covenantId
+                    }}</span>
+                  </div>
+                }
+                @if (selectedDetail()!.entry.scriptHash) {
+                  <div class="flex column gap-4">
+                    <span class="text-gray-60 typo-text-2">Script Hash</span>
+                    <span class="text-white typo-text-2 text-mono">{{
+                      selectedDetail()!.entry.scriptHash
+                    }}</span>
+                  </div>
+                }
+              </div>
+            </details>
+          }
+        </div>
+      }
+    </div>
   }
 
   <!-- Tab 3: Interact -->
-  @if (activeTab() === 'interact') {
-  <div class="panel flex column gap-20 p-24 rounded-lg">
-    <!-- Contract selector from registry -->
-    <div class="form-group flex column gap-8">
-      <label class="text-gray-60 typo-text-1">Select Contract</label>
-      <select class="form-input p-12 rounded-lg text-white typo-text-2" [ngModel]="selectedContractId()" (ngModelChange)="selectedContractId.set($event); selectContractFromRegistry()"
-        [disabled]="isInteracting()">
-        <option value="">-- Select a deployed contract --</option>
-        @for (contract of registryContracts(); track contract.id) {
-        <option [value]="contract.id">
-          {{ contract.contractName }} ({{ truncate(contract.contractAddress, 20) }})
-        </option>
-        }
-      </select>
-    </div>
+  @if (
+    activeTab() === "interact" ||
+    (activeTab() === "detail" &&
+      detailPanelTab() === "action" &&
+      selectedDetail() &&
+      selectedDetail()!.entry.status === "active" &&
+      interactContractJson())
+  ) {
+    <div class="panel flex column gap-20 p-24 rounded-lg">
+      <!-- Contract selector from registry -->
+      @if (selectedContract()) {
+        <div class="contract-summary p-16 rounded-lg flex column gap-8">
+          <span class="text-gray-60 typo-text-2">Current Contract</span>
+          <div
+            class="flex justify-content-between align-items-center gap-12 flex-wrap"
+          >
+            <div class="flex column gap-4">
+              <span class="text-white typo-text-1 fw-bold">{{
+                selectedContract()!.contractName
+              }}</span>
+              <span class="text-gray-60 typo-text-2">{{
+                truncate(selectedContract()!.contractAddress, 30)
+              }}</span>
+            </div>
+            <span class="text-gray-60 typo-text-2"
+              >{{ formatSompiToKas(selectedContract()!.amountSompi) }} KAS</span
+            >
+          </div>
+        </div>
+      } @else if (
+        activeTab() !== "detail" && !detailRouteId() && !interactContractJson()
+      ) {
+        <div class="form-group flex column gap-8">
+          <label class="text-gray-60 typo-text-1">Select Contract</label>
+          <kc-dropdown-select
+            [options]="registryContractOptions()"
+            [placeholder]="'Select a deployed contract'"
+            [isFullWidth]="true"
+            [isDisabled]="isInteracting()"
+            [value]="selectedContractId()"
+            (valueChange)="
+              selectedContractId.set($event); selectContractFromRegistry()
+            "
+          >
+          </kc-dropdown-select>
+        </div>
+      }
 
-    <!-- Advanced: Manual contract JSON (collapsed by default) -->
-    <details class="advanced-section">
-      <summary class="text-gray-60 typo-text-2 cursor-pointer"
-        kcTooltip="Paste raw compiled JSON to interact with unregistered contracts" tooltipPosition="top">
-        ⚙️ Advanced: Paste Contract JSON
-      </summary>
-      <div class="form-group flex column gap-8 mt-8">
-        <textarea class="contract-input p-12 rounded-lg text-white typo-text-2" rows="4"
-          placeholder="Paste compiled contract JSON here" [ngModel]="interactContractJson()" (ngModelChange)="interactContractJson.set($event)"
-          [disabled]="isInteracting()">
+      <!-- Advanced: Manual contract JSON (collapsed by default) -->
+      <details class="advanced-section">
+        <summary
+          class="text-gray-60 typo-text-2 cursor-pointer"
+          kcTooltip="Paste raw compiled JSON to interact with unregistered contracts"
+          tooltipPosition="top"
+        >
+          ⚙️ Advanced: Paste Contract JSON
+        </summary>
+        <div class="form-group flex column gap-8 mt-8">
+          <textarea
+            class="contract-input p-12 rounded-lg text-white typo-text-2"
+            rows="4"
+            placeholder="Paste compiled contract JSON here"
+            [ngModel]="interactContractJson()"
+            (ngModelChange)="interactContractJson.set($event)"
+            [disabled]="isInteracting()"
+          >
           </textarea>
-      </div>
-    </details>
-
-    <!-- Contract info card -->
-    @if (parsedInteractContract()) {
-    <div class="contract-summary p-16 rounded-lg flex column gap-12">
-      <h3 class="text-white typo-text-1 fw-bold">{{ parsedInteractContract()!.contract_name || 'Contract' }}</h3>
-
-      <!-- UTXO Details (read-only) -->
-      <div class="flex column gap-8">
-        <div class="flex align-items-center gap-4">
-          <span class="text-gray-60 typo-text-2">Locked Amount</span>
-          <kc-icon [iconClass]="'icon-info'" [size]="'xs'" kcTooltip="Total KAS locked in this covenant UTXO"
-            tooltipPosition="top"></kc-icon>
         </div>
-        <span class="text-white typo-text-1 fw-bold">{{ interactInputAmountKas() }} KAS</span>
-      </div>
+      </details>
 
-      @if (interactOutpointTxid) {
-      <div class="flex column gap-4">
-        <span class="text-gray-60 typo-text-2">Transaction</span>
-        <div class="flex align-items-center gap-8">
-          <a [href]="getExplorerLink(interactOutpointTxid)" target="_blank" class="text-blue typo-text-2 text-truncate">
-            {{ truncate(interactOutpointTxid, 24) }}
-          </a>
-          <app-copy-button [value]="interactOutpointTxid" [size]="'sm'"></app-copy-button>
+      <!-- Contract info card -->
+      @if (parsedInteractContract()) {
+        <div class="contract-summary p-16 rounded-lg flex column gap-12">
+          <h3 class="text-white typo-text-1 fw-bold">
+            {{ parsedInteractContract()!.contract_name || "Contract" }}
+          </h3>
+
+          <!-- UTXO Details (read-only) -->
+          <div class="flex column gap-8">
+            <div class="flex align-items-center gap-4">
+              <span class="text-gray-60 typo-text-2">Locked Amount</span>
+              <kc-icon
+                [iconClass]="'icon-info'"
+                [size]="'xs'"
+                kcTooltip="Total KAS locked in this covenant UTXO"
+                tooltipPosition="top"
+              ></kc-icon>
+            </div>
+            <span class="text-white typo-text-1 fw-bold"
+              >{{ interactInputAmountKas() }} KAS</span
+            >
+          </div>
+
+          @if (interactOutpointTxid) {
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-2">Transaction</span>
+              <div class="flex align-items-center gap-8">
+                <a
+                  [href]="getExplorerLink(interactOutpointTxid)"
+                  target="_blank"
+                  class="text-blue typo-text-2 text-truncate"
+                >
+                  {{ truncate(interactOutpointTxid, 24) }}
+                </a>
+                <app-copy-button
+                  [value]="interactOutpointTxid"
+                  [size]="'sm'"
+                ></app-copy-button>
+              </div>
+            </div>
+          }
+
+          @if (currentWallet()) {
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-2">Your Account</span>
+              <span class="text-white typo-text-2">{{
+                currentWallet()!.getDisplayName()
+              }}</span>
+            </div>
+          }
         </div>
-      </div>
-      }
 
-      @if (currentWallet()) {
-      <div class="flex column gap-4">
-        <span class="text-gray-60 typo-text-2">Your Account</span>
-        <span class="text-white typo-text-2">{{ currentWallet()!.getDisplayName() }}</span>
-      </div>
-      }
-    </div>
+        <!-- Action Selection -->
+        <div class="form-group flex column gap-8">
+          <div class="flex align-items-center gap-4">
+            <label class="text-gray-60 typo-text-1">Action</label>
+            <kc-icon
+              [iconClass]="'icon-info'"
+              [size]="'xs'"
+              kcTooltip="Choose how to interact with this contract. Each action has different requirements (e.g. owner key, timelock expiry)."
+              tooltipPosition="top"
+            ></kc-icon>
+          </div>
 
-    <!-- Action Selection -->
-    <div class="form-group flex column gap-8">
-      <div class="flex align-items-center gap-4">
-        <label class="text-gray-60 typo-text-1">Action</label>
-        <kc-icon [iconClass]="'icon-info'" [size]="'xs'"
-          kcTooltip="Choose how to interact with this contract. Each action has different requirements (e.g. owner key, timelock expiry)."
-          tooltipPosition="top"></kc-icon>
-      </div>
+          <!-- Function buttons instead of dropdown -->
+          <div class="flex gap-8 flex-wrap">
+            @for (fn of availableFunctions(); track fn.name) {
+              <kc-button
+                [text]="getFunctionLabel(fn.name)"
+                [isDisabled]="isInteracting()"
+                [class.active-function]="selectedFunction === fn.name"
+                [style]="
+                  selectedFunction === fn.name ? 'opacity: 1' : 'opacity: 0.6'
+                "
+                (buttonClick)="selectFunction(fn.name)"
+              >
+              </kc-button>
+            }
+          </div>
 
-      <!-- Function buttons instead of dropdown -->
-      <div class="flex gap-8 flex-wrap">
-        @for (fn of availableFunctions(); track fn.name) {
-        <kc-button [text]="getFunctionLabel(fn.name)" [isDisabled]="isInteracting()"
-          [class.active-function]="selectedFunction === fn.name"
-          [style]="selectedFunction === fn.name ? 'opacity: 1' : 'opacity: 0.6'"
-          (buttonClick)="selectFunction(fn.name)">
-        </kc-button>
-        }
-      </div>
+          @if (selectedFunction) {
+            <div
+              class="p-12 rounded-lg"
+              style="
+                background: rgba(111, 199, 186, 0.08);
+                border: 1px solid rgba(111, 199, 186, 0.2);
+              "
+            >
+              <span class="text-gray-75 typo-text-2">{{
+                getFunctionDescription(selectedFunction)
+              }}</span>
+            </div>
+          }
 
-      @if (selectedFunction) {
-      <div class="p-12 rounded-lg"
-        style="background: rgba(111, 199, 186, 0.08); border: 1px solid rgba(111, 199, 186, 0.2);">
-        <span class="text-gray-75 typo-text-2">{{ getFunctionDescription(selectedFunction) }}</span>
-      </div>
-      }
+          @if (availableFunctions().length === 0 && interactContractJson()) {
+            <span class="text-gray-60 typo-text-2"
+              >No callable functions found in this contract</span
+            >
+          }
 
-      @if (availableFunctions().length === 0 && interactContractJson()) {
-      <span class="text-gray-60 typo-text-2">No callable functions found in this contract</span>
-      }
+          @if (selectedFunction && isMultiSigFunction(selectedFunction)) {
+            <div
+              class="p-12 rounded-lg"
+              style="
+                background: rgba(255, 193, 7, 0.1);
+                border: 1px solid rgba(255, 193, 7, 0.3);
+              "
+            >
+              <span class="text-yellow typo-text-2">
+                Two-phase signing: clicking the button will sign your part and
+                generate a partial spend JSON. Send it to the co-signer to
+                complete.
+              </span>
+            </div>
+          }
+        </div>
 
-      @if (selectedFunction && isMultiSigFunction(selectedFunction)) {
-      <div class="p-12 rounded-lg"
-        style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3);">
-        <span class="text-yellow typo-text-2">
-          Two-phase signing: clicking the button will sign your part and generate a partial spend JSON. Send it to the
-          co-signer to complete.
-        </span>
-      </div>
-      }
-    </div>
-
-    <!-- DMS keepAlive: new expiry input -->
-    @if (isDmsKeepAlive()) {
-    <div class="form-group flex column gap-8">
-      <div class="flex align-items-center gap-4">
-        <label class="text-gray-60 typo-text-1">New Expiry Timestamp (Unix seconds)</label>
-        <kc-icon [iconClass]="'icon-info'" [size]="'xs'"
-          kcTooltip="The new deadline timestamp for the refreshed contract. Enter as Unix timestamp in seconds (e.g. from epochconverter.com). The same owner and heir are preserved automatically."
-          tooltipPosition="top"></kc-icon>
-      </div>
-      <input type="number" class="form-input p-12 rounded-lg text-white typo-text-2"
-        placeholder="e.g. 1780000000 (from epochconverter.com)"
-        [(ngModel)]="dmsNewExpiry" [disabled]="isInteracting()" step="1" min="0" />
-      <a href="https://www.epochconverter.com/" target="_blank" class="text-blue typo-text-2" style="font-size: 12px;">
+        <!-- DMS keepAlive: new expiry input -->
+        @if (isDmsKeepAlive()) {
+          <div class="form-group flex column gap-8">
+            <app-covenant-date-time-input
+              [label]="'New check-in deadline'"
+              [value]="dmsNewExpiry"
+              [isDisabled]="isInteracting()"
+              [isValid]="true"
+              (valueChange)="dmsNewExpiry = $event"
+            >
+            </app-covenant-date-time-input>
+            <!--
         🔗 Convert date to timestamp →
-      </a>
-    </div>
+      -->
+            <span class="text-gray-60 typo-text-2"
+              >Pick when the heir should become able to claim if you do not
+              refresh again.</span
+            >
+          </div>
 
-    <div class="p-12 rounded-lg"
-      style="background: rgba(111, 199, 186, 0.08); border: 1px solid rgba(111, 199, 186, 0.2);">
-      <span class="text-gray-75 typo-text-2">
-        A new Dead Man's Switch contract will be generated with the same owner and heir but the updated expiry.
-        Funds will move to the new contract in the same transaction. The covenant lineage is preserved.
-      </span>
-    </div>
-    }
-
-    <!-- Output address + amount (only for withdrawal functions, NOT DMS keepAlive) -->
-    @if (selectedFunction && functionRequiresOutput(selectedFunction) && !isDmsKeepAlive()) {
-    <div class="form-group flex column gap-8">
-      <div class="flex align-items-center gap-4">
-        <label class="text-gray-60 typo-text-1">Send To</label>
-        <kc-icon [iconClass]="'icon-info'" [size]="'xs'"
-          kcTooltip="The Kaspa address where funds will be sent when you withdraw" tooltipPosition="top"></kc-icon>
-      </div>
-      <input type="text" class="form-input p-12 rounded-lg text-white typo-text-2"
-        placeholder="Kaspa address (defaults to your wallet)" [(ngModel)]="interactOutputAddress"
-        [disabled]="isInteracting()" />
-    </div>
-
-    <div class="form-group flex column gap-8">
-      <div class="flex justify-content-between align-items-center">
-        <div class="flex align-items-center gap-4">
-          <label class="text-gray-60 typo-text-1">Withdraw Amount (KAS)</label>
-          <kc-icon [iconClass]="'icon-info'" [size]="'xs'"
-            kcTooltip="Amount to withdraw. A small fee (~0.01 KAS) is deducted for the transaction. Use 'Max' to withdraw everything."
-            tooltipPosition="top"></kc-icon>
-        </div>
-        <span class="text-blue typo-text-2 cursor-pointer" (click)="fillMaxOutputAmount()"
-          kcTooltip="Withdraw full balance minus transaction fee" tooltipPosition="left">
-          Max
-        </span>
-      </div>
-      <input type="number" class="form-input p-12 rounded-lg text-white typo-text-2" placeholder="Amount in KAS"
-        [(ngModel)]="interactOutputAmount" [disabled]="isInteracting()" step="0.01" min="0" />
-    </div>
-    }
-
-    <!-- Info banner for redeploy functions (keepAlive on non-DMS contracts, increment) -->
-    @if (selectedFunction && !functionRequiresOutput(selectedFunction) && !isDmsKeepAlive()) {
-    <div class="p-12 rounded-lg"
-      style="background: rgba(111, 199, 186, 0.08); border: 1px solid rgba(111, 199, 186, 0.2);">
-      <span class="text-gray-75 typo-text-2">
-        Funds will be re-locked into the same contract (minus ~0.00001 KAS fee). No external withdrawal.
-      </span>
-    </div>
-    }
-
-    <!-- Extra args (int/bool params, e.g. escrow arbitrate amountToSeller) -->
-    @for (arg of extraArgsForFunction(); track arg.name) {
-    <div class="form-group flex column gap-8">
-      <div class="flex align-items-center gap-4">
-        <label class="text-gray-60 typo-text-1">{{ arg.name }} ({{ arg.type_name }})</label>
-        <kc-icon [iconClass]="'icon-info'" [size]="'xs'"
-          [kcTooltip]="'Value for ' + arg.name + ' parameter (type: ' + arg.type_name + ')'"
-          tooltipPosition="top"></kc-icon>
-      </div>
-      <input type="number" class="form-input p-12 rounded-lg text-white typo-text-2"
-        [placeholder]="'Enter ' + arg.name + ' value (sompi)'" [(ngModel)]="extraArgValues[arg.name]"
-        [disabled]="isInteracting()" />
-    </div>
-    }
-
-    <!-- Multi-sig: partial spend output -->
-    @if (partialSpendJson()) {
-    <div class="flex column gap-8 p-12 rounded-lg"
-      style="background: rgba(255, 193, 7, 0.08); border: 1px solid rgba(255, 193, 7, 0.2);">
-      <span class="text-yellow typo-text-1 fw-bold">Partial Spend Created</span>
-      <span class="text-gray-75 typo-text-2">
-        Your signature has been added. Copy the JSON below and send it to the co-signer to complete the transaction.
-      </span>
-      <textarea class="contract-input p-12 rounded-lg text-white typo-text-2" rows="4" readonly
-        [value]="partialSpendJson()!">
-            </textarea>
-      <kc-button [text]="'Copy Partial Spend JSON'" [isFullWidth]="true" (buttonClick)="copyPartialSpend()">
-      </kc-button>
-    </div>
-    }
-    }
-
-    <!-- Two-Phase Signing: Complete a partial spend from co-signer -->
-    @if (parsedInteractContract()) {
-    <details class="advanced-section">
-      <summary class="text-gray-60 typo-text-2 cursor-pointer"
-        kcTooltip="Complete a multi-sig transaction started by a co-signer" tooltipPosition="top">
-        Complete Co-Signer Transaction
-      </summary>
-      <div class="flex column gap-12 mt-8">
-        <span class="text-gray-75 typo-text-2">
-          Paste the partial spend JSON received from the co-signer. Your signature will be added and the transaction
-          broadcast.
-        </span>
-        <textarea class="contract-input p-12 rounded-lg text-white typo-text-2" rows="4"
-          placeholder="Paste partial spend JSON from co-signer" [(ngModel)]="importPartialJson"
-          [disabled]="isCompletingPartial()">
-            </textarea>
-        <kc-button [text]="isCompletingPartial() ? 'Completing...' : 'Sign & Broadcast'"
-          [isDisabled]="isCompletingPartial() || !importPartialJson" [isFullWidth]="true"
-          (buttonClick)="completePartialSpend()">
-        </kc-button>
-
-        @if (partialCompleteError()) {
-        <div class="error-message p-12 rounded-lg text-red typo-text-2">
-          {{ partialCompleteError() }}
-        </div>
+          <div
+            class="p-12 rounded-lg"
+            style="
+              background: rgba(111, 199, 186, 0.08);
+              border: 1px solid rgba(111, 199, 186, 0.2);
+            "
+          >
+            <span class="text-gray-75 typo-text-2">
+              A new Dead Man's Switch contract will be generated with the same
+              owner and heir but the updated expiry. Funds will move to the new
+              contract in the same transaction. The covenant lineage is
+              preserved.
+            </span>
+          </div>
         }
 
-        @if (partialCompleteResult()) {
+        <!-- Output address + amount (only for withdrawal functions, NOT DMS keepAlive) -->
+        @if (
+          selectedFunction &&
+          functionRequiresOutput(selectedFunction) &&
+          !isDmsKeepAlive()
+        ) {
+          <div class="form-group flex column gap-8">
+            <app-address-smart-input
+              [label]="'Send To'"
+              [placeholder]="'Enter recipient wallet address or KNS domain'"
+              [isFullWidth]="true"
+              [isValid]="true"
+              [invalidReason]="''"
+              [isDisabled]="isInteracting()"
+              [value]="interactOutputAddress"
+              (valueChange)="onInteractOutputAddressChange($event)"
+              (resolved)="onInteractOutputAddressResolved($event)"
+              (qrClick)="onInteractOutputQrClick()"
+            >
+            </app-address-smart-input>
+          </div>
+
+          <div class="form-group flex column gap-8">
+            <kc-input
+              [label]="'Withdraw Amount (KAS)'"
+              [placeholder]="'0'"
+              [type]="'number'"
+              [min]="0"
+              [isFullWidth]="true"
+              [isDisabled]="isInteracting()"
+              [ngModel]="interactOutputAmount"
+              (valueChange)="onInteractOutputAmountChange($event)"
+            >
+              <div
+                (click)="!isInteracting() && fillMaxOutputAmount()"
+                [class]="
+                  isInteracting() ? 'max-text disabled' : 'max-text clickable'
+                "
+                rightSideSlot
+              >
+                <span>Max</span>
+              </div>
+            </kc-input>
+          </div>
+        }
+
+        <!-- Info banner for redeploy functions (keepAlive on non-DMS contracts, increment) -->
+        @if (
+          selectedFunction &&
+          !functionRequiresOutput(selectedFunction) &&
+          !isDmsKeepAlive()
+        ) {
+          <div
+            class="p-12 rounded-lg"
+            style="
+              background: rgba(111, 199, 186, 0.08);
+              border: 1px solid rgba(111, 199, 186, 0.2);
+            "
+          >
+            <span class="text-gray-75 typo-text-2">
+              Funds will be re-locked into the same contract (minus ~0.00001 KAS
+              fee). No external withdrawal.
+            </span>
+          </div>
+        }
+
+        <!-- Extra args (int/bool params, e.g. escrow arbitrate amountToSeller) -->
+        @for (arg of extraArgsForFunction(); track arg.name) {
+          <div class="form-group flex column gap-8">
+            <kc-input
+              [label]="arg.name + ' (' + arg.type_name + ')'"
+              [placeholder]="'Enter ' + arg.name + ' value'"
+              [type]="'number'"
+              [isFullWidth]="true"
+              [isDisabled]="isInteracting()"
+              [ngModel]="extraArgValues[arg.name] || ''"
+              (valueChange)="extraArgValues[arg.name] = $event || ''"
+            >
+            </kc-input>
+          </div>
+        }
+
+        <!-- Multi-sig: partial spend output -->
+        @if (partialSpendJson()) {
+          <div
+            class="flex column gap-8 p-12 rounded-lg"
+            style="
+              background: rgba(255, 193, 7, 0.08);
+              border: 1px solid rgba(255, 193, 7, 0.2);
+            "
+          >
+            <span class="text-yellow typo-text-1 fw-bold"
+              >Partial Spend Created</span
+            >
+            <span class="text-gray-75 typo-text-2">
+              Your signature has been added. Copy the JSON below and send it to
+              the co-signer to complete the transaction.
+            </span>
+            <textarea
+              class="contract-input p-12 rounded-lg text-white typo-text-2"
+              rows="4"
+              readonly
+              [value]="partialSpendJson()!"
+            >
+            </textarea>
+            <kc-button
+              [text]="'Copy Partial Spend JSON'"
+              [isFullWidth]="true"
+              (buttonClick)="copyPartialSpend()"
+            >
+            </kc-button>
+          </div>
+        }
+      }
+
+      <!-- Two-Phase Signing: Complete a partial spend from co-signer -->
+      @if (parsedInteractContract()) {
+        <details class="advanced-section">
+          <summary
+            class="text-gray-60 typo-text-2 cursor-pointer"
+            kcTooltip="Complete a multi-sig transaction started by a co-signer"
+            tooltipPosition="top"
+          >
+            Complete Co-Signer Transaction
+          </summary>
+          <div class="flex column gap-12 mt-8">
+            <span class="text-gray-75 typo-text-2">
+              Paste the partial spend JSON received from the co-signer. Your
+              signature will be added and the transaction broadcast.
+            </span>
+            <textarea
+              class="contract-input p-12 rounded-lg text-white typo-text-2"
+              rows="4"
+              placeholder="Paste partial spend JSON from co-signer"
+              [(ngModel)]="importPartialJson"
+              [disabled]="isCompletingPartial()"
+            >
+            </textarea>
+            <kc-button
+              [text]="
+                isCompletingPartial() ? 'Completing...' : 'Sign & Broadcast'
+              "
+              [isDisabled]="isCompletingPartial() || !importPartialJson"
+              [isFullWidth]="true"
+              (buttonClick)="completePartialSpend()"
+            >
+            </kc-button>
+
+            @if (partialCompleteError()) {
+              <div class="error-message p-12 rounded-lg text-red typo-text-2">
+                {{ partialCompleteError() }}
+              </div>
+            }
+
+            @if (partialCompleteResult()) {
+              <div class="result-panel flex column gap-12 p-16 rounded-lg">
+                <h3 class="text-white typo-text-1 fw-bold">
+                  Transaction Sent!
+                </h3>
+                <div class="result-row flex column gap-4">
+                  <span class="text-gray-60 typo-text-1">Transaction</span>
+                  <div class="flex align-items-center gap-8">
+                    <a
+                      [href]="getExplorerLink(partialCompleteResult()!.txid)"
+                      target="_blank"
+                      class="text-blue typo-text-2 text-truncate"
+                    >
+                      {{ partialCompleteResult()!.txid }}
+                    </a>
+                    <app-copy-button
+                      [value]="partialCompleteResult()!.txid"
+                      [size]="'sm'"
+                    ></app-copy-button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </details>
+      }
+
+      <!-- Error message -->
+      @if (interactError()) {
+        <div class="error-message p-12 rounded-lg text-red typo-text-2">
+          {{ interactError() }}
+        </div>
+      }
+
+      <!-- Success result -->
+      @if (interactResult()) {
         <div class="result-panel flex column gap-12 p-16 rounded-lg">
-          <h3 class="text-white typo-text-1 fw-bold">Transaction Sent!</h3>
+          <h3 class="text-white typo-text-1 fw-bold">✅ Transaction Sent!</h3>
+          <div class="result-row flex column gap-4">
+            <span class="text-gray-60 typo-text-1">Action</span>
+            <span class="text-white typo-text-2">{{
+              getFunctionLabel(interactResult()!.functionName)
+            }}</span>
+          </div>
           <div class="result-row flex column gap-4">
             <span class="text-gray-60 typo-text-1">Transaction</span>
             <div class="flex align-items-center gap-8">
-              <a [href]="getExplorerLink(partialCompleteResult()!.txid)" target="_blank"
-                class="text-blue typo-text-2 text-truncate">
-                {{ partialCompleteResult()!.txid }}
+              <a
+                [href]="getExplorerLink(interactResult()!.txid)"
+                target="_blank"
+                class="text-blue typo-text-2 text-truncate"
+              >
+                {{ interactResult()!.txid }}
               </a>
-              <app-copy-button [value]="partialCompleteResult()!.txid" [size]="'sm'"></app-copy-button>
+              <app-copy-button
+                [value]="interactResult()!.txid"
+                [size]="'sm'"
+              ></app-copy-button>
             </div>
           </div>
         </div>
-        }
-      </div>
-    </details>
-    }
+      }
 
-    <!-- Error message -->
-    @if (interactError()) {
-    <div class="error-message p-12 rounded-lg text-red typo-text-2">
-      {{ interactError() }}
-    </div>
-    }
-
-    <!-- Success result -->
-    @if (interactResult()) {
-    <div class="result-panel flex column gap-12 p-16 rounded-lg">
-      <h3 class="text-white typo-text-1 fw-bold">✅ Transaction Sent!</h3>
-      <div class="result-row flex column gap-4">
-        <span class="text-gray-60 typo-text-1">Action</span>
-        <span class="text-white typo-text-2">{{ getFunctionLabel(interactResult()!.functionName) }}</span>
-      </div>
-      <div class="result-row flex column gap-4">
-        <span class="text-gray-60 typo-text-1">Transaction</span>
-        <div class="flex align-items-center gap-8">
-          <a [href]="getExplorerLink(interactResult()!.txid)" target="_blank"
-            class="text-blue typo-text-2 text-truncate">
-            {{ interactResult()!.txid }}
-          </a>
-          <app-copy-button [value]="interactResult()!.txid" [size]="'sm'"></app-copy-button>
+      <!-- Sender Fee Toggle -->
+      @if (parsedInteractContract()) {
+        <div class="form-group flex align-items-center gap-8">
+          <label class="flex align-items-center gap-8 cursor-pointer m-0">
+            <input
+              type="checkbox"
+              class="cursor-pointer"
+              [(ngModel)]="useSenderFee"
+              [disabled]="
+                isInteracting() ||
+                (selectedFunction && isMultiSigFunction(selectedFunction))
+              "
+            />
+            <span class="text-white typo-text-2"
+              >Use wallet to pay for fees</span
+            >
+          </label>
+          <kc-icon
+            [iconClass]="'icon-info'"
+            [size]="'xs'"
+            [kcTooltip]="
+              selectedFunction && isMultiSigFunction(selectedFunction)
+                ? 'Disabled for multi-sig signing. The contract must pay fees because wallet fee inputs would change the transaction after signatures are created.'
+                : 'If enabled, transaction fees will be paid from your wallet balance instead of the contract funds.'
+            "
+            tooltipPosition="top"
+          ></kc-icon>
         </div>
-      </div>
-    </div>
-    }
+        @if (selectedFunction && isMultiSigFunction(selectedFunction)) {
+          <div
+            class="p-12 rounded-lg"
+            style="
+              background: rgba(255, 193, 7, 0.08);
+              border: 1px solid rgba(255, 193, 7, 0.2);
+            "
+          >
+            <span class="text-yellow typo-text-2">
+              Multi-sig transactions must pay fees from the contract funds.
+              Wallet-paid fees add inputs and would invalidate the partial
+              signatures.
+            </span>
+          </div>
+        }
+      }
 
-    <!-- Sender Fee Toggle -->
-    @if (parsedInteractContract()) {
-    <div class="form-group flex align-items-center gap-8">
-      <label class="flex align-items-center gap-8 cursor-pointer m-0">
-        <input type="checkbox" class="cursor-pointer" [(ngModel)]="useSenderFee"
-          [disabled]="isInteracting() || (selectedFunction && isMultiSigFunction(selectedFunction))" />
-        <span class="text-white typo-text-2">Use wallet to pay for fees</span>
-      </label>
-      <kc-icon [iconClass]="'icon-info'" [size]="'xs'"
-        [kcTooltip]="selectedFunction && isMultiSigFunction(selectedFunction)
-          ? 'Disabled for multi-sig signing. The contract must pay fees because wallet fee inputs would change the transaction after signatures are created.'
-          : 'If enabled, transaction fees will be paid from your wallet balance instead of the contract funds.'"
-        tooltipPosition="top"></kc-icon>
+      <!-- Execute button -->
+      @if (parsedInteractContract()) {
+        <kc-button
+          [text]="
+            isInteracting()
+              ? 'Processing...'
+              : selectedFunction
+                ? getFunctionLabel(selectedFunction)
+                : 'Select an action'
+          "
+          [isDisabled]="
+            isInteracting() ||
+            !interactContractJson() ||
+            !interactOutpointTxid ||
+            !selectedFunction
+          "
+          [isFullWidth]="true"
+          (buttonClick)="interactContract()"
+        >
+        </kc-button>
+      }
     </div>
-    @if (selectedFunction && isMultiSigFunction(selectedFunction)) {
-    <div class="p-12 rounded-lg"
-      style="background: rgba(255, 193, 7, 0.08); border: 1px solid rgba(255, 193, 7, 0.2);">
-      <span class="text-yellow typo-text-2">
-        Multi-sig transactions must pay fees from the contract funds. Wallet-paid fees add inputs and would invalidate
-        the partial signatures.
-      </span>
-    </div>
-    }
-    }
-
-    <!-- Execute button -->
-    @if (parsedInteractContract()) {
-    <kc-button
-      [text]="isInteracting() ? 'Processing...' : (selectedFunction ? getFunctionLabel(selectedFunction) : 'Select an action')"
-      [isDisabled]="isInteracting() || !interactContractJson() || !interactOutpointTxid || !selectedFunction"
-      [isFullWidth]="true" (buttonClick)="interactContract()">
-    </kc-button>
-    }
-  </div>
   }
 
   <!-- Tab 4: Templates -->
-  @if (activeTab() === 'templates') {
-  <div class="panel flex column gap-20 p-24 rounded-lg">
-    @if (!activeTemplate()) {
-    <div class="flex column gap-8">
-      <h3 class="text-white typo-text-1 fw-bold">Contract Templates</h3>
-      <p class="text-gray-60 typo-text-2">
-        Pick a pre-built covenant, fill in a human-friendly form, and generate deploy-ready compiled JSON.
-      </p>
-    </div>
-
-    <div class="template-list flex column gap-12">
-      @for (template of contractTemplates; track template.id) {
-      <div class="template-card-compact p-16 rounded-lg flex align-items-center gap-12"
-        (click)="selectTemplate(template)">
-        <div class="template-icon-compact">{{ template.icon }}</div>
-        <div class="flex column gap-4 flex-1">
-          <h4 class="text-white typo-text-1 fw-bold">{{ template.name }}</h4>
-          <p class="text-gray-60 typo-text-2 template-description">{{ template.description }}</p>
+  @if (activeTab() === "templates") {
+    <div class="panel flex column gap-20 p-24 rounded-lg">
+      @if (!activeTemplate()) {
+        <div class="flex column gap-8">
+          <h3 class="text-white typo-text-1 fw-bold">Contract Templates</h3>
+          <p class="text-gray-60 typo-text-2">
+            Pick a pre-built covenant, fill in a human-friendly form, and
+            generate deploy-ready compiled JSON.
+          </p>
         </div>
-        <svg class="template-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none"
-          xmlns="http://www.w3.org/2000/svg">
-          <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round" />
-        </svg>
-      </div>
-      }
-    </div>
-    } @else {
-    <div class="flex justify-content-between align-items-center gap-12 flex-wrap">
-      <div class="flex align-items-center gap-12">
-        <button class="back-button p-8 rounded typo-text-2"
-          (click)="activeTemplate.set(null); generatedContractJson.set(null); templateError.set(null)">
-          ← Back
-        </button>
-        <div class="flex column gap-4">
-          <h3 class="text-white typo-title-3">{{ activeTemplate()!.icon }} {{ activeTemplate()!.name }}</h3>
-          <p class="text-gray-60 typo-text-2">{{ activeTemplate()!.description }}</p>
-        </div>
-      </div>
-    </div>
 
-    <div class="flex column gap-16">
-      @for (field of activeTemplate()!.fields; track field.paramName) {
-      <div class="form-group flex column gap-8">
-        <label class="text-gray-60 typo-text-1" [title]="field.description">{{ field.label }}</label>
-
-        @if (field.type === 'address') {
-        <input type="text" class="form-input p-12 rounded-lg text-white typo-text-2" [name]="field.paramName"
-          [placeholder]="field.placeholder" [title]="field.description"
-          [(ngModel)]="templateFormValues[field.paramName]" />
-        }
-
-        @if (field.type === 'hash32') {
-        <div class="flex column gap-4">
-          <input type="text" class="form-input p-12 rounded-lg text-white typo-text-2" [name]="field.paramName"
-            placeholder="Paste Kaspa address or pubkey hex — auto-hashes, or paste hash directly"
-            [title]="field.description" [(ngModel)]="templateFormValues[field.paramName]"
-            (ngModelChange)="onHash32Input(field.paramName, $event)" />
-          @if (templateFormValues[field.paramName + '_isAutoHashed']) {
-          <span class="text-green typo-text-2">✓ blake2b-256 hash computed automatically</span>
+        <div class="template-list flex column gap-12">
+          @for (template of contractTemplates; track template.id) {
+            <div
+              class="template-card-compact p-16 rounded-lg flex align-items-center gap-12"
+              (click)="selectTemplate(template)"
+            >
+              <div class="template-icon-compact">{{ template.icon }}</div>
+              <div class="flex column gap-4 flex-1">
+                <h4 class="text-white typo-text-1 fw-bold">
+                  {{ template.name }}
+                </h4>
+                <p class="text-gray-60 typo-text-2 template-description">
+                  {{ template.description }}
+                </p>
+              </div>
+              <svg
+                class="template-chevron"
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M7.5 15L12.5 10L7.5 5"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
           }
-          @if (!templateFormValues[field.paramName + '_isAutoHashed'] && (templateFormValues[field.paramName] || '').length ===
-          64) {
-          <div class="flex gap-8 align-items-center">
-            <span class="text-gray-60 typo-text-2">Is this a pubkey?</span>
-            <span class="text-blue typo-text-2 cursor-pointer" (click)="computeBlake2bHash(field.paramName)">
-              Click to compute blake2b hash →
-            </span>
+        </div>
+      } @else {
+        <div
+          class="flex justify-content-between align-items-center gap-12 flex-wrap"
+        >
+          <div class="flex align-items-center gap-12">
+            <button
+              class="back-button p-8 rounded typo-text-2"
+              (click)="
+                activeTemplate.set(null);
+                generatedContractJson.set(null);
+                templateError.set(null)
+              "
+            >
+              ← Back
+            </button>
+            <div class="flex column gap-4">
+              <h3 class="text-white typo-title-3">
+                {{ activeTemplate()!.icon }} {{ activeTemplate()!.name }}
+              </h3>
+              <p class="text-gray-60 typo-text-2">
+                {{ activeTemplate()!.description }}
+              </p>
+            </div>
           </div>
+        </div>
+
+        <div class="flex column gap-16">
+          @for (field of activeTemplate()!.fields; track field.paramName) {
+            <div class="form-group flex column gap-8">
+              <label
+                class="text-gray-60 typo-text-1"
+                [title]="field.description"
+                >{{ field.label }}</label
+              >
+
+              @if (field.type === "address") {
+                <input
+                  type="text"
+                  class="form-input p-12 rounded-lg text-white typo-text-2"
+                  [name]="field.paramName"
+                  [placeholder]="field.placeholder"
+                  [title]="field.description"
+                  [(ngModel)]="templateFormValues[field.paramName]"
+                />
+              }
+
+              @if (field.type === "hash32") {
+                <div class="flex column gap-4">
+                  <input
+                    type="text"
+                    class="form-input p-12 rounded-lg text-white typo-text-2"
+                    [name]="field.paramName"
+                    placeholder="Paste Kaspa address or pubkey hex — auto-hashes, or paste hash directly"
+                    [title]="field.description"
+                    [(ngModel)]="templateFormValues[field.paramName]"
+                    (ngModelChange)="onHash32Input(field.paramName, $event)"
+                  />
+                  @if (templateFormValues[field.paramName + "_isAutoHashed"]) {
+                    <span class="text-green typo-text-2"
+                      >✓ blake2b-256 hash computed automatically</span
+                    >
+                  }
+                  @if (
+                    !templateFormValues[field.paramName + "_isAutoHashed"] &&
+                    (templateFormValues[field.paramName] || "").length === 64
+                  ) {
+                    <div class="flex gap-8 align-items-center">
+                      <span class="text-gray-60 typo-text-2"
+                        >Is this a pubkey?</span
+                      >
+                      <span
+                        class="text-blue typo-text-2 cursor-pointer"
+                        (click)="computeBlake2bHash(field.paramName)"
+                      >
+                        Click to compute blake2b hash →
+                      </span>
+                    </div>
+                  }
+                </div>
+              }
+
+              @if (field.type === "int_days" || field.type === "int_count") {
+                <input
+                  type="number"
+                  class="form-input p-12 rounded-lg text-white typo-text-2"
+                  [name]="field.paramName"
+                  [placeholder]="field.placeholder"
+                  [title]="field.description"
+                  min="0"
+                  step="1"
+                  [(ngModel)]="templateFormValues[field.paramName]"
+                />
+              }
+
+              @if (field.type === "int_timestamp") {
+                <input
+                  type="number"
+                  class="form-input p-12 rounded-lg text-white typo-text-2"
+                  [name]="field.paramName"
+                  [placeholder]="field.placeholder"
+                  [title]="field.description"
+                  min="0"
+                  step="1"
+                  [(ngModel)]="templateFormValues[field.paramName]"
+                />
+              }
+
+              <span class="text-gray-60 typo-text-2">{{
+                field.description
+              }}</span>
+              @if (field.helpUrl) {
+                <a
+                  [href]="field.helpUrl"
+                  target="_blank"
+                  class="text-blue typo-text-2"
+                  style="font-size: 12px"
+                >
+                  🔗 Convert date to timestamp →
+                </a>
+              }
+            </div>
           }
         </div>
+
+        @if (templateError()) {
+          <div class="error-message p-12 rounded-lg text-red typo-text-2">
+            {{ templateError() }}
+          </div>
         }
 
-        @if (field.type === 'int_days' || field.type === 'int_count') {
-        <input type="number" class="form-input p-12 rounded-lg text-white typo-text-2" [name]="field.paramName"
-          [placeholder]="field.placeholder" [title]="field.description" min="0" step="1"
-          [(ngModel)]="templateFormValues[field.paramName]" />
-        }
+        <kc-button
+          [text]="'Generate Contract'"
+          [isFullWidth]="true"
+          (buttonClick)="generateContract()"
+        >
+        </kc-button>
 
-        @if (field.type === 'int_timestamp') {
-        <input type="number" class="form-input p-12 rounded-lg text-white typo-text-2" [name]="field.paramName"
-          [placeholder]="field.placeholder" [title]="field.description" min="0" step="1"
-          [(ngModel)]="templateFormValues[field.paramName]" />
+        @if (generatedContractJson()) {
+          <div class="result-panel flex column gap-12 p-16 rounded-lg">
+            <h3 class="text-white typo-text-1 fw-bold">
+              ✅ Contract JSON Ready
+            </h3>
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-1">Template</span>
+              <span class="text-white typo-text-2">{{
+                activeTemplate()!.name
+              }}</span>
+            </div>
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-1">Details</span>
+              <span class="text-white typo-text-2"
+                >Compiled JSON has been patched and is ready for the existing
+                deploy flow.</span
+              >
+            </div>
+            <div class="form-group flex column gap-8">
+              <label class="text-gray-60 typo-text-1"
+                >Generated JSON Preview</label
+              >
+              <textarea
+                class="contract-input p-12 rounded-lg text-white typo-text-2"
+                rows="8"
+                [ngModel]="generatedContractJson()"
+                readonly
+              >
+              </textarea>
+            </div>
+            <kc-button
+              [text]="'Deploy This Contract'"
+              [isFullWidth]="true"
+              (buttonClick)="useGeneratedContract()"
+            >
+            </kc-button>
+          </div>
         }
-
-        <span class="text-gray-60 typo-text-2">{{ field.description }}</span>
-        @if (field.helpUrl) {
-        <a [href]="field.helpUrl" target="_blank" class="text-blue typo-text-2" style="font-size: 12px;">
-          🔗 Convert date to timestamp →
-        </a>
-        }
-      </div>
       }
     </div>
-
-    @if (templateError()) {
-    <div class="error-message p-12 rounded-lg text-red typo-text-2">
-      {{ templateError() }}
-    </div>
-    }
-
-    <kc-button [text]="'Generate Contract'" [isFullWidth]="true" (buttonClick)="generateContract()">
-    </kc-button>
-
-    @if (generatedContractJson()) {
-    <div class="result-panel flex column gap-12 p-16 rounded-lg">
-      <h3 class="text-white typo-text-1 fw-bold">✅ Contract JSON Ready</h3>
-      <div class="flex column gap-4">
-        <span class="text-gray-60 typo-text-1">Template</span>
-        <span class="text-white typo-text-2">{{ activeTemplate()!.name }}</span>
-      </div>
-      <div class="flex column gap-4">
-        <span class="text-gray-60 typo-text-1">Details</span>
-        <span class="text-white typo-text-2">Compiled JSON has been patched and is ready for the existing deploy
-          flow.</span>
-      </div>
-      <div class="form-group flex column gap-8">
-        <label class="text-gray-60 typo-text-1">Generated JSON Preview</label>
-        <textarea class="contract-input p-12 rounded-lg text-white typo-text-2" rows="8"
-          [ngModel]="generatedContractJson()" readonly>
-              </textarea>
-      </div>
-      <kc-button [text]="'Deploy This Contract'" [isFullWidth]="true" (buttonClick)="useGeneratedContract()">
-      </kc-button>
-    </div>
-    }
-    }
-  </div>
   }
 </div>

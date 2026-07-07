@@ -965,7 +965,7 @@
                 (buttonClick)="navigateToContractDetail(contract)"
               >
               </kc-button>
-              @if (contract.status !== "spent") {
+              @if (contract.status === "active") {
                 <kc-button
                   [text]="contract.nextActionLabel"
                   (buttonClick)="openDashboardAction(contract)"
@@ -1011,7 +1011,7 @@
             </button>
           </div>
 
-          @if (selectedDetail()!.entry.status !== "spent") {
+          @if (selectedDetail()!.entry.status === "active") {
             <div class="contract-detail-tabs flex gap-4 rounded">
               <button
                 class="detail-tab-button p-8 rounded typo-text-2"
@@ -1171,7 +1171,7 @@
     (activeTab() === "detail" &&
       detailPanelTab() === "action" &&
       selectedDetail() &&
-      selectedDetail()!.entry.status !== "spent" &&
+      selectedDetail()!.entry.status === "active" &&
       interactContractJson())
   ) {
     <div class="panel flex column gap-20 p-24 rounded-lg">

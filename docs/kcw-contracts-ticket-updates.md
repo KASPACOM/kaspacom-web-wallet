@@ -14,6 +14,7 @@ Acceptance criteria:
 - Role/template filters use `walletArg`, `template`, and `active` query params.
 - Supported v1 templates are Deadman Switch, Time Lock, MultiSig, and Escrow.
 - Each card shows contract type, status, locked amount, participants/roles, deadline or unlock time, latest tx/action, and next available action.
+- Spend/action buttons are enabled only when the indexer reports exactly one active UTXO. Multiple active UTXOs must remain visible in details but actions stay disabled until the wallet has explicit UTXO selection.
 - Local registry entries are merged only as fallback/cache while indexer data catches up.
 - If indexer is unavailable, show local cached entries with an indexer-unavailable message.
 - Raw IDs, args, outpoints, and JSON stay hidden under Advanced or detail views.

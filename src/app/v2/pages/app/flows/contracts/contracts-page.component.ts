@@ -1343,7 +1343,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   ): ContractDashboardEntry {
     const contractName = this.getIndexerTemplateName(summary);
     const participants = this.indexerParticipants(summary);
-    const status = (summary.activeUtxos ?? 0) > 0 ? 'active' : 'spent';
+    const status = this.statusFromActiveUtxoCount(summary.activeUtxos);
     return {
       id: `indexer:${summary.covenantIdHex || summary.scriptHashHex}`,
       source: 'indexer',
@@ -1599,7 +1599,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           latestAction?.entrypoint ||
           latestAction?.action ||
           entry.latestAction,
-        status: utxos.length > 0 ? 'active' : 'spent',
+        status: this.statusFromActiveUtxoCount(utxos.length),
         amountSompi: lockedSompi.toString(),
       };
       this.selectedDetail.set({
@@ -1610,7 +1610,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       });
       if (
         (this.detailRouteId() || this.activeTab() === 'detail') &&
-        updatedEntry.status !== 'spent'
+        updatedEntry.status === 'active'
       ) {
         await this.prepareDashboardAction(updatedEntry);
       }
@@ -1641,6 +1641,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
 
     this.dashboardError.set(null);
+
+    if (entry.status === 'tracking-incomplete') {
+      this.dashboardError.set(
+        'Actions are disabled because the indexer reports multiple active UTXOs for this covenant. Open details and choose a specific UTXO once the wallet supports UTXO selection.',
+      );
+      this.detailPanelTab.set('details');
+      return false;
+    }
 
     const identifier = entry.covenantId || entry.scriptHash;
     if (!identifier) {
@@ -1903,8 +1911,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.latestAction(response.actions) ||
       preview.activeAction ||
       response.action;
-    const status =
-      (response.covenant?.activeUtxos ?? 1) > 0 ? 'active' : 'spent';
+    const status = this.statusFromActiveUtxoCount(
+      response.covenant?.activeUtxos,
+    );
     const participants = response.covenant
       ? this.indexerParticipants(response.covenant)
       : preview.args.map((arg) => ({
@@ -1943,6 +1952,18 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         : 'Open current covenant state',
       indexerSummary: response.covenant,
     };
+  }
+
+  private statusFromActiveUtxoCount(
+    activeUtxos: number | undefined,
+  ): ContractDashboardEntry['status'] {
+    if (activeUtxos === 0) return 'spent';
+    if (activeUtxos === 1) return 'active';
+
+    // The current wallet action flow spends one selected outpoint. If the
+    // indexer reports multiple active UTXOs, showing the contract is fine but
+    // auto-selecting one for a spend would be unsafe until a UTXO picker exists.
+    return 'tracking-incomplete';
   }
 
   private async fetchIndexerCovenant(identifier: string): Promise<{

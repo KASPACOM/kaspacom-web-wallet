@@ -35,6 +35,7 @@ KCW-77, My Contracts dashboard:
 - Do not require `classification=covenant` for My Contracts because fresh wallet-created templates can be indexed as `unknown/unrevealed` while still exposing `claimedTemplate` and `claimedArgs`.
 - Support optional filters by template, active state, classification state, and role via `walletArg`.
 - Cards show type, status, locked KAS, participants, deadline/unlock, latest tx/action, and next action.
+- Enable spend/action buttons only when the current indexer state has exactly one active UTXO. If multiple active UTXOs are present, show the contract but mark action tracking incomplete until a UTXO picker exists.
 - Local registry entries remain visible only as fallback/cache.
 
 KCW-78, Guided deployment wizard:

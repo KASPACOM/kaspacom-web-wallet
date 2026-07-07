@@ -169,6 +169,8 @@ type DeployIndexerState = {
   },
 })
 export class ContractsPageComponent implements OnInit, OnDestroy {
+  readonly MIN_DEPLOY_AMOUNT_KAS = 0.5;
+
   private walletService = inject(WalletService);
   private walletActionService = inject(WalletActionService);
   private qrScannerService = inject(QrScannerService);
@@ -200,7 +202,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (!currentWallet) return 0;
     const mature =
       currentWallet.getCurrentWalletStateBalanceSignalValue()?.mature || 0n;
-    return Math.floor(Number(mature) / 1e8);
+    return Number(mature) / 1e8;
   });
 
   // Computed pubkey for selected account
@@ -961,13 +963,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
 
     const amount = Number(raw);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      this.deployAmountError.set('Amount must be greater than 0');
+    if (!Number.isFinite(amount)) {
+      this.deployAmountError.set('Enter a valid amount');
       return false;
     }
 
-    if (!Number.isInteger(amount)) {
-      this.deployAmountError.set('Use whole KAS increments only');
+    if (amount < this.MIN_DEPLOY_AMOUNT_KAS) {
+      this.deployAmountError.set(
+        `Minimum amount is ${this.MIN_DEPLOY_AMOUNT_KAS} KAS`,
+      );
       return false;
     }
 
@@ -1097,8 +1101,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (!raw) return false;
     const amount = Number(raw);
     return (
-      Number.isInteger(amount) &&
-      amount > 0 &&
+      Number.isFinite(amount) &&
+      amount >= this.MIN_DEPLOY_AMOUNT_KAS &&
       amount <= this.deployAvailableBalance()
     );
   }

@@ -324,9 +324,9 @@
         <div class="form-group flex column gap-8">
           <kc-input
             [label]="'Amount to lock (KAS)'"
-            [placeholder]="'0'"
+            [placeholder]="'0.5'"
             [type]="'number'"
-            [min]="0"
+            [min]="MIN_DEPLOY_AMOUNT_KAS"
             [max]="deployAvailableBalance()"
             [isFullWidth]="true"
             [isValid]="!deployAmountError()"

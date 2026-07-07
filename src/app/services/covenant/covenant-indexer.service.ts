@@ -122,43 +122,68 @@ export class CovenantIndexerService {
     private readonly kaspaL1NetworkService: KaspaL1NetworkService,
   ) {}
 
-  async listCovenants(params: IndexerCovenantListParams = {}): Promise<IndexerCovenantDetails[]> {
+  async listCovenants(
+    params: IndexerCovenantListParams = {},
+  ): Promise<IndexerCovenantDetails[]> {
     return firstValueFrom(
-      this.http.get<IndexerCovenantDetails[]>(`${this.getBaseUrl()}/covenants`, {
-        params: this.toHttpParams(params),
-      }),
+      this.http.get<IndexerCovenantDetails[]>(
+        `${this.getBaseUrl()}/covenants`,
+        {
+          params: this.toHttpParams(params),
+        },
+      ),
     );
   }
 
   async getCovenant(covenantId: string): Promise<IndexerCovenantResponse> {
     return firstValueFrom(
-      this.http.get<IndexerCovenantResponse>(`${this.getBaseUrl()}/covenants/${covenantId}`),
+      this.http.get<IndexerCovenantResponse>(
+        `${this.getBaseUrl()}/covenants/${covenantId}`,
+      ),
     );
   }
 
-  async getCovenantByCanonicalId(covenantId: string): Promise<IndexerCovenantResponse> {
+  async getCovenantByCanonicalId(
+    covenantId: string,
+  ): Promise<IndexerCovenantResponse> {
     return firstValueFrom(
-      this.http.get<IndexerCovenantResponse>(`${this.getBaseUrl()}/covenants/by-id/${covenantId}`),
+      this.http.get<IndexerCovenantResponse>(
+        `${this.getBaseUrl()}/covenants/by-id/${covenantId}`,
+      ),
     );
   }
 
-  async getCovenantActions(covenantIdOrScriptHash: string): Promise<IndexerCovenantAction[]> {
+  async getCovenantActions(
+    covenantIdOrScriptHash: string,
+  ): Promise<IndexerCovenantAction[]> {
     return firstValueFrom(
-      this.http.get<IndexerCovenantAction[]>(`${this.getBaseUrl()}/covenants/${covenantIdOrScriptHash}/actions`),
+      this.http.get<IndexerCovenantAction[]>(
+        `${this.getBaseUrl()}/covenants/${covenantIdOrScriptHash}/actions`,
+      ),
     );
   }
 
-  async getCovenantUtxos(covenantIdOrScriptHash: string): Promise<IndexerCovenantUtxo[]> {
+  async getCovenantUtxos(
+    covenantIdOrScriptHash: string,
+  ): Promise<IndexerCovenantUtxo[]> {
     return firstValueFrom(
-      this.http.get<IndexerCovenantUtxo[]>(`${this.getBaseUrl()}/covenants/${covenantIdOrScriptHash}/utxos`),
+      this.http.get<IndexerCovenantUtxo[]>(
+        `${this.getBaseUrl()}/covenants/${covenantIdOrScriptHash}/utxos`,
+      ),
     );
   }
 
-  async getAddressEvents(address: string, limit = 50): Promise<IndexerCovenantAction[]> {
+  async getAddressEvents(
+    address: string,
+    limit = 50,
+  ): Promise<IndexerCovenantAction[]> {
     return firstValueFrom(
-      this.http.get<IndexerCovenantAction[]>(`${this.getBaseUrl()}/addresses/${address}/events`, {
-        params: this.toHttpParams({ limit }),
-      }),
+      this.http.get<IndexerCovenantAction[]>(
+        `${this.getBaseUrl()}/addresses/${address}/events`,
+        {
+          params: this.toHttpParams({ limit }),
+        },
+      ),
     );
   }
 
@@ -168,17 +193,24 @@ export class CovenantIndexerService {
     );
   }
 
-  async getTransactionSettlementStatus(txid: string): Promise<IndexerTxSettlementStatus> {
+  async getTransactionSettlementStatus(
+    txid: string,
+  ): Promise<IndexerTxSettlementStatus> {
     return firstValueFrom(
-      this.http.get<IndexerTxSettlementStatus>(`${this.getBaseUrl()}/tx/${txid}/settlement-status`),
+      this.http.get<IndexerTxSettlementStatus>(
+        `${this.getBaseUrl()}/tx/${txid}/settlement-status`,
+      ),
     );
   }
 
   async search(query: string, limit = 10): Promise<IndexerSearchResult[]> {
     return firstValueFrom(
-      this.http.get<IndexerSearchResult[]>(`${this.getBaseUrl()}/explorer/search`, {
-        params: this.toHttpParams({ q: query, limit }),
-      }),
+      this.http.get<IndexerSearchResult[]>(
+        `${this.getBaseUrl()}/explorer/search`,
+        {
+          params: this.toHttpParams({ q: query, limit }),
+        },
+      ),
     );
   }
 
@@ -194,7 +226,9 @@ export class CovenantIndexerService {
   private getBaseUrl(): string {
     const baseUrl = this.kaspaL1NetworkService.getCovenantIndexerApiBaseurl();
     if (!baseUrl) {
-      throw new Error(`Covenant indexer import is not available for ${this.kaspaL1NetworkService.getNetworkId()}.`);
+      throw new Error(
+        `Covenant indexer import is not available for ${this.kaspaL1NetworkService.getNetworkId()}.`,
+      );
     }
 
     return baseUrl.replace(/\/+$/, '');

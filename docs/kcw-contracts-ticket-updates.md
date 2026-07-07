@@ -8,7 +8,8 @@ Build the default full-screen `/app/contracts` view as an indexer-backed My Cont
 
 Acceptance criteria:
 
-- Dashboard loads contracts involving the current wallet from `GET /covenants?wallet={addressOrPubkey}&active={bool}&sort=recent&limit={n}`.
+- Dashboard loads contracts involving the current wallet from `GET /covenants?wallet={addressOrPubkey}&sort=recent&limit={n}`.
+- The default My Contracts query must not require `classification=covenant`; fresh wallet template contracts can still be `unknown/unrevealed` but discoverable by `claimedTemplate` and `claimedArgs`.
 - Wallet lookup checks both wallet address and x-only pubkey where available.
 - Role/template filters use `walletArg`, `template`, and `active` query params.
 - Supported v1 templates are Deadman Switch, Time Lock, MultiSig, and Escrow.
@@ -22,6 +23,7 @@ Indexer dependencies:
 - `GET /covenants?wallet={wallet}`
 - `GET /covenants?wallet={wallet}&walletArg={role}`
 - `GET /covenants?wallet={wallet}&template={template}&active={bool}`
+- `GET /covenants?wallet={wallet}&classificationStatus={status}` for explicit confidence/status filters only, not the default wallet dashboard query
 
 ## KCW-78 - Guided deployment wizard
 

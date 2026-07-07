@@ -1248,11 +1248,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       // addresses and would miss participant-owned contracts.
       const rows = await this.covenantIndexerService.listCovenants({
         wallet: identifier,
-        classification: 'covenant',
         sort: 'recent',
         limit: 100,
       });
 
+      // Do not add `classification=covenant` here. Fresh wallet-created
+      // template contracts can be indexed as `unknown/unrevealed` while still
+      // carrying a trusted claimedTemplate/claimedArgs payload, so filtering by
+      // classification hides the exact contracts My Contracts needs to show.
       const supportedRows = rows.filter((row) =>
         this.supportedIndexerTemplates.includes(
           this.getIndexerTemplateName(row),

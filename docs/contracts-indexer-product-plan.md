@@ -31,7 +31,9 @@ Important implementation rule: prefer `/covenants?wallet=...` over `/addresses/{
 KCW-77, My Contracts dashboard:
 
 - Default full-screen view is My Contracts.
-- Fetch with `/covenants?wallet=...`; support filters by template, active state, and role via `walletArg`.
+- Fetch My Contracts with `/covenants?wallet=...&sort=recent&limit=...` and filter supported wallet templates client-side.
+- Do not require `classification=covenant` for My Contracts because fresh wallet-created templates can be indexed as `unknown/unrevealed` while still exposing `claimedTemplate` and `claimedArgs`.
+- Support optional filters by template, active state, classification state, and role via `walletArg`.
 - Cards show type, status, locked KAS, participants, deadline/unlock, latest tx/action, and next action.
 - Local registry entries remain visible only as fallback/cache.
 

@@ -116,6 +116,8 @@ type ContractDashboardFilter =
   | 'timelock'
   | 'multisig'
   | 'escrow';
+// Status dimension, composed on top of the template-type filter above.
+type ContractStatusFilter = 'all' | 'active' | 'history';
 
 type ContractDashboardEntry = {
   id: string;
@@ -260,11 +262,24 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   registryContracts = signal<ContractRegistryEntry[]>([]);
   dashboardContracts = signal<ContractDashboardEntry[]>([]);
   dashboardFilter = signal<ContractDashboardFilter>('all');
+  statusFilter = signal<ContractStatusFilter>('all');
+  // Applies the template-type filter and the active/history status filter
+  // together. Status: 'active' = anything not settled (active / unknown /
+  // tracking-incomplete, so ambiguous contracts are never hidden under Active);
+  // 'history' = spent/settled only.
   filteredDashboardContracts = computed(() => {
     const key = this.dashboardFilter();
-    const all = this.dashboardContracts();
-    if (key === 'all') return all;
-    return all.filter((contract) => this.getTemplateKey(contract) === key);
+    const status = this.statusFilter();
+    let list = this.dashboardContracts();
+    if (key !== 'all') {
+      list = list.filter((contract) => this.getTemplateKey(contract) === key);
+    }
+    if (status === 'active') {
+      list = list.filter((contract) => contract.status !== 'spent');
+    } else if (status === 'history') {
+      list = list.filter((contract) => contract.status === 'spent');
+    }
+    return list;
   });
   dashboardLoading = signal(false);
   dashboardError = signal<string | null>(null);
@@ -1720,6 +1735,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   setDashboardFilter(filter: ContractDashboardFilter) {
     this.dashboardFilter.set(filter);
+    this.selectedDetail.set(null);
+    this.selectedDetailError.set(null);
+  }
+
+  setStatusFilter(filter: ContractStatusFilter) {
+    this.statusFilter.set(filter);
     this.selectedDetail.set(null);
     this.selectedDetailError.set(null);
   }

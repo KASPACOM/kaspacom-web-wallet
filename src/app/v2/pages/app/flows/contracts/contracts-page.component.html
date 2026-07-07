@@ -745,6 +745,39 @@
               Escrow
             </button>
           </div>
+          <div
+            class="status-toggle"
+            role="tablist"
+            aria-label="Filter contracts by status"
+          >
+            <button
+              class="status-seg"
+              role="tab"
+              [attr.aria-selected]="statusFilter() === 'all'"
+              [class.active]="statusFilter() === 'all'"
+              (click)="setStatusFilter('all')"
+            >
+              All
+            </button>
+            <button
+              class="status-seg"
+              role="tab"
+              [attr.aria-selected]="statusFilter() === 'active'"
+              [class.active]="statusFilter() === 'active'"
+              (click)="setStatusFilter('active')"
+            >
+              Active
+            </button>
+            <button
+              class="status-seg"
+              role="tab"
+              [attr.aria-selected]="statusFilter() === 'history'"
+              [class.active]="statusFilter() === 'history'"
+              (click)="setStatusFilter('history')"
+            >
+              History
+            </button>
+          </div>
           <div class="filter-spacer"></div>
           <kc-button
             [text]="dashboardLoading() ? 'Refreshing...' : 'Refresh'"

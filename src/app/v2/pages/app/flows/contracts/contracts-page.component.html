@@ -619,9 +619,13 @@
         <span class="text-gray-60 typo-text-1">Current UTXO</span>
         @for (utxo of selectedDetail()!.utxos; track (utxo.txidHex || '') + ':' + utxo.vout) {
         <div class="utxo-row p-12 rounded-lg flex justify-content-between align-items-center gap-12">
-          <a [href]="getExplorerLink(utxo.txidHex || '')" target="_blank" class="text-blue typo-text-2">
-            {{ truncate(utxo.txidHex || 'Unknown', 24) }}:{{ utxo.vout || 0 }}
+          @if (utxo.txidHex) {
+          <a [href]="getExplorerLink(utxo.txidHex)" target="_blank" class="text-blue typo-text-2">
+            {{ truncate(utxo.txidHex, 24) }}:{{ utxo.vout ?? 0 }}
           </a>
+          } @else {
+          <span class="text-gray-60 typo-text-2">Unknown</span>
+          }
           <span class="text-white typo-text-2 fw-bold">{{ formatSompiToKas(utxo.amountSompi?.toString() || '0') }} KAS</span>
         </div>
         }

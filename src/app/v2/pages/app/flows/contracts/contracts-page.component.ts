@@ -1229,9 +1229,8 @@ export class ContractsPageComponent implements OnInit {
         this.selectDefaultFunctionForContract(entry.contractName);
       }
     } catch (error: any) {
-      this.selectedDetailError.set(error?.message || 'Import this contract before using wallet actions.');
+      this.dashboardError.set(error?.message || 'Import this contract before using wallet actions.');
     } finally {
-      this.selectedDetailLoading.set(false);
     }
   }
 

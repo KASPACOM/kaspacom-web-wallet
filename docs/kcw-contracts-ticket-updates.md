@@ -8,11 +8,13 @@ Build the default full-screen `/app/contracts` view as an indexer-backed My Cont
 
 Acceptance criteria:
 
-- Dashboard loads contracts involving the current wallet from `GET /covenants?wallet={addressOrPubkey}&active={bool}&sort=recent&limit={n}`.
+- Dashboard loads contracts involving the current wallet from `GET /covenants?wallet={addressOrPubkey}&sort=recent&limit={n}`.
+- The default My Contracts query must not require `classification=covenant`; fresh wallet template contracts can still be `unknown/unrevealed` but discoverable by `claimedTemplate` and `claimedArgs`.
 - Wallet lookup checks both wallet address and x-only pubkey where available.
 - Role/template filters use `walletArg`, `template`, and `active` query params.
 - Supported v1 templates are Deadman Switch, Time Lock, MultiSig, and Escrow.
 - Each card shows contract type, status, locked amount, participants/roles, deadline or unlock time, latest tx/action, and next available action.
+- Spend/action buttons are enabled only when the indexer reports exactly one active UTXO. Multiple active UTXOs must remain visible in details but actions stay disabled until the wallet has explicit UTXO selection.
 - Local registry entries are merged only as fallback/cache while indexer data catches up.
 - If indexer is unavailable, show local cached entries with an indexer-unavailable message.
 - Raw IDs, args, outpoints, and JSON stay hidden under Advanced or detail views.
@@ -22,6 +24,7 @@ Indexer dependencies:
 - `GET /covenants?wallet={wallet}`
 - `GET /covenants?wallet={wallet}&walletArg={role}`
 - `GET /covenants?wallet={wallet}&template={template}&active={bool}`
+- `GET /covenants?wallet={wallet}&classificationStatus={status}` for explicit confidence/status filters only, not the default wallet dashboard query
 
 ## KCW-78 - Guided deployment wizard
 

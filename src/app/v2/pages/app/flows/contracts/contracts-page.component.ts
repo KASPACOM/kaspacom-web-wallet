@@ -176,6 +176,8 @@ type DeployIndexerState = {
   },
 })
 export class ContractsPageComponent implements OnInit, OnDestroy {
+  readonly MIN_DEPLOY_AMOUNT_KAS = 0.5;
+
   private walletService = inject(WalletService);
   private walletActionService = inject(WalletActionService);
   private qrScannerService = inject(QrScannerService);
@@ -194,7 +196,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private routeSubscription?: Subscription;
 
   // Current active tab
-  activeTab = signal<TabName>('deploy');
+  activeTab = signal<TabName>('my-contracts');
 
   // Current wallet
   currentWallet = computed(() => this.walletService.getCurrentWallet());
@@ -207,7 +209,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (!currentWallet) return 0;
     const mature =
       currentWallet.getCurrentWalletStateBalanceSignalValue()?.mature || 0n;
-    return Math.floor(Number(mature) / 1e8);
+    return Number(mature) / 1e8;
   });
 
   // Computed pubkey for selected account
@@ -289,6 +291,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   detailPanelTab = signal<ContractDetailTab>('details');
   detailRouteId = signal<string | null>(null);
   detailRouteNotFound = signal(false);
+  pendingUrlImport = signal<string | null>(null);
   private readonly supportedIndexerTemplates = [
     'DeadManSwitch',
     'TimeLockVault',
@@ -487,12 +490,23 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.syncWalletOwnedTemplateFields();
       this.validateDeployAmount(false);
     });
+
+    effect(() => {
+      const contractId = this.pendingUrlImport();
+      const wallet = this.currentWallet();
+      this.network();
+      if (!contractId || !wallet) return;
+
+      this.pendingUrlImport.set(null);
+      void this.showInboundIndexerImport(contractId);
+    });
   }
 
   ngOnInit() {
+    this.restoreTransientState();
     this.routeSubscription = this.route.paramMap.subscribe((params) => {
       const contractId = params.get('contractId');
-      this.detailRouteId.set(contractId);
+      this.detailRouteId.set(null);
       this.detailRouteNotFound.set(false);
       if (contractId) {
         const requestedNetwork = this.route.snapshot.queryParamMap
@@ -505,15 +519,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             );
             return;
           }
-          this.activeTab.set('my-contracts');
-          return;
         }
-        this.detailPanelTab.set('details');
-        this.activeTab.set('detail');
-        void this.openDetailFromRoute(contractId);
+        this.queueInboundIndexerImport(contractId);
       }
     });
-    this.restoreTransientState();
     void this.applyInboundContractLink();
   }
 
@@ -569,20 +578,27 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       return;
     }
 
+    this.queueInboundIndexerImport(contractId);
+  }
+
+  private queueInboundIndexerImport(contractId: string) {
+    this.activeTab.set('lookup-import');
+    this.indexerImportQuery = contractId;
+    this.indexerImportError.set(null);
+    this.indexerImportPreview.set(null);
+
+    if (!this.currentWallet()) {
+      this.pendingUrlImport.set(contractId);
+      return;
+    }
+
+    void this.showInboundIndexerImport(contractId);
+  }
+
+  private async showInboundIndexerImport(contractId: string) {
     this.activeTab.set('lookup-import');
     this.indexerImportQuery = contractId;
     await this.lookupIndexerImport();
-
-    const preview = this.indexerImportPreview();
-    if (!preview) return;
-
-    await this.loadContracts();
-    const existing = this.findDashboardEntryForPreview(preview);
-    if (existing) {
-      this.detailPanelTab.set('details');
-      this.activeTab.set('detail');
-      await this.openContractDetail(existing);
-    }
   }
 
   private findDashboardEntryForPreview(
@@ -1014,13 +1030,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
 
     const amount = Number(raw);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      this.deployAmountError.set('Amount must be greater than 0');
+    if (!Number.isFinite(amount)) {
+      this.deployAmountError.set('Enter a valid amount');
       return false;
     }
 
-    if (!Number.isInteger(amount)) {
-      this.deployAmountError.set('Use whole KAS increments only');
+    if (amount < this.MIN_DEPLOY_AMOUNT_KAS) {
+      this.deployAmountError.set(
+        `Minimum amount is ${this.MIN_DEPLOY_AMOUNT_KAS} KAS`,
+      );
       return false;
     }
 
@@ -1150,8 +1168,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (!raw) return false;
     const amount = Number(raw);
     return (
-      Number.isInteger(amount) &&
-      amount > 0 &&
+      Number.isFinite(amount) &&
+      amount >= this.MIN_DEPLOY_AMOUNT_KAS &&
       amount <= this.deployAvailableBalance()
     );
   }
@@ -1262,6 +1280,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   private getCurrentWalletLocalContracts(): ContractRegistryEntry[] {
+    return this.registryService.getAllContracts().filter((contract) => {
+      if (contract.network !== this.network()) return false;
+      return this.isCurrentWalletRegistryEntry(contract);
+    });
+  }
+
+  private isCurrentWalletRegistryEntry(
+    contract: ContractRegistryEntry,
+  ): boolean {
     const wallet = this.currentWallet();
     const address = wallet?.getAddress()?.toLowerCase();
     const pubkey = wallet
@@ -1270,16 +1297,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       .toXOnlyPublicKey()
       .toString()
       ?.toLowerCase();
-
-    return this.registryService.getAllContracts().filter((contract) => {
-      if (contract.network !== this.network()) return false;
-      const deployedAddress = contract.deployedBy?.address?.toLowerCase();
-      const deployedPubkey = contract.deployedBy?.pubkey?.toLowerCase();
-      return (
-        (!!address && deployedAddress === address) ||
-        (!!pubkey && deployedPubkey === pubkey)
-      );
-    });
+    const deployedAddress = contract.deployedBy?.address?.toLowerCase();
+    const deployedPubkey = contract.deployedBy?.pubkey?.toLowerCase();
+    return (
+      (!!address && deployedAddress === address) ||
+      (!!pubkey && deployedPubkey === pubkey)
+    );
   }
 
   private async loadIndexerDashboardEntries(): Promise<
@@ -1301,11 +1324,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       // addresses and would miss participant-owned contracts.
       const rows = await this.covenantIndexerService.listCovenants({
         wallet: identifier,
-        classification: 'covenant',
         sort: 'recent',
         limit: 100,
       });
 
+      // Do not add `classification=covenant` here. Fresh wallet-created
+      // template contracts can be indexed as `unknown/unrevealed` while still
+      // carrying a trusted claimedTemplate/claimedArgs payload, so filtering by
+      // classification hides the exact contracts My Contracts needs to show.
       const supportedRows = rows.filter((row) =>
         this.supportedIndexerTemplates.includes(
           this.getIndexerTemplateName(row),
@@ -1329,6 +1355,26 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     localEntries: ContractDashboardEntry[],
   ): ContractDashboardEntry[] {
     const merged = new Map<string, ContractDashboardEntry>();
+    const normalize = (value?: string) => String(value || '').toLowerCase();
+    const hasAmount = (entry?: ContractDashboardEntry) =>
+      BigInt(String(entry?.amountSompi || '0')) > 0n;
+    const isMatch = (
+      indexerEntry: ContractDashboardEntry,
+      localEntry: ContractDashboardEntry,
+    ) =>
+      (!!indexerEntry.covenantId &&
+        normalize(localEntry.covenantId) ===
+          normalize(indexerEntry.covenantId)) ||
+      (!!indexerEntry.scriptHash &&
+        normalize(localEntry.scriptHash) ===
+          normalize(indexerEntry.scriptHash)) ||
+      (!!indexerEntry.deployTxid &&
+        normalize(localEntry.deployTxid) ===
+          normalize(indexerEntry.deployTxid)) ||
+      (!!indexerEntry.currentAddress &&
+        normalize(localEntry.currentAddress) ===
+          normalize(indexerEntry.currentAddress));
+
     for (const entry of localEntries) {
       merged.set(
         entry.covenantId || entry.scriptHash || entry.deployTxid || entry.id,
@@ -1338,18 +1384,41 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     for (const entry of indexerEntries) {
       const key =
         entry.covenantId || entry.scriptHash || entry.deployTxid || entry.id;
-      const local = Array.from(merged.values()).find(
-        (candidate) =>
-          (!!entry.covenantId && candidate.covenantId === entry.covenantId) ||
-          (!!entry.scriptHash && candidate.scriptHash === entry.scriptHash) ||
-          (!!entry.deployTxid && candidate.deployTxid === entry.deployTxid) ||
-          (!!entry.currentAddress &&
-            candidate.currentAddress === entry.currentAddress),
+      const matchingLocalEntries = Array.from(merged.values()).filter(
+        (candidate) => isMatch(entry, candidate),
       );
+      const local =
+        matchingLocalEntries.find(
+          (candidate) => candidate.status === 'spent',
+        ) ||
+        matchingLocalEntries.find(hasAmount) ||
+        matchingLocalEntries[0];
+
+      for (const matchedLocal of matchingLocalEntries) {
+        merged.delete(
+          matchedLocal.covenantId ||
+            matchedLocal.scriptHash ||
+            matchedLocal.deployTxid ||
+            matchedLocal.id,
+        );
+      }
 
       merged.set(local?.id || key, {
         ...entry,
         source: local ? 'both' : entry.source,
+        status: local?.status === 'spent' ? 'spent' : entry.status,
+        amountSompi:
+          local && local.status === 'spent' && hasAmount(local)
+            ? local.amountSompi
+            : entry.amountSompi,
+        latestTxid:
+          local?.status === 'spent' && local.latestTxid
+            ? local.latestTxid
+            : entry.latestTxid,
+        latestAction:
+          local?.status === 'spent' && local.latestAction
+            ? local.latestAction
+            : entry.latestAction,
         registryEntry: local?.registryEntry,
       });
     }
@@ -1393,7 +1462,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   ): ContractDashboardEntry {
     const contractName = this.getIndexerTemplateName(summary);
     const participants = this.indexerParticipants(summary);
-    const status = (summary.activeUtxos ?? 0) > 0 ? 'active' : 'spent';
+    const status = this.statusFromActiveUtxoCount(summary.activeUtxos);
     return {
       id: `indexer:${summary.covenantIdHex || summary.scriptHashHex}`,
       source: 'indexer',
@@ -1649,7 +1718,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           latestAction?.entrypoint ||
           latestAction?.action ||
           entry.latestAction,
-        status: utxos.length > 0 ? 'active' : 'spent',
+        status: this.statusFromActiveUtxoCount(utxos.length),
         amountSompi: lockedSompi.toString(),
       };
       this.selectedDetail.set({
@@ -1660,7 +1729,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       });
       if (
         (this.detailRouteId() || this.activeTab() === 'detail') &&
-        updatedEntry.status !== 'spent'
+        updatedEntry.status === 'active'
       ) {
         await this.prepareDashboardAction(updatedEntry);
       }
@@ -1692,6 +1761,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
     this.dashboardError.set(null);
 
+    if (entry.status === 'tracking-incomplete') {
+      this.dashboardError.set(
+        'Actions are disabled because the indexer reports multiple active UTXOs for this covenant. Open details and choose a specific UTXO once the wallet supports UTXO selection.',
+      );
+      this.detailPanelTab.set('details');
+      return false;
+    }
+
     const identifier = entry.covenantId || entry.scriptHash;
     if (!identifier) {
       this.dashboardError.set(
@@ -1711,6 +1788,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         .find(
           (contract) =>
             contract.network === this.network() &&
+            this.isCurrentWalletRegistryEntry(contract) &&
             (contract.covenantId === preview.covenantId ||
               (contract.outpoint.txid === preview.outpoint.txid &&
                 contract.outpoint.vout === preview.outpoint.vout)),
@@ -1792,6 +1870,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
 
     try {
+      this.selectedDetailLoading.set(true);
       const response = await this.resolveIndexerImportQuery(routeId);
       const preview = await this.buildIndexerImportPreview(response);
       const existing = this.findDashboardEntryForPreview(preview);
@@ -1806,6 +1885,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         error?.message ||
           'Contract not found for this wallet or indexer network.',
       );
+      this.selectedDetailLoading.set(false);
     }
   }
 
@@ -1887,6 +1967,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
     const existing = this.registryService.getAllContracts().find((entry) => {
       if (entry.network !== this.network()) return false;
+      if (!this.isCurrentWalletRegistryEntry(entry)) return false;
       const sameOutpoint =
         entry.outpoint.txid === preview.outpoint.txid &&
         entry.outpoint.vout === preview.outpoint.vout;
@@ -1959,8 +2040,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.latestAction(response.actions) ||
       preview.activeAction ||
       response.action;
-    const status =
-      (response.covenant?.activeUtxos ?? 1) > 0 ? 'active' : 'spent';
+    const status = this.statusFromActiveUtxoCount(
+      response.covenant?.activeUtxos,
+    );
     const participants = response.covenant
       ? this.indexerParticipants(response.covenant)
       : preview.args.map((arg) => ({
@@ -1999,6 +2081,18 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         : 'Open current covenant state',
       indexerSummary: response.covenant,
     };
+  }
+
+  private statusFromActiveUtxoCount(
+    activeUtxos: number | undefined,
+  ): ContractDashboardEntry['status'] {
+    if (activeUtxos === 0) return 'spent';
+    if (activeUtxos === 1) return 'active';
+
+    // The current wallet action flow spends one selected outpoint. If the
+    // indexer reports multiple active UTXOs, showing the contract is fine but
+    // auto-selecting one for a spend would be unsafe until a UTXO picker exists.
+    return 'tracking-incomplete';
   }
 
   private async fetchIndexerCovenant(identifier: string): Promise<{

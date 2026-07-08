@@ -84,7 +84,8 @@ type ActivityItem = KaspaActivityItem | Krc20ActivityItem | Erc20ActivityItem;
 })
 export class ActivityComponent
   extends BaseActivityComponent<ActivityItem>
-  implements OnInit, OnDestroy {
+  implements OnInit, OnDestroy
+{
   private walletService = inject(WalletService);
   private kaspaApiService = inject(KaspaApiService);
   private kasplexService = inject(KasplexKrc20Service);
@@ -561,7 +562,8 @@ export class ActivityComponent
     const formattedDate = date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: date.getFullYear() !== nowDate.getFullYear() ? 'numeric' : undefined,
+      year:
+        date.getFullYear() !== nowDate.getFullYear() ? 'numeric' : undefined,
     });
 
     const formattedTimestamp = `${timeAgo} • ${formattedDate}`;

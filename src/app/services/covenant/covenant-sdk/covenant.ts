@@ -19,7 +19,7 @@ import {
   type ITransactionInput,
   type ITransactionOutput,
   type UtxoEntryReference,
-} from "../../../../../public/kaspa/kaspa";
+} from '../../../../../public/kaspa/kaspa';
 import {
   type CompiledContract,
   type CovenantOutpoint,
@@ -27,9 +27,9 @@ import {
   type PartiallySignedSpend,
   type SpendOutput,
   type SpendResult,
-} from "./types";
+} from './types';
 
-const SUBNETWORK_ID_NATIVE = "0000000000000000000000000000000000000000";
+const SUBNETWORK_ID_NATIVE = '0000000000000000000000000000000000000000';
 
 type SupportedSigArg = Uint8Array | bigint;
 
@@ -38,7 +38,7 @@ function toScriptBytes(compiled: CompiledContract): Uint8Array {
 }
 
 function hexToBytes(hex: string): Uint8Array {
-  const normalized = hex.trim().replace(/^0x/i, "");
+  const normalized = hex.trim().replace(/^0x/i, '');
   if (normalized.length === 0 || normalized.length % 2 !== 0) {
     throw new Error(`Invalid hex string length: "${hex}"`);
   }
@@ -55,8 +55,8 @@ function hexToBytes(hex: string): Uint8Array {
 
 function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 function requireAddress(value: Address | undefined, context: string): Address {
@@ -67,19 +67,26 @@ function requireAddress(value: Address | undefined, context: string): Address {
 }
 
 function getAbiEntry(compiled: CompiledContract, functionName: string) {
-  const entry = compiled.abi.find((candidate) => candidate.name === functionName);
+  const entry = compiled.abi.find(
+    (candidate) => candidate.name === functionName,
+  );
   if (!entry) {
     throw new Error(`Function "${functionName}" not found in compiled ABI`);
   }
   return entry;
 }
 
-function getFunctionSelector(compiled: CompiledContract, functionName: string): bigint | undefined {
+function getFunctionSelector(
+  compiled: CompiledContract,
+  functionName: string,
+): bigint | undefined {
   if (compiled.without_selector) {
     return undefined;
   }
 
-  const selector = compiled.abi.findIndex((candidate) => candidate.name === functionName);
+  const selector = compiled.abi.findIndex(
+    (candidate) => candidate.name === functionName,
+  );
   if (selector === -1) {
     throw new Error(`Function "${functionName}" not found in compiled ABI`);
   }
@@ -106,7 +113,9 @@ function buildSigScript(
 ): string {
   const abiEntry = getAbiEntry(compiled, functionName);
   if (abiEntry.inputs.length !== functionArgs.length) {
-    throw new Error(`Function "${functionName}" expects ${abiEntry.inputs.length} arguments`);
+    throw new Error(
+      `Function "${functionName}" expects ${abiEntry.inputs.length} arguments`,
+    );
   }
 
   const builder = new ScriptBuilder();
@@ -115,8 +124,8 @@ function buildSigScript(
     const input = abiEntry.inputs[index];
     const arg = functionArgs[index];
 
-    if (input.type_name === "int" || input.type_name === "bool") {
-      if (typeof arg === "bigint") {
+    if (input.type_name === 'int' || input.type_name === 'bool') {
+      if (typeof arg === 'bigint') {
         builder.addI64(arg);
       } else {
         throw new Error(
@@ -126,31 +135,37 @@ function buildSigScript(
       continue;
     }
 
-    if (input.type_name === "sig") {
-      if (typeof arg !== "object" || arg.length !== 65) {
+    if (input.type_name === 'sig') {
+      if (typeof arg !== 'object' || arg.length !== 65) {
         throw new Error(`Expected sig argument "${input.name}" to be 65 bytes`);
       }
       builder.addData(arg);
       continue;
     }
 
-    if (input.type_name === "pubkey") {
-      if (typeof arg !== "object" || arg.length !== 32) {
-        throw new Error(`Expected pubkey argument "${input.name}" to be 32 bytes`);
+    if (input.type_name === 'pubkey') {
+      if (typeof arg !== 'object' || arg.length !== 32) {
+        throw new Error(
+          `Expected pubkey argument "${input.name}" to be 32 bytes`,
+        );
       }
       builder.addData(arg);
       continue;
     }
 
-    if (input.type_name === "byte" || /^byte\[\d+\]$/.test(input.type_name)) {
-      if (typeof arg !== "object") {
-        throw new Error(`Expected byte argument "${input.name}" to be Uint8Array`);
+    if (input.type_name === 'byte' || /^byte\[\d+\]$/.test(input.type_name)) {
+      if (typeof arg !== 'object') {
+        throw new Error(
+          `Expected byte argument "${input.name}" to be Uint8Array`,
+        );
       }
       builder.addData(encodeAbiBytesArray(input.type_name, arg));
       continue;
     }
 
-    throw new Error(`Unsupported ABI argument type "${input.type_name}" for "${functionName}"`);
+    throw new Error(
+      `Unsupported ABI argument type "${input.type_name}" for "${functionName}"`,
+    );
   }
 
   const selector = getFunctionSelector(compiled, functionName);
@@ -161,18 +176,36 @@ function buildSigScript(
   return builder.drain();
 }
 
-async function getAddressUtxos(rpc: RpcClient, address: string): Promise<UtxoEntryReference[]> {
+async function getAddressUtxos(
+  rpc: RpcClient,
+  address: string,
+): Promise<UtxoEntryReference[]> {
   const utxoPromise = rpc.getUtxosByAddresses([address]);
   const timeoutPromise = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error('UTXO query timed out after 20 seconds — RPC may not be connected')), 20000)
+    setTimeout(
+      () =>
+        reject(
+          new Error(
+            'UTXO query timed out after 20 seconds — RPC may not be connected',
+          ),
+        ),
+      20000,
+    ),
   );
   const utxos = await Promise.race([utxoPromise, timeoutPromise]);
   return utxos.entries;
 }
 
-function findOutputIndex(transaction: Transaction, address: string, network: string): number {
+function findOutputIndex(
+  transaction: Transaction,
+  address: string,
+  network: string,
+): number {
   return transaction.outputs.findIndex((output) => {
-    const resolved = addressFromScriptPublicKey(output.scriptPublicKey, network);
+    const resolved = addressFromScriptPublicKey(
+      output.scriptPublicKey,
+      network,
+    );
     return resolved?.toString() === address;
   });
 }
@@ -185,16 +218,18 @@ function resolveSpendFunctionArgs(
   extraArgs?: Record<string, bigint>,
 ): SupportedSigArg[] {
   const entry = getAbiEntry(compiled, functionName);
-  const xOnlyPubkey = hexToBytes(privateKey.toPublicKey().toXOnlyPublicKey().toString());
+  const xOnlyPubkey = hexToBytes(
+    privateKey.toPublicKey().toXOnlyPublicKey().toString(),
+  );
 
   return entry.inputs.map((input) => {
-    if (input.type_name === "sig") {
+    if (input.type_name === 'sig') {
       return signature;
     }
-    if (input.type_name === "pubkey") {
+    if (input.type_name === 'pubkey') {
       return xOnlyPubkey;
     }
-    if (input.type_name === "int" || input.type_name === "bool") {
+    if (input.type_name === 'int' || input.type_name === 'bool') {
       const val = extraArgs?.[input.name];
       if (val === undefined) {
         throw new Error(
@@ -229,7 +264,10 @@ function resolveSpendFunctionArgs(
  * "RpcTransactionInput.sig_op_count is inconsistent with transaction
  * version 1" when sigOpCount is non-zero.
  */
-function buildCovenantInput(entry: UtxoEntryReference, computeBudget: number = 10): TransactionInput {
+function buildCovenantInput(
+  entry: UtxoEntryReference,
+  computeBudget: number = 10,
+): TransactionInput {
   // The ITransactionInput.utxo field is typed as UtxoEntryReference (a class
   // with a private constructor) but the runtime accepts a plain object
   // matching the same shape — this is what the working tn12-covenant-tools
@@ -250,9 +288,15 @@ function buildCovenantInput(entry: UtxoEntryReference, computeBudget: number = 1
  * Get the P2SH address for a compiled covenant contract.
  * Uses payToScriptHashScript() to hash the contract bytecode.
  */
-export function getCovenantAddress(compiled: CompiledContract, network: string): string {
+export function getCovenantAddress(
+  compiled: CompiledContract,
+  network: string,
+): string {
   const scriptPublicKey = payToScriptHashScript(toScriptBytes(compiled));
-  return requireAddress(addressFromScriptPublicKey(scriptPublicKey, network), compiled.contract_name).toString();
+  return requireAddress(
+    addressFromScriptPublicKey(scriptPublicKey, network),
+    compiled.contract_name,
+  ).toString();
 }
 
 /**
@@ -294,7 +338,10 @@ export async function deployContract(
       const payloadBytes = new TextEncoder().encode(payloadJson);
       payload = payloadBytes;
     } catch (payloadErr) {
-      console.warn('[CovenantSDK] Failed to attach deployment claim payload:', payloadErr);
+      console.warn(
+        '[CovenantSDK] Failed to attach deployment claim payload:',
+        payloadErr,
+      );
     }
   }
 
@@ -309,7 +356,8 @@ export async function deployContract(
   } as never);
 
   let finalTxId = created.summary.finalTransactionId;
-  let finalTransaction = created.transactions[created.transactions.length - 1]?.transaction;
+  let finalTransaction =
+    created.transactions[created.transactions.length - 1]?.transaction;
 
   // KIP-20: covenant genesis covenant id. Populated on the final tx via
   // tx.populateGenesisCovenants + tx.finalize, then read back from the
@@ -344,9 +392,9 @@ export async function deployContract(
         }
 
         try {
-          tx.populateGenesisCovenants(
-            [{ authorizingInput: 0, outputs: [covenantOutputIdx] }],
-          );
+          tx.populateGenesisCovenants([
+            { authorizingInput: 0, outputs: [covenantOutputIdx] },
+          ]);
           // finalize() recomputes the tx id from the post-binding state so
           // the sighash + network-agreed id stay in sync.
           tx.finalize();
@@ -385,12 +433,18 @@ export async function deployContract(
   }
 
   if (!finalTxId || !finalTransaction) {
-    throw new Error("Failed to submit deployment transaction");
+    throw new Error('Failed to submit deployment transaction');
   }
 
-  const outputIndex = findOutputIndex(finalTransaction, contractAddress, network);
+  const outputIndex = findOutputIndex(
+    finalTransaction,
+    contractAddress,
+    network,
+  );
   if (outputIndex === -1) {
-    throw new Error("Deployment transaction did not contain the covenant output");
+    throw new Error(
+      'Deployment transaction did not contain the covenant output',
+    );
   }
 
   // Read the canonical covenant id from the serialized tx. The example pattern
@@ -404,7 +458,6 @@ export async function deployContract(
       covenantId = String(covenant.covenantId);
       console.log('covenantId', covenantId);
     }
-
   } catch {
     // best-effort; if serialization fails, fall back to whatever was already set
   }
@@ -455,11 +508,14 @@ export async function spendContract(
   const utxos = await getAddressUtxos(rpc, covenantAddress);
   const entry = utxos.find(
     (candidate) =>
-      candidate.outpoint.transactionId === outpoint.txid && candidate.outpoint.index === outpoint.vout,
+      candidate.outpoint.transactionId === outpoint.txid &&
+      candidate.outpoint.index === outpoint.vout,
   );
 
   if (!entry) {
-    throw new Error(`Covenant outpoint ${outpoint.txid}:${outpoint.vout} was not found for ${covenantAddress}`);
+    throw new Error(
+      `Covenant outpoint ${outpoint.txid}:${outpoint.vout} was not found for ${covenantAddress}`,
+    );
   }
 
   if (entry.amount !== inputAmountSompi) {
@@ -481,9 +537,7 @@ export async function spendContract(
     }
   }
 
-  const txInputs: ITransactionInput[] = [
-    buildCovenantInput(entry),
-  ];
+  const txInputs: ITransactionInput[] = [buildCovenantInput(entry)];
 
   // --- Fee and Change Logic (Dynamic) ---
   const MAX_TRANSACTION_FEE = 20000n;
@@ -495,20 +549,28 @@ export async function spendContract(
   let walletSelectedAmount = 0n;
 
   if (useSenderFee) {
-    const targetRequired = spendOutputsSum + MAX_TRANSACTION_FEE + MINIMAL_AMOUNT_TO_SEND;
-    const shortfall = targetRequired > inputAmountSompi ? targetRequired - inputAmountSompi : 0n;
+    const targetRequired =
+      spendOutputsSum + MAX_TRANSACTION_FEE + MINIMAL_AMOUNT_TO_SEND;
+    const shortfall =
+      targetRequired > inputAmountSompi
+        ? targetRequired - inputAmountSompi
+        : 0n;
 
     if (shortfall > 0n) {
       const walletUtxos = await getAddressUtxos(rpc, senderAddress);
 
-      for (const utxo of walletUtxos.sort((a, b) => Number(b.amount - a.amount))) {
+      for (const utxo of walletUtxos.sort((a, b) =>
+        Number(b.amount - a.amount),
+      )) {
         selectedWalletUtxos.push(utxo);
         walletSelectedAmount += utxo.amount;
         if (walletSelectedAmount >= shortfall) break;
       }
 
       if (walletSelectedAmount < shortfall) {
-        throw new Error(`Insufficient wallet balance for transaction fee. Need at least ${shortfall} sompi from wallet, found ${walletSelectedAmount}`);
+        throw new Error(
+          `Insufficient wallet balance for transaction fee. Need at least ${shortfall} sompi from wallet, found ${walletSelectedAmount}`,
+        );
       }
     }
 
@@ -528,8 +590,11 @@ export async function spendContract(
     // Determine which covenant ID to use for this output:
     //   1. Prefer the per-output explicit covenantId (keepAlive → new DMS contract)
     //   2. Fall back to the global utxoCovenantId if output goes to same covenant address
-    const bindingCovenantId = output.covenantId
-      ?? (utxoCovenantId && output.address === covenantAddress ? utxoCovenantId : undefined);
+    const bindingCovenantId =
+      output.covenantId ??
+      (utxoCovenantId && output.address === covenantAddress
+        ? utxoCovenantId
+        : undefined);
 
     if (bindingCovenantId) {
       try {
@@ -538,7 +603,10 @@ export async function spendContract(
         const txOutput = new TransactionOutput(output.amount, spk, binding);
         return txOutput as any;
       } catch (err) {
-        console.warn('[CovenantSDK] Failed to attach continuation binding:', err);
+        console.warn(
+          '[CovenantSDK] Failed to attach continuation binding:',
+          err,
+        );
       }
     }
 
@@ -567,10 +635,13 @@ export async function spendContract(
   // Determine lockTime based on AST time_op nodes:
   //   tx_var === 'tx_time' (tx.time) → needs lockTime set to Unix ms
   //   tx_var === 'this_age' (this.age) → DAA block count, does NOT need lockTime
-  const astFunction = compiled.ast?.functions?.find((f: any) => f.name === functionName);
-  const needsLockTime = astFunction?.body?.some(
-    (node: any) => node.kind === 'time_op' && node.data?.tx_var === 'tx_time'
-  ) ?? false;
+  const astFunction = compiled.ast?.functions?.find(
+    (f: any) => f.name === functionName,
+  );
+  const needsLockTime =
+    astFunction?.body?.some(
+      (node: any) => node.kind === 'time_op' && node.data?.tx_var === 'tx_time',
+    ) ?? false;
   let lockTime = 0n;
   if (needsLockTime) {
     try {
@@ -582,7 +653,10 @@ export async function spendContract(
     } catch {
       // Fallback: use Date.now() - 10s buffer (less reliable)
       lockTime = BigInt(Date.now() - 10_000);
-      console.warn('[CovenantSDK] lockTime fallback (Date.now - 10s):', lockTime.toString());
+      console.warn(
+        '[CovenantSDK] lockTime fallback (Date.now - 10s):',
+        lockTime.toString(),
+      );
     }
   }
 
@@ -593,9 +667,7 @@ export async function spendContract(
     outputs: txOutputs,
     subnetworkId: SUBNETWORK_ID_NATIVE,
     gas: 0n,
-    payload: transactionPayloadHex || "",
-
-
+    payload: transactionPayloadHex || '',
   });
 
   // KIP-20: recompute the tx id from the post-binding state so the sighash
@@ -603,10 +675,10 @@ export async function spendContract(
   unsignedTx.finalize();
 
   // --- Dynamic Fee Adjustment ---
-  const transactionFee = calculateTransactionFee(network, unsignedTx);
-  
+  const transactionFee = calculateTransactionFee(network, unsignedTx, 1, true);
+
   if (!transactionFee) {
-    throw new Error("Transaction fee not calculated");
+    throw new Error('Transaction fee not calculated');
   }
   const totalFees = transactionFee + priorityFee;
 
@@ -614,14 +686,18 @@ export async function spendContract(
     if (changeOutputIdx !== -1) {
       const finalChange = totalInputsAmount - spendOutputsSum - totalFees;
       if (finalChange < MINIMAL_AMOUNT_TO_SEND) {
-        throw new Error(`Insufficient change to cover the fee. Need ${MINIMAL_AMOUNT_TO_SEND}, have ${finalChange}`);
+        throw new Error(
+          `Insufficient change to cover the fee. Need ${MINIMAL_AMOUNT_TO_SEND}, have ${finalChange}`,
+        );
       }
       unsignedTx.outputs[changeOutputIdx].value = finalChange;
     } else {
       // If no change output, ensure the surplus covers the fee
       const surplus = totalInputsAmount - spendOutputsSum;
       if (surplus < totalFees) {
-        throw new Error(`Insufficient funds for fee. Need ${totalFees}, have ${surplus}`);
+        throw new Error(
+          `Insufficient funds for fee. Need ${totalFees}, have ${surplus}`,
+        );
       }
     }
   } else {
@@ -636,10 +712,16 @@ export async function spendContract(
       );
     }
 
-    unsignedTx.outputs[unsignedTx.outputs.length - 1].value = unsignedTx.outputs[unsignedTx.outputs.length - 1].value - totalFees;
+    unsignedTx.outputs[unsignedTx.outputs.length - 1].value =
+      unsignedTx.outputs[unsignedTx.outputs.length - 1].value - totalFees;
   }
 
-  const signatureHex = createInputSignature(unsignedTx, 0, privateKey, SighashType.All);
+  const signatureHex = createInputSignature(
+    unsignedTx,
+    0,
+    privateKey,
+    SighashType.All,
+  );
   // createInputSignature returns: [length_prefix(1)] + [schnorr_sig(64)] + [sighash_type(1)] = 66 bytes
   // The contract expects just [schnorr_sig(64)] + [sighash_type(1)] = 65 bytes (no length prefix)
   const sigHexStr = String(signatureHex);
@@ -648,22 +730,32 @@ export async function spendContract(
     // Strip the length prefix byte — 65 means "65 bytes of sig+sighash follow"
     signature = signature.slice(1);
   }
-  const functionArgs = resolveSpendFunctionArgs(compiled, functionName, signature, privateKey, extraArgs);
+  const functionArgs = resolveSpendFunctionArgs(
+    compiled,
+    functionName,
+    signature,
+    privateKey,
+    extraArgs,
+  );
   const sigPrefix = buildSigScript(compiled, functionName, functionArgs);
 
-  unsignedTx.inputs[0].signatureScript = ScriptBuilder.fromScript(toScriptBytes(compiled)).encodePayToScriptHashSignatureScript(
-    sigPrefix,
-  );
+  unsignedTx.inputs[0].signatureScript = ScriptBuilder.fromScript(
+    toScriptBytes(compiled),
+  ).encodePayToScriptHashSignatureScript(sigPrefix);
 
   // Sign extra inputs (gas) if any
   for (let i = 1; i < unsignedTx.inputs.length; i++) {
-    const sigHexStr = String(createInputSignature(unsignedTx, i, privateKey, SighashType.All));
+    const sigHexStr = String(
+      createInputSignature(unsignedTx, i, privateKey, SighashType.All),
+    );
     let sigBytes = hexToBytes(sigHexStr);
     if (sigBytes.length === 66 && sigBytes[0] === 65) {
       sigBytes = sigBytes.slice(1);
     }
     // For standard P2PK/P2TR gas inputs, the signatureScript must be a valid script (a push of the signature).
-    unsignedTx.inputs[i].signatureScript = new ScriptBuilder().addData(sigBytes).drain();
+    unsignedTx.inputs[i].signatureScript = new ScriptBuilder()
+      .addData(sigBytes)
+      .drain();
   }
 
   const submitted = await rpc.submitTransaction({
@@ -678,7 +770,6 @@ export async function spendContract(
   };
 }
 
-
 /**
  * Query UTXOs for a covenant address and return covenant-specific information.
  * Leverages the new covenantId field on UtxoEntry (v1.1.0-rc.3).
@@ -687,12 +778,14 @@ export async function getCovenantUtxos(
   compiled: CompiledContract,
   network: string,
   rpc: RpcClient,
-): Promise<Array<{
-  outpoint: CovenantOutpoint;
-  amount: bigint;
-  covenantId?: string;
-  blockDaaScore: bigint;
-}>> {
+): Promise<
+  Array<{
+    outpoint: CovenantOutpoint;
+    amount: bigint;
+    covenantId?: string;
+    blockDaaScore: bigint;
+  }>
+> {
   const covenantAddress = getCovenantAddress(compiled, network);
 
   const utxos = await getAddressUtxos(rpc, covenantAddress);
@@ -749,19 +842,25 @@ export async function buildPartialSpend(
 
   const utxos = await getAddressUtxos(rpc, covenantAddress);
   const entry = utxos.find(
-    (u: any) => u.outpoint.transactionId === outpoint.txid && Number(u.outpoint.index) === outpoint.vout
+    (u: any) =>
+      u.outpoint.transactionId === outpoint.txid &&
+      Number(u.outpoint.index) === outpoint.vout,
   );
-  if (!entry) throw new Error(`UTXO ${outpoint.txid}:${outpoint.vout} not found at ${covenantAddress}`);
+  if (!entry)
+    throw new Error(
+      `UTXO ${outpoint.txid}:${outpoint.vout} not found at ${covenantAddress}`,
+    );
 
   // Count sig params for sigOpCount
-  const sigParams = abiEntry.inputs.filter(inp => inp.type_name === 'sig');
+  const sigParams = abiEntry.inputs.filter((inp) => inp.type_name === 'sig');
   const sigOpCount = sigParams.length || 1;
 
   // Detect timelock: only tx.time needs lockTime, this.age does not
-  const astFn = compiled.ast?.functions?.find(f => f.name === functionName);
-  const needsLockTime = astFn?.body?.some(
-    (n: any) => n.kind === 'time_op' && n.data?.tx_var === 'tx_time'
-  ) ?? false;
+  const astFn = compiled.ast?.functions?.find((f) => f.name === functionName);
+  const needsLockTime =
+    astFn?.body?.some(
+      (n: any) => n.kind === 'time_op' && n.data?.tx_var === 'tx_time',
+    ) ?? false;
   let lockTime = 0n;
   if (needsLockTime) {
     try {
@@ -773,12 +872,10 @@ export async function buildPartialSpend(
   }
 
   // Build unsigned TX
-  const txInputs: ITransactionInput[] = [
-    buildCovenantInput(entry, 30),
-  ];
+  const txInputs: ITransactionInput[] = [buildCovenantInput(entry, 30)];
 
-  const adjustedOutputs = outputs.map(o => ({ ...o }));
-  const txOutputs: ITransactionOutput[] = adjustedOutputs.map(o => ({
+  const adjustedOutputs = outputs.map((o) => ({ ...o }));
+  const txOutputs: ITransactionOutput[] = adjustedOutputs.map((o) => ({
     scriptPublicKey: payToAddressScript(o.address),
     value: o.amount,
   }));
@@ -790,14 +887,14 @@ export async function buildPartialSpend(
     outputs: txOutputs,
     subnetworkId: SUBNETWORK_ID_NATIVE,
     gas: 0n,
-    payload: "",
+    payload: '',
   });
 
   unsignedTx.finalize();
 
-  const transactionFee = calculateTransactionFee(network, unsignedTx);
+  const transactionFee = calculateTransactionFee(network, unsignedTx, 1, true);
   if (!transactionFee) {
-    throw new Error("Transaction fee not calculated");
+    throw new Error('Transaction fee not calculated');
   }
 
   const totalFees = transactionFee + priorityFee;
@@ -807,17 +904,26 @@ export async function buildPartialSpend(
   }
 
   if (unsignedTx.outputs[feeOutputIndex].value <= totalFees) {
-    throw new Error(`Insufficient contract output to cover fees. Need ${totalFees} sompi, have ${unsignedTx.outputs[feeOutputIndex].value}`);
+    throw new Error(
+      `Insufficient contract output to cover fees. Need ${totalFees} sompi, have ${unsignedTx.outputs[feeOutputIndex].value}`,
+    );
   }
 
   unsignedTx.outputs[feeOutputIndex].value -= totalFees;
-  adjustedOutputs[feeOutputIndex].amount = unsignedTx.outputs[feeOutputIndex].value;
+  adjustedOutputs[feeOutputIndex].amount =
+    unsignedTx.outputs[feeOutputIndex].value;
   unsignedTx.finalize();
 
   // Sign this key's params
-  const signatureHex = createInputSignature(unsignedTx, 0, privateKey, SighashType.All);
+  const signatureHex = createInputSignature(
+    unsignedTx,
+    0,
+    privateKey,
+    SighashType.All,
+  );
   let signature = hexToBytes(String(signatureHex));
-  if (signature.length === 66 && signature[0] === 65) signature = signature.slice(1);
+  if (signature.length === 66 && signature[0] === 65)
+    signature = signature.slice(1);
   const sigHex = bytesToHex(signature);
 
   // Match this pubkey to contract params by scanning the compiled script bytes
@@ -831,9 +937,18 @@ export async function buildPartialSpend(
     // findMatchingPubkey returns the PUBKEY PARAM NAME (e.g. "key1") that must sign this sig param.
     // We then check whether our actual pubkey bytes appear at the position where that
     // constructor param is embedded in the script.
-    const pubkeyParamName = findMatchingPubkeyParamName(compiled, functionName, sigParam.name);
+    const pubkeyParamName = findMatchingPubkeyParamName(
+      compiled,
+      functionName,
+      sigParam.name,
+    );
     const myKeyMatchesThisParam = pubkeyParamName
-      ? scriptContainsPubkeyForParam(compiled, pubkeyParamName, myPubkeyBytes, scriptBytes)
+      ? scriptContainsPubkeyForParam(
+          compiled,
+          pubkeyParamName,
+          myPubkeyBytes,
+          scriptBytes,
+        )
       : false;
 
     if (myKeyMatchesThisParam) {
@@ -844,7 +959,9 @@ export async function buildPartialSpend(
   }
 
   if (signatures.length === 0) {
-    throw new Error('Current wallet does not match any required signer for this contract function');
+    throw new Error(
+      'Current wallet does not match any required signer for this contract function',
+    );
   }
 
   return {
@@ -853,13 +970,21 @@ export async function buildPartialSpend(
     network,
     outpoint,
     inputAmountSompi: inputAmountSompi.toString(),
-    outputs: adjustedOutputs.map(o => ({ address: o.address, amountSompi: o.amount.toString() })),
+    outputs: adjustedOutputs.map((o) => ({
+      address: o.address,
+      amountSompi: o.amount.toString(),
+    })),
     signatures,
     pendingParams,
     lockTime: lockTime.toString(),
     sigOpCount,
     extraArgs: extraArgs
-      ? Object.fromEntries(Object.entries(extraArgs).map(([key, value]) => [key, value.toString()]))
+      ? Object.fromEntries(
+          Object.entries(extraArgs).map(([key, value]) => [
+            key,
+            value.toString(),
+          ]),
+        )
       : undefined,
   };
 }
@@ -881,17 +1006,16 @@ export async function completePartialSpend(
 
   const utxos = await getAddressUtxos(rpc, covenantAddress);
   const entry = utxos.find(
-    (u: any) => u.outpoint.transactionId === partialSpend.outpoint.txid &&
-      Number(u.outpoint.index) === partialSpend.outpoint.vout
+    (u: any) =>
+      u.outpoint.transactionId === partialSpend.outpoint.txid &&
+      Number(u.outpoint.index) === partialSpend.outpoint.vout,
   );
   if (!entry) throw new Error(`UTXO not found for completion`);
 
   // Rebuild the exact same unsigned TX
-  const txInputs: ITransactionInput[] = [
-    buildCovenantInput(entry, 30),
-  ];
+  const txInputs: ITransactionInput[] = [buildCovenantInput(entry, 30)];
 
-  const txOutputs: ITransactionOutput[] = partialSpend.outputs.map(o => ({
+  const txOutputs: ITransactionOutput[] = partialSpend.outputs.map((o) => ({
     scriptPublicKey: payToAddressScript(o.address),
     value: BigInt(o.amountSompi),
   }));
@@ -903,15 +1027,21 @@ export async function completePartialSpend(
     outputs: txOutputs,
     subnetworkId: SUBNETWORK_ID_NATIVE,
     gas: 0n,
-    payload: "",
+    payload: '',
   });
 
   unsignedTx.finalize();
 
   // Sign our params
-  const signatureHex = createInputSignature(unsignedTx, 0, privateKey, SighashType.All);
+  const signatureHex = createInputSignature(
+    unsignedTx,
+    0,
+    privateKey,
+    SighashType.All,
+  );
   let signature = hexToBytes(String(signatureHex));
-  if (signature.length === 66 && signature[0] === 65) signature = signature.slice(1);
+  if (signature.length === 66 && signature[0] === 65)
+    signature = signature.slice(1);
   const newSigHex = bytesToHex(signature);
 
   // Merge signatures
@@ -921,9 +1051,18 @@ export async function completePartialSpend(
 
   const remainingParams: string[] = [];
   for (const paramName of partialSpend.pendingParams) {
-    const pubkeyParamName = findMatchingPubkeyParamName(compiled, partialSpend.functionName, paramName);
+    const pubkeyParamName = findMatchingPubkeyParamName(
+      compiled,
+      partialSpend.functionName,
+      paramName,
+    );
     const myKeyMatchesThisParam = pubkeyParamName
-      ? scriptContainsPubkeyForParam(compiled, pubkeyParamName, myPubkeyBytes, scriptBytes)
+      ? scriptContainsPubkeyForParam(
+          compiled,
+          pubkeyParamName,
+          myPubkeyBytes,
+          scriptBytes,
+        )
       : false;
 
     if (myKeyMatchesThisParam) {
@@ -934,7 +1073,9 @@ export async function completePartialSpend(
   }
 
   if (remainingParams.length > 0) {
-    throw new Error(`Current wallet cannot sign pending param(s): ${remainingParams.join(', ')}`);
+    throw new Error(
+      `Current wallet cannot sign pending param(s): ${remainingParams.join(', ')}`,
+    );
   }
 
   // Build the complete sigscript in ABI order
@@ -942,24 +1083,34 @@ export async function completePartialSpend(
   const functionArgs: SupportedSigArg[] = [];
   for (const input of abiEntry.inputs) {
     if (input.type_name === 'sig') {
-      const sigEntry = allSigs.find(s => s.paramName === input.name);
-      if (!sigEntry) throw new Error(`Missing signature for param "${input.name}"`);
+      const sigEntry = allSigs.find((s) => s.paramName === input.name);
+      if (!sigEntry)
+        throw new Error(`Missing signature for param "${input.name}"`);
       functionArgs.push(hexToBytes(sigEntry.signatureHex));
     } else if (input.type_name === 'pubkey') {
-      functionArgs.push(hexToBytes(privateKey.toPublicKey().toXOnlyPublicKey().toString()));
+      functionArgs.push(
+        hexToBytes(privateKey.toPublicKey().toXOnlyPublicKey().toString()),
+      );
     } else if (input.type_name === 'int' || input.type_name === 'bool') {
       // Extra args are passed through the partial spend's extraArgs field
       const extraVal = partialSpend.extraArgs?.[input.name];
-      if (extraVal === undefined) throw new Error(`Missing extra arg "${input.name}" in partial spend`);
+      if (extraVal === undefined)
+        throw new Error(`Missing extra arg "${input.name}" in partial spend`);
       functionArgs.push(BigInt(extraVal));
     } else {
-      throw new Error(`Unsupported ABI input type "${input.type_name}" in two-phase signing`);
+      throw new Error(
+        `Unsupported ABI input type "${input.type_name}" in two-phase signing`,
+      );
     }
   }
 
-  const sigPrefix = buildSigScript(compiled, partialSpend.functionName, functionArgs);
+  const sigPrefix = buildSigScript(
+    compiled,
+    partialSpend.functionName,
+    functionArgs,
+  );
   unsignedTx.inputs[0].signatureScript = ScriptBuilder.fromScript(
-    toScriptBytes(compiled)
+    toScriptBytes(compiled),
   ).encodePayToScriptHashSignatureScript(sigPrefix);
 
   const submitted = await rpc.submitTransaction({
@@ -975,7 +1126,9 @@ export async function completePartialSpend(
 
 // ── Helpers for Two-Phase Signing ────────────────────────────
 
-function extractContractPubkeys(compiled: CompiledContract): Map<string, string> {
+function extractContractPubkeys(
+  compiled: CompiledContract,
+): Map<string, string> {
   // Extract pubkey param names from the AST (values are not stored in compiled JSON)
   const pubkeys = new Map<string, string>();
   for (const param of compiled.ast.params) {
@@ -996,7 +1149,7 @@ function findMatchingPubkeyParamName(
   functionName: string,
   sigParamName: string,
 ): string | undefined {
-  const astFn = compiled.ast.functions.find(f => f.name === functionName);
+  const astFn = compiled.ast.functions.find((f) => f.name === functionName);
   if (!astFn) return undefined;
 
   for (const node of astFn.body) {
@@ -1051,8 +1204,10 @@ function scriptContainsPubkeyForParam(
   }
 
   // Step 2: Find the index of pubkeyParamName among the constructor's pubkey params.
-  const pubkeyParams = compiled.ast.params.filter(p => p.type_ref.base === 'pubkey');
-  const paramIndex = pubkeyParams.findIndex(p => p.name === pubkeyParamName);
+  const pubkeyParams = compiled.ast.params.filter(
+    (p) => p.type_ref.base === 'pubkey',
+  );
+  const paramIndex = pubkeyParams.findIndex((p) => p.name === pubkeyParamName);
   if (paramIndex === -1) return false;
 
   // Step 3: The pubkey at that index in the script must match our caller's key.

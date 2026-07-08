@@ -1161,6 +1161,43 @@
             </details>
           }
         </div>
+      } @else {
+        <div class="panel flex column gap-16 p-20 rounded-lg">
+          <div class="flex justify-content-between align-items-start gap-12">
+            <div class="flex column gap-4">
+              <h3 class="text-white typo-title-3">Contract Details</h3>
+              <p class="text-gray-60 typo-text-2">
+                Loading current state from the covenant indexer.
+              </p>
+            </div>
+            <button
+              class="back-button detail-close-button p-8 rounded typo-text-2"
+              (click)="backToContractsList()"
+            >
+              Close
+            </button>
+          </div>
+
+          @if (selectedDetailLoading() || dashboardLoading()) {
+            <div class="p-12 rounded text-gray-60 typo-text-2">
+              Loading current indexer state...
+            </div>
+          } @else if (selectedDetailError()) {
+            <div class="error-message p-12 rounded-lg text-red typo-text-2">
+              {{ selectedDetailError() }}
+            </div>
+          } @else if (detailRouteNotFound()) {
+            <div class="empty-state p-32 rounded-lg text-center">
+              <p class="text-gray-60 typo-text-1">
+                Contract not found for this wallet on {{ network() }}
+              </p>
+            </div>
+          } @else {
+            <div class="p-12 rounded text-gray-60 typo-text-2">
+              Preparing contract details...
+            </div>
+          }
+        </div>
       }
     </div>
   }

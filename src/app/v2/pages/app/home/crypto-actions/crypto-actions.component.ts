@@ -50,7 +50,7 @@ export class CryptoActionsComponent {
     if (!this.walletService.getIsL2DisplaySignal()() && !environment.isProduction) {
       baseActions.push({
         title: 'contracts',
-        iconClass: 'icon-file-05',
+        iconClass: 'icon-template',
         iconColor: '',
         action: () => this.openContractsPage(),
       });

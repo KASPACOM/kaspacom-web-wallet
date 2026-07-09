@@ -30,6 +30,7 @@ import {
 } from './types';
 
 const SUBNETWORK_ID_NATIVE = '0000000000000000000000000000000000000000';
+const DUMMY_SIGNATURE_BYTES = new Uint8Array(65);
 
 type SupportedSigArg = Uint8Array | bigint;
 
@@ -250,6 +251,87 @@ function resolveSpendFunctionArgs(
 // by the kaspa library's tx.populateGenesisCovenants() and read back from the
 // bound output's covenant.covenantId field (see deployContract()).
 
+function applyEstimatedSignatureScripts(
+  tx: Transaction,
+  compiled: CompiledContract,
+  functionName: string,
+  privateKey: PrivateKey,
+  extraArgs?: Record<string, bigint>,
+): void {
+  const functionArgs = resolveSpendFunctionArgs(
+    compiled,
+    functionName,
+    DUMMY_SIGNATURE_BYTES,
+    privateKey,
+    extraArgs,
+  );
+  const sigPrefix = buildSigScript(compiled, functionName, functionArgs);
+
+  tx.inputs[0].signatureScript = ScriptBuilder.fromScript(
+    toScriptBytes(compiled),
+  ).encodePayToScriptHashSignatureScript(sigPrefix);
+
+  for (let i = 1; i < tx.inputs.length; i += 1) {
+    tx.inputs[i].signatureScript = new ScriptBuilder()
+      .addData(DUMMY_SIGNATURE_BYTES)
+      .drain();
+  }
+}
+
+function applyEstimatedStandardSignatureScripts(tx: Transaction): void {
+  for (const input of tx.inputs) {
+    input.signatureScript = new ScriptBuilder()
+      .addData(DUMMY_SIGNATURE_BYTES)
+      .drain();
+  }
+}
+
+function getTransactionInputAmount(tx: Transaction): bigint {
+  return tx.inputs.reduce((sum, input) => sum + (input.utxo?.amount ?? 0n), 0n);
+}
+
+function getTransactionOutputAmount(tx: Transaction): bigint {
+  return tx.outputs.reduce((sum, output) => sum + output.value, 0n);
+}
+
+function reconcileDeployFee(
+  tx: Transaction,
+  network: string,
+  senderAddress: string,
+  priorityFee: bigint,
+): void {
+  applyEstimatedStandardSignatureScripts(tx);
+
+  const transactionFee = calculateTransactionFee(network, tx);
+  if (!transactionFee) {
+    throw new Error('Transaction fee not calculated');
+  }
+
+  const requiredFee = transactionFee + priorityFee;
+  const currentFee =
+    getTransactionInputAmount(tx) - getTransactionOutputAmount(tx);
+  if (currentFee >= requiredFee) {
+    return;
+  }
+
+  const feeShortfall = requiredFee - currentFee;
+  const changeOutputIdx = findOutputIndex(tx, senderAddress, network);
+  if (changeOutputIdx === -1) {
+    throw new Error(
+      `Insufficient deploy funds for post-binding fee. Need ${requiredFee} sompi, have ${currentFee}`,
+    );
+  }
+
+  const changeOutput = tx.outputs[changeOutputIdx];
+  if (changeOutput.value <= feeShortfall) {
+    throw new Error(
+      `Insufficient deploy change for post-binding fee. Need ${feeShortfall} sompi, have ${changeOutput.value}`,
+    );
+  }
+
+  changeOutput.value -= feeShortfall;
+}
+
 /**
  * Build a v1-shape TransactionInput from a UtxoEntryReference.
  *
@@ -415,6 +497,9 @@ export async function deployContract(
           input.computeBudget = 10;
         }
       }
+
+      reconcileDeployFee(tx, network, senderAddress, priorityFee);
+      tx.finalize();
 
       const signed = signTransaction(tx, [privateKey], true);
       const submitted = await rpc.submitTransaction({
@@ -673,9 +758,16 @@ export async function spendContract(
   // KIP-20: recompute the tx id from the post-binding state so the sighash
   // and the network-agreed id stay in sync with the bound outputs.
   unsignedTx.finalize();
+  applyEstimatedSignatureScripts(
+    unsignedTx,
+    compiled,
+    functionName,
+    privateKey,
+    extraArgs,
+  );
 
   // --- Dynamic Fee Adjustment ---
-  const transactionFee = calculateTransactionFee(network, unsignedTx, 1, true);
+  const transactionFee = calculateTransactionFee(network, unsignedTx);
 
   if (!transactionFee) {
     throw new Error('Transaction fee not calculated');
@@ -715,6 +807,7 @@ export async function spendContract(
     unsignedTx.outputs[unsignedTx.outputs.length - 1].value =
       unsignedTx.outputs[unsignedTx.outputs.length - 1].value - totalFees;
   }
+  unsignedTx.finalize();
 
   const signatureHex = createInputSignature(
     unsignedTx,
@@ -891,8 +984,15 @@ export async function buildPartialSpend(
   });
 
   unsignedTx.finalize();
+  applyEstimatedSignatureScripts(
+    unsignedTx,
+    compiled,
+    functionName,
+    privateKey,
+    extraArgs,
+  );
 
-  const transactionFee = calculateTransactionFee(network, unsignedTx, 1, true);
+  const transactionFee = calculateTransactionFee(network, unsignedTx);
   if (!transactionFee) {
     throw new Error('Transaction fee not calculated');
   }

@@ -140,6 +140,12 @@ type ContractDetailState = {
   utxos: IndexerCovenantUtxo[];
 };
 
+type ContractDetailParameter = {
+  label: string;
+  value: string;
+  type?: string;
+};
+
 type DeployIndexerState = {
   txid: string;
   status: 'checking' | 'indexed' | 'not-indexed' | 'unavailable';
@@ -344,7 +350,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   registryContractOptions = computed<DropdownOption[]>(() =>
     this.registryContracts().map((contract) => ({
       value: contract.id,
-      label: `${contract.contractName} (${this.truncate(contract.contractAddress, 20)})`,
+      label: `${contract.contractName} (${this.getRegistryContractIdentityLabel(contract)})`,
       disabled: contract.status === 'spent',
     })),
   );
@@ -553,10 +559,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   ): ContractDashboardEntry | undefined {
     return this.dashboardContracts().find(
       (entry) =>
-        entry.covenantId === preview.covenantId ||
-        entry.scriptHash === preview.action.scriptHashHex ||
-        entry.deployTxid === preview.deployTxid ||
-        entry.currentAddress === preview.contractAddress,
+        this.sameIdentity(entry.covenantId, preview.covenantId) ||
+        this.sameIdentity(entry.deployTxid, preview.deployTxid) ||
+        this.sameIdentity(entry.scriptHash, preview.action.scriptHashHex),
     );
   }
 
@@ -583,11 +588,31 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       sort: 'recent',
       limit: 10,
     });
-    const row = rows.find((item) =>
+    const supportedRows = rows.filter((item) =>
       this.supportedIndexerTemplates.includes(
         this.getIndexerTemplateName(item),
       ),
     );
+    const normalizedQuery = this.normalizeIdentity(query);
+    const exactRow =
+      supportedRows.find(
+        (item) =>
+          this.normalizeIdentity(item.covenantIdHex) === normalizedQuery,
+      ) ||
+      supportedRows.find(
+        (item) =>
+          this.normalizeIdentity(item.genesisTxidHex) === normalizedQuery,
+      ) ||
+      supportedRows.find(
+        (item) =>
+          this.normalizeIdentity(item.scriptHashHex) === normalizedQuery,
+      );
+    if (!exactRow && supportedRows.length > 1) {
+      throw new Error(
+        'That address matches multiple wallet-supported covenants. Open by covenant ID or deploy transaction to choose the exact contract.',
+      );
+    }
+    const row = exactRow || supportedRows[0];
     const identifier =
       row?.covenantIdHex || row?.scriptHashHex || row?.genesisTxidHex;
     if (identifier) {
@@ -1138,8 +1163,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   async loadContracts() {
     this.dashboardLoading.set(true);
     this.dashboardError.set(null);
-    this.selectedDetail.set(null);
-    this.selectedDetailError.set(null);
+    if (this.activeTab() !== 'detail') {
+      this.selectedDetail.set(null);
+      this.selectedDetailError.set(null);
+    }
 
     const filtered = this.getCurrentWalletLocalContracts();
     this.registryContracts.set(filtered);
@@ -1288,7 +1315,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         this.indexerSummaryToDashboard(row),
       );
       for (const entry of entries) {
-        byKey.set(entry.covenantId || entry.scriptHash || entry.id, entry);
+        byKey.set(this.getDashboardIdentityKey(entry), entry);
       }
     }
 
@@ -1302,35 +1329,38 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     localEntries: ContractDashboardEntry[],
   ): ContractDashboardEntry[] {
     const merged = new Map<string, ContractDashboardEntry>();
-    const normalize = (value?: string) => String(value || '').toLowerCase();
     const hasAmount = (entry?: ContractDashboardEntry) =>
       BigInt(String(entry?.amountSompi || '0')) > 0n;
     const isMatch = (
       indexerEntry: ContractDashboardEntry,
       localEntry: ContractDashboardEntry,
-    ) =>
-      (!!indexerEntry.covenantId &&
-        normalize(localEntry.covenantId) ===
-          normalize(indexerEntry.covenantId)) ||
-      (!!indexerEntry.scriptHash &&
-        normalize(localEntry.scriptHash) ===
-          normalize(indexerEntry.scriptHash)) ||
-      (!!indexerEntry.deployTxid &&
-        normalize(localEntry.deployTxid) ===
-          normalize(indexerEntry.deployTxid)) ||
-      (!!indexerEntry.currentAddress &&
-        normalize(localEntry.currentAddress) ===
-          normalize(indexerEntry.currentAddress));
+    ) => {
+      if (indexerEntry.covenantId && localEntry.covenantId) {
+        return this.sameIdentity(
+          indexerEntry.covenantId,
+          localEntry.covenantId,
+        );
+      }
+      if (indexerEntry.deployTxid && localEntry.deployTxid) {
+        return this.sameIdentity(
+          indexerEntry.deployTxid,
+          localEntry.deployTxid,
+        );
+      }
+      if (indexerEntry.scriptHash && localEntry.scriptHash) {
+        return this.sameIdentity(
+          indexerEntry.scriptHash,
+          localEntry.scriptHash,
+        );
+      }
+      return false;
+    };
 
     for (const entry of localEntries) {
-      merged.set(
-        entry.covenantId || entry.scriptHash || entry.deployTxid || entry.id,
-        entry,
-      );
+      merged.set(this.getDashboardIdentityKey(entry), entry);
     }
     for (const entry of indexerEntries) {
-      const key =
-        entry.covenantId || entry.scriptHash || entry.deployTxid || entry.id;
+      const key = this.getDashboardIdentityKey(entry);
       const matchingLocalEntries = Array.from(merged.values()).filter(
         (candidate) => isMatch(entry, candidate),
       );
@@ -1342,12 +1372,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         matchingLocalEntries[0];
 
       for (const matchedLocal of matchingLocalEntries) {
-        merged.delete(
-          matchedLocal.covenantId ||
-            matchedLocal.scriptHash ||
-            matchedLocal.deployTxid ||
-            matchedLocal.id,
-        );
+        merged.delete(this.getDashboardIdentityKey(matchedLocal));
       }
 
       merged.set(local?.id || key, {
@@ -1477,6 +1502,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return labels[this.normalizeContractName(name)] || name || 'Covenant';
   }
 
+  private getRegistryContractIdentityLabel(
+    contract: ContractRegistryEntry,
+  ): string {
+    const primary =
+      contract.covenantId ||
+      contract.deployTxid ||
+      `${contract.outpoint.txid}:${contract.outpoint.vout}`;
+    return this.truncate(primary, 20);
+  }
+
   private localParticipants(
     contract: ContractRegistryEntry,
   ): Array<{ label: string; value: string }> {
@@ -1560,6 +1595,43 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return labels[role] || role;
   }
 
+  getContractDetailParameters(
+    detail: ContractDetailState,
+  ): ContractDetailParameter[] {
+    const covenant = detail.response?.covenant || detail.entry.indexerSummary;
+    const params: ContractDetailParameter[] = [];
+    const seen = new Set<string>();
+    const addParam = (name: string, value: unknown, type?: string) => {
+      if (value === undefined || value === null || value === '') return;
+      const key = name.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      params.push({
+        label: this.roleLabel(name),
+        value: String(value),
+        type,
+      });
+    };
+
+    for (const arg of covenant?.claimedArgs?.args || []) {
+      addParam(arg.name, arg.value, arg.type);
+    }
+
+    const constructorArgs = covenant?.constructor || {};
+    for (const [name, value] of Object.entries(constructorArgs)) {
+      addParam(name, value);
+    }
+
+    if (params.length > 0) {
+      return params;
+    }
+
+    return detail.entry.participants.map((participant) => ({
+      label: participant.label,
+      value: participant.value,
+    }));
+  }
+
   private getNextActionLabel(
     contractName: string,
     status: ContractDashboardEntry['status'],
@@ -1638,26 +1710,40 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
     this.scrollContractsContentToTop();
 
-    const identifier = entry.covenantId || entry.scriptHash;
+    const identifier = entry.covenantId || entry.scriptHash || entry.deployTxid;
     if (!identifier) {
       this.selectedDetailLoading.set(false);
       this.selectedDetailError.set(
-        'This local contract has no indexer id yet. Use the action flow or import by tx once indexed.',
+        'This local contract has no indexer id or deploy transaction yet. Use the action flow or import by tx once indexed.',
       );
       return;
     }
 
     try {
-      const [response, actions, utxos] = await Promise.all([
-        this.fetchIndexerCovenantByIdOrHash(identifier),
-        this.covenantIndexerService.getCovenantActions(identifier),
-        this.covenantIndexerService.getCovenantUtxos(identifier),
-      ]);
+      const resolved = await this.fetchIndexerCovenant(identifier);
+      const detailIdentifier =
+        resolved.covenant?.covenantIdHex ||
+        resolved.covenant?.scriptHashHex ||
+        entry.covenantId ||
+        entry.scriptHash;
+      const [actions, utxos] = detailIdentifier
+        ? await Promise.all([
+            this.covenantIndexerService.getCovenantActions(detailIdentifier),
+            this.covenantIndexerService.getCovenantUtxos(detailIdentifier),
+          ])
+        : [resolved.actions, [] as IndexerCovenantUtxo[]];
+      const response: IndexerCovenantResponse = {
+        actions,
+        covenant: resolved.covenant,
+      };
       const latestAction = this.latestAction(actions);
       const lockedSompi = utxos.reduce(
         (total, utxo) => total + BigInt(String(utxo.amountSompi ?? 0)),
         0n,
       );
+      const resolvedStatus = detailIdentifier
+        ? this.statusFromActiveUtxoCount(utxos.length)
+        : entry.status;
       const updatedEntry: ContractDashboardEntry = {
         ...entry,
         latestTxid: latestAction?.txidHex || entry.latestTxid,
@@ -1665,8 +1751,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           latestAction?.entrypoint ||
           latestAction?.action ||
           entry.latestAction,
-        status: this.statusFromActiveUtxoCount(utxos.length),
-        amountSompi: lockedSompi.toString(),
+        covenantId: resolved.covenant?.covenantIdHex || entry.covenantId,
+        scriptHash: resolved.covenant?.scriptHashHex || entry.scriptHash,
+        status: resolvedStatus,
+        amountSompi: detailIdentifier
+          ? lockedSompi.toString()
+          : entry.amountSompi,
       };
       this.selectedDetail.set({
         entry: updatedEntry,
@@ -1700,7 +1790,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     entry: ContractDashboardEntry,
   ): Promise<boolean> {
     if (entry.registryEntry) {
-      this.selectedContractId.set(entry.registryEntry.id);
+      const registryEntry = this.syncRegistryEntryForDashboardAction(entry);
+      this.selectedContractId.set(registryEntry.id);
       this.selectContractFromRegistry();
       this.selectDefaultFunctionForContract(entry.contractName);
       return true;
@@ -1716,10 +1807,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       return false;
     }
 
-    const identifier = entry.covenantId || entry.scriptHash;
+    const identifier = entry.covenantId || entry.scriptHash || entry.deployTxid;
     if (!identifier) {
       this.dashboardError.set(
-        'This contract cannot be opened for actions until it has an indexer covenant id or script hash.',
+        'This contract cannot be opened for actions until it has an indexer covenant id, script hash, or deploy transaction.',
       );
       return false;
     }
@@ -1736,8 +1827,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           (contract) =>
             contract.network === this.network() &&
             this.isCurrentWalletRegistryEntry(contract) &&
-            (contract.covenantId === preview.covenantId ||
-              (contract.outpoint.txid === preview.outpoint.txid &&
+            (this.sameIdentity(contract.covenantId, preview.covenantId) ||
+              (this.sameIdentity(
+                contract.outpoint.txid,
+                preview.outpoint.txid,
+              ) &&
                 contract.outpoint.vout === preview.outpoint.vout)),
         );
       if (imported) {
@@ -1756,6 +1850,51 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.selectedDetailLoading.set(false);
     }
     return false;
+  }
+
+  private syncRegistryEntryForDashboardAction(
+    entry: ContractDashboardEntry,
+  ): ContractRegistryEntry {
+    const registryEntry = entry.registryEntry!;
+    const detail = this.selectedDetail();
+    const activeUtxo = detail?.utxos.length === 1 ? detail.utxos[0] : undefined;
+    const amountSompi = String(
+      activeUtxo?.amountSompi ?? entry.amountSompi ?? registryEntry.amountSompi,
+    );
+    const contractAddress =
+      activeUtxo?.address ||
+      entry.currentAddress ||
+      registryEntry.contractAddress;
+
+    const updates: Partial<ContractRegistryEntry> = {
+      amountSompi,
+      contractAddress,
+      covenantId: entry.covenantId || registryEntry.covenantId,
+      deployTxid: entry.deployTxid || registryEntry.deployTxid,
+      lastChecked: Date.now(),
+      status:
+        entry.status === 'active' ||
+        entry.status === 'spent' ||
+        entry.status === 'unknown'
+          ? entry.status
+          : registryEntry.status,
+    };
+
+    if (activeUtxo?.txidHex && activeUtxo.vout !== undefined) {
+      updates.outpoint = {
+        txid: activeUtxo.txidHex,
+        vout: Number(activeUtxo.vout),
+      };
+    }
+
+    this.registryService.updateContract(registryEntry.id, updates);
+    const updatedEntry = { ...registryEntry, ...updates };
+    this.registryContracts.set(
+      this.registryContracts().map((contract) =>
+        contract.id === updatedEntry.id ? updatedEntry : contract,
+      ),
+    );
+    return updatedEntry;
   }
 
   setDashboardFilter(filter: ContractDashboardFilter) {
@@ -1833,13 +1972,39 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private findDashboardEntryByRouteId(
     routeId: string,
   ): ContractDashboardEntry | undefined {
+    const normalizedRouteId = this.normalizeIdentity(routeId);
     return this.dashboardContracts().find(
-      (entry) => this.getContractRouteId(entry) === routeId,
+      (entry) =>
+        this.normalizeIdentity(this.getContractRouteId(entry)) ===
+          normalizedRouteId ||
+        this.normalizeIdentity(entry.deployTxid) === normalizedRouteId ||
+        this.normalizeIdentity(entry.scriptHash) === normalizedRouteId,
     );
   }
 
   private getContractRouteId(entry: ContractDashboardEntry): string {
     return entry.covenantId || entry.scriptHash || entry.deployTxid || entry.id;
+  }
+
+  private getDashboardIdentityKey(entry: ContractDashboardEntry): string {
+    return (
+      this.normalizeIdentity(entry.covenantId) ||
+      this.normalizeIdentity(entry.deployTxid) ||
+      this.normalizeIdentity(entry.scriptHash) ||
+      entry.id
+    );
+  }
+
+  private sameIdentity(left?: string, right?: string): boolean {
+    const normalizedLeft = this.normalizeIdentity(left);
+    const normalizedRight = this.normalizeIdentity(right);
+    return !!normalizedLeft && normalizedLeft === normalizedRight;
+  }
+
+  private normalizeIdentity(value?: string): string {
+    return String(value || '')
+      .trim()
+      .toLowerCase();
   }
 
   private clearInteractContractSelection() {
@@ -1910,16 +2075,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       if (entry.network !== this.network()) return false;
       if (!this.isCurrentWalletRegistryEntry(entry)) return false;
       const sameOutpoint =
-        entry.outpoint.txid === preview.outpoint.txid &&
+        this.sameIdentity(entry.outpoint.txid, preview.outpoint.txid) &&
         entry.outpoint.vout === preview.outpoint.vout;
       if (sameOutpoint) return true;
 
-      const sameAddress = entry.contractAddress === preview.contractAddress;
-      if (!sameAddress) return false;
-
       return (
-        entry.covenantId === preview.covenantId ||
-        entry.deployTxid === preview.deployTxid
+        this.sameIdentity(entry.covenantId, preview.covenantId) ||
+        this.sameIdentity(entry.deployTxid, preview.deployTxid)
       );
     });
     if (existing) {

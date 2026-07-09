@@ -4,7 +4,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import {
   KcButtonComponent,
@@ -25,13 +25,12 @@ type ImportState = 'idle' | 'loading' | 'found' | 'already-imported' | 'error';
   selector: 'app-import-token-flow-page',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     KcButtonComponent,
     KcInputComponent,
     KcIconComponent,
-    SkeletonComponent,
-  ],
+    SkeletonComponent
+],
   templateUrl: './import-token-flow-page.component.html',
   styleUrl: './import-token-flow-page.component.scss',
   host: {

@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { DropdownOption, KcButtonComponent, KcDropdownSelectComponent, KcInputComponent, NotificationService } from 'kaspacom-ui';
 import { EthereumWalletChainManager, ExtendedEIP1193ProviderChain } from '../../../../../services/etherium-services/etherium-wallet-chain.manager';
@@ -36,7 +36,7 @@ const WELL_KNOWN_NETWORKS: WellKnownNetwork[] = [
 @Component({
   selector: 'app-add-custom-network-flow-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, KcButtonComponent, KcInputComponent, KcDropdownSelectComponent],
+  imports: [FormsModule, KcButtonComponent, KcInputComponent, KcDropdownSelectComponent],
   templateUrl: './add-custom-network-flow-page.component.html',
   styleUrl: './add-custom-network-flow-page.component.scss',
   host: {

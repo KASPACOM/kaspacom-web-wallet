@@ -12,11 +12,13 @@
     }
 
     <!-- Iframe loading spinner - shows during initial load -->
-    <div class="iframe-overlay-cover" *ngIf="shouldEnforceAccountSelection() && showIframeLoader()">
-      <div class="iframe-loader">
-        <kc-spinner size="lg"></kc-spinner>
+    @if (shouldEnforceAccountSelection() && showIframeLoader()) {
+      <div class="iframe-overlay-cover">
+        <div class="iframe-loader">
+          <kc-spinner size="lg"></kc-spinner>
+        </div>
       </div>
-    </div>
+    }
 
     @if (isExpandedLayout()) {
       <!-- ── EXPANDED MODE: two-column layout ── -->
@@ -24,7 +26,7 @@
         <div
           [@navAnimation]="getRouteAnimationData()"
           class="wrapper__content full-width"
-        >
+          >
           <div class="wrapper__header">
             <app-wrapper-header></app-wrapper-header>
           </div>
@@ -93,7 +95,7 @@
       <div
         [@navAnimation]="getRouteAnimationData()"
         class="wrapper__content full-width"
-      >
+        >
         <div class="wrapper__header">
           <app-wrapper-header></app-wrapper-header>
         </div>
@@ -115,7 +117,7 @@
         (navigateBack)="flowPagesService.navigateBack()"
         (backdropClick)="onFlowPageBackdropClick()"
         (close)="onFlowPageClose()"
-      >
+        >
         <app-dynamic-flow-page-outlet></app-dynamic-flow-page-outlet>
       </app-flow-page>
     }

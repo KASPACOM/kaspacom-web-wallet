@@ -1,5 +1,5 @@
 import { Component, signal, OnInit, inject, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute, Router } from '@angular/router';
 import { BalanceComponent } from './balance/balance.component';
 import { CryptoActionsComponent } from './crypto-actions/crypto-actions.component';
@@ -12,13 +12,12 @@ import { KaspaNetworkActionsService } from '../../../../services/kaspa-netwrok-s
 @Component({
   selector: 'app-home',
   imports: [
-    CommonModule,
     BalanceComponent,
     CryptoActionsComponent,
     L1AssetsContainerComponent,
     L2AssetsContainerComponent,
-    PendingTransactionsBannerComponent,
-  ],
+    PendingTransactionsBannerComponent
+],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })

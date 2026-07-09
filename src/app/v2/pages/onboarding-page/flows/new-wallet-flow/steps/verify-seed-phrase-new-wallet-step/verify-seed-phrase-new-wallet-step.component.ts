@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import {
   Component,
   OnInit,
@@ -23,11 +23,10 @@ interface VerificationWordEntry {
 @Component({
   selector: 'app-verify-seed-phrase-new-wallet-step',
   imports: [
-    CommonModule,
     FormsModule,
     KcButtonComponent,
-    KcInputComponent,
-  ],
+    KcInputComponent
+],
   templateUrl: './verify-seed-phrase-new-wallet-step.component.html',
   styleUrl: './verify-seed-phrase-new-wallet-step.component.scss',
 })

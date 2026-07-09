@@ -1,22 +1,22 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, input, output } from '@angular/core';
+
 
 export type MessageType = 'success' | 'error' | 'warning' | 'info';
 
 @Component({
     selector: 'app-message-popup',
-    imports: [CommonModule],
+    imports: [],
     templateUrl: './message-popup.component.html',
     styleUrls: ['./message-popup.component.scss']
 })
 export class MessagePopupComponent {
-  @Input() message: string = '';
-  @Input() type: MessageType = 'info';
-  @Input() show: boolean = false;
-  @Output() close = new EventEmitter<void>();
+  readonly message = input<string>('');
+  readonly type = input<MessageType>('info');
+  readonly show = input<boolean>(false);
+  readonly close = output<void>();
 
   get icon(): string {
-    switch (this.type) {
+    switch (this.type()) {
       case 'success':
         return '✓';
       case 'error':
@@ -31,6 +31,7 @@ export class MessagePopupComponent {
   }
 
   onClose(): void {
+    // TODO: The 'emit' function requires a mandatory void argument
     this.close.emit();
   }
 } 

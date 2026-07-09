@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute, Router } from '@angular/router';
 import { KcIconComponent, KcButtonComponent } from 'kaspacom-ui';
 import { Erc20ActivityItem } from '../../activity/activity.component';
@@ -7,7 +7,7 @@ import { Erc20ActivityItem } from '../../activity/activity.component';
 @Component({
   selector: 'app-erc20-transaction-details',
   standalone: true,
-  imports: [CommonModule, KcIconComponent, KcButtonComponent],
+  imports: [KcIconComponent, KcButtonComponent],
   template: `
     <div
       class="transaction-details-container flex column full-width full-height p-24"

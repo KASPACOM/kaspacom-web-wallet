@@ -1,4 +1,4 @@
-import { Component, ViewChild, computed, inject, OnInit, AfterViewInit, DestroyRef } from '@angular/core';
+import { Component, viewChild, effect, computed, inject, OnInit, AfterViewInit, DestroyRef } from '@angular/core';
 import { TitleCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
@@ -23,31 +23,26 @@ export class KnsSummaryComponent implements OnInit, AfterViewInit {
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
   private pendingThresholdReset = false;
-  private _infiniteScrollDirective?: InfiniteScrollDirective;
-  
+
   // Configuration
   readonly config = L1_PAGINATION_CONFIG.kns;
-  
+
   // Loading skeletons - portfolio pattern with opacity cascade
   private static readonly SKELETON_COUNT = 6;
   loadingSkeletons: unknown[] = Array.from({ length: KnsSummaryComponent.SKELETON_COUNT }).map(() => ({}));
-  
+
   // Reference to infinite scroll directive
-  @ViewChild(InfiniteScrollDirective)
-  set infiniteScrollDirective(directive: InfiniteScrollDirective | undefined) {
-    this._infiniteScrollDirective = directive;
-
-    if (directive && this.pendingThresholdReset) {
-      directive.resetThreshold();
-      this.pendingThresholdReset = false;
-    }
-  }
-
-  get infiniteScrollDirective(): InfiniteScrollDirective | undefined {
-    return this._infiniteScrollDirective;
-  }
+  readonly infiniteScrollDirective = viewChild(InfiniteScrollDirective);
 
   constructor() {
+    effect(() => {
+      const directive = this.infiniteScrollDirective();
+      if (directive && this.pendingThresholdReset) {
+        directive.resetThreshold();
+        this.pendingThresholdReset = false;
+      }
+    });
+
     toObservable(this.knsListService.shouldCheckScrollPosition)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(shouldCheck => {
@@ -55,8 +50,9 @@ export class KnsSummaryComponent implements OnInit, AfterViewInit {
           return;
         }
 
-        if (this.infiniteScrollDirective) {
-          this.infiniteScrollDirective.resetThreshold();
+        const directive = this.infiniteScrollDirective();
+        if (directive) {
+          directive.resetThreshold();
           this.pendingThresholdReset = false;
         } else {
           this.pendingThresholdReset = true;
@@ -92,7 +88,7 @@ export class KnsSummaryComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void {
     if (this.config.greedyLoading) {
-      setTimeout(() => this.infiniteScrollDirective?.checkScroll(), 100);
+      setTimeout(() => this.infiniteScrollDirective()?.checkScroll(), 100);
     }
   }
 

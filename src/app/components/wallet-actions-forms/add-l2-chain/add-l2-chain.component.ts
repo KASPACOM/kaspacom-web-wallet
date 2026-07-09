@@ -1,21 +1,23 @@
-import { Component, EventEmitter, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, output } from '@angular/core';
+
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { EIP1193ProviderChain } from '@kaspacom/wallet-messages';
 
 @Component({
     selector: 'add-l2-chain',
-    imports: [CommonModule, FormsModule, ReactiveFormsModule],
+    imports: [FormsModule, ReactiveFormsModule],
     templateUrl: './add-l2-chain.component.html',
     styleUrls: ['./add-l2-chain.component.scss']
 })
 export class AddL2ChainComponent {
-  @Output() chainAdded = new EventEmitter<EIP1193ProviderChain>();
-  @Output() cancelled = new EventEmitter<void>();
+  private fb = inject(FormBuilder);
+
+  readonly chainAdded = output<EIP1193ProviderChain>();
+  readonly cancelled = output<void>();
 
   chainForm: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor() {
     this.chainForm = this.fb.group({
       chainName: ['', [Validators.required]],
       chainId: ['', [Validators.required, Validators.min(1)]],
@@ -60,6 +62,7 @@ export class AddL2ChainComponent {
   }
 
   onCancel() {
+    // TODO: The 'emit' function requires a mandatory void argument
     this.cancelled.emit();
   }
 } 

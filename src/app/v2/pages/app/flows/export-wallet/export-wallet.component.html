@@ -1,55 +1,60 @@
 <div class="export-wallet">
-	@if (currentStep() === 'password' && hasMnemonic()) {
-		<div class="export-wallet__password-step flex column align-items-center gap-24 full-width">
-			<div class="flex column align-items-center gap-8 text-align-center">
-				<span class="typo-title-3">Confirm Password</span>
-				<span class="typo-text-2 text-medium">
-					Enter your wallet password to reveal the seed phrase.
-				</span>
-			</div>
-			<div class="export-wallet__password-form flex column gap-16 full-width">
-				<label class="typo-text-1 text-gray-60" for="export-wallet-password">Password</label>
-				<input
-					id="export-wallet-password"
-					type="password"
-					class="export-wallet__password-input p-16 rounded-lg typo-text-1"
-					[class.error]="passwordError()"
-					placeholder="Enter your password"
-					[(ngModel)]="password"
-					(ngModelChange)="onPasswordInput()"
-					(keyup.enter)="onVerifyPassword()"
-				/>
-				@if (passwordError()) {
-					<span class="export-wallet__password-error typo-text-2">{{ passwordError() }}</span>
-				}
-				<kc-button
-					[variant]="'primary'"
-					[text]="'Continue'"
-					[isDisabled]="isVerifying() || !password().trim()"
-					(buttonClick)="onVerifyPassword()"
-				></kc-button>
-			</div>
-		</div>
-	} @else {
-		<div class="export-wallet__content flex column align-items-center gap-24 full-width">
-			<div class="flex column align-items-center gap-4">
-				<span class="typo-title-3 p-4">Seed Phrase</span>
-				<span class="typo-text-2 text-medium text-align-center" *ngIf="hasMnemonic()">This seed phrase is the only way to recover your wallet. Do NOT share it with anyone.</span>
-			</div>
-			<div class="seed-container" *ngIf="hasMnemonic(); else noMnemonic">
-				@for (item of seedWords(); track $index) {
-					<app-seed-phrase-word class="seed-container__word" [idx]="$index + 1" [word]="item"></app-seed-phrase-word>
-				}
-			</div>
-			<ng-template #noMnemonic>
-				<div class="flex column align-items-center gap-8">
-					<span class="typo-text-2 text-align-center">This wallet was created without a seed phrase (private key only) or the seed phrase is unavailable.</span>
-				</div>
-			</ng-template>
-			<div class="flex full-width justify-content-between" *ngIf="hasMnemonic()">
-				<kc-button [variant]="'tertiary'" [suffixIcon]="'icon-copy'" [text]="'Copy'" (buttonClick)="copySeedToClipboard()"></kc-button>
-				<kc-button [variant]="'primary'" [suffixIcon]="'icon-download'" [text]="'Download .txt'" (buttonClick)="downloadSeedAsTxt()"></kc-button>
-			</div>
-		</div>
-	}
+  @if (currentStep() === 'password' && hasMnemonic()) {
+    <div class="export-wallet__password-step flex column align-items-center gap-24 full-width">
+      <div class="flex column align-items-center gap-8 text-align-center">
+        <span class="typo-title-3">Confirm Password</span>
+        <span class="typo-text-2 text-medium">
+          Enter your wallet password to reveal the seed phrase.
+        </span>
+      </div>
+      <div class="export-wallet__password-form flex column gap-16 full-width">
+        <label class="typo-text-1 text-gray-60" for="export-wallet-password">Password</label>
+        <input
+          id="export-wallet-password"
+          type="password"
+          class="export-wallet__password-input p-16 rounded-lg typo-text-1"
+          [class.error]="passwordError()"
+          placeholder="Enter your password"
+          [(ngModel)]="password"
+          (ngModelChange)="onPasswordInput()"
+          (keyup.enter)="onVerifyPassword()"
+          />
+        @if (passwordError()) {
+          <span class="export-wallet__password-error typo-text-2">{{ passwordError() }}</span>
+        }
+        <kc-button
+          [variant]="'primary'"
+          [text]="'Continue'"
+          [isDisabled]="isVerifying() || !password().trim()"
+          (buttonClick)="onVerifyPassword()"
+        ></kc-button>
+      </div>
+    </div>
+  } @else {
+    <div class="export-wallet__content flex column align-items-center gap-24 full-width">
+      <div class="flex column align-items-center gap-4">
+        <span class="typo-title-3 p-4">Seed Phrase</span>
+        @if (hasMnemonic()) {
+          <span class="typo-text-2 text-medium text-align-center">This seed phrase is the only way to recover your wallet. Do NOT share it with anyone.</span>
+        }
+      </div>
+      @if (hasMnemonic()) {
+        <div class="seed-container">
+          @for (item of seedWords(); track $index) {
+            <app-seed-phrase-word class="seed-container__word" [idx]="$index + 1" [word]="item"></app-seed-phrase-word>
+          }
+        </div>
+      } @else {
+        <div class="flex column align-items-center gap-8">
+          <span class="typo-text-2 text-align-center">This wallet was created without a seed phrase (private key only) or the seed phrase is unavailable.</span>
+        </div>
+      }
+      @if (hasMnemonic()) {
+        <div class="flex full-width justify-content-between">
+          <kc-button [variant]="'tertiary'" [suffixIcon]="'icon-copy'" [text]="'Copy'" (buttonClick)="copySeedToClipboard()"></kc-button>
+          <kc-button [variant]="'primary'" [suffixIcon]="'icon-download'" [text]="'Download .txt'" (buttonClick)="downloadSeedAsTxt()"></kc-button>
+        </div>
+      }
+    </div>
+  }
 </div>

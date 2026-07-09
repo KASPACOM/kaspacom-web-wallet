@@ -6,7 +6,7 @@ import {
   slideAnimation,
 } from '../../shared/animation/slide.animation';
 import { StepIndicatorComponent } from '../../shared/component/step-indicator/step-indicator.component';
-import { CommonModule } from '@angular/common';
+
 import { ImportSwitchImportExistingStepComponent } from './steps/import-switch-import-existing-step/import-switch-import-existing-step.component';
 import { CreatePinImportExistingStepComponent } from './steps/create-pin-import-existing-step/create-pin-import-existing-step.component';
 import { SuccessImportExistingStepComponent } from './steps/success-import-existing-step/success-import-existing-step.component';
@@ -19,7 +19,6 @@ import { BackupImportExistingStepComponent } from './steps/backup-import-existin
 @Component({
   selector: 'app-import-existing-flow',
   imports: [
-    CommonModule,
     StepIndicatorComponent,
     ImportSwitchImportExistingStepComponent,
     SeedPhraseImportExistingStepComponent,
@@ -27,8 +26,8 @@ import { BackupImportExistingStepComponent } from './steps/backup-import-existin
     PrivateKeyImportExistingStepComponent,
     BackupImportExistingStepComponent,
     CreatePinImportExistingStepComponent,
-    SuccessImportExistingStepComponent,
-  ],
+    SuccessImportExistingStepComponent
+],
   animations: [slideAnimation],
   templateUrl: './import-existing-flow.component.html',
   styleUrl: './import-existing-flow.component.scss',

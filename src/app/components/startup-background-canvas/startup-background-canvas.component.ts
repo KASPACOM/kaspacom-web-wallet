@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, ElementRef, AfterViewInit, OnDestroy, viewChild } from '@angular/core';
 
 interface CanvasNode {
   x: number;
@@ -38,7 +38,7 @@ interface CanvasNode {
   `]
 })
 export class StartupBackgroundCanvasComponent implements AfterViewInit, OnDestroy {
-  @ViewChild('canvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
+  readonly canvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
 
   private canvas!: HTMLCanvasElement;
   private ctx!: CanvasRenderingContext2D;
@@ -60,7 +60,7 @@ export class StartupBackgroundCanvasComponent implements AfterViewInit, OnDestro
   };
 
   ngAfterViewInit(): void {
-    this.canvas = this.canvasRef.nativeElement;
+    this.canvas = this.canvasRef().nativeElement;
     const context = this.canvas.getContext('2d');
     
     if (!context) {

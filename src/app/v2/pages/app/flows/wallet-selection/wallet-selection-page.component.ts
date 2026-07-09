@@ -1,5 +1,5 @@
 import { Component, inject, signal, computed, Signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { KcButtonComponent, KcIconComponent, KcTooltipDirective, KcSpinnerComponent } from 'kaspacom-ui';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
@@ -22,7 +22,7 @@ interface WalletGroupItem {
 @Component({
   selector: 'app-wallet-selection-page',
   standalone: true,
-  imports: [CommonModule, KcButtonComponent, KcIconComponent, KcTooltipDirective, KcSpinnerComponent, ShortenAddressPipe],
+  imports: [KcButtonComponent, KcIconComponent, KcTooltipDirective, KcSpinnerComponent, ShortenAddressPipe],
   templateUrl: './wallet-selection-page.component.html',
   styleUrl: './wallet-selection-page.component.scss',
 })

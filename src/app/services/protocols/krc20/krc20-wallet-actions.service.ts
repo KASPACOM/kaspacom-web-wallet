@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { WalletAction, WalletActionType } from "../../../types/wallet-action";
 import { KRC20_TRANSACTIONS_PRICE, Krc20OperationDataService } from "./krc20-operation-data.service";
 import { KaspaNetworkActionsService, REVEAL_PSKT_AMOUNT } from "../../kaspa-netwrok-services/kaspa-network-actions.service";
@@ -12,10 +12,10 @@ const CURRENT_PROTOCOL = ProtocolType.KASPLEX;
     providedIn: 'root',
 })
 export class Krc20WalletActionService {
-    constructor(private krc20OperationDataService: Krc20OperationDataService,
-        private kaspaNetworkActionsService: KaspaNetworkActionsService,
-        private utils: UtilsHelper,
-    ) { }
+    private krc20OperationDataService = inject(Krc20OperationDataService);
+    private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+    private utils = inject(UtilsHelper);
+
 
     createTransferWalletAction(ticker: string, to: string, amount: bigint): WalletAction {
         return {

@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, computed, inject, signal } from '@angular/core';
 import { StepIndicatorComponent } from '../../../shared/component/step-indicator/step-indicator.component';
 import { ImportSwitchImportExistingStepComponent } from '../steps/import-switch-import-existing-step/import-switch-import-existing-step.component';
@@ -14,12 +14,11 @@ import { ImportExistingFlowService } from '../service/import-existing-flow.servi
 @Component({
   selector: 'app-import-existing-flow',
   imports: [
-    CommonModule,
     StepIndicatorComponent,
     ImportSwitchImportExistingStepComponent,
     CreatePinImportExistingStepComponent,
-    SuccessImportExistingStepComponent,
-  ],
+    SuccessImportExistingStepComponent
+],
   animations: [slideAnimation],
   templateUrl: './recovery-import.component.html',
   styleUrl: './recovery-import.component.scss',

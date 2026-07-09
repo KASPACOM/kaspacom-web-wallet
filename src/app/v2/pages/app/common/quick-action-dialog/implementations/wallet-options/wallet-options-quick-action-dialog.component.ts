@@ -1,13 +1,12 @@
 import {
   Component,
-  Input,
-  Output,
-  EventEmitter,
   inject,
   ChangeDetectorRef,
   AfterViewInit,
+  input,
+  output
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { KcIconComponent } from 'kaspacom-ui';
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
 import { FlowPagesService } from '../../../../../../services/flow-pages.service';
@@ -15,15 +14,15 @@ import { FlowPagesService } from '../../../../../../services/flow-pages.service'
 @Component({
   selector: 'app-wallet-options-quick-action-dialog',
   standalone: true,
-  imports: [CommonModule, KcIconComponent, QuickActionDialogComponent],
+  imports: [KcIconComponent, QuickActionDialogComponent],
   templateUrl: './wallet-options-quick-action-dialog.component.html',
   styleUrl: './wallet-options-quick-action-dialog.component.scss',
 })
 export class WalletOptionsQuickActionDialogComponent implements AfterViewInit {
-  @Input() isOpen = false;
-  @Input() data: any;
-  @Output() backdropClick = new EventEmitter<void>();
-  @Output() close = new EventEmitter<void>();
+  readonly isOpen = input(false);
+  readonly data = input<any>();
+  readonly backdropClick = output<void>();
+  readonly close = output<void>();
 
   private cdr = inject(ChangeDetectorRef);
   private flowPagesService = inject(FlowPagesService);
@@ -51,6 +50,7 @@ export class WalletOptionsQuickActionDialogComponent implements AfterViewInit {
     this.isDialogOpen = false;
     // Wait for animation to complete before emitting close
     setTimeout(() => {
+      // TODO: The 'emit' function requires a mandatory void argument
       this.close.emit();
     }, 300);
   }

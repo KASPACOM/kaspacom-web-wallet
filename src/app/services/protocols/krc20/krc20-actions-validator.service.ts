@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { ProtocolActionsValidatorInterface } from "../interfaces/protocol-actions-validator.interface";
 import { AppWallet } from "../../../classes/AppWallet";
 import { CommitRevealAction } from "../../../types/wallet-action";
@@ -14,7 +14,9 @@ import { TokenState } from "../../kasplex-api/dtos/token-list-info.dto";
     providedIn: 'root',
 })
 export class Krc20ActionsValidatorService implements ProtocolActionsValidatorInterface {
-    constructor(private readonly utils: UtilsHelper, private readonly kasplexService: KasplexKrc20Service) { }
+    private readonly utils = inject(UtilsHelper);
+    private readonly kasplexService = inject(KasplexKrc20Service);
+
 
     async validateCommitRevealAction(action: CommitRevealAction, wallet: AppWallet): Promise<{ isValidated: boolean; errorCode?: number; }> {
         try {

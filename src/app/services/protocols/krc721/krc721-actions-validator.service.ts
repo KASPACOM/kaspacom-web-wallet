@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ProtocolActionsValidatorInterface } from '../interfaces/protocol-actions-validator.interface';
 import { AppWallet } from '../../../classes/AppWallet';
 import { CommitRevealAction } from '../../../types/wallet-action';
@@ -19,10 +19,9 @@ import { Krc721ApiService } from '../../krc721-api/krc721-api.service';
   providedIn: 'root',
 })
 export class Krc721ActionsValidatorService implements ProtocolActionsValidatorInterface {
-  constructor(
-    private readonly utils: UtilsHelper,
-    private readonly krc721Service: Krc721ApiService,
-  ) {}
+  private readonly utils = inject(UtilsHelper);
+  private readonly krc721Service = inject(Krc721ApiService);
+
 
   async validateCommitRevealAction(
     action: CommitRevealAction,

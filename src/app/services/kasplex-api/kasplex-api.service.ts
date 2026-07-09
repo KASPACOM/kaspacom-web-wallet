@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { catchError, firstValueFrom, map, Observable, of } from 'rxjs';
 import { GetTokenWalletInfoDto, GetTokenWalletInfoResponse } from './dtos/get-token-wallet-info-response.dto';
@@ -13,10 +13,9 @@ import { KaspaL1NetworkService } from '../kaspa-netwrok-services/kaspa-l1-networ
 
 @Injectable({ providedIn: 'root' })
 export class KasplexKrc20Service {
-  constructor(
-    private readonly httpClient: HttpClient,
-    private readonly kaspaL1NetworkService: KaspaL1NetworkService,
-  ) {}
+  private readonly httpClient = inject(HttpClient);
+  private readonly kaspaL1NetworkService = inject(KaspaL1NetworkService);
+
 
   get baseurl(): string | undefined {
     return this.kaspaL1NetworkService.getKasplexApiBaseurl();

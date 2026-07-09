@@ -1,18 +1,6 @@
-import {
-  Component,
-  EventEmitter,
-  Input,
-  OnChanges,
-  Output,
-  SimpleChanges,
-} from '@angular/core';
+import { Component, OnChanges, SimpleChanges, inject, input, output } from '@angular/core';
 import { trigger, state, style, transition, animate } from '@angular/animations';
-import {
-  CommonModule,
-  NgFor,
-  NgIf,
-  TitleCasePipe,
-} from '@angular/common';
+import { CommonModule, TitleCasePipe } from '@angular/common';
 import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
 import { WalletAction, WalletActionType } from '../../../types/wallet-action';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
@@ -36,15 +24,13 @@ const MINIMUM_FEE_MULTIPLIER = 100n;
   templateUrl: './priority-fee-selection.component.html',
   styleUrls: ['./priority-fee-selection.component.scss'],
   imports: [
-    NgIf,
-    NgFor,
     SompiToNumberPipe,
     FormsModule,
     TitleCasePipe,
     CommonModule,
     KcIconComponent,
-    KcInputComponent,
-  ],
+    KcInputComponent
+],
   animations: [
     trigger('slideDown', [
       state('closed', style({
@@ -67,9 +53,12 @@ const MINIMUM_FEE_MULTIPLIER = 100n;
   ]
 })
 export class PriorityFeeSelectionComponent implements OnChanges {
-  @Input() action!: WalletAction;
-  @Input() wallet!: AppWallet;
-  @Output() priorityFeeSelected = new EventEmitter<bigint | undefined>();
+  protected kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  protected krc20OperationsDataService = inject(Krc20OperationDataService);
+
+  readonly action = input.required<WalletAction>();
+  readonly wallet = input.required<AppWallet>();
+  readonly priorityFeeSelected = output<bigint | undefined>();
 
   protected minimumFeeMultiplier = MINIMUM_FEE_MULTIPLIER;
   protected totalTransactionsMass: undefined | bigint[] = undefined;
@@ -88,20 +77,16 @@ export class PriorityFeeSelectionComponent implements OnChanges {
   protected additionalPriorityFee: bigint | undefined = undefined;
   protected showPriorityFeeSelection: boolean = false;
 
-  constructor(
-    protected kaspaNetworkActionsService: KaspaNetworkActionsService,
-    protected krc20OperationsDataService: Krc20OperationDataService,
-  ) { }
-
   // Methods to determine transaction type and asset info
   getTransactionAssetInfo(): { type: 'kaspa' | 'krc20' | 'krc721' | 'kns', ticker?: string, imageUrl?: string } {
-    if (this.action.type === WalletActionType.TRANSFER_KAS) {
+    const action = this.action();
+    if (action.type === WalletActionType.TRANSFER_KAS) {
       return { type: 'kaspa' };
     }
 
-    if (this.action.type === WalletActionType.COMMIT_REVEAL) {
+    if (action.type === WalletActionType.COMMIT_REVEAL) {
       try {
-        const actionScript = this.action.data.actionScript?.stringifyAction;
+        const actionScript = action.data.actionScript?.stringifyAction;
         if (actionScript) {
           const parsed = JSON.parse(actionScript);
           if (parsed.p === 'krc-20') {
@@ -131,13 +116,13 @@ export class PriorityFeeSelectionComponent implements OnChanges {
   async ngOnChanges(changes: SimpleChanges): Promise<void> {
     this.totalTransactionsMass = undefined;
     this.feeSelected(undefined);
-    await this.loadPriorityFeeDataAndEmit(this.action);
+    await this.loadPriorityFeeDataAndEmit(this.action());
   }
 
   async loadPriorityFeeDataAndEmit(action: WalletAction) {
     await Promise.all([
       this.kaspaNetworkActionsService
-        .estimateWalletActionMass(action, this.wallet)
+        .estimateWalletActionMass(action, this.wallet())
         .then((result) => {
           this.totalTransactionsMass = result;
         }),
@@ -227,8 +212,9 @@ export class PriorityFeeSelectionComponent implements OnChanges {
   }
 
   getAdditionalCommitActionPrice(): bigint {
-    if (this.action.type == WalletActionType.COMMIT_REVEAL) {
-      return this.action.data.options?.revealPriorityFee || 0n;
+    const action = this.action();
+    if (action.type == WalletActionType.COMMIT_REVEAL) {
+      return action.data.options?.revealPriorityFee || 0n;
     }
 
     return 0n;

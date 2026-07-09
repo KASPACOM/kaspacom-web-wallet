@@ -3,36 +3,39 @@
     <span class="typo-title-3 p-4">Import Wallet</span>
     <span class="typo-text-2 text-medium text-align-center"
       >Pick how you would like to connect your existing wallet.</span
-    >
-  </div>
-
-  <div class="flex column full-width gap-16">
-    <kc-button
-      *ngIf="!userHasWallets()"
-      [text]="'Scan QR Code'"
-      [prefixIcon]="'icon-qr'"
-      [isFullWidth]="true"
-      [variant]="'tertiary'"
-      (buttonClick)="onQrScanClick()"
-    ></kc-button>
-
-    <div class="flex align-items-center gap-12 full-width"  *ngIf="!userHasWallets()">
-      <div class="separator-line"></div>
-      <span class="separator-text typo-text-3 text-medium">- OR -</span>
-      <div class="separator-line"></div>
+      >
     </div>
 
-    <app-import-switch
-      class="full-width"
-      [selectedMethod]="importMethod()"
-      [showImportFromFile]="!userHasWallets()"
-      (methodChanged)="onImportMethodChange($event)"
-    ></app-import-switch>
-  </div>
+    <div class="flex column full-width gap-16">
+      @if (!userHasWallets()) {
+        <kc-button
+          [text]="'Scan QR Code'"
+          [prefixIcon]="'icon-qr'"
+          [isFullWidth]="true"
+          [variant]="'tertiary'"
+          (buttonClick)="onQrScanClick()"
+        ></kc-button>
+      }
 
-  <kc-button
-    [isFullWidth]="true"
-    [text]="'Continue'"
-    (buttonClick)="onContinue()"
-  ></kc-button>
-</div>
+      @if (!userHasWallets()) {
+        <div class="flex align-items-center gap-12 full-width" >
+          <div class="separator-line"></div>
+          <span class="separator-text typo-text-3 text-medium">- OR -</span>
+          <div class="separator-line"></div>
+        </div>
+      }
+
+      <app-import-switch
+        class="full-width"
+        [selectedMethod]="importMethod()"
+        [showImportFromFile]="!userHasWallets()"
+        (methodChanged)="onImportMethodChange($event)"
+      ></app-import-switch>
+    </div>
+
+    <kc-button
+      [isFullWidth]="true"
+      [text]="'Continue'"
+      (buttonClick)="onContinue()"
+    ></kc-button>
+  </div>

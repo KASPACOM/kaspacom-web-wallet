@@ -1,5 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import {
   KcLabeledTabsComponent,
   TabItem,
@@ -18,7 +18,7 @@ import { FlowPagesService } from '../../../../services/flow-pages.service';
 @Component({
   selector: 'app-l2-assets-container',
   standalone: true,
-  imports: [CommonModule, KcLabeledTabsComponent, Erc20SummaryComponent, L2TxHistoryComponent, KcButtonComponent],
+  imports: [KcLabeledTabsComponent, Erc20SummaryComponent, L2TxHistoryComponent, KcButtonComponent],
   templateUrl: './l2-assets-container.component.html',
   styleUrl: './l2-assets-container.component.scss',
 })

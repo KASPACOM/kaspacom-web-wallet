@@ -1,6 +1,7 @@
 import {
   Component,
-  ViewChild,
+  viewChild,
+  effect,
   computed,
   inject,
   OnInit,
@@ -41,22 +42,9 @@ export class Krc20SummaryComponent implements OnInit, AfterViewInit {
   private destroyRef = inject(DestroyRef);
   private metadataInitialized = false;
   private pendingThresholdReset = false;
-  private _infiniteScrollDirective?: InfiniteScrollDirective;
 
-  @ViewChild(InfiniteScrollDirective)
-  set infiniteScrollDirective(directive: InfiniteScrollDirective | undefined) {
-    this._infiniteScrollDirective = directive;
+  readonly infiniteScrollDirective = viewChild(InfiniteScrollDirective);
 
-    if (directive && this.pendingThresholdReset) {
-      directive.resetThreshold();
-      this.pendingThresholdReset = false;
-    }
-  }
-
-  get infiniteScrollDirective(): InfiniteScrollDirective | undefined {
-    return this._infiniteScrollDirective;
-  }
-  
   // Configuration
   readonly config = L1_PAGINATION_CONFIG.krc20;
   
@@ -65,6 +53,14 @@ export class Krc20SummaryComponent implements OnInit, AfterViewInit {
   loadingSkeletons: unknown[] = Array.from({ length: Krc20SummaryComponent.SKELETON_COUNT }).map(() => ({}));
 
   constructor() {
+    effect(() => {
+      const directive = this.infiniteScrollDirective();
+      if (directive && this.pendingThresholdReset) {
+        directive.resetThreshold();
+        this.pendingThresholdReset = false;
+      }
+    });
+
     toObservable(this.krc20ListService.tokens)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(tokens => {
@@ -92,8 +88,9 @@ export class Krc20SummaryComponent implements OnInit, AfterViewInit {
           return;
         }
 
-        if (this.infiniteScrollDirective) {
-          this.infiniteScrollDirective.resetThreshold();
+        const directive = this.infiniteScrollDirective();
+        if (directive) {
+          directive.resetThreshold();
           this.pendingThresholdReset = false;
         } else {
           this.pendingThresholdReset = true;
@@ -156,7 +153,7 @@ export class Krc20SummaryComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void {
     if (this.config.greedyLoading) {
-      setTimeout(() => this.infiniteScrollDirective?.checkScroll(), 100);
+      setTimeout(() => this.infiniteScrollDirective()?.checkScroll(), 100);
     }
   }
 

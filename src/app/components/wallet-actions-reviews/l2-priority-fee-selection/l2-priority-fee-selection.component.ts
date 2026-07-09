@@ -1,17 +1,13 @@
 import {
   Component,
   computed,
-  EventEmitter,
-  Input,
   OnChanges,
-  Output,
   signal,
   SimpleChanges,
+  input,
+  output
 } from '@angular/core';
-import {
-  CommonModule,
-  NgIf,
-} from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { WalletAction } from '../../../types/wallet-action';
 import { AppWallet } from '../../../classes/AppWallet';
@@ -31,12 +27,11 @@ const MIN_CUSTOM_FEE = 1;
   templateUrl: './l2-priority-fee-selection.component.html',
   styleUrls: ['./l2-priority-fee-selection.component.scss'],
   imports: [
-    NgIf,
     FormsModule,
     CommonModule,
     KcIconComponent,
-    KcInputComponent,
-  ],
+    KcInputComponent
+],
   animations: [
     trigger('slideDown', [
       state('closed', style({
@@ -55,13 +50,13 @@ const MIN_CUSTOM_FEE = 1;
   ],
 })
 export class L2PriorityFeeSelectionComponent implements OnChanges {
-  @Input() action!: WalletAction;
-  @Input() wallet!: AppWallet;
-  @Output() priorityFeeSelected = new EventEmitter<{
+  readonly action = input.required<WalletAction>();
+  readonly wallet = input.required<AppWallet>();
+  readonly priorityFeeSelected = output<{
     priorityFee: bigint;
     baseFee: bigint;
-  } | undefined>();
-  @Output() gasLimitSelected = new EventEmitter<bigint | undefined>();
+} | undefined>();
+  readonly gasLimitSelected = output<bigint | undefined>();
 
   protected customFee = signal<number>(0);
   protected selectedOption = signal<AvailableOption>('normal');
@@ -182,7 +177,7 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
     this.feeSelected(undefined);
     this.gasLimit.set(undefined);
     this.updateGasLimit();
-    await this.loadPriorityFeeDataAndEmit(this.action);
+    await this.loadPriorityFeeDataAndEmit(this.action());
   }
 
   async loadPriorityFeeDataAndEmit(action: WalletAction): Promise<void> {
@@ -190,11 +185,11 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
     const actionData: EIP1193RequestPayload<EIP1193RequestType> = action.data as EIP1193RequestPayload<EIP1193RequestType>;
     const transaction: EthTransactionParams = actionData.params[0] as EthTransactionParams;
 
-    const provider = this.wallet.getL2Provider();
+    const provider = this.wallet().getL2Provider();
     if (!provider) throw new Error('No provider found');
 
     try {
-      let gasForTransaction = await provider.estimateGas((await this.wallet.getL2Wallet())!, {
+      let gasForTransaction = await provider.estimateGas((await this.wallet().getL2Wallet())!, {
         from: transaction.from,
         to: transaction.to,
         value: transaction.value,
@@ -219,7 +214,7 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
   }
 
   fromWeiToKas(number: bigint): number {
-    return Number(ethers.formatUnits(number, this.wallet.getL2Provider()?.getConfig().nativeCurrency.decimals));
+    return Number(ethers.formatUnits(number, this.wallet().getL2Provider()?.getConfig().nativeCurrency.decimals));
   }
 
   fromWeiToGwei(number: bigint): string {

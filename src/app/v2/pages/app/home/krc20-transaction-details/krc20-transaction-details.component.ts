@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { KcIconComponent } from 'kaspacom-ui';
@@ -13,11 +13,10 @@ import { KaspaL1NetworkService } from '../../../../../services/kaspa-netwrok-ser
 @Component({
   selector: 'app-krc20-transaction-details',
   imports: [
-    CommonModule,
     KcIconComponent,
     SkeletonComponent,
     CopyButtonComponent
-  ],
+],
   templateUrl: './krc20-transaction-details.component.html',
   styleUrl: './krc20-transaction-details.component.scss'
 })

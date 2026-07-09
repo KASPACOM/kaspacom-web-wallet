@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
@@ -13,11 +13,10 @@ import { Router } from '@angular/router';
 @Component({
   selector: 'app-backup-import-existing-step',
   imports: [
-    CommonModule,
     FormsModule,
     KcButtonComponent,
-    KcIconComponent,
-  ],
+    KcIconComponent
+],
   templateUrl: './backup-import-existing-step.component.html',
   styleUrl: './backup-import-existing-step.component.scss',
 })

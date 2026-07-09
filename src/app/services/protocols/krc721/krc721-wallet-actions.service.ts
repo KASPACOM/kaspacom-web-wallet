@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { WalletAction, WalletActionType } from "../../../types/wallet-action";
 import { KRC721_TRANSACTIONS_PRICE, Krc721OperationDataService } from "./krc721-operation-data.service";
 import { KaspaNetworkActionsService, REVEAL_PSKT_AMOUNT } from "../../kaspa-netwrok-services/kaspa-network-actions.service";
@@ -11,11 +11,10 @@ const CURRENT_PROTOCOL = ProtocolType.KSPR;
     providedIn: 'root',
 })
 export class Krc721WalletActionService {
-    constructor(
-        private krc721OperationDataService: Krc721OperationDataService,
-        private kaspaNetworkActionsService: KaspaNetworkActionsService,
-        private utils: UtilsHelper,
-    ) { }
+    private krc721OperationDataService = inject(Krc721OperationDataService);
+    private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+    private utils = inject(UtilsHelper);
+
 
     createDeployWalletAction(
         ticker: string,

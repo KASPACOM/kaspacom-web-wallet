@@ -1,18 +1,21 @@
 <h1 class="visually-hidden">KaspaCom Web Wallet — self-custody Kaspa (KAS) wallet</h1>
 <app-startup-background-canvas></app-startup-background-canvas>
 <div class="application-container">
-    <ng-container *ngIf="isAllowedDomain() && !incompatibleBrowserReason(); else notSupported">
-<!--        <app-header></app-header>-->
-        <router-outlet></router-outlet>
-        <app-message-popup
-            [message]="messagePopupService.message().message"
-            [type]="messagePopupService.message().type"
-            [show]="messagePopupService.message().show"
-            (close)="messagePopupService.hideMessage()">
-        </app-message-popup>
-    </ng-container>
-    <ng-template #notSupported>
-        <p class="not-supported-url" *ngIf="!isAllowedDomain()">This URL Is not allowed to use this application, If you see this message please report to us at Kaspa.com</p>
-        <p class="not-supported-url" *ngIf="incompatibleBrowserReason()">You browser is not compatible with this application, please use a compatible browser. (Reason: {{incompatibleBrowserReason()}})</p>
-    </ng-template>
+  @if (isAllowedDomain() && !incompatibleBrowserReason()) {
+    <!--        <app-header></app-header>-->
+    <router-outlet></router-outlet>
+    <app-message-popup
+      [message]="messagePopupService.message().message"
+      [type]="messagePopupService.message().type"
+      [show]="messagePopupService.message().show"
+      (close)="messagePopupService.hideMessage()">
+    </app-message-popup>
+  } @else {
+    @if (!isAllowedDomain()) {
+      <p class="not-supported-url">This URL Is not allowed to use this application, If you see this message please report to us at Kaspa.com</p>
+    }
+    @if (incompatibleBrowserReason()) {
+      <p class="not-supported-url">You browser is not compatible with this application, please use a compatible browser. (Reason: {{incompatibleBrowserReason()}})</p>
+    }
+  }
 </div>

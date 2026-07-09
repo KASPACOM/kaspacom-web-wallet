@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
@@ -13,17 +13,15 @@ import { WalletActionService } from '../../../services/wallet-action.service';
   imports: [FormsModule],
 })
 export class DeployComponent {
+  private walletActionService = inject(WalletActionService);
+  private krc20WalletActionService = inject(Krc20WalletActionService);
+  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  private messagePopupService = inject(MessagePopupService);
+
   protected selectedToken = '';
   protected maxSupply: number = 100000000;
   protected limitPerMint = 1000;
   protected preAllocation = 0;
-
-  constructor(
-    private walletActionService: WalletActionService,
-    private krc20WalletActionService: Krc20WalletActionService,
-    private kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private messagePopupService: MessagePopupService,
-  ) {}
 
   async deployToken() {
     const action = this.krc20WalletActionService.createDeployWalletAction(

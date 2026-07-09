@@ -1,5 +1,5 @@
-import { Component, inject, signal, EventEmitter, Output, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, signal, computed, output } from '@angular/core';
+
 import { Router } from '@angular/router';
 import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { WalletService } from '../../../../services/wallet.service';
@@ -25,7 +25,7 @@ interface WalletAccountItem {
 @Component({
   selector: 'app-iframe-account-selection',
   standalone: true,
-  imports: [CommonModule, KcButtonComponent, KcIconComponent, ShortenAddressPipe],
+  imports: [KcButtonComponent, KcIconComponent, ShortenAddressPipe],
   templateUrl: './iframe-account-selection.component.html',
   styleUrl: './iframe-account-selection.component.scss',
 })
@@ -33,7 +33,7 @@ export class IframeAccountSelectionComponent {
   private walletService = inject(WalletService);
   private router = inject(Router);
 
-  @Output() accountSelected = new EventEmitter<void>();
+  readonly accountSelected = output<void>();
 
   walletGroups = signal<WalletGroupItem[]>([]);
   selectedWalletGroup = signal<WalletGroupItem | undefined>(undefined);
@@ -115,6 +115,7 @@ export class IframeAccountSelectionComponent {
 
   async selectAccount(account: WalletAccountItem): Promise<void> {
     await this.walletService.selectCurrentWallet(account.wallet.getIdWithAccount());
+    // TODO: The 'emit' function requires a mandatory void argument
     this.accountSelected.emit();
   }
 

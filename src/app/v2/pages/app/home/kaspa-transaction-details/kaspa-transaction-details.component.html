@@ -3,7 +3,7 @@
   <div class="transaction-header flex align-items-center justify-content-between">
     <!-- Left side: back button and title -->
     <div class="header-left flex align-items-center gap-16">
-      <kc-icon 
+      <kc-icon
         [iconClass]="'icon-arrow-left'"
         [size]="'md'"
         (click)="goBack()"
@@ -11,7 +11,7 @@
       </kc-icon>
       <h1 class="transaction-title text-gray-90">Transaction Details</h1>
     </div>
-    
+
     <!-- Right side: chevron or additional actions if needed -->
     <div class="header-right">
       <!-- Could add additional actions here if needed -->
@@ -35,19 +35,19 @@
     <!-- Transaction Details Section -->
     <div class="details-section flex column gap-16">
       <h3 class="section-title text-gray-90">Transaction Details</h3>
-      
+
       <div class="details-grid">
         <!-- Net Amount -->
         <div class="detail-card">
           <div class="detail-label">Net Amount</div>
           <div class="detail-value-container flex align-items-center">
             <div class="kaspa-amount-display flex align-items-center gap-8">
-              <kc-icon 
-                [iconClass]="'icon-kaspa-coin'" 
+              <kc-icon
+                [iconClass]="'icon-kaspa-coin'"
                 [size]="'sm'">
               </kc-icon>
-              <div class="detail-value kaspa-amount font-weight-bold" 
-                   [style.color]="getNetAmountForWallet().isIncoming ? 'var(--success)' : 'var(--error)'">
+              <div class="detail-value kaspa-amount font-weight-bold"
+                [style.color]="getNetAmountForWallet().isIncoming ? 'var(--success)' : 'var(--error)'">
                 {{ (getNetAmountForWallet().isIncoming ? '+' : '-') + formatAmount(getNetAmountForWallet().amount) }}
               </div>
             </div>
@@ -59,8 +59,8 @@
           <div class="detail-label">Transaction Fee</div>
           <div class="detail-value-container flex align-items-center">
             <div class="kaspa-amount-display flex align-items-center gap-8">
-              <kc-icon 
-                [iconClass]="'icon-kaspa-coin'" 
+              <kc-icon
+                [iconClass]="'icon-kaspa-coin'"
                 [size]="'sm'">
               </kc-icon>
               <div class="detail-value kaspa-amount font-weight-bold text-white">
@@ -75,8 +75,8 @@
           <div class="detail-label">Total Input</div>
           <div class="detail-value-container flex align-items-center">
             <div class="kaspa-amount-display flex align-items-center gap-8">
-              <kc-icon 
-                [iconClass]="'icon-kaspa-coin'" 
+              <kc-icon
+                [iconClass]="'icon-kaspa-coin'"
                 [size]="'sm'">
               </kc-icon>
               <div class="detail-value kaspa-amount font-weight-bold text-white">
@@ -91,8 +91,8 @@
           <div class="detail-label">Total Output</div>
           <div class="detail-value-container flex align-items-center">
             <div class="kaspa-amount-display flex align-items-center gap-8">
-              <kc-icon 
-                [iconClass]="'icon-kaspa-coin'" 
+              <kc-icon
+                [iconClass]="'icon-kaspa-coin'"
                 [size]="'sm'">
               </kc-icon>
               <div class="detail-value kaspa-amount font-weight-bold text-white">
@@ -103,12 +103,14 @@
         </div>
 
         <!-- Status -->
-        <div class="detail-card" *ngIf="transactionDetails()?.is_accepted">
-          <div class="detail-label">Status</div>
-          <div class="detail-value font-weight-medium status-accepted">
-            {{ getTransactionStatus(transactionDetails()!) }}
+        @if (transactionDetails()?.is_accepted) {
+          <div class="detail-card">
+            <div class="detail-label">Status</div>
+            <div class="detail-value font-weight-medium status-accepted">
+              {{ getTransactionStatus(transactionDetails()!) }}
+            </div>
           </div>
-        </div>
+        }
 
         <!-- Block Time -->
         <div class="detail-card">
@@ -126,7 +128,7 @@
               <div class="detail-value font-mono break-all">
                 {{ shortenAddress(getBlockHashDisplay()) }}
               </div>
-              <app-copy-button 
+              <app-copy-button
                 [value]="getBlockHashDisplay()"
                 [size]="'xs'">
               </app-copy-button>
@@ -139,10 +141,10 @@
           <div class="detail-label">Transaction ID</div>
           <div class="detail-value-container flex align-items-center gap-8">
             <div class="detail-value text-primary font-mono cursor-pointer hover-opacity break-all"
-                 (click)="openTransactionInExplorer()">
+              (click)="openTransactionInExplorer()">
               {{ transactionDetails()?.transaction_id }}
             </div>
-            <app-copy-button 
+            <app-copy-button
               [value]="transactionDetails()?.transaction_id || ''"
               [size]="'xs'">
             </app-copy-button>
@@ -167,8 +169,8 @@
                 <div class="input-header flex justify-content-between align-items-center mb-8">
                   <div class="detail-label">Address</div>
                   <div class="kaspa-amount-display flex align-items-center gap-8">
-                    <kc-icon 
-                      [iconClass]="'icon-kaspa-coin'" 
+                    <kc-icon
+                      [iconClass]="'icon-kaspa-coin'"
                       [size]="'sm'">
                     </kc-icon>
                     <div class="detail-value kaspa-amount font-weight-bold text-white">
@@ -180,7 +182,7 @@
                   <div class="detail-value font-mono break-all">
                     {{ shortenAddress(input.previous_outpoint_address || '') }}
                   </div>
-                  <app-copy-button 
+                  <app-copy-button
                     [value]="input.previous_outpoint_address || ''"
                     [size]="'xs'">
                   </app-copy-button>
@@ -201,8 +203,8 @@
                 <div class="output-header flex justify-content-between align-items-center mb-8">
                   <div class="detail-label">Address</div>
                   <div class="kaspa-amount-display flex align-items-center gap-8">
-                    <kc-icon 
-                      [iconClass]="'icon-kaspa-coin'" 
+                    <kc-icon
+                      [iconClass]="'icon-kaspa-coin'"
                       [size]="'sm'">
                     </kc-icon>
                     <div class="detail-value kaspa-amount font-weight-bold text-white">
@@ -214,7 +216,7 @@
                   <div class="detail-value font-mono break-all">
                     {{ shortenAddress(output.script_public_key_address || '') }}
                   </div>
-                  <app-copy-button 
+                  <app-copy-button
                     [value]="output.script_public_key_address || ''"
                     [size]="'xs'">
                   </app-copy-button>
@@ -232,4 +234,4 @@
       <div class="text-gray-50 typo-text-1 text-center">The requested transaction details could not be loaded.</div>
     </div>
   }
-</div> 
+</div>

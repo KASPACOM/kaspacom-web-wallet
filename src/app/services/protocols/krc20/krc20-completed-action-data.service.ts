@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { ActionDisplay } from "../../../types/action-display.type";
 import { KRC20OperationDataInterface, KRC20OperationType } from "../../../types/kaspa-network/krc20-operations-data.interface";
 import { KaspaNetworkActionsService, REVEAL_PSKT_AMOUNT } from "../../kaspa-netwrok-services/kaspa-network-actions.service";
@@ -11,8 +11,8 @@ import { CommitRevealActionResult } from "@kaspacom/wallet-messages";
     providedIn: 'root',
 })
 export class Krc20CompletedActionDataService implements ProtocolCompletedActionDataInterface {
+    private readonly kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
 
-    constructor(private readonly kaspaNetworkActionsService: KaspaNetworkActionsService) { }
 
     getActionDisplay(action: CommitRevealActionResult): CompletedActionDisplay | undefined {
 

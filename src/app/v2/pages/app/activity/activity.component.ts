@@ -8,7 +8,7 @@ import {
   effect,
 } from '@angular/core';
 import { BaseActivityComponent } from './base-activity.component';
-import { CommonModule } from '@angular/common';
+
 import { Router } from '@angular/router';
 import { KcIconComponent } from 'kaspacom-ui';
 import {
@@ -74,11 +74,10 @@ type ActivityItem = KaspaActivityItem | Krc20ActivityItem | Erc20ActivityItem;
 @Component({
   selector: 'app-activity',
   imports: [
-    CommonModule,
     KcIconComponent,
     KcLabeledTabsComponent,
-    SkeletonComponent,
-  ],
+    SkeletonComponent
+],
   templateUrl: './activity.component.html',
   styleUrl: './activity.component.scss',
 })

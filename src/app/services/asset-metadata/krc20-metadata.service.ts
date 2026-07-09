@@ -17,10 +17,16 @@ export interface Krc20TokenWithMetadata extends GetTokenListDto {
   providedIn: 'root'
 })
 export class Krc20MetadataService extends BaseAssetMetadataService<GetTokenListDto, Krc20TokenWithMetadata> {
+  protected assetsManager: AssetsManagerService;
+
   private kasplexService = inject(KasplexKrc20Service);
   
-  constructor(protected assetsManager: AssetsManagerService) {
+  constructor() {
+    const assetsManager = inject(AssetsManagerService);
+
     super(assetsManager.getAllAssetStores().l1, L1_ASSET_KEYS.krc20);
+  
+    this.assetsManager = assetsManager;
   }
 
   protected override getAssetId(asset: GetTokenListDto): string {

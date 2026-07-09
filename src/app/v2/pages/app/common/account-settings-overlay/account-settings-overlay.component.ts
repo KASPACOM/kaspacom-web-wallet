@@ -1,8 +1,7 @@
 import {
   Component,
-  Input,
-  Output,
-  EventEmitter,
+  input,
+  output,
   signal,
   inject,
   OnInit,
@@ -84,8 +83,8 @@ interface WalletAccount {
   ],
 })
 export class AccountSettingsOverlayComponent implements OnInit {
-  @Input() isOpen = false;
-  @Output() close = new EventEmitter<void>();
+  readonly isOpen = input(false);
+  readonly close = output<void>();
 
   private walletService = inject(WalletService);
   // Real wallet data

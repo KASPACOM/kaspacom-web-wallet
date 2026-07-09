@@ -1,14 +1,5 @@
-import { DOCUMENT, NgIf } from '@angular/common';
-import {
-  AfterViewInit,
-  Component,
-  Inject,
-  NgZone,
-  OnDestroy,
-  OnInit,
-  Renderer2,
-  inject,
-} from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { AfterViewInit, Component, NgZone, OnDestroy, OnInit, Renderer2, inject } from '@angular/core';
 import { Meta } from '@angular/platform-browser';
 import { RouterOutlet } from '@angular/router';
 import { KaspaNetworkActionsService } from './services/kaspa-netwrok-services/kaspa-network-actions.service';
@@ -29,15 +20,19 @@ import { WalletService } from './services/wallet.service';
   selector: 'app-root',
   imports: [
     RouterOutlet,
-    NgIf,
     MessagePopupComponent,
-    StartupBackgroundCanvasComponent,
-  ],
+    StartupBackgroundCanvasComponent
+],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
   providers: [KaspaNetworkActionsService],
 })
 export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
+  private readonly communicationManagerService = inject(CommunicationManagerService);
+  private readonly renderer = inject(Renderer2);
+  private readonly document = inject<Document>(DOCUMENT);
+  private readonly zone = inject(NgZone);
+
   title = 'kaspiano-wallet';
   rpcConnectionRejectReason = '';
   walletService = inject(WalletService);
@@ -50,13 +45,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly meta = inject(Meta);
   private referralService = inject(ReferralService);
   private teardownLoader?: VoidFunction;
-
-  constructor(
-    private readonly communicationManagerService: CommunicationManagerService,
-    private readonly renderer: Renderer2,
-    @Inject(DOCUMENT) private readonly document: Document,
-    private readonly zone: NgZone,
-  ) {}
 
   async ngOnInit() {
     console.log('App component initialized');

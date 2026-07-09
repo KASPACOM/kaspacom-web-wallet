@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, OnDestroy, ViewChild, AfterViewInit, Injector } from '@angular/core';
+import { Component, computed, inject, OnInit, OnDestroy, AfterViewInit, Injector, viewChild } from '@angular/core';
 import { CommonModule, DecimalPipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
@@ -28,7 +28,7 @@ export class SendKrc20ListComponent extends FlowPageBaseComponent implements OnI
   private krc20Assets$!: Observable<GetTokenListDto[] | undefined>;
   private assetsManagerService = inject(AssetsManagerService);
 
-  @ViewChild(InfiniteScrollDirective) infiniteScroll!: InfiniteScrollDirective;
+  readonly infiniteScroll = viewChild.required(InfiniteScrollDirective);
 
   // Show tokens immediately from assets store, enhanced with metadata when available
   tokens = computed<ITokenWithMetadata[]>(() => {
@@ -103,8 +103,9 @@ export class SendKrc20ListComponent extends FlowPageBaseComponent implements OnI
   ngAfterViewInit(): void {
     // Check initial scroll position after view init
     setTimeout(() => {
-      if (this.infiniteScroll) {
-        this.infiniteScroll.checkScroll();
+      const infiniteScroll = this.infiniteScroll();
+      if (infiniteScroll) {
+        infiniteScroll.checkScroll();
       }
     }, 100);
   }

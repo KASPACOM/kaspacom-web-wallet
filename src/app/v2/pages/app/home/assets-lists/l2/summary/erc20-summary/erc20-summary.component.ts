@@ -3,10 +3,10 @@ import {
   computed,
   inject,
   OnDestroy,
-  ViewChild,
   AfterViewInit,
+  viewChild
 } from '@angular/core';
-import {} from '@angular/common';
+
 import { Router } from '@angular/router';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
 import { InfiniteScrollDirective } from '../../../../../../../../directives/infinite-scroll.directive';
@@ -35,7 +35,7 @@ export class Erc20SummaryComponent
   private flowPagesService = inject(FlowPagesService);
   private destroy$ = new Subject<void>();
 
-  @ViewChild(InfiniteScrollDirective) infiniteScroll!: InfiniteScrollDirective;
+  readonly infiniteScroll = viewChild.required(InfiniteScrollDirective);
 
   // Show tokens immediately from assets store, enhanced with metadata when available
   tokens = computed<Erc20Token[]>(() => {
@@ -51,8 +51,9 @@ export class Erc20SummaryComponent
   ngAfterViewInit(): void {
     // Check initial scroll position after view init
     setTimeout(() => {
-      if (this.infiniteScroll) {
-        this.infiniteScroll.checkScroll();
+      const infiniteScroll = this.infiniteScroll();
+      if (infiniteScroll) {
+        infiniteScroll.checkScroll();
       }
     }, 100);
   }

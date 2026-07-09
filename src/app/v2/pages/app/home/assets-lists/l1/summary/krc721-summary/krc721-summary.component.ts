@@ -1,4 +1,4 @@
-import { Component, ViewChild, computed, inject, OnInit, OnDestroy, AfterViewInit, ElementRef, DestroyRef, signal } from '@angular/core';
+import { Component, viewChild, effect, computed, inject, OnInit, OnDestroy, AfterViewInit, ElementRef, DestroyRef, signal } from '@angular/core';
 import { TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { INftWithMetadata } from '../../../../../common/interfaces/nft.interface';
@@ -29,22 +29,9 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
   private destroyRef = inject(DestroyRef);
   private metadataInitialized = false;
   private pendingThresholdReset = false;
-  private _infiniteScrollDirective?: InfiniteScrollDirective;
 
   // Reference to the infinite scroll directive
-  @ViewChild(InfiniteScrollDirective)
-  set infiniteScrollDirective(directive: InfiniteScrollDirective | undefined) {
-    this._infiniteScrollDirective = directive;
-
-    if (directive && this.pendingThresholdReset) {
-      directive.resetThreshold();
-      this.pendingThresholdReset = false;
-    }
-  }
-
-  get infiniteScrollDirective(): InfiniteScrollDirective | undefined {
-    return this._infiniteScrollDirective;
-  }
+  readonly infiniteScrollDirective = viewChild(InfiniteScrollDirective);
 
   // Configuration
   readonly config = L1_PAGINATION_CONFIG.krc721;
@@ -54,6 +41,14 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
   loadingSkeletons: unknown[] = Array.from({ length: Krc721SummaryComponent.SKELETON_COUNT }).map(() => ({}));
 
   constructor() {
+    effect(() => {
+      const directive = this.infiniteScrollDirective();
+      if (directive && this.pendingThresholdReset) {
+        directive.resetThreshold();
+        this.pendingThresholdReset = false;
+      }
+    });
+
     toObservable(this.krc721ListService.nfts)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(nfts => {
@@ -81,8 +76,9 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
           return;
         }
 
-        if (this.infiniteScrollDirective) {
-          this.infiniteScrollDirective.resetThreshold();
+        const directive = this.infiniteScrollDirective();
+        if (directive) {
+          directive.resetThreshold();
           this.pendingThresholdReset = false;
         } else {
           this.pendingThresholdReset = true;
@@ -185,7 +181,7 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
 
   ngAfterViewInit(): void {
     if (this.config.greedyLoading) {
-      setTimeout(() => this.infiniteScrollDirective?.checkScroll(), 100);
+      setTimeout(() => this.infiniteScrollDirective()?.checkScroll(), 100);
     }
   }
 

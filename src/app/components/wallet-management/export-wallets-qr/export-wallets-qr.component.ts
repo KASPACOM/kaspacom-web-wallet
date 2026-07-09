@@ -1,5 +1,5 @@
-import { NgIf } from '@angular/common';
-import { Component, HostListener } from '@angular/core';
+
+import { Component, HostListener, inject } from '@angular/core';
 import { QRCodeComponent } from 'angularx-qrcode';
 import { PasswordManagerService } from '../../../services/password-manager.service';
 import { LOCAL_STORAGE_KEYS } from '../../../config/consts';
@@ -9,19 +9,19 @@ import { MessagePopupService } from '../../../services/message-popup.service';
   selector: 'export-wallets-qr',
   templateUrl: './export-wallets-qr.component.html',
   styleUrls: ['./export-wallets-qr.component.scss'],
-  imports: [NgIf, QRCodeComponent],
+  imports: [QRCodeComponent],
 })
 export class ExportWalletsQrComponent {
+  private passwordManagerService = inject(PasswordManagerService);
+  private messagePopupService = inject(MessagePopupService);
+
   showPasswordPrompt: boolean = false; // Signal to display the password prompt
   passwordFilled: boolean = false; // Signal to display the QR code
   encryptedUserData: string | null = null;
   maxDataLength = 2331;
   qrCodeSize: number = 400; // Default size for desktop
 
-  constructor(
-    private passwordManagerService: PasswordManagerService,
-    private messagePopupService: MessagePopupService
-  ) {
+  constructor() {
     this.updateQrCodeSize();
   }
 

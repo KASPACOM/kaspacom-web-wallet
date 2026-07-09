@@ -17,7 +17,7 @@
     "
     (click)="methodChanged.emit(ImportSwitchMethod.SEED_PHRASE)"
     type="button"
-  >
+    >
     <span class="import-switch__label">Seed Phrase</span>
   </button>
   <button
@@ -27,18 +27,19 @@
     "
     (click)="methodChanged.emit(ImportSwitchMethod.PRIVATE_KEY)"
     type="button"
-  >
+    >
     <span class="import-switch__label">Private Key</span>
   </button>
-  <button
-    *ngIf="showImportFromFile()"
-    class="import-switch__option"
+  @if (showImportFromFile()) {
+    <button
+      class="import-switch__option"
     [class.import-switch__option--active]="
       selectedMethod() === ImportSwitchMethod.BACKUP
     "
-    (click)="methodChanged.emit(ImportSwitchMethod.BACKUP)"
-    type="button"
-  >
-    <span class="import-switch__label">Backup File</span>
-  </button>
+      (click)="methodChanged.emit(ImportSwitchMethod.BACKUP)"
+      type="button"
+      >
+      <span class="import-switch__label">Backup File</span>
+    </button>
+  }
 </div>

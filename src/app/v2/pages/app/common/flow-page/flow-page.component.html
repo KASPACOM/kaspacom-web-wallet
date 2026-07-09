@@ -1,21 +1,21 @@
 <div
   class="flow-page-overlay"
-  [class.open]="isOpen"
-  [class.no-background]="!showBackground"
+  [class.open]="isOpen()"
+  [class.no-background]="!showBackground()"
   (click)="onBackdropClick()"
 >
   <div
     class="flow-page-content"
-    [class.no-background]="!showBackground"
-    [@slideDown]="isOpen ? 'open' : 'closed'"
+    [class.no-background]="!showBackground()"
+    [@slideDown]="isOpen() ? 'open' : 'closed'"
     (@slideDown.start)="onAnimationStart()"
     (@slideDown.done)="onAnimationDone()"
     (click)="$event.stopPropagation()"
   >
-    @if (showTitle) {
+    @if (showTitle()) {
       <div class="flow-page-header">
         <div class="flow-page-header__left">
-          @if (canNavigateBack) {
+          @if (canNavigateBack()) {
             <kc-icon
               class="flow-page-back"
               [iconClass]="'icon-chevron-left'"
@@ -25,10 +25,10 @@
               tooltipPosition="bottom"
             ></kc-icon>
           }
-          <h2 class="flow-page-title typo-title-4">{{ title }}</h2>
+          <h2 class="flow-page-title typo-title-4">{{ title() }}</h2>
         </div>
         <div class="flow-page-header__right">
-          @if (canClose) {
+          @if (canClose()) {
             <kc-icon
               class="flow-page-close"
               [iconClass]="'icon-close'"

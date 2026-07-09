@@ -1,14 +1,8 @@
-import {
-  Component,
-  computed,
-  OnDestroy,
-  OnInit,
-  ViewChild,
-} from '@angular/core';
+import { Component, computed, OnDestroy, OnInit, inject, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { WalletService } from '../../services/wallet.service'; // Assume you have a service to fetch wallets
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { CommonModule, NgFor, NgIf, Time } from '@angular/common';
+import { Time } from '@angular/common';
 import { AppWallet } from '../../classes/AppWallet';
 import { catchError, firstValueFrom, map, of, tap } from 'rxjs';
 import { KasplexKrc20Service } from '../../services/kasplex-api/kasplex-api.service';
@@ -44,27 +38,31 @@ type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
     templateUrl: './wallet-info.component.html',
     styleUrls: ['./wallet-info.component.scss'],
     imports: [
-        FormsModule,
-        ReactiveFormsModule,
-        NgIf,
-        NgFor,
-        SompiToNumberPipe,
-        SendAssetComponent,
-        MintComponent,
-        ReviewActionComponent,
-        CommonModule,
-        DeployComponent,
-        UtxosListComponent,
-        TransactionHistoryComponent,
-        Krc20OperationHistoryComponent,
-        MempoolTransactionsComponent,
-        AddL2ChainComponent,
-        L2TransactionComponent,
-    ]
+    FormsModule,
+    ReactiveFormsModule,
+    SompiToNumberPipe,
+    SendAssetComponent,
+    MintComponent,
+    ReviewActionComponent,
+    DeployComponent,
+    UtxosListComponent,
+    TransactionHistoryComponent,
+    Krc20OperationHistoryComponent,
+    MempoolTransactionsComponent,
+    AddL2ChainComponent,
+    L2TransactionComponent
+]
 })
 export class WalletInfoComponent implements OnInit, OnDestroy {
-  @ViewChild('reviewActionComponent')
-  reviewActionComponent!: ReviewActionComponent;
+  private walletService = inject(WalletService);
+  private router = inject(Router);
+  private kasplexService = inject(KasplexKrc20Service);
+  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  private walletActionService = inject(WalletActionService);
+  private kaspaApiService = inject(KaspaApiService);
+  private ethereumWalletChainManager = inject(EthereumWalletChainManager);
+
+  readonly reviewActionComponent = viewChild.required<ReviewActionComponent>('reviewActionComponent');
 
   protected wallet: AppWallet | undefined = undefined;
   protected tokens: undefined | { ticker: string; balance: number }[] =
@@ -96,15 +94,7 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
 
   protected isAddChainFormVisible = false;
 
-  constructor(
-    private walletService: WalletService, // Inject wallet service
-    private router: Router,
-    private kasplexService: KasplexKrc20Service,
-    private kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private walletActionService: WalletActionService,
-    private kaspaApiService: KaspaApiService,
-    private ethereumWalletChainManager: EthereumWalletChainManager,
-  ) {
+  constructor() {
     toObservable(this.ethereumWalletChainManager.getCurrentChainSignal()).subscribe((chain) => {
       this.selectedChain = chain;
     });

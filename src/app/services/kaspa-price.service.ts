@@ -1,4 +1,4 @@
-import { Injectable, signal, OnDestroy } from '@angular/core';
+import { Injectable, signal, OnDestroy, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
 
@@ -10,6 +10,8 @@ interface KaspaPriceResponse {
   providedIn: 'root'
 })
 export class KaspaPriceService implements OnDestroy {
+  private readonly httpClient = inject(HttpClient);
+
   private readonly KASPA_PRICE_API_URL = 'https://api.kaspa.org/info/price';
   private readonly UPDATE_INTERVAL = 10000; // 10 seconds
   
@@ -23,7 +25,7 @@ export class KaspaPriceService implements OnDestroy {
   public readonly isLoading = this.isLoadingSignal.asReadonly();
   public readonly lastUpdated = this.lastUpdatedSignal.asReadonly();
 
-  constructor(private readonly httpClient: HttpClient) {
+  constructor() {
     this.startPriceUpdates();
   }
 

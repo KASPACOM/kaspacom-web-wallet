@@ -1,5 +1,5 @@
 import { CommonModule, DecimalPipe, UpperCasePipe } from '@angular/common';
-import { Component, EventEmitter, Output, input } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { Erc20TokenLogoComponent } from '../../logo/erc20-token-logo/erc20-token-logo.component';
 import type { Erc20TokenWithPrice } from '../../../../../../../../services/assets-manager/assets-stores/l2-assets-store.service';
 
@@ -13,9 +13,10 @@ import type { Erc20TokenWithPrice } from '../../../../../../../../services/asset
 export class Erc20AssetCardComponent {
   token = input<Erc20TokenWithPrice | undefined>(undefined);
 
-  @Output() cardClick = new EventEmitter<void>();
+  readonly cardClick = output<void>();
 
   onClick(): void {
+    // TODO: The 'emit' function requires a mandatory void argument
     this.cardClick.emit();
   }
 }

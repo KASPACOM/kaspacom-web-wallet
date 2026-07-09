@@ -1,22 +1,21 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { KaspaNetworkActionsService } from '../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { WalletActionService } from '../../services/wallet-action.service';
-import { NgIf } from '@angular/common';
+
 import { WalletService } from '../../services/wallet.service';
 import { AppWallet } from '../../classes/AppWallet';
 
 @Component({
     selector: 'app-header',
-    imports: [NgIf],
+    imports: [],
     templateUrl: './app-header.component.html',
     styleUrl: './app-header.component.scss'
 })
 export class AppHeaderComponent {
-  constructor(
-    private readonly kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private readonly walletActionService: WalletActionService,
-    private readonly walletService: WalletService
-  ) {}
+  private readonly kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  private readonly walletActionService = inject(WalletActionService);
+  private readonly walletService = inject(WalletService);
+
 
   getWalletsWaitingActionsCount() {
     return Object.values(

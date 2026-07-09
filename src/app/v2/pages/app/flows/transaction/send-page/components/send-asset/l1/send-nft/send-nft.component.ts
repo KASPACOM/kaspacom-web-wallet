@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import {
   Component,
   effect,
@@ -34,13 +34,12 @@ import { INft } from '../../../../../../../common/interfaces/nft.interface';
   selector: 'app-send-nft',
   standalone: true,
   imports: [
-    CommonModule,
     KcCheckboxComponent,
     KcButtonComponent,
     FormsModule,
     SkeletonComponent,
-    AddressSmartInputComponent,
-  ],
+    AddressSmartInputComponent
+],
   templateUrl: './send-nft.component.html',
   styleUrl: './send-nft.component.scss',
 })

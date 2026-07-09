@@ -1,5 +1,5 @@
 import { Component, computed, input, output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { TokenLogoComponent } from '../../../../../../../components/token-logo/token-logo.component';
 import { SwapContext } from '../../../../../../services/swap-context.service';
@@ -9,12 +9,11 @@ import { CommaFormatterPipe } from '../../../../../../../pipes/comma-formatter.p
   selector: 'app-swap-approval',
   standalone: true,
   imports: [
-    CommonModule,
     KcButtonComponent,
     KcIconComponent,
     TokenLogoComponent,
-    CommaFormatterPipe,
-  ],
+    CommaFormatterPipe
+],
   templateUrl: './swap-approval.component.html',
   styleUrl: './swap-approval.component.scss',
 })

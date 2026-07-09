@@ -1,13 +1,13 @@
-import { CommonModule } from '@angular/common';
+
 import {
   Component,
-  EventEmitter,
-  Input,
-  Output,
   inject,
   signal,
   OnChanges,
   SimpleChanges,
+  input,
+  model,
+  output
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
@@ -26,33 +26,31 @@ import {
   selector: 'app-address-smart-input',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     KcInputComponent,
     KcIconComponent,
     KcSpinnerComponent,
     CopyButtonComponent,
-    KcTooltipDirective,
-  ],
+    KcTooltipDirective
+],
   templateUrl: './address-smart-input.component.html',
   styleUrl: './address-smart-input.component.scss',
 })
 export class AddressSmartInputComponent implements OnChanges {
   private readonly resolver = inject(AddressResolutionService);
 
-  @Input() label: string = 'Wallet Address';
-  @Input() placeholder: string = 'Enter wallet address or KNS domain';
-  @Input() isDisabled: boolean = false;
-  @Input() isFullWidth: boolean = true;
-  @Input() showQrButton: boolean = true;
-  @Input() value: string = '';
-  @Input() isValid: boolean = true;
-  @Input() invalidReason: string = '';
-  @Input() validationDebounceMs: number = 300;
+  readonly label = input<string>('Wallet Address');
+  readonly placeholder = input<string>('Enter wallet address or KNS domain');
+  readonly isDisabled = input<boolean>(false);
+  readonly isFullWidth = input<boolean>(true);
+  readonly showQrButton = input<boolean>(true);
+  readonly value = model<string>('');
+  readonly isValid = input<boolean>(true);
+  readonly invalidReason = input<string>('');
+  readonly validationDebounceMs = input<number>(300);
 
-  @Output() valueChange = new EventEmitter<string>();
-  @Output() resolved = new EventEmitter<AddressResolutionResult>();
-  @Output() qrClick = new EventEmitter<void>();
+  readonly resolved = output<AddressResolutionResult>();
+  readonly qrClick = output<void>();
 
   isResolving = signal<boolean>(false);
   resolvedAddress = signal<string>('');
@@ -74,18 +72,17 @@ export class AddressSmartInputComponent implements OnChanges {
       this.validationTimer = setTimeout(() => {
         // Do not surface external validation while we're resolving or considering a domain
         if (!this.isResolving() && !this.isDomainCandidate()) {
-          this.displayIsValid.set(this.isValid);
-          this.displayInvalidReason.set(this.invalidReason);
+          this.displayIsValid.set(this.isValid());
+          this.displayInvalidReason.set(this.invalidReason());
         }
-      }, this.validationDebounceMs);
+      }, this.validationDebounceMs());
     }
   }
 
   onInputChange(val: string) {
-    this.value = val || '';
-    this.valueChange.emit(this.value);
+    this.value.set(val || '');
 
-    const input = (this.value || '').trim();
+    const input = (this.value() || '').trim();
 
     // Immediately clear any previously displayed errors when user changes input
     this.resolveError.set('');
@@ -119,7 +116,7 @@ export class AddressSmartInputComponent implements OnChanges {
   }
 
   async resolveNow() {
-    const input = (this.value || '').trim();
+    const input = (this.value() || '').trim();
     this.resolvedAddress.set('');
     this.resolvedDomain.set('');
     this.resolveError.set('');

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { AppWallet } from '../../classes/AppWallet';
 import {
   EIP1193RequestPayload,
@@ -23,13 +23,12 @@ import { ethers, TransactionRequest } from 'ethers';
   providedIn: 'root',
 })
 export class EthereumWalletActionsService {
-  constructor(
-    private readonly ethereumWalletChainManager: EthereumWalletChainManager,
-    private readonly ethereumHandleActionRequestService: EthereumHandleActionRequestService,
-    private readonly walletService: WalletService,
-    private readonly walletActionsService: WalletActionService,
-    private readonly allowedApplicationsService: AllowedApplicationsService,
-  ) { }
+  private readonly ethereumWalletChainManager = inject(EthereumWalletChainManager);
+  private readonly ethereumHandleActionRequestService = inject(EthereumHandleActionRequestService);
+  private readonly walletService = inject(WalletService);
+  private readonly walletActionsService = inject(WalletActionService);
+  private readonly allowedApplicationsService = inject(AllowedApplicationsService);
+
 
   async handleRequest<T extends EIP1193RequestType>(
     request: EIP1193RequestPayload<T>,

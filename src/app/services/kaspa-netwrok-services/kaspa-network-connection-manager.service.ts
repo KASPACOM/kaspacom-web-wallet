@@ -1,4 +1,4 @@
-import { Injectable, OnDestroy, Signal, signal, WritableSignal } from '@angular/core';
+import { Injectable, OnDestroy, Signal, signal, WritableSignal, inject } from '@angular/core';
 import { RpcService } from './rpc.service';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
 import { ConnectStrategy, RpcClient } from '../../../../public/kaspa/kaspa';
@@ -12,6 +12,8 @@ const MAX_RECONNECT_DELAY = 30 * 1000;
   providedIn: 'root',
 })
 export class KaspaNetworkConnectionManagerService implements OnDestroy {
+  private readonly rpcService = inject(RpcService);
+
   private connectionPromise?: Promise<void>;
   private connectionGeneration = 0;
   private activeConnectingRpc?: RpcClient;
@@ -24,7 +26,7 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
   private connectionStatusSignal: WritableSignal<RpcConnectionStatus> =
     signal<RpcConnectionStatus>(RpcConnectionStatus.DISCONNECTED);
 
-  constructor(private readonly rpcService: RpcService) {
+  constructor() {
     this.listenForBrowserResume();
   }
 

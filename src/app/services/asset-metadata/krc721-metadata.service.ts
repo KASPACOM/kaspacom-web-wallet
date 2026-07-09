@@ -15,11 +15,17 @@ export interface Krc721NftWithMetadata extends Krc721Nft {
   providedIn: 'root'
 })
 export class Krc721MetadataService extends BaseAssetMetadataService<Krc721Nft, Krc721Metadata> {
+  protected assetsManager: AssetsManagerService;
+
   private krc721Service = inject(Krc721ApiService);
   private kaspaL1NetworkService = inject(KaspaL1NetworkService);
   
-  constructor(protected assetsManager: AssetsManagerService) {
+  constructor() {
+    const assetsManager = inject(AssetsManagerService);
+
     super(assetsManager.getAllAssetStores().l1, L1_ASSET_KEYS.krc721);
+  
+    this.assetsManager = assetsManager;
   }
   protected override getAssetId(asset: Krc721Nft): string {
     return `${asset.tick}-${asset.tokenId}`;

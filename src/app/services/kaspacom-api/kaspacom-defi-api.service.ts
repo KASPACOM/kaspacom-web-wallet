@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom, map, catchError, of } from 'rxjs';
 import { DexApiWalletToken } from './dtos/dex-api-wallet-tokens.interface';
@@ -76,11 +76,10 @@ const EXPLORER_CONTROLLER = 'explorer';
 
 @Injectable({ providedIn: 'root' })
 export class KaspaComDefiApiService {
-  constructor(
-    private readonly httpClient: HttpClient,
-    private readonly ethereumWalletChainManager: EthereumWalletChainManager,
-    private readonly kaspaL1NetworkService: KaspaL1NetworkService,
-  ) {}
+  private readonly httpClient = inject(HttpClient);
+  private readonly ethereumWalletChainManager = inject(EthereumWalletChainManager);
+  private readonly kaspaL1NetworkService = inject(KaspaL1NetworkService);
+
 
   get baseurl(): string {
     return this.kaspaL1NetworkService.getKaspaComDefiApiBaseurl();

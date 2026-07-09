@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { WalletService } from '../../../services/wallet.service';
-import { NgFor, NgIf } from '@angular/common';
+
 import { AssetType, TransferableAsset } from '../../../types/transferable-asset';
 import { WalletAction, WalletActionType } from '../../../types/wallet-action';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
@@ -13,22 +13,20 @@ import { MessagePopupService } from '../../../services/message-popup.service';
     selector: 'send-asset',
     templateUrl: './send-asset.component.html',
     styleUrls: ['./send-asset.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, NgIf, NgFor]
+    imports: [FormsModule, ReactiveFormsModule]
 })
 export class SendAssetComponent implements OnInit {
+  private walletService = inject(WalletService);
+  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  private walletActionService = inject(WalletActionService);
+  private messagePopupService = inject(MessagePopupService);
+
   public AssetType = AssetType;
   assets: undefined | TransferableAsset[] = undefined; // Replace with your dynamic asset list
   selectedAsset: undefined | string = undefined;
   amount: number | null = null;
   recipientAddress: string = '';
   rbf: boolean = false;
-
-  constructor(
-    private walletService: WalletService,
-    private kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private walletActionService: WalletActionService,
-    private messagePopupService: MessagePopupService,
-  ) {}
 
   async ngOnInit(): Promise<void> {
     this.assets =

@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { NgIf } from '@angular/common';
+
 import { WalletService } from '../../services/wallet.service';
 import { PasswordManagerService } from '../../services/password-manager.service';
 import { LOCAL_STORAGE_KEYS } from '../../config/consts';
@@ -10,19 +10,17 @@ import { LOCAL_STORAGE_KEYS } from '../../config/consts';
     selector: 'app-clear-data',
     templateUrl: './clear-data.component.html',
     styleUrls: ['./clear-data.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, NgIf]
+    imports: [FormsModule, ReactiveFormsModule]
 })
 export class ClearDataComponent {
+  private fb = inject(FormBuilder);
+  private router = inject(Router);
+  private passwordManagerService = inject(PasswordManagerService);
+
   clearDataForm: FormGroup = this.fb.group({
     confirmation: ['', [Validators.required, Validators.pattern('DELETE ALL DATA')]]
   });
   error: string = '';
-
-  constructor(
-    private fb: FormBuilder,
-    private router: Router,
-    private passwordManagerService: PasswordManagerService
-  ) {}
 
   async onSubmit() {
     if (this.clearDataForm.valid) {

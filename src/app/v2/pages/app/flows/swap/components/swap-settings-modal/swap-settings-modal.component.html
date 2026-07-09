@@ -1,4 +1,4 @@
-@if (open) {
+@if (open()) {
 <kc-base-modal title="Settings" [showCloseButton]="true" [autoWidth]="false" (close)="onClose()">
     <div class="settings-content" [formGroup]="settingsForm">
         <div class="form-field">

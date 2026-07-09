@@ -1,4 +1,4 @@
-import { Injectable, input, Signal } from '@angular/core';
+import { Injectable, input, Signal, inject } from '@angular/core';
 import {
   Address,
   addressFromScriptPublicKey,
@@ -75,14 +75,12 @@ type DoTransactionOptions = {
   providedIn: 'root',
 })
 export class KaspaNetworkTransactionsManagerService {
-  constructor(
-    private readonly rpcService: RpcService,
-    private readonly connectionManager: KaspaNetworkConnectionManagerService,
-    private readonly utils: UtilsHelper,
-    private readonly etherService: EtherService,
-    private readonly kaspaWalletMnemonicActionsService: KaspaWalletMnemonicActionsService,
-  ) {
-  }
+  private readonly rpcService = inject(RpcService);
+  private readonly connectionManager = inject(KaspaNetworkConnectionManagerService);
+  private readonly utils = inject(UtilsHelper);
+  private readonly etherService = inject(EtherService);
+  private readonly kaspaWalletMnemonicActionsService = inject(KaspaWalletMnemonicActionsService);
+
 
   async connectAndDo<T>(
     fn: () => Promise<T>,

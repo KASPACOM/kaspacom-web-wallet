@@ -1,5 +1,5 @@
-import { Component, Input, Output, EventEmitter, inject, ChangeDetectorRef, AfterViewInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, ChangeDetectorRef, AfterViewInit, input, output } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { KcInputComponent, KcButtonComponent, NotificationService } from 'kaspacom-ui';
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
@@ -9,15 +9,15 @@ import { AppWallet } from '../../../../../../../classes/AppWallet';
 @Component({
   selector: 'app-create-wallet-account-quick-action-dialog',
   standalone: true,
-  imports: [CommonModule, FormsModule, KcInputComponent, KcButtonComponent, QuickActionDialogComponent],
+  imports: [FormsModule, KcInputComponent, KcButtonComponent, QuickActionDialogComponent],
   templateUrl: './create-wallet-account-quick-action-dialog.component.html',
   styleUrl: './create-wallet-account-quick-action-dialog.component.scss'
 })
 export class CreateWalletAccountQuickActionDialogComponent implements AfterViewInit {
-  @Input() isOpen = false;
-  @Input() data: any;
-  @Output() backdropClick = new EventEmitter<void>();
-  @Output() close = new EventEmitter<void>();
+  readonly isOpen = input(false);
+  readonly data = input<any>();
+  readonly backdropClick = output<void>();
+  readonly close = output<void>();
 
   private notificationService = inject(NotificationService);
   private walletService = inject(WalletService);
@@ -30,7 +30,7 @@ export class CreateWalletAccountQuickActionDialogComponent implements AfterViewI
   isDialogOpen = false;
 
   get isEditMode(): boolean {
-    return this.data?.isEditMode || false;
+    return this.data()?.isEditMode || false;
   }
 
   get dialogTitle(): string {
@@ -43,8 +43,9 @@ export class CreateWalletAccountQuickActionDialogComponent implements AfterViewI
 
   ngAfterViewInit(): void {
     // Pre-fill account name in edit mode
-    if (this.isEditMode && this.data?.accountName) {
-      this.accountName = this.data.accountName;
+    const data = this.data();
+    if (this.isEditMode && data?.accountName) {
+      this.accountName = data.accountName;
     }
 
     // Start with dialog closed, then open it to trigger animation
@@ -66,6 +67,7 @@ export class CreateWalletAccountQuickActionDialogComponent implements AfterViewI
     this.isDialogOpen = false;
     // Wait for animation to complete before emitting close
     setTimeout(() => {
+      // TODO: The 'emit' function requires a mandatory void argument
       this.close.emit();
     }, 300);
   }
@@ -75,7 +77,7 @@ export class CreateWalletAccountQuickActionDialogComponent implements AfterViewI
       try {
         if (this.isEditMode) {
           // Handle account name update
-          const wallet: AppWallet = this.data.wallet;
+          const wallet: AppWallet = this.data().wallet;
 
           // For accounts, we need to update the account name, not the wallet name
           if (wallet.getDerivedPath()) {
@@ -88,8 +90,9 @@ export class CreateWalletAccountQuickActionDialogComponent implements AfterViewI
               this.notificationService.success('Success', `Account name updated successfully!`);
               // Account name is already updated in storage, no need to reload
               // Call the success callback to refresh the parent component
-              if (this.data?.onSuccess) {
-                this.data.onSuccess();
+              const data = this.data();
+              if (data?.onSuccess) {
+                data.onSuccess();
               }
             } else {
               this.notificationService.error('Error', 'Failed to update account name');
@@ -101,8 +104,9 @@ export class CreateWalletAccountQuickActionDialogComponent implements AfterViewI
               this.notificationService.success('Success', `Wallet name updated successfully!`);
               // The updateWalletName method already updates the wallet signal
               // Call the success callback to refresh the parent component
-              if (this.data?.onSuccess) {
-                this.data.onSuccess();
+              const data = this.data();
+              if (data?.onSuccess) {
+                data.onSuccess();
               }
             } else {
               this.notificationService.error('Error', 'Failed to update wallet name');
@@ -148,8 +152,9 @@ export class CreateWalletAccountQuickActionDialogComponent implements AfterViewI
             // Note: addWalletAccount already updates the wallet service's signal,
             // so we don't need to call loadWallets() here
             // Call the success callback to refresh the parent component
-            if (this.data?.onSuccess) {
-              this.data.onSuccess();
+            const data = this.data();
+            if (data?.onSuccess) {
+              data.onSuccess();
             }
           } else {
             this.notificationService.error('Error', result.error || 'Failed to add account');

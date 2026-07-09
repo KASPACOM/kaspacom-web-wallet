@@ -1,5 +1,5 @@
-import { Component, inject, signal, computed, ViewChild, ElementRef, AfterViewInit, OnDestroy, OnInit, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser, CommonModule } from '@angular/common';
+import { Component, inject, signal, computed, ElementRef, AfterViewInit, OnDestroy, OnInit, PLATFORM_ID, viewChild } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterOutlet, ChildrenOutletContexts } from '@angular/router';
 import { navAnimation } from './common/animation/nav.animation';
 import { WrapperHeaderComponent } from './common/wrapper-header/wrapper-header.component';
@@ -22,7 +22,6 @@ import { AssetsManagerService } from '../../../services/assets-manager/assets-ma
 @Component({
   selector: 'app-app-wrapper',
   imports: [
-    CommonModule,
     RouterOutlet,
     WrapperHeaderComponent,
     WrapperNavComponent,
@@ -33,15 +32,14 @@ import { AssetsManagerService } from '../../../services/assets-manager/assets-ma
     KcSnackbarComponent,
     KcSpinnerComponent,
     KcIconComponent,
-    IframeAccountSelectionComponent,
-  ],
+    IframeAccountSelectionComponent
+],
   templateUrl: './app-wrapper.component.html',
   styleUrl: './app-wrapper.component.scss',
   animations: [navAnimation],
 })
 export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('graphCanvas', { static: false })
-  graphCanvas!: ElementRef<HTMLCanvasElement>;
+  readonly graphCanvas = viewChild.required<ElementRef<HTMLCanvasElement>>('graphCanvas');
 
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
@@ -166,7 +164,7 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private initGraphAnimation(): void {
-    const canvas = this.graphCanvas.nativeElement;
+    const canvas = this.graphCanvas().nativeElement;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     this.ctx = ctx;
@@ -195,7 +193,7 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private resizeCanvas(): void {
-    const canvas = this.graphCanvas.nativeElement;
+    const canvas = this.graphCanvas().nativeElement;
     canvas.width = this.isBrowser ? window.innerWidth : 0;
     canvas.height = this.isBrowser ? window.innerHeight : 0;
   }
@@ -211,7 +209,7 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private drawConnections(): void {
-    const canvas = this.graphCanvas.nativeElement;
+    const canvas = this.graphCanvas().nativeElement;
     const maxDistance = Math.max(canvas.width, canvas.height);
 
     for (let i = 0; i < this.nodes.length; i++) {
@@ -254,7 +252,7 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private animate(): void {
-    const canvas = this.graphCanvas.nativeElement;
+    const canvas = this.graphCanvas().nativeElement;
 
     // Clear canvas
     this.ctx.clearRect(0, 0, canvas.width, canvas.height);

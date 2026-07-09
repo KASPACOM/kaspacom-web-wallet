@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { WalletService } from '../../../services/wallet.service';
-import { NgFor, NgIf } from '@angular/common';
+
 import { TransferableAsset } from '../../../types/transferable-asset';
 import { WalletAction, WalletActionType } from '../../../types/wallet-action';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
@@ -14,21 +14,19 @@ import { MessagePopupService } from '../../../services/message-popup.service';
     selector: 'list-krc20-token',
     templateUrl: './list-krc20-component.component.html',
     styleUrls: ['./list-krc20-component.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, NgIf, NgFor]
+    imports: [FormsModule, ReactiveFormsModule]
 })
 export class ListKrc20Component implements OnInit {
+  private walletService = inject(WalletService);
+  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  private walletActionService = inject(WalletActionService);
+  private krc20WalletActionService = inject(Krc20WalletActionService);
+  private messagePopupService = inject(MessagePopupService);
+
   assets: undefined | TransferableAsset[] = undefined; // Replace with your dynamic asset list
   selectedAsset: undefined | string = undefined;
   amount: number | null = null;
   totalPrice: number | null = null;
-
-  constructor(
-    private walletService: WalletService,
-    private kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private walletActionService: WalletActionService,
-    private krc20WalletActionService: Krc20WalletActionService,
-    private messagePopupService: MessagePopupService,
-  ) {}
 
   async ngOnInit(): Promise<void> {
     this.assets =

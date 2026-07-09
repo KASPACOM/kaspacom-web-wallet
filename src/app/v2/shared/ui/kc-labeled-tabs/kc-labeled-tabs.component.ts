@@ -1,5 +1,5 @@
 import { Component, computed, input, output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 export interface TabItem {
   id: string;
@@ -9,7 +9,7 @@ export interface TabItem {
 
 @Component({
   selector: 'kc-labeled-tabs',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './kc-labeled-tabs.component.html',
   styleUrl: './kc-labeled-tabs.component.scss',
 })

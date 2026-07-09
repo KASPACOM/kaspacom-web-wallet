@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { ProtocolActionsValidatorInterface } from "../interfaces/protocol-actions-validator.interface";
 import { AppWallet } from "../../../classes/AppWallet";
 import { CommitRevealAction } from "../../../types/wallet-action";
@@ -12,10 +12,9 @@ import { KnsApiService } from "../../kns-api/kns-api.service";
     providedIn: 'root',
 })
 export class KnsActionsValidatorService implements ProtocolActionsValidatorInterface {
-    constructor(
-        private readonly utils: UtilsHelper, 
-        private readonly knsService: KnsApiService
-    ) { }
+    private readonly utils = inject(UtilsHelper);
+    private readonly knsService = inject(KnsApiService);
+
 
     async validateCommitRevealAction(action: CommitRevealAction, wallet: AppWallet): Promise<{ isValidated: boolean; errorCode?: number; }> {
         try {

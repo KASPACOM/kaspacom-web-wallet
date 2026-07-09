@@ -9,11 +9,15 @@
         &nbsp;{{ krc20()?.symbol || '' | uppercase }}
       </div>
       <ng-container>
-        <div *ngIf="krc20()?.maxSupply && !krc20()?.isLoadingMetadata" class="text-gray-50 typo-text-1">
-          Supply: {{ krc20()?.maxSupply }}
-        </div>
-        <app-skeleton *ngIf="krc20()?.isLoadingMetadata" [height]="'14px'" [width]="'100px'"
+        @if (krc20()?.maxSupply && !krc20()?.isLoadingMetadata) {
+          <div class="text-gray-50 typo-text-1">
+            Supply: {{ krc20()?.maxSupply }}
+          </div>
+        }
+        @if (krc20()?.isLoadingMetadata) {
+          <app-skeleton [height]="'14px'" [width]="'100px'"
           [fullRound]="false"></app-skeleton>
+        }
       </ng-container>
     </div>
   </div>
@@ -22,8 +26,10 @@
       {{ (krc20()?.balance || 0) * (krc20()?.priceKas || 0 )| number : "1.2-2" }} KAS
     </div>
     <div class="text-gray-60 typo-text-1 asset-card__usd-meta">${{ getPriceUsd((krc20()?.balance || 0) * (krc20()?.priceKas || 0)) | number : "1.2-2" }}</div>
-    <div *ngIf="krc20()?.holders && !krc20()?.isLoadingMetadata" class="text-gray-50 typo-text-1">
-      {{ krc20()?.holders }} holders
-    </div>
+    @if (krc20()?.holders && !krc20()?.isLoadingMetadata) {
+      <div class="text-gray-50 typo-text-1">
+        {{ krc20()?.holders }} holders
+      </div>
+    }
   </div>
 </div>

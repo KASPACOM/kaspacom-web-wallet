@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { Krc20PortfolioResponse } from './dtos/krc20-prortfolio';
@@ -10,10 +10,9 @@ export type TokenLogosResult = TokenLogoResult[];
 
 @Injectable({ providedIn: 'root' })
 export class KaspaComApiService {
-  constructor(
-    private readonly httpClient: HttpClient,
-    private readonly kaspaL1NetworkService: KaspaL1NetworkService,
-  ) { }
+  private readonly httpClient = inject(HttpClient);
+  private readonly kaspaL1NetworkService = inject(KaspaL1NetworkService);
+
 
   get baseurl(): string {
     return this.kaspaL1NetworkService.getKaspaComApiBaseurl();

@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import {
   Component,
   computed,
@@ -55,15 +55,14 @@ import {
   selector: 'app-swap-flow-page',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     KcButtonComponent,
     KcIconComponent,
     TokenSelectorModalComponent,
     SwapSettingsModalComponent,
     CommaFormatterPipe,
-    TokenLogoComponent,
-  ],
+    TokenLogoComponent
+],
   templateUrl: './swap-flow-page.component.html',
   styleUrl: './swap-flow-page.component.scss',
   host: {

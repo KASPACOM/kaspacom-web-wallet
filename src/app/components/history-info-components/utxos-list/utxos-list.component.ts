@@ -1,5 +1,5 @@
-import { Component, Input } from '@angular/core';
-import { NgFor, NgIf } from '@angular/common';
+import { Component, input, inject } from '@angular/core';
+
 import { UtilsHelper } from '../../../services/utils.service';
 import { FormsModule } from '@angular/forms';
 import { WalletActionService } from '../../../services/wallet-action.service';
@@ -10,16 +10,14 @@ import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
     selector: 'utxos-list',
     templateUrl: './utxos-list.component.html',
     styleUrls: ['./utxos-list.component.scss'],
-    imports: [NgIf, NgFor, FormsModule, SompiToNumberPipe]
+    imports: [FormsModule, SompiToNumberPipe]
 })
 export class UtxosListComponent {
-  @Input() wallet!: AppWallet;
+  private walletActionService = inject(WalletActionService);
+
+  readonly wallet = input.required<AppWallet>();
 
   protected selectedToken = '';
-
-  constructor(
-    private walletActionService: WalletActionService
-  ) {}
 
   async compoundUtxos() {
     await this.walletActionService.validateAndDoActionAfterApproval(

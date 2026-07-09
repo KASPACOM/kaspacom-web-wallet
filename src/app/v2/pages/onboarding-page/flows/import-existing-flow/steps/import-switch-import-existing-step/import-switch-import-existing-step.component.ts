@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, computed, inject, output, signal } from '@angular/core';
 import { KcButtonComponent, NotificationService } from 'kaspacom-ui';
 import { ImportSwitchComponent } from './component/import-switch/import-switch.component';
@@ -9,7 +9,7 @@ import { PasswordManagerService } from '../../../../../../../services/password-m
 
 @Component({
   selector: 'app-import-switch-import-existing-step',
-  imports: [CommonModule, KcButtonComponent, ImportSwitchComponent],
+  imports: [KcButtonComponent, ImportSwitchComponent],
   templateUrl: './import-switch-import-existing-step.component.html',
   styleUrl: './import-switch-import-existing-step.component.scss',
 })

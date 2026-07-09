@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject } from '@angular/core';
+
 import {
   FormsModule,
   ReactiveFormsModule,
@@ -18,19 +18,19 @@ import {
 
 @Component({
   selector: 'l2-transaction',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [FormsModule, ReactiveFormsModule],
   templateUrl: './l2-transaction.component.html',
   styleUrls: ['./l2-transaction.component.scss'],
 })
 export class L2TransactionComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private walletActionService = inject(WalletActionService);
+  private walletService = inject(WalletService);
+  private ethereumWalletChainManager = inject(EthereumWalletChainManager);
+
   ethForm: FormGroup;
 
-  constructor(
-    private fb: FormBuilder,
-    private walletActionService: WalletActionService,
-    private walletService: WalletService,
-    private ethereumWalletChainManager: EthereumWalletChainManager,
-  ) {
+  constructor() {
     this.ethForm = this.fb.group({
       to: ['', [Validators.pattern(/^0x[a-fA-F0-9]{40}$/)]],
       value: ['', [Validators.min(0)]],

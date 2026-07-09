@@ -1,17 +1,19 @@
 <div class="send-page-content">
   <!-- L1 Assets Container -->
-  <app-l1-send-assets-container
-    *ngIf="!isL2Network()"
-    (kaspaClick)="onKaspaCardClick()"
-    (krc20Click)="onKrc20CardClick()"
-    (nftClick)="onNftCardClick()"
-    (knsClick)="onKnsCardClick()"
-  ></app-l1-send-assets-container>
+  @if (!isL2Network()) {
+    <app-l1-send-assets-container
+      (kaspaClick)="onKaspaCardClick()"
+      (krc20Click)="onKrc20CardClick()"
+      (nftClick)="onNftCardClick()"
+      (knsClick)="onKnsCardClick()"
+    ></app-l1-send-assets-container>
+  }
 
   <!-- L2 Assets Container -->
-  <app-l2-send-assets-container
-    *ngIf="isL2Network()"
-    (kaspaClick)="onL2KaspaCardClick()"
-    (erc20Click)="onL2Erc20CardClick()"
-  ></app-l2-send-assets-container>
+  @if (isL2Network()) {
+    <app-l2-send-assets-container
+      (kaspaClick)="onL2KaspaCardClick()"
+      (erc20Click)="onL2Erc20CardClick()"
+    ></app-l2-send-assets-container>
+  }
 </div>

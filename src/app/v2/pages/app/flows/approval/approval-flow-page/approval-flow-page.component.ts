@@ -6,7 +6,7 @@ import {
   WritableSignal,
   OnDestroy,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { KcButtonComponent } from 'kaspacom-ui';
 import { KcIconComponent } from 'kaspacom-ui';
@@ -33,7 +33,6 @@ import { SwapContextService } from '../../../../../services/swap-context.service
 @Component({
   selector: 'app-approval-flow-page',
   imports: [
-    CommonModule,
     FormsModule,
     KcButtonComponent,
     KcIconComponent,
@@ -41,8 +40,8 @@ import { SwapContextService } from '../../../../../services/swap-context.service
     L2PriorityFeeSelectionComponent,
     ApprovalSuccessPageComponent,
     ApprovalLoadingPageComponent,
-    SwapApprovalComponent,
-  ],
+    SwapApprovalComponent
+],
   templateUrl: './approval-flow-page.component.html',
   styleUrl: './approval-flow-page.component.scss',
 })

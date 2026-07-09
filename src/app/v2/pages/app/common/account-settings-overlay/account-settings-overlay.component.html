@@ -1,11 +1,11 @@
 <div 
   class="account-settings-overlay"
-  [class.open]="isOpen"
+  [class.open]="isOpen()"
   (click)="onClose()"
 >
   <div 
     class="account-settings-content" 
-    [@slideDown]="isOpen ? 'open' : 'closed'"
+    [@slideDown]="isOpen() ? 'open' : 'closed'"
     (click)="$event.stopPropagation()"
   >
     <h2 class="account-settings-title">Manage wallets</h2>

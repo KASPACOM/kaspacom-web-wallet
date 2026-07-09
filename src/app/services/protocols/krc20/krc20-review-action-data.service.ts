@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { AppWallet } from "../../../classes/AppWallet";
 import { CommitRevealAction } from "../../../types/wallet-action";
 import { ActionDisplay } from "../../../types/action-display.type";
@@ -10,8 +10,8 @@ import { ProtocolReviewActionDataInterface } from "../interfaces/protocol-review
     providedIn: 'root',
 })
 export class Krc20ReviewActionDataService implements ProtocolReviewActionDataInterface {
+    private readonly kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
 
-    constructor(private readonly kaspaNetworkActionsService: KaspaNetworkActionsService) { }
 
     getActionDisplay(action: CommitRevealAction | undefined, wallet: AppWallet): ActionDisplay | undefined {
 

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   CommitRevealAction,
   CompoundUtxosAction,
@@ -29,10 +29,9 @@ import { formatUnits } from 'ethers';
   providedIn: 'root',
 })
 export class ReviewActionDataService {
-  constructor(
-    private readonly kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private readonly baseProtocolClassesService: BaseProtocolClassesService,
-  ) { }
+  private readonly kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  private readonly baseProtocolClassesService = inject(BaseProtocolClassesService);
+
 
   public getActionDisplay(
     action: WalletAction | undefined,

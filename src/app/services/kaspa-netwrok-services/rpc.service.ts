@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Encoding, Resolver, RpcClient } from '../../../../public/kaspa/kaspa';
 import { KaspaL1NetworkService } from './kaspa-l1-network.service';
 
@@ -6,13 +6,15 @@ import { KaspaL1NetworkService } from './kaspa-l1-network.service';
   providedIn: 'root',
 })
 export class RpcService {
+  private readonly kaspaL1NetworkService = inject(KaspaL1NetworkService);
+
   private RPC?: RpcClient;
   private network: string;
   private usingConfiguredRpcUrl = false;
   private usingResolver = false;
   private configuredRpcUrlIndex = 0;
 
-  constructor(private readonly kaspaL1NetworkService: KaspaL1NetworkService) {
+  constructor() {
     this.network = this.kaspaL1NetworkService.getNetworkId();
     this.refreshRpc();
   }

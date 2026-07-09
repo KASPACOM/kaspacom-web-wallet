@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { EIP1193ProviderRequestActionResult, EIP1193RequestParams, EIP1193RequestPayload, EIP1193RequestType, ERROR_CODES, WalletActionResultType } from "@kaspacom/wallet-messages";
 import { AppWallet } from "../../classes/AppWallet";
 import { WalletActionResultWithError } from "../../types/wallet-action-result";
@@ -12,6 +12,9 @@ import { MINIMAL_AMOUNT_TO_SEND } from "../kaspa-netwrok-services/kaspa-network-
     providedIn: 'root',
 })
 export class EthereumHandleActionRequestService {
+    private readonly etherService = inject(EtherService);
+    private readonly ethereumWalletChainManager = inject(EthereumWalletChainManager);
+
     protected actionToFunctionMap: {
         [K in EIP1193RequestType]?: (action: EIP1193RequestPayload<K>, wallet: AppWallet) => Promise<WalletActionResultWithError>
     } = {
@@ -19,12 +22,6 @@ export class EthereumHandleActionRequestService {
             [EIP1193RequestType.WALLET_SWITCH_ETHEREUM_CHAIN]: this.handleWalletSwitchEthereumChainRequest.bind(this),
             [EIP1193RequestType.WALLET_ADD_ETHEREUM_CHAIN]: this.handleWalletAddEthereumChainRequest.bind(this),
         }
-
-
-    constructor(
-        private readonly etherService: EtherService,
-        private readonly ethereumWalletChainManager: EthereumWalletChainManager,
-    ) { }
 
     getSupportedActions(): EIP1193RequestType[] {
         return Object.keys(this.actionToFunctionMap) as EIP1193RequestType[];

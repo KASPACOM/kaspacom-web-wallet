@@ -1,5 +1,5 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ElementRef, AfterViewInit, OnDestroy, input, viewChild } from '@angular/core';
+
 
 class GraphNode {
   x: number;
@@ -87,7 +87,7 @@ export interface KaspaNodesConfig {
 @Component({
   selector: 'kaspa-nodes-background',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
     <canvas 
       #backgroundCanvas 
@@ -97,8 +97,8 @@ export interface KaspaNodesConfig {
   styleUrls: ['./kaspa-nodes-background.component.scss']
 })
 export class KaspaNodesBackgroundComponent implements AfterViewInit, OnDestroy {
-  @ViewChild('backgroundCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
-  @Input() config: KaspaNodesConfig = {};
+  readonly canvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('backgroundCanvas');
+  readonly config = input<KaspaNodesConfig>({});
   
   private animationId: number | null = null;
   private canvas!: HTMLCanvasElement;
@@ -120,7 +120,7 @@ export class KaspaNodesBackgroundComponent implements AfterViewInit, OnDestroy {
   };
 
   private get mergedConfig(): Required<KaspaNodesConfig> {
-    return { ...this.defaultConfig, ...this.config };
+    return { ...this.defaultConfig, ...this.config() };
   }
 
   ngAfterViewInit() {
@@ -146,7 +146,7 @@ export class KaspaNodesBackgroundComponent implements AfterViewInit, OnDestroy {
   }
 
   private initCanvas() {
-    this.canvas = this.canvasRef.nativeElement;
+    this.canvas = this.canvasRef().nativeElement;
     this.ctx = this.canvas.getContext('2d')!;
     
     // Set initial canvas size

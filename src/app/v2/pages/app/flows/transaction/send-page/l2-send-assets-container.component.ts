@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, output } from '@angular/core';
 import { TokenLogoComponent } from '../../../../../../components/token-logo/token-logo.component';
 import { BaseSendAssetsContainerComponent } from './base-send-assets-container';
@@ -6,7 +6,7 @@ import { BaseSendAssetsContainerComponent } from './base-send-assets-container';
 @Component({
   selector: 'app-l2-send-assets-container',
   standalone: true,
-  imports: [CommonModule, TokenLogoComponent],
+  imports: [TokenLogoComponent],
   templateUrl: './l2-send-assets-container.component.html',
   styleUrl: './l2-send-assets-container.component.scss',
 })

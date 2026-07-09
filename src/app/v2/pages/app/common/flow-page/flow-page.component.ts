@@ -1,12 +1,12 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, input, output } from '@angular/core';
+
 import { KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 
 @Component({
   selector: 'app-flow-page',
   standalone: true,
-  imports: [CommonModule, KcIconComponent, KcTooltipDirective],
+  imports: [KcIconComponent, KcTooltipDirective],
   templateUrl: './flow-page.component.html',
   styleUrl: './flow-page.component.scss',
   animations: [
@@ -42,28 +42,31 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
   ]
 })
 export class FlowPageComponent {
-  @Input() isOpen = false;
-  @Input() title = '';
-  @Input() canNavigateBack = false;
-  @Input() canClose = false;
-  @Input() showTitle = true;
-  @Input() showBackground = true;
-  @Output() navigateBack = new EventEmitter<void>();
-  @Output() backdropClick = new EventEmitter<void>();
-  @Output() close = new EventEmitter<void>();
+  readonly isOpen = input(false);
+  readonly title = input('');
+  readonly canNavigateBack = input(false);
+  readonly canClose = input(false);
+  readonly showTitle = input(true);
+  readonly showBackground = input(true);
+  readonly navigateBack = output<void>();
+  readonly backdropClick = output<void>();
+  readonly close = output<void>();
 
   // Track animation state to prevent content changes during animation
   isAnimating = false;
 
   onNavigateBack(): void {
+    // TODO: The 'emit' function requires a mandatory void argument
     this.navigateBack.emit();
   }
 
   onBackdropClick(): void {
+    // TODO: The 'emit' function requires a mandatory void argument
     this.backdropClick.emit();
   }
 
   onClose(): void {
+    // TODO: The 'emit' function requires a mandatory void argument
     this.close.emit();
   }
 

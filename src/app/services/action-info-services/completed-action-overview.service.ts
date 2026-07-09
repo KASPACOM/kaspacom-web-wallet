@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { KaspaNetworkActionsService } from "../kaspa-netwrok-services/kaspa-network-actions.service";
 import { CommitRevealActionResult, EIP1193ProviderRequestActionResult, EIP1193RequestResults, EIP1193RequestType, KasTransferActionResult, ProtocolType, SignedMessageActionResult, SignPsktTransactionActionResult, WalletActionResult, WalletActionResultType } from "@kaspacom/wallet-messages";
 import { BaseProtocolClassesService } from "../protocols/base-protocol-classes.service";
@@ -10,10 +10,9 @@ import { CompoundUtxosActionResult } from "../../types/wallet-action-result";
     providedIn: 'root',
 })
 export class CompletedActionOverviewService {
-    constructor(private readonly kaspaNetworkActionsService: KaspaNetworkActionsService,
-        private readonly baseProtocolClassesService: BaseProtocolClassesService,
-    ) {
-    }
+    private readonly kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+    private readonly baseProtocolClassesService = inject(BaseProtocolClassesService);
+
 
     public getActionDisplay(action: WalletActionResult | undefined): CompletedActionDisplay | undefined {
         if (!action) {

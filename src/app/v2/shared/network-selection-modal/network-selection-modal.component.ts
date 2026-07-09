@@ -1,5 +1,5 @@
 import { Component, computed, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { FlowPagesService } from '../../services/flow-pages.service';
@@ -26,7 +26,7 @@ interface PriceCacheEntry {
 
 @Component({
   selector: 'network-selection-modal',
-  imports: [CommonModule, KcIconComponent],
+  imports: [KcIconComponent],
   templateUrl: './network-selection-modal.component.html',
   styleUrl: './network-selection-modal.component.scss',
 })

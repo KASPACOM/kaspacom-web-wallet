@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import pkg from '../../../package.json';
 import { LOCAL_STORAGE_KEYS } from '../config/consts';
 import { UserWalletsData } from '../types/user-wallets-data';
@@ -9,12 +9,10 @@ import { UtilsHelper } from './utils.service';
   providedIn: 'root',
 })
 export class PasswordManagerService {
-  private password: string | null = null;
+  private readonly encryptionService = inject(EncryptionService);
+  private utils = inject(UtilsHelper);
 
-  constructor(
-    private readonly encryptionService: EncryptionService,
-    private utils: UtilsHelper
-  ) {}
+  private password: string | null = null;
 
   isUserHasSavedPassword(): boolean {
     return !!localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA);

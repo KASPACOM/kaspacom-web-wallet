@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { WalletService } from '../wallet.service';
 
 // TODO: Implement L2 transaction history fetching using indexer API
@@ -23,7 +23,8 @@ export interface ERC20Transaction {
   providedIn: 'root',
 })
 export class Erc20TransactionService {
-  constructor(private walletService: WalletService) {}
+  private walletService = inject(WalletService);
+
 
   async getERC20TransactionHistory(
     walletAddress: string,

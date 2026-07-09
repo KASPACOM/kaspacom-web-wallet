@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, of, throwError } from 'rxjs';
 import { 
@@ -22,10 +22,9 @@ import { KaspaL1NetworkService } from '../kaspa-netwrok-services/kaspa-l1-networ
 
 @Injectable({ providedIn: 'root' })
 export class Krc721ApiService {
-  constructor(
-    private readonly httpClient: HttpClient,
-    private readonly kaspaL1NetworkService: KaspaL1NetworkService,
-  ) {}
+  private readonly httpClient = inject(HttpClient);
+  private readonly kaspaL1NetworkService = inject(KaspaL1NetworkService);
+
 
   private get baseUrl(): string | undefined {
     return this.kaspaL1NetworkService.getKrc721ApiBaseurl();

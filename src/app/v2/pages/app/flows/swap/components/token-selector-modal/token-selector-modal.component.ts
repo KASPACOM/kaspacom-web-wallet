@@ -1,8 +1,6 @@
 import {
   Component,
-  EventEmitter,
   OnInit,
-  Output,
   inject,
   input,
   signal,
@@ -10,8 +8,9 @@ import {
   effect,
   untracked,
   DestroyRef,
+  output
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { KcBaseModalComponent, KcInputComponent, KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
 import { MessagePopupService } from '../../../../../../../services/message-popup.service';
 import type { Erc20Token } from '@kaspacom/swap-sdk';
@@ -51,14 +50,13 @@ function isLocalStorageAvailable(): boolean {
   selector: 'app-token-selector-modal',
   standalone: true,
   imports: [
-    CommonModule,
     KcBaseModalComponent,
     KcInputComponent,
     KcIconComponent,
     KcTooltipDirective,
     CommaFormatterPipe,
-    TokenLogoComponent,
-  ],
+    TokenLogoComponent
+],
   templateUrl: './token-selector-modal.component.html',
   styleUrl: './token-selector-modal.component.scss',
 })
@@ -106,8 +104,8 @@ export class TokenSelectorModalComponent implements OnInit {
   isLoading = input(false);
   tokens = input<Erc20Token[]>([]);
   excludedToken = input<Erc20Token | null>(null);
-  @Output() close = new EventEmitter<void>();
-  @Output() selectToken = new EventEmitter<Erc20Token>();
+  readonly close = output<void>();
+  readonly selectToken = output<Erc20Token>();
 
   // Search state
   searchQuery = signal('');
@@ -258,6 +256,7 @@ export class TokenSelectorModalComponent implements OnInit {
   }
 
   onClose(): void {
+    // TODO: The 'emit' function requires a mandatory void argument
     this.close.emit();
   }
 

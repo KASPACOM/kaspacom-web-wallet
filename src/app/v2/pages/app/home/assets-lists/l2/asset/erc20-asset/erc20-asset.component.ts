@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { formatUnits, getAddress } from 'ethers';
@@ -26,12 +26,11 @@ interface Erc20TokenInfo {
 @Component({
   selector: 'app-erc20-asset',
   imports: [
-    CommonModule,
     KcButtonComponent,
     KcIconComponent,
     SkeletonComponent,
-    KcLabeledTabsComponent,
-  ],
+    KcLabeledTabsComponent
+],
   templateUrl: './erc20-asset.component.html',
   styleUrl: './erc20-asset.component.scss',
 })

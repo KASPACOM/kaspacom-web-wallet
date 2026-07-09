@@ -1,17 +1,17 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, input, output } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 
 @Component({
     selector: 'app-verify-mnemonic',
-    imports: [CommonModule, FormsModule],
+    imports: [FormsModule],
     templateUrl: './verify-mnemonic.component.html',
     styleUrls: ['./verify-mnemonic.component.scss']
 })
 export class VerifyMnemonicComponent {
-  @Input() mnemonic: string = '';
-  @Output() onVerified = new EventEmitter<void>();
-  @Output() onBack = new EventEmitter<void>();
+  readonly mnemonic = input<string>('');
+  readonly onVerified = output<void>();
+  readonly onBack = output<void>();
 
   wordsToVerify: { index: number; word: string; input: string }[] = [];
   isVerified: boolean = false;
@@ -22,7 +22,7 @@ export class VerifyMnemonicComponent {
   }
 
   private generateVerificationWords() {
-    const words = this.mnemonic.split(' ');
+    const words = this.mnemonic().split(' ');
     const numWordsToVerify = Math.min(3, words.length);
     const indices = new Set<number>();
     

@@ -1,11 +1,4 @@
-import {
-  computed,
-  EnvironmentInjector,
-  Injectable,
-  Signal,
-  signal,
-  WritableSignal,
-} from '@angular/core';
+import { computed, EnvironmentInjector, Injectable, Signal, signal, WritableSignal, inject } from '@angular/core';
 import { PasswordManagerService } from './password-manager.service';
 import {
   SavedWalletAccount,
@@ -34,22 +27,22 @@ export enum VIEW_METHOD {
   providedIn: 'root',
 })
 export class WalletService {
+  private readonly passwordManagerService = inject(PasswordManagerService);
+  private readonly kaspaWalletMnemonicActionsService = inject(KaspaWalletMnemonicActionsService);
+  private readonly kaspaConnectionManagerService = inject(KaspaNetworkConnectionManagerService);
+  private readonly kasplexService = inject(KasplexKrc20Service);
+  private readonly utilsService = inject(UtilsHelper);
+  private readonly injector = inject(EnvironmentInjector);
+  private readonly etheriumChainManager = inject(EthereumWalletChainManager);
+  private readonly monitorService = inject(MonitorService);
+  private readonly kaspaL1NetworkService = inject(KaspaL1NetworkService);
+
   private currentWalletSignal = signal<AppWallet | undefined>(undefined);
   private allWalletsSignal = signal<AppWallet[] | undefined>(undefined);
   private isL2DisplaySignal: WritableSignal<boolean>;
   private isWalletLoaded = false;
 
-  constructor(
-    private readonly passwordManagerService: PasswordManagerService,
-    private readonly kaspaWalletMnemonicActionsService: KaspaWalletMnemonicActionsService,
-    private readonly kaspaConnectionManagerService: KaspaNetworkConnectionManagerService,
-    private readonly kasplexService: KasplexKrc20Service,
-    private readonly utilsService: UtilsHelper,
-    private readonly injector: EnvironmentInjector,
-    private readonly etheriumChainManager: EthereumWalletChainManager,
-    private readonly monitorService: MonitorService,
-    private readonly kaspaL1NetworkService: KaspaL1NetworkService,
-  ) {
+  constructor() {
     let isL2View =
       localStorage.getItem(LOCAL_STORAGE_KEYS.IS_L2_DISPLAY) === 'true';
 

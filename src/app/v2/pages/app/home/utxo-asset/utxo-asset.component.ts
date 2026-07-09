@@ -1,5 +1,5 @@
 import { Component, computed, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute } from '@angular/router';
 import { KcIconComponent } from 'kaspacom-ui';
 import { BaseAssetPageComponent, AssetDetail } from '../../common/base-asset-page/base-asset-page.component';
@@ -11,11 +11,10 @@ import { KaspaL1NetworkService } from '../../../../../services/kaspa-netwrok-ser
 @Component({
   selector: 'app-utxo-asset',
   imports: [
-    CommonModule,
     KcIconComponent,
     CopyButtonComponent,
     SkeletonComponent
-  ],
+],
   templateUrl: './utxo-asset.component.html',
   styleUrl: './utxo-asset.component.scss'
 })

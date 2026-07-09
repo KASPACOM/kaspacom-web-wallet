@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { KcButtonComponent, KcIconComponent, KcInputComponent } from 'kaspacom-ui';
@@ -17,7 +17,7 @@ import {
 @Component({
   selector: 'app-delete-wallet-confirmation',
   standalone: true,
-  imports: [CommonModule, FormsModule, KcButtonComponent, KcIconComponent, KcInputComponent],
+  imports: [FormsModule, KcButtonComponent, KcIconComponent, KcInputComponent],
   templateUrl: './delete-wallet-confirmation.component.html',
   styleUrl: './delete-wallet-confirmation.component.scss',
 })

@@ -3,7 +3,7 @@
   <div class="transaction-header flex align-items-center justify-content-between">
     <!-- Left side: back button and title -->
     <div class="header-left flex align-items-center gap-16">
-      <kc-icon 
+      <kc-icon
         [iconClass]="'icon-arrow-left'"
         [size]="'md'"
         (click)="goBack()"
@@ -11,7 +11,7 @@
       </kc-icon>
       <h1 class="transaction-title text-gray-90">Transaction Details</h1>
     </div>
-    
+
     <!-- Right side: chevron or additional actions if needed -->
     <div class="header-right">
       <!-- Could add additional actions here if needed -->
@@ -35,7 +35,7 @@
     <!-- Transaction Details Section -->
     <div class="details-section flex column gap-16">
       <h3 class="section-title text-gray-90">Transaction Details</h3>
-      
+
       <div class="details-grid">
         <!-- Amount -->
         <div class="detail-card">
@@ -52,7 +52,7 @@
             <div class="detail-value font-mono break-all">
               {{ shortenAddress(operationDetails()?.from || '') }}
             </div>
-            <app-copy-button 
+            <app-copy-button
               [value]="operationDetails()?.from || ''"
               [size]="'xs'">
             </app-copy-button>
@@ -67,7 +67,7 @@
               <div class="detail-value font-mono break-all">
                 {{ shortenAddress(operationDetails()?.to || '') }}
               </div>
-              <app-copy-button 
+              <app-copy-button
                 [value]="operationDetails()?.to || ''"
                 [size]="'xs'">
               </app-copy-button>
@@ -108,12 +108,14 @@
         </div>
 
         <!-- TX State -->
-        <div class="detail-card" *ngIf="isOperationAccepted(operationDetails()!)">
-          <div class="detail-label">TX State</div>
-          <div class="detail-value font-weight-medium status-accepted">
-            {{ getOperationStatus(operationDetails()!) }}
+        @if (isOperationAccepted(operationDetails()!)) {
+          <div class="detail-card">
+            <div class="detail-label">TX State</div>
+            <div class="detail-value font-weight-medium status-accepted">
+              {{ getOperationStatus(operationDetails()!) }}
+            </div>
           </div>
-        </div>
+        }
 
         <!-- TX State (Second entry - "Implemented") -->
         <div class="detail-card">
@@ -130,7 +132,7 @@
             <div class="detail-value font-mono break-all">
               {{ operationDetails()?.checkpoint }}
             </div>
-            <app-copy-button 
+            <app-copy-button
               [value]="operationDetails()?.checkpoint || ''"
               [size]="'xs'">
             </app-copy-button>
@@ -158,10 +160,10 @@
           <div class="detail-label">Reveal TX</div>
           <div class="detail-value-container flex align-items-center gap-8">
             <div class="detail-value text-primary font-mono cursor-pointer hover-opacity break-all"
-                 (click)="openTransactionInExplorer()">
+              (click)="openTransactionInExplorer()">
               {{ operationDetails()?.hashRev }}
             </div>
-            <app-copy-button 
+            <app-copy-button
               [value]="operationDetails()?.hashRev || ''"
               [size]="'xs'">
             </app-copy-button>
@@ -183,4 +185,4 @@
       <div class="text-gray-50 typo-text-1 text-center">The requested transaction details could not be loaded.</div>
     </div>
   }
-</div> 
+</div>

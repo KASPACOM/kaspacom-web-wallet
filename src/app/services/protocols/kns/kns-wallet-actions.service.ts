@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { WalletAction, WalletActionType } from "../../../types/wallet-action";
 import { KNS_TRANSACTIONS_PRICE, KnsOperationDataService } from "./kns-operation-data.service";
 import { KaspaNetworkActionsService, REVEAL_PSKT_AMOUNT } from "../../kaspa-netwrok-services/kaspa-network-actions.service";
@@ -11,11 +11,10 @@ const CURRENT_PROTOCOL = ProtocolType.KNS;
     providedIn: 'root',
 })
 export class KnsWalletActionService {
-    constructor(
-        private knsOperationDataService: KnsOperationDataService,
-        private kaspaNetworkActionsService: KaspaNetworkActionsService,
-        private utils: UtilsHelper,
-    ) { }
+    private knsOperationDataService = inject(KnsOperationDataService);
+    private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+    private utils = inject(UtilsHelper);
+
 
     createCreateWalletAction(
         domain: string,

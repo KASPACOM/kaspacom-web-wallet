@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import {
@@ -23,13 +23,12 @@ import { KaspaL1NetworkService } from '../../../../../../../../services/kaspa-ne
 @Component({
   selector: 'app-kns-asset',
   imports: [
-    CommonModule,
     KcButtonComponent,
     KcIconComponent,
     KcTooltipDirective,
     SkeletonComponent,
-    CopyButtonComponent,
-  ],
+    CopyButtonComponent
+],
   templateUrl: './kns-asset.component.html',
   styleUrl: './kns-asset.component.scss',
 })

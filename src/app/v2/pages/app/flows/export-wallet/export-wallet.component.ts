@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { KcButtonComponent, NotificationService } from 'kaspacom-ui';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
@@ -18,7 +18,7 @@ interface ExportWalletTransientState {
 @Component({
   selector: 'app-export-wallet',
   standalone: true,
-  imports: [CommonModule, KcButtonComponent, SeedPhraseWordComponent, FormsModule],
+  imports: [KcButtonComponent, SeedPhraseWordComponent, FormsModule],
   templateUrl: './export-wallet.component.html',
   styleUrl: './export-wallet.component.scss',
 })

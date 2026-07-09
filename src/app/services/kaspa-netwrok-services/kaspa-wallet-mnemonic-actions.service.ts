@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { Mnemonic, PrivateKey, XPrv } from "../../../../public/kaspa/kaspa";
 import { DEFAULT_DERIVED_PATH } from "../../config/consts";
 import { RpcService } from "./rpc.service";
@@ -7,9 +7,8 @@ import { RpcService } from "./rpc.service";
   providedIn: 'root',
 })
 export class KaspaWalletMnemonicActionsService {
-  constructor(
-    private rpcService: RpcService,
-  ) { }
+  private rpcService = inject(RpcService);
+
   getPrivateKeyFromMnemonic(
     mnemonicWords: string,
     derivedPath: string = DEFAULT_DERIVED_PATH,

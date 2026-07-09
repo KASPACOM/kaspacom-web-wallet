@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, computed, inject, output, signal } from '@angular/core';
 import {
   AbstractControl,
@@ -17,12 +17,11 @@ import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 @Component({
   selector: 'app-create-password-new-wallet-step',
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     KcInputComponent,
     KcButtonComponent,
-    KcIconComponent,
-  ],
+    KcIconComponent
+],
   templateUrl: './create-password-new-wallet-step.component.html',
   styleUrl: './create-password-new-wallet-step.component.scss',
 })

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -7,7 +7,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { PasswordManagerService } from '../../services/password-manager.service';
-import { NgIf } from '@angular/common';
+
 import { Router } from '@angular/router';
 import { WalletService } from '../../services/wallet.service';
 import { IFrameCommunicationApp } from '../../services/communication-service/communication-app/iframe-communication.service';
@@ -16,18 +16,16 @@ import { IFrameCommunicationApp } from '../../services/communication-service/com
     selector: 'app-login',
     templateUrl: './login.component.html',
     styleUrls: ['./login.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, NgIf]
+    imports: [FormsModule, ReactiveFormsModule]
 })
 export class LoginComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private passwordManagerService = inject(PasswordManagerService);
+  private router = inject(Router);
+  private walletService = inject(WalletService);
+
   loginForm: FormGroup = new FormGroup({});
   loginError: boolean = false;
-
-  constructor(
-    private fb: FormBuilder,
-    private passwordManagerService: PasswordManagerService,
-    private router: Router,
-    private walletService: WalletService,
-  ) {}
 
   ngOnInit() {
     this.loginForm = this.fb.group({

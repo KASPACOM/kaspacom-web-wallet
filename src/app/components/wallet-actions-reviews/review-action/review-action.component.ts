@@ -17,7 +17,8 @@ import {
   EIP1193RequestType,
 } from '@kaspacom/wallet-messages';
 import { InputFieldType } from '../../../types/action-display.type';
-import { KcButtonComponent, KcCheckboxComponent } from 'kaspacom-ui';
+import { KcButtonComponent } from '@kaspacom/ui-kit';
+import { CheckboxComponent } from '../../../v2/shared/ui/checkbox/checkbox.component';
 
 const TIMEOUT = 2 * 60 * 1000;
 
@@ -30,7 +31,7 @@ const TIMEOUT = 2 * 60 * 1000;
     PriorityFeeSelectionComponent,
     FormsModule,
     KcButtonComponent,
-    KcCheckboxComponent,
+    CheckboxComponent,
   ],
 })
 export class ReviewActionComponent {

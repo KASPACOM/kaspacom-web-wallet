@@ -9,7 +9,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import { KcButtonComponent, KcCheckboxComponent } from 'kaspacom-ui';
+import { KcButtonComponent } from '@kaspacom/ui-kit';
 import { firstValueFrom } from 'rxjs';
 import { AddressResolutionResult } from '../../../../../../../../../../services/address-resolution.service';
 import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
@@ -25,6 +25,7 @@ import { WalletService } from '../../../../../../../../../../services/wallet.ser
 import { ApprovalFlowService } from '../../../../../../../../../services/approval-flow.service';
 import { AddressSmartInputComponent } from '../../../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { SkeletonComponent } from '../../../../../../../../../shared/ui/skeleton/skeleton.component';
+import { CheckboxComponent } from '../../../../../../../../../shared/ui/checkbox/checkbox.component';
 import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
 import { INft } from '../../../../../../../common/interfaces/nft.interface';
@@ -33,7 +34,7 @@ import { INft } from '../../../../../../../common/interfaces/nft.interface';
   selector: 'app-send-nft',
   standalone: true,
   imports: [
-    KcCheckboxComponent,
+    CheckboxComponent,
     KcButtonComponent,
     FormsModule,
     SkeletonComponent,

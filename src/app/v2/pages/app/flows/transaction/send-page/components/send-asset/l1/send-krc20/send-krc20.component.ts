@@ -10,11 +10,8 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import {
-  KcButtonComponent,
-  KcCheckboxComponent,
-  KcInputComponent,
-} from 'kaspacom-ui';
+import { KcButtonComponent, KcInputComponent } from '@kaspacom/ui-kit';
+import { CheckboxComponent } from '../../../../../../../../../shared/ui/checkbox/checkbox.component';
 import { AddressResolutionResult } from '../../../../../../../../../../services/address-resolution.service';
 import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
 import { L1_ASSET_KEYS } from '../../../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
@@ -38,7 +35,7 @@ import { Krc20TokenLogoComponent } from '../../../../../../../home/assets-lists/
   imports: [
     CommonModule,
     KcInputComponent,
-    KcCheckboxComponent,
+    CheckboxComponent,
     KcButtonComponent,
     FormsModule,
     Krc20TokenLogoComponent,

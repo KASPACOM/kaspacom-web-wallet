@@ -5,7 +5,7 @@ import {
   KcButtonComponent,
   KcIconComponent,
   NotificationService,
-} from 'kaspacom-ui';
+} from '@kaspacom/ui-kit';
 import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
 import { L2AssetsStoreService } from '../../../../../../../../services/assets-manager/assets-stores/l2-assets-store.service';
 import { ERC20Contract } from '../../../../../../../../services/etherium-services/smart-contracts/contracts/erc20-contract';

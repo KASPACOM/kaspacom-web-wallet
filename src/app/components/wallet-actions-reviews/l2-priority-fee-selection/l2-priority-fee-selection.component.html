@@ -137,7 +137,6 @@
             </div>
             <div class="custom-fee-input">
               <kc-input
-                type="number"
                 placeholder="Min 1 wei"
                 [(ngModel)]="customFee"
                 (valueChange)="selectOption('custom')"
@@ -157,7 +156,6 @@
             </div>
             <div class="custom-fee-input">
               <kc-input
-                type="number"
                 placeholder="Min 21,000"
                 [(ngModel)]="gasLimit"
                 (valueChange)="updateGasLimit()"

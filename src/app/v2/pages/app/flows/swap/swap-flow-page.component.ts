@@ -24,7 +24,7 @@ import {
   KcButtonComponent,
   KcIconComponent,
   NotificationService,
-} from 'kaspacom-ui';
+} from '@kaspacom/ui-kit';
 import {
   EIP1193RequestPayload,
   EIP1193RequestType,

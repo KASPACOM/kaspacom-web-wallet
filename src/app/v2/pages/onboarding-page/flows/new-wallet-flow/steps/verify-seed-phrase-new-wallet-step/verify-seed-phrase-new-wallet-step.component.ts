@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { KcButtonComponent, KcInputComponent } from 'kaspacom-ui';
+import { KcButtonComponent, KcInputComponent } from '@kaspacom/ui-kit';
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 
 interface VerificationWordEntry {

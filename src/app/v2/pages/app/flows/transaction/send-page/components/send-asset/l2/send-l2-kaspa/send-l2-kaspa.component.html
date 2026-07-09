@@ -32,12 +32,7 @@
       <kc-input
         [label]="'Amount of Kaspa'"
         [placeholder]="'0.00'"
-        [type]="'number'"
-        [min]="0"
-        [max]="availableBalance()"
-        [isFullWidth]="true"
         [isValid]="isAmountValid"
-        [invalidReason]="amountErrorMessage"
         [isDisabled]="isLoading"
         [ngModel]="kaspaAmount"
         (valueChange)="onAmountChange($event)">
@@ -45,6 +40,9 @@
           <span>Max</span>
         </div>
       </kc-input>
+      @if (!isAmountValid && amountErrorMessage) {
+        <span class="input-error-text">{{ amountErrorMessage }}</span>
+      }
     </div>
 
     <!-- Send Button -->

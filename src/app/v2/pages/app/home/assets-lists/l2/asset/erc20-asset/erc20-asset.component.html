@@ -27,7 +27,7 @@
   <div class="action-buttons flex gap-12">
     <kc-button 
       [variant]="'primary'"
-      [size]="'md'"
+      [size]="'m'"
       [text]="'Send'"
       class="flex-1"
       (buttonClick)="onSendAction()">
@@ -35,7 +35,7 @@
     @if (isTokenSaved()) {
       <kc-button
         [variant]="'secondary'"
-        [size]="'md'"
+        [size]="'m'"
         [text]="isRemoving() ? 'Removing...' : 'Remove'"
         [isDisabled]="isRemoving()"
         class="flex-1"

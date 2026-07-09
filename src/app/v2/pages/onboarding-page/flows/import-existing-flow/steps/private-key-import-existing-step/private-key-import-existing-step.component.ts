@@ -12,7 +12,7 @@ import {
   KcIconComponent,
   KcInputComponent,
   NotificationService,
-} from 'kaspacom-ui';
+} from '@kaspacom/ui-kit';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
 import { ImportSwitchMethod } from '../import-switch-import-existing-step/component/import-switch/import-switch-method.enum';
 

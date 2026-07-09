@@ -14,7 +14,7 @@
               [placeholder]="`${item.index + 1}.`"
               [label]="`Word #${item.index + 1}`"
               [ngModel]="item.input"
-              (valueChange)="onInputChange($index, $event)"
+              (valueChange)="onInputChange($index, $any($event))"
             ></kc-input>
           }
         </div>
@@ -25,7 +25,7 @@
   <div class="step-layout__buttons">
     <div class="flex full-width gap-16">
       <div class="full-width">
-        <kc-button [isFullWidth]="true" [variant]="'tertiary'" [text]="'Back'" (buttonClick)="previous.emit()"></kc-button>
+        <kc-button [isFullWidth]="true" [variant]="'secondary'" [text]="'Back'" (buttonClick)="previous.emit()"></kc-button>
       </div>
       <div class="full-width">
         <kc-button [isFullWidth]="true" [text]="'Continue'" [isDisabled]="!isVerified()" (buttonClick)="onContinue()"></kc-button>

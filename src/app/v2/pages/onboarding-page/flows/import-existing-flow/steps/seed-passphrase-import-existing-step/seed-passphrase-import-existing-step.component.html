@@ -19,7 +19,6 @@
           [type]="passphraseFieldType()"
           [label]="'Seed passphrase'"
           [placeholder]="'Enter seed passphrase (optional)'"
-          [isFullWidth]="true"
         >
           <div class="clickable" rightSideSlot (click)="togglePassphraseVisibility()">
             <kc-icon [iconClass]="passphraseIcon()" [size]="'xs'"></kc-icon>
@@ -40,7 +39,7 @@
       ></kc-button>
       <kc-button
         [text]="'Back'"
-        [variant]="'tertiary'"
+        [variant]="'secondary'"
         [isFullWidth]="true"
         type="button"
         (buttonClick)="previous.emit()"

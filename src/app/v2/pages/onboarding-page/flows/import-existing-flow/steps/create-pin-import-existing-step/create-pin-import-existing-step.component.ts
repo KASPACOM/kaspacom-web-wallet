@@ -11,7 +11,7 @@ import {
   KcIconComponent,
   KcInputComponent,
   NotificationService,
-} from 'kaspacom-ui';
+} from '@kaspacom/ui-kit';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
 
 @Component({

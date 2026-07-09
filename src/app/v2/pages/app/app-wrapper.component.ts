@@ -33,7 +33,7 @@ import {
   KcSnackbarComponent,
   KcSpinnerComponent,
   KcIconComponent,
-} from 'kaspacom-ui';
+} from '@kaspacom/ui-kit';
 import { WalletService } from '../../../services/wallet.service';
 import { AssetsManagerService } from '../../../services/assets-manager/assets-manager.service';
 

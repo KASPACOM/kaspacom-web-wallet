@@ -3,23 +3,24 @@
 		[label]="label"
 		[placeholder]="placeholder"
 		[type]="'text'"
-		[isFullWidth]="isFullWidth"
 		[isValid]="(isResolving() || isDomainCandidate()) ? true : (displayIsValid() && !resolveError())"
-		[invalidReason]="(isResolving() || isDomainCandidate()) ? '' : (resolveError() || displayInvalidReason())"
 		[isDisabled]="isDisabled"
 		[ngModel]="value"
-		(valueChange)="onInputChange($event)">
+		(valueChange)="onInputChange($any($event))">
 		<!-- Right slot: QR and spinner -->
 		<div class="right-slot" rightSideSlot>
 			@if (isResolving()) {
 				<kc-spinner [size]="'xs'"></kc-spinner>
 			} @else if (showQrButton) {
-				<div (click)="!isDisabled && qrClick.emit()" [class]="isDisabled ? 'qr-button disabled' : 'qr-button clickable'" kcTooltip="Scan QR code" tooltipPosition="left">
+				<div (click)="!isDisabled && qrClick.emit()" [class]="isDisabled ? 'qr-button disabled' : 'qr-button clickable'" kcTooltip="Scan QR code" tooltipPosition="left-center">
 					<kc-icon [iconClass]="'icon-qr'" [size]="'xs'" [color]="'var(--gray-60)'"></kc-icon>
 				</div>
 			}
 		</div>
 	</kc-input>
+	@if (!isResolving() && !isDomainCandidate() && (resolveError() || displayInvalidReason())) {
+		<span class="input-error-text">{{ resolveError() || displayInvalidReason() }}</span>
+	}
 
 	@if (resolvedAddress() && resolvedDomain() && value && !isResolving()) {
 		<div class="resolved-address flex align-items-center gap-8">

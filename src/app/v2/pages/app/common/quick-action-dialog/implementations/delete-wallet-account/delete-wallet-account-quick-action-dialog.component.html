@@ -27,16 +27,16 @@
   <div slot="footer" class="button-row">
     <kc-button
       [text]="'Cancel'"
-      [variant]="'tertiary'"
-      [size]="'md'"
+      [variant]="'secondary'"
+      [size]="'m'"
       [isFullWidth]="true"
       (buttonClick)="onCancel()"
     ></kc-button>
     <kc-button
+      class="danger-action-button"
       [text]="'Delete'"
       [variant]="'secondary'"
-      [role]="'danger'"
-      [size]="'md'"
+      [size]="'m'"
       [isFullWidth]="true"
       [isDisabled]="isLastWalletAccount()"
       (buttonClick)="onDelete()"

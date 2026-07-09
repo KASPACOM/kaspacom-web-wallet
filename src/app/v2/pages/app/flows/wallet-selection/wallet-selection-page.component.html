@@ -23,7 +23,7 @@
                   [size]="'xs'"
                   (click)="editWallet(item); $event.stopPropagation()"
                   kcTooltip="Edit wallet"
-                  tooltipPosition="top"
+                  tooltipPosition="top-center"
                 ></kc-icon>
               </div>
               <div class="wallet-item__address">{{ item.address | shortenAddress }}</div>
@@ -33,7 +33,7 @@
                     class="pending-indicator"
                     (click)="togglePendingTransactions(item, $event)"
                     [kcTooltip]="item.pendingTransactionCount() + ' pending transaction(s)'"
-                    tooltipPosition="top"
+                    tooltipPosition="top-center"
                   >
                     <kc-spinner [size]="'xs'"></kc-spinner>
                     <span class="pending-count">{{ item.pendingTransactionCount() }}</span>
@@ -47,7 +47,7 @@
               [size]="'sm'"
               (click)="deleteWallet(item); $event.stopPropagation()"
               kcTooltip="Delete wallet"
-              tooltipPosition="top"
+              tooltipPosition="top-center"
             ></kc-icon>
           </div>
           @if (item.isExpanded && item.hasPendingTransactions()) {
@@ -87,14 +87,14 @@
     <kc-button
       [text]="'Import Wallet'"
       [variant]="'primary'"
-      [size]="'md'"
+      [size]="'m'"
       [isFullWidth]="true"
       (buttonClick)="addWallet()"
     ></kc-button>
     <kc-button
       [text]="'Create Wallet'"
-      [variant]="'tertiary'"
-      [size]="'md'"
+      [variant]="'secondary'"
+      [size]="'m'"
       [isFullWidth]="true"
       (buttonClick)="createWallet()"
     ></kc-button>

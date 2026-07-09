@@ -7,7 +7,7 @@ import {
   SimpleChanges,
 } from '@angular/core';
 
-import { KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
+import { KcIconComponent, KcTooltipDirective } from '@kaspacom/ui-kit';
 import {
   trigger,
   state,

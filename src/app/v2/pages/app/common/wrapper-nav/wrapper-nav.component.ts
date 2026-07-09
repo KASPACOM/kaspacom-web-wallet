@@ -13,7 +13,7 @@ import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { NavIcons } from './icons/nav-icons';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { filter } from 'rxjs';
-import { KcTooltipDirective } from 'kaspacom-ui';
+import { KcTooltipDirective } from '@kaspacom/ui-kit';
 
 export interface INavRoute {
   svgContent: SafeHtml;

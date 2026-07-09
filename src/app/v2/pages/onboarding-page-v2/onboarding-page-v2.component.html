@@ -123,11 +123,8 @@
                 <kc-input
                   formControlName="password"
                   [placeholder]="'Password'"
-                  [isFullWidth]="true"
                   [type]="passwordType()"
                   [isValid]="!isInvalid('password')"
-                  [invalidReason]="getPasswordError()"
-                  [prepadInvalidReason]="true"
                   [isDisabled]="isSubmitting()"
                 >
                   <div
@@ -142,6 +139,9 @@
                     ></kc-icon>
                   </div>
                 </kc-input>
+                @if (isInvalid('password') && getPasswordError()) {
+                  <span class="input-error-text">{{ getPasswordError() }}</span>
+                }
 
                 <div class="onboarding-v2__login-actions">
                   <kc-button
@@ -153,9 +153,8 @@
                   ></kc-button>
 
                   <kc-button
-                    class="onboarding-v2__delete-trigger"
-                    [variant]="'tertiary'"
-                    role="danger"
+                    class="onboarding-v2__delete-trigger danger-action-button"
+                    [variant]="'secondary'"
                     [isFullWidth]="true"
                     [isDisabled]="isSubmitting()"
                     (buttonClick)="openDeleteWalletDialog()"
@@ -184,7 +183,7 @@
 
                       <kc-button
                         [text]="'Connect Existing Wallet'"
-                        [variant]="'tertiary'"
+                        [variant]="'secondary'"
                         [isFullWidth]="true"
                         (buttonClick)="startExistingWallet()"
                       ></kc-button>
@@ -306,27 +305,26 @@
           </p>
           <kc-input
             class="onboarding-v2__delete-input"
-            [isFullWidth]="true"
             [placeholder]="deleteConfirmationPhrase"
             [ngModel]="deleteConfirmationInput()"
             [isDisabled]="isDeletingWallet()"
-            (valueChange)="onDeleteConfirmationInputChange($event)"
+            (valueChange)="onDeleteConfirmationInputChange($any($event))"
           ></kc-input>
         </div>
 
         <div class="onboarding-v2__delete-actions">
           <kc-button
             [text]="'Cancel'"
-            [variant]="'tertiary'"
+            [variant]="'secondary'"
             [isFullWidth]="true"
             (buttonClick)="closeDeleteWalletDialog()"
             [isDisabled]="isDeletingWallet()"
           ></kc-button>
 
           <kc-button
+            class="danger-action-button"
             [text]="'Delete Wallet'"
             [variant]="'secondary'"
-            role="danger"
             [isFullWidth]="true"
             [isLoading]="isDeletingWallet()"
             [isDisabled]="isDeletingWallet() || !isDeleteConfirmationValid()"

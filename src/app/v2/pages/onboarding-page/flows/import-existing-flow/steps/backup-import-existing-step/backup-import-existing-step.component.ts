@@ -4,7 +4,7 @@ import {
   KcButtonComponent,
   KcIconComponent,
   NotificationService,
-} from 'kaspacom-ui';
+} from '@kaspacom/ui-kit';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
 import { PasswordManagerService } from '../../../../../../../services/password-manager.service';
 import { Router } from '@angular/router';

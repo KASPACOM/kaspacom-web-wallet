@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcButtonComponent } from 'kaspacom-ui';
+import { KcButtonComponent } from '@kaspacom/ui-kit';
 
 type ButtonSize = 's' | 'm' | 'l' | 'xl' | 'xs';
 type ButtonVariant = 'primary' | 'secondary' | 'tertiary';

@@ -69,7 +69,7 @@
         <div class="export-account__actions">
           <kc-button
             [text]="'Copy'"
-            [variant]="'tertiary'"
+            [variant]="'secondary'"
             [suffixIcon]="'icon-copy'"
             [isDisabled]="!privateKey()"
             (buttonClick)="copyPrivateKey()"
@@ -88,7 +88,7 @@
         <span class="typo-text-2">Unable to load this account's private key.</span>
         <kc-button
           [text]="'Back'"
-          [variant]="'tertiary'"
+          [variant]="'secondary'"
           (buttonClick)="navigateBackToPrevious()"
         ></kc-button>
       </div>

@@ -18,7 +18,7 @@
         <kc-button 
           [text]="'Export wallet'"
           variant="primary" 
-          size="lg" 
+          size="m" 
           [isFullWidth]="true"
           (buttonClick)="onStartExport()">
         </kc-button>
@@ -65,7 +65,7 @@
           <kc-button 
             [text]="'Verify Password'"
             variant="primary" 
-            size="lg" 
+            size="m" 
             [isFullWidth]="true"
             [isLoading]="isLoading()"
             [isDisabled]="!password().trim()"
@@ -74,8 +74,8 @@
           
           <kc-button 
             [text]="'Cancel'"
-            variant="tertiary" 
-            size="md" 
+            variant="secondary" 
+            size="m" 
             [isFullWidth]="true"
             [isDisabled]="isLoading()"
             (buttonClick)="onHideKeyInfo()">
@@ -113,7 +113,7 @@
             <kc-button 
               [text]="'Copy Data'"
               variant="secondary" 
-              size="md"
+              size="m"
               (buttonClick)="onCopyQrData()">
             </kc-button>
           </div>
@@ -125,7 +125,7 @@
         <div class="warning-section flex column align-items-center gap-16">
           <div class="warning-box p-16 rounded-lg">
             <div class="flex align-items-start gap-12">
-              <kc-icon name="alert-triangle" size="sm" class="text-warning flex-shrink-0"></kc-icon>
+              <kc-icon iconClass="icon-warning" size="sm" class="text-warning flex-shrink-0"></kc-icon>
               <div class="warning-content">
                 <p class="typo-text-1 text-warning mb-4 font-medium">QR Code Not Available</p>
                 <p class="typo-text-2 text-gray-75">
@@ -149,7 +149,7 @@
         <kc-button 
           [text]="'Download Key File'"
           variant="primary" 
-          size="lg"
+          size="m"
           (buttonClick)="onDownloadKeyFile()">
         </kc-button>
       </div>
@@ -158,8 +158,8 @@
       <div class="export-actions flex column gap-12 mt-16">
         <kc-button 
           [text]="'Done'"
-          variant="tertiary" 
-          size="md" 
+          variant="secondary" 
+          size="m" 
           [isFullWidth]="true"
           (buttonClick)="onHideKeyInfo()">
         </kc-button>

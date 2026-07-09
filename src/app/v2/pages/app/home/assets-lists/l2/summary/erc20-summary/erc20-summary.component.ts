@@ -15,7 +15,7 @@ import { AssetsManagerService } from '../../../../../../../../services/assets-ma
 import { L2_ASSET_KEYS } from '../../../../../../../../services/assets-manager/assets-stores/l2-assets-store.service';
 import { Erc20Token } from '@kaspacom/swap-sdk';
 import { Erc20AssetCardComponent } from '../../asset-card/erc20-asset-card/erc20-asset-card.component';
-import { KcButtonComponent } from 'kaspacom-ui';
+import { KcButtonComponent } from '@kaspacom/ui-kit';
 import { FlowPagesService } from '../../../../../../../services/flow-pages.service';
 
 @Component({

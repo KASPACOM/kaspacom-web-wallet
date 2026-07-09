@@ -1,5 +1,5 @@
 import { Component, inject, computed } from '@angular/core';
-import { KcIconComponent } from 'kaspacom-ui';
+import { KcIconComponent } from '@kaspacom/ui-kit';
 import { TitleCasePipe } from '@angular/common';
 import { ICryptoAction } from '../../common/interfaces/crypto-actions.interface';
 import { FlowPagesService } from '../../../../services/flow-pages.service';

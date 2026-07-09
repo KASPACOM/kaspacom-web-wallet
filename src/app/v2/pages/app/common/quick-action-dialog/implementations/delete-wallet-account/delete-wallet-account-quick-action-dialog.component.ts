@@ -9,7 +9,7 @@ import {
   computed,
 } from '@angular/core';
 
-import { KcButtonComponent, NotificationService } from 'kaspacom-ui';
+import { KcButtonComponent, NotificationService } from '@kaspacom/ui-kit';
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
 import { WalletService } from '../../../../../../../services/wallet.service';
 import { AppWallet } from '../../../../../../../classes/AppWallet';

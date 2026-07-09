@@ -128,7 +128,7 @@
                   <kc-button
                     [text]="isLoading() ? 'Processing...' : 'Approve'"
                     variant="primary"
-                    size="lg"
+                    size="m"
                     [isFullWidth]="true"
                     [isDisabled]="!isAvailableForApproval()"
                     [isLoading]="isLoading()"
@@ -138,8 +138,8 @@
                   </kc-button>
                   <kc-button
                     [text]="'Reject'"
-                    variant="tertiary"
-                    size="lg"
+                    variant="secondary"
+                    size="m"
                     [isFullWidth]="true"
                     [isDisabled]="isLoading()"
                     (buttonClick)="onReject()"
@@ -180,7 +180,7 @@
             <kc-button
               [text]="'Close'"
               variant="secondary"
-              size="lg"
+              size="m"
               [isFullWidth]="true"
               (buttonClick)="approvalFlowService.closeApproval()"
             >

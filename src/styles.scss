@@ -3,7 +3,14 @@
 // ~50 files reference its bare --gray-*/--blue-*/--kaspa-* variables
 // directly, not just through Kc* components. Remove it once those are
 // migrated to @kaspacom/ui-kit's --kc-* tokens too.
-@use "@kaspacom/ui-kit/tokens/index.scss" as kcTokens;
+//
+// Relative path (not the bare "@kaspacom/ui-kit/tokens/index.scss" specifier
+// from the README): the package's package.json "exports" map only declares
+// the "." entry, so Node's strict exports resolution (karma/webpack's
+// sass-loader) 404s on the tokens subpath even though esbuild's looser
+// resolver (used by `ng build`) accepts it. Needs a "./tokens/*" export
+// added upstream in @kaspacom/ui-kit's package.json.
+@use "../node_modules/@kaspacom/ui-kit/tokens/index.scss" as kcTokens;
 @use "styles/common";
 @use "styles/responsive";
 
@@ -253,4 +260,27 @@ button {
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
+}
+
+// kc-input dropped its built-in invalidReason/prepadInvalidReason slot -
+// pair [isValid] with this sibling element to show the same validation text.
+.input-error-text {
+  display: block;
+  margin-top: var(--kc-gap-xs, 4px);
+  color: var(--kc-color-danger-600);
+  font-family: var(--kc-font-family-base);
+  font-size: var(--kc-font-size-12);
+  line-height: var(--kc-font-line-height-100);
+}
+
+// kc-button has no built-in "danger" treatment - add this class to a
+// kc-button (on top of variant="secondary") for destructive actions.
+.danger-action-button button.secondary {
+  border-color: var(--kc-color-danger-600);
+  color: var(--kc-color-danger-600);
+
+  &:not(.disabled):hover {
+    border-color: var(--kc-color-danger-500);
+    color: var(--kc-color-danger-500);
+  }
 }

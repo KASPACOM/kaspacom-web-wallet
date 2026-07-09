@@ -15,19 +15,19 @@
         (ngSubmit)="submit()"
       >
         <kc-input
-          [isFullWidth]="true"
           formControlName="privateKey"
           [label]="'Private key'"
           [placeholder]="'Enter private key'"
           [type]="privateKeyFieldType()"
-          [prepadInvalidReason]="true"
           [isValid]="!isPrivateKeyInvalid('privateKey')"
-          [invalidReason]="'Cannot be empty'"
         >
           <div class="clickable" rightSideSlot (click)="togglePrivateKeyVisibility()">
             <kc-icon [iconClass]="privateKeyFieldIcon()" [size]="'xs'"></kc-icon>
           </div>
         </kc-input>
+        @if (isPrivateKeyInvalid('privateKey')) {
+          <span class="input-error-text">Cannot be empty</span>
+        }
       </form>
     </div>
   </div>
@@ -43,7 +43,7 @@
       ></kc-button>
       <kc-button
         [text]="'Back'"
-        [variant]="'tertiary'"
+        [variant]="'secondary'"
         [isFullWidth]="true"
         type="button"
         (buttonClick)="previous.emit()"

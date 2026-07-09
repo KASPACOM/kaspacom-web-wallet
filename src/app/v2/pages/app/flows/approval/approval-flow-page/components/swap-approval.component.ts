@@ -1,6 +1,6 @@
 import { Component, computed, input, output } from '@angular/core';
 
-import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import { TokenLogoComponent } from '../../../../../../../components/token-logo/token-logo.component';
 import { SwapContext } from '../../../../../../services/swap-context.service';
 import { CommaFormatterPipe } from '../../../../../../../pipes/comma-formatter.pipe';

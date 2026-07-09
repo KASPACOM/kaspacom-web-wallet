@@ -45,7 +45,7 @@
         [class.refresh-action--disabled]="isLoading() || isRefreshing()"
         (click)="onRefreshClick($event)"
         kcTooltip="Refresh balances"
-        tooltipPosition="top"
+        tooltipPosition="top-center"
       >
         @if (isRefreshing()) {
           <kc-spinner

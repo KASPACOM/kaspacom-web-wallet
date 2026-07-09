@@ -10,7 +10,7 @@ import {
 import { BaseActivityComponent } from './base-activity.component';
 
 import { Router } from '@angular/router';
-import { KcIconComponent } from 'kaspacom-ui';
+import { KcIconComponent } from '@kaspacom/ui-kit';
 import {
   KcLabeledTabsComponent,
   TabItem,

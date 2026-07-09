@@ -6,7 +6,7 @@ import {
   KcInputComponent,
   KcIconComponent,
   NotificationService,
-} from 'kaspacom-ui';
+} from '@kaspacom/ui-kit';
 import { Erc20Token } from '@kaspacom/swap-sdk';
 import { ethers } from 'ethers';
 import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';

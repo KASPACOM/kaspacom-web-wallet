@@ -6,7 +6,7 @@ import {
   KcButtonComponent,
   KcIconComponent,
   KcTooltipDirective,
-} from 'kaspacom-ui';
+} from '@kaspacom/ui-kit';
 import { BaseAssetPageComponent } from '../../../../../common/base-asset-page/base-asset-page.component';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
 import { FlowPagesService } from '../../../../../../../services/flow-pages.service';

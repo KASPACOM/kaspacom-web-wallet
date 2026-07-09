@@ -7,17 +7,17 @@
         <div class="wallet-name-container">
           <span class="wallet-name">{{ currentWalletName() }}</span>
           <kc-icon class="pencil-icon" [iconClass]="'icon-pencil'" [size]="'xs'" (click)="onEditWalletName()"
-            kcTooltip="Edit wallet name" tooltipPosition="bottom"></kc-icon>
+            kcTooltip="Edit wallet name" tooltipPosition="bottom-center"></kc-icon>
         </div>
       </div>
     </div>
     <div class="header-right">
       <kc-icon class="more-options-icon" [iconClass]="'icon-more-options'" [size]="'md'"
-        (click)="onWalletOptionsClick()" kcTooltip="Wallet options" tooltipPosition="bottom"></kc-icon>
+        (click)="onWalletOptionsClick()" kcTooltip="Wallet options" tooltipPosition="bottom-center"></kc-icon>
       <kc-icon class="update-icon" [iconClass]="'icon-update'" [size]="'md'" (click)="onChangeWalletClicked()"
-        kcTooltip="Change wallet" tooltipPosition="bottom"></kc-icon>
+        kcTooltip="Change wallet" tooltipPosition="bottom-center"></kc-icon>
       <kc-icon class="close-icon" [iconClass]="'icon-close'" [size]="'md'" (click)="onCloseClick()" kcTooltip="Close"
-        tooltipPosition="bottom"></kc-icon>
+        tooltipPosition="bottom-center"></kc-icon>
     </div>
   </div>
 
@@ -37,12 +37,12 @@
               <div class="wallet-item__name">{{ wallet.name }}</div>
               <kc-icon class="wallet-item__pencil" [iconClass]="'icon-pencil'" [size]="'xs'"
                 (click)="editWalletAccount(wallet); $event.stopPropagation()" kcTooltip="Edit account"
-                tooltipPosition="top"></kc-icon>
+                tooltipPosition="top-center"></kc-icon>
             </div>
             <div class="wallet-item__address">
               {{ wallet.address | shortenAddress }}
               <app-copy-button [value]="wallet.address" [size]="'xs'" (click)="$event.stopPropagation()"
-                kcTooltip="Copy address" tooltipPosition="top"></app-copy-button>
+                kcTooltip="Copy address" tooltipPosition="top-center"></app-copy-button>
             </div>
             <div class="wallet-item__balance">
               @if (wallet.isLoadingBalance()) {
@@ -54,7 +54,7 @@
               }
               @if (wallet.hasPendingTransactions()) {
               <div class="pending-indicator" (click)="togglePendingTransactions(wallet, $event)"
-                [kcTooltip]="wallet.pendingTransactionCount() + ' pending transaction(s)'" tooltipPosition="top">
+                [kcTooltip]="wallet.pendingTransactionCount() + ' pending transaction(s)'" tooltipPosition="top-center">
                 <kc-spinner [size]="'xs'"></kc-spinner>
                 <span class="pending-count">{{ wallet.pendingTransactionCount() }}</span>
               </div>
@@ -64,10 +64,10 @@
           <div class="wallet-item__actions">
             <kc-icon class="wallet-item__export" [iconClass]="'icon-download'" [size]="'sm'"
               (click)="exportWalletAccount(wallet); $event.stopPropagation()" kcTooltip="Export account"
-              tooltipPosition="top"></kc-icon>
+              tooltipPosition="top-center"></kc-icon>
             <kc-icon class="wallet-item__trash" [iconClass]="'icon-trash'" [size]="'sm'"
               (click)="deleteWallet(wallet); $event.stopPropagation()" kcTooltip="Delete account"
-              tooltipPosition="top"></kc-icon>
+              tooltipPosition="top-center"></kc-icon>
           </div>
         </div>
         @if (wallet.isExpanded && wallet.hasPendingTransactions()) {
@@ -98,7 +98,7 @@
 
   <!-- Floating Create Account Orb -->
   @if (canAddMoreAccounts()) {
-  <div class="floating-orb" (click)="onAddAccountClick()" kcTooltip="Create account" tooltipPosition="top">
+  <div class="floating-orb" (click)="onAddAccountClick()" kcTooltip="Create account" tooltipPosition="top-center">
     <kc-icon [iconClass]="'icon-add'" [size]="'md'"></kc-icon>
   </div>
   }

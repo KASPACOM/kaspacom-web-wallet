@@ -26,7 +26,11 @@
           This password unlocks your wallet data. If you lose it, you will not be able to recover your wallet data. Please make sure to save it somewhere safe.
         </p>
       </div>
-      <form [formGroup]="passwordForm" (ngSubmit)="onSubmit()">
+      <form
+        class="flex column gap-16 full-width align-items-stretch align-self-stretch"
+        [formGroup]="passwordForm"
+        (ngSubmit)="onSubmit()"
+      >
         <div class="flex column gap-4">
           <kc-input
             formControlName="password"
@@ -34,22 +38,21 @@
             [placeholder]="'Password'"
             [type]="passwordType()"
             [isValid]="!isInvalid('password')"
-            [prepadInvalidReason]="true"
-            [invalidReason]="getPasswordErrorMessage()"
             (keydown.enter)="onSubmit()"
           >
             <div (click)="togglePwVisibility()" class="clickable" rightSideSlot>
               <kc-icon iconClass="{{ passwordIcon() }}" [size]="'xs'"></kc-icon>
             </div>
           </kc-input>
+          @if (isInvalid('password') && getPasswordErrorMessage()) {
+            <span class="input-error-text">{{ getPasswordErrorMessage() }}</span>
+          }
           <kc-input
             formControlName="confirmPassword"
             [label]="'Confirm your password'"
             [placeholder]="'Confirm password'"
             [type]="passwordConfirmType()"
             [isValid]="!isInvalid('confirmPassword')"
-            [prepadInvalidReason]="true"
-            [invalidReason]="getConfirmPasswordErrorMessage()"
             (keydown.enter)="onSubmit()"
           >
             <div
@@ -60,6 +63,9 @@
               <kc-icon [iconClass]="passwordConfirmIcon()" [size]="'xs'"></kc-icon>
             </div>
           </kc-input>
+          @if (isInvalid('confirmPassword') && getConfirmPasswordErrorMessage()) {
+            <span class="input-error-text">{{ getConfirmPasswordErrorMessage() }}</span>
+          }
         </div>
       </form>
     </div>

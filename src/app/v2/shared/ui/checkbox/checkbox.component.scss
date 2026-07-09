@@ -1,0 +1,115 @@
+.checkbox-container {
+  display: inline-flex;
+  align-items: center;
+}
+
+.checkbox-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--kc-gap-sm);
+  cursor: pointer;
+  user-select: none;
+
+  &.checkbox-disabled {
+    cursor: not-allowed;
+  }
+}
+
+.checkbox-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: var(--kc-radius-xs);
+  border: var(--kc-border-width-1) solid var(--kc-color-black-500);
+  background-color: transparent;
+  color: var(--kc-color-white);
+  transition:
+    background-color var(--kc-duration-skeleton-animation, 0.15s) ease,
+    border-color var(--kc-duration-skeleton-animation, 0.15s) ease;
+
+  &:hover {
+    border-color: var(--kc-color-gray-500);
+  }
+}
+
+.checkbox-checkmark {
+  width: 65%;
+  height: 65%;
+}
+
+.checkbox-text {
+  font-family: var(--kc-font-family-base);
+  font-weight: var(--kc-font-weight-500);
+  color: var(--kc-color-white);
+}
+
+.checkbox-input:focus-visible + .checkbox-label .checkbox-box {
+  box-shadow:
+    0px 0px 0px 3px var(--kc-color-toggle-focus-ring-outer),
+    0px 0px 0px 2px var(--kc-color-toggle-focus-ring-inner);
+}
+
+.checkbox-checked .checkbox-box {
+  background-color: var(--kc-color-primary-600);
+  border-color: var(--kc-color-primary-600);
+}
+
+.checkbox-disabled {
+  .checkbox-box {
+    border-color: var(--kc-color-black-800);
+  }
+
+  &.checkbox-checked .checkbox-box {
+    background-color: var(--kc-color-black-800);
+    border-color: var(--kc-color-black-800);
+  }
+
+  .checkbox-text {
+    color: var(--kc-color-black-600);
+  }
+}
+
+.checkbox-sm {
+  .checkbox-box {
+    width: 16px;
+    height: 16px;
+  }
+
+  .checkbox-text {
+    font-size: var(--kc-font-size-12);
+    line-height: var(--kc-font-line-height-100);
+  }
+}
+
+.checkbox-md {
+  .checkbox-box {
+    width: 20px;
+    height: 20px;
+  }
+
+  .checkbox-text {
+    font-size: var(--kc-font-size-14);
+    line-height: var(--kc-font-line-height-100);
+  }
+}
+
+.checkbox-lg {
+  .checkbox-box {
+    width: 24px;
+    height: 24px;
+  }
+
+  .checkbox-text {
+    font-size: var(--kc-font-size-16);
+    line-height: var(--kc-font-line-height-100);
+  }
+}

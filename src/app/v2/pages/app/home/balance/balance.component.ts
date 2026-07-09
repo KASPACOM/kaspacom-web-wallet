@@ -4,7 +4,7 @@ import {
   KcIconComponent,
   KcSpinnerComponent,
   KcTooltipDirective,
-} from 'kaspacom-ui';
+} from '@kaspacom/ui-kit';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { WalletService } from '../../../../../services/wallet.service';

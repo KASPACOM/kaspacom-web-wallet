@@ -4,7 +4,7 @@ import {
   KcButtonComponent,
   KcIconComponent,
   NotificationService,
-} from 'kaspacom-ui';
+} from '@kaspacom/ui-kit';
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 import { WalletService } from '../../../../../../../services/wallet.service';
 import { Router } from '@angular/router';

@@ -35,7 +35,6 @@
     "@angular/router": "^21.2.18",
     "@angular/ssr": "^21.2.18",
     "@kaspacom/swap-sdk": "^1.1.26",
-    "@kaspacom/ui": "^1.0.51",
     "@kaspacom/ui-kit": "^0.3.1",
     "@kaspacom/wallet-messages": "^1.0.35",
     "@segment/analytics-next": "1.81.1",

@@ -928,6 +928,25 @@
               </div>
             }
 
+            @if (contract.deployTxid) {
+              <div class="flex column gap-4">
+                <span class="text-gray-60 typo-text-2">Deploy Tx</span>
+                <div class="flex align-items-center gap-8">
+                  <a
+                    [href]="getExplorerLink(contract.deployTxid)"
+                    target="_blank"
+                    class="text-blue typo-text-2"
+                  >
+                    {{ truncate(contract.deployTxid, 24) }}
+                  </a>
+                  <app-copy-button
+                    [value]="contract.deployTxid"
+                    [size]="'sm'"
+                  ></app-copy-button>
+                </div>
+              </div>
+            }
+
             @if (contract.deadlineMs) {
               <div class="flex column gap-4">
                 <span class="text-gray-60 typo-text-2">Deadline</span>
@@ -1070,6 +1089,34 @@
               </div>
             </div>
 
+            @if (getContractDetailParameters(selectedDetail()!).length > 0) {
+              <div class="flex column gap-8">
+                <span class="text-gray-60 typo-text-1">Parameters</span>
+                <div class="participant-grid">
+                  @for (
+                    param of getContractDetailParameters(selectedDetail()!);
+                    track param.label + param.value
+                  ) {
+                    <div class="participant-item p-8 rounded">
+                      <div class="flex align-items-center gap-6 flex-wrap">
+                        <span class="text-gray-60 typo-text-2">{{
+                          param.label
+                        }}</span>
+                        @if (param.type) {
+                          <span class="param-tag typo-text-2 rounded p-4">{{
+                            param.type
+                          }}</span>
+                        }
+                      </div>
+                      <span class="text-white typo-text-2 text-mono">{{
+                        truncate(param.value, 36)
+                      }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
             @if (selectedDetail()!.utxos.length > 0) {
               <div class="flex column gap-8">
                 <span class="text-gray-60 typo-text-1">Current UTXO</span>
@@ -1157,6 +1204,14 @@
                     }}</span>
                   </div>
                 }
+                @if (selectedDetail()!.entry.deployTxid) {
+                  <div class="flex column gap-4">
+                    <span class="text-gray-60 typo-text-2">Deploy Tx</span>
+                    <span class="text-white typo-text-2 text-mono">{{
+                      selectedDetail()!.entry.deployTxid
+                    }}</span>
+                  </div>
+                }
               </div>
             </details>
           }
@@ -1226,6 +1281,17 @@
               <span class="text-gray-60 typo-text-2">{{
                 truncate(selectedContract()!.contractAddress, 30)
               }}</span>
+              @if (selectedContract()!.covenantId) {
+                <span class="text-gray-60 typo-text-2 text-mono">
+                  Covenant
+                  {{ truncate(selectedContract()!.covenantId || "", 18) }}
+                </span>
+              }
+              <span class="text-gray-60 typo-text-2 text-mono">
+                UTXO {{ truncate(selectedContract()!.outpoint.txid, 18) }}:{{
+                  selectedContract()!.outpoint.vout
+                }}
+              </span>
             </div>
             <span class="text-gray-60 typo-text-2"
               >{{ formatSompiToKas(selectedContract()!.amountSompi) }} KAS</span

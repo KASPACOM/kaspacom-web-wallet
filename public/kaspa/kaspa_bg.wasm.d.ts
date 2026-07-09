@@ -58,6 +58,82 @@ export const payToScriptHashSignatureScript: (
   b: number,
   c: number,
 ) => void;
+export const __wbg_computecommit_free: (a: number, b: number) => void;
+export const __wbg_transaction_free: (a: number, b: number) => void;
+export const computecommit_constructor: (a: number, b: number) => void;
+export const computecommit_fromComputeBudget: (a: number) => number;
+export const computecommit_fromSigOpCount: (a: number) => number;
+export const computecommit_get_type: (a: number, b: number) => void;
+export const computecommit_get_value: (a: number) => number;
+export const computecommit_set_type: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+) => void;
+export const computecommit_set_value: (a: number, b: number, c: number) => void;
+export const computecommit_toJSON: (a: number, b: number) => void;
+export const computecommit_toString: (a: number, b: number) => void;
+export const transaction_addresses: (a: number, b: number, c: number) => void;
+export const transaction_constructor: (a: number, b: number) => void;
+export const transaction_deserializeFromJSON: (
+  a: number,
+  b: number,
+  c: number,
+) => void;
+export const transaction_deserializeFromObject: (a: number, b: number) => void;
+export const transaction_deserializeFromSafeJSON: (
+  a: number,
+  b: number,
+  c: number,
+) => void;
+export const transaction_finalize: (a: number, b: number) => void;
+export const transaction_gas: (a: number) => bigint;
+export const transaction_get_inputs_as_js_array: (a: number) => number;
+export const transaction_get_mass: (a: number) => bigint;
+export const transaction_get_outputs_as_js_array: (a: number) => number;
+export const transaction_get_payload_as_hex_string: (
+  a: number,
+  b: number,
+) => void;
+export const transaction_get_subnetwork_id_as_hex: (
+  a: number,
+  b: number,
+) => void;
+export const transaction_id: (a: number, b: number) => void;
+export const transaction_is_coinbase: (a: number) => number;
+export const transaction_lockTime: (a: number) => bigint;
+export const transaction_populateGenesisCovenants: (
+  a: number,
+  b: number,
+  c: number,
+) => void;
+export const transaction_serializeToJSON: (a: number, b: number) => void;
+export const transaction_serializeToObject: (a: number, b: number) => void;
+export const transaction_serializeToSafeJSON: (a: number, b: number) => void;
+export const transaction_set_gas: (a: number, b: bigint) => void;
+export const transaction_set_inputs_from_js_array: (
+  a: number,
+  b: number,
+) => void;
+export const transaction_set_lockTime: (a: number, b: bigint) => void;
+export const transaction_set_mass: (a: number, b: bigint) => void;
+export const transaction_set_outputs_from_js_array: (
+  a: number,
+  b: number,
+) => void;
+export const transaction_set_payload_from_js_value: (
+  a: number,
+  b: number,
+) => void;
+export const transaction_set_subnetwork_id_from_js_value: (
+  a: number,
+  b: number,
+) => void;
+export const transaction_set_version: (a: number, b: number) => void;
+export const transaction_version: (a: number) => number;
+export const transaction_get_storage_mass: (a: number) => bigint;
+export const transaction_set_storage_mass: (a: number, b: bigint) => void;
 export const __wbg_covenantbinding_free: (a: number, b: number) => void;
 export const __wbg_genesiscovenantgroup_free: (a: number, b: number) => void;
 export const __wbg_header_free: (a: number, b: number) => void;
@@ -135,82 +211,57 @@ export const header_set_utxo_commitment_from_js_value: (
   b: number,
 ) => void;
 export const header_set_version: (a: number, b: number) => void;
-export const __wbg_computecommit_free: (a: number, b: number) => void;
-export const __wbg_transaction_free: (a: number, b: number) => void;
-export const computecommit_constructor: (a: number, b: number) => void;
-export const computecommit_fromComputeBudget: (a: number) => number;
-export const computecommit_fromSigOpCount: (a: number) => number;
-export const computecommit_get_type: (a: number, b: number) => void;
-export const computecommit_get_value: (a: number) => number;
-export const computecommit_set_type: (
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-) => void;
-export const computecommit_set_value: (a: number, b: number, c: number) => void;
-export const computecommit_toJSON: (a: number, b: number) => void;
-export const computecommit_toString: (a: number, b: number) => void;
-export const transaction_addresses: (a: number, b: number, c: number) => void;
-export const transaction_constructor: (a: number, b: number) => void;
-export const transaction_deserializeFromJSON: (
-  a: number,
-  b: number,
-  c: number,
-) => void;
-export const transaction_deserializeFromObject: (a: number, b: number) => void;
-export const transaction_deserializeFromSafeJSON: (
-  a: number,
-  b: number,
-  c: number,
-) => void;
-export const transaction_finalize: (a: number, b: number) => void;
-export const transaction_gas: (a: number) => bigint;
-export const transaction_get_inputs_as_js_array: (a: number) => number;
-export const transaction_get_mass: (a: number) => bigint;
-export const transaction_get_outputs_as_js_array: (a: number) => number;
-export const transaction_get_payload_as_hex_string: (
+export const __wbg_compressedparents_free: (a: number, b: number) => void;
+export const compressedparents_expandedLen: (a: number) => number;
+export const compressedparents_get: (a: number, b: number, c: number) => void;
+export const compressedparents_new: (a: number, b: number) => void;
+export const compressedparents_toExpanded: (a: number, b: number) => void;
+export const __wbg_optionalheader_free: (a: number, b: number) => void;
+export const __wbg_transactionoutpoint_free: (a: number, b: number) => void;
+export const __wbg_transactionsigninghash_free: (a: number, b: number) => void;
+export const __wbg_transactionsigninghashecdsa_free: (
   a: number,
   b: number,
 ) => void;
-export const transaction_get_subnetwork_id_as_hex: (
+export const covenantId: (a: number, b: number, c: number) => void;
+export const optionalheader_acceptedIdMerkleRoot: (
   a: number,
   b: number,
 ) => void;
-export const transaction_id: (a: number, b: number) => void;
-export const transaction_is_coinbase: (a: number) => number;
-export const transaction_lockTime: (a: number) => bigint;
-export const transaction_populateGenesisCovenants: (
+export const optionalheader_bits: (a: number) => number;
+export const optionalheader_blueScore: (a: number, b: number) => void;
+export const optionalheader_blueWork: (a: number) => number;
+export const optionalheader_daaScore: (a: number, b: number) => void;
+export const optionalheader_hash: (a: number, b: number) => void;
+export const optionalheader_hashMerkleRoot: (a: number, b: number) => void;
+export const optionalheader_new: (a: number, b: number) => void;
+export const optionalheader_nonce: (a: number, b: number) => void;
+export const optionalheader_parentsByLevel: (a: number) => number;
+export const optionalheader_pruningPoint: (a: number, b: number) => void;
+export const optionalheader_timestamp: (a: number, b: number) => void;
+export const optionalheader_utxoCommitment: (a: number, b: number) => void;
+export const optionalheader_version: (a: number) => number;
+export const transactionoutpoint_ctor: (a: number, b: number) => number;
+export const transactionoutpoint_getId: (a: number, b: number) => void;
+export const transactionoutpoint_index: (a: number) => number;
+export const transactionoutpoint_transactionId: (a: number, b: number) => void;
+export const transactionsigninghash_finalize: (a: number, b: number) => void;
+export const transactionsigninghash_new: () => number;
+export const transactionsigninghash_update: (
   a: number,
   b: number,
   c: number,
 ) => void;
-export const transaction_serializeToJSON: (a: number, b: number) => void;
-export const transaction_serializeToObject: (a: number, b: number) => void;
-export const transaction_serializeToSafeJSON: (a: number, b: number) => void;
-export const transaction_set_gas: (a: number, b: bigint) => void;
-export const transaction_set_inputs_from_js_array: (
+export const transactionsigninghashecdsa_finalize: (
   a: number,
   b: number,
 ) => void;
-export const transaction_set_lockTime: (a: number, b: bigint) => void;
-export const transaction_set_mass: (a: number, b: bigint) => void;
-export const transaction_set_outputs_from_js_array: (
+export const transactionsigninghashecdsa_new: () => number;
+export const transactionsigninghashecdsa_update: (
   a: number,
   b: number,
+  c: number,
 ) => void;
-export const transaction_set_payload_from_js_value: (
-  a: number,
-  b: number,
-) => void;
-export const transaction_set_subnetwork_id_from_js_value: (
-  a: number,
-  b: number,
-) => void;
-export const transaction_set_version: (a: number, b: number) => void;
-export const transaction_version: (a: number) => number;
-export const transaction_get_storage_mass: (a: number) => bigint;
-export const transaction_set_storage_mass: (a: number, b: bigint) => void;
 export const __wbg_transactioninput_free: (a: number, b: number) => void;
 export const transactioninput_constructor: (a: number, b: number) => void;
 export const transactioninput_get_compute_budget: (a: number) => number;
@@ -275,57 +326,6 @@ export const utxoentryreference_isCoinbase: (a: number) => number;
 export const utxoentryreference_outpoint: (a: number) => number;
 export const utxoentryreference_scriptPublicKey: (a: number) => number;
 export const utxoentryreference_toString: (a: number, b: number) => void;
-export const __wbg_optionalheader_free: (a: number, b: number) => void;
-export const __wbg_transactionoutpoint_free: (a: number, b: number) => void;
-export const __wbg_transactionsigninghash_free: (a: number, b: number) => void;
-export const __wbg_transactionsigninghashecdsa_free: (
-  a: number,
-  b: number,
-) => void;
-export const covenantId: (a: number, b: number, c: number) => void;
-export const optionalheader_acceptedIdMerkleRoot: (
-  a: number,
-  b: number,
-) => void;
-export const optionalheader_bits: (a: number) => number;
-export const optionalheader_blueScore: (a: number, b: number) => void;
-export const optionalheader_blueWork: (a: number) => number;
-export const optionalheader_daaScore: (a: number, b: number) => void;
-export const optionalheader_hash: (a: number, b: number) => void;
-export const optionalheader_hashMerkleRoot: (a: number, b: number) => void;
-export const optionalheader_new: (a: number, b: number) => void;
-export const optionalheader_nonce: (a: number, b: number) => void;
-export const optionalheader_parentsByLevel: (a: number) => number;
-export const optionalheader_pruningPoint: (a: number, b: number) => void;
-export const optionalheader_timestamp: (a: number, b: number) => void;
-export const optionalheader_utxoCommitment: (a: number, b: number) => void;
-export const optionalheader_version: (a: number) => number;
-export const transactionoutpoint_ctor: (a: number, b: number) => number;
-export const transactionoutpoint_getId: (a: number, b: number) => void;
-export const transactionoutpoint_index: (a: number) => number;
-export const transactionoutpoint_transactionId: (a: number, b: number) => void;
-export const transactionsigninghash_finalize: (a: number, b: number) => void;
-export const transactionsigninghash_new: () => number;
-export const transactionsigninghash_update: (
-  a: number,
-  b: number,
-  c: number,
-) => void;
-export const transactionsigninghashecdsa_finalize: (
-  a: number,
-  b: number,
-) => void;
-export const transactionsigninghashecdsa_new: () => number;
-export const transactionsigninghashecdsa_update: (
-  a: number,
-  b: number,
-  c: number,
-) => void;
-export const __wbg_compressedparents_free: (a: number, b: number) => void;
-export const compressedparents_expandedLen: (a: number) => number;
-export const compressedparents_get: (a: number, b: number, c: number) => void;
-export const compressedparents_new: (a: number, b: number) => void;
-export const compressedparents_toExpanded: (a: number, b: number) => void;
 export const __wbg_get_networkid_suffix: (a: number) => number;
 export const __wbg_get_networkid_type: (a: number) => number;
 export const __wbg_networkid_free: (a: number, b: number) => void;
@@ -422,23 +422,111 @@ export const scriptbuilder_addSequence: (
   b: number,
   c: bigint,
 ) => void;
-export const __wbg_balance_free: (a: number, b: number) => void;
-export const __wbg_balancestrings_free: (a: number, b: number) => void;
-export const __wbg_wallet_free: (a: number, b: number) => void;
-export const balance_mature: (a: number) => number;
-export const balance_outgoing: (a: number) => number;
-export const balance_pending: (a: number) => number;
-export const balance_toBalanceStrings: (
+export const __wbg_zkscriptbuilder_free: (a: number, b: number) => void;
+export const zkscriptbuilder_drain: (a: number) => number;
+export const zkscriptbuilder_newR0: (a: number, b: number) => void;
+export const zkscriptbuilder_script: (a: number) => number;
+export const __wbg_r0succinctwitnessparts_free: (a: number, b: number) => void;
+export const prepareR0Groth16Proof: (a: number, b: number) => void;
+export const prepareR0SuccinctWitness: (a: number, b: number) => void;
+export const r0succinctwitnessparts_claim: (a: number) => number;
+export const r0succinctwitnessparts_controlDigests: (a: number) => number;
+export const r0succinctwitnessparts_controlIndex: (a: number) => number;
+export const r0succinctwitnessparts_seal: (a: number) => number;
+export const zkscriptbuilder_addData: (a: number, b: number, c: number) => void;
+export const zkscriptbuilder_appendR0Groth16Verifier: (
   a: number,
   b: number,
   c: number,
 ) => void;
-export const balancestrings_mature: (a: number, b: number) => void;
-export const balancestrings_pending: (a: number, b: number) => void;
-export const setDefaultStorageFolder: (a: number, b: number, c: number) => void;
-export const setDefaultWalletFile: (a: number, b: number, c: number) => void;
-export const signMessage: (a: number, b: number) => void;
-export const verifyMessage: (a: number, b: number) => void;
+export const zkscriptbuilder_appendR0Groth16VerifierWithFixedJournal: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+) => void;
+export const zkscriptbuilder_appendR0SuccinctVerifier: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+  f: number,
+) => void;
+export const zkscriptbuilder_appendR0SuccinctVerifierWithFixedJournal: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+  f: number,
+  g: number,
+) => void;
+export const zkscriptbuilder_commitToGroth16: (
+  a: number,
+  b: number,
+  c: number,
+) => void;
+export const zkscriptbuilder_finalizeWithGroth16Proof: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+) => void;
+export const zkscriptbuilder_finalizeWithSuccinctProof: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+) => void;
+export const zkscriptbuilder_pushR0Groth16Proof: (
+  a: number,
+  b: number,
+  c: number,
+) => void;
+export const zkscriptbuilder_pushR0SuccinctWitness: (
+  a: number,
+  b: number,
+  c: number,
+) => void;
+export const __wbg_finalizedr0script_free: (a: number, b: number) => void;
+export const finalizedr0script_redeemScript: (a: number) => number;
+export const finalizedr0script_sigScript: (a: number) => number;
+export const zkscriptbuilder_commitToSuccinct: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+  f: number,
+) => void;
+export const __wbg_generator_free: (a: number, b: number) => void;
+export const generator_ctor: (a: number, b: number) => void;
+export const generator_estimate: (a: number) => number;
+export const generator_next: (a: number) => number;
+export const generator_summary: (a: number) => number;
+export const __wbg_cryptobox_free: (a: number, b: number) => void;
+export const __wbg_cryptoboxprivatekey_free: (a: number, b: number) => void;
+export const __wbg_cryptoboxpublickey_free: (a: number, b: number) => void;
+export const __wbg_wallet_free: (a: number, b: number) => void;
+export const cryptobox_ctor: (a: number, b: number, c: number) => void;
+export const cryptobox_decrypt: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+) => void;
+export const cryptobox_encrypt: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+) => void;
+export const cryptobox_publicKey: (a: number, b: number) => void;
+export const cryptoboxprivatekey_ctor: (a: number, b: number) => void;
+export const cryptoboxprivatekey_to_public_key: (a: number) => number;
+export const cryptoboxpublickey_ctor: (a: number, b: number) => void;
+export const cryptoboxpublickey_toString: (a: number, b: number) => void;
 export const wallet_addEventListener: (
   a: number,
   b: number,
@@ -462,19 +550,6 @@ export const wallet_rpc: (a: number) => number;
 export const wallet_setNetworkId: (a: number, b: number, c: number) => void;
 export const wallet_start: (a: number) => number;
 export const wallet_stop: (a: number) => number;
-export const __wbg_accountkind_free: (a: number, b: number) => void;
-export const accountkind_ctor: (a: number, b: number, c: number) => void;
-export const accountkind_toString: (a: number, b: number) => void;
-export const createTransaction: (
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  e: number,
-  f: number,
-) => void;
-export const createTransactions: (a: number) => number;
-export const estimateTransactions: (a: number) => number;
 export const argon2sha256ivFromBinary: (
   a: number,
   b: number,
@@ -504,186 +579,44 @@ export const sha256FromBinary: (a: number, b: number) => void;
 export const sha256FromText: (a: number, b: number, c: number) => void;
 export const sha256dFromBinary: (a: number, b: number) => void;
 export const sha256dFromText: (a: number, b: number, c: number) => void;
-export const __wbg_get_paymentoutput_address: (a: number) => number;
-export const __wbg_get_paymentoutput_amount: (a: number) => bigint;
-export const __wbg_get_paymentoutput_covenant: (a: number) => number;
-export const __wbg_paymentoutput_free: (a: number, b: number) => void;
-export const __wbg_paymentoutputs_free: (a: number, b: number) => void;
-export const __wbg_prvkeydatainfo_free: (a: number, b: number) => void;
-export const __wbg_set_paymentoutput_address: (a: number, b: number) => void;
-export const __wbg_set_paymentoutput_amount: (a: number, b: bigint) => void;
-export const __wbg_set_paymentoutput_covenant: (a: number, b: number) => void;
-export const calculateStorageMass: (
+export const signMessage: (a: number, b: number) => void;
+export const verifyMessage: (a: number, b: number) => void;
+export const __wbg_balance_free: (a: number, b: number) => void;
+export const __wbg_balancestrings_free: (a: number, b: number) => void;
+export const __wbg_generatorsummary_free: (a: number, b: number) => void;
+export const __wbg_pendingtransaction_free: (a: number, b: number) => void;
+export const __wbg_utxocontext_free: (a: number, b: number) => void;
+export const balance_mature: (a: number) => number;
+export const balance_outgoing: (a: number) => number;
+export const balance_pending: (a: number) => number;
+export const balance_toBalanceStrings: (
   a: number,
   b: number,
   c: number,
-  d: number,
 ) => void;
-export const calculateTransactionFee: (
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  e: number,
-) => void;
-export const calculateTransactionMass: (
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-) => void;
-export const maximumStandardTransactionMass: (a: number) => bigint;
-export const paymentoutput_new: (a: number, b: bigint) => number;
-export const paymentoutput_withCovenant: (
-  a: number,
-  b: bigint,
-  c: number,
-) => number;
-export const paymentoutputs_constructor: (a: number, b: number) => void;
-export const prvkeydatainfo_id: (a: number, b: number) => void;
-export const prvkeydatainfo_isEncrypted: (a: number) => number;
-export const prvkeydatainfo_name: (a: number) => number;
-export const prvkeydatainfo_setName: (
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-) => void;
-export const updateTransactionMass: (
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  e: number,
-) => void;
-export const wallet_accountsActivate: (a: number, b: number) => number;
-export const wallet_accountsCommitReveal: (a: number, b: number) => number;
-export const wallet_accountsCommitRevealManual: (
-  a: number,
-  b: number,
-) => number;
-export const wallet_accountsCreate: (a: number, b: number) => number;
-export const wallet_accountsCreateNewAddress: (a: number, b: number) => number;
-export const wallet_accountsDeactivate: (a: number, b: number) => number;
-export const wallet_accountsDiscovery: (a: number, b: number) => number;
-export const wallet_accountsEnsureDefault: (a: number, b: number) => number;
-export const wallet_accountsEnumerate: (a: number, b: number) => number;
-export const wallet_accountsEstimate: (a: number, b: number) => number;
-export const wallet_accountsGet: (a: number, b: number) => number;
-export const wallet_accountsGetUtxos: (a: number, b: number) => number;
-export const wallet_accountsImport: (a: number, b: number) => number;
-export const wallet_accountsPskbBroadcast: (a: number, b: number) => number;
-export const wallet_accountsPskbSend: (a: number, b: number) => number;
-export const wallet_accountsPskbSign: (a: number, b: number) => number;
-export const wallet_accountsRename: (a: number, b: number) => number;
-export const wallet_accountsSend: (a: number, b: number) => number;
-export const wallet_accountsTransfer: (a: number, b: number) => number;
-export const wallet_addressBookEnumerate: (a: number, b: number) => number;
-export const wallet_batch: (a: number, b: number) => number;
-export const wallet_feeRateEstimate: (a: number, b: number) => number;
-export const wallet_feeRatePollerDisable: (a: number, b: number) => number;
-export const wallet_feeRatePollerEnable: (a: number, b: number) => number;
-export const wallet_flush: (a: number, b: number) => number;
-export const wallet_getStatus: (a: number, b: number) => number;
-export const wallet_prvKeyDataCreate: (a: number, b: number) => number;
-export const wallet_prvKeyDataEnumerate: (a: number, b: number) => number;
-export const wallet_prvKeyDataGet: (a: number, b: number) => number;
-export const wallet_prvKeyDataRemove: (a: number, b: number) => number;
-export const wallet_retainContext: (a: number, b: number) => number;
-export const wallet_transactionsDataGet: (a: number, b: number) => number;
-export const wallet_transactionsReplaceMetadata: (
-  a: number,
-  b: number,
-) => number;
-export const wallet_transactionsReplaceNote: (a: number, b: number) => number;
-export const wallet_walletChangeSecret: (a: number, b: number) => number;
-export const wallet_walletClose: (a: number, b: number) => number;
-export const wallet_walletCreate: (a: number, b: number) => number;
-export const wallet_walletEnumerate: (a: number, b: number) => number;
-export const wallet_walletExport: (a: number, b: number) => number;
-export const wallet_walletImport: (a: number, b: number) => number;
-export const wallet_walletOpen: (a: number, b: number) => number;
-export const wallet_walletReload: (a: number, b: number) => number;
-export const createAddress: (
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  e: number,
-) => void;
-export const createMultisigAddress: (
+export const balancestrings_mature: (a: number, b: number) => void;
+export const balancestrings_pending: (a: number, b: number) => void;
+export const createTransaction: (
   a: number,
   b: number,
   c: number,
   d: number,
   e: number,
   f: number,
+  g: number,
 ) => void;
-export const __wbg_generator_free: (a: number, b: number) => void;
-export const __wbg_utxocontext_free: (a: number, b: number) => void;
-export const generator_ctor: (a: number, b: number) => void;
-export const generator_estimate: (a: number) => number;
-export const generator_next: (a: number) => number;
-export const generator_summary: (a: number) => number;
-export const utxocontext_balance: (a: number) => number;
-export const utxocontext_balanceStrings: (a: number, b: number) => void;
-export const utxocontext_clear: (a: number) => number;
-export const utxocontext_ctor: (a: number, b: number) => void;
-export const utxocontext_getMatureRange: (
+export const createTransactions: (a: number) => number;
+export const estimateTransactions: (a: number) => number;
+export const generatorsummary_fees: (a: number) => number;
+export const generatorsummary_finalAmount: (a: number) => number;
+export const generatorsummary_finalTransactionId: (
   a: number,
   b: number,
-  c: number,
-  d: number,
 ) => void;
-export const utxocontext_getPending: (a: number, b: number) => void;
-export const utxocontext_isActive: (a: number) => number;
-export const utxocontext_matureLength: (a: number) => number;
-export const utxocontext_trackAddresses: (
-  a: number,
-  b: number,
-  c: number,
-) => number;
-export const utxocontext_unregisterAddresses: (a: number, b: number) => number;
-export const __wbg_cryptobox_free: (a: number, b: number) => void;
-export const __wbg_cryptoboxprivatekey_free: (a: number, b: number) => void;
-export const __wbg_cryptoboxpublickey_free: (a: number, b: number) => void;
-export const __wbg_pendingtransaction_free: (a: number, b: number) => void;
-export const __wbg_storage_free: (a: number, b: number) => void;
-export const __wbg_utxoprocessor_free: (a: number, b: number) => void;
-export const createInputSignature: (
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  e: number,
-) => void;
-export const cryptobox_ctor: (a: number, b: number, c: number) => void;
-export const cryptobox_decrypt: (
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-) => void;
-export const cryptobox_encrypt: (
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-) => void;
-export const cryptobox_publicKey: (a: number, b: number) => void;
-export const cryptoboxprivatekey_ctor: (a: number, b: number) => void;
-export const cryptoboxprivatekey_to_public_key: (a: number) => number;
-export const cryptoboxpublickey_ctor: (a: number, b: number) => void;
-export const cryptoboxpublickey_toString: (a: number, b: number) => void;
-export const getNetworkParams: (a: number, b: number) => void;
-export const getTransactionMaturityProgress: (
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  e: number,
-) => void;
-export const kaspaToSompi: (a: number, b: number) => number;
+export const generatorsummary_mass: (a: number) => number;
+export const generatorsummary_networkType: (a: number) => number;
+export const generatorsummary_transactions: (a: number) => number;
+export const generatorsummary_utxos: (a: number) => number;
 export const pendingtransaction_addresses: (a: number) => number;
 export const pendingtransaction_aggregateInputAmount: (a: number) => number;
 export const pendingtransaction_aggregateOutputAmount: (a: number) => number;
@@ -732,6 +665,58 @@ export const pendingtransaction_signInput: (
 export const pendingtransaction_submit: (a: number, b: number) => number;
 export const pendingtransaction_transaction: (a: number, b: number) => void;
 export const pendingtransaction_type: (a: number, b: number) => void;
+export const setDefaultStorageFolder: (a: number, b: number, c: number) => void;
+export const setDefaultWalletFile: (a: number, b: number, c: number) => void;
+export const utxocontext_balance: (a: number) => number;
+export const utxocontext_balanceStrings: (a: number, b: number) => void;
+export const utxocontext_clear: (a: number) => number;
+export const utxocontext_ctor: (a: number, b: number) => void;
+export const utxocontext_getMatureRange: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+) => void;
+export const utxocontext_getPending: (a: number, b: number) => void;
+export const utxocontext_isActive: (a: number) => number;
+export const utxocontext_matureLength: (a: number) => number;
+export const utxocontext_trackAddresses: (
+  a: number,
+  b: number,
+  c: number,
+) => number;
+export const utxocontext_unregisterAddresses: (a: number, b: number) => number;
+export const __wbg_accountkind_free: (a: number, b: number) => void;
+export const __wbg_prvkeydatainfo_free: (a: number, b: number) => void;
+export const __wbg_storage_free: (a: number, b: number) => void;
+export const __wbg_utxoprocessor_free: (a: number, b: number) => void;
+export const accountkind_ctor: (a: number, b: number, c: number) => void;
+export const accountkind_toString: (a: number, b: number) => void;
+export const createInputSignature: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+) => void;
+export const getNetworkParams: (a: number, b: number) => void;
+export const getTransactionMaturityProgress: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+) => void;
+export const kaspaToSompi: (a: number, b: number) => number;
+export const prvkeydatainfo_id: (a: number, b: number) => void;
+export const prvkeydatainfo_isEncrypted: (a: number) => number;
+export const prvkeydatainfo_name: (a: number) => number;
+export const prvkeydatainfo_setName: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+) => void;
 export const signScriptHash: (a: number, b: number, c: number) => void;
 export const signTransaction: (
   a: number,
@@ -859,17 +844,109 @@ export const transactionrecord_maturityProgress: (
 export const transactionrecord_serialize: (a: number) => number;
 export const transactionrecord_type: (a: number, b: number) => void;
 export const transactionrecord_value: (a: number) => number;
-export const __wbg_generatorsummary_free: (a: number, b: number) => void;
-export const generatorsummary_fees: (a: number) => number;
-export const generatorsummary_finalAmount: (a: number) => number;
-export const generatorsummary_finalTransactionId: (
+export const createAddress: (
   a: number,
   b: number,
+  c: number,
+  d: number,
+  e: number,
 ) => void;
-export const generatorsummary_mass: (a: number) => number;
-export const generatorsummary_networkType: (a: number) => number;
-export const generatorsummary_transactions: (a: number) => number;
-export const generatorsummary_utxos: (a: number) => number;
+export const createMultisigAddress: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+  f: number,
+) => void;
+export const wallet_accountsActivate: (a: number, b: number) => number;
+export const wallet_accountsCommitReveal: (a: number, b: number) => number;
+export const wallet_accountsCommitRevealManual: (
+  a: number,
+  b: number,
+) => number;
+export const wallet_accountsCreate: (a: number, b: number) => number;
+export const wallet_accountsCreateNewAddress: (a: number, b: number) => number;
+export const wallet_accountsDeactivate: (a: number, b: number) => number;
+export const wallet_accountsDiscovery: (a: number, b: number) => number;
+export const wallet_accountsEnsureDefault: (a: number, b: number) => number;
+export const wallet_accountsEnumerate: (a: number, b: number) => number;
+export const wallet_accountsEstimate: (a: number, b: number) => number;
+export const wallet_accountsGet: (a: number, b: number) => number;
+export const wallet_accountsGetUtxos: (a: number, b: number) => number;
+export const wallet_accountsImport: (a: number, b: number) => number;
+export const wallet_accountsPskbBroadcast: (a: number, b: number) => number;
+export const wallet_accountsPskbSend: (a: number, b: number) => number;
+export const wallet_accountsPskbSign: (a: number, b: number) => number;
+export const wallet_accountsRename: (a: number, b: number) => number;
+export const wallet_accountsSend: (a: number, b: number) => number;
+export const wallet_accountsTransfer: (a: number, b: number) => number;
+export const wallet_addressBookEnumerate: (a: number, b: number) => number;
+export const wallet_batch: (a: number, b: number) => number;
+export const wallet_feeRateEstimate: (a: number, b: number) => number;
+export const wallet_feeRatePollerDisable: (a: number, b: number) => number;
+export const wallet_feeRatePollerEnable: (a: number, b: number) => number;
+export const wallet_flush: (a: number, b: number) => number;
+export const wallet_getStatus: (a: number, b: number) => number;
+export const wallet_prvKeyDataCreate: (a: number, b: number) => number;
+export const wallet_prvKeyDataEnumerate: (a: number, b: number) => number;
+export const wallet_prvKeyDataGet: (a: number, b: number) => number;
+export const wallet_prvKeyDataRemove: (a: number, b: number) => number;
+export const wallet_retainContext: (a: number, b: number) => number;
+export const wallet_transactionsDataGet: (a: number, b: number) => number;
+export const wallet_transactionsReplaceMetadata: (
+  a: number,
+  b: number,
+) => number;
+export const wallet_transactionsReplaceNote: (a: number, b: number) => number;
+export const wallet_walletChangeSecret: (a: number, b: number) => number;
+export const wallet_walletClose: (a: number, b: number) => number;
+export const wallet_walletCreate: (a: number, b: number) => number;
+export const wallet_walletEnumerate: (a: number, b: number) => number;
+export const wallet_walletExport: (a: number, b: number) => number;
+export const wallet_walletImport: (a: number, b: number) => number;
+export const wallet_walletOpen: (a: number, b: number) => number;
+export const wallet_walletReload: (a: number, b: number) => number;
+export const __wbg_get_paymentoutput_address: (a: number) => number;
+export const __wbg_get_paymentoutput_amount: (a: number) => bigint;
+export const __wbg_get_paymentoutput_covenant: (a: number) => number;
+export const __wbg_paymentoutput_free: (a: number, b: number) => void;
+export const __wbg_paymentoutputs_free: (a: number, b: number) => void;
+export const __wbg_set_paymentoutput_address: (a: number, b: number) => void;
+export const __wbg_set_paymentoutput_amount: (a: number, b: bigint) => void;
+export const __wbg_set_paymentoutput_covenant: (a: number, b: number) => void;
+export const calculateStorageMass: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+) => void;
+export const calculateTransactionFee: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+) => void;
+export const calculateTransactionMass: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+) => void;
+export const maximumStandardTransactionMass: () => bigint;
+export const paymentoutput_new: (a: number, b: bigint) => number;
+export const paymentoutput_withCovenant: (
+  a: number,
+  b: bigint,
+  c: number,
+) => number;
+export const paymentoutputs_constructor: (a: number, b: number) => void;
+export const updateTransactionMass: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+) => void;
 export const __wbg_publickey_free: (a: number, b: number) => void;
 export const __wbg_xonlypublickey_free: (a: number, b: number) => void;
 export const publickey_fingerprint: (a: number) => number;
@@ -1100,14 +1177,6 @@ export const keypair_get_xonly_public_key: (a: number) => number;
 export const keypair_random: (a: number) => void;
 export const keypair_toAddress: (a: number, b: number, c: number) => void;
 export const keypair_toAddressECDSA: (a: number, b: number, c: number) => void;
-export const __wbg_pskb_free: (a: number, b: number) => void;
-export const pskb_add: (a: number, b: number, c: number) => void;
-export const pskb_deserialize: (a: number, b: number, c: number) => void;
-export const pskb_displayFormat: (a: number, b: number, c: number) => void;
-export const pskb_length: (a: number) => number;
-export const pskb_merge: (a: number, b: number) => void;
-export const pskb_new: (a: number) => void;
-export const pskb_serialize: (a: number, b: number) => void;
 export const __wbg_pskt_free: (a: number, b: number) => void;
 export const pskt_calculateId: (a: number, b: number) => void;
 export const pskt_calculateMass: (a: number, b: number, c: number) => void;
@@ -1141,6 +1210,14 @@ export const pskt_toExtractor: (a: number, b: number) => void;
 export const pskt_toFinalizer: (a: number, b: number) => void;
 export const pskt_toSigner: (a: number, b: number) => void;
 export const pskt_toUpdater: (a: number, b: number) => void;
+export const __wbg_pskb_free: (a: number, b: number) => void;
+export const pskb_add: (a: number, b: number, c: number) => void;
+export const pskb_deserialize: (a: number, b: number, c: number) => void;
+export const pskb_displayFormat: (a: number, b: number, c: number) => void;
+export const pskb_length: (a: number) => number;
+export const pskb_merge: (a: number, b: number) => void;
+export const pskb_new: (a: number) => void;
+export const pskb_serialize: (a: number, b: number) => void;
 export const version: (a: number) => void;
 export const __wbg_get_nodedescriptor_uid: (a: number, b: number) => void;
 export const __wbg_get_nodedescriptor_url: (a: number, b: number) => void;
@@ -1676,6 +1753,188 @@ export const consoleconstructoroptions_set_stdout: (
 ) => void;
 export const consoleconstructoroptions_stderr: (a: number) => number;
 export const consoleconstructoroptions_stdout: (a: number) => number;
+export const sys_alloc_aligned: (a: number, b: number) => number;
+export const sys_alloc_words: (a: number) => number;
+export const sys_argc: () => number;
+export const sys_log: (a: number, b: number) => void;
+export const sys_argv: (a: number, b: number, c: number) => number;
+export const sys_bigint: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+) => void;
+export const sys_bigint2_1: (a: number, b: number) => void;
+export const sys_bigint2_2: (a: number, b: number, c: number) => void;
+export const sys_bigint2_3: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+) => void;
+export const sys_bigint2_4: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+) => void;
+export const sys_bigint2_5: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+  f: number,
+) => void;
+export const sys_bigint2_6: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+  f: number,
+  g: number,
+) => void;
+export const sys_cycle_count: () => bigint;
+export const sys_exit: (a: number) => void;
+export const sys_fork: () => number;
+export const sys_getenv: (a: number, b: number, c: number, d: number) => number;
+export const sys_halt: (a: number, b: number) => void;
+export const sys_input: (a: number) => number;
+export const sys_keccak: (a: number, b: number) => number;
+export const sys_pause: (a: number, b: number) => void;
+export const sys_pipe: (a: number) => number;
+export const sys_poseidon2: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+) => void;
+export const sys_prove_keccak: (a: number, b: number) => void;
+export const sys_rand: (a: number, b: number) => void;
+export const sys_read: (a: number, b: number, c: number) => number;
+export const sys_read_words: (a: number, b: number, c: number) => number;
+export const sys_sha_buffer: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+) => void;
+export const sys_sha_compress: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+) => void;
+export const sys_verify_integrity: (a: number, b: number) => void;
+export const sys_write: (a: number, b: number, c: number) => void;
+export const syscall_0: (a: number, b: number, c: number, d: number) => void;
+export const syscall_0_nr: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+) => void;
+export const syscall_1: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+) => void;
+export const syscall_1_nr: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+  f: number,
+) => void;
+export const syscall_2: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+  f: number,
+) => void;
+export const syscall_2_nr: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+  f: number,
+  g: number,
+) => void;
+export const syscall_3: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+  f: number,
+  g: number,
+) => void;
+export const syscall_3_nr: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+  f: number,
+  g: number,
+  h: number,
+) => void;
+export const syscall_4: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+  f: number,
+  g: number,
+  h: number,
+) => void;
+export const syscall_4_nr: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+  f: number,
+  g: number,
+  h: number,
+  i: number,
+) => void;
+export const syscall_5: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+  f: number,
+  g: number,
+  h: number,
+  i: number,
+) => void;
+export const syscall_5_nr: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+  f: number,
+  g: number,
+  h: number,
+  i: number,
+  j: number,
+) => void;
+export const sys_panic: (a: number, b: number) => void;
+export const sys_verify_integrity2: (a: number, b: number) => void;
 export const rustsecp256k1_v0_10_0_context_create: (a: number) => number;
 export const rustsecp256k1_v0_10_0_context_destroy: (a: number) => void;
 export const rustsecp256k1_v0_10_0_default_error_callback_fn: (

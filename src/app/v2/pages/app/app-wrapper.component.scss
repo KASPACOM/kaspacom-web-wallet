@@ -6,7 +6,8 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
 
 // Ambient light animations
 @keyframes ambient-float-left {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
   50% {
@@ -15,7 +16,8 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
 }
 
 @keyframes ambient-float-right {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
   50% {
@@ -25,7 +27,8 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
 
 // Mobile-optimized animations with smaller movement
 @keyframes ambient-float-left-mobile {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
   50% {
@@ -34,7 +37,8 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
 }
 
 @keyframes ambient-float-right-mobile {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
   50% {

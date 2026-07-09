@@ -1,4 +1,11 @@
-import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { WalletService } from '../../../../services/wallet.service';
 import { KaspaL1NetworkService } from '../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
 
@@ -96,11 +103,17 @@ export class WalletProfileOrbComponent {
 
   isL2 = this.walletService.getIsL2DisplaySignal();
   walletAddress = computed(
-    () => this.address() ?? this.walletService.getCurrentDisplayWalletAddressAsString(),
+    () =>
+      this.address() ??
+      this.walletService.getCurrentDisplayWalletAddressAsString(),
   );
 
-  avatarConfig = computed((): AvatarConfig => computeAvatar(this.walletAddress()));
-  l1AvatarConfig = computed((): L1AvatarConfig => computeL1Avatar(this.walletAddress()));
+  avatarConfig = computed(
+    (): AvatarConfig => computeAvatar(this.walletAddress()),
+  );
+  l1AvatarConfig = computed(
+    (): L1AvatarConfig => computeL1Avatar(this.walletAddress()),
+  );
   l1AvatarError = signal(false);
 
   constructor() {

@@ -12,7 +12,10 @@
     }
 
     <!-- Iframe loading spinner - shows during initial load -->
-    <div class="iframe-overlay-cover" *ngIf="shouldEnforceAccountSelection() && showIframeLoader()">
+    <div
+      class="iframe-overlay-cover"
+      *ngIf="shouldEnforceAccountSelection() && showIframeLoader()"
+    >
       <div class="iframe-loader">
         <kc-spinner size="lg"></kc-spinner>
       </div>
@@ -38,7 +41,10 @@
       <div class="wrapper__right">
         <!-- Right-panel header (title + navigation controls) -->
         <div class="wrapper__right-header">
-          @if (flowPagesService.isAnyPageOpen() && (flowPagesService.activePage()?.showTitle ?? true)) {
+          @if (
+            flowPagesService.isAnyPageOpen() &&
+            (flowPagesService.activePage()?.showTitle ?? true)
+          ) {
             <div class="wrapper__right-nav">
               @if (flowPagesService.canNavigateBack()) {
                 <kc-icon
@@ -80,21 +86,29 @@
             <!-- Placeholder shown when no action is active -->
             <div class="wrapper__right-placeholder">
               <div class="wrapper__right-placeholder-icon">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="3" width="7" height="7" rx="1"/>
-                  <rect x="14" y="3" width="7" height="7" rx="1"/>
-                  <rect x="3" y="14" width="7" height="7" rx="1"/>
-                  <path d="M14 14h7v7h-7z" opacity="0.35"/>
+                <svg
+                  width="48"
+                  height="48"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="3" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="3" width="7" height="7" rx="1" />
+                  <rect x="3" y="14" width="7" height="7" rx="1" />
+                  <path d="M14 14h7v7h-7z" opacity="0.35" />
                 </svg>
               </div>
               <p class="wrapper__right-placeholder-text">
-                Open Swap or another action<br>to see it here
+                Open Swap or another action<br />to see it here
               </p>
             </div>
           }
         </div>
       </div>
-
     } @else {
       <!-- ── NORMAL MODE: existing single-column layout ── -->
       <div

@@ -77,58 +77,6 @@
   }
 }
 
-.custom-select-wrapper {
-  position: relative;
-  display: inline-block;
+.ticker-filter {
   min-width: 180px;
-}
-
-.custom-select {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 100%;
-  background-color: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 10px 40px 10px 16px;
-  color: #fff;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  outline: none;
-  transition: all 0.2s ease;
-  font-family: inherit;
-
-  &:hover {
-    border-color: rgba(255, 255, 255, 0.3);
-    background-color: rgba(255, 255, 255, 0.02);
-  }
-
-  &:focus {
-    border-color: #70c7ba;
-    background-color: rgba(255, 255, 255, 0.05);
-  }
-
-  option {
-    background-color: #1e1e1e;
-    color: #fff;
-    padding: 12px;
-  }
-}
-
-.custom-arrow {
-  position: absolute;
-  top: 50%;
-  right: 16px;
-  transform: translateY(-50%);
-  pointer-events: none;
-  color: rgba(255, 255, 255, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.2s ease;
-}
-
-.custom-select:hover+.custom-arrow {
-  color: #fff;
 }

@@ -104,8 +104,26 @@ $tpl-accents: (
 
   .filter-chips {
     display: flex;
+    flex: 1 1 auto;
     gap: 6px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    min-width: 0;
+    max-width: 100%;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+    // Room for the scrollbar so it doesn't clip the chips' bottom border.
+    padding-bottom: 4px;
+    margin-bottom: -4px;
+
+    &::-webkit-scrollbar {
+      height: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: var(--gray-30);
+      border-radius: 4px;
+    }
   }
   .filter-spacer {
     margin-left: auto;
@@ -125,6 +143,7 @@ $tpl-accents: (
   color: var(--gray-60);
   transition: all 0.15s;
   white-space: nowrap;
+  flex-shrink: 0;
 
   &:hover {
     color: var(--gray-75);

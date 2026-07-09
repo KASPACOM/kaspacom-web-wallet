@@ -474,6 +474,12 @@ $tpl-accents: (
   @media (min-width: 768px) {
     padding: 22px;
   }
+
+  @each $name, $color in $tpl-accents {
+    &[data-tpl="#{$name}"] {
+      --tpl-accent: #{$color};
+    }
+  }
 }
 .detail-title-row {
   display: flex;
@@ -631,17 +637,7 @@ $tpl-accents: (
   border-radius: 9px;
   padding: 9px 11px;
   .p-avatar {
-    width: 26px;
-    height: 26px;
     flex-shrink: 0;
-    border-radius: 7px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: 600;
-    background: rgba(111, 199, 186, 0.15);
-    color: var(--kaspa-20);
   }
   .p-body {
     display: flex;
@@ -710,11 +706,13 @@ $tpl-accents: (
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 .tl-action {
   font-size: 13px;
   font-weight: 500;
   color: var(--white);
+  flex-shrink: 0;
 }
 .tl-when {
   font-size: 11px;
@@ -731,6 +729,10 @@ $tpl-accents: (
   text-decoration: none;
   font-family: var(--font-mono, monospace);
   margin-left: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   &:hover {
     text-decoration: underline;
   }
@@ -1160,6 +1162,17 @@ $tpl-accents: (
   &:hover {
     border-color: rgba(255, 255, 255, 0.15);
   }
+  > a,
+  > span:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  > span:last-child {
+    flex-shrink: 0;
+  }
 }
 .pubkey-display {
   background: rgba(255, 204, 0, 0.08);
@@ -1231,6 +1244,7 @@ $tpl-accents: (
 }
 .text-truncate {
   max-width: 100%;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

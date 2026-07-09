@@ -1020,7 +1020,7 @@
                 <div class="card-actions">
                   <button
                     class="btn secondary"
-                    (click)="openContractDetail(contract)"
+                    (click)="navigateToContractDetail(contract)"
                   >
                     Details
                   </button>
@@ -1325,7 +1325,11 @@
                       track p.label + p.value
                     ) {
                       <div class="participant">
-                        <span class="p-avatar">{{ p.label.charAt(0) }}</span>
+                        <app-wallet-profile-orb
+                          class="p-avatar"
+                          [address]="p.value"
+                          [sizePx]="26"
+                        ></app-wallet-profile-orb>
                         <div class="p-body">
                           <span class="p-role">{{ p.label }}</span
                           ><span class="p-val">{{

@@ -68,6 +68,7 @@ import { FlowPagesService } from '../../../../services/flow-pages.service';
 import { ApprovalFlowService } from '../../../../services/approval-flow.service';
 import { AddressSmartInputComponent } from '../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { CovenantDateTimeInputComponent } from './covenant-date-time-input.component';
+import { WalletProfileOrbComponent } from '../../../../shared/ui/wallet-profile-orb/wallet-profile-orb.component';
 
 type TabName =
   | 'deploy'
@@ -167,6 +168,7 @@ type DeployIndexerState = {
     CopyButtonComponent,
     AddressSmartInputComponent,
     CovenantDateTimeInputComponent,
+    WalletProfileOrbComponent,
   ],
   templateUrl: './contracts-page.component.html',
   styleUrl: './contracts-page.component.scss',

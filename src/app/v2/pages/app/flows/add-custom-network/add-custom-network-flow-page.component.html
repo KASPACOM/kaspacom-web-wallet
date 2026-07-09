@@ -6,13 +6,7 @@
     [isFullWidth]="true"
     [isSearchable]="true"
     [value]="selectedPresetChainId()"
-    (valueChange)="onPresetSelected($event)">
-
-    <ng-template #prefixTemplate>
-      @if (selectedPresetChainId() && getPresetNetworkIcon(selectedPresetChainId()!)) {
-        <img [src]="getPresetNetworkIcon(selectedPresetChainId()!)!" alt="" class="preset-trigger-icon" />
-      }
-    </ng-template>
+    (valueChange)="onPresetSelected($any($event))">
 
     <ng-template #optionTemplate let-option>
       <div class="preset-option">
@@ -32,78 +26,74 @@
     <kc-input
       [label]="'Network Name'"
       [placeholder]="'e.g. Base, Polygon, Arbitrum'"
-      [type]="'text'"
-      [isFullWidth]="true"
       [ngModel]="networkName()"
-      (valueChange)="networkName.set($event || '')">
+      (valueChange)="networkName.set($any($event) || '')">
     </kc-input>
 
     <kc-input
       [label]="'Chain ID'"
       [placeholder]="'e.g. 8453'"
-      [type]="'number'"
-      [isFullWidth]="true"
       [isValid]="!chainIdError()"
-      [invalidReason]="chainIdError()"
       [ngModel]="chainId()"
       (valueChange)="chainId.set(coerceToString($event))">
     </kc-input>
+    @if (chainIdError()) {
+      <span class="input-error-text">{{ chainIdError() }}</span>
+    }
 
     <kc-input
       [label]="'RPC URL'"
       [placeholder]="'https://rpc.example.com'"
-      [type]="'text'"
-      [isFullWidth]="true"
       [isValid]="!rpcUrlError()"
-      [invalidReason]="rpcUrlError()"
       [ngModel]="rpcUrl()"
-      (valueChange)="rpcUrl.set($event || '')">
+      (valueChange)="rpcUrl.set($any($event) || '')">
     </kc-input>
+    @if (rpcUrlError()) {
+      <span class="input-error-text">{{ rpcUrlError() }}</span>
+    }
 
     <kc-input
       [label]="'Currency Symbol'"
       [placeholder]="'ETH'"
-      [type]="'text'"
-      [isFullWidth]="true"
       [ngModel]="currencySymbol()"
-      (valueChange)="currencySymbol.set($event || '')">
+      (valueChange)="currencySymbol.set($any($event) || '')">
     </kc-input>
 
     <kc-input
       [label]="'Decimals'"
       [placeholder]="'18'"
-      [type]="'number'"
-      [isFullWidth]="true"
       [isValid]="!decimalsError()"
-      [invalidReason]="decimalsError()"
       [ngModel]="currencyDecimals()"
       (valueChange)="currencyDecimals.set(coerceToString($event))">
     </kc-input>
+    @if (decimalsError()) {
+      <span class="input-error-text">{{ decimalsError() }}</span>
+    }
 
     <kc-input
       [label]="'Block Explorer URL (optional)'"
       [placeholder]="'https://explorer.example.com'"
-      [type]="'text'"
-      [isFullWidth]="true"
       [isValid]="!explorerUrlError()"
-      [invalidReason]="explorerUrlError()"
       [ngModel]="explorerUrl()"
-      (valueChange)="explorerUrl.set($event || '')">
+      (valueChange)="explorerUrl.set($any($event) || '')">
     </kc-input>
+    @if (explorerUrlError()) {
+      <span class="input-error-text">{{ explorerUrlError() }}</span>
+    }
 
   </div>
 
   <div class="action-buttons flex gap-12 mt-auto">
     <kc-button
       [variant]="'secondary'"
-      [size]="'md'"
+      [size]="'m'"
       [text]="'Cancel'"
       class="flex-1"
       (buttonClick)="onCancel()">
     </kc-button>
     <kc-button
       [variant]="'primary'"
-      [size]="'md'"
+      [size]="'m'"
       [text]="isSaving() ? 'Adding...' : 'Add Network'"
       [isDisabled]="isSaving()"
       class="flex-1"

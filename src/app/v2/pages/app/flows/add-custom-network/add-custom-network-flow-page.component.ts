@@ -7,7 +7,7 @@ import {
   KcDropdownSelectComponent,
   KcInputComponent,
   NotificationService,
-} from 'kaspacom-ui';
+} from '@kaspacom/ui-kit';
 import {
   EthereumWalletChainManager,
   ExtendedEIP1193ProviderChain,

@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { WalletService } from '../../../services/wallet.service';
-import { NgFor, NgIf } from '@angular/common';
+
 import { TransferableAsset } from '../../../types/transferable-asset';
 import { WalletAction, WalletActionType } from '../../../types/wallet-action';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
@@ -11,10 +11,10 @@ import { Krc20WalletActionService } from '../../../services/protocols/krc20/krc2
 import { MessagePopupService } from '../../../services/message-popup.service';
 
 @Component({
-    selector: 'list-krc20-token',
-    templateUrl: './list-krc20-component.component.html',
-    styleUrls: ['./list-krc20-component.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, NgIf, NgFor]
+  selector: 'list-krc20-token',
+  templateUrl: './list-krc20-component.component.html',
+  styleUrls: ['./list-krc20-component.component.scss'],
+  imports: [FormsModule, ReactiveFormsModule],
 })
 export class ListKrc20Component implements OnInit {
   assets: undefined | TransferableAsset[] = undefined; // Replace with your dynamic asset list
@@ -40,7 +40,14 @@ export class ListKrc20Component implements OnInit {
 
   // Validate the form
   isFormValid(): boolean {
-    return (this.selectedAsset && this.amount && this.amount > 0 && this.totalPrice && this.totalPrice > 0) || false;
+    return (
+      (this.selectedAsset &&
+        this.amount &&
+        this.amount > 0 &&
+        this.totalPrice &&
+        this.totalPrice > 0) ||
+      false
+    );
   }
 
   // Handle the send action
@@ -51,7 +58,7 @@ export class ListKrc20Component implements OnInit {
 
     if (this.isFormValid()) {
       const selectedAsset = this.assets?.find(
-        (asset) => this.selectedAsset == this.getAssetId(asset)
+        (asset) => this.selectedAsset == this.getAssetId(asset),
       );
 
       const action: WalletAction =
@@ -59,10 +66,14 @@ export class ListKrc20Component implements OnInit {
           this.walletService.getCurrentWallet()!.getAddress(),
           selectedAsset!.ticker,
           this.kaspaNetworkActionsService.kaspaToSompiFromNumber(this.amount!),
-          [{
-            address: this.walletService.getCurrentWallet()!.getAddress(),
-            amount: this.kaspaNetworkActionsService.kaspaToSompiFromNumber(this.totalPrice!),
-          }],
+          [
+            {
+              address: this.walletService.getCurrentWallet()!.getAddress(),
+              amount: this.kaspaNetworkActionsService.kaspaToSompiFromNumber(
+                this.totalPrice!,
+              ),
+            },
+          ],
         );
 
       const result =
@@ -73,14 +84,20 @@ export class ListKrc20Component implements OnInit {
         this.messagePopupService.showSuccess('Asset listed successfully!');
       } else {
         if (result.errorCode != ERROR_CODES.EIP1193.USER_REJECTED) {
-          this.messagePopupService.showError(result.errorCode ? ERROR_CODES_MESSAGES[result.errorCode] : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR]);
+          this.messagePopupService.showError(
+            result.errorCode
+              ? ERROR_CODES_MESSAGES[result.errorCode]
+              : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR],
+          );
           return;
         }
       }
 
       // Add your transaction logic here
     } else {
-      this.messagePopupService.showError('Please fill in all fields correctly.');
+      this.messagePopupService.showError(
+        'Please fill in all fields correctly.',
+      );
     }
   }
 

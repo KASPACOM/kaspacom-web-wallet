@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   Component,
   effect,
@@ -35,7 +34,6 @@ import { IFlowPageConfig } from '../../../../../../../common/flow-page/interface
   selector: 'app-send-kns',
   standalone: true,
   imports: [
-    CommonModule,
     KcCheckboxComponent,
     KcButtonComponent,
     FormsModule,

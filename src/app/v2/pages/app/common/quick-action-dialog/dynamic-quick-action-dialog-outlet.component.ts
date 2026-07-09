@@ -8,7 +8,7 @@ import {
   ComponentRef,
   Type,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { QuickActionDialogService } from '../../../../services/quick-action-dialog.service';
 import {
   IQuickActionDialogComponent,
@@ -19,7 +19,7 @@ import {
 @Component({
   selector: 'app-dynamic-quick-action-dialog-outlet',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: ` <ng-template #host></ng-template> `,
 })
 export class DynamicQuickActionDialogOutletComponent {

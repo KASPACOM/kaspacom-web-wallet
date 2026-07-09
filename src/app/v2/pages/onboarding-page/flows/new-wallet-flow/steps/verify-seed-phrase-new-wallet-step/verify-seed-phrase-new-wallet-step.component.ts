@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   Component,
   OnInit,
@@ -8,10 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import {
-  KcButtonComponent,
-  KcInputComponent,
-} from 'kaspacom-ui';
+import { KcButtonComponent, KcInputComponent } from 'kaspacom-ui';
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 
 interface VerificationWordEntry {
@@ -22,12 +18,7 @@ interface VerificationWordEntry {
 
 @Component({
   selector: 'app-verify-seed-phrase-new-wallet-step',
-  imports: [
-    CommonModule,
-    FormsModule,
-    KcButtonComponent,
-    KcInputComponent,
-  ],
+  imports: [FormsModule, KcButtonComponent, KcInputComponent],
   templateUrl: './verify-seed-phrase-new-wallet-step.component.html',
   styleUrl: './verify-seed-phrase-new-wallet-step.component.scss',
 })

@@ -7,16 +7,16 @@ import {
   Validators,
 } from '@angular/forms';
 import { PasswordManagerService } from '../../services/password-manager.service';
-import { NgIf } from '@angular/common';
+
 import { Router } from '@angular/router';
 import { WalletService } from '../../services/wallet.service';
 import { IFrameCommunicationApp } from '../../services/communication-service/communication-app/iframe-communication.service';
 
 @Component({
-    selector: 'app-login',
-    templateUrl: './login.component.html',
-    styleUrls: ['./login.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, NgIf]
+  selector: 'app-login',
+  templateUrl: './login.component.html',
+  styleUrls: ['./login.component.scss'],
+  imports: [FormsModule, ReactiveFormsModule],
 })
 export class LoginComponent implements OnInit {
   loginForm: FormGroup = new FormGroup({});
@@ -57,18 +57,16 @@ export class LoginComponent implements OnInit {
 
         await this.walletService.loadWallets();
 
-
         if (this.walletService.getWalletsCount() === 0) {
           this.router.navigate(['/add-wallet']);
         } else {
           if (IFrameCommunicationApp.isIframe()) {
-            this.router.navigate(['/wallet-selection']);  
+            this.router.navigate(['/wallet-selection']);
           } else {
             await this.walletService.selectCurrentWalletFromLocalStorage();
-            this.router.navigate(['/wallet-info']);  
+            this.router.navigate(['/wallet-info']);
           }
         }
-        
       } else {
         this.loginError = true;
       }

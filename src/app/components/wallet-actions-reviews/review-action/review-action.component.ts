@@ -1,5 +1,5 @@
 import { Component, computed } from '@angular/core';
-import { NgClass, NgFor, NgIf } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   SignPsktTransactionAction,
@@ -12,17 +12,26 @@ import { PriorityFeeSelectionComponent } from '../priority-fee-selection/priorit
 import { AppWallet } from '../../../classes/AppWallet';
 import { ReviewActionDataService } from '../../../services/action-info-services/review-action-data.service';
 import { WalletActionService } from '../../../services/wallet-action.service';
-import { EIP1193RequestPayload, EIP1193RequestType } from '@kaspacom/wallet-messages';
+import {
+  EIP1193RequestPayload,
+  EIP1193RequestType,
+} from '@kaspacom/wallet-messages';
 import { InputFieldType } from '../../../types/action-display.type';
 import { KcButtonComponent, KcCheckboxComponent } from 'kaspacom-ui';
 
 const TIMEOUT = 2 * 60 * 1000;
 
 @Component({
-    selector: 'review-action',
-    templateUrl: './review-action.component.html',
-    styleUrls: ['./review-action.component.scss'],
-    imports: [NgIf, NgFor, NgClass, PriorityFeeSelectionComponent, FormsModule, KcButtonComponent, KcCheckboxComponent]
+  selector: 'review-action',
+  templateUrl: './review-action.component.html',
+  styleUrls: ['./review-action.component.scss'],
+  imports: [
+    NgClass,
+    PriorityFeeSelectionComponent,
+    FormsModule,
+    KcButtonComponent,
+    KcCheckboxComponent,
+  ],
 })
 export class ReviewActionComponent {
   public WalletActionType = WalletActionType;
@@ -30,11 +39,23 @@ export class ReviewActionComponent {
   public InputFieldType = InputFieldType;
   public Number = Number;
 
-  currentActionDisplay = computed(() => this.currentActionSignal ? this.reviewActionDataService.getActionDisplay(this.currentActionSignal()?.action, this.wallet) : undefined);
-  currentActionSignal = computed(() => this.walletActionService.getActionToApproveSignal()());
-  currentProgressSignal = computed(() => this.walletActionService.getCurrentProgressSignal()());
-  actionResultSignal = computed(() => this.walletActionService.getActionResultSignal()());
-
+  currentActionDisplay = computed(() =>
+    this.currentActionSignal
+      ? this.reviewActionDataService.getActionDisplay(
+          this.currentActionSignal()?.action,
+          this.wallet,
+        )
+      : undefined,
+  );
+  currentActionSignal = computed(() =>
+    this.walletActionService.getActionToApproveSignal()(),
+  );
+  currentProgressSignal = computed(() =>
+    this.walletActionService.getCurrentProgressSignal()(),
+  );
+  actionResultSignal = computed(() =>
+    this.walletActionService.getActionResultSignal()(),
+  );
 
   private resolve:
     | ((result: { isApproved: boolean; priorityFee?: bigint }) => void)
@@ -46,7 +67,11 @@ export class ReviewActionComponent {
   protected currentPriorityFee: bigint | undefined = undefined;
   protected additionalParams: { [key: string]: any } = {};
 
-  constructor(private walletService: WalletService, private walletActionService: WalletActionService, private readonly reviewActionDataService: ReviewActionDataService) { }
+  constructor(
+    private walletService: WalletService,
+    private walletActionService: WalletActionService,
+    private readonly reviewActionDataService: ReviewActionDataService,
+  ) {}
 
   requestUserConfirmation(action: WalletAction): Promise<{
     isApproved: boolean;
@@ -58,8 +83,6 @@ export class ReviewActionComponent {
     return this.initAction(action);
   }
 
-
-
   // COMPONENT MANAGEMENT
   private clearData() {
     clearTimeout(this.timeout!);
@@ -68,7 +91,11 @@ export class ReviewActionComponent {
   }
 
   private resolveActionAndClear(isApproved: boolean) {
-    this.walletActionService.resolveCurrentWaitingForApproveAction(isApproved, isApproved ? this.currentPriorityFee! : undefined, isApproved ? this.additionalParams : undefined);
+    this.walletActionService.resolveCurrentWaitingForApproveAction(
+      isApproved,
+      isApproved ? this.currentPriorityFee! : undefined,
+      isApproved ? this.additionalParams : undefined,
+    );
     this.clearData();
   }
 
@@ -114,7 +141,9 @@ export class ReviewActionComponent {
   }
 
   isAvailableForApproval(): boolean {
-    return this.currentPriorityFee !== undefined || !this.isActionHasPriorityFee;
+    return (
+      this.currentPriorityFee !== undefined || !this.isActionHasPriorityFee
+    );
   }
 
   protected get isActionHasPriorityFee() {
@@ -122,12 +151,21 @@ export class ReviewActionComponent {
       return false;
     }
 
-    if ([WalletActionType.SIGN_MESSAGE, WalletActionType.APPROVE_COMMUNICATION_APP].includes(this.currentActionSignal()!.action.type)) {
+    if (
+      [
+        WalletActionType.SIGN_MESSAGE,
+        WalletActionType.APPROVE_COMMUNICATION_APP,
+      ].includes(this.currentActionSignal()!.action.type)
+    ) {
       return false;
     }
 
-    if (this.currentActionSignal()!.action.type === WalletActionType.EIP1193_PROVIDER_REQUEST) {
-      const actionData = this.currentActionSignal()!.action.data as EIP1193RequestPayload<EIP1193RequestType>;
+    if (
+      this.currentActionSignal()!.action.type ===
+      WalletActionType.EIP1193_PROVIDER_REQUEST
+    ) {
+      const actionData = this.currentActionSignal()!.action
+        .data as EIP1193RequestPayload<EIP1193RequestType>;
 
       if (actionData.method != EIP1193RequestType.KAS_SEND_TRANSACTION) {
         return false;
@@ -135,8 +173,10 @@ export class ReviewActionComponent {
     }
 
     if (
-      this.currentActionSignal()!.action.type === WalletActionType.SIGN_PSKT_TRANSACTION &&
-      (this.currentActionSignal()!.action.data as SignPsktTransactionAction).signOnly
+      this.currentActionSignal()!.action.type ===
+        WalletActionType.SIGN_PSKT_TRANSACTION &&
+      (this.currentActionSignal()!.action.data as SignPsktTransactionAction)
+        .signOnly
     ) {
       return false;
     }

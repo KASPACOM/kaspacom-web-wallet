@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectorRef,
@@ -25,12 +24,7 @@ interface DeleteWalletDialogData {
 @Component({
   selector: 'app-delete-wallet-quick-action-dialog',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    KcButtonComponent,
-    QuickActionDialogComponent,
-  ],
+  imports: [FormsModule, KcButtonComponent, QuickActionDialogComponent],
   templateUrl: './delete-wallet-quick-action-dialog.component.html',
   styleUrl: './delete-wallet-quick-action-dialog.component.scss',
 })

@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   Component,
   computed,
@@ -55,7 +54,6 @@ import {
   selector: 'app-swap-flow-page',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     KcButtonComponent,
     KcIconComponent,

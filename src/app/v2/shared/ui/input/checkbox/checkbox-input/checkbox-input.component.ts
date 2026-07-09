@@ -1,9 +1,8 @@
-import { CommonModule } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 
 @Component({
   selector: 'app-checkbox-input',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './checkbox-input.component.html',
   styleUrl: './checkbox-input.component.scss',
 })

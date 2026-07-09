@@ -23,24 +23,24 @@
   },
   "private": true,
   "dependencies": {
-    "@angular/animations": "^19.2.13",
-    "@angular/cdk": "^19.2.17",
-    "@angular/common": "^19.2.13",
-    "@angular/compiler": "^19.2.13",
-    "@angular/core": "^19.2.13",
-    "@angular/forms": "^19.2.13",
-    "@angular/platform-browser": "^19.2.13",
-    "@angular/platform-browser-dynamic": "^19.2.13",
-    "@angular/platform-server": "^19.2.13",
-    "@angular/router": "^19.2.13",
-    "@angular/ssr": "^19.2.18",
+    "@angular/animations": "^21.2.18",
+    "@angular/cdk": "^21.2.14",
+    "@angular/common": "^21.2.18",
+    "@angular/compiler": "^21.2.18",
+    "@angular/core": "^21.2.18",
+    "@angular/forms": "^21.2.18",
+    "@angular/platform-browser": "^21.2.18",
+    "@angular/platform-browser-dynamic": "^21.2.18",
+    "@angular/platform-server": "^21.2.18",
+    "@angular/router": "^21.2.18",
+    "@angular/ssr": "^21.2.18",
     "@kaspacom/swap-sdk": "^1.1.26",
     "@kaspacom/ui": "^1.0.51",
     "@kaspacom/wallet-messages": "^1.0.35",
     "@segment/analytics-next": "1.81.1",
     "@sentry/angular": "^10.31.0",
     "@sentry/cli": "^2.58.4",
-    "angularx-qrcode": "^19.0.0",
+    "angularx-qrcode": "^21.0.5",
     "crypto-js": "^4.2.0",
     "dexie": "^4.2.1",
     "ethers": "^6.13.5",
@@ -51,12 +51,12 @@
     "lodash": "^4.17.21",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
-    "zone.js": "~0.15.1"
+    "zone.js": "~0.16.2"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^19.2.13",
-    "@angular/cli": "^19.2.13",
-    "@angular/compiler-cli": "^19.2.13",
+    "@angular-devkit/build-angular": "^21.2.18",
+    "@angular/cli": "^21.2.18",
+    "@angular/compiler-cli": "^21.2.18",
     "@types/express": "^4.17.17",
     "@types/jasmine": "~5.1.0",
     "@types/lodash": "^4.17.13",
@@ -73,9 +73,12 @@
     "karma-jasmine-html-reporter": "~2.1.0",
     "npm": "^10.9.1",
     "prettier": "^3.5.3",
-    "typescript": "~5.8.3"
+    "typescript": "~5.9.3"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "^4.45.1"
+  },
+  "overrides": {
+    "@angular/cdk": "^21.2.14"
   }
 }

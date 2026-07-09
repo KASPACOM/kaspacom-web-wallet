@@ -1,5 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import {
   KcLabeledTabsComponent,
   TabItem,
@@ -18,7 +18,12 @@ import { FlowPagesService } from '../../../../services/flow-pages.service';
 @Component({
   selector: 'app-l2-assets-container',
   standalone: true,
-  imports: [CommonModule, KcLabeledTabsComponent, Erc20SummaryComponent, L2TxHistoryComponent, KcButtonComponent],
+  imports: [
+    KcLabeledTabsComponent,
+    Erc20SummaryComponent,
+    L2TxHistoryComponent,
+    KcButtonComponent,
+  ],
   templateUrl: './l2-assets-container.component.html',
   styleUrl: './l2-assets-container.component.scss',
 })
@@ -31,12 +36,18 @@ export class L2AssetsContainerComponent extends BaseAssetsContainerComponent {
     { id: ASSET_TAB_IDS.L2_TX_HISTORY, label: 'History' },
   ];
 
-  hasErc20Tokens = computed(() =>
-    (this.assetsManagerService.getAllAssetStores().l2.getAssets(L2_ASSET_KEYS.erc20) ?? []).length > 0
+  hasErc20Tokens = computed(
+    () =>
+      (
+        this.assetsManagerService
+          .getAllAssetStores()
+          .l2.getAssets(L2_ASSET_KEYS.erc20) ?? []
+      ).length > 0,
   );
 
-  showImportTokenFab = computed(() =>
-    this.selectedTabId() === ASSET_TAB_IDS.L2_ERC20 && this.hasErc20Tokens()
+  showImportTokenFab = computed(
+    () =>
+      this.selectedTabId() === ASSET_TAB_IDS.L2_ERC20 && this.hasErc20Tokens(),
   );
 
   onImportToken(): void {

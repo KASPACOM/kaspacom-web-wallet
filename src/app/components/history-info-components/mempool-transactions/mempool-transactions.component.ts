@@ -1,4 +1,3 @@
-import { CommonModule, NgIf } from '@angular/common';
 import { Component, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { WalletService } from '../../../services/wallet.service';
@@ -7,7 +6,7 @@ import { WalletService } from '../../../services/wallet.service';
   selector: 'mempool-transactions',
   templateUrl: './mempool-transactions.component.html',
   styleUrls: ['./mempool-transactions.component.scss'],
-  imports: [NgIf, FormsModule, CommonModule],
+  imports: [FormsModule],
 })
 export class MempoolTransactionsComponent {
   constructor(private walletService: WalletService) {}

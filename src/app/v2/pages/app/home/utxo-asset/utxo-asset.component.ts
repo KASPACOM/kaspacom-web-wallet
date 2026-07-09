@@ -1,8 +1,11 @@
 import { Component, computed, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute } from '@angular/router';
 import { KcIconComponent } from 'kaspacom-ui';
-import { BaseAssetPageComponent, AssetDetail } from '../../common/base-asset-page/base-asset-page.component';
+import {
+  BaseAssetPageComponent,
+  AssetDetail,
+} from '../../common/base-asset-page/base-asset-page.component';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { UtxoEntryReference } from '../../../../../../../public/kaspa/kaspa';
@@ -10,16 +13,14 @@ import { KaspaL1NetworkService } from '../../../../../services/kaspa-netwrok-ser
 
 @Component({
   selector: 'app-utxo-asset',
-  imports: [
-    CommonModule,
-    KcIconComponent,
-    CopyButtonComponent,
-    SkeletonComponent
-  ],
+  imports: [KcIconComponent, CopyButtonComponent, SkeletonComponent],
   templateUrl: './utxo-asset.component.html',
-  styleUrl: './utxo-asset.component.scss'
+  styleUrl: './utxo-asset.component.scss',
 })
-export class UtxoAssetComponent extends BaseAssetPageComponent implements OnInit {
+export class UtxoAssetComponent
+  extends BaseAssetPageComponent
+  implements OnInit
+{
   protected route = inject(ActivatedRoute);
   private kaspaL1NetworkService = inject(KaspaL1NetworkService);
 
@@ -31,9 +32,11 @@ export class UtxoAssetComponent extends BaseAssetPageComponent implements OnInit
     const balance = wallet.getBalanceSignal()();
     if (!balance?.utxoEntries) return null;
 
-    return balance.utxoEntries.find(utxo =>
-      utxo.outpoint.transactionId === this.transactionId
-    ) || null;
+    return (
+      balance.utxoEntries.find(
+        (utxo) => utxo.outpoint.transactionId === this.transactionId,
+      ) || null
+    );
   });
 
   override ngOnInit() {
@@ -58,7 +61,7 @@ export class UtxoAssetComponent extends BaseAssetPageComponent implements OnInit
           name: 'UTXO Transaction',
           symbol: 'KAS',
           balance: kasAmount.toFixed(3),
-          decimals: 3
+          decimals: 3,
         };
         this.assetDetail.set(assetDetail);
       }

@@ -1,21 +1,28 @@
 import { Component, computed, inject, Input, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router } from '@angular/router';
-import { WalletActionResult, WalletActionResultType, CommitRevealActionResult, ProtocolType } from '@kaspacom/wallet-messages';
+import {
+  WalletActionResult,
+  WalletActionResultType,
+  CommitRevealActionResult,
+  ProtocolType,
+} from '@kaspacom/wallet-messages';
 import { CompletedActionOverviewService } from '../../../../../../../services/action-info-services/completed-action-overview.service';
 import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { ApprovalFlowService } from '../../../../../../services/approval-flow.service';
-import { trigger, state, style, transition, animate } from '@angular/animations';
+import {
+  trigger,
+  state,
+  style,
+  transition,
+  animate,
+} from '@angular/animations';
 import { WalletActionService } from '../../../../../../../services/wallet-action.service';
 
 @Component({
   selector: 'app-approval-success-page',
   standalone: true,
-  imports: [
-    CommonModule,
-    KcButtonComponent,
-    KcIconComponent
-  ],
+  imports: [KcButtonComponent, KcIconComponent],
   template: `
     <div class="success-container">
       <!-- Success Header -->
@@ -24,43 +31,61 @@ import { WalletActionService } from '../../../../../../../services/wallet-action
 
         <!-- Success Icon -->
         <div class="success-icon-wrapper">
-          <img src="/svgs/success.svg" alt="Success" class="success-icon" width="334" height="226" />
+          <img
+            src="/svgs/success.svg"
+            alt="Success"
+            class="success-icon"
+            width="334"
+            height="226"
+          />
         </div>
       </div>
 
       <!-- Transaction Details Spoiler -->
-      <div class="details-spoiler-container" *ngIf="actionDisplay()">
-        <!-- Details Toggle Header -->
-        <div class="details-spoiler-toggle" (click)="toggleDetails()">
-          <div class="spoiler-left">
-            <kc-icon iconClass="icon-info" size="sm" color="#6fc7ba"></kc-icon>
-            <span class="spoiler-label">Transaction Details</span>
+      @if (actionDisplay()) {
+        <div class="details-spoiler-container">
+          <!-- Details Toggle Header -->
+          <div class="details-spoiler-toggle" (click)="toggleDetails()">
+            <div class="spoiler-left">
+              <kc-icon
+                iconClass="icon-info"
+                size="sm"
+                color="#6fc7ba"
+              ></kc-icon>
+              <span class="spoiler-label">Transaction Details</span>
+            </div>
+            <div class="spoiler-chevron">
+              <kc-icon
+                [iconClass]="
+                  showDetails ? 'icon-chevron-up' : 'icon-chevron-down'
+                "
+                size="sm"
+                color="var(--gray-60, #9E9E9E)"
+              >
+              </kc-icon>
+            </div>
           </div>
-          <div class="spoiler-chevron">
-            <kc-icon
-              [iconClass]="showDetails ? 'icon-chevron-up' : 'icon-chevron-down'"
-              size="sm"
-              color="var(--gray-60, #9E9E9E)">
-            </kc-icon>
-          </div>
-        </div>
-
-        <!-- Details Content (Collapsible) -->
-        <div class="details-content" [@slideDown]="showDetails ? 'open' : 'closed'">
-          <div class="details-inner">
-            <h3 class="details-title">{{ actionDisplay()!.title }}</h3>
-
-            <div class="details-grid">
-              <div class="detail-item" *ngFor="let row of actionDisplay()!.rows">
-                <div class="detail-label">{{ row.fieldName }}</div>
-                <div class="detail-value">
-                  {{ row.fieldValue }}
-                </div>
+          <!-- Details Content (Collapsible) -->
+          <div
+            class="details-content"
+            [@slideDown]="showDetails ? 'open' : 'closed'"
+          >
+            <div class="details-inner">
+              <h3 class="details-title">{{ actionDisplay()!.title }}</h3>
+              <div class="details-grid">
+                @for (row of actionDisplay()!.rows; track row) {
+                  <div class="detail-item">
+                    <div class="detail-label">{{ row.fieldName }}</div>
+                    <div class="detail-value">
+                      {{ row.fieldValue }}
+                    </div>
+                  </div>
+                }
               </div>
             </div>
           </div>
         </div>
-      </div>
+      }
 
       <!-- Action Button -->
       <div class="action-button">
@@ -70,7 +95,8 @@ import { WalletActionService } from '../../../../../../../services/wallet-action
           size="lg"
           [isFullWidth]="true"
           (buttonClick)="onDone()"
-          class="done-button">
+          class="done-button"
+        >
         </kc-button>
       </div>
     </div>
@@ -78,27 +104,31 @@ import { WalletActionService } from '../../../../../../../services/wallet-action
   styleUrl: './approval-success-page.component.scss',
   animations: [
     trigger('slideDown', [
-      state('closed', style({
-        height: '0px',
-        opacity: 0,
-        overflow: 'hidden'
-      })),
-      state('open', style({
-        height: '*',
-        opacity: 1,
-        overflow: 'visible'
-      })),
-      transition('closed => open', [
-        animate('400ms ease-out')
-      ]),
-      transition('open => closed', [
-        animate('300ms ease-in')
-      ])
-    ])
-  ]
+      state(
+        'closed',
+        style({
+          height: '0px',
+          opacity: 0,
+          overflow: 'hidden',
+        }),
+      ),
+      state(
+        'open',
+        style({
+          height: '*',
+          opacity: 1,
+          overflow: 'visible',
+        }),
+      ),
+      transition('closed => open', [animate('400ms ease-out')]),
+      transition('open => closed', [animate('300ms ease-in')]),
+    ]),
+  ],
 })
 export class ApprovalSuccessPageComponent {
-  private completedActionOverviewService = inject(CompletedActionOverviewService);
+  private completedActionOverviewService = inject(
+    CompletedActionOverviewService,
+  );
   private approvalFlowService = inject(ApprovalFlowService);
   private router = inject(Router);
   private walletActionService = inject(WalletActionService);
@@ -122,7 +152,7 @@ export class ApprovalSuccessPageComponent {
   }
 
   actionDisplay = computed(() =>
-    this.completedActionOverviewService.getActionDisplay(this.actionResult)
+    this.completedActionOverviewService.getActionDisplay(this.actionResult),
   );
 
   toggleDetails() {
@@ -141,7 +171,6 @@ export class ApprovalSuccessPageComponent {
 
     // Clear the action result to dismiss the modal
     this.walletActionService.clearActionResult();
-
   }
 
   /**

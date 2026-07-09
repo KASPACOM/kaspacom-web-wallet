@@ -7,9 +7,9 @@ import {
   OnDestroy,
 } from '@angular/core';
 
-import { FormsModule } from '@angular/forms';
 import { KcButtonComponent } from '@kaspacom/ui-kit';
 import { KcIconComponent } from '@kaspacom/ui-kit';
+import { CheckboxComponent } from '../../../../../shared/ui/checkbox/checkbox.component';
 import { PriorityFeeSelectionComponent } from '../../../../../../components/wallet-actions-reviews/priority-fee-selection/priority-fee-selection.component';
 import {
   ApprovalFlowService,
@@ -33,9 +33,9 @@ import { SwapContextService } from '../../../../../services/swap-context.service
 @Component({
   selector: 'app-approval-flow-page',
   imports: [
-    FormsModule,
     KcButtonComponent,
     KcIconComponent,
+    CheckboxComponent,
     PriorityFeeSelectionComponent,
     L2PriorityFeeSelectionComponent,
     ApprovalSuccessPageComponent,

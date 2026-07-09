@@ -32,26 +32,3 @@
     padding-bottom: 4px;
 }
 
-.slippage-btn {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    color: var(--gray-60);
-    font-size: 13px;
-    font-weight: 500;
-    padding: 8px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover {
-        background: var(--bg-primary);
-        color: var(--color-text-primary);
-        border-color: var(--primary-40);
-    }
-
-    &.active {
-        background: var(--primary-20);
-        border-color: var(--primary-40);
-        color: var(--primary);
-    }
-}

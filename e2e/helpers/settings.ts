@@ -7,10 +7,10 @@ import { waitForWalletHome } from './wait';
  */
 export async function openSettings(page: Page): Promise<void> {
   await waitForWalletHome(page);
-  // wrapper-header binds `[iconClass]="'icon-settings'"` as an Angular input,
+  // wrapper-header binds `[icon]="'icon-settings'"` as an Angular input,
   // which is NOT reflected to a DOM attribute. Use the stable CSS class on
-  // the host (`.settings-icon`) plus the (click) handler on kc-icon itself.
-  const settingsIcon = page.locator('kc-icon.settings-icon').first();
+  // the host (`.settings-icon`) plus the (buttonClick) handler on kc-icon-button.
+  const settingsIcon = page.locator('kc-icon-button.settings-icon').first();
   await expect(settingsIcon).toBeVisible({ timeout: 10_000 });
   await settingsIcon.click();
   await expect(page.locator('.settings-menu-container').first()).toBeVisible({

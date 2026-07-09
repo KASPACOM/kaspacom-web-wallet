@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-import { KcIconComponent, KcTooltipDirective } from '@kaspacom/ui-kit';
+import { KcIconButtonComponent, KcTooltipDirective } from '@kaspacom/ui-kit';
 import { environment } from '../../../../../../environments/environment';
 import { EthereumWalletChainManager } from '../../../../../services/etherium-services/etherium-wallet-chain.manager';
 import { UtilsHelper } from '../../../../../services/utils.service';
@@ -17,7 +17,7 @@ import { KaspaL1NetworkService } from '../../../../../services/kaspa-netwrok-ser
 @Component({
   selector: 'app-wrapper-header',
   imports: [
-    KcIconComponent,
+    KcIconButtonComponent,
     RouterModule,
     CopyButtonComponent,
     WalletProfileOrbComponent,

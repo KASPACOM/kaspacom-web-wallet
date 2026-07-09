@@ -37,13 +37,15 @@ test.describe('Settings', () => {
     // Initial step: "Export wallet" kicks off the password step.
     await clickKcButton(page, 'Export wallet');
 
-    const passwordInput = page.locator('#password-input').first();
+    const passwordInput = page
+      .locator('kc-input input[type="password"]')
+      .first();
     await expect(passwordInput).toBeVisible({ timeout: 10_000 });
 
     // Wrong password should surface the error and stay on the password step.
     await passwordInput.fill('definitely-the-wrong-password');
     await clickKcButton(page, 'Verify Password');
-    await expect(page.locator('.error-message').first()).toBeVisible({
+    await expect(page.locator('.input-error-text').first()).toBeVisible({
       timeout: 5_000,
     });
     // The download button must NOT be visible while password is invalid.

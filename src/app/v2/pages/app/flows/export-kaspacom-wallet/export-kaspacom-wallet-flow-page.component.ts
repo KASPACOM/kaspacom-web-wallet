@@ -10,6 +10,7 @@ import { QRCodeComponent } from 'angularx-qrcode';
 import {
   KcButtonComponent,
   KcIconComponent,
+  KcInputComponent,
   NotificationService,
 } from '@kaspacom/ui-kit';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
@@ -21,7 +22,13 @@ import { FormsModule } from '@angular/forms';
 @Component({
   selector: 'app-export-kaspacom-wallet-flow-page',
   standalone: true,
-  imports: [QRCodeComponent, KcButtonComponent, KcIconComponent, FormsModule],
+  imports: [
+    QRCodeComponent,
+    KcButtonComponent,
+    KcIconComponent,
+    KcInputComponent,
+    FormsModule,
+  ],
   templateUrl: './export-kaspacom-wallet-flow-page.component.html',
   styleUrl: './export-kaspacom-wallet-flow-page.component.scss',
 })

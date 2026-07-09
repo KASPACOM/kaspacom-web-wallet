@@ -35,19 +35,6 @@
       line-height: 1.4;
     }
 
-    .close-button {
-      background: none;
-      border: none;
-      font-size: 20px;
-      cursor: pointer;
-      padding: 0 4px;
-      color: #666;
-      transition: color 0.2s ease;
-
-      &:hover {
-        color: #333;
-      }
-    }
   }
 
   &.success {

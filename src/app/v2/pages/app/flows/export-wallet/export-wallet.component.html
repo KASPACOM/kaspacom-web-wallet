@@ -10,21 +10,17 @@
         </span>
       </div>
       <div class="export-wallet__password-form flex column gap-16 full-width">
-        <label class="typo-text-1 text-gray-60" for="export-wallet-password"
-          >Password</label
-        >
-        <input
-          id="export-wallet-password"
+        <kc-input
+          [label]="'Password'"
           type="password"
-          class="export-wallet__password-input p-16 rounded-lg typo-text-1"
-          [class.error]="passwordError()"
           placeholder="Enter your password"
-          [(ngModel)]="password"
-          (ngModelChange)="onPasswordInput()"
-          (keyup.enter)="onVerifyPassword()"
-        />
+          [isValid]="!passwordError()"
+          [ngModel]="password()"
+          (valueChange)="password.set($any($event)); $any($event) && onPasswordInput()"
+          (keydown.enter)="onVerifyPassword()"
+        ></kc-input>
         @if (passwordError()) {
-          <span class="export-wallet__password-error typo-text-2">{{
+          <span class="input-error-text typo-text-2">{{
             passwordError()
           }}</span>
         }

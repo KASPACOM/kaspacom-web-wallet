@@ -23,7 +23,8 @@ import {
 } from '@kaspacom/swap-sdk';
 import {
   KcButtonComponent,
-  KcIconComponent,
+  KcIconButtonComponent,
+  KcInputComponent,
   NotificationService,
 } from '@kaspacom/ui-kit';
 import {
@@ -63,7 +64,8 @@ import {
   imports: [
     FormsModule,
     KcButtonComponent,
-    KcIconComponent,
+    KcIconButtonComponent,
+    KcInputComponent,
     CommaFormatterPipe,
     TokenLogoComponent,
   ],

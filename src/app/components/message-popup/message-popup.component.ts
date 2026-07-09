@@ -1,10 +1,11 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { KcIconButtonComponent } from '@kaspacom/ui-kit';
 
 export type MessageType = 'success' | 'error' | 'warning' | 'info';
 
 @Component({
   selector: 'app-message-popup',
-  imports: [],
+  imports: [KcIconButtonComponent],
   templateUrl: './message-popup.component.html',
   styleUrls: ['./message-popup.component.scss'],
 })

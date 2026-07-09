@@ -66,31 +66,6 @@
 
   &__back-button {
     margin-top: 16px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    background: transparent;
-    color: var(--white, #fff);
-    font-size: 13px;
-    cursor: pointer;
-    transition: border 0.2s ease, color 0.2s ease;
-
-    &:hover {
-      border-color: rgba(255, 255, 255, 0.4);
-      color: var(--white, #fff);
-    }
-
-    kc-icon {
-      display: inline-flex;
-      align-items: center;
-
-      ::ng-deep .icon {
-        color: currentColor !important;
-      }
-    }
   }
 
   &__actions {

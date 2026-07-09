@@ -4,46 +4,46 @@
     <!-- Header -->
     <div class="swap-header flex justify-content-between align-items-center">
       <span class="swap-title">Swap</span>
-      <button
-        class="settings-btn"
-        (click)="openSettingsDialog()"
-        title="Settings"
-      >
-        <kc-icon [iconClass]="'icon-settings'" [size]="'sm'"></kc-icon>
-      </button>
+      <kc-icon-button
+        icon="icon-settings"
+        size="sm"
+        [ariaLabel]="'Settings'"
+        [title]="'Settings'"
+        (buttonClick)="openSettingsDialog()"
+      ></kc-icon-button>
     </div>
 
     <!-- Percentage Options -->
     <div class="percentage-options-wrapper flex justify-content-end">
       <div class="percentage-options">
-        <button
-          class="percentage-btn"
-          [class.active]="selectedPercentage() === 25"
-          (click)="onPercentageClick(25)"
-        >
-          25%
-        </button>
-        <button
-          class="percentage-btn"
-          [class.active]="selectedPercentage() === 50"
-          (click)="onPercentageClick(50)"
-        >
-          50%
-        </button>
-        <button
-          class="percentage-btn"
-          [class.active]="selectedPercentage() === 75"
-          (click)="onPercentageClick(75)"
-        >
-          75%
-        </button>
-        <button
-          class="percentage-btn"
-          [class.active]="selectedPercentage() === 100"
-          (click)="onPercentageClick(100)"
-        >
-          MAX
-        </button>
+        <kc-button
+          variant="tag-secondary"
+          size="s"
+          [isSelected]="selectedPercentage() === 25"
+          text="25%"
+          (buttonClick)="onPercentageClick(25)"
+        ></kc-button>
+        <kc-button
+          variant="tag-secondary"
+          size="s"
+          [isSelected]="selectedPercentage() === 50"
+          text="50%"
+          (buttonClick)="onPercentageClick(50)"
+        ></kc-button>
+        <kc-button
+          variant="tag-secondary"
+          size="s"
+          [isSelected]="selectedPercentage() === 75"
+          text="75%"
+          (buttonClick)="onPercentageClick(75)"
+        ></kc-button>
+        <kc-button
+          variant="tag-secondary"
+          size="s"
+          [isSelected]="selectedPercentage() === 100"
+          text="MAX"
+          (buttonClick)="onPercentageClick(100)"
+        ></kc-button>
       </div>
     </div>
 
@@ -63,42 +63,44 @@
           }
         </div>
         <div class="token-input-row">
-          <input
-            type="text"
-            inputmode="decimal"
+          <kc-input
             class="token-amount-input"
             [class.error]="fromInputError()"
+            variant="transparent"
             placeholder="0"
             [ngModel]="fromAmountInput()"
-            (ngModelChange)="onFromAmountChange($event)"
-          />
-          <button class="token-select-btn" (click)="openTokenModal('from')">
-            @if (fromToken()) {
-              <kc-token-logo
-                [ticker]="fromToken()!.symbol"
-                [address]="fromToken()!.address"
-                size="md"
-              ></kc-token-logo>
-              <span class="token-symbol">{{ fromToken()?.symbol }}</span>
-            } @else {
-              <span class="select-token-text">Select</span>
-            }
-            <kc-icon iconClass="icon-chevron-down" size="xs"></kc-icon>
-          </button>
+            (valueChange)="onFromAmountChange($any($event))"
+          ></kc-input>
+          <kc-button
+            class="token-select-btn"
+            variant="secondary"
+            [text]="fromToken() ? fromToken()!.symbol : 'Select'"
+            suffixIcon="icon-chevron-down"
+            (buttonClick)="openTokenModal('from')"
+          >
+            <ng-template #prefixTemplate>
+              @if (fromToken()) {
+                <kc-token-logo
+                  [ticker]="fromToken()!.symbol"
+                  [address]="fromToken()!.address"
+                  size="md"
+                ></kc-token-logo>
+              }
+            </ng-template>
+          </kc-button>
         </div>
       </div>
 
       <!-- Switch Button -->
       <div class="switch-btn-container">
-        <button
+        <kc-icon-button
           class="switch-btn"
-          (click)="switchTokens()"
-          title="Switch tokens"
-        >
-          <div class="switch-arrows">
-            <kc-icon iconClass="icon-switch-vertical-01" size="sm"></kc-icon>
-          </div>
-        </button>
+          icon="icon-switch-vertical-01"
+          size="sm"
+          [ariaLabel]="'Switch tokens'"
+          [title]="'Switch tokens'"
+          (buttonClick)="switchTokens()"
+        ></kc-icon-button>
       </div>
 
       <!-- BUY (To) -->
@@ -112,27 +114,30 @@
           }
         </div>
         <div class="token-input-row">
-          <input
-            type="text"
-            inputmode="decimal"
+          <kc-input
             class="token-amount-input"
+            variant="transparent"
             placeholder="0"
             [ngModel]="toAmountInput()"
-            (ngModelChange)="onToAmountChange($event)"
-          />
-          <button class="token-select-btn" (click)="openTokenModal('to')">
-            @if (toToken()) {
-              <kc-token-logo
-                [ticker]="toToken()!.symbol"
-                [address]="toToken()!.address"
-                size="md"
-              ></kc-token-logo>
-              <span class="token-symbol">{{ toToken()?.symbol }}</span>
-            } @else {
-              <span class="select-token-text">Select</span>
-            }
-            <kc-icon iconClass="icon-chevron-down" size="xs"></kc-icon>
-          </button>
+            (valueChange)="onToAmountChange($any($event))"
+          ></kc-input>
+          <kc-button
+            class="token-select-btn"
+            variant="secondary"
+            [text]="toToken() ? toToken()!.symbol : 'Select'"
+            suffixIcon="icon-chevron-down"
+            (buttonClick)="openTokenModal('to')"
+          >
+            <ng-template #prefixTemplate>
+              @if (toToken()) {
+                <kc-token-logo
+                  [ticker]="toToken()!.symbol"
+                  [address]="toToken()!.address"
+                  size="md"
+                ></kc-token-logo>
+              }
+            </ng-template>
+          </kc-button>
         </div>
         <!-- Min Received -->
         @if (!currentIsOutput() && minReceived()) {

@@ -11,6 +11,13 @@
       <span class="icon">{{ icon }}</span>
     }
     <span class="message">{{ message }}</span>
-    <button class="close-button" (click)="onClose()">×</button>
+    <kc-icon-button
+      class="close-button"
+      icon="icon-close"
+      variant="secondary"
+      size="xs"
+      [ariaLabel]="'Close'"
+      (buttonClick)="onClose()"
+    ></kc-icon-button>
   </div>
 </div>

@@ -76,37 +76,36 @@
                 class="delete-confirm-row"
                 (click)="$event.stopPropagation()"
               >
-                <button
-                  type="button"
-                  class="btn-confirm-delete"
-                  (click)="confirmDelete($event, network.chainId)"
-                >
-                  Delete
-                </button>
-                <button
-                  type="button"
-                  class="btn-cancel-delete"
-                  (click)="cancelDelete($event)"
-                >
-                  Keep
-                </button>
+                <kc-button
+                  class="danger-action-button"
+                  variant="secondary"
+                  size="s"
+                  [text]="'Delete'"
+                  (buttonClick)="confirmDelete($event, network.chainId)"
+                ></kc-button>
+                <kc-button
+                  variant="secondary"
+                  size="s"
+                  [text]="'Keep'"
+                  (buttonClick)="cancelDelete($event)"
+                ></kc-button>
               </div>
             } @else {
               @if (isCurrentNetwork(network.chainId)) {
                 <kc-icon [iconClass]="'icon-check'" [size]="'sm'"></kc-icon>
               }
               @if (isCustomNetwork(network.chainId)) {
-                <button
-                  type="button"
+                <kc-icon-button
                   class="btn-delete-network"
-                  title="Remove network"
-                  [attr.aria-label]="
+                  icon="icon-trash"
+                  variant="secondary"
+                  size="sm"
+                  [title]="'Remove network'"
+                  [ariaLabel]="
                     'Remove ' + getNetworkShortName(network) + ' network'
                   "
-                  (click)="confirmDelete($event, network.chainId)"
-                >
-                  <kc-icon [iconClass]="'icon-trash'" [size]="'sm'"></kc-icon>
-                </button>
+                  (buttonClick)="confirmDelete($event, network.chainId)"
+                ></kc-icon-button>
               }
             }
           </div>

@@ -32,19 +32,6 @@ $swap-input-row-height: 45px;
   color: var(--color-text-primary);
 }
 
-.settings-btn {
-  background: transparent;
-  border: none;
-  padding: 8px;
-  cursor: pointer;
-  border-radius: 12px;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background-color: var(--bg-secondary);
-  }
-}
-
 // Token Inputs Wrapper
 .token-inputs-wrapper {
   position: relative;
@@ -125,31 +112,6 @@ $swap-input-row-height: 45px;
   width: max-content;
 }
 
-.percentage-btn {
-  flex: 1;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--gray-25, #404040);
-  color: var(--gray-75, #bdbdbd);
-  font-size: 13px;
-  font-weight: 500;
-  padding: 5px 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: var(--bg-secondary);
-    color: var(--white, #fff);
-    border-color: var(--gray-45, #757575);
-  }
-
-  &.active {
-    background: var(--primary-20, #2a4a5a);
-    border-color: var(--primary, #6fc7ba);
-    color: var(--primary, #6fc7ba);
-  }
-}
-
 .token-input-row {
   display: flex;
   align-items: center;
@@ -158,86 +120,24 @@ $swap-input-row-height: 45px;
 
 .token-amount-input {
   flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  font-size: 32px;
-  font-weight: 500;
-  color: var(--color-text-primary);
   min-width: 0;
 
-  &::placeholder {
-    color: var(--gray-40);
+  ::ng-deep .input-field {
+    font-size: 32px;
+    font-weight: 500;
+
+    &::placeholder {
+      color: var(--gray-40);
+    }
   }
 
-  &.error {
+  &.error ::ng-deep .input-field {
     color: var(--error, #e04242);
   }
-
-  // Hide number input spinners
-  &::-webkit-outer-spin-button,
-  &::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-  -moz-appearance: textfield;
-  appearance: textfield;
 }
 
 .token-select-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background-color: var(--bg-tertiary);
-  border: 1px solid var(--gray-25, #404040);
-  border-radius: 20px;
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
   flex-shrink: 0;
-  color: var(--color-text-primary);
-
-  &:hover {
-    background-color: var(--bg-secondary);
-    border-color: var(--gray-45, #757575);
-  }
-}
-
-.token-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.token-icon-placeholder {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(
-    135deg,
-    var(--primary-20) 0%,
-    var(--primary-40) 100%
-  );
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--primary);
-  text-transform: uppercase;
-}
-
-.token-symbol {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.select-token-text {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--primary);
 }
 
 // Switch Button
@@ -250,36 +150,13 @@ $swap-input-row-height: 45px;
 }
 
 .switch-btn {
-  background-color: var(--bg-tertiary, #1a2025);
-  border: 4px solid var(--bg-primary, #0d1316);
-  border-radius: 12px;
-  padding: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &:hover {
-    background-color: var(--bg-secondary, #141a1f);
-    border-color: var(--primary-40, #3a5a5a);
+  ::ng-deep .app-icon-button {
+    border-width: 4px;
+    border-color: var(--bg-primary, #0d1316);
   }
 
   &:active {
     transform: scale(0.95);
-  }
-}
-
-.switch-arrows {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0;
-  color: var(--primary);
-
-  kc-icon {
-    transition: transform 0.2s ease;
-    font-size: 24px;
   }
 }
 

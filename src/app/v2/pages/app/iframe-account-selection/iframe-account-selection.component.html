@@ -24,14 +24,14 @@
         }
 
         @if (hasMultipleWallets() && !isWalletSelectionVisible()) {
-          <button
-            type="button"
+          <kc-button
             class="selection-panel__back-button"
-            (click)="onChangeWallet()"
-          >
-            <kc-icon iconClass="icon-arrow-left" size="xs"></kc-icon>
-            Change wallet
-          </button>
+            variant="link-secondary"
+            size="s"
+            [prefixIcon]="'icon-arrow-left'"
+            [text]="'Change wallet'"
+            (buttonClick)="onChangeWallet()"
+          ></kc-button>
         }
       </div>
 

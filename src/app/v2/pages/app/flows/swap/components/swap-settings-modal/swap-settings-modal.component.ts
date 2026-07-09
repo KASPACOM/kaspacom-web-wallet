@@ -1,14 +1,5 @@
-import {
-  Component,
-  EventEmitter,
-  Input,
-  Output,
-  computed,
-  inject,
-  OnChanges,
-  SimpleChanges,
-} from '@angular/core';
-
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
+import { Component, computed, inject } from '@angular/core';
 import {
   ReactiveFormsModule,
   FormBuilder,
@@ -16,19 +7,24 @@ import {
   Validators,
 } from '@angular/forms';
 import {
-  KcBaseModalComponent,
+  KcDialogComponent,
   KcInputComponent,
   KcButtonComponent,
-} from 'kaspacom-ui';
+} from '@kaspacom/ui-kit';
 import { FormErrorMessageComponent } from '../../../../../../shared/components/form-error/form-error.component';
 import type { SwapSettings } from '@kaspacom/swap-sdk';
+
+export interface SwapSettingsDialogData {
+  title?: string;
+  initialSettings?: Partial<SwapSettings>;
+}
 
 @Component({
   selector: 'app-swap-settings-modal',
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    KcBaseModalComponent,
+    KcDialogComponent,
     KcInputComponent,
     KcButtonComponent,
     FormErrorMessageComponent,
@@ -36,13 +32,12 @@ import type { SwapSettings } from '@kaspacom/swap-sdk';
   templateUrl: './swap-settings-modal.component.html',
   styleUrl: './swap-settings-modal.component.scss',
 })
-export class SwapSettingsModalComponent implements OnChanges {
+export class SwapSettingsModalComponent {
   private fb = inject(FormBuilder);
-
-  @Input() open = false;
-  @Input() initialSettings: Partial<SwapSettings> | undefined;
-  @Output() close = new EventEmitter<void>();
-  @Output() save = new EventEmitter<SwapSettings>();
+  private dialogRef = inject(DialogRef<SwapSettings | undefined>);
+  private data = inject<SwapSettingsDialogData>(DIALOG_DATA, {
+    optional: true,
+  });
 
   settingsForm: FormGroup;
 
@@ -61,22 +56,11 @@ export class SwapSettingsModalComponent implements OnChanges {
   });
 
   constructor() {
-    this.settingsForm = this.createForm('0.5', '20');
-  }
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['initialSettings'] || changes['open']) {
-      if (this.open && this.initialSettings) {
-        const maxSlippageValue = this.initialSettings.maxSlippage || '0.5';
-        const swapDeadlineValue = String(
-          this.initialSettings.swapDeadline || 20,
-        );
-        this.settingsForm = this.createForm(
-          maxSlippageValue,
-          swapDeadlineValue,
-        );
-      }
-    }
+    const initial = this.data?.initialSettings;
+    this.settingsForm = this.createForm(
+      initial?.maxSlippage || '0.5',
+      String(initial?.swapDeadline || 20),
+    );
   }
 
   private createForm(maxSlippage: string, swapDeadline: string): FormGroup {
@@ -104,7 +88,7 @@ export class SwapSettingsModalComponent implements OnChanges {
 
   onSave() {
     if (this.settingsForm.valid) {
-      this.save.emit({
+      this.dialogRef.close({
         maxSlippage: this.settingsForm.get('maxSlippage')?.value,
         swapDeadline: parseInt(
           this.settingsForm.get('swapDeadline')?.value,
@@ -115,6 +99,6 @@ export class SwapSettingsModalComponent implements OnChanges {
   }
 
   onClose() {
-    this.close.emit();
+    this.dialogRef.close();
   }
 }

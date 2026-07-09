@@ -1,13 +1,10 @@
-@if (open()) {
-<kc-base-modal title="Select a token" [showCloseButton]="true" [autoWidth]="false" (close)="onClose()">
+<kc-dialog [showCloseButton]="true">
   <div class="token-selector-content">
 
     <kc-input
       placeholder="Search name, symbol, or address"
-      type="text"
-      [isFullWidth]="true"
       prefixIcon="pi pi-search"
-      (valueChange)="onSearchChange($event)"
+      (valueChange)="onSearchChange($any($event))"
     ></kc-input>
 
     <div class="token-list">
@@ -239,5 +236,4 @@
       }
     </div>
   </div>
-</kc-base-modal>
-}
+</kc-dialog>

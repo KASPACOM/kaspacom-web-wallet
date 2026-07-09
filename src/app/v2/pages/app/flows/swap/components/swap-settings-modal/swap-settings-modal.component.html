@@ -1,9 +1,8 @@
-@if (open) {
-<kc-base-modal title="Settings" [showCloseButton]="true" [autoWidth]="false" (close)="onClose()">
+<kc-dialog [showCloseButton]="true">
     <div class="settings-content" [formGroup]="settingsForm">
         <div class="form-field">
             <div class="slippage-row">
-                <kc-input label="Slippage tolerance (%)" type="number" [isFullWidth]="true" placeholder="0.5"
+                <kc-input label="Slippage tolerance (%)" placeholder="0.5"
                     formControlName="maxSlippage"></kc-input>
                 <div class="slippage-options">
                     <button class="slippage-btn" [class.active]="selectedSlippage() === 0.1" (click)="onSlippageClick(0.1)">0.1%</button>
@@ -23,7 +22,7 @@
         </div>
 
         <div class="form-field">
-            <kc-input label="Transaction deadline (minutes)" type="number" [isFullWidth]="true" placeholder="20"
+            <kc-input label="Transaction deadline (minutes)" placeholder="20"
                 formControlName="swapDeadline"></kc-input>
             <kc-form-error-message
                 [control]="settingsForm.get('swapDeadline')"
@@ -37,5 +36,4 @@
 
         <kc-button text="Save" variant="primary" [isFullWidth]="true" [isDisabled]="settingsForm.invalid" (buttonClick)="onSave()"></kc-button>
     </div>
-</kc-base-modal>
-}
+</kc-dialog>

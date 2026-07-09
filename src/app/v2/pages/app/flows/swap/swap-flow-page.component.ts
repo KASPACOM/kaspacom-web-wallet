@@ -1,3 +1,4 @@
+import { Dialog } from '@angular/cdk/dialog';
 import {
   Component,
   computed,
@@ -43,8 +44,14 @@ import { EthereumWalletActionsService } from '../../../../../services/etherium-s
 import { EthereumWalletChainManager } from '../../../../../services/etherium-services/etherium-wallet-chain.manager';
 import { WalletService } from '../../../../../services/wallet.service';
 import { SwapContextService } from '../../../../services/swap-context.service';
-import { SwapSettingsModalComponent } from './components/swap-settings-modal/swap-settings-modal.component';
-import { TokenSelectorModalComponent } from './components/token-selector-modal/token-selector-modal.component';
+import {
+  SwapSettingsModalComponent,
+  SwapSettingsDialogData,
+} from './components/swap-settings-modal/swap-settings-modal.component';
+import {
+  TokenSelectorModalComponent,
+  TokenSelectorDialogData,
+} from './components/token-selector-modal/token-selector-modal.component';
 import {
   KAS_NATIVE_FEE_RESERVE,
   WALLET_APP_ID,
@@ -57,8 +64,6 @@ import {
     FormsModule,
     KcButtonComponent,
     KcIconComponent,
-    TokenSelectorModalComponent,
-    SwapSettingsModalComponent,
     CommaFormatterPipe,
     TokenLogoComponent,
   ],
@@ -74,6 +79,7 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
   private chainManager = inject(EthereumWalletChainManager);
   private notificationService = inject(NotificationService);
   private ethereumWalletActionsService = inject(EthereumWalletActionsService);
+  private dialog = inject(Dialog);
   private swapContextService = inject(SwapContextService);
   private assetsManagerService = inject(AssetsManagerService);
 
@@ -92,10 +98,6 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
 
   // Settings
   currentSettings = signal<SwapSettings>(DEFAULT_SWAP_SETTINGS);
-
-  // Modals
-  tokenModalOpen = signal<'from' | 'to' | null>(null);
-  settingsOpen = signal(false);
 
   // Internal State
   currentIsOutput = signal(false);
@@ -509,23 +511,39 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
   }
 
   openTokenModal(type: 'from' | 'to') {
-    this.tokenModalOpen.set(type);
+    const excludedToken = computed(() =>
+      type === 'from' ? this.toToken() : this.fromToken(),
+    );
+    const ref = this.dialog.open<Erc20Token | undefined, TokenSelectorDialogData>(
+      TokenSelectorModalComponent,
+      {
+        data: {
+          title: 'Select a token',
+          tokens: this.allTokens,
+          isLoading: this.loadingTokens,
+          excludedToken,
+        },
+      },
+    );
+    ref.closed.subscribe((token) => {
+      if (token) {
+        this.onTokenSelect(type, token);
+      }
+    });
   }
 
-  onTokenSelect(token: Erc20Token) {
-    const type = this.tokenModalOpen();
+  private onTokenSelect(type: 'from' | 'to', token: Erc20Token) {
     if (type === 'from') {
       if (this.toToken()?.address === token.address) {
         this.toToken.set(this.fromToken());
       }
       this.fromToken.set(token);
-    } else if (type === 'to') {
+    } else {
       if (this.fromToken()?.address === token.address) {
         this.fromToken.set(this.toToken());
       }
       this.toToken.set(token);
     }
-    this.tokenModalOpen.set(null);
 
     // Update with current input
     this.updateControllerAmount(this.fromAmountInput(), false);
@@ -561,7 +579,24 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
     this.onFromAmountChange(amount);
   }
 
-  onSettingsSave(settings: SwapSettings) {
+  openSettingsDialog() {
+    const ref = this.dialog.open<SwapSettings | undefined, SwapSettingsDialogData>(
+      SwapSettingsModalComponent,
+      {
+        data: {
+          title: 'Settings',
+          initialSettings: this.currentSettings(),
+        },
+      },
+    );
+    ref.closed.subscribe((settings) => {
+      if (settings) {
+        this.onSettingsSave(settings);
+      }
+    });
+  }
+
+  private onSettingsSave(settings: SwapSettings) {
     this.currentSettings.set(settings);
     this.controller()?.setData({
       settings: {
@@ -569,7 +604,6 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
         ...settings,
       },
     });
-    this.settingsOpen.set(false);
   }
 
   async executeSwap() {

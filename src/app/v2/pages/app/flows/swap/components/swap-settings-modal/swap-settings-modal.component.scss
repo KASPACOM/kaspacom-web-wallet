@@ -1,31 +1,3 @@
-:host {
-    ::ng-deep {
-        kc-base-modal {
-            .modal-container {
-                background-color: var(--vampire-black, #0d1316) !important;
-                border-color: var(--border-color, #1a2025) !important;
-            }
-
-            .modal-header {
-                background-color: var(--vampire-black, #0d1316) !important;
-                border-bottom-color: var(--border-color, #1a2025) !important;
-            }
-
-            .modal-title-text {
-                color: var(--color-text-primary, #fff) !important;
-            }
-
-            .modal-content {
-                background-color: var(--vampire-black, #0d1316) !important;
-            }
-
-            .close-button kc-icon {
-                color: var(--gray-60, #aaa) !important;
-            }
-        }
-    }
-}
-
 .settings-content {
     display: flex;
     flex-direction: column;

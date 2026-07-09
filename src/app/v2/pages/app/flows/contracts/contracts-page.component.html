@@ -5,43 +5,6 @@
   getTemplateKey(entry). Everything else already exists on the component.
 -->
 <div class="contracts-container">
-  <!-- Header -->
-  <div class="header-row">
-    <div class="header-actions">
-      <button class="btn secondary" (click)="switchTab('lookup-import')">
-        <svg
-          width="15"
-          height="15"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <path d="M21 21l-4.3-4.3" />
-        </svg>
-        Import
-      </button>
-      <button class="btn primary" (click)="switchTab('deploy')">
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.4"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M12 5v14M5 12h14" />
-        </svg>
-        New contract
-      </button>
-    </div>
-  </div>
-
   <!-- Segmented tabs -->
   <div class="seg-tabs" role="tablist">
     <button
@@ -702,6 +665,20 @@
       }
 
       @if (activeTab() === "my-contracts") {
+        <!-- Toolbar: search -->
+        <div class="dashboard-toolbar">
+          <div class="dashboard-search">
+            <kc-input
+              [prefixIcon]="'pi pi-search'"
+              [placeholder]="'Search by name, address, or covenant ID'"
+              [type]="'text'"
+              [isFullWidth]="true"
+              [ngModel]="dashboardSearch()"
+              (valueChange)="dashboardSearch.set($event || '')"
+            ></kc-input>
+          </div>
+        </div>
+
         <!-- Filter row -->
         <div class="filter-row">
           <div class="filter-chips">

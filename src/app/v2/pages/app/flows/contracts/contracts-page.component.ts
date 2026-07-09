@@ -267,13 +267,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   dashboardContracts = signal<ContractDashboardEntry[]>([]);
   dashboardFilter = signal<ContractDashboardFilter>('all');
   statusFilter = signal<ContractStatusFilter>('all');
-  // Applies the template-type filter and the active/history status filter
-  // together. Status: 'active' = anything not settled (active / unknown /
-  // tracking-incomplete, so ambiguous contracts are never hidden under Active);
-  // 'history' = spent/settled only.
+  dashboardSearch = signal('');
+  // Applies the template-type filter, the active/history status filter, and
+  // the search query together. Status: 'active' = anything not settled
+  // (active / unknown / tracking-incomplete, so ambiguous contracts are never
+  // hidden under Active); 'history' = spent/settled only. Search matches
+  // name, address, and covenant ID so a pasted value finds the right card.
   filteredDashboardContracts = computed(() => {
     const key = this.dashboardFilter();
     const status = this.statusFilter();
+    const search = this.dashboardSearch().trim().toLowerCase();
     let list = this.dashboardContracts();
     if (key !== 'all') {
       list = list.filter((contract) => this.getTemplateKey(contract) === key);
@@ -282,6 +285,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       list = list.filter((contract) => contract.status !== 'spent');
     } else if (status === 'history') {
       list = list.filter((contract) => contract.status === 'spent');
+    }
+    if (search) {
+      list = list.filter((contract) =>
+        [
+          contract.displayName,
+          contract.contractName,
+          contract.currentAddress,
+          contract.covenantId,
+        ].some((value) => value?.toLowerCase().includes(search)),
+      );
     }
     return list;
   });

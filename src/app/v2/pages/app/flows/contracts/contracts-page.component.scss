@@ -34,21 +34,6 @@ $tpl-accents: (
   }
 }
 
-// ── header ───────────────────────────────────────────────────────────────
-.header-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  flex-wrap: wrap;
-
-  .header-actions {
-    display: flex;
-    gap: 10px;
-    margin-left: auto;
-    flex-wrap: wrap;
-  }
-}
-
 // ── segmented tab control ─────────────────────────────────────────────────
 .seg-tabs {
   display: grid;
@@ -94,6 +79,19 @@ $tpl-accents: (
     background: rgba(111, 199, 186, 0.15);
     color: var(--white);
     box-shadow: inset 0 0 0 1px var(--kaspa-20);
+  }
+}
+
+// ── dashboard toolbar (create + search) ────────────────────────────────────
+.dashboard-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  .dashboard-search {
+    flex: 1;
+    min-width: 220px;
   }
 }
 

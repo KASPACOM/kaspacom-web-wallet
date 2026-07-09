@@ -48,8 +48,15 @@
                   (click)="flowPagesService.navigateBack()"
                 ></kc-icon>
               }
-              <span class="wrapper__right-title typo-title-4">
-                {{ flowPagesService.activePage()?.title }}
+              <span class="wrapper__right-title-group">
+                <span class="wrapper__right-title typo-title-4">
+                  {{ flowPagesService.activePage()?.title }}
+                </span>
+                @if (flowPagesService.activePage()?.subtitle) {
+                  <span class="wrapper__right-subtitle typo-text-2">
+                    {{ flowPagesService.activePage()?.subtitle }}
+                  </span>
+                }
               </span>
               @if (flowPagesService.activePage()?.canClose) {
                 <kc-icon
@@ -108,6 +115,7 @@
       <app-flow-page
         [isOpen]="flowPagesService.isAnyPageOpen()"
         [title]="flowPagesService.activePage()?.title || ''"
+        [subtitle]="flowPagesService.activePage()?.subtitle || ''"
         [canNavigateBack]="flowPagesService.canNavigateBack()"
         [canClose]="flowPagesService.activePage()?.canClose ?? false"
         [showTitle]="flowPagesService.activePage()?.showTitle ?? true"

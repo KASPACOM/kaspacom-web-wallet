@@ -250,9 +250,20 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
   gap: 12px;
 }
 
-.wrapper__right-title {
+.wrapper__right-title-group {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.wrapper__right-title {
   color: var(--white);
+}
+
+.wrapper__right-subtitle {
+  color: var(--gray-60);
 }
 
 .wrapper__right-back {

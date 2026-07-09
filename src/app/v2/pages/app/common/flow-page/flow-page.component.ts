@@ -44,6 +44,7 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
 export class FlowPageComponent {
   @Input() isOpen = false;
   @Input() title = '';
+  @Input() subtitle = '';
   @Input() canNavigateBack = false;
   @Input() canClose = false;
   @Input() showTitle = true;

@@ -87,6 +87,7 @@ export class CryptoActionsComponent {
     this.flowPagesService.openFlow({
       id: 'contracts',
       title: 'Contracts',
+      subtitle: 'Deploy and track SilverScript covenants involving this wallet.',
       canNavigateBack: true,
     });
   }

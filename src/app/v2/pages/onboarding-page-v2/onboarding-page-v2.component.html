@@ -160,9 +160,8 @@
                   />
 
                   <kc-button
-                    class="onboarding-v2__delete-trigger"
-                    [variant]="'tertiary'"
-                    role="danger"
+                    class="onboarding-v2__delete-trigger kc-button-danger"
+                    [variant]="'secondary'"
                     [isFullWidth]="true"
                     [isDisabled]="isSubmitting()"
                     (buttonClick)="openDeleteWalletDialog()"
@@ -191,7 +190,7 @@
 
                       <kc-button
                         [text]="'Connect Existing Wallet'"
-                        [variant]="'tertiary'"
+                        [variant]="'secondary'"
                         [isFullWidth]="true"
                         (buttonClick)="startExistingWallet()"
                       />
@@ -329,16 +328,16 @@
         <div class="onboarding-v2__delete-actions">
           <kc-button
             [text]="'Cancel'"
-            [variant]="'tertiary'"
+            [variant]="'secondary'"
             [isFullWidth]="true"
             (buttonClick)="closeDeleteWalletDialog()"
             [isDisabled]="isDeletingWallet()"
           />
 
           <kc-button
+            class="kc-button-danger"
             [text]="'Delete Wallet'"
             [variant]="'secondary'"
-            role="danger"
             [isFullWidth]="true"
             [isLoading]="isDeletingWallet()"
             [isDisabled]="isDeletingWallet() || !isDeleteConfirmationValid()"

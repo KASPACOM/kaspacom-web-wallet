@@ -10,7 +10,8 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import { KcButtonComponent, KcCheckboxComponent, KcInputComponent } from 'kaspacom-ui';
+import { KcCheckboxComponent, KcInputComponent } from 'kaspacom-ui';
+import { KcButtonComponent } from '@kaspacom/ui-kit';
 import { AddressResolutionResult } from '../../../../../../../../../../services/address-resolution.service';
 import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
 import { L1_ASSET_KEYS } from '../../../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';

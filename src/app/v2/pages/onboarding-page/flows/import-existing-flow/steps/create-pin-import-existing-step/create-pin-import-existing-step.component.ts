@@ -6,8 +6,8 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { KcButtonComponent, KcInputComponent, NotificationService } from 'kaspacom-ui';
-import { KcIconComponent } from '@kaspacom/ui-kit';
+import { KcInputComponent, NotificationService } from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
 
 @Component({

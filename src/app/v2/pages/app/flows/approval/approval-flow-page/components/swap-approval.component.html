@@ -109,7 +109,7 @@
         <kc-button
           [text]="isLoading() ? 'Processing...' : 'Approve Swap'"
           variant="primary"
-          size="lg"
+          size="m"
           [isFullWidth]="true"
           [isDisabled]="isLoading() || !canApprove()"
           [isLoading]="isLoading()"
@@ -118,8 +118,8 @@
 
         <kc-button
           text="Reject"
-          variant="tertiary"
-          size="lg"
+          variant="secondary"
+          size="m"
           [isFullWidth]="true"
           [isDisabled]="isLoading()"
           (buttonClick)="onReject()"

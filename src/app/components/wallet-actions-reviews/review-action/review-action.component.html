@@ -74,15 +74,15 @@
         <kc-button
           text="Approve"
           variant="primary"
-          size="lg"
+          size="m"
           [isFullWidth]="true"
           [isDisabled]="!isAvailableForApproval()"
           (buttonClick)="acceptTransaction()"
         />
         <kc-button
           text="Reject"
-          variant="tertiary"
-          size="lg"
+          variant="secondary"
+          size="m"
           [isFullWidth]="true"
           (buttonClick)="rejectTransaction()"
         />

@@ -9,7 +9,8 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import { KcButtonComponent, KcCheckboxComponent } from 'kaspacom-ui';
+import { KcCheckboxComponent } from 'kaspacom-ui';
+import { KcButtonComponent } from '@kaspacom/ui-kit';
 import { firstValueFrom } from 'rxjs';
 import { AddressResolutionResult } from '../../../../../../../../../../services/address-resolution.service';
 import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';

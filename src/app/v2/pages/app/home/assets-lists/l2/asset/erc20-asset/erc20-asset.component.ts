@@ -1,8 +1,8 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { formatUnits, getAddress } from 'ethers';
-import { KcButtonComponent, NotificationService } from 'kaspacom-ui';
-import { KcIconComponent } from '@kaspacom/ui-kit';
+import { NotificationService } from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
 import { L2AssetsStoreService } from '../../../../../../../../services/assets-manager/assets-stores/l2-assets-store.service';
 import { ERC20Contract } from '../../../../../../../../services/etherium-services/smart-contracts/contracts/erc20-contract';

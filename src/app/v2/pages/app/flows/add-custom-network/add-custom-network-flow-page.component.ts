@@ -1,8 +1,8 @@
 import { Component, computed, inject, signal } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
-import { KcButtonComponent, KcInputComponent, NotificationService } from 'kaspacom-ui';
-import { DropdownOption, KcDropdownSelectComponent } from '@kaspacom/ui-kit';
+import { KcInputComponent, NotificationService } from 'kaspacom-ui';
+import { KcButtonComponent, DropdownOption, KcDropdownSelectComponent } from '@kaspacom/ui-kit';
 import {
   EthereumWalletChainManager,
   ExtendedEIP1193ProviderChain,

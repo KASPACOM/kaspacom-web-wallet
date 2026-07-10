@@ -1,7 +1,7 @@
 import { NgOptimizedImage } from '@angular/common';
 import { Component, inject, output } from '@angular/core';
 import { Router } from '@angular/router';
-import { KcButtonComponent } from 'kaspacom-ui';
+import { KcButtonComponent } from '@kaspacom/ui-kit';
 import { WalletService } from '../../../../../../../services/wallet.service';
 import { FlowPagesService } from '../../../../../../services/flow-pages.service';
 

@@ -10,8 +10,7 @@ import {
   computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KcButtonComponent } from 'kaspacom-ui';
-import { KcIconComponent, KcTooltipDirective } from '@kaspacom/ui-kit';
+import { KcButtonComponent, KcIconComponent, KcTooltipDirective } from '@kaspacom/ui-kit';
 import {
   trigger,
   state,

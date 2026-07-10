@@ -6,8 +6,8 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { KcButtonComponent, KcInputComponent } from 'kaspacom-ui';
-import { KcIconComponent } from '@kaspacom/ui-kit';
+import { KcInputComponent } from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 
 @Component({

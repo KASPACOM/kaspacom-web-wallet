@@ -20,8 +20,8 @@ import {
   LoaderStatuses,
   NETWORKS,
 } from '@kaspacom/swap-sdk';
-import { KcButtonComponent, NotificationService } from 'kaspacom-ui';
-import { KcIconComponent } from '@kaspacom/ui-kit';
+import { NotificationService } from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import {
   EIP1193RequestPayload,
   EIP1193RequestType,

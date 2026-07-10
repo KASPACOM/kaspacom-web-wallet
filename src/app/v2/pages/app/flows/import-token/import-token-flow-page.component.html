@@ -26,7 +26,7 @@
       </div>
       <kc-button
         [variant]="'secondary'"
-        [size]="'md'"
+        [size]="'m'"
         [text]="'Paste'"
         class="paste-btn"
         (buttonClick)="pasteFromClipboard()"
@@ -41,7 +41,7 @@
 
     <kc-button
       [variant]="'primary'"
-      [size]="'md'"
+      [size]="'m'"
       [text]="state() === 'loading' ? 'Looking up...' : 'Look Up Token'"
       [isDisabled]="!isAddressValid() || state() === 'loading'"
       class="full-width"
@@ -111,7 +111,7 @@
 
       <kc-button
         [variant]="'secondary'"
-        [size]="'md'"
+        [size]="'m'"
         [text]="'Close'"
         class="full-width"
         (buttonClick)="onCancel()"
@@ -172,14 +172,14 @@
       <div class="action-buttons flex gap-12">
         <kc-button
           [variant]="'secondary'"
-          [size]="'md'"
+          [size]="'m'"
           [text]="'Cancel'"
           class="flex-1"
           (buttonClick)="onCancel()"
         />
         <kc-button
           [variant]="'primary'"
-          [size]="'md'"
+          [size]="'m'"
           [text]="isSaving() ? 'Importing...' : 'Import Token'"
           [isDisabled]="isSaving()"
           class="flex-1"

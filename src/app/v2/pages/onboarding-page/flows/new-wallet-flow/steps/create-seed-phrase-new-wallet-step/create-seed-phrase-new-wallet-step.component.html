@@ -36,7 +36,7 @@
         </div>
         <div class="flex full-width justify-content-between">
           <kc-button
-            [variant]="'tertiary'"
+            [variant]="'secondary'"
             [suffixIcon]="'icon-copy'"
             [text]="'Copy'"
             (buttonClick)="addToClipboard()"
@@ -44,7 +44,7 @@
             <div rightSideSlot>foo</div>
           </kc-button>
           <kc-button
-            [variant]="'tertiary'"
+            [variant]="'secondary'"
             [suffixIcon]="'icon-update'"
             [text]="'Renew'"
             (buttonClick)="renewSeedPhrase()"
@@ -71,7 +71,7 @@
         <div class="full-width">
           <kc-button
             [isFullWidth]="true"
-            [variant]="'tertiary'"
+            [variant]="'secondary'"
             [text]="'Back'"
             [isDisabled]="false"
             (buttonClick)="previous.emit()"

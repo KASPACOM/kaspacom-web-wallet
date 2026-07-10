@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, output } from '@angular/core';
 
 import {
   FormsModule,
@@ -16,8 +16,8 @@ import { EIP1193ProviderChain } from '@kaspacom/wallet-messages';
   styleUrls: ['./add-l2-chain.component.scss'],
 })
 export class AddL2ChainComponent {
-  @Output() chainAdded = new EventEmitter<EIP1193ProviderChain>();
-  @Output() cancelled = new EventEmitter<void>();
+  readonly chainAdded = output<EIP1193ProviderChain>();
+  readonly cancelled = output<void>();
 
   chainForm: FormGroup;
 

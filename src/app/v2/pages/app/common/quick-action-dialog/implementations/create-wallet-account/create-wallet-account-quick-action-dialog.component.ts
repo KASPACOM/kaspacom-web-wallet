@@ -1,11 +1,10 @@
 import {
   Component,
-  Output,
-  EventEmitter,
   inject,
   ChangeDetectorRef,
   AfterViewInit,
   input,
+  output,
 } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
@@ -33,8 +32,8 @@ import { AppWallet } from '../../../../../../../classes/AppWallet';
 export class CreateWalletAccountQuickActionDialogComponent implements AfterViewInit {
   readonly isOpen = input(false);
   readonly data = input<any>();
-  @Output() backdropClick = new EventEmitter<void>();
-  @Output() close = new EventEmitter<void>();
+  readonly backdropClick = output<void>();
+  readonly close = output<void>();
 
   private notificationService = inject(NotificationService);
   private walletService = inject(WalletService);

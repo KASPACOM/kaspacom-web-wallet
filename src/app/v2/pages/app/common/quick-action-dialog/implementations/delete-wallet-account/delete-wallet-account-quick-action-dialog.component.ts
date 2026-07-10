@@ -1,12 +1,11 @@
 import {
   Component,
-  Output,
-  EventEmitter,
   inject,
   ChangeDetectorRef,
   AfterViewInit,
   computed,
   input,
+  output,
 } from '@angular/core';
 
 import { KcButtonComponent, NotificationService } from 'kaspacom-ui';
@@ -31,8 +30,8 @@ interface DeleteAccountDialogData {
 export class DeleteWalletAccountQuickActionDialogComponent implements AfterViewInit {
   readonly isOpen = input(false);
   readonly data = input<DeleteAccountDialogData>();
-  @Output() backdropClick = new EventEmitter<void>();
-  @Output() close = new EventEmitter<void>();
+  readonly backdropClick = output<void>();
+  readonly close = output<void>();
 
   private notificationService = inject(NotificationService);
   private walletService = inject(WalletService);

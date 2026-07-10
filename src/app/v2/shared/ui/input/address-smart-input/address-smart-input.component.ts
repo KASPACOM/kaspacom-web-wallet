@@ -1,13 +1,12 @@
 import {
   Component,
-  EventEmitter,
   Input,
-  Output,
   inject,
   signal,
   OnChanges,
   SimpleChanges,
   input,
+  output,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
@@ -51,9 +50,9 @@ export class AddressSmartInputComponent implements OnChanges {
   readonly invalidReason = input<string>('');
   readonly validationDebounceMs = input<number>(300);
 
-  @Output() valueChange = new EventEmitter<string>();
-  @Output() resolved = new EventEmitter<AddressResolutionResult>();
-  @Output() qrClick = new EventEmitter<void>();
+  readonly valueChange = output<string>();
+  readonly resolved = output<AddressResolutionResult>();
+  readonly qrClick = output<void>();
 
   isResolving = signal<boolean>(false);
   resolvedAddress = signal<string>('');

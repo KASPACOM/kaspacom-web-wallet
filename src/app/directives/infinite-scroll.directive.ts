@@ -1,14 +1,13 @@
 import {
   Directive,
   ElementRef,
-  EventEmitter,
   OnDestroy,
   OnInit,
-  Output,
   NgZone,
   PLATFORM_ID,
   inject,
   input,
+  output,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { fromEvent, Subject, throttleTime, takeUntil } from 'rxjs';
@@ -29,8 +28,8 @@ export class InfiniteScrollDirective implements OnInit, OnDestroy {
   readonly scrollDebounce = input(120);
   readonly scrollContainer = input<HTMLElement | Window>();
   readonly greedyLoading = input(false);
-  @Output() scrolled = new EventEmitter<number>(); // Emits scroll percentage
-  @Output() thresholdReached = new EventEmitter<void>(); // Emits when threshold is reached
+  readonly scrolled = output<number>(); // Emits scroll percentage
+  readonly thresholdReached = output<void>(); // Emits when threshold is reached
 
   private destroy$ = new Subject<void>();
   private lastScrollHeight = 0;

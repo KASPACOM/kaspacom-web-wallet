@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter, input } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 
 import { KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
 import {
@@ -66,9 +66,9 @@ export class FlowPageComponent {
   readonly canClose = input(false);
   readonly showTitle = input(true);
   readonly showBackground = input(true);
-  @Output() navigateBack = new EventEmitter<void>();
-  @Output() backdropClick = new EventEmitter<void>();
-  @Output() close = new EventEmitter<void>();
+  readonly navigateBack = output<void>();
+  readonly backdropClick = output<void>();
+  readonly close = output<void>();
 
   // Track animation state to prevent content changes during animation
   isAnimating = false;

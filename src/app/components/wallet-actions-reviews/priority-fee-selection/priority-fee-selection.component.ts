@@ -1,10 +1,9 @@
 import {
   Component,
-  EventEmitter,
   OnChanges,
-  Output,
   SimpleChanges,
   input,
+  output,
 } from '@angular/core';
 import {
   trigger,
@@ -70,7 +69,7 @@ const MINIMUM_FEE_MULTIPLIER = 100n;
 export class PriorityFeeSelectionComponent implements OnChanges {
   readonly action = input.required<WalletAction>();
   readonly wallet = input.required<AppWallet>();
-  @Output() priorityFeeSelected = new EventEmitter<bigint | undefined>();
+  readonly priorityFeeSelected = output<bigint | undefined>();
 
   protected minimumFeeMultiplier = MINIMUM_FEE_MULTIPLIER;
   protected totalTransactionsMass: undefined | bigint[] = undefined;

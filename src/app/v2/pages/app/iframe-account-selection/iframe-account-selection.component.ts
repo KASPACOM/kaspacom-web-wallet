@@ -1,11 +1,4 @@
-import {
-  Component,
-  inject,
-  signal,
-  EventEmitter,
-  Output,
-  computed,
-} from '@angular/core';
+import { Component, inject, signal, computed, output } from '@angular/core';
 
 import { Router } from '@angular/router';
 import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
@@ -40,7 +33,7 @@ export class IframeAccountSelectionComponent {
   private walletService = inject(WalletService);
   private router = inject(Router);
 
-  @Output() accountSelected = new EventEmitter<void>();
+  readonly accountSelected = output<void>();
 
   walletGroups = signal<WalletGroupItem[]>([]);
   selectedWalletGroup = signal<WalletGroupItem | undefined>(undefined);

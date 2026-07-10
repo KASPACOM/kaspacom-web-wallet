@@ -1,8 +1,6 @@
 import {
   Component,
-  EventEmitter,
   OnInit,
-  Output,
   inject,
   input,
   signal,
@@ -10,6 +8,7 @@ import {
   effect,
   untracked,
   DestroyRef,
+  output,
 } from '@angular/core';
 
 import {
@@ -113,8 +112,8 @@ export class TokenSelectorModalComponent implements OnInit {
   isLoading = input(false);
   tokens = input<Erc20Token[]>([]);
   excludedToken = input<Erc20Token | null>(null);
-  @Output() close = new EventEmitter<void>();
-  @Output() selectToken = new EventEmitter<Erc20Token>();
+  readonly close = output<void>();
+  readonly selectToken = output<Erc20Token>();
 
   // Search state
   searchQuery = signal('');

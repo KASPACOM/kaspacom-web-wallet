@@ -3,10 +3,9 @@ import {
   ChangeDetectorRef,
   Component,
   computed,
-  EventEmitter,
   inject,
-  Output,
   input,
+  output,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { KcButtonComponent, NotificationService } from 'kaspacom-ui';
@@ -31,8 +30,8 @@ interface DeleteWalletDialogData {
 export class DeleteWalletQuickActionDialogComponent implements AfterViewInit {
   readonly isOpen = input(false);
   readonly data = input<DeleteWalletDialogData>();
-  @Output() backdropClick = new EventEmitter<void>();
-  @Output() close = new EventEmitter<void>();
+  readonly backdropClick = output<void>();
+  readonly close = output<void>();
 
   private cdr = inject(ChangeDetectorRef);
   private walletService = inject(WalletService);

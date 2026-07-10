@@ -1,12 +1,11 @@
 import {
   Component,
-  EventEmitter,
-  Output,
   computed,
   inject,
   OnChanges,
   SimpleChanges,
   input,
+  output,
 } from '@angular/core';
 
 import {
@@ -41,8 +40,8 @@ export class SwapSettingsModalComponent implements OnChanges {
 
   readonly open = input(false);
   readonly initialSettings = input<Partial<SwapSettings>>();
-  @Output() close = new EventEmitter<void>();
-  @Output() save = new EventEmitter<SwapSettings>();
+  readonly close = output<void>();
+  readonly save = output<SwapSettings>();
 
   settingsForm: FormGroup;
 

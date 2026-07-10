@@ -1,11 +1,10 @@
 import {
   Component,
   Input,
-  Output,
-  EventEmitter,
   OnChanges,
   SimpleChanges,
   input,
+  output,
 } from '@angular/core';
 
 import { KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
@@ -74,8 +73,8 @@ export class QuickActionDialogComponent implements OnChanges {
   //  This input is used in a control flow expression (e.g. `@if` or `*ngIf`)
   //  and migrating would break narrowing currently.
   @Input() isCloseable = true;
-  @Output() backdropClick = new EventEmitter<void>();
-  @Output() close = new EventEmitter<void>();
+  readonly backdropClick = output<void>();
+  readonly close = output<void>();
 
   // Track animation state to prevent content changes during animation
   isAnimating = false;

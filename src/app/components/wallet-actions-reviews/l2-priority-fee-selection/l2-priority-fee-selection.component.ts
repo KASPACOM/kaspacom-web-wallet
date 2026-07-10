@@ -1,12 +1,11 @@
 import {
   Component,
   computed,
-  EventEmitter,
   OnChanges,
-  Output,
   signal,
   SimpleChanges,
   input,
+  output,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -62,14 +61,14 @@ const MIN_CUSTOM_FEE = 1;
 export class L2PriorityFeeSelectionComponent implements OnChanges {
   readonly action = input.required<WalletAction>();
   readonly wallet = input.required<AppWallet>();
-  @Output() priorityFeeSelected = new EventEmitter<
+  readonly priorityFeeSelected = output<
     | {
         priorityFee: bigint;
         baseFee: bigint;
       }
     | undefined
   >();
-  @Output() gasLimitSelected = new EventEmitter<bigint | undefined>();
+  readonly gasLimitSelected = output<bigint | undefined>();
 
   protected customFee = signal<number>(0);
   protected selectedOption = signal<AvailableOption>('normal');

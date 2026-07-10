@@ -1,12 +1,11 @@
 import {
   Component,
-  Output,
-  EventEmitter,
   computed,
   AfterViewInit,
   inject,
   ChangeDetectorRef,
   input,
+  output,
 } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
@@ -30,8 +29,8 @@ import { MessagePopupService } from '../../../../../../../services/message-popup
 export class EditWalletQuickActionDialogComponent implements AfterViewInit {
   readonly isOpen = input(false);
   readonly data = input<any>(null);
-  @Output() backdropClick = new EventEmitter<void>();
-  @Output() close = new EventEmitter<void>();
+  readonly backdropClick = output<void>();
+  readonly close = output<void>();
 
   private walletService = inject(WalletService);
   private messagePopupService = inject(MessagePopupService);

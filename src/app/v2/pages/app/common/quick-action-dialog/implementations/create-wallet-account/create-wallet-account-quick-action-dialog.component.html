@@ -11,9 +11,9 @@
       [label]="'Account name'"
       [placeholder]="'Enter account name'"
       [(ngModel)]="accountName"
-    ></kc-input>
+    />
   </div>
-  
+
   <!-- Footer slot for action button -->
   <div slot="footer">
     <kc-button
@@ -23,8 +23,6 @@
       [isFullWidth]="true"
       [isDisabled]="!accountName.trim()"
       (buttonClick)="onCreateAccount()"
-    ></kc-button>
+    />
   </div>
 </app-quick-action-dialog>
-
-

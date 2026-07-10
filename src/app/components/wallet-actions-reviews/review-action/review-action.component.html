@@ -34,8 +34,7 @@
                                 $event
                             "
                             size="md"
-                          >
-                          </kc-checkbox>
+                          />
                         </div>
                       </div>
                     }
@@ -67,7 +66,7 @@
             [action]="currentActionSignal()!.action"
             [wallet]="wallet"
             (priorityFeeSelected)="setCurrentPriorityFee($event)"
-          ></priority-fee-selection>
+          />
         }
       </div>
       <!-- Actions buttons -->
@@ -79,16 +78,14 @@
           [isFullWidth]="true"
           [isDisabled]="!isAvailableForApproval()"
           (buttonClick)="acceptTransaction()"
-        >
-        </kc-button>
+        />
         <kc-button
           text="Reject"
           variant="tertiary"
           size="lg"
           [isFullWidth]="true"
           (buttonClick)="rejectTransaction()"
-        >
-        </kc-button>
+        />
       </div>
     </div>
   </div>

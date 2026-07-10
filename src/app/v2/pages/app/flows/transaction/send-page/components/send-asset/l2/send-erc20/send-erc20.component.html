@@ -1,9 +1,15 @@
 <div class="send-krc20-content">
   <!-- Token Info Header -->
   <div class="token-info-header card-0 flex align-items-center gap-16 p-16">
-    <kc-token-logo [ticker]="token()?.symbol || ''" [address]="token()?.address || ''" [size]="'lg'"></kc-token-logo>
+    <kc-token-logo
+      [ticker]="token()?.symbol || ''"
+      [address]="token()?.address || ''"
+      [size]="'lg'"
+    />
     <div class="flex column gap-4">
-      <div class="text-gray-90 typo-text-2">{{ token()?.name | titlecase }}</div>
+      <div class="text-gray-90 typo-text-2">
+        {{ token()?.name | titlecase }}
+      </div>
       <div class="text-gray-60 typo-text-1">
         Available: {{ availableBalance }}&nbsp;{{ token()?.symbol | uppercase }}
       </div>
@@ -22,8 +28,8 @@
         [isDisabled]="isLoading"
         [value]="walletAddress"
         (valueChange)="onWalletAddressChange($event)"
-        (qrClick)="onQrScanClick()">
-      </app-address-smart-input>
+        (qrClick)="onQrScanClick()"
+      />
     </div>
 
     <!-- Amount Input -->
@@ -39,8 +45,13 @@
         [invalidReason]="amountErrorMessage"
         [isDisabled]="isLoading"
         [ngModel]="tokenAmount"
-        (valueChange)="onAmountChange($event)">
-        <div (click)="!isLoading && onMaxAmountClick()" [class]="isLoading ? 'max-text disabled' : 'max-text clickable'" rightSideSlot>
+        (valueChange)="onAmountChange($event)"
+      >
+        <div
+          (click)="!isLoading && onMaxAmountClick()"
+          [class]="isLoading ? 'max-text disabled' : 'max-text clickable'"
+          rightSideSlot
+        >
           <span>Max</span>
         </div>
       </kc-input>
@@ -49,13 +60,18 @@
     <!-- Send Button -->
     <div class="form-field">
       <kc-button
-        [text]="isLoading ? 'Sending...' : 'Send ' + (token()?.symbol ? (token()?.symbol | uppercase) : 'Token')"
+        [text]="
+          isLoading
+            ? 'Sending...'
+            : 'Send ' +
+              (token()?.symbol ? (token()?.symbol | uppercase) : 'Token')
+        "
         [variant]="'primary'"
         [isFullWidth]="true"
         [isLoading]="isLoading"
         [isDisabled]="!isFormValid"
-        (buttonClick)="onSendClick()">
-      </kc-button>
+        (buttonClick)="onSendClick()"
+      />
     </div>
   </div>
 </div>

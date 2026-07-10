@@ -1,11 +1,13 @@
-<div class="private-key-step flex column align-items-center step-layout full-width">
+<div
+  class="private-key-step flex column align-items-center step-layout full-width"
+>
   <div class="step-layout__content">
     <div class="flex column align-items-center gap-32 full-width">
       <div class="flex column align-items-center gap-8 text-align-center">
         <span class="typo-title-3">Enter private key</span>
         <p class="typo-text-2 text-medium">
-          Paste the private key of the wallet you want to import. Make sure you're in a
-          secure environment before continuing.
+          Paste the private key of the wallet you want to import. Make sure
+          you're in a secure environment before continuing.
         </p>
       </div>
 
@@ -24,8 +26,12 @@
           [isValid]="!isPrivateKeyInvalid('privateKey')"
           [invalidReason]="'Cannot be empty'"
         >
-          <div class="clickable" rightSideSlot (click)="togglePrivateKeyVisibility()">
-            <kc-icon [iconClass]="privateKeyFieldIcon()" [size]="'xs'"></kc-icon>
+          <div
+            class="clickable"
+            rightSideSlot
+            (click)="togglePrivateKeyVisibility()"
+          >
+            <kc-icon [iconClass]="privateKeyFieldIcon()" [size]="'xs'" />
           </div>
         </kc-input>
       </form>
@@ -40,15 +46,14 @@
         [isFullWidth]="true"
         type="submit"
         (buttonClick)="submit()"
-      ></kc-button>
+      />
       <kc-button
         [text]="'Back'"
         [variant]="'tertiary'"
         [isFullWidth]="true"
         type="button"
         (buttonClick)="previous.emit()"
-      ></kc-button>
+      />
     </div>
   </div>
 </div>
-

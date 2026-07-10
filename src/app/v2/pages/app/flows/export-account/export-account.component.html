@@ -1,6 +1,8 @@
 <div class="export-account-wrapper">
-  @if (currentStep() === 'password') {
-    <div class="export-account__password-step flex column gap-24 align-items-center">
+  @if (currentStep() === "password") {
+    <div
+      class="export-account__password-step flex column gap-24 align-items-center"
+    >
       <div class="flex column gap-8 text-align-center">
         <span class="typo-title-3">Confirm Password</span>
         <span class="typo-text-2 text-medium">
@@ -31,7 +33,7 @@
           [variant]="'primary'"
           [isDisabled]="isVerifying() || !password().trim()"
           (buttonClick)="onVerifyPassword()"
-        ></kc-button>
+        />
       </div>
     </div>
   } @else {
@@ -39,7 +41,8 @@
       <div class="export-account">
         <div class="export-account__warning">
           <span class="typo-text-2">
-            Keep your private key secure. Anyone with this key can control this account.
+            Keep your private key secure. Anyone with this key can control this
+            account.
           </span>
         </div>
 
@@ -73,26 +76,27 @@
             [suffixIcon]="'icon-copy'"
             [isDisabled]="!privateKey()"
             (buttonClick)="copyPrivateKey()"
-          ></kc-button>
+          />
           <kc-button
             [text]="'Download .txt'"
             [variant]="'primary'"
             [suffixIcon]="'icon-download'"
             [isDisabled]="!privateKey()"
             (buttonClick)="downloadPrivateKey()"
-          ></kc-button>
+          />
         </div>
       </div>
     } @else {
       <div class="export-account__error">
-        <span class="typo-text-2">Unable to load this account's private key.</span>
+        <span class="typo-text-2"
+          >Unable to load this account's private key.</span
+        >
         <kc-button
           [text]="'Back'"
           [variant]="'tertiary'"
           (buttonClick)="navigateBackToPrevious()"
-        ></kc-button>
+        />
       </div>
     }
   }
 </div>
-

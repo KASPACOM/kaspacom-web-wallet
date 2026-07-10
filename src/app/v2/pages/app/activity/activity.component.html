@@ -1,8 +1,9 @@
 <div class="activity-container flex column full-width full-height gap-16">
-  
   <!-- Activity Header -->
   <div class="activity-header">
-    <h2 class="activity-title text-white typo-title-4 mb-16">Recent Activity</h2>
+    <h2 class="activity-title text-white typo-title-4 mb-16">
+      Recent Activity
+    </h2>
   </div>
 
   <!-- Activity Tabs -->
@@ -18,19 +19,37 @@
         <!-- Loading skeletons -->
         <div class="skeleton-loading-container">
           <div class="activity-list flex column gap-16">
-            @for (item of [1,2,3,4,5]; track item) {
+            @for (item of [1, 2, 3, 4, 5]; track item) {
               <div class="activity-item card-0 p-16">
-                <div class="activity-content flex justify-content-between align-items-center">
+                <div
+                  class="activity-content flex justify-content-between align-items-center"
+                >
                   <div class="activity-info flex align-items-center gap-12">
-                    <app-skeleton [height]="'32px'" [width]="'32px'" [fullRound]="true"></app-skeleton>
+                    <app-skeleton
+                      [height]="'32px'"
+                      [width]="'32px'"
+                      [fullRound]="true"
+                    />
                     <div class="activity-details">
-                      <app-skeleton [height]="'18px'" [width]="'120px'" class="mb-4"></app-skeleton>
-                      <app-skeleton [height]="'14px'" [width]="'80px'"></app-skeleton>
+                      <app-skeleton
+                        [height]="'18px'"
+                        [width]="'120px'"
+                        class="mb-4"
+                      />
+                      <app-skeleton [height]="'14px'" [width]="'80px'" />
                     </div>
                   </div>
                   <div class="activity-amount-info text-right">
-                    <app-skeleton [height]="'18px'" [width]="'80px'" class="mb-4 ml-auto"></app-skeleton>
-                    <app-skeleton [height]="'14px'" [width]="'60px'" class="ml-auto"></app-skeleton>
+                    <app-skeleton
+                      [height]="'18px'"
+                      [width]="'80px'"
+                      class="mb-4 ml-auto"
+                    />
+                    <app-skeleton
+                      [height]="'14px'"
+                      [width]="'60px'"
+                      class="ml-auto"
+                    />
                   </div>
                 </div>
               </div>
@@ -39,56 +58,70 @@
         </div>
       } @else if (filteredActivity().length === 0) {
         <!-- Empty state -->
-        <div class="empty-state flex column align-items-center justify-content-center p-32 text-center">
-          <kc-icon 
-            [iconClass]="'icon-clock'" 
-            [size]="'xlg'" 
-            [color]="'var(--gray-60)'">
-          </kc-icon>
+        <div
+          class="empty-state flex column align-items-center justify-content-center p-32 text-center"
+        >
+          <kc-icon
+            [iconClass]="'icon-clock'"
+            [size]="'xlg'"
+            [color]="'var(--gray-60)'"
+          />
           <h3 class="text-gray-60 typo-title-3 mt-16 mb-8">No Activity Yet</h3>
           <p class="text-gray-75 typo-text-2">
-            Your transaction history will appear here once you start using your wallet.
+            Your transaction history will appear here once you start using your
+            wallet.
           </p>
         </div>
       } @else {
         <!-- Activity items -->
         <div class="activity-list">
           @for (item of filteredActivity(); track item.id) {
-            <div class="activity-item card-0 card-hover mb-12 cursor-pointer" 
-                 [class.status-accepted]="item.status === 'accepted'"
-                 [class.status-other]="item.status !== 'accepted'"
-                 (click)="onTransactionClick(item)">
-              <div class="activity-content flex justify-content-between align-items-center">
-                
+            <div
+              class="activity-item card-0 card-hover mb-12 cursor-pointer"
+              [class.status-accepted]="item.status === 'accepted'"
+              [class.status-other]="item.status !== 'accepted'"
+              (click)="onTransactionClick(item)"
+            >
+              <div
+                class="activity-content flex justify-content-between align-items-center"
+              >
                 <!-- Left side: Icon and details -->
                 <div class="activity-info flex align-items-center gap-12">
                   <!-- Activity icon -->
-                  <div class="activity-icon-container flex align-items-center justify-content-center">
-                    <kc-icon 
+                  <div
+                    class="activity-icon-container flex align-items-center justify-content-center"
+                  >
+                    <kc-icon
                       [iconClass]="getActivityIcon(item)"
                       [size]="'sm'"
-                      [color]="getActivityIconColor(item)">
-                    </kc-icon>
+                      [color]="getActivityIconColor(item)"
+                    />
                   </div>
-                  
+
                   <!-- Activity details -->
                   <div class="activity-details flex column gap-4">
-                    @if (item.type === 'kaspa') {
-                      <div class="activity-type text-white typo-text-2 font-weight-medium">
+                    @if (item.type === "kaspa") {
+                      <div
+                        class="activity-type text-white typo-text-2 font-weight-medium"
+                      >
                         {{ getKaspaActivityTitle(item) }}
                       </div>
                       <div class="activity-address text-gray-60 typo-text-1">
                         {{ getKaspaActivitySubtitle(item) }}
                       </div>
-                    } @else if (item.type === 'erc20') {
-                      <div class="activity-type text-white typo-text-2 font-weight-medium">
+                    } @else if (item.type === "erc20") {
+                      <div
+                        class="activity-type text-white typo-text-2 font-weight-medium"
+                      >
                         {{ getErc20ActivityTitle(item) }}
                       </div>
                       <div class="activity-address text-gray-60 typo-text-1">
                         {{ getErc20ActivitySubtitle(item) }}
                       </div>
                     } @else {
-                      <div class="activity-type text-white typo-text-2 font-weight-medium">
+                      <div
+                        class="activity-type text-white typo-text-2 font-weight-medium"
+                      >
                         {{ getKrc20ActivityTitle(item) }}
                       </div>
                       @if (hasKrc20Address(item)) {
@@ -101,46 +134,43 @@
                 </div>
 
                 <!-- Right side: Amount and status -->
-                <div class="activity-amount-info flex column align-items-end gap-4">
-                  @if (item.type === 'kaspa') {
+                <div
+                  class="activity-amount-info flex column align-items-end gap-4"
+                >
+                  @if (item.type === "kaspa") {
                     <div class="activity-amount flex align-items-center gap-8">
-                      <span class="typo-text-2 font-weight-medium"
-                            [style.color]="getActivityIconColor(item)">
+                      <span
+                        class="typo-text-2 font-weight-medium"
+                        [style.color]="getActivityIconColor(item)"
+                      >
                         {{ getKaspaAmountDisplay(item) }}
                       </span>
-                      <kc-icon
-                        [iconClass]="'icon-kaspa-coin'"
-                        [size]="'sm'">
-                      </kc-icon>
+                      <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'sm'" />
                     </div>
                     @if (hasKaspaFee(item)) {
                       <div class="activity-fee text-gray-60 typo-text-1">
                         Fee: {{ getKaspaFeeDisplay(item) }}
                       </div>
                     }
-                  } @else if (item.type === 'erc20') {
+                  } @else if (item.type === "erc20") {
                     <div class="activity-amount flex align-items-center gap-8">
-                      <span class="typo-text-2 font-weight-medium"
-                            [style.color]="getActivityIconColor(item)">
+                      <span
+                        class="typo-text-2 font-weight-medium"
+                        [style.color]="getActivityIconColor(item)"
+                      >
                         {{ getErc20AmountDisplay(item) }}
                       </span>
-                      <kc-icon
-                        [iconClass]="'icon-tokens'"
-                        [size]="'sm'">
-                      </kc-icon>
+                      <kc-icon [iconClass]="'icon-tokens'" [size]="'sm'" />
                     </div>
                   } @else {
                     <div class="activity-amount flex align-items-center gap-8">
                       <span class="text-white typo-text-2 font-weight-medium">
                         {{ getKrc20AmountDisplay(item) }}
                       </span>
-                      <kc-icon
-                        [iconClass]="'icon-tokens'"
-                        [size]="'sm'">
-                      </kc-icon>
+                      <kc-icon [iconClass]="'icon-tokens'" [size]="'sm'" />
                     </div>
                   }
-                  
+
                   <!-- Timestamp only -->
                   <div class="activity-meta flex align-items-center gap-8">
                     <div class="activity-time text-gray-60 typo-text-1">

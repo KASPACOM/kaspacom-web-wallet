@@ -19,18 +19,18 @@
             (click)="onClose()"
             kcTooltip="Close"
             tooltipPosition="bottom"
-          ></kc-icon>
+          />
         }
       </div>
     }
 
     <div class="quick-action-dialog-body">
       <div class="dialog-content">
-        <ng-content select="[slot=content]"></ng-content>
+        <ng-content select="[slot=content]" />
       </div>
 
       <div class="dialog-footer">
-        <ng-content select="[slot=footer]"></ng-content>
+        <ng-content select="[slot=footer]" />
       </div>
     </div>
   </div>

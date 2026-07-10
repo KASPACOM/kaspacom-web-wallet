@@ -1,11 +1,13 @@
-<div class="seed-phrase-step flex column align-items-center step-layout full-width">
+<div
+  class="seed-phrase-step flex column align-items-center step-layout full-width"
+>
   <div class="step-layout__content">
     <div class="flex column align-items-center gap-32 full-width">
       <div class="flex column align-items-center gap-8 text-align-center">
         <span class="typo-title-3">Enter recovery phrase</span>
         <p class="typo-text-2 text-medium">
-          Paste or type your 12 or 24 word recovery phrase. Keep it private and never
-          share it with anyone.
+          Paste or type your 12 or 24 word recovery phrase. Keep it private and
+          never share it with anyone.
         </p>
       </div>
 
@@ -14,7 +16,9 @@
         [formGroup]="seedPhraseForm"
         (ngSubmit)="submitSeedPhrase()"
       >
-        <div class="seed-phrase-step__word-count flex gap-24 justify-content-center">
+        <div
+          class="seed-phrase-step__word-count flex gap-24 justify-content-center"
+        >
           <app-radio-input
             [value]="12"
             [selected]="wordCount()"
@@ -41,9 +45,11 @@
               [id]="$index"
               [formControlName]="$index"
               [placeholder]="`${$index + 1}.`"
-              [isValid]="!(control.invalid && (control.dirty || control.touched))"
+              [isValid]="
+                !(control.invalid && (control.dirty || control.touched))
+              "
               class="seed-phrase-step__word"
-            ></kc-input>
+            />
           }
         </div>
       </form>
@@ -58,15 +64,14 @@
         [isFullWidth]="true"
         type="button"
         (buttonClick)="previous.emit()"
-      ></kc-button>
+      />
       <kc-button
         [text]="'Continue'"
         [isDisabled]="seedPhraseForm.invalid"
         [isFullWidth]="true"
         type="submit"
         (buttonClick)="submitSeedPhrase()"
-      ></kc-button>
+      />
     </div>
   </div>
 </div>
-

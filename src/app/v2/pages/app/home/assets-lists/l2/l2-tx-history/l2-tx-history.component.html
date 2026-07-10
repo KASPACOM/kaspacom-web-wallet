@@ -1,7 +1,9 @@
 <div class="l2-tx-history full-width">
   @if (historyLoading()) {
-    <div class="l2-tx-history-loading card-0 flex column align-items-center justify-content-center gap-12">
-      <kc-spinner [size]="'lg'"></kc-spinner>
+    <div
+      class="l2-tx-history-loading card-0 flex column align-items-center justify-content-center gap-12"
+    >
+      <kc-spinner [size]="'lg'" />
       <p class="typo-text-2 text-gray-60">Loading history…</p>
     </div>
   } @else if (!hasTransactions()) {
@@ -11,9 +13,13 @@
         [iconClass]="'icon-clock'"
         [size]="'xlg'"
         [color]="'var(--gray-60)'"
-      ></kc-icon>
-      <p class="no-transactions__title typo-text-1 text-gray-60">No transactions yet</p>
-      <p class="no-transactions__subtitle typo-text-2 text-gray-60">Your L2 transaction history will appear here</p>
+      />
+      <p class="no-transactions__title typo-text-1 text-gray-60">
+        No transactions yet
+      </p>
+      <p class="no-transactions__subtitle typo-text-2 text-gray-60">
+        Your L2 transaction history will appear here
+      </p>
     </div>
   } @else {
     <div class="tx-list flex column gap-8">
@@ -30,16 +36,27 @@
           <!-- Row summary -->
           <div class="tx-row flex align-items-center gap-12">
             <!-- Status badge -->
-            <div class="tx-status flex align-items-center justify-content-center" [ngClass]="'tx-status--' + status">
+            <div
+              class="tx-status flex align-items-center justify-content-center"
+              [ngClass]="'tx-status--' + status"
+            >
               @switch (status) {
-                @case ('pending') {
-                  <kc-spinner [size]="'xs'"></kc-spinner>
+                @case ("pending") {
+                  <kc-spinner [size]="'xs'" />
                 }
-                @case ('success') {
-                  <kc-icon [iconClass]="'icon-check'" [size]="'xs'" [color]="'var(--green-20)'"></kc-icon>
+                @case ("success") {
+                  <kc-icon
+                    [iconClass]="'icon-check'"
+                    [size]="'xs'"
+                    [color]="'var(--green-20)'"
+                  />
                 }
-                @case ('failed') {
-                  <kc-icon [iconClass]="'icon-x'" [size]="'xs'" [color]="'var(--red-20)'"></kc-icon>
+                @case ("failed") {
+                  <kc-icon
+                    [iconClass]="'icon-x'"
+                    [size]="'xs'"
+                    [color]="'var(--red-20)'"
+                  />
                 }
               }
             </div>
@@ -56,48 +73,78 @@
 
             <!-- Amount + chevron -->
             <div class="tx-right flex align-items-center gap-8">
-              <span class="tx-amount typo-text-2 text-gray-90 font-weight-medium">
+              <span
+                class="tx-amount typo-text-2 text-gray-90 font-weight-medium"
+              >
                 {{ getFormattedValue(tx) }}
               </span>
               <kc-icon
-                [iconClass]="isExpanded(tx.hash) ? 'icon-arrow-up' : 'icon-arrow-down'"
+                [iconClass]="
+                  isExpanded(tx.hash) ? 'icon-arrow-up' : 'icon-arrow-down'
+                "
                 [size]="'xs'"
                 [color]="'var(--gray-60)'"
-              ></kc-icon>
+              />
             </div>
           </div>
 
           <!-- Expanded details -->
           @if (isExpanded(tx.hash)) {
             <div class="tx-details flex column gap-12 mt-12">
-              <div class="tx-detail-row flex justify-content-between align-items-center">
+              <div
+                class="tx-detail-row flex justify-content-between align-items-center"
+              >
                 <span class="typo-text-3 text-gray-60">Status</span>
-                <span class="tx-status-badge typo-text-3 font-weight-medium" [ngClass]="'tx-status-text--' + status">
+                <span
+                  class="tx-status-badge typo-text-3 font-weight-medium"
+                  [ngClass]="'tx-status-text--' + status"
+                >
                   @switch (status) {
-                    @case ('pending') { Pending }
-                    @case ('success') { Confirmed }
-                    @case ('failed') { Failed }
+                    @case ("pending") {
+                      Pending
+                    }
+                    @case ("success") {
+                      Confirmed
+                    }
+                    @case ("failed") {
+                      Failed
+                    }
                   }
                 </span>
               </div>
 
-              <div class="tx-detail-row flex justify-content-between align-items-center">
+              <div
+                class="tx-detail-row flex justify-content-between align-items-center"
+              >
                 <span class="typo-text-3 text-gray-60">TX Hash</span>
-                <div class="flex align-items-center gap-8" (click)="stopPropagation($event)">
-                  <span class="typo-text-3 text-gray-90">{{ shortenHash(tx.hash) }}</span>
-                  <app-copy-button [value]="tx.hash" [size]="'xs'"></app-copy-button>
+                <div
+                  class="flex align-items-center gap-8"
+                  (click)="stopPropagation($event)"
+                >
+                  <span class="typo-text-3 text-gray-90">{{
+                    shortenHash(tx.hash)
+                  }}</span>
+                  <app-copy-button [value]="tx.hash" [size]="'xs'" />
                 </div>
               </div>
 
               @if (tx.receiptInfo) {
-                <div class="tx-detail-row flex justify-content-between align-items-center">
+                <div
+                  class="tx-detail-row flex justify-content-between align-items-center"
+                >
                   <span class="typo-text-3 text-gray-60">Block</span>
-                  <span class="typo-text-3 text-gray-90">{{ tx.receiptInfo.blockNumber }}</span>
+                  <span class="typo-text-3 text-gray-90">{{
+                    tx.receiptInfo.blockNumber
+                  }}</span>
                 </div>
 
-                <div class="tx-detail-row flex justify-content-between align-items-center">
+                <div
+                  class="tx-detail-row flex justify-content-between align-items-center"
+                >
                   <span class="typo-text-3 text-gray-60">Gas Fee</span>
-                  <span class="typo-text-3 text-gray-90">{{ getGasFee(tx) }}</span>
+                  <span class="typo-text-3 text-gray-90">{{
+                    getGasFee(tx)
+                  }}</span>
                 </div>
               }
             </div>

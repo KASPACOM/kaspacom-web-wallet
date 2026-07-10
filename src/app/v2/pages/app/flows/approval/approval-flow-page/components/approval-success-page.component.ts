@@ -47,11 +47,7 @@ import { WalletActionService } from '../../../../../../../services/wallet-action
           <!-- Details Toggle Header -->
           <div class="details-spoiler-toggle" (click)="toggleDetails()">
             <div class="spoiler-left">
-              <kc-icon
-                iconClass="icon-info"
-                size="sm"
-                color="#6fc7ba"
-              ></kc-icon>
+              <kc-icon iconClass="icon-info" size="sm" color="#6fc7ba" />
               <span class="spoiler-label">Transaction Details</span>
             </div>
             <div class="spoiler-chevron">
@@ -61,8 +57,7 @@ import { WalletActionService } from '../../../../../../../services/wallet-action
                 "
                 size="sm"
                 color="var(--gray-60, #9E9E9E)"
-              >
-              </kc-icon>
+              />
             </div>
           </div>
           <!-- Details Content (Collapsible) -->
@@ -96,8 +91,7 @@ import { WalletActionService } from '../../../../../../../services/wallet-action
           [isFullWidth]="true"
           (buttonClick)="onDone()"
           class="done-button"
-        >
-        </kc-button>
+        />
       </div>
     </div>
   `,

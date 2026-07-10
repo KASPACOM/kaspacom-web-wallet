@@ -15,7 +15,7 @@
             [height]="'75px'"
             [width]="'auto'"
             [fullRound]="false"
-          ></app-skeleton>
+          />
         }
       </div>
     } @else if (nfts().length === 0) {
@@ -46,7 +46,7 @@
                   [height]="'48px'"
                   [width]="'48px'"
                   [fullRound]="false"
-                ></app-skeleton>
+                />
               } @else if (getImageUrl(nft)) {
                 <img
                   [src]="getImageUrl(nft)"
@@ -68,12 +68,12 @@
                   [height]="'20px'"
                   [width]="'120px'"
                   [fullRound]="false"
-                ></app-skeleton>
+                />
                 <app-skeleton
                   [height]="'16px'"
                   [width]="'80px'"
                   [fullRound]="false"
-                ></app-skeleton>
+                />
               } @else {
                 <div class="text-gray-90 typo-text-2">
                   {{ getDisplayName(nft) }}
@@ -100,7 +100,7 @@
                 [height]="'16px'"
                 [width]="'60px'"
                 [fullRound]="false"
-              ></app-skeleton>
+              />
             } @else {
               @if (nft.attributes && nft.attributes.length > 0) {
                 <div class="text-gray-90 typo-text-2">
@@ -124,7 +124,7 @@
             [height]="'75px'"
             [width]="'auto'"
             [fullRound]="false"
-          ></app-skeleton>
+          />
         </div>
       }
     }

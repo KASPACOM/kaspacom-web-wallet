@@ -3,7 +3,10 @@
     <div class="flex column align-items-center gap-32">
       <div class="flex column align-items-center gap-4">
         <span class="typo-title-3 p-4">Verify Recovery Phrase</span>
-        <span class="typo-text-2 text-align-center">Please enter the requested words to confirm you've safely saved your recovery phrase.</span>
+        <span class="typo-text-2 text-align-center"
+          >Please enter the requested words to confirm you've safely saved your
+          recovery phrase.</span
+        >
       </div>
 
       <div class="flex column align-items-center gap-24 full-width">
@@ -15,7 +18,7 @@
               [label]="`Word #${item.index + 1}`"
               [ngModel]="item.input"
               (valueChange)="onInputChange($index, $event)"
-            ></kc-input>
+            />
           }
         </div>
       </div>
@@ -25,11 +28,21 @@
   <div class="step-layout__buttons">
     <div class="flex full-width gap-16">
       <div class="full-width">
-        <kc-button [isFullWidth]="true" [variant]="'tertiary'" [text]="'Back'" (buttonClick)="previous.emit()"></kc-button>
+        <kc-button
+          [isFullWidth]="true"
+          [variant]="'tertiary'"
+          [text]="'Back'"
+          (buttonClick)="previous.emit()"
+        />
       </div>
       <div class="full-width">
-        <kc-button [isFullWidth]="true" [text]="'Continue'" [isDisabled]="!isVerified()" (buttonClick)="onContinue()"></kc-button>
+        <kc-button
+          [isFullWidth]="true"
+          [text]="'Continue'"
+          [isDisabled]="!isVerified()"
+          (buttonClick)="onContinue()"
+        />
       </div>
     </div>
   </div>
-</div> 
+</div>

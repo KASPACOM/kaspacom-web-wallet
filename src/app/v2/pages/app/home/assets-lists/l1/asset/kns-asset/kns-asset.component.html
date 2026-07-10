@@ -12,8 +12,7 @@
         [size]="'md'"
         (click)="goBack()"
         class="cursor-pointer hover-opacity"
-      >
-      </kc-icon>
+      />
       <h1 class="asset-title text-gray-90">{{ getDisplayName() }}</h1>
     </div>
   </div>
@@ -32,8 +31,7 @@
         [isFullWidth]="true"
         [isDisabled]="isListed()"
         (buttonClick)="onSendAction()"
-      >
-      </kc-button>
+      />
     </div>
   </div>
 
@@ -48,14 +46,10 @@
     @if (detailLoading()) {
       <!-- Details skeleton -->
       <div class="detail-section mb-24">
-        <app-skeleton
-          [height]="'24px'"
-          [width]="'120px'"
-          class="mb-16"
-        ></app-skeleton>
+        <app-skeleton [height]="'24px'" [width]="'120px'" class="mb-16" />
         <div class="details-grid gap-12">
           @for (item of [1, 2, 3, 4, 5, 6]; track item) {
-            <app-skeleton [height]="'60px'" [width]="'100%'"></app-skeleton>
+            <app-skeleton [height]="'60px'" [width]="'100%'" />
           }
         </div>
       </div>
@@ -108,10 +102,7 @@
                 {{ getOwnerAddress() }}
               </div>
               @if (getOwnerAddress() !== "N/A") {
-                <app-copy-button
-                  [value]="getOwnerAddress()"
-                  [size]="'xs'"
-                ></app-copy-button>
+                <app-copy-button [value]="getOwnerAddress()" [size]="'xs'" />
               }
             </div>
           </div>
@@ -128,17 +119,14 @@
                 {{ getTransactionId() }}
               </div>
               @if (getTransactionId() !== "N/A") {
-                <app-copy-button
-                  [value]="getTransactionId()"
-                  [size]="'xs'"
-                ></app-copy-button>
+                <app-copy-button [value]="getTransactionId()" [size]="'xs'" />
                 <kc-icon
                   [iconClass]="'icon-link'"
                   [size]="'xs'"
                   [color]="'var(--gray-60)'"
                   class="cursor-pointer hover-opacity"
                   (click)="openInExplorer()"
-                ></kc-icon>
+                />
               }
             </div>
           </div>
@@ -173,10 +161,7 @@
                 {{ knsDetail()?.assetId || "N/A" }}
               </div>
               @if (knsDetail()?.assetId) {
-                <app-copy-button
-                  [value]="knsDetail()!.assetId"
-                  [size]="'xs'"
-                ></app-copy-button>
+                <app-copy-button [value]="knsDetail()!.assetId" [size]="'xs'" />
               }
             </div>
           </div>

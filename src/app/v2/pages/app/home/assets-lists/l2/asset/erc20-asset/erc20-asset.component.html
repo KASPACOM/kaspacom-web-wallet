@@ -1,23 +1,27 @@
-<div class="asset-page-container full-width full-height column p-16 flex column gap-24" [class.loading]="loading() || historyLoading()">
+<div
+  class="asset-page-container full-width full-height column p-16 flex column gap-24"
+  [class.loading]="loading() || historyLoading()"
+>
   <!-- Header with back button -->
   <div class="asset-header flex align-items-center justify-content-between">
     <!-- Left side: back button and title -->
     <div class="header-left flex align-items-center gap-16">
-      <kc-icon 
+      <kc-icon
         [iconClass]="'icon-arrow-left'"
         [size]="'md'"
         (click)="goBack()"
-        class="cursor-pointer hover-opacity">
-      </kc-icon>
-      <h1 class="asset-title text-gray-90">{{ assetDetail()?.name || 'Loading...' }}</h1>
+        class="cursor-pointer hover-opacity"
+      />
+      <h1 class="asset-title text-gray-90">
+        {{ assetDetail()?.name || "Loading..." }}
+      </h1>
     </div>
-    
+
     <!-- Right side: balance with token icon -->
     <div class="header-right flex align-items-center gap-8">
       @if (loading()) {
-        <app-skeleton [height]="'28px'" [width]="'120px'"></app-skeleton>
+        <app-skeleton [height]="'28px'" [width]="'120px'" />
       } @else if (assetDetail()) {
-
         <span class="typo-title-4 text-gray-90">{{ shortBalance() }}</span>
       }
     </div>
@@ -25,13 +29,13 @@
 
   <!-- Action Buttons -->
   <div class="action-buttons flex gap-12">
-    <kc-button 
+    <kc-button
       [variant]="'primary'"
       [size]="'md'"
       [text]="'Send'"
       class="flex-1"
-      (buttonClick)="onSendAction()">
-    </kc-button>
+      (buttonClick)="onSendAction()"
+    />
     @if (isTokenSaved()) {
       <kc-button
         [variant]="'secondary'"
@@ -39,8 +43,8 @@
         [text]="isRemoving() ? 'Removing...' : 'Remove'"
         [isDisabled]="isRemoving()"
         class="flex-1"
-        (buttonClick)="onRemoveToken()">
-      </kc-button>
+        (buttonClick)="onRemoveToken()"
+      />
     }
   </div>
 
@@ -52,16 +56,18 @@
     (selectedTabChange)="onTabChange($event)"
   >
     @switch (selectedTabId()) {
-      @case ('token-info') {
+      @case ("token-info") {
         <!-- Token Info -->
         <div class="token-info-content">
           @if (loading()) {
             <div class="skeleton-loading-container flex column gap-16">
-              @for (item of [1,2,3,4,5,6]; track item) {
+              @for (item of [1, 2, 3, 4, 5, 6]; track item) {
                 <div class="info-item-card card-0">
-                  <div class="info-content flex justify-content-between align-items-center">
-                    <app-skeleton [height]="'20px'" [width]="'120px'"></app-skeleton>
-                    <app-skeleton [height]="'20px'" [width]="'100px'"></app-skeleton>
+                  <div
+                    class="info-content flex justify-content-between align-items-center"
+                  >
+                    <app-skeleton [height]="'20px'" [width]="'120px'" />
+                    <app-skeleton [height]="'20px'" [width]="'100px'" />
                   </div>
                 </div>
               }
@@ -74,56 +80,79 @@
             <div class="token-info-grid flex column gap-16">
               <!-- Balance -->
               <div class="info-item-card card-0 card-hover">
-                <div class="info-content flex justify-content-between align-items-center">
+                <div
+                  class="info-content flex justify-content-between align-items-center"
+                >
                   <div class="info-label text-gray-60">Wallet Balance</div>
-                  <div class="info-value text-gray-90">{{ formatBalance() }}</div>
+                  <div class="info-value text-gray-90">
+                    {{ formatBalance() }}
+                  </div>
                 </div>
               </div>
 
               <!-- Address -->
               <div class="info-item-card card-0 card-hover">
-                <div class="info-content flex justify-content-between align-items-center">
+                <div
+                  class="info-content flex justify-content-between align-items-center"
+                >
                   <div class="info-label text-gray-60">Address</div>
-                  <div class="info-value text-gray-90">{{ tokenInfo()?.address }}</div>
+                  <div class="info-value text-gray-90">
+                    {{ tokenInfo()?.address }}
+                  </div>
                 </div>
               </div>
 
               <!-- NAME -->
               <div class="info-item-card card-0 card-hover">
-                <div class="info-content flex justify-content-between align-items-center">
+                <div
+                  class="info-content flex justify-content-between align-items-center"
+                >
                   <div class="info-label text-gray-60">Name</div>
-                  <div class="info-value text-gray-90">{{ tokenInfo()?.name }}</div>
+                  <div class="info-value text-gray-90">
+                    {{ tokenInfo()?.name }}
+                  </div>
                 </div>
               </div>
 
               <!-- SYMBOL -->
               <div class="info-item-card card-0 card-hover">
-                <div class="info-content flex justify-content-between align-items-center">
+                <div
+                  class="info-content flex justify-content-between align-items-center"
+                >
                   <div class="info-label text-gray-60">Symbol</div>
-                  <div class="info-value text-gray-90">{{ tokenInfo()?.symbol }}</div>
+                  <div class="info-value text-gray-90">
+                    {{ tokenInfo()?.symbol }}
+                  </div>
                 </div>
               </div>
 
               <!-- DECIMALS -->
               <div class="info-item-card card-0 card-hover">
-                <div class="info-content flex justify-content-between align-items-center">
+                <div
+                  class="info-content flex justify-content-between align-items-center"
+                >
                   <div class="info-label text-gray-60">Decimals</div>
-                  <div class="info-value text-gray-90">{{ tokenInfo()?.decimals }}</div>
+                  <div class="info-value text-gray-90">
+                    {{ tokenInfo()?.decimals }}
+                  </div>
                 </div>
               </div>
 
               <!-- TOTAL SUPPLY -->
               <div class="info-item-card card-0 card-hover">
-                <div class="info-content flex justify-content-between align-items-center">
+                <div
+                  class="info-content flex justify-content-between align-items-center"
+                >
                   <div class="info-label text-gray-60">Total Supply</div>
-                  <div class="info-value text-gray-90">{{ tokenInfo()?.totalSupply }}</div>
+                  <div class="info-value text-gray-90">
+                    {{ tokenInfo()?.totalSupply }}
+                  </div>
                 </div>
               </div>
             </div>
-
           }
         </div>
       }
     }
   </kc-labeled-tabs>
-</div> 
+</div>

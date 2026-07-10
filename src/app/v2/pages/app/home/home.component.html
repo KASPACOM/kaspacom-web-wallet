@@ -1,14 +1,14 @@
 <div
   class="home-container flex full-width full-height column align-items-center gap-16 p-8"
 >
-  <app-balance [kasBalanceInput]="kasBalance()"></app-balance>
-  <app-pending-transactions-banner></app-pending-transactions-banner>
-  <app-crypto-actions></app-crypto-actions>
+  <app-balance [kasBalanceInput]="kasBalance()" />
+  <app-pending-transactions-banner />
+  <app-crypto-actions />
 
   @if (!isL2Display()) {
-    <app-l1-assets-container class="full-width"></app-l1-assets-container>
+    <app-l1-assets-container class="full-width" />
   }
   @if (isL2Display()) {
-    <app-l2-assets-container class="full-width"></app-l2-assets-container>
+    <app-l2-assets-container class="full-width" />
   }
 </div>

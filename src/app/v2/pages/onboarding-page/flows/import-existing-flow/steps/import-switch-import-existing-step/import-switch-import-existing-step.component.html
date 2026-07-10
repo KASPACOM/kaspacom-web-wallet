@@ -14,7 +14,7 @@
         [isFullWidth]="true"
         [variant]="'tertiary'"
         (buttonClick)="onQrScanClick()"
-      ></kc-button>
+      />
     }
 
     @if (!userHasWallets()) {
@@ -30,12 +30,12 @@
       [selectedMethod]="importMethod()"
       [showImportFromFile]="!userHasWallets()"
       (methodChanged)="onImportMethodChange($event)"
-    ></app-import-switch>
+    />
   </div>
 
   <kc-button
     [isFullWidth]="true"
     [text]="'Continue'"
     (buttonClick)="onContinue()"
-  ></kc-button>
+  />
 </div>

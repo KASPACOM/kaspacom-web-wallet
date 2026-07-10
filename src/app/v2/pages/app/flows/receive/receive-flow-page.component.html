@@ -2,10 +2,10 @@
   @if (isLoading()) {
     <!-- Loading State -->
     <div class="receive-loading flex column align-items-center gap-24">
-      <app-skeleton [height]="'280px'" [width]="'280px'" [fullRound]="false"></app-skeleton>
+      <app-skeleton [height]="'280px'" [width]="'280px'" [fullRound]="false" />
       <div class="wallet-info-loading flex column align-items-center gap-16">
-        <app-skeleton [height]="'24px'" [width]="'200px'" [fullRound]="false"></app-skeleton>
-        <app-skeleton [height]="'40px'" [width]="'300px'" [fullRound]="false"></app-skeleton>
+        <app-skeleton [height]="'24px'" [width]="'200px'" [fullRound]="false" />
+        <app-skeleton [height]="'40px'" [width]="'300px'" [fullRound]="false" />
       </div>
     </div>
   } @else {
@@ -17,8 +17,8 @@
           [width]="qrCodeSize"
           [errorCorrectionLevel]="'M'"
           [elementType]="'canvas'"
-          [margin]="2">
-        </qrcode>
+          [margin]="2"
+        />
       </div>
 
       <div class="qr-info flex column align-items-center gap-8">
@@ -32,10 +32,16 @@
     <div class="wallet-info flex column gap-20">
       <!-- Wallet Address -->
       <div class="info-row flex column gap-8">
-        <label class="info-label text-gray-60 typo-text-1">Wallet Address</label>
-        <div class="info-content flex align-items-center justify-content-between p-16 rounded-lg gap-12">
-          <span class="address-text text-white typo-text-2 text-truncate">{{ walletAddress() }}</span>
-          <app-copy-button [value]="walletAddress()" [size]="'sm'"></app-copy-button>
+        <label class="info-label text-gray-60 typo-text-1"
+          >Wallet Address</label
+        >
+        <div
+          class="info-content flex align-items-center justify-content-between p-16 rounded-lg gap-12"
+        >
+          <span class="address-text text-white typo-text-2 text-truncate">{{
+            walletAddress()
+          }}</span>
+          <app-copy-button [value]="walletAddress()" [size]="'sm'" />
         </div>
       </div>
     </div>

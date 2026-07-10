@@ -1,12 +1,12 @@
 <div class="kc-labeled-tabs-container">
   <div class="kc-labeled-tabs-header">
     <div class="kc-labeled-tabs-prefix">
-      <ng-content select="[slot=prefix]"></ng-content>
+      <ng-content select="[slot=prefix]" />
     </div>
-    
+
     <div class="kc-labeled-tabs-list">
       @for (tab of tabs(); track tab.id) {
-        <div 
+        <div
           class="kc-labeled-tabs-item"
           [class.selected]="isSelected(tab.id)"
           [class.disabled]="tab.disabled"
@@ -16,13 +16,13 @@
         </div>
       }
     </div>
-    
+
     <div class="kc-labeled-tabs-suffix">
-      <ng-content select="[slot=suffix]"></ng-content>
+      <ng-content select="[slot=suffix]" />
     </div>
   </div>
-  
+
   <div class="kc-labeled-tabs-content">
-    <ng-content></ng-content>
+    <ng-content />
   </div>
-</div> 
+</div>

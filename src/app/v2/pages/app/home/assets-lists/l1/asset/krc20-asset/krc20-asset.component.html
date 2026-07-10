@@ -1,26 +1,28 @@
-<div class="asset-page-container full-width full-height column p-16 flex column gap-24" [class.loading]="loading() || historyLoading()">
+<div
+  class="asset-page-container full-width full-height column p-16 flex column gap-24"
+  [class.loading]="loading() || historyLoading()"
+>
   <!-- Header with back button -->
   <div class="asset-header flex align-items-center justify-content-between">
     <!-- Left side: back button and title -->
     <div class="header-left flex align-items-center gap-16">
-      <kc-icon 
+      <kc-icon
         [iconClass]="'icon-arrow-left'"
         [size]="'md'"
         (click)="goBack()"
-        class="cursor-pointer hover-opacity">
-      </kc-icon>
-      <h1 class="asset-title text-gray-90">{{ assetDetail()?.name || 'Loading...' }}</h1>
+        class="cursor-pointer hover-opacity"
+      />
+      <h1 class="asset-title text-gray-90">
+        {{ assetDetail()?.name || "Loading..." }}
+      </h1>
     </div>
-    
+
     <!-- Right side: balance with token icon -->
     <div class="header-right flex align-items-center gap-8">
       @if (loading()) {
-        <app-skeleton [height]="'28px'" [width]="'120px'"></app-skeleton>
+        <app-skeleton [height]="'28px'" [width]="'120px'" />
       } @else if (assetDetail()) {
-        <krc20-token-logo 
-          [ticker]="ticker || ''" 
-          [size]="'sm'">
-        </krc20-token-logo>
+        <krc20-token-logo [ticker]="ticker || ''" [size]="'sm'" />
         <span class="typo-title-4 text-gray-90">{{ formatBalance() }}</span>
       }
     </div>
@@ -28,13 +30,13 @@
 
   <!-- Action Buttons -->
   <div class="action-buttons flex gap-12">
-    <kc-button 
+    <kc-button
       [variant]="'primary'"
       [size]="'md'"
       [text]="'Send'"
       class="flex-1"
-      (click)="onSendAction()">
-    </kc-button>
+      (click)="onSendAction()"
+    />
   </div>
 
   <!-- Tabs Section -->
@@ -45,22 +47,39 @@
     (selectedTabChange)="onTabChange($event)"
   >
     @switch (selectedTabId()) {
-      @case ('transactions') {
+      @case ("transactions") {
         <!-- Transaction History -->
-        <div class="transaction-history flex-1" [class.loading]="historyLoading()">
+        <div
+          class="transaction-history flex-1"
+          [class.loading]="historyLoading()"
+        >
           <div class="transaction-list" [class.loading]="historyLoading()">
             @if (historyLoading()) {
               <div class="skeleton-loading-container flex column gap-16">
-                @for (item of [1,2,3,4,5]; track item) {
+                @for (item of [1, 2, 3, 4, 5]; track item) {
                   <div class="transaction-item-card card-0">
-                    <div class="transaction-content flex justify-content-between align-items-center">
+                    <div
+                      class="transaction-content flex justify-content-between align-items-center"
+                    >
                       <div class="transaction-info">
-                        <app-skeleton [height]="'20px'" [width]="'100px'" class="mb-4"></app-skeleton>
-                        <app-skeleton [height]="'16px'" [width]="'150px'"></app-skeleton>
+                        <app-skeleton
+                          [height]="'20px'"
+                          [width]="'100px'"
+                          class="mb-4"
+                        />
+                        <app-skeleton [height]="'16px'" [width]="'150px'" />
                       </div>
                       <div class="transaction-amount text-right">
-                        <app-skeleton [height]="'20px'" [width]="'80px'" class="mb-4 ml-auto"></app-skeleton>
-                        <app-skeleton [height]="'16px'" [width]="'60px'" class="ml-auto"></app-skeleton>
+                        <app-skeleton
+                          [height]="'20px'"
+                          [width]="'80px'"
+                          class="mb-4 ml-auto"
+                        />
+                        <app-skeleton
+                          [height]="'16px'"
+                          [width]="'60px'"
+                          class="ml-auto"
+                        />
                       </div>
                     </div>
                   </div>
@@ -72,10 +91,18 @@
               </div>
             } @else {
               @for (transaction of transactions(); track transaction.id) {
-                <div class="transaction-item-card card-0 card-hover fade-in cursor-pointer" [attr.data-transaction-type]="transaction.type" (click)="navigateToTransactionDetails(transaction)">
-                  <div class="transaction-content flex justify-content-between align-items-center">
+                <div
+                  class="transaction-item-card card-0 card-hover fade-in cursor-pointer"
+                  [attr.data-transaction-type]="transaction.type"
+                  (click)="navigateToTransactionDetails(transaction)"
+                >
+                  <div
+                    class="transaction-content flex justify-content-between align-items-center"
+                  >
                     <div class="transaction-info">
-                      <div class="transaction-type font-weight-medium text-gray-90">
+                      <div
+                        class="transaction-type font-weight-medium text-gray-90"
+                      >
                         {{ transaction.type | titlecase }}
                       </div>
                       <div class="transaction-details text-small text-gray-60">
@@ -83,10 +110,20 @@
                       </div>
                     </div>
                     <div class="transaction-amount text-right">
-                      <div class="amount font-weight-medium" [class.transaction-positive]="isTransactionPositive(transaction)" [class.transaction-negative]="!isTransactionPositive(transaction)">
+                      <div
+                        class="amount font-weight-medium"
+                        [class.transaction-positive]="
+                          isTransactionPositive(transaction)
+                        "
+                        [class.transaction-negative]="
+                          !isTransactionPositive(transaction)
+                        "
+                      >
                         {{ formatTransactionAmount(transaction) }}
                       </div>
-                      <div class="timestamp-container flex align-items-center justify-content-end gap-8">
+                      <div
+                        class="timestamp-container flex align-items-center justify-content-end gap-8"
+                      >
                         <div class="timestamp text-small text-gray-60">
                           {{ formatTimestamp(transaction.timestamp) }}
                         </div>
@@ -95,8 +132,10 @@
                           [size]="'xs'"
                           [color]="'var(--gray-60)'"
                           class="cursor-pointer hover-opacity"
-                          (click)="openTransactionInExplorer(transaction, $event)"
-                        ></kc-icon>
+                          (click)="
+                            openTransactionInExplorer(transaction, $event)
+                          "
+                        />
                       </div>
                     </div>
                   </div>
@@ -106,16 +145,21 @@
           </div>
         </div>
       }
-      @case ('token-info') {
+      @case ("token-info") {
         <!-- Token Info -->
         <div class="token-info-content">
           @if (tokenInfoLoading()) {
             <div class="skeleton-loading-container flex column gap-16">
-              @for (item of [1,2,3,4,5,6,7,8,9,10,11,12]; track item) {
+              @for (
+                item of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+                track item
+              ) {
                 <div class="info-item-card card-0">
-                  <div class="info-content flex justify-content-between align-items-center">
-                    <app-skeleton [height]="'20px'" [width]="'120px'"></app-skeleton>
-                    <app-skeleton [height]="'20px'" [width]="'100px'"></app-skeleton>
+                  <div
+                    class="info-content flex justify-content-between align-items-center"
+                  >
+                    <app-skeleton [height]="'20px'" [width]="'120px'" />
+                    <app-skeleton [height]="'20px'" [width]="'100px'" />
                   </div>
                 </div>
               }
@@ -128,7 +172,9 @@
             <div class="token-info-grid flex column gap-16">
               <!-- Price -->
               <div class="info-item-card card-0 card-hover">
-                <div class="info-content flex justify-content-between align-items-center">
+                <div
+                  class="info-content flex justify-content-between align-items-center"
+                >
                   <div class="info-label text-gray-60">Price</div>
                   <div class="info-value text-gray-90">-</div>
                 </div>
@@ -136,15 +182,21 @@
 
               <!-- Decimal -->
               <div class="info-item-card card-0 card-hover">
-                <div class="info-content flex justify-content-between align-items-center">
+                <div
+                  class="info-content flex justify-content-between align-items-center"
+                >
                   <div class="info-label text-gray-60">Decimal</div>
-                  <div class="info-value text-gray-90">{{ tokenInfo()?.dec || '8' }}</div>
+                  <div class="info-value text-gray-90">
+                    {{ tokenInfo()?.dec || "8" }}
+                  </div>
                 </div>
               </div>
 
               <!-- Mod -->
               <div class="info-item-card card-0 card-hover">
-                <div class="info-content flex justify-content-between align-items-center">
+                <div
+                  class="info-content flex justify-content-between align-items-center"
+                >
                   <div class="info-label text-gray-60">Mod</div>
                   <div class="info-value text-gray-90">mint</div>
                 </div>
@@ -152,81 +204,125 @@
 
               <!-- Max Supply -->
               <div class="info-item-card card-0 card-hover">
-                <div class="info-content flex justify-content-between align-items-center">
+                <div
+                  class="info-content flex justify-content-between align-items-center"
+                >
                   <div class="info-label text-gray-60">Max Supply</div>
-                  <div class="info-value text-gray-90">{{ formatNumber(tokenInfo()?.max) }}</div>
+                  <div class="info-value text-gray-90">
+                    {{ formatNumber(tokenInfo()?.max) }}
+                  </div>
                 </div>
               </div>
 
               <!-- Minted Amount -->
               <div class="info-item-card card-0 card-hover">
-                <div class="info-content flex justify-content-between align-items-center">
+                <div
+                  class="info-content flex justify-content-between align-items-center"
+                >
                   <div class="info-label text-gray-60">Minted Amount</div>
-                  <div class="info-value text-gray-90">{{ formatNumber(tokenInfo()?.minted) }}</div>
+                  <div class="info-value text-gray-90">
+                    {{ formatNumber(tokenInfo()?.minted) }}
+                  </div>
                 </div>
               </div>
 
               <!-- Burned Amount -->
               <div class="info-item-card card-0 card-hover">
-                <div class="info-content flex justify-content-between align-items-center">
+                <div
+                  class="info-content flex justify-content-between align-items-center"
+                >
                   <div class="info-label text-gray-60">Burned Amount</div>
-                  <div class="info-value text-gray-90">{{ getBurnedAmount() }}</div>
+                  <div class="info-value text-gray-90">
+                    {{ getBurnedAmount() }}
+                  </div>
                 </div>
               </div>
 
               <!-- Pre-Allocation Amount -->
               <div class="info-item-card card-0 card-hover">
-                <div class="info-content flex justify-content-between align-items-center">
-                  <div class="info-label text-gray-60">Pre-Allocation Amount</div>
-                  <div class="info-value text-gray-90">{{ formatNumber(tokenInfo()?.pre) }}</div>
+                <div
+                  class="info-content flex justify-content-between align-items-center"
+                >
+                  <div class="info-label text-gray-60">
+                    Pre-Allocation Amount
+                  </div>
+                  <div class="info-value text-gray-90">
+                    {{ formatNumber(tokenInfo()?.pre) }}
+                  </div>
                 </div>
               </div>
 
               <!-- Total Holders -->
               <div class="info-item-card card-0 card-hover">
-                <div class="info-content flex justify-content-between align-items-center">
+                <div
+                  class="info-content flex justify-content-between align-items-center"
+                >
                   <div class="info-label text-gray-60">Total Holders</div>
-                  <div class="info-value text-gray-90">{{ formatNumber(tokenInfo()?.holderTotal) }}</div>
+                  <div class="info-value text-gray-90">
+                    {{ formatNumber(tokenInfo()?.holderTotal) }}
+                  </div>
                 </div>
               </div>
 
               <!-- Total Transfer Times -->
               <div class="info-item-card card-0 card-hover">
-                <div class="info-content flex justify-content-between align-items-center">
-                  <div class="info-label text-gray-60">Total Transfer Times</div>
-                  <div class="info-value text-gray-90">{{ formatNumber(tokenInfo()?.transferTotal) }}</div>
+                <div
+                  class="info-content flex justify-content-between align-items-center"
+                >
+                  <div class="info-label text-gray-60">
+                    Total Transfer Times
+                  </div>
+                  <div class="info-value text-gray-90">
+                    {{ formatNumber(tokenInfo()?.transferTotal) }}
+                  </div>
                 </div>
               </div>
 
               <!-- Total Mint Times -->
               <div class="info-item-card card-0 card-hover">
-                <div class="info-content flex justify-content-between align-items-center">
+                <div
+                  class="info-content flex justify-content-between align-items-center"
+                >
                   <div class="info-label text-gray-60">Total Mint Times</div>
-                  <div class="info-value text-gray-90">{{ formatNumber(tokenInfo()?.mintTotal) }}</div>
+                  <div class="info-value text-gray-90">
+                    {{ formatNumber(tokenInfo()?.mintTotal) }}
+                  </div>
                 </div>
               </div>
 
               <!-- opScoreAdd -->
               <div class="info-item-card card-0 card-hover">
-                <div class="info-content flex justify-content-between align-items-center">
+                <div
+                  class="info-content flex justify-content-between align-items-center"
+                >
                   <div class="info-label text-gray-60">opScoreAdd</div>
-                  <div class="info-value text-gray-90">{{ tokenInfo()?.opScoreAdd }}</div>
+                  <div class="info-value text-gray-90">
+                    {{ tokenInfo()?.opScoreAdd }}
+                  </div>
                 </div>
               </div>
 
               <!-- opScoreMod -->
               <div class="info-item-card card-0 card-hover">
-                <div class="info-content flex justify-content-between align-items-center">
+                <div
+                  class="info-content flex justify-content-between align-items-center"
+                >
                   <div class="info-label text-gray-60">opScoreMod</div>
-                  <div class="info-value text-gray-90">{{ tokenInfo()?.opScoreMod }}</div>
+                  <div class="info-value text-gray-90">
+                    {{ tokenInfo()?.opScoreMod }}
+                  </div>
                 </div>
               </div>
 
               <!-- State -->
               <div class="info-item-card card-0 card-hover">
-                <div class="info-content flex justify-content-between align-items-center">
+                <div
+                  class="info-content flex justify-content-between align-items-center"
+                >
                   <div class="info-label text-gray-60">State</div>
-                  <div class="info-value text-gray-90">{{ getStateDisplay() }}</div>
+                  <div class="info-value text-gray-90">
+                    {{ getStateDisplay() }}
+                  </div>
                 </div>
               </div>
             </div>
@@ -235,4 +331,4 @@
       }
     }
   </kc-labeled-tabs>
-</div> 
+</div>

@@ -4,27 +4,35 @@
 >
   @if (loading()) {
     <div class="skeleton-loading-container flex column gap-16 full-width">
-      @for (item of [1,2,3]; track item) {
-        <app-skeleton class="full-width" [height]="'75px'" [width]="'auto'" [fullRound]="false"></app-skeleton>
+      @for (item of [1, 2, 3]; track item) {
+        <app-skeleton
+          class="full-width"
+          [height]="'75px'"
+          [width]="'auto'"
+          [fullRound]="false"
+        />
       }
     </div>
   } @else if (tokens().length === 0) {
-    <div class="empty-state flex column align-items-center gap-16 p-16 full-width">
+    <div
+      class="empty-state flex column align-items-center gap-16 p-16 full-width"
+    >
       <div class="text-gray-60">No ERC20 tokens found</div>
       <kc-button
         [variant]="'primary'"
         [size]="'md'"
         [text]="'Import Token'"
         class="full-width"
-        (buttonClick)="onImportToken()">
-      </kc-button>
+        (buttonClick)="onImportToken()"
+      />
     </div>
   } @else {
-    @for ( token of tokens(); track trackByToken($index, token) ) {
-      <erc20-asset-card class="erc20-summary-container__card full-width"
+    @for (token of tokens(); track trackByToken($index, token)) {
+      <erc20-asset-card
+        class="erc20-summary-container__card full-width"
         [token]="token"
         (cardClick)="onTokenClick(token)"
-      ></erc20-asset-card>
+      />
     }
   }
 </div>

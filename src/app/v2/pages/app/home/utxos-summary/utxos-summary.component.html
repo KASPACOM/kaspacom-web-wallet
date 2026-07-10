@@ -1,7 +1,9 @@
 <div class="utxos-summary-container flex column full-width gap-8">
   <!-- Header with count and compound button - only show when UTXOs exist -->
   @if (!loading() && utxos().length > 0) {
-    <div class="utxos-header flex justify-content-between align-items-center mb-8">
+    <div
+      class="utxos-header flex justify-content-between align-items-center mb-8"
+    >
       <div class="utxos-count flex align-items-center gap-8">
         <span class="text-gray-60 typo-text-2">
           Total UTXOs: {{ utxoCount() }}
@@ -17,7 +19,7 @@
           [prefixIconColor]="'white'"
           (buttonClick)="compoundUtxos()"
           class="compound-button"
-        ></kc-button>
+        />
       }
     </div>
   }
@@ -26,15 +28,30 @@
   <div class="utxos-list-container flex column gap-16">
     @if (loading()) {
       <div class="skeleton-loading-container flex column gap-16">
-        @for (item of [1,2,3]; track item) {
+        @for (item of [1, 2, 3]; track item) {
           <div class="utxo-card card-0 card-hover">
-            <div class="utxo-content flex justify-content-between align-items-center">
+            <div
+              class="utxo-content flex justify-content-between align-items-center"
+            >
               <div class="utxo-info">
-                <app-skeleton [height]="'20px'" [width]="'120px'" [fullRound]="false" class="mb-4"></app-skeleton>
-                <app-skeleton [height]="'14px'" [width]="'200px'" [fullRound]="false"></app-skeleton>
+                <app-skeleton
+                  [height]="'20px'"
+                  [width]="'120px'"
+                  [fullRound]="false"
+                  class="mb-4"
+                />
+                <app-skeleton
+                  [height]="'14px'"
+                  [width]="'200px'"
+                  [fullRound]="false"
+                />
               </div>
               <div class="utxo-amount">
-                <app-skeleton [height]="'20px'" [width]="'100px'" [fullRound]="false"></app-skeleton>
+                <app-skeleton
+                  [height]="'20px'"
+                  [width]="'100px'"
+                  [fullRound]="false"
+                />
               </div>
             </div>
           </div>
@@ -46,8 +63,13 @@
       </div>
     } @else {
       @for (utxo of utxos(); track trackByUtxo($index, utxo)) {
-        <div class="utxo-card card-0 card-hover fade-in cursor-pointer" (click)="openUtxoDetail(utxo)">
-          <div class="utxo-content flex justify-content-between align-items-center">
+        <div
+          class="utxo-card card-0 card-hover fade-in cursor-pointer"
+          (click)="openUtxoDetail(utxo)"
+        >
+          <div
+            class="utxo-content flex justify-content-between align-items-center"
+          >
             <div class="utxo-info flex column gap-12">
               <div class="utxo-tx-id-container flex align-items-center gap-8">
                 <div class="utxo-tx-id text-gray-60 typo-text-1">
@@ -56,16 +78,17 @@
                 <app-copy-button
                   [value]="utxo.outpoint.transactionId"
                   [size]="'xs'"
-                ></app-copy-button>
+                />
               </div>
             </div>
             <div class="utxo-amount-section flex align-items-end">
-              <div class="utxo-amount-main text-gray-90 font-weight-bold flex align-items-center gap-8">
-                <kc-icon
-                  [iconClass]="'icon-kaspa-coin'"
-                  [size]="'sm'"
-                ></kc-icon>
-                <span>{{ formatUtxoAmount(utxo.amount) | number : "1.0-8" }}</span>
+              <div
+                class="utxo-amount-main text-gray-90 font-weight-bold flex align-items-center gap-8"
+              >
+                <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'sm'" />
+                <span>{{
+                  formatUtxoAmount(utxo.amount) | number: "1.0-8"
+                }}</span>
               </div>
             </div>
           </div>

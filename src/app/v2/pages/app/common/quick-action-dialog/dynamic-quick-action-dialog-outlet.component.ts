@@ -20,7 +20,7 @@ import {
   selector: 'app-dynamic-quick-action-dialog-outlet',
   standalone: true,
   imports: [],
-  template: ` <ng-template #host></ng-template> `,
+  template: ` <ng-template #host /> `,
 })
 export class DynamicQuickActionDialogOutletComponent {
   private quickActionDialogService = inject(QuickActionDialogService);

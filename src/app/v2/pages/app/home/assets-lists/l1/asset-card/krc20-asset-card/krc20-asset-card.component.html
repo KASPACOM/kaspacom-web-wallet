@@ -7,7 +7,7 @@
       class="asset-card__logo"
       [ticker]="krc20()?.symbol || ''"
       [size]="'lg'"
-    ></krc20-token-logo>
+    />
     <div class="flex column gap-4">
       <div class="text-gray-90">{{ krc20()?.name || "" | titlecase }}</div>
       <div class="text-gray-60 typo-text-1 asset-card__meta">
@@ -25,16 +25,14 @@
             [height]="'14px'"
             [width]="'100px'"
             [fullRound]="false"
-          ></app-skeleton>
+          />
         }
       </ng-container>
     </div>
   </div>
   <div class="asset-card__usd-info flex column align-items-end">
     <div class="text-gray-90">
-      {{
-        (krc20()?.balance || 0) * (krc20()?.priceKas || 0) | number: "1.2-2"
-      }}
+      {{ (krc20()?.balance || 0) * (krc20()?.priceKas || 0) | number: "1.2-2" }}
       KAS
     </div>
     <div class="text-gray-60 typo-text-1 asset-card__usd-meta">

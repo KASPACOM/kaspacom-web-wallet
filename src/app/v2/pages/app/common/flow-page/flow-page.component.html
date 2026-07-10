@@ -23,7 +23,7 @@
               (click)="onNavigateBack()"
               kcTooltip="Back"
               tooltipPosition="bottom"
-            ></kc-icon>
+            />
           }
           <h2 class="flow-page-title typo-title-4">{{ title() }}</h2>
         </div>
@@ -36,14 +36,14 @@
               (click)="onClose()"
               kcTooltip="Close"
               tooltipPosition="bottom"
-            ></kc-icon>
+            />
           }
         </div>
       </div>
     }
 
     <div class="flow-page-body">
-      <ng-content></ng-content>
+      <ng-content />
     </div>
   </div>
 </div>

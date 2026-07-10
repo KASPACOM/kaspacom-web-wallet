@@ -11,9 +11,7 @@ import { KaspaNodesBackgroundComponent } from '../../../../common/components/kas
   template: `
     <div class="loading-container">
       <!-- Background Canvas -->
-      <kaspa-nodes-background
-        class="background-canvas"
-      ></kaspa-nodes-background>
+      <kaspa-nodes-background class="background-canvas" />
 
       <!-- Loading Header -->
       <div class="loading-header">
@@ -23,8 +21,7 @@ import { KaspaNodesBackgroundComponent } from '../../../../common/components/kas
               [iconClass]="'icon-refresh'"
               [size]="'xlg'"
               class="spinner-icon"
-            >
-            </kc-icon>
+            />
           </div>
         </div>
         <h2 class="loading-title">Processing Transaction</h2>

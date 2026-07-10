@@ -14,7 +14,7 @@
             [isFullWidth]="true"
             placeholder="0.5"
             formControlName="maxSlippage"
-          ></kc-input>
+          />
           <div class="slippage-options">
             <button
               class="slippage-btn"
@@ -47,8 +47,7 @@
             min: 'Slippage must be at least 0.01%',
             max: 'Slippage cannot exceed 50%',
           }"
-        >
-        </kc-form-error-message>
+        />
       </div>
 
       <div class="form-field">
@@ -58,7 +57,7 @@
           [isFullWidth]="true"
           placeholder="20"
           formControlName="swapDeadline"
-        ></kc-input>
+        />
         <kc-form-error-message
           [control]="settingsForm.get('swapDeadline')"
           fieldName="Deadline"
@@ -66,8 +65,7 @@
             min: 'Deadline must be at least 1 minute',
             max: 'Deadline cannot exceed 4320 minutes (3 days)',
           }"
-        >
-        </kc-form-error-message>
+        />
       </div>
 
       <kc-button
@@ -76,7 +74,7 @@
         [isFullWidth]="true"
         [isDisabled]="settingsForm.invalid"
         (buttonClick)="onSave()"
-      ></kc-button>
+      />
     </div>
   </kc-base-modal>
 }

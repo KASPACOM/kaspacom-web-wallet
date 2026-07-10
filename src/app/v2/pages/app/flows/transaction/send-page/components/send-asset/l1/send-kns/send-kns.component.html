@@ -13,8 +13,7 @@
         (valueChange)="onWalletAddressChange($event)"
         (resolved)="onAddressResolved($event)"
         (qrClick)="onQrScanClick()"
-      >
-      </app-address-smart-input>
+      />
     </div>
 
     <!-- Replace By Fee Checkbox -->
@@ -25,8 +24,7 @@
         [isDisabled]="isLoading"
         (checkedChange)="onRbfChange($event)"
         size="md"
-      >
-      </kc-checkbox>
+      />
     </div>
 
     <!-- Send Button -->
@@ -44,8 +42,7 @@
         [isLoading]="isLoading"
         [isDisabled]="!isFormValid"
         (buttonClick)="onSendClick()"
-      >
-      </kc-button>
+      />
     </div>
   </div>
 </div>

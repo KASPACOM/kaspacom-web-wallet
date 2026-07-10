@@ -4,47 +4,26 @@
     <!-- Header -->
     <div class="swap-header flex justify-content-between align-items-center">
       <span class="swap-title">Swap</span>
-      <button
-        class="settings-btn"
-        (click)="openSettingsModal()"
-        title="Settings"
-      >
-        <kc-icon [iconClass]="'icon-settings'" [size]="'sm'" />
-      </button>
+      <kc-icon-button
+        [icon]="'icon-settings'"
+        [size]="'sm'"
+        [variant]="'secondary'"
+        [ariaLabel]="'Settings'"
+        [title]="'Settings'"
+        (buttonClick)="openSettingsModal()"
+      />
     </div>
 
     <!-- Percentage Options -->
     <div class="percentage-options-wrapper flex justify-content-end">
-      <div class="percentage-options">
-        <button
-          class="percentage-btn"
-          [class.active]="selectedPercentage() === 25"
-          (click)="onPercentageClick(25)"
-        >
-          25%
-        </button>
-        <button
-          class="percentage-btn"
-          [class.active]="selectedPercentage() === 50"
-          (click)="onPercentageClick(50)"
-        >
-          50%
-        </button>
-        <button
-          class="percentage-btn"
-          [class.active]="selectedPercentage() === 75"
-          (click)="onPercentageClick(75)"
-        >
-          75%
-        </button>
-        <button
-          class="percentage-btn"
-          [class.active]="selectedPercentage() === 100"
-          (click)="onPercentageClick(100)"
-        >
-          MAX
-        </button>
-      </div>
+      <kc-switch
+        class="percentage-options"
+        [options]="percentageOptions"
+        [selectedValue]="selectedPercentage() ?? undefined"
+        [size]="'s'"
+        [ariaLabel]="'Select percentage of balance'"
+        (selectionChange)="onPercentageClick($any($event.value))"
+      />
     </div>
 
     <!-- Token Inputs Wrapper -->
@@ -90,15 +69,14 @@
 
       <!-- Switch Button -->
       <div class="switch-btn-container">
-        <button
-          class="switch-btn"
-          (click)="switchTokens()"
-          title="Switch tokens"
-        >
-          <div class="switch-arrows">
-            <kc-icon iconClass="icon-switch-vertical-01" size="sm" />
-          </div>
-        </button>
+        <kc-icon-button
+          [icon]="'icon-switch-vertical-01'"
+          [size]="'sm'"
+          [variant]="'default'"
+          [ariaLabel]="'Switch tokens'"
+          [title]="'Switch tokens'"
+          (buttonClick)="switchTokens()"
+        />
       </div>
 
       <!-- BUY (To) -->

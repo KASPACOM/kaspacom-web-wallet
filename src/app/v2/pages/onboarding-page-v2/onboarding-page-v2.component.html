@@ -97,13 +97,12 @@
             </div>
 
             @if (!shouldShowLogin() && !isWelcome()) {
-              <button
+              <kc-button
                 class="onboarding-v2__restart"
-                type="button"
-                (click)="resetFlow()"
-              >
-                Start Over
-              </button>
+                [text]="'Start Over'"
+                [variant]="'link'"
+                (buttonClick)="resetFlow()"
+              />
             }
           </header>
 

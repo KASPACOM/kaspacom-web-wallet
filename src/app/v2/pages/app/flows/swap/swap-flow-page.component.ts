@@ -22,7 +22,13 @@ import {
   NETWORKS,
 } from '@kaspacom/swap-sdk';
 import { NotificationService } from 'kaspacom-ui';
-import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
+import {
+  KcButtonComponent,
+  KcIconComponent,
+  KcIconButtonComponent,
+  KcSwitchComponent,
+  SwitchOption,
+} from '@kaspacom/ui-kit';
 import {
   EIP1193RequestPayload,
   EIP1193RequestType,
@@ -61,6 +67,8 @@ import {
     FormsModule,
     KcButtonComponent,
     KcIconComponent,
+    KcIconButtonComponent,
+    KcSwitchComponent,
     CommaFormatterPipe,
     TokenLogoComponent,
   ],
@@ -174,6 +182,13 @@ export class SwapFlowPageComponent implements OnInit, OnDestroy {
     const minOut = val * (1 - slippage);
     return minOut.toFixed(6).replace(/\.?0+$/, '');
   });
+
+  percentageOptions: SwitchOption[] = [
+    { label: '25%', value: 25 },
+    { label: '50%', value: 50 },
+    { label: '75%', value: 75 },
+    { label: 'MAX', value: 100 },
+  ];
 
   selectedPercentage = computed(() => {
     const effectiveMax = this.fromTokenEffectiveMaxBalance();

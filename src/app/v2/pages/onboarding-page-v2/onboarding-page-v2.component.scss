@@ -177,17 +177,7 @@
   }
 
   &__restart {
-    background: transparent;
-    border: none;
-    color: var(--primary);
-    cursor: pointer;
-    font: inherit;
     padding: 8px 0;
-    transition: color 0.2s ease;
-
-    &:hover {
-      color: rgba(111, 199, 186, 0.8);
-    }
   }
 
   &__panel-description {

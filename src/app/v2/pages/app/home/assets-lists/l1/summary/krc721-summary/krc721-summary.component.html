@@ -8,35 +8,14 @@
   (thresholdReached)="shouldLoadMore(true)"
 >
   <div class="full-width flex justify-content-start px-16">
-    <div class="custom-select-wrapper">
-      <select class="custom-select" (change)="onTickerChange($event)">
-        <option value="" [selected]="selectedTicker() === ''">
-          Filter by Ticker
-        </option>
-        @for (tick of uniqueTickers(); track tick) {
-          <option [value]="tick" [selected]="selectedTicker() === tick">
-            {{ tick | uppercase }}
-          </option>
-        }
-      </select>
-      <div class="custom-arrow">
-        <svg
-          width="10"
-          height="6"
-          viewBox="0 0 10 6"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M1 1L5 5L9 1"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-      </div>
-    </div>
+    <kc-dropdown-select
+      class="ticker-filter"
+      [options]="tickerOptions()"
+      [placeholder]="'Filter by Ticker'"
+      [isSearchable]="true"
+      [value]="selectedTicker()"
+      (valueChange)="onTickerChange($any($event))"
+    />
   </div>
 
   @if (loading()) {

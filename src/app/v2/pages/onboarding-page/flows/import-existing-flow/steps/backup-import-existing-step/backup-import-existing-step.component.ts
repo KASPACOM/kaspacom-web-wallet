@@ -1,14 +1,14 @@
 import { Component, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NotificationService } from 'kaspacom-ui';
-import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
+import { KcButtonComponent } from '@kaspacom/ui-kit';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
 import { PasswordManagerService } from '../../../../../../../services/password-manager.service';
 import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-backup-import-existing-step',
-  imports: [FormsModule, KcButtonComponent, KcIconComponent],
+  imports: [FormsModule, KcButtonComponent],
   templateUrl: './backup-import-existing-step.component.html',
   styleUrl: './backup-import-existing-step.component.scss',
 })

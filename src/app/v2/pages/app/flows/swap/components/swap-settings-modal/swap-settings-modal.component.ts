@@ -11,6 +11,8 @@ import {
   KcDialogComponent,
   KcNumberInputComponent,
   KcButtonComponent,
+  KcSwitchComponent,
+  SwitchOption,
 } from '@kaspacom/ui-kit';
 import { FormErrorMessageComponent } from '../../../../../../shared/components/form-error/form-error.component';
 import type { SwapSettings } from '@kaspacom/swap-sdk';
@@ -30,6 +32,7 @@ export interface SwapSettingsDialogData {
     KcDialogComponent,
     KcNumberInputComponent,
     KcButtonComponent,
+    KcSwitchComponent,
     FormErrorMessageComponent,
   ],
   templateUrl: './swap-settings-modal.component.html',
@@ -43,6 +46,12 @@ export class SwapSettingsModalComponent {
   });
 
   settingsForm: FormGroup;
+
+  slippageOptions: SwitchOption[] = [
+    { label: '0.1%', value: 0.1 },
+    { label: '0.5%', value: 0.5 },
+    { label: '1.5%', value: 1.5 },
+  ];
 
   selectedSlippage = computed(() => {
     const slippage = parseFloat(

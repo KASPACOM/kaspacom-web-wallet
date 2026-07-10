@@ -54,18 +54,19 @@
                           @if (
                             row.inputField.fieldType === InputFieldType.CHECKBOX
                           ) {
-                            <div>
-                              <label class="checkbox-label">
-                                <input
-                                  type="checkbox"
-                                  [(ngModel)]="
-                                    additionalParams[row.inputField.fieldParam]
-                                  "
-                                  [checked]="row.fieldValue === 'true'"
-                                />
-                                <span>{{ row.fieldName }}</span>
-                              </label>
-                            </div>
+                            <app-checkbox-input
+                              [checked]="
+                                additionalParams[
+                                  row.inputField.fieldParam
+                                ] ?? (row.fieldValue === 'true')
+                              "
+                              (checkedChange)="
+                                additionalParams[row.inputField.fieldParam] =
+                                  $event
+                              "
+                            >
+                              {{ row.fieldName }}
+                            </app-checkbox-input>
                           }
                         </div>
                       } @else {

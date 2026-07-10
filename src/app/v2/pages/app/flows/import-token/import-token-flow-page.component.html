@@ -3,14 +3,10 @@
 >
   <!-- Address Input Section -->
   <div class="input-section flex column gap-12">
-    <div class="section-label typo-text-1 text-gray-60">
-      Token Contract Address
-    </div>
-
-    <div class="address-input-row flex gap-8 align-items-start">
+    <div class="address-input-row flex gap-8 align-items-center">
       <div class="flex-1">
         <kc-input
-          [label]="'Contract Address'"
+          [infoLabel]="{ label: 'Token Contract Address' }"
           [placeholder]="'0x...'"
           [type]="'text'"
           [isValid]="state() !== 'error' && state() !== 'already-imported'"
@@ -42,7 +38,7 @@
       [size]="'m'"
       [text]="state() === 'loading' ? 'Looking up...' : 'Look Up Token'"
       [isDisabled]="!isAddressValid() || state() === 'loading'"
-      class="full-width"
+      [isFullWidth]="true"
       (buttonClick)="lookupToken()"
     />
   </div>
@@ -111,7 +107,7 @@
         [variant]="'secondary'"
         [size]="'m'"
         [text]="'Close'"
-        class="full-width"
+        [isFullWidth]="true"
         (buttonClick)="onCancel()"
       />
     </div>

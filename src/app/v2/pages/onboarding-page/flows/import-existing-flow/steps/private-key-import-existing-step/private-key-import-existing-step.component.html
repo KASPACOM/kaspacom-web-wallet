@@ -18,7 +18,7 @@
       >
         <kc-input
           formControlName="privateKey"
-          [label]="'Private key'"
+          [infoLabel]="{ label: 'Private key' }"
           [placeholder]="'Enter private key'"
           [type]="privateKeyFieldType()"
           [isValid]="!isPrivateKeyInvalid('privateKey')"

@@ -40,7 +40,7 @@
 
   <div class="fields-section flex column gap-12">
     <kc-input
-      [label]="'Network Name'"
+      [infoLabel]="{ label: 'Network Name' }"
       [placeholder]="'e.g. Base, Polygon, Arbitrum'"
       [type]="'text'"
       [ngModel]="networkName()"
@@ -48,7 +48,7 @@
     />
 
     <kc-number-input
-      [label]="'Chain ID'"
+      [infoLabel]="{ label: 'Chain ID' }"
       [placeholder]="'e.g. 8453'"
       [enforceEthersFormat]="false"
       [isValid]="!chainIdError()"
@@ -60,7 +60,7 @@
     }
 
     <kc-input
-      [label]="'RPC URL'"
+      [infoLabel]="{ label: 'RPC URL' }"
       [placeholder]="'https://rpc.example.com'"
       [type]="'text'"
       [isValid]="!rpcUrlError()"
@@ -72,7 +72,7 @@
     }
 
     <kc-input
-      [label]="'Currency Symbol'"
+      [infoLabel]="{ label: 'Currency Symbol' }"
       [placeholder]="'ETH'"
       [type]="'text'"
       [ngModel]="currencySymbol()"
@@ -80,7 +80,7 @@
     />
 
     <kc-number-input
-      [label]="'Decimals'"
+      [infoLabel]="{ label: 'Decimals' }"
       [placeholder]="'18'"
       [enforceEthersFormat]="false"
       [isValid]="!decimalsError()"
@@ -92,7 +92,7 @@
     }
 
     <kc-input
-      [label]="'Block Explorer URL (optional)'"
+      [infoLabel]="{ label: 'Block Explorer URL (optional)' }"
       [placeholder]="'https://explorer.example.com'"
       [type]="'text'"
       [isValid]="!explorerUrlError()"
@@ -109,6 +109,7 @@
       [variant]="'secondary'"
       [size]="'m'"
       [text]="'Cancel'"
+      [isFullWidth]="true"
       class="flex-1"
       (buttonClick)="onCancel()"
     />
@@ -117,7 +118,8 @@
       [size]="'m'"
       [text]="isSaving() ? 'Adding...' : 'Add Network'"
       [isDisabled]="isSaving()"
-      class="flex-1"
+      [isFullWidth]="true"
+      class="flex-1 add-network-btn"
       (buttonClick)="onSave()"
     />
   </div>

@@ -24,7 +24,10 @@
           width: 48px;
           height: 48px;
           border-radius: 50%;
-          background: var(--primary-bg, rgba(var(--primary-rgb, 70, 130, 220), 0.15));
+          background: var(
+            --primary-bg,
+            rgba(var(--primary-rgb, 70, 130, 220), 0.15)
+          );
           border: 2px solid var(--primary, #4682dc);
           flex-shrink: 0;
 
@@ -42,7 +45,7 @@
 
         .detail-row {
           .font-mono {
-            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-family: "JetBrains Mono", "Courier New", monospace;
             font-size: 13px;
           }
         }

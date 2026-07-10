@@ -10,7 +10,6 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import { KcCheckboxComponent } from 'kaspacom-ui';
 import { KcNumberInputComponent, KcButtonComponent } from '@kaspacom/ui-kit';
 import { AddressResolutionResult } from '../../../../../../../../../../services/address-resolution.service';
 import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
@@ -24,6 +23,7 @@ import { WalletActionService } from '../../../../../../../../../../services/wall
 import { WalletService } from '../../../../../../../../../../services/wallet.service';
 import { ApprovalFlowService } from '../../../../../../../../../services/approval-flow.service';
 import { AddressSmartInputComponent } from '../../../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
+import { CheckboxInputComponent } from '../../../../../../../../../shared/ui/input/checkbox/checkbox-input/checkbox-input.component';
 import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
 import { IToken } from '../../../../../../../common/interfaces/token.interface';
@@ -35,7 +35,7 @@ import { Krc20TokenLogoComponent } from '../../../../../../../home/assets-lists/
   imports: [
     CommonModule,
     KcNumberInputComponent,
-    KcCheckboxComponent,
+    CheckboxInputComponent,
     KcButtonComponent,
     FormsModule,
     Krc20TokenLogoComponent,

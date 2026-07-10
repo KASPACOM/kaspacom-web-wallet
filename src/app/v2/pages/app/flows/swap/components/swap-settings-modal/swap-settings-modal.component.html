@@ -1,10 +1,5 @@
-@if (open()) {
-  <kc-base-modal
-    title="Settings"
-    [showCloseButton]="true"
-    [autoWidth]="false"
-    (close)="onClose()"
-  >
+<kc-dialog>
+  <ng-template #contentTemplate>
     <div class="settings-content" [formGroup]="settingsForm">
       <div class="form-field">
         <div class="slippage-row">
@@ -74,5 +69,5 @@
         (buttonClick)="onSave()"
       />
     </div>
-  </kc-base-modal>
-}
+  </ng-template>
+</kc-dialog>

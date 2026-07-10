@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -19,15 +19,13 @@ import { IFrameCommunicationApp } from '../../services/communication-service/com
   imports: [FormsModule, ReactiveFormsModule],
 })
 export class LoginComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private passwordManagerService = inject(PasswordManagerService);
+  private router = inject(Router);
+  private walletService = inject(WalletService);
+
   loginForm: FormGroup = new FormGroup({});
   loginError: boolean = false;
-
-  constructor(
-    private fb: FormBuilder,
-    private passwordManagerService: PasswordManagerService,
-    private router: Router,
-    private walletService: WalletService,
-  ) {}
 
   ngOnInit() {
     this.loginForm = this.fb.group({

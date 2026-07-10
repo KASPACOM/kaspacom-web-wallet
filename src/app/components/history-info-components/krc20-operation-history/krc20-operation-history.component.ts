@@ -1,4 +1,4 @@
-import { Component, Input, input } from '@angular/core';
+import { Component, Input, input, inject } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
@@ -17,6 +17,8 @@ import { AppWallet } from '../../../classes/AppWallet';
   imports: [FormsModule, SompiToNumberPipe],
 })
 export class Krc20OperationHistoryComponent {
+  protected readonly utils = inject(UtilsHelper);
+
   public AcceptedStatus = AcceptedStatus;
   public KRC20OperationType = KRC20OperationType;
   public Number = Number;
@@ -26,8 +28,6 @@ export class Krc20OperationHistoryComponent {
   //  and migrating would break narrowing currently.
   @Input() operations: undefined | OperationDetails[];
   readonly wallet = input.required<AppWallet>();
-
-  constructor(protected readonly utils: UtilsHelper) {}
 
   public isNullOrEmptyString(value: string | null | undefined): boolean {
     return this.utils.isNullOrEmptyString(value);

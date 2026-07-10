@@ -1,4 +1,4 @@
-import { Component, computed } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { WalletService } from '../../../services/wallet.service';
 
@@ -9,7 +9,8 @@ import { WalletService } from '../../../services/wallet.service';
   imports: [FormsModule],
 })
 export class MempoolTransactionsComponent {
-  constructor(private walletService: WalletService) {}
+  private walletService = inject(WalletService);
+
   mempoolTransactions = computed(() =>
     this.walletService.getCurrentWallet()!.getMempoolTransactionsSignalValue(),
   );

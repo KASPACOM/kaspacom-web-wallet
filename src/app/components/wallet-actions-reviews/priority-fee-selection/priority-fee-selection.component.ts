@@ -4,6 +4,7 @@ import {
   SimpleChanges,
   input,
   output,
+  inject,
 } from '@angular/core';
 import {
   trigger,
@@ -67,6 +68,9 @@ const MINIMUM_FEE_MULTIPLIER = 100n;
   ],
 })
 export class PriorityFeeSelectionComponent implements OnChanges {
+  protected kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  protected krc20OperationsDataService = inject(Krc20OperationDataService);
+
   readonly action = input.required<WalletAction>();
   readonly wallet = input.required<AppWallet>();
   readonly priorityFeeSelected = output<bigint | undefined>();
@@ -87,11 +91,6 @@ export class PriorityFeeSelectionComponent implements OnChanges {
   protected selectedOption: AvailableOption = 'normal';
   protected additionalPriorityFee: bigint | undefined = undefined;
   protected showPriorityFeeSelection: boolean = false;
-
-  constructor(
-    protected kaspaNetworkActionsService: KaspaNetworkActionsService,
-    protected krc20OperationsDataService: Krc20OperationDataService,
-  ) {}
 
   // Methods to determine transaction type and asset info
   getTransactionAssetInfo(): {

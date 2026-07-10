@@ -1,7 +1,6 @@
 import {
   AfterViewInit,
   Component,
-  Inject,
   NgZone,
   OnDestroy,
   OnInit,
@@ -37,6 +36,13 @@ import { WalletService } from './services/wallet.service';
   providers: [KaspaNetworkActionsService],
 })
 export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
+  private readonly communicationManagerService = inject(
+    CommunicationManagerService,
+  );
+  private readonly renderer = inject(Renderer2);
+  private readonly document = inject<Document>(DOCUMENT);
+  private readonly zone = inject(NgZone);
+
   title = 'kaspiano-wallet';
   rpcConnectionRejectReason = '';
   walletService = inject(WalletService);
@@ -49,13 +55,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly meta = inject(Meta);
   private referralService = inject(ReferralService);
   private teardownLoader?: VoidFunction;
-
-  constructor(
-    private readonly communicationManagerService: CommunicationManagerService,
-    private readonly renderer: Renderer2,
-    @Inject(DOCUMENT) private readonly document: Document,
-    private readonly zone: NgZone,
-  ) {}
 
   async ngOnInit() {
     console.log('App component initialized');

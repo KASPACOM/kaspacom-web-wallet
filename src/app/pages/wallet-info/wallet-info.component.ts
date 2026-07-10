@@ -4,6 +4,7 @@ import {
   OnDestroy,
   OnInit,
   viewChild,
+  inject,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { WalletService } from '../../services/wallet.service'; // Assume you have a service to fetch wallets
@@ -60,6 +61,14 @@ type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
   ],
 })
 export class WalletInfoComponent implements OnInit, OnDestroy {
+  private walletService = inject(WalletService);
+  private router = inject(Router);
+  private kasplexService = inject(KasplexKrc20Service);
+  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  private walletActionService = inject(WalletActionService);
+  private kaspaApiService = inject(KaspaApiService);
+  private ethereumWalletChainManager = inject(EthereumWalletChainManager);
+
   readonly reviewActionComponent = viewChild.required<ReviewActionComponent>(
     'reviewActionComponent',
   );
@@ -95,15 +104,7 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
 
   protected isAddChainFormVisible = false;
 
-  constructor(
-    private walletService: WalletService, // Inject wallet service
-    private router: Router,
-    private kasplexService: KasplexKrc20Service,
-    private kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private walletActionService: WalletActionService,
-    private kaspaApiService: KaspaApiService,
-    private ethereumWalletChainManager: EthereumWalletChainManager,
-  ) {
+  constructor() {
     toObservable(
       this.ethereumWalletChainManager.getCurrentChainSignal(),
     ).subscribe((chain) => {

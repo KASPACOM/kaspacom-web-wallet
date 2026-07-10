@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -19,6 +19,10 @@ import { LOCAL_STORAGE_KEYS } from '../../config/consts';
   imports: [FormsModule, ReactiveFormsModule],
 })
 export class ClearDataComponent {
+  private fb = inject(FormBuilder);
+  private router = inject(Router);
+  private passwordManagerService = inject(PasswordManagerService);
+
   clearDataForm: FormGroup = this.fb.group({
     confirmation: [
       '',
@@ -26,12 +30,6 @@ export class ClearDataComponent {
     ],
   });
   error: string = '';
-
-  constructor(
-    private fb: FormBuilder,
-    private router: Router,
-    private passwordManagerService: PasswordManagerService,
-  ) {}
 
   async onSubmit() {
     if (this.clearDataForm.valid) {

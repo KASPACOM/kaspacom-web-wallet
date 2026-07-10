@@ -12,23 +12,34 @@ export interface Krc721NftWithMetadata extends Krc721Nft {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
-export class Krc721MetadataService extends BaseAssetMetadataService<Krc721Nft, Krc721Metadata> {
+export class Krc721MetadataService extends BaseAssetMetadataService<
+  Krc721Nft,
+  Krc721Metadata
+> {
+  protected assetsManager: AssetsManagerService;
+
   private krc721Service = inject(Krc721ApiService);
   private kaspaL1NetworkService = inject(KaspaL1NetworkService);
-  
-  constructor(protected assetsManager: AssetsManagerService) {
+
+  constructor() {
+    const assetsManager = inject(AssetsManagerService);
+
     super(assetsManager.getAllAssetStores().l1, L1_ASSET_KEYS.krc721);
+
+    this.assetsManager = assetsManager;
   }
   protected override getAssetId(asset: Krc721Nft): string {
     return `${asset.tick}-${asset.tokenId}`;
   }
 
-  protected override async loadMetadata(asset: Krc721Nft): Promise<Krc721Metadata | null> {
+  protected override async loadMetadata(
+    asset: Krc721Nft,
+  ): Promise<Krc721Metadata | null> {
     try {
       const metadata = await firstValueFrom(
-        this.krc721Service.getNftMetadata(asset.tick, asset.tokenId)
+        this.krc721Service.getNftMetadata(asset.tick, asset.tokenId),
       );
 
       if (metadata) {
@@ -37,7 +48,10 @@ export class Krc721MetadataService extends BaseAssetMetadataService<Krc721Nft, K
 
       return null;
     } catch (error) {
-      console.error(`Failed to load metadata for NFT ${asset.tick}#${asset.tokenId}:`, error);
+      console.error(
+        `Failed to load metadata for NFT ${asset.tick}#${asset.tokenId}:`,
+        error,
+      );
       return null;
     }
   }
@@ -45,20 +59,23 @@ export class Krc721MetadataService extends BaseAssetMetadataService<Krc721Nft, K
   /**
    * Get enriched NFT data with metadata
    */
-  public getEnrichedNftData(tick: string, tokenId: string): Krc721NftWithMetadata | undefined {
+  public getEnrichedNftData(
+    tick: string,
+    tokenId: string,
+  ): Krc721NftWithMetadata | undefined {
     const assetId = `${tick}-${tokenId}`;
     const item = this.paginatedAssetsSignal().find(
-      item => this.getAssetId(item.data) === assetId
+      (item) => this.getAssetId(item.data) === assetId,
     );
-    
+
     if (item) {
       return {
         ...item.data,
         metadata: item.metadata || item.data.metadata,
-        metadataLoaded: !!item.metadata
+        metadataLoaded: !!item.metadata,
       };
     }
-    
+
     return undefined;
   }
 
@@ -98,7 +115,7 @@ export class Krc721MetadataService extends BaseAssetMetadataService<Krc721Nft, K
    */
   public filterByCollection(tick: string): void {
     const filteredAssets = this.getAssetsFromStore().filter(
-      nft => nft.tick === tick
+      (nft) => nft.tick === tick,
     );
     this.initialize(filteredAssets);
   }

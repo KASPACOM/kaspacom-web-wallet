@@ -1,4 +1,4 @@
-import { Component, output } from '@angular/core';
+import { Component, output, inject } from '@angular/core';
 
 import {
   FormsModule,
@@ -16,12 +16,14 @@ import { EIP1193ProviderChain } from '@kaspacom/wallet-messages';
   styleUrls: ['./add-l2-chain.component.scss'],
 })
 export class AddL2ChainComponent {
+  private fb = inject(FormBuilder);
+
   readonly chainAdded = output<EIP1193ProviderChain>();
   readonly cancelled = output<void>();
 
   chainForm: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor() {
     this.chainForm = this.fb.group({
       chainName: ['', [Validators.required]],
       chainId: ['', [Validators.required, Validators.min(1)]],

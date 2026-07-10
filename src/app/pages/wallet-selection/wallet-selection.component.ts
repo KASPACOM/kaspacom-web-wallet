@@ -16,17 +16,15 @@ import { WalletActionService } from '../../services/wallet-action.service';
   imports: [FormsModule, ReactiveFormsModule, ExportWalletsQrComponent],
 })
 export class WalletSelectionComponent implements OnInit {
+  private walletService = inject(WalletService);
+  private router = inject(Router);
+
   public Object = Object;
   walletGroups: AppWallet[][] | undefined = undefined;
   user: any = {}; // User information
 
   private approvalFlowService = inject(ApprovalFlowService);
   private walletActionService = inject(WalletActionService);
-
-  constructor(
-    private walletService: WalletService, // Inject wallet service
-    private router: Router, // private kaspaTransactionsManagerService: KaspaNetworkTransactionsManagerService
-  ) {}
 
   ngOnInit(): void {
     this.loadWallets();

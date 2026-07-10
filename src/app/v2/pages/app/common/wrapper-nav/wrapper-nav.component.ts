@@ -27,6 +27,8 @@ export interface INavRoute {
   styleUrl: './wrapper-nav.component.scss',
 })
 export class WrapperNavComponent implements AfterViewInit, OnDestroy {
+  private router = inject(Router);
+
   private readonly domSanitizer = inject(DomSanitizer);
 
   readonly myElementRef =
@@ -64,7 +66,7 @@ export class WrapperNavComponent implements AfterViewInit, OnDestroy {
     return `${dist}px`;
   });
 
-  constructor(private router: Router) {
+  constructor() {
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe((eventGen) => {

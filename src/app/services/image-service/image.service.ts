@@ -1,4 +1,4 @@
-import { inject, Inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { DEFI_API_BASE_URL } from '../../config/injection-tokens';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { LfgTokenResponse } from '../../types/lfg-token.model';
@@ -10,6 +10,8 @@ import { EthereumWalletChainManager } from '../etherium-services/etherium-wallet
   providedIn: 'root',
 })
 export class ImageService {
+  private baseUrl = inject(DEFI_API_BASE_URL);
+
   private readonly http = inject(HttpClient);
   private readonly ethereumWalletChainManager = inject(
     EthereumWalletChainManager,
@@ -17,8 +19,6 @@ export class ImageService {
 
   private readonly EXPLORER_CONTROLLER = 'explorer';
   private readonly DEX_CONTROLLER = 'dex';
-
-  constructor(@Inject(DEFI_API_BASE_URL) private baseUrl: string) {}
 
   /**
    * GET /explorer/lfg-tokens

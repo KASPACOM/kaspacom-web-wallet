@@ -24,6 +24,9 @@ import { fromEvent, Subject, throttleTime, takeUntil } from 'rxjs';
   standalone: true,
 })
 export class InfiniteScrollDirective implements OnInit, OnDestroy {
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private zone = inject(NgZone);
+
   readonly scrollThreshold = input(70);
   readonly scrollDebounce = input(120);
   readonly scrollContainer = input<HTMLElement | Window>();
@@ -38,11 +41,6 @@ export class InfiniteScrollDirective implements OnInit, OnDestroy {
   private isWindowContainer = false;
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
-
-  constructor(
-    private elementRef: ElementRef<HTMLElement>,
-    private zone: NgZone,
-  ) {}
 
   ngOnInit(): void {
     if (!this.isBrowser) {

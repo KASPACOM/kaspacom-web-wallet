@@ -3,7 +3,7 @@
 >
   <!-- Address Input Section -->
   <div class="input-section flex column gap-12">
-    <div class="address-input-row flex gap-8 align-items-center">
+    <div class="address-input-row flex gap-8 align-items-end">
       <div class="flex-1">
         <kc-input
           [infoLabel]="{ label: 'Token Contract Address' }"
@@ -28,9 +28,7 @@
     }
 
     @if (showAddressError()) {
-      <div class="address-error typo-text-1 text-red">
-        Invalid contract address format
-      </div>
+      <span class="kc-input-error-text">Invalid contract address format</span>
     }
 
     <kc-button

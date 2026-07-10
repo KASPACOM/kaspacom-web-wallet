@@ -9,14 +9,16 @@
             placeholder="0.5"
             formControlName="maxSlippage"
           />
-          <kc-switch
-            class="slippage-options"
-            [options]="slippageOptions"
-            [selectedValue]="selectedSlippage() ?? undefined"
-            [size]="'s'"
-            [ariaLabel]="'Select slippage tolerance'"
-            (selectionChange)="onSlippageClick($any($event.value))"
-          />
+          <div class="slippage-options flex gap-8">
+            @for (option of slippageOptions; track option.value) {
+              <kc-button
+                [text]="option.label"
+                [variant]="'tag-secondary'"
+                [isSelected]="selectedSlippage() === option.value"
+                (buttonClick)="onSlippageClick($any(option.value))"
+              />
+            }
+          </div>
         </div>
         <kc-form-error-message
           [control]="settingsForm.get('maxSlippage')"

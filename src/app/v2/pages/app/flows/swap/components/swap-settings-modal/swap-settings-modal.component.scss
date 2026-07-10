@@ -1,31 +1,31 @@
 .settings-content {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    min-width: 380px;
-    max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 380px;
+  max-width: 90vw;
 }
 
 .form-field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 
-    kc-form-error-message {
-        color: var(--error, #E04242);
-    }
+  kc-form-error-message {
+    color: var(--error, #e04242);
+  }
 }
 
 .slippage-row {
-    display: flex;
-    align-items: flex-end;
-    gap: 12px;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
 
-    kc-number-input {
-        flex: 1;
-    }
+  kc-number-input {
+    flex: 1;
+  }
 }
 
 .slippage-options {
-    padding-bottom: 4px;
+  padding-bottom: 4px;
 }

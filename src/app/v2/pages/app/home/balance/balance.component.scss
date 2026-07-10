@@ -18,6 +18,19 @@
   line-height: 1;
 }
 
+// .typo-title-6 (font.style.scss) isn't wired into the global stylesheet,
+// so it contributes no styling here - set the intended size/line-height
+// directly instead of relying on it (was previously an inline
+// style="font-size: 4rem" override with no line-height, so the line box
+// collapsed to the browser default and the balance row below overlapped it).
+.balance-container__value {
+  font-family: "Poppins", sans-serif;
+  font-weight: 600;
+  font-size: 4rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
 .balance-amount {
   font-weight: 600;
 }

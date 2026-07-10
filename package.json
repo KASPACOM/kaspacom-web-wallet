@@ -24,7 +24,7 @@
   "private": true,
   "dependencies": {
     "@angular/animations": "^20.3.26",
-    "@angular/cdk": "^19.2.17",
+    "@angular/cdk": "^20.2.14",
     "@angular/common": "^20.3.26",
     "@angular/compiler": "^20.3.26",
     "@angular/core": "^20.3.26",
@@ -40,7 +40,7 @@
     "@segment/analytics-next": "1.81.1",
     "@sentry/angular": "^10.31.0",
     "@sentry/cli": "^2.58.4",
-    "angularx-qrcode": "^19.0.0",
+    "angularx-qrcode": "^20.0.0",
     "crypto-js": "^4.2.0",
     "dexie": "^4.2.1",
     "ethers": "^6.13.5",
@@ -77,5 +77,17 @@
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "^4.45.1"
+  },
+  "overrides": {
+    "@kaspacom/ui": {
+      "@angular/cdk": "20.2.14",
+      "@angular/core": "20.3.26",
+      "@angular/common": "20.3.26"
+    },
+    "kaspacom-ui": {
+      "@angular/cdk": "20.2.14",
+      "@angular/core": "20.3.26",
+      "@angular/common": "20.3.26"
+    }
   }
 }

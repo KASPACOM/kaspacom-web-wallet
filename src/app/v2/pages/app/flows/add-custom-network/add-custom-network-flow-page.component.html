@@ -24,14 +24,14 @@
   <div class="fields-section flex column gap-12">
 
     <kc-input
-      [label]="'Network Name'"
+      [infoLabel]="{ label: 'Network Name' }"
       [placeholder]="'e.g. Base, Polygon, Arbitrum'"
       [ngModel]="networkName()"
       (valueChange)="networkName.set($any($event) || '')">
     </kc-input>
 
     <kc-input
-      [label]="'Chain ID'"
+      [infoLabel]="{ label: 'Chain ID' }"
       [placeholder]="'e.g. 8453'"
       [isValid]="!chainIdError()"
       [ngModel]="chainId()"
@@ -42,7 +42,7 @@
     }
 
     <kc-input
-      [label]="'RPC URL'"
+      [infoLabel]="{ label: 'RPC URL' }"
       [placeholder]="'https://rpc.example.com'"
       [isValid]="!rpcUrlError()"
       [ngModel]="rpcUrl()"
@@ -53,14 +53,14 @@
     }
 
     <kc-input
-      [label]="'Currency Symbol'"
+      [infoLabel]="{ label: 'Currency Symbol' }"
       [placeholder]="'ETH'"
       [ngModel]="currencySymbol()"
       (valueChange)="currencySymbol.set($any($event) || '')">
     </kc-input>
 
     <kc-input
-      [label]="'Decimals'"
+      [infoLabel]="{ label: 'Decimals' }"
       [placeholder]="'18'"
       [isValid]="!decimalsError()"
       [ngModel]="currencyDecimals()"
@@ -71,7 +71,7 @@
     }
 
     <kc-input
-      [label]="'Block Explorer URL (optional)'"
+      [infoLabel]="{ label: 'Block Explorer URL (optional)' }"
       [placeholder]="'https://explorer.example.com'"
       [isValid]="!explorerUrlError()"
       [ngModel]="explorerUrl()"

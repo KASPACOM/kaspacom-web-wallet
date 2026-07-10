@@ -29,7 +29,7 @@
     <!-- Amount Input -->
     <div class="form-field">
       <kc-input
-        [label]="'Amount of ' + (token()?.symbol | uppercase)"
+        [infoLabel]="{ label: 'Amount of ' + (token()?.symbol | uppercase) }"
         [placeholder]="'0.00'"
         [isValid]="isAmountValid"
         [isDisabled]="isLoading"

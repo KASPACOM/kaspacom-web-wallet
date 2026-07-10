@@ -34,7 +34,7 @@
         <div class="flex column gap-4">
           <kc-input
             formControlName="password"
-            [label]="'Enter your password'"
+            [infoLabel]="{ label: 'Enter your password' }"
             [placeholder]="'Password'"
             [type]="passwordType()"
             [isValid]="!isInvalid('password')"
@@ -49,7 +49,7 @@
           }
           <kc-input
             formControlName="confirmPassword"
-            [label]="'Confirm your password'"
+            [infoLabel]="{ label: 'Confirm your password' }"
             [placeholder]="'Confirm password'"
             [type]="passwordConfirmType()"
             [isValid]="!isInvalid('confirmPassword')"

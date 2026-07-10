@@ -1,6 +1,6 @@
 <div class="address-smart-input">
 	<kc-input
-		[label]="label"
+		[infoLabel]="{ label: label }"
 		[placeholder]="placeholder"
 		[type]="'text'"
 		[isValid]="(isResolving() || isDomainCandidate()) ? true : (displayIsValid() && !resolveError())"

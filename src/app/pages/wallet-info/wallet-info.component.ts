@@ -3,7 +3,7 @@ import {
   computed,
   OnDestroy,
   OnInit,
-  ViewChild,
+  viewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { WalletService } from '../../services/wallet.service'; // Assume you have a service to fetch wallets
@@ -60,8 +60,9 @@ type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
   ],
 })
 export class WalletInfoComponent implements OnInit, OnDestroy {
-  @ViewChild('reviewActionComponent')
-  reviewActionComponent!: ReviewActionComponent;
+  readonly reviewActionComponent = viewChild.required<ReviewActionComponent>(
+    'reviewActionComponent',
+  );
 
   protected wallet: AppWallet | undefined = undefined;
   protected tokens: undefined | { ticker: string; balance: number }[] =

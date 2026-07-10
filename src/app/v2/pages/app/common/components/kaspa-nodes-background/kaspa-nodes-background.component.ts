@@ -1,10 +1,10 @@
 import {
   Component,
   ElementRef,
-  ViewChild,
   AfterViewInit,
   OnDestroy,
   input,
+  viewChild,
 } from '@angular/core';
 
 class GraphNode {
@@ -114,8 +114,8 @@ export interface KaspaNodesConfig {
   styleUrls: ['./kaspa-nodes-background.component.scss'],
 })
 export class KaspaNodesBackgroundComponent implements AfterViewInit, OnDestroy {
-  @ViewChild('backgroundCanvas', { static: true })
-  canvasRef!: ElementRef<HTMLCanvasElement>;
+  readonly canvasRef =
+    viewChild.required<ElementRef<HTMLCanvasElement>>('backgroundCanvas');
   readonly config = input<KaspaNodesConfig>({});
 
   private animationId: number | null = null;
@@ -164,7 +164,7 @@ export class KaspaNodesBackgroundComponent implements AfterViewInit, OnDestroy {
   }
 
   private initCanvas() {
-    this.canvas = this.canvasRef.nativeElement;
+    this.canvas = this.canvasRef().nativeElement;
     this.ctx = this.canvas.getContext('2d')!;
 
     // Set initial canvas size

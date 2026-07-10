@@ -1,9 +1,23 @@
-import { Component, computed, inject, OnInit, OnDestroy, ViewChild, AfterViewInit, Injector } from '@angular/core';
-import { CommonModule, DecimalPipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
+import {
+  Component,
+  computed,
+  inject,
+  OnInit,
+  OnDestroy,
+  AfterViewInit,
+  Injector,
+  viewChild,
+} from '@angular/core';
+import {
+  CommonModule,
+  DecimalPipe,
+  TitleCasePipe,
+  UpperCasePipe,
+} from '@angular/common';
 import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
 import { ITokenWithMetadata } from '../../../../../../../common/interfaces/token.interface';
-import { SkeletonComponent } from "../../../../../../../../../shared/ui/skeleton";
+import { SkeletonComponent } from '../../../../../../../../../shared/ui/skeleton';
 import { Krc20MetadataService } from '../../../../../../../../../../services/asset-metadata/krc20-metadata.service';
 import { InfiniteScrollDirective } from '../../../../../../../../../../directives/infinite-scroll.directive';
 import { toObservable } from '@angular/core/rxjs-interop';
@@ -17,52 +31,71 @@ import { Krc20TokenLogoComponent } from '../../../../../../../home/assets-lists/
 @Component({
   selector: 'app-send-krc20-list',
   standalone: true,
-  imports: [CommonModule, Krc20TokenLogoComponent, SkeletonComponent, DecimalPipe, TitleCasePipe, UpperCasePipe, InfiniteScrollDirective],
+  imports: [
+    CommonModule,
+    Krc20TokenLogoComponent,
+    SkeletonComponent,
+    DecimalPipe,
+    TitleCasePipe,
+    UpperCasePipe,
+    InfiniteScrollDirective,
+  ],
   templateUrl: './send-krc20-list.component.html',
-  styleUrl: './send-krc20-list.component.scss'
+  styleUrl: './send-krc20-list.component.scss',
 })
-export class SendKrc20ListComponent extends FlowPageBaseComponent implements OnInit, OnDestroy, AfterViewInit {
+export class SendKrc20ListComponent
+  extends FlowPageBaseComponent
+  implements OnInit, OnDestroy, AfterViewInit
+{
   private krc20MetadataService = inject(Krc20MetadataService);
   private injector = inject(Injector);
   private destroy$ = new Subject<void>();
   private krc20Assets$!: Observable<GetTokenListDto[] | undefined>;
   private assetsManagerService = inject(AssetsManagerService);
 
-  @ViewChild(InfiniteScrollDirective) infiniteScroll!: InfiniteScrollDirective;
+  readonly infiniteScroll = viewChild.required(InfiniteScrollDirective);
 
   // Show tokens immediately from assets store, enhanced with metadata when available
   tokens = computed<ITokenWithMetadata[]>(() => {
-    const krc20Assets = this.assetsManagerService.getAllAssetStores().l1.getAssets(L1_ASSET_KEYS.krc20);
+    const krc20Assets = this.assetsManagerService
+      .getAllAssetStores()
+      .l1.getAssets(L1_ASSET_KEYS.krc20);
     const paginatedAssets = this.krc20MetadataService.paginatedAssets();
-    
+
     // Create a map of metadata by tick
     const metadataMap = new Map();
-    paginatedAssets.forEach(item => {
+    paginatedAssets.forEach((item) => {
       metadataMap.set(item.data.tick, {
         metadata: item.metadata,
-        isLoadingMetadata: item.isLoadingMetadata
+        isLoadingMetadata: item.isLoadingMetadata,
       });
     });
-    
-    return krc20Assets.map(token => {
+
+    return krc20Assets.map((token) => {
       const metadataInfo = metadataMap.get(token.tick);
-      
+
       return {
         name: token.tick,
         symbol: token.tick.toUpperCase(),
         address: token.tick,
         balance: token.balance,
         priceKas: token.priceKas,
-        isLoadingMetadata: metadataInfo?.isLoadingMetadata || false
+        isLoadingMetadata: metadataInfo?.isLoadingMetadata || false,
       };
     });
   });
-  
-  loading = computed(() => !this.assetsManagerService.getAllAssetStores().l1.getAssetSignal(L1_ASSET_KEYS.krc20)());
-  
-  isLoadingMore = computed(() => 
-    this.krc20MetadataService.isLoading() && 
-    this.krc20MetadataService.paginatedAssets().length > 0
+
+  loading = computed(
+    () =>
+      !this.assetsManagerService
+        .getAllAssetStores()
+        .l1.getAssetSignal(L1_ASSET_KEYS.krc20)(),
+  );
+
+  isLoadingMore = computed(
+    () =>
+      this.krc20MetadataService.isLoading() &&
+      this.krc20MetadataService.paginatedAssets().length > 0,
   );
 
   hasMore = computed(() => this.krc20MetadataService.hasMoreItems());
@@ -71,25 +104,28 @@ export class SendKrc20ListComponent extends FlowPageBaseComponent implements OnI
     return {
       id: 'send-krc20-list',
       title: 'Select KRC20 Token',
-      canNavigateBack: true
+      canNavigateBack: true,
     };
   }
 
   override ngOnInit() {
     super.ngOnInit();
-    
+
     // Create observable within injection context to ensure proper signal binding
-    this.krc20Assets$ = runInInjectionContext(this.injector, () => 
-      toObservable(this.assetsManagerService.getAllAssetStores().l1.getAssetSignal(L1_ASSET_KEYS.krc20))
+    this.krc20Assets$ = runInInjectionContext(this.injector, () =>
+      toObservable(
+        this.assetsManagerService
+          .getAllAssetStores()
+          .l1.getAssetSignal(L1_ASSET_KEYS.krc20),
+      ),
     );
-    
+
     // Initialize metadata service when assets are available, but don't block display
-    this.krc20Assets$.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(assets => {
+    this.krc20Assets$.pipe(takeUntil(this.destroy$)).subscribe((assets) => {
       if (assets && assets.length > 0) {
         // Only initialize if metadata service doesn't have any assets yet
-        const currentPaginatedAssets = this.krc20MetadataService.paginatedAssets();
+        const currentPaginatedAssets =
+          this.krc20MetadataService.paginatedAssets();
         if (currentPaginatedAssets.length === 0) {
           // Initialize metadata service in background
           setTimeout(() => {
@@ -103,8 +139,9 @@ export class SendKrc20ListComponent extends FlowPageBaseComponent implements OnI
   ngAfterViewInit(): void {
     // Check initial scroll position after view init
     setTimeout(() => {
-      if (this.infiniteScroll) {
-        this.infiniteScroll.checkScroll();
+      const infiniteScroll = this.infiniteScroll();
+      if (infiniteScroll) {
+        infiniteScroll.checkScroll();
       }
     }, 100);
   }
@@ -129,7 +166,7 @@ export class SendKrc20ListComponent extends FlowPageBaseComponent implements OnI
       id: 'send-krc20',
       title: `Send ${token.name}`,
       canNavigateBack: true,
-      data: { token }
+      data: { token },
     });
   }
 }

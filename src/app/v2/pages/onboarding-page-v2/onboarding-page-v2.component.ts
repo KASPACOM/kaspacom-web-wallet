@@ -2,11 +2,11 @@ import {
   Component,
   computed,
   signal,
-  ViewChild,
   ElementRef,
   AfterViewInit,
   OnDestroy,
   inject,
+  viewChild,
 } from '@angular/core';
 
 import {
@@ -58,8 +58,8 @@ interface PanelCopy {
   styleUrl: './onboarding-page-v2.component.scss',
 })
 export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
-  @ViewChild('graphCanvas', { static: false })
-  graphCanvas!: ElementRef<HTMLCanvasElement>;
+  readonly graphCanvas =
+    viewChild.required<ElementRef<HTMLCanvasElement>>('graphCanvas');
   readonly OnboardingStep = OnboardingStep;
 
   onboardingStep = signal(OnboardingStep.WELCOME);
@@ -310,7 +310,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
   }
 
   private initGraphAnimation(): void {
-    const canvas = this.graphCanvas.nativeElement;
+    const canvas = this.graphCanvas().nativeElement;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     this.ctx = ctx;
@@ -339,7 +339,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
   }
 
   private resizeCanvas(): void {
-    const canvas = this.graphCanvas.nativeElement;
+    const canvas = this.graphCanvas().nativeElement;
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
   }
@@ -355,7 +355,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
   }
 
   private drawConnections(): void {
-    const canvas = this.graphCanvas.nativeElement;
+    const canvas = this.graphCanvas().nativeElement;
     const maxDistance = Math.max(canvas.width, canvas.height);
 
     for (let i = 0; i < this.nodes.length; i++) {
@@ -398,7 +398,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
   }
 
   private animate(): void {
-    const canvas = this.graphCanvas.nativeElement;
+    const canvas = this.graphCanvas().nativeElement;
 
     // Clear canvas
     this.ctx.clearRect(0, 0, canvas.width, canvas.height);

@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { Component, HostListener } from '@angular/core';
 import { QRCodeComponent } from 'angularx-qrcode';
 import { PasswordManagerService } from '../../../services/password-manager.service';
@@ -9,7 +8,7 @@ import { MessagePopupService } from '../../../services/message-popup.service';
   selector: 'export-wallets-qr',
   templateUrl: './export-wallets-qr.component.html',
   styleUrls: ['./export-wallets-qr.component.scss'],
-  imports: [NgIf, QRCodeComponent],
+  imports: [QRCodeComponent],
 })
 export class ExportWalletsQrComponent {
   showPasswordPrompt: boolean = false; // Signal to display the password prompt
@@ -20,7 +19,7 @@ export class ExportWalletsQrComponent {
 
   constructor(
     private passwordManagerService: PasswordManagerService,
-    private messagePopupService: MessagePopupService
+    private messagePopupService: MessagePopupService,
   ) {
     this.updateQrCodeSize();
   }
@@ -44,7 +43,7 @@ export class ExportWalletsQrComponent {
       this.showPasswordPrompt = false;
 
       const encryptedUserData = localStorage.getItem(
-        LOCAL_STORAGE_KEYS.USER_DATA
+        LOCAL_STORAGE_KEYS.USER_DATA,
       );
 
       if (encryptedUserData) {
@@ -52,7 +51,7 @@ export class ExportWalletsQrComponent {
       }
     } else {
       this.messagePopupService.showError(
-        'Incorrect password. Please try again.'
+        'Incorrect password. Please try again.',
       );
     }
   }
@@ -67,8 +66,8 @@ export class ExportWalletsQrComponent {
     link.setAttribute(
       'href',
       `data:text/plain;charset=utf-8,${encodeURIComponent(
-        this.encryptedUserData!
-      )}`
+        this.encryptedUserData!,
+      )}`,
     );
     link.setAttribute('download', 'kaspacom-wallets.key');
 

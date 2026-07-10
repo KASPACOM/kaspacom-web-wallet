@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, inject, output, signal } from '@angular/core';
 import {
   AbstractControl,
@@ -18,7 +17,6 @@ import { ImportExistingFlowService } from '../../service/import-existing-flow.se
 @Component({
   selector: 'app-create-pin-import-existing-step',
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     KcButtonComponent,
     KcInputComponent,
@@ -46,7 +44,7 @@ export class CreatePinImportExistingStepComponent {
         [
           Validators.required,
           Validators.minLength(8),
-          Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/)
+          Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/),
         ],
       ],
       confirmPassword: [

@@ -1,5 +1,5 @@
 import { Component, signal, OnInit, inject, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute, Router } from '@angular/router';
 import { BalanceComponent } from './balance/balance.component';
 import { CryptoActionsComponent } from './crypto-actions/crypto-actions.component';
@@ -12,7 +12,6 @@ import { KaspaNetworkActionsService } from '../../../../services/kaspa-netwrok-s
 @Component({
   selector: 'app-home',
   imports: [
-    CommonModule,
     BalanceComponent,
     CryptoActionsComponent,
     L1AssetsContainerComponent,
@@ -27,13 +26,18 @@ export class HomeComponent implements OnInit {
 
   kasBalance = computed<number | null>(() => {
     if (this.walletService.isL2Display()) {
-      return this.walletService.getCurrentWallet()?.getL2WalletStateSignal()()?.balanceFormatted || 0;
+      return (
+        this.walletService.getCurrentWallet()?.getL2WalletStateSignal()()
+          ?.balanceFormatted || 0
+      );
     } else {
-      return this.walletService.getCurrentWallet()?.getTotalBalanceAsSignal() || 0;
+      return (
+        this.walletService.getCurrentWallet()?.getTotalBalanceAsSignal() || 0
+      );
     }
   });
 
   isL2Display = computed(() => this.walletService.getIsL2DisplaySignal()());
 
-  ngOnInit() { }
+  ngOnInit() {}
 }

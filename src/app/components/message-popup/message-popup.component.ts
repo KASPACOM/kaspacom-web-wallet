@@ -1,13 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
 export type MessageType = 'success' | 'error' | 'warning' | 'info';
 
 @Component({
-    selector: 'app-message-popup',
-    imports: [CommonModule],
-    templateUrl: './message-popup.component.html',
-    styleUrls: ['./message-popup.component.scss']
+  selector: 'app-message-popup',
+  imports: [],
+  templateUrl: './message-popup.component.html',
+  styleUrls: ['./message-popup.component.scss'],
 })
 export class MessagePopupComponent {
   @Input() message: string = '';
@@ -33,4 +32,4 @@ export class MessagePopupComponent {
   onClose(): void {
     this.close.emit();
   }
-} 
+}

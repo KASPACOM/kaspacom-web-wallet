@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   Component,
   computed,
@@ -20,7 +19,6 @@ import { ImportExistingFlowService } from '../../service/import-existing-flow.se
 @Component({
   selector: 'app-seed-passphrase-import-existing-step',
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     KcButtonComponent,
     KcInputComponent,

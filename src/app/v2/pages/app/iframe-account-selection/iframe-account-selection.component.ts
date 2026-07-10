@@ -1,5 +1,12 @@
-import { Component, inject, signal, EventEmitter, Output, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {
+  Component,
+  inject,
+  signal,
+  EventEmitter,
+  Output,
+  computed,
+} from '@angular/core';
+
 import { Router } from '@angular/router';
 import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { WalletService } from '../../../../services/wallet.service';
@@ -25,7 +32,7 @@ interface WalletAccountItem {
 @Component({
   selector: 'app-iframe-account-selection',
   standalone: true,
-  imports: [CommonModule, KcButtonComponent, KcIconComponent, ShortenAddressPipe],
+  imports: [KcButtonComponent, KcIconComponent, ShortenAddressPipe],
   templateUrl: './iframe-account-selection.component.html',
   styleUrl: './iframe-account-selection.component.scss',
 })
@@ -42,9 +49,7 @@ export class IframeAccountSelectionComponent {
   isWalletSelectionVisible = computed(
     () => this.hasMultipleWallets() && !this.selectedWalletGroup(),
   );
-  selectedWalletName = computed(
-    () => this.selectedWalletGroup()?.name || '',
-  );
+  selectedWalletName = computed(() => this.selectedWalletGroup()?.name || '');
   accountItems = computed<WalletAccountItem[]>(() => {
     const group = this.selectedWalletGroup();
     if (!group) {
@@ -114,7 +119,9 @@ export class IframeAccountSelectionComponent {
   }
 
   async selectAccount(account: WalletAccountItem): Promise<void> {
-    await this.walletService.selectCurrentWallet(account.wallet.getIdWithAccount());
+    await this.walletService.selectCurrentWallet(
+      account.wallet.getIdWithAccount(),
+    );
     this.accountSelected.emit();
   }
 
@@ -138,7 +145,8 @@ export class IframeAccountSelectionComponent {
   }
 
   private getWalletAddress(wallet: AppWallet): string {
-    return this.walletService.isL2Display() ? wallet.getL2WalletAddress() : wallet.getAddress();
+    return this.walletService.isL2Display()
+      ? wallet.getL2WalletAddress()
+      : wallet.getAddress();
   }
 }
-

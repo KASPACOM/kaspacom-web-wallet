@@ -8,7 +8,7 @@ import {
   OnDestroy,
   inject,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import {
   FormBuilder,
   FormsModule,
@@ -45,7 +45,6 @@ interface PanelCopy {
 @Component({
   selector: 'app-onboarding-page-v2',
   imports: [
-    CommonModule,
     FormsModule,
     ReactiveFormsModule,
     KcButtonComponent,

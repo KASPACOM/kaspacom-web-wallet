@@ -30,15 +30,16 @@
   >
     <span class="import-switch__label">Private Key</span>
   </button>
-  <button
-    *ngIf="showImportFromFile()"
-    class="import-switch__option"
-    [class.import-switch__option--active]="
-      selectedMethod() === ImportSwitchMethod.BACKUP
-    "
-    (click)="methodChanged.emit(ImportSwitchMethod.BACKUP)"
-    type="button"
-  >
-    <span class="import-switch__label">Backup File</span>
-  </button>
+  @if (showImportFromFile()) {
+    <button
+      class="import-switch__option"
+      [class.import-switch__option--active]="
+        selectedMethod() === ImportSwitchMethod.BACKUP
+      "
+      (click)="methodChanged.emit(ImportSwitchMethod.BACKUP)"
+      type="button"
+    >
+      <span class="import-switch__label">Backup File</span>
+    </button>
+  }
 </div>

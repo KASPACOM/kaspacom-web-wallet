@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectorRef,
   Component,
@@ -26,7 +25,6 @@ import { ImportSwitchMethod } from '../import-switch-import-existing-step/compon
 @Component({
   selector: 'app-seed-phrase-import-existing-step',
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     KcButtonComponent,
     KcInputComponent,

@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   Component,
   computed,
@@ -20,7 +19,6 @@ import { ImportSwitchMethod } from '../import-switch-import-existing-step/compon
 @Component({
   selector: 'app-private-key-import-existing-step',
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     KcButtonComponent,
     KcInputComponent,

@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router } from '@angular/router';
 import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
@@ -11,7 +11,7 @@ import { WalletService } from '../../../../../services/wallet.service';
 @Component({
   selector: 'app-settings-menu',
   standalone: true,
-  imports: [CommonModule, KcButtonComponent, KcIconComponent],
+  imports: [KcButtonComponent, KcIconComponent],
   templateUrl: './settings-menu.component.html',
   styleUrl: './settings-menu.component.scss',
 })
@@ -54,10 +54,10 @@ export class SettingsMenuComponent extends FlowPageBaseComponent {
     try {
       // Use centralized logout method from WalletService
       await this.walletService.logout();
-      
+
       // Close all flow pages
       this.flowPagesService.closePage();
-      
+
       // Navigate to the onboarding screen which now handles login
       this.router.navigate(['/onboarding']);
     } catch (error) {

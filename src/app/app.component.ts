@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import {
   AfterViewInit,
   Component,
@@ -8,7 +7,7 @@ import {
   OnInit,
   Renderer2,
   inject,
-  DOCUMENT
+  DOCUMENT,
 } from '@angular/core';
 import { Meta } from '@angular/platform-browser';
 import { RouterOutlet } from '@angular/router';
@@ -30,7 +29,6 @@ import { WalletService } from './services/wallet.service';
   selector: 'app-root',
   imports: [
     RouterOutlet,
-    NgIf,
     MessagePopupComponent,
     StartupBackgroundCanvasComponent,
   ],

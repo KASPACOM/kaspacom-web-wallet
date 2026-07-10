@@ -21,6 +21,9 @@ export class Krc20OperationHistoryComponent {
   public KRC20OperationType = KRC20OperationType;
   public Number = Number;
 
+  // TODO: Skipped for migration because:
+  //  This input is used in a control flow expression (e.g. `@if` or `*ngIf`)
+  //  and migrating would break narrowing currently.
   @Input() operations: undefined | OperationDetails[];
   readonly wallet = input.required<AppWallet>();
 

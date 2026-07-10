@@ -66,7 +66,13 @@ import {
 })
 export class QuickActionDialogComponent implements OnChanges {
   readonly isOpen = input(false);
+  // TODO: Skipped for migration because:
+  //  This input is used in a control flow expression (e.g. `@if` or `*ngIf`)
+  //  and migrating would break narrowing currently.
   @Input() title?: string;
+  // TODO: Skipped for migration because:
+  //  This input is used in a control flow expression (e.g. `@if` or `*ngIf`)
+  //  and migrating would break narrowing currently.
   @Input() isCloseable = true;
   @Output() backdropClick = new EventEmitter<void>();
   @Output() close = new EventEmitter<void>();

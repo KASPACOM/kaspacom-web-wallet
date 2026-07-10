@@ -44,6 +44,8 @@ export class AddressSmartInputComponent implements OnChanges {
   readonly isDisabled = input<boolean>(false);
   readonly isFullWidth = input<boolean>(true);
   readonly showQrButton = input<boolean>(true);
+  // TODO: Skipped for migration because:
+  //  Your application code writes to the input. This prevents migration.
   @Input() value: string = '';
   readonly isValid = input<boolean>(true);
   readonly invalidReason = input<string>('');

@@ -5,8 +5,8 @@ import {
   computed,
   EventEmitter,
   inject,
-  Input,
   Output,
+  input,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { KcButtonComponent, NotificationService } from 'kaspacom-ui';
@@ -29,8 +29,8 @@ interface DeleteWalletDialogData {
   styleUrl: './delete-wallet-quick-action-dialog.component.scss',
 })
 export class DeleteWalletQuickActionDialogComponent implements AfterViewInit {
-  @Input() isOpen = false;
-  @Input() data: DeleteWalletDialogData | undefined;
+  readonly isOpen = input(false);
+  readonly data = input<DeleteWalletDialogData>();
   @Output() backdropClick = new EventEmitter<void>();
   @Output() close = new EventEmitter<void>();
 
@@ -61,7 +61,7 @@ export class DeleteWalletQuickActionDialogComponent implements AfterViewInit {
   }
 
   get walletName(): string {
-    return this.data?.walletName || '';
+    return this.data()?.walletName || '';
   }
 
   onBackdropClick(): void {
@@ -84,7 +84,8 @@ export class DeleteWalletQuickActionDialogComponent implements AfterViewInit {
   }
 
   async onDelete(): Promise<void> {
-    const wallet = this.data?.wallet;
+    const data = this.data();
+    const wallet = data?.wallet;
     if (!wallet) {
       this.notificationService.error('Error', 'No wallet selected');
       return;
@@ -98,8 +99,8 @@ export class DeleteWalletQuickActionDialogComponent implements AfterViewInit {
         'Success',
         `Wallet "${this.walletName}" deleted successfully!`,
       );
-      if (this.data?.onSuccess) {
-        this.data.onSuccess();
+      if (data?.onSuccess) {
+        data.onSuccess();
       }
       this.closeDialog();
     } else {

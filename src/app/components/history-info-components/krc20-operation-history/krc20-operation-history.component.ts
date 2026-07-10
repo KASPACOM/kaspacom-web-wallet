@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, input } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
@@ -22,7 +22,7 @@ export class Krc20OperationHistoryComponent {
   public Number = Number;
 
   @Input() operations: undefined | OperationDetails[];
-  @Input() wallet!: AppWallet;
+  readonly wallet = input.required<AppWallet>();
 
   constructor(protected readonly utils: UtilsHelper) {}
 
@@ -34,19 +34,20 @@ export class Krc20OperationHistoryComponent {
     let op = operation.op.charAt(0).toUpperCase() + operation.op.slice(1);
 
     if (operation.op === KRC20OperationType.SEND) {
+      const wallet = this.wallet();
       if (
-        operation.from === this.wallet.getAddress() &&
-        operation.to === this.wallet.getAddress()
+        operation.from === wallet.getAddress() &&
+        operation.to === wallet.getAddress()
       ) {
         op = `${op} (Cancel List)`;
       } else if (
         operation.op === KRC20OperationType.SEND &&
-        operation.to === this.wallet.getAddress()
+        operation.to === wallet.getAddress()
       ) {
         op = `${op} (Buy)`;
       } else if (
         operation.op === KRC20OperationType.SEND &&
-        operation.from === this.wallet.getAddress()
+        operation.from === wallet.getAddress()
       ) {
         op = `${op} (Sell)`;
       }
@@ -76,7 +77,7 @@ export class Krc20OperationHistoryComponent {
         };
       case KRC20OperationType.TRANSFER:
       case KRC20OperationType.SEND:
-        const isToThisWallet = operation.to === this.wallet.getAddress();
+        const isToThisWallet = operation.to === this.wallet().getAddress();
 
         return {
           balance:

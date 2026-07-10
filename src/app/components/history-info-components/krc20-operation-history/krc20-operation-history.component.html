@@ -96,7 +96,7 @@
               op.from &&
               (op.op == KRC20OperationType.TRANSFER ||
                 op.op == KRC20OperationType.SEND) &&
-              wallet.getAddress() != op.from
+              wallet().getAddress() != op.from
             ) {
               <div class="operation-detail">
                 <strong>From:</strong>
@@ -107,7 +107,7 @@
               op.to &&
               (op.op == KRC20OperationType.TRANSFER ||
                 op.op == KRC20OperationType.SEND) &&
-              wallet.getAddress() != op.to
+              wallet().getAddress() != op.to
             ) {
               <div class="operation-detail">
                 <strong>To:</strong>

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Output, EventEmitter, input } from '@angular/core';
 
 import { KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
 import {
@@ -60,12 +60,12 @@ import {
   ],
 })
 export class FlowPageComponent {
-  @Input() isOpen = false;
-  @Input() title = '';
-  @Input() canNavigateBack = false;
-  @Input() canClose = false;
-  @Input() showTitle = true;
-  @Input() showBackground = true;
+  readonly isOpen = input(false);
+  readonly title = input('');
+  readonly canNavigateBack = input(false);
+  readonly canClose = input(false);
+  readonly showTitle = input(true);
+  readonly showBackground = input(true);
   @Output() navigateBack = new EventEmitter<void>();
   @Output() backdropClick = new EventEmitter<void>();
   @Output() close = new EventEmitter<void>();

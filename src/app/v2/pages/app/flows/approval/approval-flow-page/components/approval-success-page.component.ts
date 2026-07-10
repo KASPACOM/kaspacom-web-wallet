@@ -1,4 +1,4 @@
-import { Component, computed, inject, Input, OnInit } from '@angular/core';
+import { Component, computed, inject, OnInit, input } from '@angular/core';
 
 import { Router } from '@angular/router';
 import {
@@ -133,17 +133,18 @@ export class ApprovalSuccessPageComponent {
   private router = inject(Router);
   private walletActionService = inject(WalletActionService);
 
-  @Input() actionResult!: WalletActionResult;
+  readonly actionResult = input.required<WalletActionResult>();
 
   // Spoiler state
   protected showDetails = false;
 
   get successTitle(): string {
-    if (!this.actionResult) {
+    const actionResult = this.actionResult();
+    if (!actionResult) {
       return 'Transaction Successful!';
     }
 
-    switch (this.actionResult.type) {
+    switch (actionResult.type) {
       case WalletActionResultType.CompoundUtxos:
         return 'UTXOs compounded successfully!';
       default:
@@ -152,7 +153,7 @@ export class ApprovalSuccessPageComponent {
   }
 
   actionDisplay = computed(() =>
-    this.completedActionOverviewService.getActionDisplay(this.actionResult),
+    this.completedActionOverviewService.getActionDisplay(this.actionResult()),
   );
 
   toggleDetails() {
@@ -161,7 +162,7 @@ export class ApprovalSuccessPageComponent {
 
   onDone() {
     // Determine the appropriate tab based on the action result
-    const tab = this.getTabForActionResult(this.actionResult);
+    const tab = this.getTabForActionResult(this.actionResult());
 
     // Navigate to homepage with the correct tab
     this.router.navigate(['/app/home'], { queryParams: { tab } });

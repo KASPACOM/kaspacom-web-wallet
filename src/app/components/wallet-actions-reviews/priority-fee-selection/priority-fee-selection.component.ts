@@ -1,10 +1,10 @@
 import {
   Component,
   EventEmitter,
-  Input,
   OnChanges,
   Output,
   SimpleChanges,
+  input,
 } from '@angular/core';
 import {
   trigger,
@@ -68,8 +68,8 @@ const MINIMUM_FEE_MULTIPLIER = 100n;
   ],
 })
 export class PriorityFeeSelectionComponent implements OnChanges {
-  @Input() action!: WalletAction;
-  @Input() wallet!: AppWallet;
+  readonly action = input.required<WalletAction>();
+  readonly wallet = input.required<AppWallet>();
   @Output() priorityFeeSelected = new EventEmitter<bigint | undefined>();
 
   protected minimumFeeMultiplier = MINIMUM_FEE_MULTIPLIER;
@@ -100,13 +100,14 @@ export class PriorityFeeSelectionComponent implements OnChanges {
     ticker?: string;
     imageUrl?: string;
   } {
-    if (this.action.type === WalletActionType.TRANSFER_KAS) {
+    const action = this.action();
+    if (action.type === WalletActionType.TRANSFER_KAS) {
       return { type: 'kaspa' };
     }
 
-    if (this.action.type === WalletActionType.COMMIT_REVEAL) {
+    if (action.type === WalletActionType.COMMIT_REVEAL) {
       try {
-        const actionScript = this.action.data.actionScript?.stringifyAction;
+        const actionScript = action.data.actionScript?.stringifyAction;
         if (actionScript) {
           const parsed = JSON.parse(actionScript);
           if (parsed.p === 'krc-20') {
@@ -136,13 +137,13 @@ export class PriorityFeeSelectionComponent implements OnChanges {
   async ngOnChanges(changes: SimpleChanges): Promise<void> {
     this.totalTransactionsMass = undefined;
     this.feeSelected(undefined);
-    await this.loadPriorityFeeDataAndEmit(this.action);
+    await this.loadPriorityFeeDataAndEmit(this.action());
   }
 
   async loadPriorityFeeDataAndEmit(action: WalletAction) {
     await Promise.all([
       this.kaspaNetworkActionsService
-        .estimateWalletActionMass(action, this.wallet)
+        .estimateWalletActionMass(action, this.wallet())
         .then((result) => {
           this.totalTransactionsMass = result;
         }),
@@ -239,8 +240,9 @@ export class PriorityFeeSelectionComponent implements OnChanges {
   }
 
   getAdditionalCommitActionPrice(): bigint {
-    if (this.action.type == WalletActionType.COMMIT_REVEAL) {
-      return this.action.data.options?.revealPriorityFee || 0n;
+    const action = this.action();
+    if (action.type == WalletActionType.COMMIT_REVEAL) {
+      return action.data.options?.revealPriorityFee || 0n;
     }
 
     return 0n;

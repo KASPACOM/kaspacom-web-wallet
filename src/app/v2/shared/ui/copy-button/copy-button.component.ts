@@ -1,4 +1,4 @@
-import { Component, Input, signal, OnDestroy } from '@angular/core';
+import { Component, signal, OnDestroy, input } from '@angular/core';
 import { KcIconComponent } from 'kaspacom-ui';
 
 @Component({
@@ -12,8 +12,8 @@ import { KcIconComponent } from 'kaspacom-ui';
   },
 })
 export class CopyButtonComponent implements OnDestroy {
-  @Input() value: string = '';
-  @Input() size: 'xs' | 'sm' | 'md' | 'lg' | 'xlg' = 'xs';
+  readonly value = input<string>('');
+  readonly size = input<'xs' | 'sm' | 'md' | 'lg' | 'xlg'>('xs');
 
   private isSuccess = signal(false);
   private successTimeout: NodeJS.Timeout | null = null;
@@ -27,10 +27,11 @@ export class CopyButtonComponent implements OnDestroy {
   }
 
   async copyValue(): Promise<void> {
-    if (!this.value) return;
+    const value = this.value();
+    if (!value) return;
 
     try {
-      await navigator.clipboard.writeText(this.value);
+      await navigator.clipboard.writeText(value);
       this.showSuccessState();
     } catch (error) {
       console.error('Failed to copy value:', error);

@@ -1,12 +1,12 @@
 import {
   Component,
   EventEmitter,
-  Input,
   Output,
   computed,
   inject,
   OnChanges,
   SimpleChanges,
+  input,
 } from '@angular/core';
 
 import {
@@ -39,8 +39,8 @@ import type { SwapSettings } from '@kaspacom/swap-sdk';
 export class SwapSettingsModalComponent implements OnChanges {
   private fb = inject(FormBuilder);
 
-  @Input() open = false;
-  @Input() initialSettings: Partial<SwapSettings> | undefined;
+  readonly open = input(false);
+  readonly initialSettings = input<Partial<SwapSettings>>();
   @Output() close = new EventEmitter<void>();
   @Output() save = new EventEmitter<SwapSettings>();
 
@@ -66,11 +66,10 @@ export class SwapSettingsModalComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['initialSettings'] || changes['open']) {
-      if (this.open && this.initialSettings) {
-        const maxSlippageValue = this.initialSettings.maxSlippage || '0.5';
-        const swapDeadlineValue = String(
-          this.initialSettings.swapDeadline || 20,
-        );
+      const initialSettings = this.initialSettings();
+      if (this.open() && initialSettings) {
+        const maxSlippageValue = initialSettings.maxSlippage || '0.5';
+        const swapDeadlineValue = String(initialSettings.swapDeadline || 20);
         this.settingsForm = this.createForm(
           maxSlippageValue,
           swapDeadlineValue,

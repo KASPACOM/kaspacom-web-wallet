@@ -7,6 +7,7 @@ import {
   signal,
   OnChanges,
   SimpleChanges,
+  input,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
@@ -38,15 +39,15 @@ import {
 export class AddressSmartInputComponent implements OnChanges {
   private readonly resolver = inject(AddressResolutionService);
 
-  @Input() label: string = 'Wallet Address';
-  @Input() placeholder: string = 'Enter wallet address or KNS domain';
-  @Input() isDisabled: boolean = false;
-  @Input() isFullWidth: boolean = true;
-  @Input() showQrButton: boolean = true;
+  readonly label = input<string>('Wallet Address');
+  readonly placeholder = input<string>('Enter wallet address or KNS domain');
+  readonly isDisabled = input<boolean>(false);
+  readonly isFullWidth = input<boolean>(true);
+  readonly showQrButton = input<boolean>(true);
   @Input() value: string = '';
-  @Input() isValid: boolean = true;
-  @Input() invalidReason: string = '';
-  @Input() validationDebounceMs: number = 300;
+  readonly isValid = input<boolean>(true);
+  readonly invalidReason = input<string>('');
+  readonly validationDebounceMs = input<number>(300);
 
   @Output() valueChange = new EventEmitter<string>();
   @Output() resolved = new EventEmitter<AddressResolutionResult>();
@@ -72,10 +73,10 @@ export class AddressSmartInputComponent implements OnChanges {
       this.validationTimer = setTimeout(() => {
         // Do not surface external validation while we're resolving or considering a domain
         if (!this.isResolving() && !this.isDomainCandidate()) {
-          this.displayIsValid.set(this.isValid);
-          this.displayInvalidReason.set(this.invalidReason);
+          this.displayIsValid.set(this.isValid());
+          this.displayInvalidReason.set(this.invalidReason());
         }
-      }, this.validationDebounceMs);
+      }, this.validationDebounceMs());
     }
   }
 

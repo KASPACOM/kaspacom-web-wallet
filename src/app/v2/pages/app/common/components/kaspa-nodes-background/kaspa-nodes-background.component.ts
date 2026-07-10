@@ -4,7 +4,7 @@ import {
   ViewChild,
   AfterViewInit,
   OnDestroy,
-  Input,
+  input,
 } from '@angular/core';
 
 class GraphNode {
@@ -116,7 +116,7 @@ export interface KaspaNodesConfig {
 export class KaspaNodesBackgroundComponent implements AfterViewInit, OnDestroy {
   @ViewChild('backgroundCanvas', { static: true })
   canvasRef!: ElementRef<HTMLCanvasElement>;
-  @Input() config: KaspaNodesConfig = {};
+  readonly config = input<KaspaNodesConfig>({});
 
   private animationId: number | null = null;
   private canvas!: HTMLCanvasElement;
@@ -138,7 +138,7 @@ export class KaspaNodesBackgroundComponent implements AfterViewInit, OnDestroy {
   };
 
   private get mergedConfig(): Required<KaspaNodesConfig> {
-    return { ...this.defaultConfig, ...this.config };
+    return { ...this.defaultConfig, ...this.config() };
   }
 
   ngAfterViewInit() {

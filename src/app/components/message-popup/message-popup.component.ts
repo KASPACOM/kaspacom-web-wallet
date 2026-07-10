@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Output, EventEmitter, input } from '@angular/core';
 
 export type MessageType = 'success' | 'error' | 'warning' | 'info';
 
@@ -9,13 +9,13 @@ export type MessageType = 'success' | 'error' | 'warning' | 'info';
   styleUrls: ['./message-popup.component.scss'],
 })
 export class MessagePopupComponent {
-  @Input() message: string = '';
-  @Input() type: MessageType = 'info';
-  @Input() show: boolean = false;
+  readonly message = input<string>('');
+  readonly type = input<MessageType>('info');
+  readonly show = input<boolean>(false);
   @Output() close = new EventEmitter<void>();
 
   get icon(): string {
-    switch (this.type) {
+    switch (this.type()) {
       case 'success':
         return '✓';
       case 'error':

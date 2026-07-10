@@ -2,11 +2,11 @@ import {
   Component,
   computed,
   EventEmitter,
-  Input,
   OnChanges,
   Output,
   signal,
   SimpleChanges,
+  input,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -60,8 +60,8 @@ const MIN_CUSTOM_FEE = 1;
   ],
 })
 export class L2PriorityFeeSelectionComponent implements OnChanges {
-  @Input() action!: WalletAction;
-  @Input() wallet!: AppWallet;
+  readonly action = input.required<WalletAction>();
+  readonly wallet = input.required<AppWallet>();
   @Output() priorityFeeSelected = new EventEmitter<
     | {
         priorityFee: bigint;
@@ -210,7 +210,7 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
     this.feeSelected(undefined);
     this.gasLimit.set(undefined);
     this.updateGasLimit();
-    await this.loadPriorityFeeDataAndEmit(this.action);
+    await this.loadPriorityFeeDataAndEmit(this.action());
   }
 
   async loadPriorityFeeDataAndEmit(action: WalletAction): Promise<void> {
@@ -220,12 +220,12 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
     const transaction: EthTransactionParams = actionData
       .params[0] as EthTransactionParams;
 
-    const provider = this.wallet.getL2Provider();
+    const provider = this.wallet().getL2Provider();
     if (!provider) throw new Error('No provider found');
 
     try {
       let gasForTransaction = await provider.estimateGas(
-        (await this.wallet.getL2Wallet())!,
+        (await this.wallet().getL2Wallet())!,
         {
           from: transaction.from,
           to: transaction.to,
@@ -255,7 +255,7 @@ export class L2PriorityFeeSelectionComponent implements OnChanges {
     return Number(
       ethers.formatUnits(
         number,
-        this.wallet.getL2Provider()?.getConfig().nativeCurrency.decimals,
+        this.wallet().getL2Provider()?.getConfig().nativeCurrency.decimals,
       ),
     );
   }

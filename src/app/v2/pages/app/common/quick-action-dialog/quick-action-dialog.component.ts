@@ -5,6 +5,7 @@ import {
   EventEmitter,
   OnChanges,
   SimpleChanges,
+  input,
 } from '@angular/core';
 
 import { KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
@@ -64,7 +65,7 @@ import {
   ],
 })
 export class QuickActionDialogComponent implements OnChanges {
-  @Input() isOpen = false;
+  readonly isOpen = input(false);
   @Input() title?: string;
   @Input() isCloseable = true;
   @Output() backdropClick = new EventEmitter<void>();

@@ -1,4 +1,4 @@
-import { Component, effect, Input } from '@angular/core';
+import { Component, effect, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
@@ -25,16 +25,17 @@ type MappedTransaction = {
   imports: [FormsModule, SompiToNumberPipe, CommonModule],
 })
 export class TransactionHistoryComponent {
-  @Input() transactions: undefined | FullTransactionResponse;
-  @Input() wallet!: AppWallet;
+  readonly transactions = input<FullTransactionResponse>();
+  readonly wallet = input.required<AppWallet>();
 
   protected kaspaTransactionsHistoryMapped: undefined | MappedTransaction[] =
     undefined;
 
   constructor() {
     effect(() => {
-      if (this.transactions) {
-        this.kaspaTransactionsHistoryMapped = this.transactions.map((tx) =>
+      const transactions = this.transactions();
+      if (transactions) {
+        this.kaspaTransactionsHistoryMapped = transactions.map((tx) =>
           this.transformTransactionData(tx),
         );
       }
@@ -73,11 +74,11 @@ export class TransactionHistoryComponent {
       Object.values(receivers).reduce((acc, val) => acc + val, 0n);
 
     const totalForThisWallet =
-      (receivers[this.wallet!.getAddress()] || BigInt(0)) -
-      (senders[this.wallet!.getAddress()] || BigInt(0));
+      (receivers[this.wallet()!.getAddress()] || BigInt(0)) -
+      (senders[this.wallet()!.getAddress()] || BigInt(0));
 
-    delete senders[this.wallet!.getAddress()];
-    delete receivers[this.wallet!.getAddress()];
+    delete senders[this.wallet()!.getAddress()];
+    delete receivers[this.wallet()!.getAddress()];
 
     const walletsInBoth = Object.keys(senders).filter(
       (address) => !!receivers[address],

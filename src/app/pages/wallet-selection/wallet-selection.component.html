@@ -42,10 +42,10 @@
                 <p><strong>Account Name:</strong> {{ wallet.getAccountName() }}</p>
                 <p><strong>Wallet Address:</strong> {{ wallet.getAddress() }}</p>
                 <p><strong>Balance:</strong>
-                  <ng-container *ngIf="wallet.getTotalBalanceAsSignal() !== undefined; else loading">
+                  <ng-container *ngIf="wallet.getTotalBalanceAsSignal() !== undefined; else loadingAccount">
                     {{ wallet.getTotalBalanceAsSignal() }} KAS
                   </ng-container>
-                  <ng-template #loading>
+                  <ng-template #loadingAccount>
                     Loading...
                   </ng-template>
                 </p>

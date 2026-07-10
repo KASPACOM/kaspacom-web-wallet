@@ -9,8 +9,7 @@ import {
 } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
-import { KcInputComponent } from 'kaspacom-ui';
-import { KcButtonComponent } from '@kaspacom/ui-kit';
+import { KcInputComponent, KcButtonComponent } from '@kaspacom/ui-kit';
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
 import { WalletService } from '../../../../../../../services/wallet.service';
 import { MessagePopupService } from '../../../../../../../services/message-popup.service';

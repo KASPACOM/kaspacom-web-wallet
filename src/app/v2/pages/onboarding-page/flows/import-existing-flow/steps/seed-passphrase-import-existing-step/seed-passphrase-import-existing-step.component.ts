@@ -7,8 +7,8 @@ import {
   signal,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { KcInputComponent, NotificationService } from 'kaspacom-ui';
-import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
+import { NotificationService } from 'kaspacom-ui';
+import { KcInputComponent, KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import { WalletService } from '../../../../../../../services/wallet.service';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
 

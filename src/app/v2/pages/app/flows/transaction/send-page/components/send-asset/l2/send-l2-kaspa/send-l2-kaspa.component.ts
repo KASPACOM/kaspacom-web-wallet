@@ -11,8 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { EIP1193RequestType } from '@kaspacom/wallet-messages';
 import { parseUnits } from 'ethers';
-import { KcInputComponent } from 'kaspacom-ui';
-import { KcButtonComponent } from '@kaspacom/ui-kit';
+import { KcNumberInputComponent, KcButtonComponent } from '@kaspacom/ui-kit';
 import { TokenLogoComponent } from '../../../../../../../../../../components/token-logo/token-logo.component';
 import { EthereumWalletChainManager } from '../../../../../../../../../../services/etherium-services/etherium-wallet-chain.manager';
 import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
@@ -30,7 +29,7 @@ import { IFlowPageConfig } from '../../../../../../../common/flow-page/interface
   standalone: true,
   imports: [
     CommonModule,
-    KcInputComponent,
+    KcNumberInputComponent,
     KcButtonComponent,
     FormsModule,
     TokenLogoComponent,

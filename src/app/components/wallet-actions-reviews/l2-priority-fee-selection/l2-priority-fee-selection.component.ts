@@ -18,8 +18,7 @@ import {
 import { WalletAction } from '../../../types/wallet-action';
 import { AppWallet } from '../../../classes/AppWallet';
 import { FormsModule } from '@angular/forms';
-import { KcInputComponent } from '@kaspacom/ui';
-import { KcIconComponent } from '@kaspacom/ui-kit';
+import { KcNumberInputComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import {
   EIP1193RequestPayload,
   EIP1193RequestType,
@@ -35,7 +34,7 @@ const MIN_CUSTOM_FEE = 1;
   selector: 'l2-priority-fee-selection',
   templateUrl: './l2-priority-fee-selection.component.html',
   styleUrls: ['./l2-priority-fee-selection.component.scss'],
-  imports: [FormsModule, CommonModule, KcIconComponent, KcInputComponent],
+  imports: [FormsModule, CommonModule, KcIconComponent, KcNumberInputComponent],
   animations: [
     trigger('slideDown', [
       state(

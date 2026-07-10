@@ -43,63 +43,65 @@
       [label]="'Network Name'"
       [placeholder]="'e.g. Base, Polygon, Arbitrum'"
       [type]="'text'"
-      [isFullWidth]="true"
       [ngModel]="networkName()"
-      (valueChange)="networkName.set($event || '')"
+      (valueChange)="networkName.set($any($event) || '')"
     />
 
-    <kc-input
+    <kc-number-input
       [label]="'Chain ID'"
       [placeholder]="'e.g. 8453'"
-      [type]="'number'"
-      [isFullWidth]="true"
+      [enforceEthersFormat]="false"
       [isValid]="!chainIdError()"
-      [invalidReason]="chainIdError()"
       [ngModel]="chainId()"
       (valueChange)="chainId.set(coerceToString($event))"
     />
+    @if (chainIdError()) {
+      <span class="kc-input-error-text">{{ chainIdError() }}</span>
+    }
 
     <kc-input
       [label]="'RPC URL'"
       [placeholder]="'https://rpc.example.com'"
       [type]="'text'"
-      [isFullWidth]="true"
       [isValid]="!rpcUrlError()"
-      [invalidReason]="rpcUrlError()"
       [ngModel]="rpcUrl()"
-      (valueChange)="rpcUrl.set($event || '')"
+      (valueChange)="rpcUrl.set($any($event) || '')"
     />
+    @if (rpcUrlError()) {
+      <span class="kc-input-error-text">{{ rpcUrlError() }}</span>
+    }
 
     <kc-input
       [label]="'Currency Symbol'"
       [placeholder]="'ETH'"
       [type]="'text'"
-      [isFullWidth]="true"
       [ngModel]="currencySymbol()"
-      (valueChange)="currencySymbol.set($event || '')"
+      (valueChange)="currencySymbol.set($any($event) || '')"
     />
 
-    <kc-input
+    <kc-number-input
       [label]="'Decimals'"
       [placeholder]="'18'"
-      [type]="'number'"
-      [isFullWidth]="true"
+      [enforceEthersFormat]="false"
       [isValid]="!decimalsError()"
-      [invalidReason]="decimalsError()"
       [ngModel]="currencyDecimals()"
       (valueChange)="currencyDecimals.set(coerceToString($event))"
     />
+    @if (decimalsError()) {
+      <span class="kc-input-error-text">{{ decimalsError() }}</span>
+    }
 
     <kc-input
       [label]="'Block Explorer URL (optional)'"
       [placeholder]="'https://explorer.example.com'"
       [type]="'text'"
-      [isFullWidth]="true"
       [isValid]="!explorerUrlError()"
-      [invalidReason]="explorerUrlError()"
       [ngModel]="explorerUrl()"
-      (valueChange)="explorerUrl.set($event || '')"
+      (valueChange)="explorerUrl.set($any($event) || '')"
     />
+    @if (explorerUrlError()) {
+      <span class="kc-input-error-text">{{ explorerUrlError() }}</span>
+    }
   </div>
 
   <div class="action-buttons flex gap-12 mt-auto">

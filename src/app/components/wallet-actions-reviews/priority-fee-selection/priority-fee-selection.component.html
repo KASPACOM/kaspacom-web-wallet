@@ -77,8 +77,7 @@
               <span class="custom-fee-title">Custom Fee</span>
             </div>
             <div class="custom-fee-input">
-              <kc-input
-                type="number"
+              <kc-number-input
                 placeholder="Enter amount"
                 [(ngModel)]="customFee"
                 (valueChange)="selectOption('custom')"
@@ -87,7 +86,7 @@
                   <!-- Always show kaspa icon for fees -->
                   <kc-icon iconClass="icon-kaspa-coin" size="sm" />
                 </div>
-              </kc-input>
+              </kc-number-input>
             </div>
           </div>
         </div>

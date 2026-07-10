@@ -1,8 +1,8 @@
 import { Component, computed, inject, signal } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
-import { KcInputComponent, NotificationService } from 'kaspacom-ui';
-import { KcButtonComponent, DropdownOption, KcDropdownSelectComponent } from '@kaspacom/ui-kit';
+import { NotificationService } from 'kaspacom-ui';
+import { KcInputComponent, KcNumberInputComponent, KcButtonComponent, DropdownOption, KcDropdownSelectComponent } from '@kaspacom/ui-kit';
 import {
   EthereumWalletChainManager,
   ExtendedEIP1193ProviderChain,
@@ -149,6 +149,7 @@ const WELL_KNOWN_NETWORKS: WellKnownNetwork[] = [
     FormsModule,
     KcButtonComponent,
     KcInputComponent,
+    KcNumberInputComponent,
     KcDropdownSelectComponent,
   ],
   templateUrl: './add-custom-network-flow-page.component.html',

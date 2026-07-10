@@ -32,9 +32,8 @@
       <kc-input
         class="confirmation-input"
         [placeholder]="deleteConfirmationPhrase"
-        [isFullWidth]="true"
         [ngModel]="deleteConfirmationInput()"
-        (valueChange)="onDeleteConfirmationChange($event)"
+        (valueChange)="onDeleteConfirmationChange($any($event))"
       />
     </div>
 

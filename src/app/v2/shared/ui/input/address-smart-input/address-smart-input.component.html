@@ -3,20 +3,14 @@
     [label]="label()"
     [placeholder]="placeholder()"
     [type]="'text'"
-    [isFullWidth]="isFullWidth()"
     [isValid]="
       isResolving() || isDomainCandidate()
         ? true
         : displayIsValid() && !resolveError()
     "
-    [invalidReason]="
-      isResolving() || isDomainCandidate()
-        ? ''
-        : resolveError() || displayInvalidReason()
-    "
     [isDisabled]="isDisabled()"
     [ngModel]="value"
-    (valueChange)="onInputChange($event)"
+    (valueChange)="onInputChange($any($event))"
   >
     <!-- Right slot: QR and spinner -->
     <div class="right-slot" rightSideSlot>
@@ -38,6 +32,14 @@
       }
     </div>
   </kc-input>
+  @if (
+    !isResolving() && !isDomainCandidate() &&
+    (resolveError() || displayInvalidReason())
+  ) {
+    <span class="kc-input-error-text">{{
+      resolveError() || displayInvalidReason()
+    }}</span>
+  }
 
   @if (resolvedAddress() && resolvedDomain() && value && !isResolving()) {
     <div class="resolved-address flex align-items-center gap-8">

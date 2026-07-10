@@ -14,8 +14,8 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
-import { KcBaseModalComponent, KcInputComponent } from 'kaspacom-ui';
-import { KcButtonComponent } from '@kaspacom/ui-kit';
+import { KcBaseModalComponent } from 'kaspacom-ui';
+import { KcNumberInputComponent, KcButtonComponent } from '@kaspacom/ui-kit';
 import { FormErrorMessageComponent } from '../../../../../../shared/components/form-error/form-error.component';
 import type { SwapSettings } from '@kaspacom/swap-sdk';
 
@@ -25,7 +25,7 @@ import type { SwapSettings } from '@kaspacom/swap-sdk';
   imports: [
     ReactiveFormsModule,
     KcBaseModalComponent,
-    KcInputComponent,
+    KcNumberInputComponent,
     KcButtonComponent,
     FormErrorMessageComponent,
   ],

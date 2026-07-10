@@ -8,10 +8,9 @@
     <div class="settings-content" [formGroup]="settingsForm">
       <div class="form-field">
         <div class="slippage-row">
-          <kc-input
+          <kc-number-input
             label="Slippage tolerance (%)"
-            type="number"
-            [isFullWidth]="true"
+            [enforceEthersFormat]="false"
             placeholder="0.5"
             formControlName="maxSlippage"
           />
@@ -51,10 +50,9 @@
       </div>
 
       <div class="form-field">
-        <kc-input
+        <kc-number-input
           label="Transaction deadline (minutes)"
-          type="number"
-          [isFullWidth]="true"
+          [enforceEthersFormat]="false"
           placeholder="20"
           formControlName="swapDeadline"
         />

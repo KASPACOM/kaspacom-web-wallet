@@ -126,11 +126,8 @@
                 <kc-input
                   formControlName="password"
                   [placeholder]="'Password'"
-                  [isFullWidth]="true"
                   [type]="passwordType()"
                   [isValid]="!isInvalid('password')"
-                  [invalidReason]="getPasswordError()"
-                  [prepadInvalidReason]="true"
                   [isDisabled]="isSubmitting()"
                 >
                   <div
@@ -149,6 +146,11 @@
                     />
                   </div>
                 </kc-input>
+                @if (isInvalid('password') && getPasswordError()) {
+                  <span class="kc-input-error-text">{{
+                    getPasswordError()
+                  }}</span>
+                }
 
                 <div class="onboarding-v2__login-actions">
                   <kc-button
@@ -317,11 +319,10 @@
           </p>
           <kc-input
             class="onboarding-v2__delete-input"
-            [isFullWidth]="true"
             [placeholder]="deleteConfirmationPhrase"
             [ngModel]="deleteConfirmationInput()"
             [isDisabled]="isDeletingWallet()"
-            (valueChange)="onDeleteConfirmationInputChange($event)"
+            (valueChange)="onDeleteConfirmationInputChange($any($event))"
           />
         </div>
 

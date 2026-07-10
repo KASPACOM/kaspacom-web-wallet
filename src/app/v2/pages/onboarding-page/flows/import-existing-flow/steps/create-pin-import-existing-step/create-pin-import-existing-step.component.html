@@ -36,22 +36,23 @@
             [placeholder]="'Password'"
             [type]="passwordType()"
             [isValid]="!isInvalid('password')"
-            [prepadInvalidReason]="true"
-            [invalidReason]="getPasswordErrorMessage()"
             (keydown.enter)="onSubmit()"
           >
             <div (click)="togglePwVisibility()" class="clickable" rightSideSlot>
               <kc-icon iconClass="{{ passwordIcon() }}" [size]="'xs'" />
             </div>
           </kc-input>
+          @if (isInvalid('password') && getPasswordErrorMessage()) {
+            <span class="kc-input-error-text">{{
+              getPasswordErrorMessage()
+            }}</span>
+          }
           <kc-input
             formControlName="confirmPassword"
             [label]="'Confirm your password'"
             [placeholder]="'Confirm password'"
             [type]="passwordConfirmType()"
             [isValid]="!isInvalid('confirmPassword')"
-            [prepadInvalidReason]="true"
-            [invalidReason]="getConfirmPasswordErrorMessage()"
             (keydown.enter)="onSubmit()"
           >
             <div
@@ -62,6 +63,11 @@
               <kc-icon [iconClass]="passwordConfirmIcon()" [size]="'xs'" />
             </div>
           </kc-input>
+          @if (isInvalid('confirmPassword') && getConfirmPasswordErrorMessage()) {
+            <span class="kc-input-error-text">{{
+              getConfirmPasswordErrorMessage()
+            }}</span>
+          }
         </div>
       </form>
     </div>

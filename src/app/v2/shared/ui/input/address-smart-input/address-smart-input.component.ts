@@ -9,8 +9,7 @@ import {
   output,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { KcInputComponent } from 'kaspacom-ui';
-import { KcIconComponent, KcSpinnerComponent, KcTooltipDirective } from '@kaspacom/ui-kit';
+import { KcInputComponent, KcIconComponent, KcSpinnerComponent, KcTooltipDirective } from '@kaspacom/ui-kit';
 import { CopyButtonComponent } from '../../copy-button/copy-button.component';
 import {
   AddressResolutionService,

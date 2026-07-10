@@ -17,7 +17,7 @@
               [placeholder]="`${item.index + 1}.`"
               [label]="`Word #${item.index + 1}`"
               [ngModel]="item.input"
-              (valueChange)="onInputChange($index, $event)"
+              (valueChange)="onInputChange($index, $any($event))"
             />
           }
         </div>

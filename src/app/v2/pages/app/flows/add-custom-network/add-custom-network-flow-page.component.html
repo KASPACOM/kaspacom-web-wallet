@@ -7,7 +7,7 @@
     [isFullWidth]="true"
     [isSearchable]="true"
     [value]="selectedPresetChainId()"
-    (valueChange)="onPresetSelected($event)"
+    (valueChange)="onPresetSelected($any($event))"
   >
     <ng-template #prefixTemplate>
       @if (

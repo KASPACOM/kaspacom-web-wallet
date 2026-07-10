@@ -10,11 +10,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import {
-  KcButtonComponent,
-  KcCheckboxComponent,
-  KcInputComponent,
-} from 'kaspacom-ui';
+import { KcButtonComponent, KcCheckboxComponent, KcInputComponent } from 'kaspacom-ui';
 import {
   KaspaNetworkActionsService,
   MINIMAL_AMOUNT_TO_SEND,

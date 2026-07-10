@@ -1645,3 +1645,13 @@
   padding-top: 72px;
   padding-bottom: 72px;
 }
+
+// kc-input (@kaspacom/ui-kit) has no built-in slot for a validation error
+// message (only the isValid boolean, which just toggles the invalid border
+// style) - render this alongside kc-input to show the reason text.
+.kc-input-error-text {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: var(--kc-color-danger-600);
+  font-weight: 600;
+}

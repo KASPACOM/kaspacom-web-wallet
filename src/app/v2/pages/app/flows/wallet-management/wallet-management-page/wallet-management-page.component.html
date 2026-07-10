@@ -12,7 +12,7 @@
             [size]="'xs'"
             (click)="onEditWalletName()"
             kcTooltip="Edit wallet name"
-            tooltipPosition="bottom"
+            tooltipPosition="bottom-center"
           />
         </div>
       </div>
@@ -24,7 +24,7 @@
         [size]="'md'"
         (click)="onWalletOptionsClick()"
         kcTooltip="Wallet options"
-        tooltipPosition="bottom"
+        tooltipPosition="bottom-center"
       />
       <kc-icon
         class="update-icon"
@@ -32,7 +32,7 @@
         [size]="'md'"
         (click)="onChangeWalletClicked()"
         kcTooltip="Change wallet"
-        tooltipPosition="bottom"
+        tooltipPosition="bottom-center"
       />
       <kc-icon
         class="close-icon"
@@ -40,7 +40,7 @@
         [size]="'md'"
         (click)="onCloseClick()"
         kcTooltip="Close"
-        tooltipPosition="bottom"
+        tooltipPosition="bottom-center"
       />
     </div>
   </div>
@@ -72,7 +72,7 @@
                   [size]="'xs'"
                   (click)="editWalletAccount(wallet); $event.stopPropagation()"
                   kcTooltip="Edit account"
-                  tooltipPosition="top"
+                  tooltipPosition="top-center"
                 />
               </div>
               <div class="wallet-item__address">
@@ -82,7 +82,7 @@
                   [size]="'xs'"
                   (click)="$event.stopPropagation()"
                   kcTooltip="Copy address"
-                  tooltipPosition="top"
+                  tooltipPosition="top-center"
                 />
               </div>
               <div class="wallet-item__balance">
@@ -103,7 +103,7 @@
                       wallet.pendingTransactionCount() +
                       ' pending transaction(s)'
                     "
-                    tooltipPosition="top"
+                    tooltipPosition="top-center"
                   >
                     <kc-spinner [size]="'xs'" />
                     <span class="pending-count">{{
@@ -120,7 +120,7 @@
                 [size]="'sm'"
                 (click)="exportWalletAccount(wallet); $event.stopPropagation()"
                 kcTooltip="Export account"
-                tooltipPosition="top"
+                tooltipPosition="top-center"
               />
               <kc-icon
                 class="wallet-item__trash"
@@ -128,7 +128,7 @@
                 [size]="'sm'"
                 (click)="deleteWallet(wallet); $event.stopPropagation()"
                 kcTooltip="Delete account"
-                tooltipPosition="top"
+                tooltipPosition="top-center"
               />
             </div>
           </div>
@@ -176,7 +176,7 @@
       class="floating-orb"
       (click)="onAddAccountClick()"
       kcTooltip="Create account"
-      tooltipPosition="top"
+      tooltipPosition="top-center"
     >
       <kc-icon [iconClass]="'icon-add'" [size]="'md'" />
     </div>

@@ -11,12 +11,8 @@ import {
   output,
 } from '@angular/core';
 
-import {
-  KcBaseModalComponent,
-  KcInputComponent,
-  KcIconComponent,
-  KcTooltipDirective,
-} from 'kaspacom-ui';
+import { KcBaseModalComponent, KcInputComponent } from 'kaspacom-ui';
+import { KcIconComponent, KcTooltipDirective } from '@kaspacom/ui-kit';
 import { MessagePopupService } from '../../../../../../../services/message-popup.service';
 import type { Erc20Token } from '@kaspacom/swap-sdk';
 import { CommaFormatterPipe } from '../../../../../../../pipes/comma-formatter.pipe';

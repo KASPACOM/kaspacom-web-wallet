@@ -18,7 +18,8 @@ import {
 import { WalletAction } from '../../../types/wallet-action';
 import { AppWallet } from '../../../classes/AppWallet';
 import { FormsModule } from '@angular/forms';
-import { KcIconComponent, KcInputComponent } from '@kaspacom/ui';
+import { KcInputComponent } from '@kaspacom/ui';
+import { KcIconComponent } from '@kaspacom/ui-kit';
 import {
   EIP1193RequestPayload,
   EIP1193RequestType,

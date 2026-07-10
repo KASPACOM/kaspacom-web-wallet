@@ -1,7 +1,8 @@
 import { Component, inject, OnInit } from '@angular/core';
 
 import { ActivatedRoute, Router } from '@angular/router';
-import { KcIconComponent, KcButtonComponent } from 'kaspacom-ui';
+import { KcButtonComponent } from 'kaspacom-ui';
+import { KcIconComponent } from '@kaspacom/ui-kit';
 import { Erc20ActivityItem } from '../../activity/activity.component';
 
 @Component({

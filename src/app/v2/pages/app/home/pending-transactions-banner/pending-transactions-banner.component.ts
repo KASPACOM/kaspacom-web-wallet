@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { KcIconComponent, KcSpinnerComponent } from 'kaspacom-ui';
+import { KcIconComponent, KcSpinnerComponent } from '@kaspacom/ui-kit';
 import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { WalletService } from '../../../../../services/wallet.service';
 

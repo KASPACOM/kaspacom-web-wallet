@@ -2,7 +2,8 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 
 import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcButtonComponent } from 'kaspacom-ui';
+import { KcIconComponent } from '@kaspacom/ui-kit';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton';
 import { NftRankTagComponent } from './components/nft-rank-tag/nft-rank-tag.component';
 import { BaseAssetPageComponent } from '../../../../../common/base-asset-page/base-asset-page.component';

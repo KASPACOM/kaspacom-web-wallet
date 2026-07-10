@@ -2,11 +2,8 @@ import { Component, computed, inject, signal } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import {
-  KcButtonComponent,
-  KcIconComponent,
-  KcInputComponent,
-} from 'kaspacom-ui';
+import { KcButtonComponent, KcInputComponent } from 'kaspacom-ui';
+import { KcIconComponent } from '@kaspacom/ui-kit';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
 import { FlowPagesService } from '../../../../services/flow-pages.service';

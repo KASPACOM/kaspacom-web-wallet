@@ -1,7 +1,8 @@
 import { CommonModule, TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcButtonComponent } from 'kaspacom-ui';
+import { KcIconComponent } from '@kaspacom/ui-kit';
 import { WalletService } from '../../../../../services/wallet.service';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 

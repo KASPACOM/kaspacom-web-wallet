@@ -1,7 +1,8 @@
 import { Component, inject, signal, computed, output } from '@angular/core';
 
 import { Router } from '@angular/router';
-import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcButtonComponent } from 'kaspacom-ui';
+import { KcIconComponent } from '@kaspacom/ui-kit';
 import { WalletService } from '../../../../services/wallet.service';
 import { AppWallet } from '../../../../classes/AppWallet';
 import { ShortenAddressPipe } from '../../../../pipes/shorten-address.pipe';

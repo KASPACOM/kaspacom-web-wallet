@@ -8,7 +8,8 @@ import {
   ProtocolType,
 } from '@kaspacom/wallet-messages';
 import { CompletedActionOverviewService } from '../../../../../../../services/action-info-services/completed-action-overview.service';
-import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcButtonComponent } from 'kaspacom-ui';
+import { KcIconComponent } from '@kaspacom/ui-kit';
 import { ApprovalFlowService } from '../../../../../../services/approval-flow.service';
 import {
   trigger,

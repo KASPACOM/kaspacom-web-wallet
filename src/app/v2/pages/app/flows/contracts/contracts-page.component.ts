@@ -176,6 +176,7 @@ type DeployIndexerState = {
 })
 export class ContractsPageComponent implements OnInit, OnDestroy {
   readonly MIN_DEPLOY_AMOUNT_KAS = 0.5;
+  private readonly MIN_CONTINUATION_AMOUNT_SOMPI = 50_000_000n;
 
   private walletService = inject(WalletService);
   private walletActionService = inject(WalletActionService);
@@ -2955,12 +2956,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           this.interactError.set('Output amount must be greater than 0');
           return;
         }
-        outputs = [
-          {
-            address: outputAddress,
-            amount: BigInt(Math.floor(outputAmountKas * 1e8)),
-          },
-        ];
+        const withdrawalAmount = BigInt(Math.floor(outputAmountKas * 1e8));
+        const withdrawalOutputs = this.buildWithdrawalOutputs(
+          compiled,
+          inputAmount,
+          outputAddress,
+          withdrawalAmount,
+        );
+        if (!withdrawalOutputs) return;
+        outputs = withdrawalOutputs;
       } else if (this.isDmsKeepAlive()) {
         // DMS keepAlive — delegate to the dedicated method which handles new-contract generation
         await this.executeDmsKeepAlive(
@@ -3076,12 +3080,29 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       // Update registry based on function type
       if (this.selectedContractId()) {
         if (this.functionRequiresOutput(functionName)) {
-          // Withdrawal: funds left the covenant
-          this.registryService.updateContract(this.selectedContractId(), {
-            status: 'spent',
-            spendTxid: result.txid,
-            lastChecked: Date.now(),
-          });
+          const covenantAddress =
+            this.covenantService.getContractAddress(compiled);
+          const continuationOutputIndex = outputs.findIndex(
+            (output) => output.address === covenantAddress,
+          );
+          if (continuationOutputIndex >= 0) {
+            const continuationAmount = outputs[continuationOutputIndex].amount;
+            this.registryService.updateContract(this.selectedContractId(), {
+              lastChecked: Date.now(),
+              outpoint: { txid: result.txid, vout: continuationOutputIndex },
+              amountSompi: continuationAmount.toString(),
+            });
+            this.interactOutpointTxid = result.txid;
+            this.interactOutpointVout = continuationOutputIndex.toString();
+            this.interactInputAmount = continuationAmount.toString();
+          } else {
+            // Full withdrawal: funds left the covenant
+            this.registryService.updateContract(this.selectedContractId(), {
+              status: 'spent',
+              spendTxid: result.txid,
+              lastChecked: Date.now(),
+            });
+          }
         } else {
           // Redeploy (keepAlive/increment): update the outpoint to the new UTXO
           this.registryService.updateContract(this.selectedContractId(), {
@@ -3100,6 +3121,47 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     } finally {
       this.isInteracting.set(false);
     }
+  }
+
+  private buildWithdrawalOutputs(
+    compiled: CompiledContract,
+    inputAmount: bigint,
+    outputAddress: string,
+    withdrawalAmount: bigint,
+  ): SpendOutput[] | undefined {
+    if (withdrawalAmount > inputAmount) {
+      this.interactError.set(
+        'Withdraw amount cannot exceed the contract balance',
+      );
+      return undefined;
+    }
+
+    const remainder = inputAmount - withdrawalAmount;
+    const outputs: SpendOutput[] = [
+      {
+        address: outputAddress,
+        amount: withdrawalAmount,
+      },
+    ];
+
+    if (remainder === 0n) {
+      return outputs;
+    }
+
+    if (remainder < this.MIN_CONTINUATION_AMOUNT_SOMPI) {
+      this.interactError.set(
+        'Partial withdrawals must leave at least 0.5 KAS in the contract. Withdraw the full amount or reduce the withdrawal.',
+      );
+      return undefined;
+    }
+
+    outputs.push({
+      address: this.covenantService.getContractAddress(compiled),
+      amount: remainder,
+      covenantId: this.selectedContract()?.covenantId,
+    });
+
+    return outputs;
   }
 
   /**
@@ -4050,11 +4112,27 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
       // Update registry if we know the contract
       if (this.selectedContractId()) {
-        this.registryService.updateContract(this.selectedContractId(), {
-          status: 'spent',
-          spendTxid: result.txid,
-          lastChecked: Date.now(),
-        });
+        const compiled = this.covenantService.parseCompiledContract(
+          partial.compiledJson,
+        );
+        const covenantAddress =
+          this.covenantService.getContractAddress(compiled);
+        const continuationOutputIndex = partial.outputs.findIndex(
+          (output) => output.address === covenantAddress,
+        );
+        if (continuationOutputIndex >= 0) {
+          this.registryService.updateContract(this.selectedContractId(), {
+            lastChecked: Date.now(),
+            outpoint: { txid: result.txid, vout: continuationOutputIndex },
+            amountSompi: partial.outputs[continuationOutputIndex].amountSompi,
+          });
+        } else {
+          this.registryService.updateContract(this.selectedContractId(), {
+            status: 'spent',
+            spendTxid: result.txid,
+            lastChecked: Date.now(),
+          });
+        }
         this.loadContracts();
       }
     } catch (error: any) {

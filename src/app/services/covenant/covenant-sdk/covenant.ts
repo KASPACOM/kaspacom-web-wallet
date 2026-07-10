@@ -77,6 +77,43 @@ function getAbiEntry(compiled: CompiledContract, functionName: string) {
   return entry;
 }
 
+function getUtxoCovenantId(entry: UtxoEntryReference): string | undefined {
+  try {
+    const covenantId = (entry as any).covenantId;
+    return covenantId ? covenantId.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function buildSpendOutput(
+  output: SpendOutput,
+  covenantAddress: string,
+  utxoCovenantId?: string,
+): ITransactionOutput {
+  const spk = payToAddressScript(output.address);
+  const bindingCovenantId =
+    output.covenantId ??
+    (utxoCovenantId && output.address === covenantAddress
+      ? utxoCovenantId
+      : undefined);
+
+  if (bindingCovenantId) {
+    try {
+      const hashObj = new Hash(bindingCovenantId);
+      const binding = new CovenantBinding(0, hashObj);
+      return new TransactionOutput(output.amount, spk, binding) as any;
+    } catch (err) {
+      console.warn('[CovenantSDK] Failed to attach continuation binding:', err);
+    }
+  }
+
+  return {
+    scriptPublicKey: spk,
+    value: output.amount,
+  };
+}
+
 function getFunctionSelector(
   compiled: CompiledContract,
   functionName: string,
@@ -612,14 +649,7 @@ export async function spendContract(
   // Try to get covenant ID from the UTXO entry (new in v1.1.0-rc.3)
   let utxoCovenantId: string | undefined = covenantId;
   if (!utxoCovenantId) {
-    try {
-      const entryCovId = (entry as any).covenantId;
-      if (entryCovId) {
-        utxoCovenantId = entryCovId.toString();
-      }
-    } catch {
-      // covenantId not available on this UTXO
-    }
+    utxoCovenantId = getUtxoCovenantId(entry);
   }
 
   const txInputs: ITransactionInput[] = [buildCovenantInput(entry)];
@@ -943,6 +973,7 @@ export async function buildPartialSpend(
     throw new Error(
       `UTXO ${outpoint.txid}:${outpoint.vout} not found at ${covenantAddress}`,
     );
+  const utxoCovenantId = getUtxoCovenantId(entry);
 
   // Count sig params for sigOpCount
   const sigParams = abiEntry.inputs.filter((inp) => inp.type_name === 'sig');
@@ -968,10 +999,9 @@ export async function buildPartialSpend(
   const txInputs: ITransactionInput[] = [buildCovenantInput(entry, 30)];
 
   const adjustedOutputs = outputs.map((o) => ({ ...o }));
-  const txOutputs: ITransactionOutput[] = adjustedOutputs.map((o) => ({
-    scriptPublicKey: payToAddressScript(o.address),
-    value: o.amount,
-  }));
+  const txOutputs: ITransactionOutput[] = adjustedOutputs.map((output) =>
+    buildSpendOutput(output, covenantAddress, utxoCovenantId),
+  );
 
   const unsignedTx = new Transaction({
     version: 1,
@@ -1073,6 +1103,7 @@ export async function buildPartialSpend(
     outputs: adjustedOutputs.map((o) => ({
       address: o.address,
       amountSompi: o.amount.toString(),
+      covenantId: o.covenantId,
     })),
     signatures,
     pendingParams,
@@ -1111,14 +1142,22 @@ export async function completePartialSpend(
       Number(u.outpoint.index) === partialSpend.outpoint.vout,
   );
   if (!entry) throw new Error(`UTXO not found for completion`);
+  const utxoCovenantId = getUtxoCovenantId(entry);
 
   // Rebuild the exact same unsigned TX
   const txInputs: ITransactionInput[] = [buildCovenantInput(entry, 30)];
 
-  const txOutputs: ITransactionOutput[] = partialSpend.outputs.map((o) => ({
-    scriptPublicKey: payToAddressScript(o.address),
-    value: BigInt(o.amountSompi),
-  }));
+  const txOutputs: ITransactionOutput[] = partialSpend.outputs.map((output) =>
+    buildSpendOutput(
+      {
+        address: output.address,
+        amount: BigInt(output.amountSompi),
+        covenantId: output.covenantId,
+      },
+      covenantAddress,
+      utxoCovenantId,
+    ),
+  );
 
   const unsignedTx = new Transaction({
     version: 1,

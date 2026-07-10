@@ -94,7 +94,7 @@ export interface PartiallySignedSpend {
   /** Input amount in sompi */
   inputAmountSompi: string;
   /** Output addresses and amounts */
-  outputs: Array<{ address: string; amountSompi: string }>;
+  outputs: Array<{ address: string; amountSompi: string; covenantId?: string }>;
   /** Collected signatures so far (hex, 65 bytes each) */
   signatures: Array<{ paramName: string; signatureHex: string }>;
   /** Which sig params still need signing */

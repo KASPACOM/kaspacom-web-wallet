@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
 import {
@@ -14,7 +14,7 @@ import { AppWallet } from '../../../classes/AppWallet';
   selector: 'krc20-operations-history',
   templateUrl: './krc20-operation-history.component.html',
   styleUrls: ['./krc20-operation-history.component.scss'],
-  imports: [FormsModule, SompiToNumberPipe, CommonModule],
+  imports: [FormsModule, SompiToNumberPipe],
 })
 export class Krc20OperationHistoryComponent {
   public AcceptedStatus = AcceptedStatus;

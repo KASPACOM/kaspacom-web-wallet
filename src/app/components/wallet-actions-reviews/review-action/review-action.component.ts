@@ -1,5 +1,5 @@
 import { Component, computed } from '@angular/core';
-import { NgClass } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import {
   SignPsktTransactionAction,
@@ -26,7 +26,6 @@ const TIMEOUT = 2 * 60 * 1000;
   templateUrl: './review-action.component.html',
   styleUrls: ['./review-action.component.scss'],
   imports: [
-    NgClass,
     PriorityFeeSelectionComponent,
     FormsModule,
     KcButtonComponent,

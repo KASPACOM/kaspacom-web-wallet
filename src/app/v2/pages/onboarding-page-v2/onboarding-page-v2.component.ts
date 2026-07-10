@@ -16,7 +16,6 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router } from '@angular/router';
-import { KcSnackbarComponent } from 'kaspacom-ui';
 import { KcInputComponent, KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import { OnboardingStep } from '../onboarding-page/onboarding-step.enum';
 import { ImportExistingFlowComponent } from '../onboarding-page/flows/import-existing-flow/import-existing-flow.component';
@@ -48,7 +47,6 @@ interface PanelCopy {
     KcInputComponent,
     ImportExistingFlowComponent,
     NewWalletFlowComponent,
-    KcSnackbarComponent,
   ],
   templateUrl: './onboarding-page-v2.component.html',
   styleUrl: './onboarding-page-v2.component.scss',

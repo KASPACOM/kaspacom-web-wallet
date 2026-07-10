@@ -1,4 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { NotificationService } from '@kaspacom/ui-kit';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { WalletService } from '../../../services/wallet.service';
 
@@ -8,7 +9,6 @@ import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-serv
 import { WalletActionService } from '../../../services/wallet-action.service';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { Krc20WalletActionService } from '../../../services/protocols/krc20/krc20-wallet-actions.service';
-import { MessagePopupService } from '../../../services/message-popup.service';
 
 @Component({
   selector: 'list-krc20-token',
@@ -21,7 +21,7 @@ export class ListKrc20Component implements OnInit {
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private walletActionService = inject(WalletActionService);
   private krc20WalletActionService = inject(Krc20WalletActionService);
-  private messagePopupService = inject(MessagePopupService);
+  private notificationService = inject(NotificationService);
 
   assets: undefined | TransferableAsset[] = undefined; // Replace with your dynamic asset list
   selectedAsset: undefined | string = undefined;
@@ -79,10 +79,10 @@ export class ListKrc20Component implements OnInit {
 
       if (result.success) {
         this.amount = null;
-        this.messagePopupService.showSuccess('Asset listed successfully!');
+        this.notificationService.success('Success', 'Asset listed successfully!');
       } else {
         if (result.errorCode != ERROR_CODES.EIP1193.USER_REJECTED) {
-          this.messagePopupService.showError(
+          this.notificationService.error('Error',
             result.errorCode
               ? ERROR_CODES_MESSAGES[result.errorCode]
               : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR],
@@ -93,7 +93,7 @@ export class ListKrc20Component implements OnInit {
 
       // Add your transaction logic here
     } else {
-      this.messagePopupService.showError(
+      this.notificationService.error('Error',
         'Please fill in all fields correctly.',
       );
     }

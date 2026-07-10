@@ -8,8 +8,7 @@ import {
   output,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { NotificationService } from 'kaspacom-ui';
-import { KcButtonComponent } from '@kaspacom/ui-kit';
+import { KcButtonComponent, NotificationService } from '@kaspacom/ui-kit';
 import _ from 'lodash';
 import { AppWallet } from '../../../../../../../classes/AppWallet';
 import { WalletService } from '../../../../../../../services/wallet.service';

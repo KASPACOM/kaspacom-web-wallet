@@ -1,6 +1,5 @@
 import { Component, OnInit, inject, input, output, signal } from '@angular/core';
-import { NotificationService } from 'kaspacom-ui';
-import { KcButtonComponent } from '@kaspacom/ui-kit';
+import { KcButtonComponent, NotificationService } from '@kaspacom/ui-kit';
 import { RadioInputComponent } from '../../../../../../shared/ui/input/radio/radio-input/radio-input.component';
 import { SeedPhraseWordComponent } from './component/seed-phrase-word/seed-phrase-word.component';
 import { WalletService } from '../../../../../../../services/wallet.service';

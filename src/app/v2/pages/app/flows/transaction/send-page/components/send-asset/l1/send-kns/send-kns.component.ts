@@ -9,7 +9,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import { KcButtonComponent } from '@kaspacom/ui-kit';
+import { KcButtonComponent, NotificationService } from '@kaspacom/ui-kit';
 import { firstValueFrom } from 'rxjs';
 import { AddressResolutionResult } from '../../../../../../../../../../services/address-resolution.service';
 import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
@@ -19,7 +19,6 @@ import {
   KnsWalletAssetsStatus,
 } from '../../../../../../../../../../services/kns-api/dtos/kns-domain.dto';
 import { KnsApiService } from '../../../../../../../../../../services/kns-api/kns-api.service';
-import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
 import { KnsWalletActionService } from '../../../../../../../../../../services/protocols/kns/kns-wallet-actions.service';
 import { QrScannerService } from '../../../../../../../../../../services/qr-scanner.service';
 import { UtilsHelper } from '../../../../../../../../../../services/utils.service';
@@ -52,7 +51,7 @@ export class SendKnsComponent
   private assetsManagerService = inject(AssetsManagerService);
   private walletActionService = inject(WalletActionService);
   private knsWalletActionService = inject(KnsWalletActionService);
-  private messagePopupService = inject(MessagePopupService);
+  private notificationService = inject(NotificationService);
   private approvalFlowService = inject(ApprovalFlowService);
   private utilsHelper = inject(UtilsHelper);
   private qrScannerService = inject(QrScannerService);
@@ -84,7 +83,7 @@ export class SendKnsComponent
 
         if (completion.success) {
           // Transaction was successful, navigate back
-          this.messagePopupService.showSuccess('KNS domain sent successfully!');
+          this.notificationService.success('Success', 'KNS domain sent successfully!');
           this.navigateBack();
         }
         // Error cases are handled by the approval flow itself
@@ -189,13 +188,13 @@ export class SendKnsComponent
 
     const currentWallet = this.walletService.getCurrentWallet();
     if (!currentWallet) {
-      this.messagePopupService.showError('No wallet selected');
+      this.notificationService.error('Error', 'No wallet selected');
       return;
     }
 
     const currentDomain = this.domain()!;
     if (!currentDomain.asset) {
-      this.messagePopupService.showError('Invalid domain data');
+      this.notificationService.error('Error', 'Invalid domain data');
       return;
     }
 
@@ -225,7 +224,7 @@ export class SendKnsComponent
         // Only show success message and navigate if not using v2 flow
         // v2 flow handles success display in the approval flow
         if (!result.isUsingV2Flow) {
-          this.messagePopupService.showSuccess('KNS domain sent successfully!');
+          this.notificationService.success('Success', 'KNS domain sent successfully!');
           this.navigateBack();
         } else {
           // For v2 flow, wait for approval flow completion
@@ -236,7 +235,7 @@ export class SendKnsComponent
           const errorMessage = result.errorCode
             ? ERROR_CODES_MESSAGES[result.errorCode]
             : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR];
-          this.messagePopupService.showError(errorMessage);
+          this.notificationService.error('Error', errorMessage);
         }
 
         // Reset the waiting flag if transaction failed
@@ -244,7 +243,7 @@ export class SendKnsComponent
       }
     } catch (error) {
       console.error('Error sending KNS domain:', error);
-      this.messagePopupService.showError('Failed to send KNS domain');
+      this.notificationService.error('Error', 'Failed to send KNS domain');
     } finally {
       this.isLoading = false;
     }

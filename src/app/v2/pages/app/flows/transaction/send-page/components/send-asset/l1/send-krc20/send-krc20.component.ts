@@ -10,12 +10,11 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import { KcNumberInputComponent, KcButtonComponent } from '@kaspacom/ui-kit';
+import { KcNumberInputComponent, KcButtonComponent, NotificationService } from '@kaspacom/ui-kit';
 import { AddressResolutionResult } from '../../../../../../../../../../services/address-resolution.service';
 import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
 import { L1_ASSET_KEYS } from '../../../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 import { KaspaNetworkActionsService } from '../../../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
-import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
 import { Krc20WalletActionService } from '../../../../../../../../../../services/protocols/krc20/krc20-wallet-actions.service';
 import { QrScannerService } from '../../../../../../../../../../services/qr-scanner.service';
 import { UtilsHelper } from '../../../../../../../../../../services/utils.service';
@@ -52,7 +51,7 @@ export class SendKrc20Component
   private walletActionService = inject(WalletActionService);
   private krc20WalletActionService = inject(Krc20WalletActionService);
   private utilsHelper = inject(UtilsHelper);
-  private messagePopupService = inject(MessagePopupService);
+  private notificationService = inject(NotificationService);
   private approvalFlowService = inject(ApprovalFlowService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private qrScannerService = inject(QrScannerService);
@@ -94,7 +93,7 @@ export class SendKrc20Component
 
         if (completion.success) {
           // Transaction was successful, navigate back
-          this.messagePopupService.showSuccess(
+          this.notificationService.success('Success',
             'KRC20 token sent successfully!',
           );
           this.navigateBack();
@@ -173,7 +172,7 @@ export class SendKrc20Component
     } else {
       // No token data passed, can't proceed
       this.loading.set(false);
-      this.messagePopupService.showError('No token selected');
+      this.notificationService.error('Error', 'No token selected');
       this.navigateBack();
     }
   }
@@ -280,7 +279,7 @@ export class SendKrc20Component
 
     const currentWallet = this.walletService.getCurrentWallet();
     if (!currentWallet) {
-      this.messagePopupService.showError('No wallet selected');
+      this.notificationService.error('Error', 'No wallet selected');
       return;
     }
 
@@ -324,7 +323,7 @@ export class SendKrc20Component
         // Only show success message and navigate if not using v2 flow
         // v2 flow handles success display in the approval flow
         if (!result.isUsingV2Flow) {
-          this.messagePopupService.showSuccess(
+          this.notificationService.success('Success',
             'KRC20 token sent successfully!',
           );
           this.navigateBack();
@@ -337,7 +336,7 @@ export class SendKrc20Component
           const errorMessage = result.errorCode
             ? ERROR_CODES_MESSAGES[result.errorCode]
             : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR];
-          this.messagePopupService.showError(errorMessage);
+          this.notificationService.error('Error', errorMessage);
         }
 
         // Reset the waiting flag if transaction failed
@@ -345,7 +344,7 @@ export class SendKrc20Component
       }
     } catch (error) {
       console.error('Error sending KRC20 token:', error);
-      this.messagePopupService.showError('Failed to send KRC20 token');
+      this.notificationService.error('Error', 'Failed to send KRC20 token');
       this.waitingForApprovalCompletion = false;
     } finally {
       this.isLoading = false;

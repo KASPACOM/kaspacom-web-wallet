@@ -11,10 +11,9 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { EIP1193RequestType } from '@kaspacom/wallet-messages';
 import { parseUnits } from 'ethers';
-import { KcNumberInputComponent, KcButtonComponent } from '@kaspacom/ui-kit';
+import { KcNumberInputComponent, KcButtonComponent, NotificationService } from '@kaspacom/ui-kit';
 import { TokenLogoComponent } from '../../../../../../../../../../components/token-logo/token-logo.component';
 import { EthereumWalletChainManager } from '../../../../../../../../../../services/etherium-services/etherium-wallet-chain.manager';
-import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
 import { QrScannerService } from '../../../../../../../../../../services/qr-scanner.service';
 import { UtilsHelper } from '../../../../../../../../../../services/utils.service';
 import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';
@@ -44,7 +43,7 @@ export class SendL2KaspaComponent
 {
   private walletService = inject(WalletService);
   private walletActionService = inject(WalletActionService);
-  private messagePopupService = inject(MessagePopupService);
+  private notificationService = inject(NotificationService);
   private approvalFlowService = inject(ApprovalFlowService);
   private qrScannerService = inject(QrScannerService);
   private router = inject(Router);
@@ -95,7 +94,7 @@ export class SendL2KaspaComponent
 
         if (completion.success) {
           // Transaction was successful, navigate back
-          this.messagePopupService.showSuccess(
+          this.notificationService.success('Success',
             'Transaction sent successfully!',
           );
           this.navigateBack();
@@ -247,7 +246,7 @@ export class SendL2KaspaComponent
 
     const currentWallet = this.walletService.getCurrentWallet();
     if (!currentWallet) {
-      this.messagePopupService.showError('No wallet selected');
+      this.notificationService.error('Error', 'No wallet selected');
       return;
     }
 
@@ -257,13 +256,13 @@ export class SendL2KaspaComponent
       // Get the L2 wallet address for the sender
       const l2WalletAddress = currentWallet.getL2WalletAddress();
       if (!l2WalletAddress) {
-        this.messagePopupService.showError('L2 wallet not available');
+        this.notificationService.error('Error', 'L2 wallet not available');
         return;
       }
 
       const l2Provider = currentWallet.getL2Provider();
       if (!l2Provider) {
-        this.messagePopupService.showError('L2 provider not available');
+        this.notificationService.error('Error', 'L2 provider not available');
         return;
       }
 
@@ -297,18 +296,18 @@ export class SendL2KaspaComponent
         // Refresh the L2 balance after successful transaction
         await currentWallet.refreshL2Balance();
 
-        this.messagePopupService.showSuccess(
+        this.notificationService.success('Success',
           'L2 Kaspa transaction sent successfully!',
         );
         this.navigateBack();
       } else {
-        this.messagePopupService.showError(
+        this.notificationService.error('Error',
           'Failed to send L2 Kaspa transaction',
         );
       }
     } catch (error) {
       console.error('Error sending L2 Kaspa transaction:', error);
-      this.messagePopupService.showError('Failed to send L2 Kaspa transaction');
+      this.notificationService.error('Error', 'Failed to send L2 Kaspa transaction');
     } finally {
       this.isLoading = false;
     }

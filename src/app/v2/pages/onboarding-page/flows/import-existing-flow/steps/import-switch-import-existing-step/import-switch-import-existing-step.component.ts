@@ -1,6 +1,5 @@
 import { Component, computed, inject, output, signal } from '@angular/core';
-import { NotificationService } from 'kaspacom-ui';
-import { KcButtonComponent } from '@kaspacom/ui-kit';
+import { KcButtonComponent, NotificationService } from '@kaspacom/ui-kit';
 import { ImportSwitchComponent } from './component/import-switch/import-switch.component';
 import { ImportSwitchMethod } from './component/import-switch/import-switch-method.enum';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';

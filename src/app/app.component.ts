@@ -1,4 +1,4 @@
-import { DOCUMENT, NgIf } from '@angular/common';
+import { NgIf } from '@angular/common';
 import {
   AfterViewInit,
   Component,
@@ -8,6 +8,7 @@ import {
   OnInit,
   Renderer2,
   inject,
+  DOCUMENT
 } from '@angular/core';
 import { Meta } from '@angular/platform-browser';
 import { RouterOutlet } from '@angular/router';

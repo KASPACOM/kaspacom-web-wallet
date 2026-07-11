@@ -847,6 +847,7 @@ export class WalletActionService {
       const requiredKaspaAmount =
         await this.kaspaNetworkActionsService.getMinimalRequiredAmountForAction(
           action,
+          wallet,
         );
 
       if (currentBalance < requiredKaspaAmount) {

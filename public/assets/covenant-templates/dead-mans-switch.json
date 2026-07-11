@@ -3,13 +3,22 @@
   "compiler_version": "0.1.0",
   "script": [
     107,
+    8,
+    0,
+    16,
+    165,
+    212,
+    232,
+    0,
+    0,
+    0,
     108,
     118,
     0,
     156,
     99,
     117,
-    118,
+    120,
     32,
     170,
     171,
@@ -51,6 +60,59 @@
     190,
     162,
     105,
+    118,
+    88,
+    205,
+    1,
+    8,
+    124,
+    126,
+    185,
+    118,
+    201,
+    2,
+    243,
+    0,
+    148,
+    118,
+    81,
+    147,
+    188,
+    124,
+    126,
+    185,
+    118,
+    201,
+    118,
+    2,
+    243,
+    0,
+    148,
+    90,
+    147,
+    124,
+    188,
+    126,
+    170,
+    2,
+    0,
+    0,
+    1,
+    170,
+    126,
+    1,
+    32,
+    126,
+    124,
+    126,
+    1,
+    135,
+    126,
+    0,
+    195,
+    135,
+    105,
+    117,
     117,
     81,
     103,
@@ -59,7 +121,83 @@
     156,
     99,
     117,
+    185,
+    0,
+    156,
+    105,
+    0,
+    194,
+    185,
+    190,
+    160,
+    105,
+    0,
+    195,
+    185,
+    191,
+    135,
+    105,
     118,
+    88,
+    205,
+    1,
+    8,
+    124,
+    126,
+    185,
+    118,
+    201,
+    2,
+    243,
+    0,
+    148,
+    118,
+    81,
+    147,
+    188,
+    124,
+    126,
+    185,
+    118,
+    201,
+    118,
+    2,
+    243,
+    0,
+    148,
+    90,
+    147,
+    124,
+    188,
+    126,
+    170,
+    2,
+    0,
+    0,
+    1,
+    170,
+    126,
+    1,
+    32,
+    126,
+    124,
+    126,
+    1,
+    135,
+    126,
+    0,
+    195,
+    135,
+    105,
+    117,
+    81,
+    103,
+    118,
+    82,
+    156,
+    99,
+    117,
+    120,
     32,
     204,
     205,
@@ -95,14 +233,9 @@
     235,
     172,
     105,
-    6,
-    0,
-    16,
-    165,
-    212,
-    232,
-    0,
-    176,
+    118,
+    177,
+    117,
     117,
     81,
     103,
@@ -110,9 +243,17 @@
     0,
     105,
     104,
+    104,
     104
   ],
   "ast": {
+    "pragma": {
+      "name": "silverscript",
+      "value": "^0.1.0",
+      "span": "pragma silverscript ^0.1.0;",
+      "name_span": "silverscript",
+      "value_span": "^0.1.0"
+    },
     "name": "DeadManSwitch",
     "params": [
       {
@@ -137,10 +278,26 @@
         "type_ref": {
           "base": "int"
         },
-        "name": "expiry",
-        "span": "int expiry",
+        "name": "initInactivityPeriod",
+        "span": "int initInactivityPeriod",
         "type_span": "int ",
-        "name_span": "expiry"
+        "name_span": "initInactivityPeriod"
+      }
+    ],
+    "fields": [
+      {
+        "type_ref": {
+          "base": "int"
+        },
+        "name": "inactivityPeriod",
+        "expr": {
+          "kind": "identifier",
+          "data": "initInactivityPeriod",
+          "span": "initInactivityPeriod"
+        },
+        "span": "int inactivityPeriod = initInactivityPeriod;",
+        "type_span": "int ",
+        "name_span": "inactivityPeriod"
       }
     ],
     "constants": [],
@@ -230,12 +387,194 @@
               "span": "require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);",
               "message_span": null
             }
+          },
+          {
+            "kind": "function_call",
+            "data": {
+              "name": "validateOutputState",
+              "args": [
+                {
+                  "kind": "int",
+                  "data": 0,
+                  "span": "0"
+                },
+                {
+                  "kind": "state_object",
+                  "data": [
+                    {
+                      "name": "inactivityPeriod",
+                      "expr": {
+                        "kind": "identifier",
+                        "data": "inactivityPeriod",
+                        "span": "inactivityPeriod"
+                      },
+                      "span": "inactivityPeriod: inactivityPeriod ",
+                      "name_span": "inactivityPeriod"
+                    }
+                  ],
+                  "span": "{ inactivityPeriod: inactivityPeriod }"
+                }
+              ],
+              "span": "validateOutputState(0, { inactivityPeriod: inactivityPeriod });",
+              "name_span": "validateOutputState"
+            }
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function keepAlive(sig s) {\r\n        require(checkSig(s, owner));\r\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);\r\n    }",
+        "span": "entrypoint function keepAlive(sig s) {\n        require(checkSig(s, owner));\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);\n        validateOutputState(0, { inactivityPeriod: inactivityPeriod });\n    }",
         "name_span": "keepAlive",
-        "body_span": "require(checkSig(s, owner));\r\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);"
+        "body_span": "require(checkSig(s, owner));\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);\n        validateOutputState(0, { inactivityPeriod: inactivityPeriod });"
+      },
+      {
+        "name": "topUp",
+        "params": [],
+        "entrypoint": true,
+        "return_types": [],
+        "returns_tuple": false,
+        "body": [
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "nullary",
+                    "data": "active_input_index",
+                    "span": "this.activeInputIndex"
+                  },
+                  "right": {
+                    "kind": "int",
+                    "data": 0,
+                    "span": "0"
+                  }
+                },
+                "span": "this.activeInputIndex == 0"
+              },
+              "message": null,
+              "span": "require(this.activeInputIndex == 0);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "gt",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_value",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".value"
+                    },
+                    "span": "tx.outputs[0].value"
+                  },
+                  "right": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "input_value",
+                      "index": {
+                        "kind": "nullary",
+                        "data": "active_input_index",
+                        "span": "this.activeInputIndex"
+                      },
+                      "field_span": ".value"
+                    },
+                    "span": "tx.inputs[this.activeInputIndex].value"
+                  }
+                },
+                "span": "tx.outputs[0].value > tx.inputs[this.activeInputIndex].value"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_script_pub_key",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".scriptPubKey"
+                    },
+                    "span": "tx.outputs[0].scriptPubKey"
+                  },
+                  "right": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "input_script_pub_key",
+                      "index": {
+                        "kind": "nullary",
+                        "data": "active_input_index",
+                        "span": "this.activeInputIndex"
+                      },
+                      "field_span": ".scriptPubKey"
+                    },
+                    "span": "tx.inputs[this.activeInputIndex].scriptPubKey"
+                  }
+                },
+                "span": "tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "function_call",
+            "data": {
+              "name": "validateOutputState",
+              "args": [
+                {
+                  "kind": "int",
+                  "data": 0,
+                  "span": "0"
+                },
+                {
+                  "kind": "state_object",
+                  "data": [
+                    {
+                      "name": "inactivityPeriod",
+                      "expr": {
+                        "kind": "identifier",
+                        "data": "inactivityPeriod",
+                        "span": "inactivityPeriod"
+                      },
+                      "span": "inactivityPeriod: inactivityPeriod ",
+                      "name_span": "inactivityPeriod"
+                    }
+                  ],
+                  "span": "{ inactivityPeriod: inactivityPeriod }"
+                }
+              ],
+              "span": "validateOutputState(0, { inactivityPeriod: inactivityPeriod });",
+              "name_span": "validateOutputState"
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function topUp() {\n        require(this.activeInputIndex == 0);\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\n        validateOutputState(0, { inactivityPeriod: inactivityPeriod });\n    }",
+        "name_span": "topUp",
+        "body_span": "require(this.activeInputIndex == 0);\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\n        validateOutputState(0, { inactivityPeriod: inactivityPeriod });"
       },
       {
         "name": "claim",
@@ -285,26 +624,26 @@
           {
             "kind": "time_op",
             "data": {
-              "tx_var": "tx_time",
+              "tx_var": "this_age",
               "expr": {
                 "kind": "identifier",
-                "data": "expiry",
-                "span": "expiry"
+                "data": "inactivityPeriod",
+                "span": "inactivityPeriod"
               },
               "message": null,
-              "span": "require(tx.time >= expiry);",
-              "tx_var_span": "tx.time",
+              "span": "require(this.age >= inactivityPeriod);",
+              "tx_var_span": "this.age",
               "message_span": null
             }
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function claim(sig s) {\r\n        require(checkSig(s, heir));\r\n        require(tx.time >= expiry);\r\n    }",
+        "span": "entrypoint function claim(sig s) {\n        require(checkSig(s, heir));\n        require(this.age >= inactivityPeriod);\n    }",
         "name_span": "claim",
-        "body_span": "require(checkSig(s, heir));\r\n        require(tx.time >= expiry);"
+        "body_span": "require(checkSig(s, heir));\n        require(this.age >= inactivityPeriod);"
       }
     ],
-    "span": "contract DeadManSwitch(pubkey owner, pubkey heir, int expiry) {\r\n\r\n    entrypoint function keepAlive(sig s) {\r\n        require(checkSig(s, owner));\r\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);\r\n    }\r\n    \r\n    entrypoint function claim(sig s) {\r\n        require(checkSig(s, heir));\r\n        require(tx.time >= expiry);\r\n    }\r\n}",
+    "span": "contract DeadManSwitch(pubkey owner, pubkey heir, int initInactivityPeriod) {\n    int inactivityPeriod = initInactivityPeriod;\n    \n    entrypoint function keepAlive(sig s) {\n        require(checkSig(s, owner));\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);\n        validateOutputState(0, { inactivityPeriod: inactivityPeriod });\n    }\n\n    entrypoint function topUp() {\n        require(this.activeInputIndex == 0);\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\n        validateOutputState(0, { inactivityPeriod: inactivityPeriod });\n    }\n    \n    entrypoint function claim(sig s) {\n        require(checkSig(s, heir));\n        require(this.age >= inactivityPeriod);\n    }\n}",
     "name_span": "DeadManSwitch"
   },
   "abi": [
@@ -316,6 +655,10 @@
           "type_name": "sig"
         }
       ]
+    },
+    {
+      "name": "topUp",
+      "inputs": []
     },
     {
       "name": "claim",
@@ -330,7 +673,7 @@
   "without_selector": false,
   "state_layout": {
     "start": 1,
-    "len": 0
+    "len": 9
   },
   "debug_info": null
 }

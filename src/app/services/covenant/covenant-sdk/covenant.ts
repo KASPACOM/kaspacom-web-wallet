@@ -22,6 +22,7 @@ import {
 } from '../../../../../public/kaspa/kaspa';
 import {
   type CompiledContract,
+  type CovenantTransactionOptions,
   type CovenantOutpoint,
   type DeployResult,
   type PartiallySignedSpend,
@@ -437,6 +438,7 @@ export async function deployContract(
   network: string,
   rpc: RpcClient,
   priorityFee: bigint = 0n,
+  options: CovenantTransactionOptions = {},
 ): Promise<DeployResult> {
   const privateKey = new PrivateKey(privateKeyHex);
   const senderAddress = privateKey.toAddress(network).toString();
@@ -477,6 +479,7 @@ export async function deployContract(
   let finalTxId = created.summary.finalTransactionId;
   let finalTransaction =
     created.transactions[created.transactions.length - 1]?.transaction;
+  let finalFee: bigint | undefined;
 
   // KIP-20: covenant genesis covenant id. Populated on the final tx via
   // tx.populateGenesisCovenants + tx.finalize, then read back from the
@@ -537,6 +540,14 @@ export async function deployContract(
 
       reconcileDeployFee(tx, network, senderAddress, priorityFee);
       tx.finalize();
+      finalFee =
+        getTransactionInputAmount(tx) - getTransactionOutputAmount(tx);
+
+      if (options.estimateOnly) {
+        finalTransaction = tx;
+        finalTxId = tx.id;
+        break;
+      }
 
       const signed = signTransaction(tx, [privateKey], true);
       const submitted = await rpc.submitTransaction({
@@ -546,6 +557,13 @@ export async function deployContract(
       finalTxId = submitted.transactionId;
       finalTransaction = signed;
     } else {
+      if (options.estimateOnly) {
+        pending.sign([privateKey]);
+        finalTxId = pending.transaction.id;
+        finalTransaction = pending.transaction;
+        continue;
+      }
+
       // Compound / consolidation tx: no covenant binding needed, use the
       // standard pending path.
       pending.sign([privateKey]);
@@ -592,6 +610,7 @@ export async function deployContract(
       vout: outputIndex,
     },
     covenantId,
+    fee: finalFee,
   };
 }
 
@@ -623,6 +642,7 @@ export async function spendContract(
   priorityFee: bigint = 0n,
   useSenderFee: boolean = false,
   transactionPayloadHex?: string,
+  options: CovenantTransactionOptions = {},
 ): Promise<SpendResult> {
   const privateKey = new PrivateKey(privateKeyHex);
   const covenantAddress = getCovenantAddress(compiled, network);
@@ -663,35 +683,32 @@ export async function spendContract(
   const selectedWalletUtxos: UtxoEntryReference[] = [];
   let walletSelectedAmount = 0n;
 
-  if (useSenderFee) {
-    const targetRequired =
-      spendOutputsSum + MAX_TRANSACTION_FEE + MINIMAL_AMOUNT_TO_SEND;
-    const shortfall =
-      targetRequired > inputAmountSompi
-        ? targetRequired - inputAmountSompi
-        : 0n;
+  const targetRequired = useSenderFee
+    ? spendOutputsSum + MAX_TRANSACTION_FEE + MINIMAL_AMOUNT_TO_SEND
+    : spendOutputsSum;
+  const shortfall =
+    targetRequired > inputAmountSompi ? targetRequired - inputAmountSompi : 0n;
 
-    if (shortfall > 0n) {
-      const walletUtxos = await getAddressUtxos(rpc, senderAddress);
+  if (shortfall > 0n) {
+    const walletUtxos = await getAddressUtxos(rpc, senderAddress);
 
-      for (const utxo of walletUtxos.sort((a, b) =>
-        Number(b.amount - a.amount),
-      )) {
-        selectedWalletUtxos.push(utxo);
-        walletSelectedAmount += utxo.amount;
-        if (walletSelectedAmount >= shortfall) break;
-      }
-
-      if (walletSelectedAmount < shortfall) {
-        throw new Error(
-          `Insufficient wallet balance for transaction fee. Need at least ${shortfall} sompi from wallet, found ${walletSelectedAmount}`,
-        );
-      }
+    for (const utxo of walletUtxos.sort((a, b) =>
+      Number(b.amount - a.amount),
+    )) {
+      selectedWalletUtxos.push(utxo);
+      walletSelectedAmount += utxo.amount;
+      if (walletSelectedAmount >= shortfall) break;
     }
 
-    for (const utxoEntry of selectedWalletUtxos) {
-      txInputs.push(buildCovenantInput(utxoEntry));
+    if (walletSelectedAmount < shortfall) {
+      throw new Error(
+        `Insufficient wallet balance. Need at least ${shortfall} sompi from wallet, found ${walletSelectedAmount}`,
+      );
     }
+  }
+
+  for (const utxoEntry of selectedWalletUtxos) {
+    txInputs.push(buildCovenantInput(utxoEntry));
   }
 
   // Build outputs, attaching CovenantBinding for continuation outputs
@@ -728,10 +745,16 @@ export async function spendContract(
     return baseOutput;
   });
 
-  // Add temporary change output if we have a surplus or picked wallet UTXOs (and useSenderFee is true)
+  // Add temporary wallet change when wallet UTXOs were selected with surplus.
+  // With useSenderFee=true this change later pays the fee. With useSenderFee=false,
+  // fees are deducted from the covenant/top-up output and this change returns only
+  // the wallet-input excess above the requested added amount.
   let changeOutputIdx = -1;
   const totalInputsAmount = inputAmountSompi + walletSelectedAmount;
-  if (useSenderFee && totalInputsAmount > spendOutputsSum) {
+  if (
+    totalInputsAmount > spendOutputsSum &&
+    (useSenderFee || selectedWalletUtxos.length > 0)
+  ) {
     changeOutputIdx = txOutputs.length;
     txOutputs.push({
       scriptPublicKey: payToAddressScript(senderAddress),
@@ -834,8 +857,25 @@ export async function spendContract(
       );
     }
 
-    unsignedTx.outputs[unsignedTx.outputs.length - 1].value =
-      unsignedTx.outputs[unsignedTx.outputs.length - 1].value - totalFees;
+    const feeOutputIndex = outputs.length - 1;
+    if (unsignedTx.outputs[feeOutputIndex].value <= totalFees) {
+      throw new Error(
+        `Insufficient output amount to cover fees (${totalFees} sompi). Enable "Use wallet to pay for fees" or increase the amount.`,
+      );
+    }
+
+    unsignedTx.outputs[feeOutputIndex].value =
+      unsignedTx.outputs[feeOutputIndex].value - totalFees;
+
+    if (
+      outputs.length === 1 &&
+      outputs[0].amount > inputAmountSompi &&
+      unsignedTx.outputs[feeOutputIndex].value <= inputAmountSompi
+    ) {
+      throw new Error(
+        `Top-up amount must exceed the transaction fee (${totalFees} sompi) when wallet-paid fees are disabled.`,
+      );
+    }
   }
   unsignedTx.finalize();
 
@@ -881,6 +921,15 @@ export async function spendContract(
       .drain();
   }
 
+  if (options.estimateOnly) {
+    return {
+      txid: unsignedTx.id,
+      functionName,
+      covenantId: utxoCovenantId,
+      fee: totalFees,
+    };
+  }
+
   const submitted = await rpc.submitTransaction({
     transaction: unsignedTx,
     allowOrphan: false,
@@ -890,6 +939,7 @@ export async function spendContract(
     txid: submitted.transactionId,
     functionName,
     covenantId: utxoCovenantId,
+    fee: totalFees,
   };
 }
 
@@ -955,6 +1005,7 @@ export async function buildPartialSpend(
   rpc: RpcClient,
   priorityFee: bigint = 0n,
   extraArgs?: Record<string, bigint>,
+  options: CovenantTransactionOptions = {},
 ): Promise<PartiallySignedSpend> {
   const covenantAddress = getCovenantAddress(compiled, network);
   const abiEntry = getAbiEntry(compiled, functionName);
@@ -1044,6 +1095,34 @@ export async function buildPartialSpend(
     unsignedTx.outputs[feeOutputIndex].value;
   unsignedTx.finalize();
 
+  if (options.estimateOnly) {
+    return {
+      compiledJson: JSON.stringify(compiled),
+      functionName,
+      network,
+      outpoint,
+      inputAmountSompi: inputAmountSompi.toString(),
+      outputs: adjustedOutputs.map((o) => ({
+        address: o.address,
+        amountSompi: o.amount.toString(),
+        covenantId: o.covenantId,
+      })),
+      signatures: [],
+      pendingParams: sigParams.map((param) => param.name),
+      lockTime: lockTime.toString(),
+      sigOpCount,
+      extraArgs: extraArgs
+        ? Object.fromEntries(
+            Object.entries(extraArgs).map(([key, value]) => [
+              key,
+              value.toString(),
+            ]),
+          )
+        : undefined,
+      fee: totalFees.toString(),
+    };
+  }
+
   // Sign this key's params
   const signatureHex = createInputSignature(
     unsignedTx,
@@ -1117,6 +1196,7 @@ export async function buildPartialSpend(
           ]),
         )
       : undefined,
+    fee: totalFees.toString(),
   };
 }
 
@@ -1128,6 +1208,7 @@ export async function completePartialSpend(
   partialSpend: PartiallySignedSpend,
   privateKeyHex: string,
   rpc: RpcClient,
+  options: CovenantTransactionOptions = {},
 ): Promise<SpendResult> {
   const compiled: CompiledContract = JSON.parse(partialSpend.compiledJson);
   const covenantAddress = getCovenantAddress(compiled, partialSpend.network);
@@ -1252,6 +1333,18 @@ export async function completePartialSpend(
     toScriptBytes(compiled),
   ).encodePayToScriptHashSignatureScript(sigPrefix);
 
+  const fee =
+    BigInt(partialSpend.inputAmountSompi) -
+    unsignedTx.outputs.reduce((sum, output) => sum + output.value, 0n);
+
+  if (options.estimateOnly) {
+    return {
+      txid: unsignedTx.id,
+      functionName: partialSpend.functionName,
+      fee,
+    };
+  }
+
   const submitted = await rpc.submitTransaction({
     transaction: unsignedTx,
     allowOrphan: false,
@@ -1260,6 +1353,7 @@ export async function completePartialSpend(
   return {
     txid: submitted.transactionId,
     functionName: partialSpend.functionName,
+    fee,
   };
 }
 

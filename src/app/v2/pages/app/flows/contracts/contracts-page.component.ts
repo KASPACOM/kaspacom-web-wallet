@@ -87,6 +87,7 @@ type ContractsTransientState = {
   interactInputAmount?: string;
   interactOutputAddress?: string;
   interactOutputAmount?: string;
+  topUpAmount?: string;
   partialSpendJson?: string;
   interactResult?: { txid: string; functionName: string };
 };
@@ -219,6 +220,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return wallet.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString();
   });
 
+  selectedPubkeyHash = computed(() => {
+    const pubkey = this.selectedPubkey();
+    return pubkey ? this.computeBlake2bHex(this.hex32ToBytes(pubkey)) : '';
+  });
+
   // Deploy form - plain properties for ngModel
   deployContractJson = signal('');
   deployContractTouched = false;
@@ -313,6 +319,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   // Lookup form
   lookupContractJson = '';
   interactOutputAmount = '';
+  topUpAmount = '';
   selectedFunction = '';
   useSenderFee = true;
 
@@ -506,6 +513,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.interactOutputAddress = state.interactOutputAddress;
     if (state.interactOutputAmount !== undefined)
       this.interactOutputAmount = state.interactOutputAmount;
+    if (state.topUpAmount !== undefined) this.topUpAmount = state.topUpAmount;
     if (state.partialSpendJson !== undefined)
       this.partialSpendJson.set(state.partialSpendJson);
     if (state.interactResult !== undefined)
@@ -807,14 +815,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             value: this.getTemplateValueByName('heir'),
           },
           {
-            name: 'checkInDeadline',
-            type: 'blueScore',
-            value: String(
-              this.parseDateToUnixMs(
-                String(this.templateFormValues['expiry'] ?? '').trim(),
-                'Initial Expiry (Unix timestamp)',
-              ),
-            ),
+            name: 'inactivityPeriodDays',
+            type: 'days',
+            value: String(this.templateFormValues['expiry'] ?? '').trim(),
           },
         ];
       } else if (template.id === 'time-lock-vault') {
@@ -878,13 +881,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     try {
       await this.generateContract();
       const generated = this.generatedContractJson();
-      if (!generated) return;
+      if (!generated) {
+        const message =
+          this.templateError() || 'Failed to generate contract from template';
+        this.deployError.set(message);
+        return;
+      }
       this.deployContractJson.set(generated);
       await this.deployContract();
     } catch (error: any) {
-      this.templateError.set(
-        error?.message || 'Failed to prepare contract for deployment',
-      );
+      const message =
+        error?.message || 'Failed to prepare contract for deployment';
+      this.templateError.set(message);
+      this.deployError.set(message);
     }
   }
 
@@ -924,7 +933,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       timeout:
         'The earliest date when the recovery wallet can use the backup withdrawal path.',
       expiry:
-        'The deadline used by this covenant. The wallet converts this date to the timestamp format required by Kaspa.',
+        this.activeTemplate()?.id === 'dead-mans-switch'
+          ? 'How many days the owner can be inactive before the heir can claim.'
+          : 'The deadline used by this covenant. The wallet converts this date to the timestamp format required by Kaspa.',
     };
 
     return help[field.paramName] || field.description;
@@ -1280,13 +1291,26 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     );
   }
 
+  private currentWalletPubkey(): string | undefined {
+    return this.currentWallet()
+      ?.getPrivateKey()
+      .toPublicKey()
+      .toXOnlyPublicKey()
+      .toString();
+  }
+
+  private currentWalletPubkeyHash(): string | undefined {
+    const pubkey = this.currentWalletPubkey();
+    return pubkey ? this.computeBlake2bHex(this.hex32ToBytes(pubkey)) : undefined;
+  }
+
   private async loadIndexerDashboardEntries(): Promise<
     ContractDashboardEntry[]
   > {
     const wallet = this.currentWallet();
     const identifiers = [
       wallet?.getAddress(),
-      wallet?.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString(),
+      this.currentWalletPubkeyHash(),
     ].filter((value): value is string => !!value);
 
     if (identifiers.length === 0) return [];
@@ -1379,19 +1403,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       merged.set(local?.id || key, {
         ...entry,
         source: local ? 'both' : entry.source,
-        status: local?.status === 'spent' ? 'spent' : entry.status,
-        amountSompi:
-          local && local.status === 'spent' && hasAmount(local)
-            ? local.amountSompi
-            : entry.amountSompi,
-        latestTxid:
-          local?.status === 'spent' && local.latestTxid
-            ? local.latestTxid
-            : entry.latestTxid,
-        latestAction:
-          local?.status === 'spent' && local.latestAction
-            ? local.latestAction
-            : entry.latestAction,
+        status: entry.status,
+        amountSompi: entry.amountSompi,
+        latestTxid: entry.latestTxid,
+        latestAction: entry.latestAction,
         registryEntry: local?.registryEntry,
       });
     }
@@ -1663,7 +1678,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const wallet = this.currentWallet();
     const candidates = [
       wallet?.getAddress(),
-      wallet?.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString(),
+      this.currentWalletPubkey(),
+      this.currentWalletPubkeyHash(),
     ]
       .filter((value): value is string => !!value)
       .map((value) => value.toLowerCase());
@@ -2526,7 +2542,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         return {
           owner: requireArg('owner'),
           heir: requireArg('heir'),
-          expiry: requireArg('checkInDeadline'),
+          expiry:
+            byName.get('inactivityPeriodDays') ??
+            byName.get('inactivityPeriod') ??
+            requireArg('checkInDeadline'),
         };
       default:
         throw new Error(`Unsupported covenant template "${template.name}".`);
@@ -2851,6 +2870,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const outputAddress =
       this.interactResolvedOutputAddress || this.interactOutputAddress;
     const outputAmountKas = parseFloat(this.interactOutputAmount);
+    const topUpAmountKas = parseFloat(this.topUpAmount);
 
     if (!contractJson) {
       this.interactError.set('Contract JSON is required');
@@ -2884,7 +2904,39 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       let outputs: SpendOutput[];
       let extraArgsOverride: Record<string, bigint> | undefined;
 
-      if (functionName === 'arbitrate' && compiled.contract_name === 'Escrow') {
+      if (this.isTopUpFunction(functionName)) {
+        if (isNaN(topUpAmountKas) || topUpAmountKas <= 0) {
+          this.interactError.set('Top-up amount must be greater than 0');
+          return;
+        }
+
+        const covenantId = this.selectedContract()?.covenantId;
+        if (!covenantId) {
+          this.interactError.set(
+            'Cannot top up this contract until its covenant ID is known. Refresh/import it from the indexer first.',
+          );
+          return;
+        }
+
+        const topUpAmount = BigInt(Math.floor(topUpAmountKas * 1e8));
+        if (topUpAmount <= 0n) {
+          this.interactError.set(
+            'Top-up amount must be at least 0.00000001 KAS',
+          );
+          return;
+        }
+
+        outputs = [
+          {
+            address: this.covenantService.getContractAddress(compiled),
+            amount: inputAmount + topUpAmount,
+            covenantId,
+          },
+        ];
+      } else if (
+        functionName === 'arbitrate' &&
+        compiled.contract_name === 'Escrow'
+      ) {
         // Escrow arbitrate: the "Withdraw Amount (KAS)" field is reused as amountToSeller.
         if (isNaN(outputAmountKas) || outputAmountKas <= 0) {
           this.interactError.set(
@@ -3041,6 +3093,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           interactInputAmount: this.interactInputAmount,
           interactOutputAddress: this.interactOutputAddress,
           interactOutputAmount: this.interactOutputAmount,
+          topUpAmount: this.topUpAmount,
           partialSpendJson: partialJson,
           interactResult: {
             txid: '(partial - share with co-signer)',
@@ -3079,7 +3132,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
       // Update registry based on function type
       if (this.selectedContractId()) {
-        if (this.functionRequiresOutput(functionName)) {
+        if (this.isTopUpFunction(functionName)) {
+          this.registryService.updateContract(this.selectedContractId(), {
+            lastChecked: Date.now(),
+            outpoint: { txid: result.txid, vout: 0 },
+            amountSompi: outputs[0].amount.toString(),
+            covenantId:
+              this.selectedContract()?.covenantId || result.covenantId,
+          });
+          this.interactOutpointTxid = result.txid;
+          this.interactOutpointVout = '0';
+          this.interactInputAmount = outputs[0].amount.toString();
+          this.topUpAmount = '';
+        } else if (this.functionRequiresOutput(functionName)) {
           const covenantAddress =
             this.covenantService.getContractAddress(compiled);
           const continuationOutputIndex = outputs.findIndex(
@@ -3181,108 +3246,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   ): Promise<void> {
     this.dmsKeepAliveError.set(null);
 
-    // 1. Validate new expiry
-    const newExpiryRaw = this.dmsNewExpiry?.toString().trim();
-    if (!newExpiryRaw) {
-      this.interactError.set(
-        'Enter the new expiry timestamp for the refreshed contract.',
-      );
-      return;
-    }
-    let newExpiryMs: number;
-    try {
-      newExpiryMs = this.parseDateToUnixMs(newExpiryRaw, 'New Expiry');
-    } catch (e: any) {
-      this.interactError.set(e?.message || 'Invalid expiry timestamp.');
-      return;
-    }
-
-    // 2. Extract owner and heir pubkey bytes from the current compiled script.
-    //    The DMS constructor order is: owner (param 0), heir (param 1).
-    const pubkeys = this.extractPubkeysFromScript(compiled);
-    if (pubkeys.length < 2) {
-      this.interactError.set(
-        'Could not extract owner/heir pubkeys from the contract script.',
-      );
-      return;
-    }
-    const ownerPubkeyBytes = this.hexStringToBytes(pubkeys[0]);
-    const heirPubkeyBytes = this.hexStringToBytes(pubkeys[1]);
-
-    // 3. Generate new DMS compiled JSON with same owner/heir, new expiry.
-    let newCompiledJson: string;
-    let newCompiled: CompiledContract;
-    try {
-      const template = await firstValueFrom(
-        this.http.get<any>('assets/covenant-templates/dead-mans-switch.json'),
-      );
-      const DMS_TEMPLATE = CONTRACT_TEMPLATES.find(
-        (t) => t.id === 'dead-mans-switch',
-      )!;
-      const descriptor = this.templatePatcher.extractPatchDescriptor(
-        template,
-        DMS_TEMPLATE.placeholderArgs,
-      );
-
-      const newArgs: import('../../../../services/covenant/template-patcher.service').CtorArg[] =
-        [
-          {
-            kind: 'array',
-            data: Array.from(ownerPubkeyBytes).map((b) => ({
-              kind: 'byte' as const,
-              data: b,
-            })),
-          },
-          {
-            kind: 'array',
-            data: Array.from(heirPubkeyBytes).map((b) => ({
-              kind: 'byte' as const,
-              data: b,
-            })),
-          },
-          { kind: 'int', data: newExpiryMs },
-        ];
-
-      const patched = this.templatePatcher.applyPatch(
-        template,
-        descriptor,
-        newArgs,
-      );
-      // Attach TN10 metadata using the current registry entry's stored values
-      const currentEntry = this.registryContracts().find(
-        (c) => c.id === this.selectedContractId(),
-      );
-      const ownerAddress =
-        currentEntry?.deployedBy?.address ||
-        this.currentWallet()?.getAddress() ||
-        '';
-      const heirAddress = this.pubkeyToAddress(pubkeys[1]);
-      patched.tn10 = {
-        v: 1,
-        tmpl: 'DeadManSwitch',
-        args: [
-          { name: 'owner', type: 'address', value: ownerAddress },
-          { name: 'heir', type: 'address', value: heirAddress },
-          {
-            name: 'checkInDeadline',
-            type: 'blueScore',
-            value: String(newExpiryMs),
-          },
-        ],
-      };
-      newCompiledJson = JSON.stringify(patched);
-      newCompiled = this.covenantService.parseCompiledContract(newCompiledJson);
-    } catch (e: any) {
-      this.interactError.set(
-        e?.message || 'Failed to generate new DMS contract.',
-      );
-      return;
-    }
-
-    const newContractAddress =
-      this.covenantService.getContractAddress(newCompiled);
-
-    // 4. Get the covenant ID from the registry for the old contract (for CovenantBinding)
     const oldEntry = this.registryContracts().find(
       (c) => c.id === this.selectedContractId(),
     );
@@ -3291,25 +3254,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     // Build spend output: full amount → new DMS address, with CovenantBinding if we have a covenantId
     const spendOutputs: SpendOutput[] = [
       {
-        address: newContractAddress,
+        address: this.covenantService.getContractAddress(compiled),
         amount: inputAmount,
         covenantId: oldCovenantId, // attach binding to preserve lineage
       },
     ];
-
-    // Build the payload hex for the new contract
-    let newPayloadHex: string | undefined;
-    if (newCompiled.tn10) {
-      try {
-        const payloadJson = JSON.stringify({ tn10: newCompiled.tn10 });
-        const payloadBytes = new TextEncoder().encode(payloadJson);
-        newPayloadHex = Array.from(payloadBytes)
-          .map((b) => b.toString(16).padStart(2, '0'))
-          .join('');
-      } catch (err) {
-        console.warn('Failed to encode new contract payload:', err);
-      }
-    }
 
     // 5. Execute the keepAlive spend on the old contract
     const result = await this.runCovenantSpendAction(
@@ -3321,55 +3270,20 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       spendOutputs,
       undefined,
       oldCovenantId,
-      this.useSenderFee,
-      newPayloadHex,
+      true,
     );
     if (!result) return;
 
     this.interactResult.set({ txid: result.txid, functionName: 'keepAlive' });
 
-    // Update old registry entry as spent
     if (this.selectedContractId()) {
       this.registryService.updateContract(this.selectedContractId(), {
-        status: 'spent',
-        spendTxid: result.txid,
+        status: 'active',
+        outpoint: { txid: result.txid, vout: 0 },
+        amountSompi: inputAmount.toString(),
         lastChecked: Date.now(),
       });
     }
-
-    // Register the new continuation contract
-    const wallet = this.currentWallet()!;
-    const newEntry: import('../../../../../services/covenant/contract-registry.service').ContractRegistryEntry =
-      {
-        id: this.registryService.generateId(),
-        contractName: 'DeadManSwitch',
-        compiledJson: newCompiledJson,
-        deployTxid: result.txid,
-        contractAddress: newContractAddress,
-        outpoint: { txid: result.txid, vout: 0 },
-        amountSompi: inputAmount.toString(),
-        deployedBy: {
-          address: wallet.getAddress(),
-          pubkey: wallet
-            .getPrivateKey()
-            .toPublicKey()
-            .toXOnlyPublicKey()
-            .toString(),
-          accountName: wallet.getDisplayName(),
-        },
-        deployedAt: Date.now(),
-        network: this.network(),
-        status: 'active',
-        lastChecked: Date.now(),
-        accessRoles: this.parseAccessRoles(newCompiled),
-        covenantId: oldCovenantId ?? result.covenantId,
-        predecessorId: this.selectedContractId() || undefined,
-      };
-    this.registryService.addContract(newEntry);
-
-    // Auto-select the new contract in the interact form
-    this.selectedContractId.set(newEntry.id);
-    this.interactContractJson.set(newCompiledJson);
     this.interactOutpointTxid = result.txid;
     this.interactOutpointVout = '0';
     this.interactInputAmount = inputAmount.toString();
@@ -3754,6 +3668,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   /** Functions that do NOT produce an external withdrawal output */
   private readonly REDEPLOY_FUNCTIONS = new Set(['keepAlive', 'increment']);
 
+  isTopUpFunction(fnName: string): boolean {
+    return fnName === 'topUp';
+  }
+
   /**
    * Returns true when the current function is DMS keepAlive (requires special handling).
    * DMS keepAlive must produce output to a *new* DMS contract (with updated expiry),
@@ -3784,7 +3702,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * keepAlive re-deploys to the covenant itself; increment updates on-chain state.
    */
   functionRequiresOutput(fnName: string): boolean {
-    return !!fnName && !this.REDEPLOY_FUNCTIONS.has(fnName);
+    return (
+      !!fnName &&
+      !this.REDEPLOY_FUNCTIONS.has(fnName) &&
+      !this.isTopUpFunction(fnName)
+    );
   }
 
   /**
@@ -3801,9 +3723,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.partialSpendJson.set(null);
     this.extraArgValues = {};
     this.dmsNewExpiry = '';
+    this.topUpAmount = '';
     this.dmsKeepAliveError.set(null);
 
-    if (this.functionRequiresOutput(name)) {
+    if (this.isTopUpFunction(name)) {
+      this.interactOutputAddress = '';
+      this.interactOutputAmount = '';
+    } else if (this.functionRequiresOutput(name)) {
       // Withdrawal function: default output to user's wallet, clear amount
       this.interactOutputAddress = this.currentWallet()?.getAddress() || '';
       this.interactOutputAmount = '';
@@ -3846,6 +3772,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       increment: '➕ Increment',
       keepAlive: '♻️ Keep Alive',
       execute: '⚡ Execute',
+      topUp: 'Top Up',
     };
     return labels[name] || name;
   }
@@ -3912,6 +3839,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       keepAlive:
         'Re-deploy the contract with a refreshed timer. No funds are withdrawn.',
       execute: "Execute this contract's logic.",
+      topUp:
+        'Add KAS to this covenant by spending the current covenant UTXO and recreating it with the same covenant ID.',
     };
 
     return fallback[name] || `Call the "${name}" function on this contract.`;

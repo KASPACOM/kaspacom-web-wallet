@@ -64,6 +64,7 @@ export interface DeployResult {
   outpoint: CovenantOutpoint;
   /** Genesis covenant ID (hex) — available when CovenantBinding is attached */
   covenantId?: string;
+  fee?: bigint;
 }
 
 export interface SpendResult {
@@ -71,6 +72,7 @@ export interface SpendResult {
   functionName: string;
   /** Covenant ID (hex) — present for continuation spends */
   covenantId?: string;
+  fee?: bigint;
 }
 
 export interface CovenantUtxoInfo {
@@ -105,4 +107,9 @@ export interface PartiallySignedSpend {
   sigOpCount: number;
   /** Extra non-sig/pubkey args (e.g. int amountToSeller) — serialized as strings */
   extraArgs?: Record<string, string>;
+  fee?: string;
+}
+
+export interface CovenantTransactionOptions {
+  estimateOnly?: boolean;
 }

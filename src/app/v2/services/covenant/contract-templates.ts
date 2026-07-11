@@ -168,9 +168,9 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
       },
       {
         paramName: 'expiry',
-        label: 'First check-in deadline',
-        type: 'int_timestamp',
-        placeholder: '1735689600',
+        label: 'Inactivity period (days)',
+        type: 'int_days',
+        placeholder: '30',
         description: 'When the heir can first claim if owner is inactive. Enter as Unix timestamp (seconds) — will be auto-converted to milliseconds. The owner can extend this by calling keepAlive.',
       },
     ],

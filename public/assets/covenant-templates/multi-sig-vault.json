@@ -1,13 +1,15 @@
 {
   "contract_name": "MultiSigVault",
+  "compiler_version": "0.1.0",
   "script": [
+    107,
+    108,
     118,
     0,
     156,
     99,
     117,
-    81,
-    121,
+    120,
     32,
     204,
     205,
@@ -43,8 +45,7 @@
     235,
     172,
     105,
-    0,
-    121,
+    118,
     32,
     221,
     222,
@@ -89,8 +90,7 @@
     156,
     99,
     117,
-    81,
-    121,
+    120,
     32,
     204,
     205,
@@ -126,8 +126,7 @@
     235,
     172,
     105,
-    0,
-    121,
+    118,
     32,
     238,
     239,
@@ -172,8 +171,7 @@
     156,
     99,
     117,
-    81,
-    121,
+    120,
     32,
     221,
     222,
@@ -209,8 +207,7 @@
     252,
     172,
     105,
-    0,
-    121,
+    118,
     32,
     238,
     239,
@@ -250,14 +247,45 @@
     117,
     81,
     103,
+    118,
+    83,
+    156,
+    99,
+    117,
+    185,
+    0,
+    156,
+    105,
+    0,
+    194,
+    185,
+    190,
+    160,
+    105,
+    0,
+    195,
+    185,
+    191,
+    135,
+    105,
+    81,
+    103,
     117,
     0,
     105,
     104,
     104,
+    104,
     104
   ],
   "ast": {
+    "pragma": {
+      "name": "silverscript",
+      "value": "^0.1.0",
+      "span": "pragma silverscript ^0.1.0;",
+      "name_span": "silverscript",
+      "value_span": "^0.1.0"
+    },
     "name": "MultiSigVault",
     "params": [
       {
@@ -314,6 +342,7 @@
         ],
         "entrypoint": true,
         "return_types": [],
+        "returns_tuple": false,
         "body": [
           {
             "kind": "require",
@@ -373,9 +402,9 @@
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function spend12(sig s1, sig s2) {\n        require(checkSig(s1, key1));\n        require(checkSig(s2, key2));\n    }",
+        "span": "entrypoint function spend12(sig s1, sig s2) {\r\n        require(checkSig(s1, key1));\r\n        require(checkSig(s2, key2));\r\n    }",
         "name_span": "spend12",
-        "body_span": "require(checkSig(s1, key1));\n        require(checkSig(s2, key2));"
+        "body_span": "require(checkSig(s1, key1));\r\n        require(checkSig(s2, key2));"
       },
       {
         "name": "spend13",
@@ -401,6 +430,7 @@
         ],
         "entrypoint": true,
         "return_types": [],
+        "returns_tuple": false,
         "body": [
           {
             "kind": "require",
@@ -460,9 +490,9 @@
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function spend13(sig s1, sig s3) {\n        require(checkSig(s1, key1));\n        require(checkSig(s3, key3));\n    }",
+        "span": "entrypoint function spend13(sig s1, sig s3) {\r\n        require(checkSig(s1, key1));\r\n        require(checkSig(s3, key3));\r\n    }",
         "name_span": "spend13",
-        "body_span": "require(checkSig(s1, key1));\n        require(checkSig(s3, key3));"
+        "body_span": "require(checkSig(s1, key1));\r\n        require(checkSig(s3, key3));"
       },
       {
         "name": "spend23",
@@ -488,6 +518,7 @@
         ],
         "entrypoint": true,
         "return_types": [],
+        "returns_tuple": false,
         "body": [
           {
             "kind": "require",
@@ -547,12 +578,132 @@
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function spend23(sig s2, sig s3) {\n        require(checkSig(s2, key2));\n        require(checkSig(s3, key3));\n    }",
+        "span": "entrypoint function spend23(sig s2, sig s3) {\r\n        require(checkSig(s2, key2));\r\n        require(checkSig(s3, key3));\r\n    }",
         "name_span": "spend23",
-        "body_span": "require(checkSig(s2, key2));\n        require(checkSig(s3, key3));"
+        "body_span": "require(checkSig(s2, key2));\r\n        require(checkSig(s3, key3));"
+      },
+      {
+        "name": "topUp",
+        "params": [],
+        "entrypoint": true,
+        "return_types": [],
+        "returns_tuple": false,
+        "body": [
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "nullary",
+                    "data": "active_input_index",
+                    "span": "this.activeInputIndex"
+                  },
+                  "right": {
+                    "kind": "int",
+                    "data": 0,
+                    "span": "0"
+                  }
+                },
+                "span": "this.activeInputIndex == 0"
+              },
+              "message": null,
+              "span": "require(this.activeInputIndex == 0);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "gt",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_value",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".value"
+                    },
+                    "span": "tx.outputs[0].value"
+                  },
+                  "right": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "input_value",
+                      "index": {
+                        "kind": "nullary",
+                        "data": "active_input_index",
+                        "span": "this.activeInputIndex"
+                      },
+                      "field_span": ".value"
+                    },
+                    "span": "tx.inputs[this.activeInputIndex].value"
+                  }
+                },
+                "span": "tx.outputs[0].value > tx.inputs[this.activeInputIndex].value"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_script_pub_key",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".scriptPubKey"
+                    },
+                    "span": "tx.outputs[0].scriptPubKey"
+                  },
+                  "right": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "input_script_pub_key",
+                      "index": {
+                        "kind": "nullary",
+                        "data": "active_input_index",
+                        "span": "this.activeInputIndex"
+                      },
+                      "field_span": ".scriptPubKey"
+                    },
+                    "span": "tx.inputs[this.activeInputIndex].scriptPubKey"
+                  }
+                },
+                "span": "tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);",
+              "message_span": null
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function topUp() {\r\n        require(this.activeInputIndex == 0);\r\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\r\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\r\n    }",
+        "name_span": "topUp",
+        "body_span": "require(this.activeInputIndex == 0);\r\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\r\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);"
       }
     ],
-    "span": "contract MultiSigVault(pubkey key1, pubkey key2, pubkey key3) {\n    // Key1 + Key2 sign\n    entrypoint function spend12(sig s1, sig s2) {\n        require(checkSig(s1, key1));\n        require(checkSig(s2, key2));\n    }\n\n    // Key1 + Key3 sign\n    entrypoint function spend13(sig s1, sig s3) {\n        require(checkSig(s1, key1));\n        require(checkSig(s3, key3));\n    }\n\n    // Key2 + Key3 sign\n    entrypoint function spend23(sig s2, sig s3) {\n        require(checkSig(s2, key2));\n        require(checkSig(s3, key3));\n    }\n}",
+    "span": "contract MultiSigVault(pubkey key1, pubkey key2, pubkey key3) {\r\n    // Key1 + Key2 sign\r\n    entrypoint function spend12(sig s1, sig s2) {\r\n        require(checkSig(s1, key1));\r\n        require(checkSig(s2, key2));\r\n    }\r\n\r\n    // Key1 + Key3 sign\r\n    entrypoint function spend13(sig s1, sig s3) {\r\n        require(checkSig(s1, key1));\r\n        require(checkSig(s3, key3));\r\n    }\r\n\r\n    // Key2 + Key3 sign\r\n    entrypoint function spend23(sig s2, sig s3) {\r\n        require(checkSig(s2, key2));\r\n        require(checkSig(s3, key3));\r\n    }\r\n\r\n    entrypoint function topUp() {\r\n        require(this.activeInputIndex == 0);\r\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\r\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\r\n    }\r\n}",
     "name_span": "MultiSigVault"
   },
   "abi": [
@@ -594,7 +745,16 @@
           "type_name": "sig"
         }
       ]
+    },
+    {
+      "name": "topUp",
+      "inputs": []
     }
   ],
-  "without_selector": false
+  "without_selector": false,
+  "state_layout": {
+    "start": 1,
+    "len": 0
+  },
+  "debug_info": null
 }

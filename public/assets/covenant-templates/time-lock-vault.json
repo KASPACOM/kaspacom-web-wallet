@@ -1,13 +1,15 @@
 {
   "contract_name": "TimeLockVault",
+  "compiler_version": "0.1.0",
   "script": [
+    107,
+    108,
     118,
     0,
     156,
     99,
     117,
-    0,
-    121,
+    118,
     32,
     170,
     171,
@@ -51,8 +53,7 @@
     156,
     99,
     117,
-    0,
-    121,
+    118,
     32,
     187,
     186,
@@ -99,13 +100,44 @@
     117,
     81,
     103,
+    118,
+    82,
+    156,
+    99,
+    117,
+    185,
+    0,
+    156,
+    105,
+    0,
+    194,
+    185,
+    190,
+    160,
+    105,
+    0,
+    195,
+    185,
+    191,
+    135,
+    105,
+    81,
+    103,
     117,
     0,
     105,
     104,
+    104,
     104
   ],
   "ast": {
+    "pragma": {
+      "name": "silverscript",
+      "value": "^0.1.0",
+      "span": "pragma silverscript ^0.1.0;",
+      "name_span": "silverscript",
+      "value_span": "^0.1.0"
+    },
     "name": "TimeLockVault",
     "params": [
       {
@@ -153,6 +185,7 @@
         ],
         "entrypoint": true,
         "return_types": [],
+        "returns_tuple": false,
         "body": [
           {
             "kind": "require",
@@ -184,7 +217,7 @@
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function spend(sig s) {\n        // Owner can spend anytime with valid signature\n        require(checkSig(s, owner));\n    }",
+        "span": "entrypoint function spend(sig s) {\r\n        // Owner can spend anytime with valid signature\r\n        require(checkSig(s, owner));\r\n    }",
         "name_span": "spend",
         "body_span": "require(checkSig(s, owner));"
       },
@@ -203,6 +236,7 @@
         ],
         "entrypoint": true,
         "return_types": [],
+        "returns_tuple": false,
         "body": [
           {
             "kind": "require",
@@ -249,12 +283,132 @@
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function recover(sig s) {\n        // Recovery can spend only after timeout\n        require(checkSig(s, recovery));\n        require(tx.time >= timeout);\n    }",
+        "span": "entrypoint function recover(sig s) {\r\n        // Recovery can spend only after timeout\r\n        require(checkSig(s, recovery));\r\n        require(tx.time >= timeout);\r\n    }",
         "name_span": "recover",
-        "body_span": "require(checkSig(s, recovery));\n        require(tx.time >= timeout);"
+        "body_span": "require(checkSig(s, recovery));\r\n        require(tx.time >= timeout);"
+      },
+      {
+        "name": "topUp",
+        "params": [],
+        "entrypoint": true,
+        "return_types": [],
+        "returns_tuple": false,
+        "body": [
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "nullary",
+                    "data": "active_input_index",
+                    "span": "this.activeInputIndex"
+                  },
+                  "right": {
+                    "kind": "int",
+                    "data": 0,
+                    "span": "0"
+                  }
+                },
+                "span": "this.activeInputIndex == 0"
+              },
+              "message": null,
+              "span": "require(this.activeInputIndex == 0);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "gt",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_value",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".value"
+                    },
+                    "span": "tx.outputs[0].value"
+                  },
+                  "right": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "input_value",
+                      "index": {
+                        "kind": "nullary",
+                        "data": "active_input_index",
+                        "span": "this.activeInputIndex"
+                      },
+                      "field_span": ".value"
+                    },
+                    "span": "tx.inputs[this.activeInputIndex].value"
+                  }
+                },
+                "span": "tx.outputs[0].value > tx.inputs[this.activeInputIndex].value"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_script_pub_key",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".scriptPubKey"
+                    },
+                    "span": "tx.outputs[0].scriptPubKey"
+                  },
+                  "right": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "input_script_pub_key",
+                      "index": {
+                        "kind": "nullary",
+                        "data": "active_input_index",
+                        "span": "this.activeInputIndex"
+                      },
+                      "field_span": ".scriptPubKey"
+                    },
+                    "span": "tx.inputs[this.activeInputIndex].scriptPubKey"
+                  }
+                },
+                "span": "tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);",
+              "message_span": null
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function topUp() {\r\n        require(this.activeInputIndex == 0);\r\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\r\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\r\n    }",
+        "name_span": "topUp",
+        "body_span": "require(this.activeInputIndex == 0);\r\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\r\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);"
       }
     ],
-    "span": "contract TimeLockVault(\n    pubkey owner,\n    pubkey recovery,\n    int timeout\n) {\n    entrypoint function spend(sig s) {\n        // Owner can spend anytime with valid signature\n        require(checkSig(s, owner));\n    }\n\n    entrypoint function recover(sig s) {\n        // Recovery can spend only after timeout\n        require(checkSig(s, recovery));\n        require(tx.time >= timeout);\n    }\n}",
+    "span": "contract TimeLockVault(\r\n    pubkey owner,\r\n    pubkey recovery,\r\n    int timeout\r\n) {\r\n    entrypoint function spend(sig s) {\r\n        // Owner can spend anytime with valid signature\r\n        require(checkSig(s, owner));\r\n    }\r\n\r\n    entrypoint function recover(sig s) {\r\n        // Recovery can spend only after timeout\r\n        require(checkSig(s, recovery));\r\n        require(tx.time >= timeout);\r\n    }\r\n\r\n    entrypoint function topUp() {\r\n        require(this.activeInputIndex == 0);\r\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\r\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\r\n    }\r\n}",
     "name_span": "TimeLockVault"
   },
   "abi": [
@@ -275,7 +429,16 @@
           "type_name": "sig"
         }
       ]
+    },
+    {
+      "name": "topUp",
+      "inputs": []
     }
   ],
-  "without_selector": false
+  "without_selector": false,
+  "state_layout": {
+    "start": 1,
+    "len": 0
+  },
+  "debug_info": null
 }

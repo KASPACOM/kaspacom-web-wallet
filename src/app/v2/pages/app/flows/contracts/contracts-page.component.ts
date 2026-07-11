@@ -417,6 +417,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       contract.contract_name === 'Escrow'
     )
       return [];
+    if (
+      contract.contract_name === 'DeadManSwitch' &&
+      (this.selectedFunction === 'keepAlive' ||
+        this.selectedFunction === 'withdraw')
+    )
+      return [];
     // Only render extra-arg inputs the interact flow can actually collect/pass
     // (collectExtraArgs + completePartialSpend handle int/bool only).
     return abiEntry.inputs.filter(
@@ -815,9 +821,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             value: this.getTemplateValueByName('heir'),
           },
           {
-            name: 'inactivityPeriodDays',
-            type: 'days',
-            value: String(this.templateFormValues['expiry'] ?? '').trim(),
+            name: 'checkInDeadline',
+            type: 'blueScore',
+            value: String(
+              this.parseDateToUnixMs(
+                String(this.templateFormValues['expiry'] ?? '').trim(),
+                'Check-in Deadline',
+              ),
+            ),
           },
         ];
       } else if (template.id === 'time-lock-vault') {
@@ -2041,7 +2052,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private selectDefaultFunctionForContract(contractName: string) {
     const normalized = this.normalizeContractName(contractName);
     const preferred: Record<string, string[]> = {
-      DeadManSwitch: ['keepAlive', 'claim'],
+      DeadManSwitch: ['keepAlive', 'withdraw', 'claim'],
       TimeLockVault: ['spend', 'recover', 'withdraw'],
       MultiSigVault: ['spend12', 'spend', 'release'],
       EscrowWithArbiter: ['release', 'refund', 'arbitrate'],
@@ -2573,6 +2584,73 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     ) as CompiledContract;
   }
 
+  private async extractTemplateIntField(
+    compiled: CompiledContract,
+    templateId: string,
+    paramName: string,
+  ): Promise<bigint | undefined> {
+    const template = this.templateById(templateId);
+    if (!template) return undefined;
+
+    try {
+      const baseCompiled = await firstValueFrom(
+        this.http.get<any>(template.assetPath),
+      );
+      const descriptor = this.templatePatcher.extractPatchDescriptor(
+        baseCompiled,
+        template.placeholderArgs,
+      );
+      const param = descriptor.params.find((entry) => entry.name === paramName);
+      const position = param?.positions[0];
+      if (!param || param.paramType !== 'int_field' || !position) {
+        return undefined;
+      }
+
+      const bytes = compiled.script.slice(
+        position.offset,
+        position.offset + position.length,
+      );
+      let value = 0n;
+      for (let index = 0; index < bytes.length; index += 1) {
+        value += BigInt(bytes[index] & 0xff) << BigInt(index * 8);
+      }
+      return value;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private async extractTemplatePubkeyHex(
+    compiled: CompiledContract,
+    templateId: string,
+    paramName: string,
+  ): Promise<string | undefined> {
+    const template = this.templateById(templateId);
+    if (!template) return undefined;
+
+    try {
+      const baseCompiled = await firstValueFrom(
+        this.http.get<any>(template.assetPath),
+      );
+      const descriptor = this.templatePatcher.extractPatchDescriptor(
+        baseCompiled,
+        template.placeholderArgs,
+      );
+      const param = descriptor.params.find((entry) => entry.name === paramName);
+      const position = param?.positions[0];
+      if (!param || param.paramType !== 'pubkey' || !position) {
+        return undefined;
+      }
+
+      return compiled.script
+        .slice(position.offset, position.offset + position.length)
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join('');
+    } catch {
+      return undefined;
+    }
+  }
+
   /**
    * Delete a contract from registry
    */
@@ -2867,7 +2945,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const vout = parseInt(this.interactOutpointVout, 10);
     const inputAmountSompi = this.interactInputAmount;
     const functionName = this.selectedFunction;
-    const outputAddress =
+    let outputAddress =
       this.interactResolvedOutputAddress || this.interactOutputAddress;
     const outputAmountKas = parseFloat(this.interactOutputAmount);
     const topUpAmountKas = parseFloat(this.topUpAmount);
@@ -2903,6 +2981,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       // Build outputs based on function type
       let outputs: SpendOutput[];
       let extraArgsOverride: Record<string, bigint> | undefined;
+      let useSenderFeeOverride: boolean | undefined;
 
       if (this.isTopUpFunction(functionName)) {
         if (isNaN(topUpAmountKas) || topUpAmountKas <= 0) {
@@ -3009,6 +3088,33 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           return;
         }
         const withdrawalAmount = BigInt(Math.floor(outputAmountKas * 1e8));
+        if (
+          compiled.contract_name === 'DeadManSwitch' &&
+          functionName === 'withdraw'
+        ) {
+          if (withdrawalAmount >= inputAmount) {
+            this.interactError.set(
+              "Dead Man's Switch withdraw must leave a continuation in the contract. Use claim after the deadline for the heir path.",
+            );
+            return;
+          }
+          const owner =
+            (await this.extractTemplatePubkeyHex(
+              compiled,
+              'dead-mans-switch',
+              'owner',
+            )) || this.extractPubkeysFromScript(compiled)[0];
+          const ownerAddress = owner ? this.pubkeyToAddress(owner) : '';
+          if (!ownerAddress) {
+            this.interactError.set(
+              'Could not derive owner address from contract script',
+            );
+            return;
+          }
+          outputAddress = ownerAddress;
+          extraArgsOverride = { amount: withdrawalAmount };
+          useSenderFeeOverride = true;
+        }
         const withdrawalOutputs = this.buildWithdrawalOutputs(
           compiled,
           inputAmount,
@@ -3121,7 +3227,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         outputs,
         Object.keys(extraArgs).length > 0 ? extraArgs : undefined,
         undefined,
-        this.useSenderFee,
+        useSenderFeeOverride ?? this.useSenderFee,
       );
       if (!result) return;
 
@@ -3250,11 +3356,79 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       (c) => c.id === this.selectedContractId(),
     );
     const oldCovenantId = oldEntry?.covenantId;
+    const keepAliveAbi = compiled.abi.find((entry) => entry.name === 'keepAlive');
+    const supportsDeadlineKeepAlive =
+      keepAliveAbi?.inputs.some((input) => input.name === 'newDeadline') &&
+      (compiled.ast as any)?.fields?.some(
+        (field: any) => field.name === 'deadline',
+      );
+    if (!supportsDeadlineKeepAlive) {
+      this.dmsKeepAliveError.set(
+        'This Dead Man\'s Switch was deployed with the old inactivity-period contract. It cannot be migrated to the new deadline contract with keepAlive; deploy a new deadline-based Dead Man\'s Switch.',
+      );
+      return;
+    }
+
+    if (!this.dmsNewExpiry.trim()) {
+      this.dmsKeepAliveError.set('Select the new check-in deadline');
+      return;
+    }
+
+    const newDeadline = BigInt(
+      this.parseDateToUnixMs(this.dmsNewExpiry, 'New check-in deadline'),
+    );
+    const currentDeadline = await this.extractTemplateIntField(
+      compiled,
+      'dead-mans-switch',
+      'initDeadline',
+    );
+    if (currentDeadline !== undefined && newDeadline <= currentDeadline) {
+      this.dmsKeepAliveError.set(
+        `New check-in deadline must be later than the current deadline (${this.formatTimestamp(Number(currentDeadline))}).`,
+      );
+      return;
+    }
+    const fallbackPubkeys = this.extractPubkeysFromScript(compiled);
+    const owner =
+      (await this.extractTemplatePubkeyHex(
+        compiled,
+        'dead-mans-switch',
+        'owner',
+      )) || fallbackPubkeys[0];
+    const heir =
+      (await this.extractTemplatePubkeyHex(
+        compiled,
+        'dead-mans-switch',
+        'heir',
+      )) || fallbackPubkeys[1];
+    const ownerAddress = owner ? this.pubkeyToAddress(owner) : '';
+    const heirAddress = heir ? this.pubkeyToAddress(heir) : '';
+    if (!ownerAddress || !heirAddress) {
+      this.dmsKeepAliveError.set(
+        'Could not derive owner/heir addresses from contract script',
+      );
+      return;
+    }
+
+    const template = this.templateById('dead-mans-switch');
+    if (!template) {
+      this.dmsKeepAliveError.set("Dead Man's Switch template is unavailable");
+      return;
+    }
+
+    const nextCompiled = await this.compileTemplateWithFieldValues(template, {
+      owner: ownerAddress,
+      heir: heirAddress,
+      expiry: this.dmsNewExpiry,
+    });
+    const nextContractJson = JSON.stringify(nextCompiled, null, 2);
+    const nextContractAddress =
+      this.covenantService.getContractAddress(nextCompiled);
 
     // Build spend output: full amount → new DMS address, with CovenantBinding if we have a covenantId
     const spendOutputs: SpendOutput[] = [
       {
-        address: this.covenantService.getContractAddress(compiled),
+        address: nextContractAddress,
         amount: inputAmount,
         covenantId: oldCovenantId, // attach binding to preserve lineage
       },
@@ -3268,7 +3442,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       inputAmount,
       'keepAlive',
       spendOutputs,
-      undefined,
+      { newDeadline },
       oldCovenantId,
       true,
     );
@@ -3279,11 +3453,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (this.selectedContractId()) {
       this.registryService.updateContract(this.selectedContractId(), {
         status: 'active',
+        compiledJson: nextContractJson,
+        contractAddress: nextContractAddress,
+        accessRoles: this.parseAccessRoles(nextCompiled),
         outpoint: { txid: result.txid, vout: 0 },
         amountSompi: inputAmount.toString(),
         lastChecked: Date.now(),
       });
     }
+    this.interactContractJson.set(nextContractJson);
     this.interactOutpointTxid = result.txid;
     this.interactOutpointVout = '0';
     this.interactInputAmount = inputAmount.toString();

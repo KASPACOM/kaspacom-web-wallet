@@ -1300,6 +1300,14 @@ $tpl-accents: (
 .fw-bold {
   font-weight: 600;
 }
+
+// Active function button highlight
+.active-function {
+  border-color: var(--kaspa-20) !important;
+  background: rgba(111, 199, 186, 0.22) !important;
+  box-shadow: 0 0 0 2px rgba(111, 199, 186, 0.18) !important;
+  color: #fff !important;
+}
 .cursor-pointer {
   cursor: pointer;
 }

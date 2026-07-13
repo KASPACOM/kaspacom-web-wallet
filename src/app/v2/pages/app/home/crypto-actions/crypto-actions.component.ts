@@ -53,7 +53,7 @@ export class CryptoActionsComponent {
     ) {
       baseActions.push({
         title: 'contracts',
-        iconClass: 'icon-template',
+        iconClass: 'icon-file-02',
         iconColor: '',
         action: () => this.openContractsPage(),
       });

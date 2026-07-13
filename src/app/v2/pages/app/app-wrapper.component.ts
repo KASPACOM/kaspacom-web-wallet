@@ -1,5 +1,16 @@
-import { Component, inject, signal, computed, ViewChild, ElementRef, AfterViewInit, OnDestroy, OnInit, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser, CommonModule } from '@angular/common';
+import {
+  Component,
+  inject,
+  signal,
+  computed,
+  ElementRef,
+  AfterViewInit,
+  OnDestroy,
+  OnInit,
+  PLATFORM_ID,
+  viewChild,
+} from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterOutlet, ChildrenOutletContexts } from '@angular/router';
 import { navAnimation } from './common/animation/nav.animation';
 import { WrapperHeaderComponent } from './common/wrapper-header/wrapper-header.component';
@@ -13,16 +24,18 @@ import { DynamicFlowPageOutletComponent } from './common/flow-page/dynamic-flow-
 import { DynamicQuickActionDialogOutletComponent } from './common/quick-action-dialog/dynamic-quick-action-dialog-outlet.component';
 import { IframeAccountSelectionComponent } from './iframe-account-selection/iframe-account-selection.component';
 import { IframeAccountSelectionService } from '../../services/iframe-account-selection.service';
-import { DesktopViewService, MOBILE_BREAKPOINT } from '../../services/desktop-view.service';
+import {
+  DesktopViewService,
+  MOBILE_BREAKPOINT,
+} from '../../services/desktop-view.service';
 
-import { KcSnackbarComponent, KcSpinnerComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcSpinnerComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import { WalletService } from '../../../services/wallet.service';
 import { AssetsManagerService } from '../../../services/assets-manager/assets-manager.service';
 
 @Component({
   selector: 'app-app-wrapper',
   imports: [
-    CommonModule,
     RouterOutlet,
     WrapperHeaderComponent,
     WrapperNavComponent,
@@ -30,7 +43,6 @@ import { AssetsManagerService } from '../../../services/assets-manager/assets-ma
     DynamicFlowPageOutletComponent,
     DynamicQuickActionDialogOutletComponent,
     ReviewActionComponent,
-    KcSnackbarComponent,
     KcSpinnerComponent,
     KcIconComponent,
     IframeAccountSelectionComponent,
@@ -40,8 +52,8 @@ import { AssetsManagerService } from '../../../services/assets-manager/assets-ma
   animations: [navAnimation],
 })
 export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('graphCanvas', { static: false })
-  graphCanvas!: ElementRef<HTMLCanvasElement>;
+  readonly graphCanvas =
+    viewChild.required<ElementRef<HTMLCanvasElement>>('graphCanvas');
 
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
@@ -54,13 +66,17 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   protected assetsManager = inject(AssetsManagerService);
   iframeAccountSelectionService = inject(IframeAccountSelectionService);
   desktopViewService = inject(DesktopViewService);
-  shouldEnforceAccountSelection = signal(this.iframeAccountSelectionService.shouldEnforceAccountSelection());
+  shouldEnforceAccountSelection = signal(
+    this.iframeAccountSelectionService.shouldEnforceAccountSelection(),
+  );
 
   // Detect if running in iframe mode
   showIframeLoader = signal(false);
 
   // Track viewport width for responsive expanded layout
-  private windowWidth = signal(this.isBrowser ? window.innerWidth : MOBILE_BREAKPOINT);
+  private windowWidth = signal(
+    this.isBrowser ? window.innerWidth : MOBILE_BREAKPOINT,
+  );
   private readonly onResize = () => this.windowWidth.set(window.innerWidth);
 
   /** True only when the user opted in AND the viewport is wide enough. */
@@ -166,7 +182,7 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private initGraphAnimation(): void {
-    const canvas = this.graphCanvas.nativeElement;
+    const canvas = this.graphCanvas().nativeElement;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     this.ctx = ctx;
@@ -195,7 +211,7 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private resizeCanvas(): void {
-    const canvas = this.graphCanvas.nativeElement;
+    const canvas = this.graphCanvas().nativeElement;
     canvas.width = this.isBrowser ? window.innerWidth : 0;
     canvas.height = this.isBrowser ? window.innerHeight : 0;
   }
@@ -211,7 +227,7 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private drawConnections(): void {
-    const canvas = this.graphCanvas.nativeElement;
+    const canvas = this.graphCanvas().nativeElement;
     const maxDistance = Math.max(canvas.width, canvas.height);
 
     for (let i = 0; i < this.nodes.length; i++) {
@@ -254,7 +270,7 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private animate(): void {
-    const canvas = this.graphCanvas.nativeElement;
+    const canvas = this.graphCanvas().nativeElement;
 
     // Clear canvas
     this.ctx.clearRect(0, 0, canvas.width, canvas.height);

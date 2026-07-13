@@ -1,11 +1,10 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input, resource } from '@angular/core';
 import { UtilsService } from '../../services/utils/utils.service';
 import { ComponentSize } from '../../v2/pages/app/common/types/sizing.type';
 
 @Component({
   selector: 'kc-token-logo',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './token-logo.component.html',
   styleUrl: './token-logo.component.scss',
 })
@@ -17,11 +16,11 @@ export class TokenLogoComponent {
   size = input.required<ComponentSize>();
 
   imageResource = resource({
-    request: () => ({ address: this.address(), ticker: this.ticker() }),
-    loader: async ({ request }) => {
+    params: () => ({ address: this.address(), ticker: this.ticker() }),
+    loader: async ({ params }) => {
       return await this.utilsService.checkLogoImageUrl(
-        request.address,
-        request.ticker,
+        params.address,
+        params.ticker,
         false,
       );
     },

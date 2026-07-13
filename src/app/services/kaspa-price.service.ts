@@ -1,4 +1,4 @@
-import { Injectable, signal, OnDestroy } from '@angular/core';
+import { Injectable, signal, OnDestroy, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
 
@@ -7,12 +7,14 @@ interface KaspaPriceResponse {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class KaspaPriceService implements OnDestroy {
+  private readonly httpClient = inject(HttpClient);
+
   private readonly KASPA_PRICE_API_URL = 'https://api.kaspa.org/info/price';
   private readonly UPDATE_INTERVAL = 10000; // 10 seconds
-  
+
   private priceSignal = signal<number>(0);
   private intervalId: NodeJS.Timeout | undefined;
   private isLoadingSignal = signal<boolean>(false);
@@ -23,7 +25,7 @@ export class KaspaPriceService implements OnDestroy {
   public readonly isLoading = this.isLoadingSignal.asReadonly();
   public readonly lastUpdated = this.lastUpdatedSignal.asReadonly();
 
-  constructor(private readonly httpClient: HttpClient) {
+  constructor() {
     this.startPriceUpdates();
   }
 
@@ -34,7 +36,7 @@ export class KaspaPriceService implements OnDestroy {
   private startPriceUpdates(): void {
     // Fetch price immediately
     this.fetchPrice();
-    
+
     // Then start the interval for periodic updates
     this.intervalId = setInterval(() => {
       this.fetchPrice();
@@ -50,14 +52,15 @@ export class KaspaPriceService implements OnDestroy {
 
   private fetchPrice(): void {
     this.isLoadingSignal.set(true);
-    
-    this.httpClient.get<KaspaPriceResponse>(this.KASPA_PRICE_API_URL)
+
+    this.httpClient
+      .get<KaspaPriceResponse>(this.KASPA_PRICE_API_URL)
       .pipe(
         catchError((error) => {
           console.error('Failed to fetch Kaspa price:', error);
           // Return the current price to avoid disrupting the signal
           return of({ price: this.priceSignal() });
-        })
+        }),
       )
       .subscribe({
         next: (response) => {
@@ -68,7 +71,7 @@ export class KaspaPriceService implements OnDestroy {
         },
         complete: () => {
           this.isLoadingSignal.set(false);
-        }
+        },
       });
   }
 
@@ -85,4 +88,4 @@ export class KaspaPriceService implements OnDestroy {
   public getCurrentPrice(): number {
     return this.priceSignal();
   }
-} 
+}

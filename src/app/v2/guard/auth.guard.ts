@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   ActivatedRouteSnapshot,
   CanActivate,
@@ -12,10 +12,9 @@ import { PasswordManagerService } from '../../services/password-manager.service'
   providedIn: 'root',
 })
 export class AuthGuard implements CanActivate {
-  constructor(
-    private router: Router,
-    private passwordManagerService: PasswordManagerService,
-  ) {}
+  private router = inject(Router);
+  private passwordManagerService = inject(PasswordManagerService);
+
   // todo this is temp, clean this up when im sure about the flow
   async canActivate(
     route: ActivatedRouteSnapshot,

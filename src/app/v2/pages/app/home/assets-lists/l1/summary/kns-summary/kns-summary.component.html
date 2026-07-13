@@ -9,82 +9,134 @@
   @if (loading()) {
     <div class="skeleton-loading-container flex column gap-16 full-width">
       @for (skeleton of loadingSkeletons; track i; let i = $index) {
-        <div class="kns-summary-container__card card-0 flex full-width align-items-center justify-content-between p-16"
-             [style.opacity]="1 - (i * 0.15)">
-          <div class="kns-summary-container__domain-info flex align-items-center gap-16">
-            <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false"></app-skeleton>
+        <div
+          class="kns-summary-container__card card-0 flex full-width align-items-center justify-content-between p-16"
+          [style.opacity]="1 - i * 0.15"
+        >
+          <div
+            class="kns-summary-container__domain-info flex align-items-center gap-16"
+          >
+            <app-skeleton
+              [height]="'48px'"
+              [width]="'48px'"
+              [fullRound]="false"
+            />
             <div class="flex column gap-4">
-              <app-skeleton [height]="'20px'" [width]="'140px'" [fullRound]="false"></app-skeleton>
-              <app-skeleton [height]="'16px'" [width]="'100px'" [fullRound]="false"></app-skeleton>
+              <app-skeleton
+                [height]="'20px'"
+                [width]="'140px'"
+                [fullRound]="false"
+              />
+              <app-skeleton
+                [height]="'16px'"
+                [width]="'100px'"
+                [fullRound]="false"
+              />
             </div>
           </div>
-          <div class="kns-summary-container__status-info flex column align-items-end gap-4">
-            <app-skeleton [height]="'16px'" [width]="'80px'" [fullRound]="false"></app-skeleton>
+          <div
+            class="kns-summary-container__status-info flex column align-items-end gap-4"
+          >
+            <app-skeleton
+              [height]="'16px'"
+              [width]="'80px'"
+              [fullRound]="false"
+            />
           </div>
         </div>
       }
     </div>
   } @else if (domains().length === 0) {
     <div class="empty-state flex column align-items-center gap-16 p-32">
-      <div class="text-gray-60 typo-text-2 text-center">No KNS domains found</div>
-      <div class="text-gray-50 typo-text-1 text-center">Domains will appear here when available</div>
+      <div class="text-gray-60 typo-text-2 text-center">
+        No KNS domains found
+      </div>
+      <div class="text-gray-50 typo-text-1 text-center">
+        Domains will appear here when available
+      </div>
     </div>
   } @else {
-    @for ( domain of domains(); track trackByDomain($index, domain) ) {
-    <div
-      class="kns-summary-container__card card-0 card-hover flex full-width align-items-center justify-content-between p-16 fade-in cursor-pointer"
-      (click)="onDomainClick(domain)"
-    >
+    @for (domain of domains(); track trackByDomain($index, domain)) {
       <div
-        class="kns-summary-container__domain-info flex align-items-center gap-16"
+        class="kns-summary-container__card card-0 card-hover flex full-width align-items-center justify-content-between p-16 fade-in cursor-pointer"
+        (click)="onDomainClick(domain)"
       >
         <div
-          class="kns-summary-container__placeholder flex align-items-center justify-content-center"
+          class="kns-summary-container__domain-info flex align-items-center gap-16"
         >
-          <span class="text-gray-60 typo-text-1">{{ domain.isDomain ? 'DOM' : 'TXT' }}</span>
+          <div
+            class="kns-summary-container__placeholder flex align-items-center justify-content-center"
+          >
+            <span class="text-gray-60 typo-text-1">{{
+              domain.isDomain ? "DOM" : "TXT"
+            }}</span>
+          </div>
+          <div class="flex column gap-8">
+            @if (domain.isDomain) {
+              <div class="text-gray-90">{{ domain.asset | titlecase }}</div>
+            } @else {
+              <div class="text-asset-box">
+                <span class="text-gray-90">{{ domain.asset }}</span>
+              </div>
+            }
+            <div class="text-gray-60 typo-text-1">
+              {{ formatDate(domain.creationBlockTime) }}
+            </div>
+          </div>
         </div>
-        <div class="flex column gap-8">
-          @if (domain.isDomain) {
-            <div class="text-gray-90">{{ domain.asset | titlecase }}</div>
-          } @else {
-            <div class="text-asset-box">
-              <span class="text-gray-90">{{ domain.asset }}</span>
+        <div
+          class="kns-summary-container__status-info flex column align-items-end gap-8"
+        >
+          @if (domain.isVerifiedDomain) {
+            <div class="text-gray-90 typo-text-1">
+              <span class="verified-badge"> ✓ Verified </span>
             </div>
           }
-          <div class="text-gray-60 typo-text-1">
-            {{ formatDate(domain.creationBlockTime) }}
-          </div>
         </div>
       </div>
-      <div class="kns-summary-container__status-info flex column align-items-end gap-8">
-        @if (domain.isVerifiedDomain) {
-          <div class="text-gray-90 typo-text-1">
-            <span class="verified-badge">
-              ✓ Verified
-            </span>
-          </div>
-        }
-      </div>
-    </div>
     }
-    
+
     <!-- Loading more indicator - portfolio pattern -->
     @if (isLoadingMore() && domains().length > 0) {
-      <div class="loading-more-container flex justify-content-center p-16 full-width">
-        <div class="kns-summary-container__card card-0 flex full-width align-items-center justify-content-between p-16"
-             [style.opacity]="0.7">
-          <div class="kns-summary-container__domain-info flex align-items-center gap-16">
-            <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false"></app-skeleton>
+      <div
+        class="loading-more-container flex justify-content-center p-16 full-width"
+      >
+        <div
+          class="kns-summary-container__card card-0 flex full-width align-items-center justify-content-between p-16"
+          [style.opacity]="0.7"
+        >
+          <div
+            class="kns-summary-container__domain-info flex align-items-center gap-16"
+          >
+            <app-skeleton
+              [height]="'48px'"
+              [width]="'48px'"
+              [fullRound]="false"
+            />
             <div class="flex column gap-4">
-              <app-skeleton [height]="'20px'" [width]="'140px'" [fullRound]="false"></app-skeleton>
-              <app-skeleton [height]="'16px'" [width]="'100px'" [fullRound]="false"></app-skeleton>
+              <app-skeleton
+                [height]="'20px'"
+                [width]="'140px'"
+                [fullRound]="false"
+              />
+              <app-skeleton
+                [height]="'16px'"
+                [width]="'100px'"
+                [fullRound]="false"
+              />
             </div>
           </div>
-          <div class="kns-summary-container__status-info flex column align-items-end gap-4">
-            <app-skeleton [height]="'16px'" [width]="'80px'" [fullRound]="false"></app-skeleton>
+          <div
+            class="kns-summary-container__status-info flex column align-items-end gap-4"
+          >
+            <app-skeleton
+              [height]="'16px'"
+              [width]="'80px'"
+              [fullRound]="false"
+            />
           </div>
         </div>
       </div>
     }
   }
-</div> 
+</div>

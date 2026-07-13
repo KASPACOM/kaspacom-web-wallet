@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnDestroy, OnInit } from '@angular/core';
 import { QRCodeComponent } from 'angularx-qrcode';
 import { WalletService } from '../../../../../services/wallet.service';
@@ -7,12 +6,7 @@ import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.compo
 
 @Component({
   selector: 'app-receive-flow-page',
-  imports: [
-    CommonModule,
-    QRCodeComponent,
-    CopyButtonComponent,
-    SkeletonComponent,
-  ],
+  imports: [QRCodeComponent, CopyButtonComponent, SkeletonComponent],
   templateUrl: './receive-flow-page.component.html',
   styleUrl: './receive-flow-page.component.scss',
   host: {

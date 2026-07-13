@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   Component,
   effect,
@@ -10,14 +9,13 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import { KcButtonComponent, KcCheckboxComponent } from 'kaspacom-ui';
+import { KcButtonComponent, NotificationService } from '@kaspacom/ui-kit';
 import { firstValueFrom } from 'rxjs';
 import { AddressResolutionResult } from '../../../../../../../../../../services/address-resolution.service';
 import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
 import { L1_ASSET_KEYS } from '../../../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 import { KaspaL1NetworkService } from '../../../../../../../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
 import { Krc721ApiService } from '../../../../../../../../../../services/krc721-api/krc721-api.service';
-import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
 import { Krc721WalletActionService } from '../../../../../../../../../../services/protocols/krc721/krc721-wallet-actions.service';
 import { QrScannerService } from '../../../../../../../../../../services/qr-scanner.service';
 import { UtilsHelper } from '../../../../../../../../../../services/utils.service';
@@ -25,6 +23,7 @@ import { WalletActionService } from '../../../../../../../../../../services/wall
 import { WalletService } from '../../../../../../../../../../services/wallet.service';
 import { ApprovalFlowService } from '../../../../../../../../../services/approval-flow.service';
 import { AddressSmartInputComponent } from '../../../../../../../../../shared/ui/input/address-smart-input/address-smart-input.component';
+import { CheckboxInputComponent } from '../../../../../../../../../shared/ui/input/checkbox/checkbox-input/checkbox-input.component';
 import { SkeletonComponent } from '../../../../../../../../../shared/ui/skeleton/skeleton.component';
 import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
@@ -34,8 +33,7 @@ import { INft } from '../../../../../../../common/interfaces/nft.interface';
   selector: 'app-send-nft',
   standalone: true,
   imports: [
-    CommonModule,
-    KcCheckboxComponent,
+    CheckboxInputComponent,
     KcButtonComponent,
     FormsModule,
     SkeletonComponent,
@@ -52,7 +50,7 @@ export class SendNftComponent
   private krc721Service = inject(Krc721ApiService);
   private walletActionService = inject(WalletActionService);
   private krc721WalletActionService = inject(Krc721WalletActionService);
-  private messagePopupService = inject(MessagePopupService);
+  private notificationService = inject(NotificationService);
   private approvalFlowService = inject(ApprovalFlowService);
   private utilsHelper = inject(UtilsHelper);
   private qrScannerService = inject(QrScannerService);
@@ -89,7 +87,7 @@ export class SendNftComponent
 
         if (completion.success) {
           // Transaction was successful, navigate back
-          this.messagePopupService.showSuccess('NFT sent successfully!');
+          this.notificationService.success('Success', 'NFT sent successfully!');
           this.navigateBack();
         }
         // Error cases are handled by the approval flow itself
@@ -196,20 +194,20 @@ export class SendNftComponent
 
     const currentWallet = this.walletService.getCurrentWallet();
     if (!currentWallet) {
-      this.messagePopupService.showError('No wallet selected');
+      this.notificationService.error('Error', 'No wallet selected');
       return;
     }
 
     const currentNft = this.nft()!;
     if (this.isListed()) {
-      this.messagePopupService.showError(
+      this.notificationService.error('Error',
         'Cancel the listing before sending this NFT.',
       );
       return;
     }
 
     if (!currentNft.tick || !currentNft.tokenId) {
-      this.messagePopupService.showError('Invalid NFT data');
+      this.notificationService.error('Error', 'Invalid NFT data');
       return;
     }
 
@@ -241,7 +239,7 @@ export class SendNftComponent
         // Only show success message and navigate if not using v2 flow
         // v2 flow handles success display in the approval flow
         if (!result.isUsingV2Flow) {
-          this.messagePopupService.showSuccess('NFT sent successfully!');
+          this.notificationService.success('Success', 'NFT sent successfully!');
           this.navigateBack();
         } else {
           // For v2 flow, wait for approval flow completion
@@ -252,7 +250,7 @@ export class SendNftComponent
           const errorMessage = result.errorCode
             ? ERROR_CODES_MESSAGES[result.errorCode]
             : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR];
-          this.messagePopupService.showError(errorMessage);
+          this.notificationService.error('Error', errorMessage);
         }
 
         // Reset the waiting flag if transaction failed
@@ -260,7 +258,7 @@ export class SendNftComponent
       }
     } catch (error) {
       console.error('Error sending NFT:', error);
-      this.messagePopupService.showError('Failed to send NFT');
+      this.notificationService.error('Error', 'Failed to send NFT');
     } finally {
       this.isLoading = false;
     }

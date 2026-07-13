@@ -8,7 +8,7 @@ import {
   OnDestroy,
   OnInit,
   runInInjectionContext,
-  ViewChild,
+  viewChild,
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Observable, Subject, takeUntil } from 'rxjs';
@@ -39,7 +39,7 @@ export class SendNftListComponent
   private krc721Assets$!: Observable<Krc721Nft[] | undefined>;
   private assetsManagerService = inject(AssetsManagerService);
 
-  @ViewChild(InfiniteScrollDirective) infiniteScroll!: InfiniteScrollDirective;
+  readonly infiniteScroll = viewChild.required(InfiniteScrollDirective);
 
   // Use NFTs from metadata service with pagination
   nfts = computed<INftWithMetadata[]>(() => {
@@ -109,8 +109,9 @@ export class SendNftListComponent
   ngAfterViewInit(): void {
     // Check initial scroll position after view init
     setTimeout(() => {
-      if (this.infiniteScroll) {
-        this.infiniteScroll.checkScroll();
+      const infiniteScroll = this.infiniteScroll();
+      if (infiniteScroll) {
+        infiniteScroll.checkScroll();
       }
       // Also load metadata for initially visible items
       this.loadVisibleMetadata();

@@ -5,107 +5,122 @@
     <div class="selection-panel">
       <div class="selection-panel__header">
         <p class="selection-panel__eyebrow">
-          {{ isWalletSelectionVisible() ? 'Select wallet' : 'Select account' }}
+          {{ isWalletSelectionVisible() ? "Select wallet" : "Select account" }}
         </p>
         <h2 class="selection-panel__title">
-          {{ isWalletSelectionVisible() ? 'Choose a wallet' : 'Choose an account' }}
+          {{
+            isWalletSelectionVisible() ? "Choose a wallet" : "Choose an account"
+          }}
         </h2>
-        <p class="selection-panel__subtitle" *ngIf="isWalletSelectionVisible()">
-          Pick the wallet you want to use inside this application.
-        </p>
-        <p
-          class="selection-panel__subtitle"
-          *ngIf="!isWalletSelectionVisible() && selectedWalletGroup()"
-        >
-          Wallet: {{ selectedWalletGroup()?.name }}
-        </p>
+        @if (isWalletSelectionVisible()) {
+          <p class="selection-panel__subtitle">
+            Pick the wallet you want to use inside this application.
+          </p>
+        }
+        @if (!isWalletSelectionVisible() && selectedWalletGroup()) {
+          <p class="selection-panel__subtitle">
+            Wallet: {{ selectedWalletGroup()?.name }}
+          </p>
+        }
 
-        <button
-          type="button"
-          class="selection-panel__back-button"
-          *ngIf="hasMultipleWallets() && !isWalletSelectionVisible()"
-          (click)="onChangeWallet()"
-        >
-          <kc-icon iconClass="icon-arrow-left" size="xs"></kc-icon>
-          Change wallet
-        </button>
-      </div>
-
-      <div class="wallets-list" *ngIf="isWalletSelectionVisible()">
-        @if (walletGroups().length === 0) {
-          <div class="empty-state">
-            <p>No wallets were found for this profile.</p>
-          </div>
-        } @else {
-          @for (item of walletGroups(); track item.id) {
-            <div
-              class="wallet-item"
-              [class.selected]="item === selectedWalletGroup()"
-              (click)="selectWalletGroup(item)"
-            >
-              <div class="wallet-item__icon">
-                <kc-icon
-                  [iconClass]="item === selectedWalletGroup() ? 'icon-user' : 'icon-user-12px'"
-                  [size]="'sm'"
-                ></kc-icon>
-              </div>
-              <div class="wallet-item__info">
-                <div class="wallet-item__name">{{ item.name }}</div>
-                <div class="wallet-item__address">
-                  {{ item.address | shortenAddress }}
-                </div>
-              </div>
-              <div class="wallet-item__chevron">
-                <kc-icon iconClass="icon-arrow-right" size="xs"></kc-icon>
-              </div>
-            </div>
-          }
+        @if (hasMultipleWallets() && !isWalletSelectionVisible()) {
+          <button
+            type="button"
+            class="selection-panel__back-button"
+            (click)="onChangeWallet()"
+          >
+            <kc-icon iconClass="icon-arrow-left" size="xs" />
+            Change wallet
+          </button>
         }
       </div>
 
-      <div class="accounts-list" *ngIf="!isWalletSelectionVisible()">
-        @if (accountItems().length === 0) {
-          <div class="empty-state">
-            <p>No accounts available in this wallet.</p>
-          </div>
-        } @else {
-          @for (account of accountItems(); track account.id) {
-            <div
-              class="account-item"
-              [class.selected]="account.isSelected"
-              (click)="selectAccount(account)"
-            >
-              <div class="account-item__icon">
-                <kc-icon
-                  [iconClass]="account.isSelected ? 'icon-user' : 'icon-user-12px'"
-                  [size]="'sm'"
-                ></kc-icon>
-              </div>
-              <div class="account-item__info">
-                <div class="account-item__name">{{ account.name }}</div>
-                <div class="account-item__address">
-                  {{ account.address | shortenAddress }}
+      @if (isWalletSelectionVisible()) {
+        <div class="wallets-list">
+          @if (walletGroups().length === 0) {
+            <div class="empty-state">
+              <p>No wallets were found for this profile.</p>
+            </div>
+          } @else {
+            @for (item of walletGroups(); track item.id) {
+              <div
+                class="wallet-item"
+                [class.selected]="item === selectedWalletGroup()"
+                (click)="selectWalletGroup(item)"
+              >
+                <div class="wallet-item__icon">
+                  <kc-icon
+                    [iconClass]="
+                      item === selectedWalletGroup()
+                        ? 'icon-user'
+                        : 'icon-user-12px'
+                    "
+                    [size]="'sm'"
+                  />
+                </div>
+                <div class="wallet-item__info">
+                  <div class="wallet-item__name">{{ item.name }}</div>
+                  <div class="wallet-item__address">
+                    {{ item.address | shortenAddress }}
+                  </div>
+                </div>
+                <div class="wallet-item__chevron">
+                  <kc-icon iconClass="icon-arrow-right" size="xs" />
                 </div>
               </div>
-              <div class="account-item__status" *ngIf="account.isSelected">
-                <span>Current</span>
-              </div>
-            </div>
+            }
           }
-        }
-      </div>
+        </div>
+      }
+
+      @if (!isWalletSelectionVisible()) {
+        <div class="accounts-list">
+          @if (accountItems().length === 0) {
+            <div class="empty-state">
+              <p>No accounts available in this wallet.</p>
+            </div>
+          } @else {
+            @for (account of accountItems(); track account.id) {
+              <div
+                class="account-item"
+                [class.selected]="account.isSelected"
+                (click)="selectAccount(account)"
+              >
+                <div class="account-item__icon">
+                  <kc-icon
+                    [iconClass]="
+                      account.isSelected ? 'icon-user' : 'icon-user-12px'
+                    "
+                    [size]="'sm'"
+                  />
+                </div>
+                <div class="account-item__info">
+                  <div class="account-item__name">{{ account.name }}</div>
+                  <div class="account-item__address">
+                    {{ account.address | shortenAddress }}
+                  </div>
+                </div>
+                @if (account.isSelected) {
+                  <div class="account-item__status">
+                    <span>Current</span>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+      }
 
       <div class="selection-panel__actions">
         <kc-button
           [text]="isLoggingOut() ? 'Logging out...' : 'Logout'"
-          [variant]="'tertiary'"
-          [size]="'md'"
+          [variant]="'secondary'"
+          [size]="'m'"
           [isFullWidth]="true"
           [isDisabled]="isLoggingOut()"
           (buttonClick)="onLogout()"
-        ></kc-button>
+        />
       </div>
     </div>
   </div>
 </div>
-

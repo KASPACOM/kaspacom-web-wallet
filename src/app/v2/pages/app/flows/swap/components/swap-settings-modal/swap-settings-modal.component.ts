@@ -1,14 +1,6 @@
-import {
-  Component,
-  EventEmitter,
-  Input,
-  Output,
-  computed,
-  inject,
-  OnChanges,
-  SimpleChanges,
-} from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, computed, inject } from '@angular/core';
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
+
 import {
   ReactiveFormsModule,
   FormBuilder,
@@ -16,36 +8,50 @@ import {
   Validators,
 } from '@angular/forms';
 import {
-  KcBaseModalComponent,
-  KcInputComponent,
+  KcDialogComponent,
+  KcNumberInputComponent,
   KcButtonComponent,
-} from 'kaspacom-ui';
+  KcSwitchComponent,
+  SwitchOption,
+} from '@kaspacom/ui-kit';
 import { FormErrorMessageComponent } from '../../../../../../shared/components/form-error/form-error.component';
 import type { SwapSettings } from '@kaspacom/swap-sdk';
+
+export interface SwapSettingsDialogData {
+  // Reserved keys read by KcDialogComponent itself off the same DIALOG_DATA.
+  title?: string;
+  showCloseButton?: boolean;
+  initialSettings?: Partial<SwapSettings>;
+}
 
 @Component({
   selector: 'app-swap-settings-modal',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
-    KcBaseModalComponent,
-    KcInputComponent,
+    KcDialogComponent,
+    KcNumberInputComponent,
     KcButtonComponent,
+    KcSwitchComponent,
     FormErrorMessageComponent,
   ],
   templateUrl: './swap-settings-modal.component.html',
   styleUrl: './swap-settings-modal.component.scss',
 })
-export class SwapSettingsModalComponent implements OnChanges {
+export class SwapSettingsModalComponent {
   private fb = inject(FormBuilder);
-
-  @Input() open = false;
-  @Input() initialSettings: Partial<SwapSettings> | undefined;
-  @Output() close = new EventEmitter<void>();
-  @Output() save = new EventEmitter<SwapSettings>();
+  private dialogRef = inject(DialogRef<SwapSettings | undefined>);
+  private data = inject<SwapSettingsDialogData>(DIALOG_DATA, {
+    optional: true,
+  });
 
   settingsForm: FormGroup;
+
+  slippageOptions: SwitchOption[] = [
+    { label: '0.1%', value: 0.1 },
+    { label: '0.5%', value: 0.5 },
+    { label: '1.5%', value: 1.5 },
+  ];
 
   selectedSlippage = computed(() => {
     const slippage = parseFloat(
@@ -62,22 +68,11 @@ export class SwapSettingsModalComponent implements OnChanges {
   });
 
   constructor() {
-    this.settingsForm = this.createForm('0.5', '20');
-  }
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['initialSettings'] || changes['open']) {
-      if (this.open && this.initialSettings) {
-        const maxSlippageValue = this.initialSettings.maxSlippage || '0.5';
-        const swapDeadlineValue = String(
-          this.initialSettings.swapDeadline || 20,
-        );
-        this.settingsForm = this.createForm(
-          maxSlippageValue,
-          swapDeadlineValue,
-        );
-      }
-    }
+    const initialSettings = this.data?.initialSettings;
+    this.settingsForm = this.createForm(
+      initialSettings?.maxSlippage || '0.5',
+      String(initialSettings?.swapDeadline || 20),
+    );
   }
 
   private createForm(maxSlippage: string, swapDeadline: string): FormGroup {
@@ -105,7 +100,7 @@ export class SwapSettingsModalComponent implements OnChanges {
 
   onSave() {
     if (this.settingsForm.valid) {
-      this.save.emit({
+      this.dialogRef.close({
         maxSlippage: this.settingsForm.get('maxSlippage')?.value,
         swapDeadline: parseInt(
           this.settingsForm.get('swapDeadline')?.value,
@@ -113,9 +108,5 @@ export class SwapSettingsModalComponent implements OnChanges {
         ),
       });
     }
-  }
-
-  onClose() {
-    this.close.emit();
   }
 }

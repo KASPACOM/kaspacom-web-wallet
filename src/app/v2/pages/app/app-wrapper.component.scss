@@ -334,17 +334,3 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
 }
 
 // Dialog content is now handled within the dialog component itself
-
-::ng-deep .kc-snackbar-container {
-  width: 100% !important;
-  max-width: unset !important;
-
-  .kc-snackbar-description {
-    font-size: 14px !important;
-    font-weight: 600 !important;
-  }
-
-  .kc-snackbar-content {
-    gap: 0px !important;
-  }
-}

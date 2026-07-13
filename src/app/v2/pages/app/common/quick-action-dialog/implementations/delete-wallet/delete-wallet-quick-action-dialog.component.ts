@@ -1,16 +1,14 @@
-import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectorRef,
   Component,
   computed,
-  EventEmitter,
   inject,
-  Input,
-  Output,
+  input,
+  output,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { KcButtonComponent, NotificationService } from 'kaspacom-ui';
+import { KcButtonComponent, NotificationService } from '@kaspacom/ui-kit';
 import _ from 'lodash';
 import { AppWallet } from '../../../../../../../classes/AppWallet';
 import { WalletService } from '../../../../../../../services/wallet.service';
@@ -25,20 +23,15 @@ interface DeleteWalletDialogData {
 @Component({
   selector: 'app-delete-wallet-quick-action-dialog',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    KcButtonComponent,
-    QuickActionDialogComponent,
-  ],
+  imports: [FormsModule, KcButtonComponent, QuickActionDialogComponent],
   templateUrl: './delete-wallet-quick-action-dialog.component.html',
   styleUrl: './delete-wallet-quick-action-dialog.component.scss',
 })
 export class DeleteWalletQuickActionDialogComponent implements AfterViewInit {
-  @Input() isOpen = false;
-  @Input() data: DeleteWalletDialogData | undefined;
-  @Output() backdropClick = new EventEmitter<void>();
-  @Output() close = new EventEmitter<void>();
+  readonly isOpen = input(false);
+  readonly data = input<DeleteWalletDialogData>();
+  readonly backdropClick = output<void>();
+  readonly close = output<void>();
 
   private cdr = inject(ChangeDetectorRef);
   private walletService = inject(WalletService);
@@ -67,7 +60,7 @@ export class DeleteWalletQuickActionDialogComponent implements AfterViewInit {
   }
 
   get walletName(): string {
-    return this.data?.walletName || '';
+    return this.data()?.walletName || '';
   }
 
   onBackdropClick(): void {
@@ -90,7 +83,8 @@ export class DeleteWalletQuickActionDialogComponent implements AfterViewInit {
   }
 
   async onDelete(): Promise<void> {
-    const wallet = this.data?.wallet;
+    const data = this.data();
+    const wallet = data?.wallet;
     if (!wallet) {
       this.notificationService.error('Error', 'No wallet selected');
       return;
@@ -104,8 +98,8 @@ export class DeleteWalletQuickActionDialogComponent implements AfterViewInit {
         'Success',
         `Wallet "${this.walletName}" deleted successfully!`,
       );
-      if (this.data?.onSuccess) {
-        this.data.onSuccess();
+      if (data?.onSuccess) {
+        data.onSuccess();
       }
       this.closeDialog();
     } else {

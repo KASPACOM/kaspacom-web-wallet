@@ -10,7 +10,8 @@
       <div class="onboarding-v2__hero-copy">
         <h1 class="typo-title-1 text-light">The Official KaspaCom Wallet</h1>
         <p class="typo-text-2 text-medium">
-          Set up or connect your wallet in a fast, secure, mobile-optimized experience.
+          Set up or connect your wallet in a fast, secure, mobile-optimized
+          experience.
         </p>
 
         <div class="onboarding-v2__social-links">
@@ -96,13 +97,12 @@
             </div>
 
             @if (!shouldShowLogin() && !isWelcome()) {
-              <button
+              <kc-button
                 class="onboarding-v2__restart"
-                type="button"
-                (click)="resetFlow()"
-              >
-                Start Over
-              </button>
+                [text]="'Start Over'"
+                [variant]="'link'"
+                (buttonClick)="resetFlow()"
+              />
             }
           </header>
 
@@ -112,7 +112,9 @@
 
           <div
             class="onboarding-v2__panel-content"
-            [class.onboarding-v2__panel-content--transitioning]="!shouldShowLogin() && isTransitioning()"
+            [class.onboarding-v2__panel-content--transitioning]="
+              !shouldShowLogin() && isTransitioning()
+            "
           >
             @if (shouldShowLogin()) {
               <form
@@ -123,25 +125,31 @@
                 <kc-input
                   formControlName="password"
                   [placeholder]="'Password'"
-                  [isFullWidth]="true"
                   [type]="passwordType()"
                   [isValid]="!isInvalid('password')"
-                  [invalidReason]="getPasswordError()"
-                  [prepadInvalidReason]="true"
                   [isDisabled]="isSubmitting()"
                 >
                   <div
                     (click)="!isSubmitting() && togglePwVisibility()"
-                    [class]="isSubmitting() ? 'onboarding-v2__visibility-toggle onboarding-v2__visibility-toggle--disabled' : 'onboarding-v2__visibility-toggle clickable'"
+                    [class]="
+                      isSubmitting()
+                        ? 'onboarding-v2__visibility-toggle onboarding-v2__visibility-toggle--disabled'
+                        : 'onboarding-v2__visibility-toggle clickable'
+                    "
                     rightSideSlot
                   >
                     <kc-icon
                       iconClass="{{ passwordIcon() }}"
                       [size]="'xs'"
                       [class]="isSubmitting() ? 'disabled-icon' : ''"
-                    ></kc-icon>
+                    />
                   </div>
                 </kc-input>
+                @if (isInvalid('password') && getPasswordError()) {
+                  <span class="kc-input-error-text">{{
+                    getPasswordError()
+                  }}</span>
+                }
 
                 <div class="onboarding-v2__login-actions">
                   <kc-button
@@ -150,17 +158,16 @@
                     [isFullWidth]="true"
                     [isLoading]="isSubmitting()"
                     [text]="'Login'"
-                  ></kc-button>
+                  />
 
                   <kc-button
-                    class="onboarding-v2__delete-trigger"
-                    [variant]="'tertiary'"
-                    role="danger"
+                    class="onboarding-v2__delete-trigger kc-button-danger"
+                    [variant]="'secondary'"
                     [isFullWidth]="true"
                     [isDisabled]="isSubmitting()"
                     (buttonClick)="openDeleteWalletDialog()"
                     [text]="'Delete Wallet'"
-                  ></kc-button>
+                  />
                 </div>
               </form>
             } @else {
@@ -180,22 +187,22 @@
                         [text]="'Create New Wallet'"
                         [isFullWidth]="true"
                         (buttonClick)="createNewWallet()"
-                      ></kc-button>
+                      />
 
                       <kc-button
                         [text]="'Connect Existing Wallet'"
-                        [variant]="'tertiary'"
+                        [variant]="'secondary'"
                         [isFullWidth]="true"
                         (buttonClick)="startExistingWallet()"
-                      ></kc-button>
+                      />
                     </div>
                   </div>
                 }
                 @case (OnboardingStep.IMPORT_EXISTING_WALLET) {
-                  <app-import-existing-flow class="onboarding-v2__flow"></app-import-existing-flow>
+                  <app-import-existing-flow class="onboarding-v2__flow" />
                 }
                 @case (OnboardingStep.NEW_WALLET) {
-                  <app-new-wallet-flow class="onboarding-v2__flow"></app-new-wallet-flow>
+                  <app-new-wallet-flow class="onboarding-v2__flow" />
                 }
               }
             }
@@ -286,16 +293,21 @@
             Are you sure you want to delete your wallet?
           </h2>
           <p class="typo-text-2 text-medium onboarding-v2__delete-message">
-            You are about to delete your wallet. Please make sure you have exported your wallet or saved your wallets separately before deleting.
+            You are about to delete your wallet. Please make sure you have
+            exported your wallet or saved your wallets separately before
+            deleting.
           </p>
           <div class="onboarding-v2__delete-highlight">
             <kc-icon
               iconClass="icon-info"
               [size]="'sm'"
               color="var(--warning-color, #FFB800)"
-            ></kc-icon>
-            <span class="typo-text-3 text-light onboarding-v2__delete-highlight-text">
-              Without your seed phrase or backup, you will permanently lose access to your funds.
+            />
+            <span
+              class="typo-text-3 text-light onboarding-v2__delete-highlight-text"
+            >
+              Without your seed phrase or backup, you will permanently lose
+              access to your funds.
             </span>
           </div>
         </div>
@@ -306,39 +318,33 @@
           </p>
           <kc-input
             class="onboarding-v2__delete-input"
-            [isFullWidth]="true"
             [placeholder]="deleteConfirmationPhrase"
             [ngModel]="deleteConfirmationInput()"
             [isDisabled]="isDeletingWallet()"
-            (valueChange)="onDeleteConfirmationInputChange($event)"
-          ></kc-input>
+            (valueChange)="onDeleteConfirmationInputChange($any($event))"
+          />
         </div>
 
         <div class="onboarding-v2__delete-actions">
           <kc-button
             [text]="'Cancel'"
-            [variant]="'tertiary'"
+            [variant]="'secondary'"
             [isFullWidth]="true"
             (buttonClick)="closeDeleteWalletDialog()"
             [isDisabled]="isDeletingWallet()"
-          ></kc-button>
+          />
 
           <kc-button
+            class="kc-button-danger"
             [text]="'Delete Wallet'"
             [variant]="'secondary'"
-            role="danger"
             [isFullWidth]="true"
             [isLoading]="isDeletingWallet()"
             [isDisabled]="isDeletingWallet() || !isDeleteConfirmationValid()"
             (buttonClick)="confirmDeleteWallet()"
-          ></kc-button>
+          />
         </div>
       </div>
     </div>
   }
-
-  <!-- Notification Snackbar System -->
-  <kc-snackbar></kc-snackbar>
-
 </div>
-

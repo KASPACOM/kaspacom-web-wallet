@@ -17,7 +17,7 @@ export class EncryptionService {
    * @param password The password to derive the key from.
    * @param salt The salt used to add randomness to the key derivation.
    */
-  private async deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
+  private async deriveKey(password: string, salt: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
     const keyMaterial = await crypto.subtle.importKey(
       'raw',
       new TextEncoder().encode(password),

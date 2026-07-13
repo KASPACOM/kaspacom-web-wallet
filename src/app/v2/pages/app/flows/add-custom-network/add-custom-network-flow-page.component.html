@@ -1,114 +1,124 @@
-<div class="add-network-container full-width full-height flex column p-16 gap-16">
-
+<div
+  class="add-network-container full-width full-height flex column p-16 gap-16"
+>
   <kc-dropdown-select
     [options]="presetOptions"
     [placeholder]="'Load a well-known network'"
     [isFullWidth]="true"
     [isSearchable]="true"
     [value]="selectedPresetChainId()"
-    (valueChange)="onPresetSelected($event)">
-
+    (valueChange)="onPresetSelected($any($event))"
+  >
     <ng-template #prefixTemplate>
-      @if (selectedPresetChainId() && getPresetNetworkIcon(selectedPresetChainId()!)) {
-        <img [src]="getPresetNetworkIcon(selectedPresetChainId()!)!" alt="" class="preset-trigger-icon" />
+      @if (
+        selectedPresetChainId() &&
+        getPresetNetworkIcon(selectedPresetChainId()!)
+      ) {
+        <img
+          [src]="getPresetNetworkIcon(selectedPresetChainId()!)!"
+          alt=""
+          class="preset-trigger-icon"
+        />
       }
     </ng-template>
 
     <ng-template #optionTemplate let-option>
       <div class="preset-option">
         @if (getPresetNetworkIcon(option.value)) {
-          <img [src]="getPresetNetworkIcon(option.value)!" alt="" class="preset-option-icon" />
+          <img
+            [src]="getPresetNetworkIcon(option.value)!"
+            alt=""
+            class="preset-option-icon"
+          />
         } @else {
           <div class="preset-option-fallback">{{ option.label.charAt(0) }}</div>
         }
         <span>{{ option.label }}</span>
       </div>
     </ng-template>
-
   </kc-dropdown-select>
 
   <div class="fields-section flex column gap-12">
-
     <kc-input
       [label]="'Network Name'"
       [placeholder]="'e.g. Base, Polygon, Arbitrum'"
       [type]="'text'"
-      [isFullWidth]="true"
       [ngModel]="networkName()"
-      (valueChange)="networkName.set($event || '')">
-    </kc-input>
+      (valueChange)="networkName.set($any($event) || '')"
+    />
 
-    <kc-input
+    <kc-number-input
       [label]="'Chain ID'"
       [placeholder]="'e.g. 8453'"
-      [type]="'number'"
-      [isFullWidth]="true"
+      [enforceEthersFormat]="false"
       [isValid]="!chainIdError()"
-      [invalidReason]="chainIdError()"
       [ngModel]="chainId()"
-      (valueChange)="chainId.set(coerceToString($event))">
-    </kc-input>
+      (valueChange)="chainId.set(coerceToString($event))"
+    />
+    @if (chainIdError()) {
+      <span class="kc-input-error-text">{{ chainIdError() }}</span>
+    }
 
     <kc-input
       [label]="'RPC URL'"
       [placeholder]="'https://rpc.example.com'"
       [type]="'text'"
-      [isFullWidth]="true"
       [isValid]="!rpcUrlError()"
-      [invalidReason]="rpcUrlError()"
       [ngModel]="rpcUrl()"
-      (valueChange)="rpcUrl.set($event || '')">
-    </kc-input>
+      (valueChange)="rpcUrl.set($any($event) || '')"
+    />
+    @if (rpcUrlError()) {
+      <span class="kc-input-error-text">{{ rpcUrlError() }}</span>
+    }
 
     <kc-input
       [label]="'Currency Symbol'"
       [placeholder]="'ETH'"
       [type]="'text'"
-      [isFullWidth]="true"
       [ngModel]="currencySymbol()"
-      (valueChange)="currencySymbol.set($event || '')">
-    </kc-input>
+      (valueChange)="currencySymbol.set($any($event) || '')"
+    />
 
-    <kc-input
+    <kc-number-input
       [label]="'Decimals'"
       [placeholder]="'18'"
-      [type]="'number'"
-      [isFullWidth]="true"
+      [enforceEthersFormat]="false"
       [isValid]="!decimalsError()"
-      [invalidReason]="decimalsError()"
       [ngModel]="currencyDecimals()"
-      (valueChange)="currencyDecimals.set(coerceToString($event))">
-    </kc-input>
+      (valueChange)="currencyDecimals.set(coerceToString($event))"
+    />
+    @if (decimalsError()) {
+      <span class="kc-input-error-text">{{ decimalsError() }}</span>
+    }
 
     <kc-input
       [label]="'Block Explorer URL (optional)'"
       [placeholder]="'https://explorer.example.com'"
       [type]="'text'"
-      [isFullWidth]="true"
       [isValid]="!explorerUrlError()"
-      [invalidReason]="explorerUrlError()"
       [ngModel]="explorerUrl()"
-      (valueChange)="explorerUrl.set($event || '')">
-    </kc-input>
-
+      (valueChange)="explorerUrl.set($any($event) || '')"
+    />
+    @if (explorerUrlError()) {
+      <span class="kc-input-error-text">{{ explorerUrlError() }}</span>
+    }
   </div>
 
   <div class="action-buttons flex gap-12 mt-auto">
     <kc-button
       [variant]="'secondary'"
-      [size]="'md'"
+      [size]="'m'"
       [text]="'Cancel'"
       class="flex-1"
-      (buttonClick)="onCancel()">
-    </kc-button>
+      (buttonClick)="onCancel()"
+    />
     <kc-button
       [variant]="'primary'"
-      [size]="'md'"
+      [size]="'m'"
       [text]="isSaving() ? 'Adding...' : 'Add Network'"
       [isDisabled]="isSaving()"
       class="flex-1"
-      (buttonClick)="onSave()">
-    </kc-button>
+      (buttonClick)="onSave()"
+    />
   </div>
-
 </div>

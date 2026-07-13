@@ -1,8 +1,11 @@
+import { TestBed } from '@angular/core/testing';
 import { ERROR_CODES } from '@kaspacom/wallet-messages';
 import { of } from 'rxjs';
 import { AppWallet } from '../../../classes/AppWallet';
 import { CommitRevealAction } from '../../../types/wallet-action';
 import { Krc721ActionsValidatorService } from './krc721-actions-validator.service';
+import { UtilsHelper } from '../../utils.service';
+import { Krc721ApiService } from '../../krc721-api/krc721-api.service';
 
 describe('Krc721ActionsValidatorService', () => {
   let service: Krc721ActionsValidatorService;
@@ -51,7 +54,13 @@ describe('Krc721ActionsValidatorService', () => {
         },
       ]),
     );
-    service = new Krc721ActionsValidatorService(utils as any, krc721Api as any);
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: UtilsHelper, useValue: utils },
+        { provide: Krc721ApiService, useValue: krc721Api },
+      ],
+    });
+    service = TestBed.inject(Krc721ActionsValidatorService);
   });
 
   it('validates KRC721 transfer actions when token is unlisted', async () => {

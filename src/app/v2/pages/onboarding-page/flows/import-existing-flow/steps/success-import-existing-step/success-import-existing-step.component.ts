@@ -1,13 +1,13 @@
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage } from '@angular/common';
 import { Component, inject, output } from '@angular/core';
 import { Router } from '@angular/router';
-import { KcButtonComponent } from 'kaspacom-ui';
+import { KcButtonComponent } from '@kaspacom/ui-kit';
 import { WalletService } from '../../../../../../../services/wallet.service';
 import { FlowPagesService } from '../../../../../../services/flow-pages.service';
 
 @Component({
   selector: 'app-success-import-existing-step',
-  imports: [CommonModule, KcButtonComponent, NgOptimizedImage],
+  imports: [KcButtonComponent, NgOptimizedImage],
   templateUrl: './success-import-existing-step.component.html',
   styleUrl: './success-import-existing-step.component.scss',
 })

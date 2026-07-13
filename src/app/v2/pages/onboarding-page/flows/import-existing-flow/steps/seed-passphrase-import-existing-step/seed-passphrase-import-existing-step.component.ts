@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   Component,
   computed,
@@ -8,19 +7,13 @@ import {
   signal,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import {
-  KcButtonComponent,
-  KcIconComponent,
-  KcInputComponent,
-  NotificationService,
-} from 'kaspacom-ui';
+import { KcInputComponent, KcButtonComponent, KcIconComponent, NotificationService } from '@kaspacom/ui-kit';
 import { WalletService } from '../../../../../../../services/wallet.service';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
 
 @Component({
   selector: 'app-seed-passphrase-import-existing-step',
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     KcButtonComponent,
     KcInputComponent,

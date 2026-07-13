@@ -1,18 +1,22 @@
 <div class="action-review-container">
-  <div class="action-review-card" *ngIf="currentActionDisplay()">
-    <div class="action-review-header">
-      <h2>
-        {{ currentActionDisplay()!.title }}
-      </h2>
-    </div>
-    <div class="action-review-content">
-      <div class="detail" *ngFor="let row of currentActionDisplay()!.rows">
-        <div class="label">{{ row.fieldName }}:</div>
-        <div class="value">{{ row.fieldValue }}</div>
+  @if (currentActionDisplay()) {
+    <div class="action-review-card">
+      <div class="action-review-header">
+        <h2>
+          {{ currentActionDisplay()!.title }}
+        </h2>
+      </div>
+      <div class="action-review-content">
+        @for (row of currentActionDisplay()!.rows; track row) {
+          <div class="detail">
+            <div class="label">{{ row.fieldName }}:</div>
+            <div class="value">{{ row.fieldValue }}</div>
+          </div>
+        }
+      </div>
+      <div class="action-review-footer">
+        <button class="done-btn" (click)="onDone()">Done</button>
       </div>
     </div>
-    <div class="action-review-footer">
-      <button class="done-btn" (click)="onDone()">Done</button>
-    </div>
-  </div>
+  }
 </div>

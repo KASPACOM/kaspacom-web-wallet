@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
@@ -7,6 +7,8 @@ import { environment } from '../../environments/environment';
   providedIn: 'root',
 })
 export class MonitorService {
+  private router = inject(Router);
+
   private readonly trackingEnabled = this.isTrackingEnabled();
   // Substring match for unambiguous sensitive fragments.
   private readonly disallowedPropertyPattern =
@@ -15,7 +17,7 @@ export class MonitorService {
   // like `tip_amount` / `zip_code` / `ship_method` are not dropped.
   private readonly disallowedTokens = new Set(['ip']);
 
-  constructor(private router: Router) {
+  constructor() {
     if (this.trackingEnabled) {
       this.trackInitialPageView();
       this.router.events

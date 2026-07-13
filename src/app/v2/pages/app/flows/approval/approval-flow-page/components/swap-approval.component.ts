@@ -1,6 +1,6 @@
 import { Component, computed, input, output } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+
+import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import { TokenLogoComponent } from '../../../../../../../components/token-logo/token-logo.component';
 import { SwapContext } from '../../../../../../services/swap-context.service';
 import { CommaFormatterPipe } from '../../../../../../../pipes/comma-formatter.pipe';
@@ -9,7 +9,6 @@ import { CommaFormatterPipe } from '../../../../../../../pipes/comma-formatter.p
   selector: 'app-swap-approval',
   standalone: true,
   imports: [
-    CommonModule,
     KcButtonComponent,
     KcIconComponent,
     TokenLogoComponent,
@@ -34,7 +33,9 @@ export class SwapApprovalComponent {
   minReceived = computed(() => this.swapContext().minReceived || '0');
   route = computed(() => this.swapContext().route || '-');
   slippage = computed(() => this.swapContext().settings?.maxSlippage || '0.5');
-  deadline = computed(() => this.swapContext().settings?.swapDeadline?.toString() || '20');
+  deadline = computed(
+    () => this.swapContext().settings?.swapDeadline?.toString() || '20',
+  );
   networkName = computed(() => this.swapContext().networkName || 'Unknown');
   priceImpact = computed(() => this.swapContext().priceImpact || '0');
   estimatedGas = computed(() => this.swapContext().estimatedGas || '0');

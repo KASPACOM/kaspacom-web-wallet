@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { AppWallet } from '../../classes/AppWallet';
 import {
   EIP1193RequestPayload,
@@ -23,13 +23,17 @@ import { ethers, TransactionRequest } from 'ethers';
   providedIn: 'root',
 })
 export class EthereumWalletActionsService {
-  constructor(
-    private readonly ethereumWalletChainManager: EthereumWalletChainManager,
-    private readonly ethereumHandleActionRequestService: EthereumHandleActionRequestService,
-    private readonly walletService: WalletService,
-    private readonly walletActionsService: WalletActionService,
-    private readonly allowedApplicationsService: AllowedApplicationsService,
-  ) { }
+  private readonly ethereumWalletChainManager = inject(
+    EthereumWalletChainManager,
+  );
+  private readonly ethereumHandleActionRequestService = inject(
+    EthereumHandleActionRequestService,
+  );
+  private readonly walletService = inject(WalletService);
+  private readonly walletActionsService = inject(WalletActionService);
+  private readonly allowedApplicationsService = inject(
+    AllowedApplicationsService,
+  );
 
   async handleRequest<T extends EIP1193RequestType>(
     request: EIP1193RequestPayload<T>,
@@ -64,8 +68,12 @@ export class EthereumWalletActionsService {
 
         if (!walletResponse.success) {
           return createEIP1193Response<T>(undefined, {
-            code: walletResponse.errorCode ?? ERROR_CODES.EIP1193.INTERNAL_ERROR,
-            message: ERROR_CODES_MESSAGES[walletResponse.errorCode ?? ERROR_CODES.EIP1193.INTERNAL_ERROR] ?? 'Unknown error',
+            code:
+              walletResponse.errorCode ?? ERROR_CODES.EIP1193.INTERNAL_ERROR,
+            message:
+              ERROR_CODES_MESSAGES[
+                walletResponse.errorCode ?? ERROR_CODES.EIP1193.INTERNAL_ERROR
+              ] ?? 'Unknown error',
           });
         }
 
@@ -138,13 +146,17 @@ export class EthereumWalletActionsService {
 
         case EIP1193RequestType.GET_ESTIMATE_GAS:
           const estimateGasTransaction = request.params?.[0] as any;
-          const provider = this.ethereumWalletChainManager.getCurrentWalletProvider()!;
+          const provider =
+            this.ethereumWalletChainManager.getCurrentWalletProvider()!;
           const wallet = await this.walletService
             .getCurrentWallet()
             ?.getL2Wallet();
 
           const gas = wallet
-            ? await provider.estimateGas(wallet, estimateGasTransaction as TransactionRequest)
+            ? await provider.estimateGas(
+                wallet,
+                estimateGasTransaction as TransactionRequest,
+              )
             : BigInt(await provider.ethEstimateGas(estimateGasTransaction));
           return createEIP1193Response<T>(ethers.toQuantity(gas));
 
@@ -260,11 +272,11 @@ export class EthereumWalletActionsService {
       appId == WALLET_APP_ID
         ? wallets
         : wallets.filter((wallet) => {
-          return this.allowedApplicationsService.isAllowedApplication(
-            appId,
-            wallet.getIdWithAccount(),
-          );
-        });
+            return this.allowedApplicationsService.isAllowedApplication(
+              appId,
+              wallet.getIdWithAccount(),
+            );
+          });
 
     if (filteredWallets.length === 0) {
       return [];

@@ -1,5 +1,10 @@
-<label class="checkbox-container">
-  <input type="checkbox" [checked]="checked()" (change)="toggle($event)" />
+<label class="checkbox-container" [class.disabled]="isDisabled()">
+  <input
+    type="checkbox"
+    [checked]="checked()"
+    [disabled]="isDisabled()"
+    (change)="toggle($event)"
+  />
   <span class="checkmark"></span>
-  <span class="label-text"><ng-content></ng-content></span>
+  <span class="label-text"><ng-content /></span>
 </label>

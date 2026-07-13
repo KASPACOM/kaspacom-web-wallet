@@ -4,7 +4,8 @@
       <div class="flex column align-items-center gap-4">
         <span class="typo-title-3 p-4">Recovery Phrase</span>
         <span class="typo-text-2 text-medium text-align-center"
-          >This recovery phrase is the only way to restore your wallet. <strong>Do NOT share it with anyone.</strong></span
+          >This recovery phrase is the only way to restore your wallet.
+          <strong>Do NOT share it with anyone.</strong></span
         >
       </div>
       <div class="flex column align-items-center gap-24 full-width">
@@ -30,12 +31,12 @@
               class="seed-container__word"
               [idx]="$index + 1"
               [word]="item"
-            ></app-seed-phrase-word>
+            />
           }
         </div>
         <div class="flex full-width justify-content-between">
           <kc-button
-            [variant]="'tertiary'"
+            [variant]="'secondary'"
             [suffixIcon]="'icon-copy'"
             [text]="'Copy'"
             (buttonClick)="addToClipboard()"
@@ -43,7 +44,7 @@
             <div rightSideSlot>foo</div>
           </kc-button>
           <kc-button
-            [variant]="'tertiary'"
+            [variant]="'secondary'"
             [suffixIcon]="'icon-update'"
             [text]="'Renew'"
             (buttonClick)="renewSeedPhrase()"
@@ -70,11 +71,11 @@
         <div class="full-width">
           <kc-button
             [isFullWidth]="true"
-            [variant]="'tertiary'"
+            [variant]="'secondary'"
             [text]="'Back'"
             [isDisabled]="false"
             (buttonClick)="previous.emit()"
-          ></kc-button>
+          />
         </div>
       }
       <div class="full-width">
@@ -84,7 +85,7 @@
           [text]="'Continue'"
           [isDisabled]="!seedPhraseSaved()"
           (buttonClick)="onContinue()"
-        ></kc-button>
+        />
       </div>
     </div>
   </div>

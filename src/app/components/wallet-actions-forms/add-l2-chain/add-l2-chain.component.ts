@@ -1,29 +1,40 @@
-import { Component, EventEmitter, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Component, output, inject } from '@angular/core';
+
+import {
+  FormsModule,
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+} from '@angular/forms';
 import { EIP1193ProviderChain } from '@kaspacom/wallet-messages';
 
 @Component({
-    selector: 'add-l2-chain',
-    imports: [CommonModule, FormsModule, ReactiveFormsModule],
-    templateUrl: './add-l2-chain.component.html',
-    styleUrls: ['./add-l2-chain.component.scss']
+  selector: 'add-l2-chain',
+  imports: [FormsModule, ReactiveFormsModule],
+  templateUrl: './add-l2-chain.component.html',
+  styleUrls: ['./add-l2-chain.component.scss'],
 })
 export class AddL2ChainComponent {
-  @Output() chainAdded = new EventEmitter<EIP1193ProviderChain>();
-  @Output() cancelled = new EventEmitter<void>();
+  private fb = inject(FormBuilder);
+
+  readonly chainAdded = output<EIP1193ProviderChain>();
+  readonly cancelled = output<void>();
 
   chainForm: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor() {
     this.chainForm = this.fb.group({
       chainName: ['', [Validators.required]],
       chainId: ['', [Validators.required, Validators.min(1)]],
       rpcUrls: ['', [Validators.required, this.urlListValidator()]],
       currencyName: ['', [Validators.required]],
       currencySymbol: ['', [Validators.required]],
-      currencyDecimals: [18, [Validators.required, Validators.min(0), Validators.max(36)]],
-      blockExplorerUrls: ['', [this.urlListValidator()]]
+      currencyDecimals: [
+        18,
+        [Validators.required, Validators.min(0), Validators.max(36)],
+      ],
+      blockExplorerUrls: ['', [this.urlListValidator()]],
     });
   }
 
@@ -48,12 +59,14 @@ export class AddL2ChainComponent {
         nativeCurrency: {
           name: formValue.currencyName,
           symbol: formValue.currencySymbol,
-          decimals: Number(formValue.currencyDecimals)
+          decimals: Number(formValue.currencyDecimals),
         },
         rpcUrls: formValue.rpcUrls.split(',').map((url: string) => url.trim()),
-        blockExplorerUrls: formValue.blockExplorerUrls ? 
-          formValue.blockExplorerUrls.split(',').map((url: string) => url.trim()) : 
-          []
+        blockExplorerUrls: formValue.blockExplorerUrls
+          ? formValue.blockExplorerUrls
+              .split(',')
+              .map((url: string) => url.trim())
+          : [],
       };
       this.chainAdded.emit(chain);
     }
@@ -62,4 +75,4 @@ export class AddL2ChainComponent {
   onCancel() {
     this.cancelled.emit();
   }
-} 
+}

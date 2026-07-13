@@ -400,13 +400,16 @@
                       [label]="field.label"
                       [placeholder]="'Paste address, public key, or 32-byte hash'"
                       [type]="'text'"
-                      [isFullWidth]="true"
                       [isValid]="isTemplateFieldValid(field)"
-                      [invalidReason]="getTemplateFieldError(field)"
                       [isDisabled]="isDeploying()"
                       [ngModel]="templateFormValues[field.paramName] || ''"
                       (valueChange)="onTemplateFieldChange(field, $event)"
                     ></kc-input>
+                    @if (!isTemplateFieldValid(field)) {
+                      <span class="kc-input-error-text">{{
+                        getTemplateFieldError(field)
+                      }}</span>
+                    }
                     @if (
                       templateFormValues[field.paramName + "_isAutoHashed"]
                     ) {
@@ -432,18 +435,20 @@
                   </div>
                 }
                 @if (field.type === "int_days" || field.type === "int_count") {
-                  <kc-input
+                  <kc-number-input
                     [label]="field.label"
                     [placeholder]="field.placeholder"
-                    [type]="'number'"
-                    [min]="0"
-                    [isFullWidth]="true"
+                    [min]="'0'"
                     [isValid]="isTemplateFieldValid(field)"
-                    [invalidReason]="getTemplateFieldError(field)"
                     [isDisabled]="isDeploying()"
                     [ngModel]="templateFormValues[field.paramName] || ''"
                     (valueChange)="onTemplateFieldChange(field, $event)"
-                  ></kc-input>
+                  ></kc-number-input>
+                  @if (!isTemplateFieldValid(field)) {
+                    <span class="kc-input-error-text">{{
+                      getTemplateFieldError(field)
+                    }}</span>
+                  }
                 }
                 @if (field.type === "int_timestamp") {
                   <app-covenant-date-time-input
@@ -544,15 +549,12 @@
 
         <!-- Amount -->
         <div class="field">
-          <kc-input
+          <kc-number-input
             [label]="'Amount to lock (KAS)'"
             [placeholder]="'0'"
-            [type]="'number'"
-            [min]="0"
-            [max]="deployAvailableBalance()"
-            [isFullWidth]="true"
+            [min]="'0'"
+            [max]="deployAvailableBalance().toString()"
             [isValid]="!deployAmountError()"
-            [invalidReason]="deployAmountError()"
             [isDisabled]="isDeploying()"
             [ngModel]="deployAmount"
             (valueChange)="onDeployAmountChange($event)"
@@ -566,7 +568,10 @@
             >
               <span>Max</span>
             </div>
-          </kc-input>
+          </kc-number-input>
+          @if (deployAmountError()) {
+            <span class="kc-input-error-text">{{ deployAmountError() }}</span>
+          }
           <span class="field-help"
             >This amount is sent into the covenant. It can only move later by
             following the covenant rules.</span
@@ -964,7 +969,7 @@
                     <span
                       class="status-badge tracking"
                       kcTooltip="Indexer tracking is incomplete"
-                      tooltipPosition="left"
+                      tooltipPosition="left-center"
                       >Tracking</span
                     >
                   } @else {
@@ -1041,7 +1046,7 @@
                       class="btn ghost"
                       (click)="copyContractShareLink(contract)"
                       kcTooltip="Copy share link"
-                      tooltipPosition="top"
+                      tooltipPosition="top-center"
                     >
                       <svg
                         width="15"
@@ -1518,10 +1523,9 @@
               [label]="'Contract lookup'"
               [placeholder]="'covenant ID, txid, or kaspatest:...'"
               [type]="'text'"
-              [isFullWidth]="true"
               [isDisabled]="indexerImportLoading()"
               [ngModel]="indexerImportQuery"
-              (valueChange)="indexerImportQuery = $event || ''"
+              (valueChange)="onIndexerImportQueryChange($event)"
             ></kc-input>
           </div>
           <kc-button
@@ -1624,10 +1628,9 @@
               [label]="'Contract address'"
               [placeholder]="'kaspatest:pr...'"
               [type]="'text'"
-              [isFullWidth]="true"
               [isDisabled]="lookupLoading()"
               [ngModel]="lookupAddress"
-              (valueChange)="lookupAddress = $event || ''"
+              (valueChange)="onLookupAddressChange($event)"
             ></kc-input>
           </div>
           <kc-button
@@ -1729,9 +1732,7 @@
           [isFullWidth]="true"
           [isDisabled]="isInteracting()"
           [value]="selectedContractId()"
-          (valueChange)="
-            selectedContractId.set($event); selectContractFromRegistry()
-          "
+          (valueChange)="onInteractContractSelect($event)"
         ></kc-dropdown-select>
       </div>
 
@@ -1761,7 +1762,7 @@
                 [iconClass]="'icon-info'"
                 [size]="'xs'"
                 kcTooltip="Total KAS locked in this covenant UTXO"
-                tooltipPosition="top"
+                tooltipPosition="top-center"
               ></kc-icon>
             </div>
             <span class="text-white typo-text-1 fw-bold"
@@ -1802,7 +1803,7 @@
               [iconClass]="'icon-info'"
               [size]="'xs'"
               kcTooltip="Each action has different requirements (e.g. owner key, timelock expiry)."
-              tooltipPosition="top"
+              tooltipPosition="top-center"
             ></kc-icon>
           </div>
           <div class="flex gap-8 flex-wrap">
@@ -1903,12 +1904,10 @@
             ></app-address-smart-input>
           </div>
           <div class="form-group flex column gap-8">
-            <kc-input
+            <kc-number-input
               [label]="'Withdraw amount (KAS)'"
               [placeholder]="'0'"
-              [type]="'number'"
-              [min]="0"
-              [isFullWidth]="true"
+              [min]="'0'"
               [isDisabled]="isInteracting()"
               [ngModel]="interactOutputAmount"
               (valueChange)="onInteractOutputAmountChange($event)"
@@ -1922,7 +1921,7 @@
               >
                 <span>Max</span>
               </div>
-            </kc-input>
+            </kc-number-input>
           </div>
         }
 
@@ -1947,15 +1946,13 @@
 
         @for (arg of extraArgsForFunction(); track arg.name) {
           <div class="form-group flex column gap-8">
-            <kc-input
+            <kc-number-input
               [label]="arg.name + ' (' + arg.type_name + ')'"
               [placeholder]="'Enter ' + arg.name + ' value'"
-              [type]="'number'"
-              [isFullWidth]="true"
               [isDisabled]="isInteracting()"
               [ngModel]="extraArgValues[arg.name] || ''"
-              (valueChange)="extraArgValues[arg.name] = $event || ''"
-            ></kc-input>
+              (valueChange)="onExtraArgValueChange(arg.name, $event)"
+            ></kc-number-input>
           </div>
         }
 
@@ -2092,7 +2089,7 @@
                 ? 'Disabled for multi-sig signing. The contract must pay fees because wallet fee inputs would change the transaction after signatures are created.'
                 : 'If enabled, transaction fees will be paid from your wallet balance instead of the contract funds.'
             "
-            tooltipPosition="top"
+            tooltipPosition="top-center"
           ></kc-icon>
         </div>
         @if (selectedFunction && isMultiSigFunction(selectedFunction)) {

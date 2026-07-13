@@ -18,8 +18,9 @@ import {
   KcDropdownSelectComponent,
   KcIconComponent,
   KcInputComponent,
+  KcNumberInputComponent,
   KcTooltipDirective,
-} from 'kaspacom-ui';
+} from '@kaspacom/ui-kit';
 import { blake2b } from '@noble/hashes/blake2b';
 import { WalletService } from '../../../../../services/wallet.service';
 import { WalletActionService } from '../../../../../services/wallet-action.service';
@@ -163,6 +164,7 @@ type DeployIndexerState = {
     KcDropdownSelectComponent,
     KcIconComponent,
     KcInputComponent,
+    KcNumberInputComponent,
     KcTooltipDirective,
     CopyButtonComponent,
     AddressSmartInputComponent,
@@ -461,6 +463,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return abiEntry.inputs.filter(
       (i) => i.type_name === 'int' || i.type_name === 'bool',
     );
+  }
+
+  onExtraArgValueChange(name: string, value: any) {
+    this.extraArgValues[name] = value || '';
   }
 
   // Current network
@@ -1051,7 +1057,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return true;
   }
 
-  onTemplateFieldChange(field: TemplateField, value: string) {
+  onTemplateFieldChange(field: TemplateField, value: any) {
     this.templateFormValues[field.paramName] = value || '';
     this.templateFieldTouched[field.paramName] = true;
     if (field.type === 'hash32') {
@@ -1931,6 +1937,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (target) this.selectFunction(target);
   }
 
+  onIndexerImportQueryChange(value: any) {
+    this.indexerImportQuery = value || '';
+  }
+
   async lookupIndexerImport() {
     const query = this.indexerImportQuery.trim();
     this.indexerImportError.set(null);
@@ -2708,6 +2718,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     });
   }
 
+  onInteractContractSelect(value: any) {
+    this.selectedContractId.set(value || '');
+    this.selectContractFromRegistry();
+  }
+
   /**
    * Select a contract from registry for interaction
    */
@@ -3287,6 +3302,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     // Parse contract to get constructor param values (need to check the actual baked-in values)
     // For now, we'll check if deployed by current account as a simple heuristic
     return contract.deployedBy.pubkey === currentPubkey;
+  }
+
+  onLookupAddressChange(value: any) {
+    this.lookupAddress = value || '';
   }
 
   /**

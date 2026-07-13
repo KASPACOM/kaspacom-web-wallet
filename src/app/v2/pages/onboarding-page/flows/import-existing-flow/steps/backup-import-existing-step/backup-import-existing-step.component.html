@@ -23,15 +23,15 @@
       <div class="divider"></div>
     </div>
 
-    <button
-      class="upload-button flex align-items-center justify-content-center gap-8"
-      (click)="importFromFile()"
-      [disabled]="isImporting()"
-      type="button"
-    >
-      <kc-icon [iconClass]="'icon-upload'" [size]="'sm'" />
-      <span class="typo-text-2">Upload File</span>
-    </button>
+    <kc-button
+      class="upload-button"
+      [text]="'Upload File'"
+      [prefixIcon]="'icon-upload'"
+      [variant]="'secondary'"
+      [isFullWidth]="true"
+      [isDisabled]="isImporting()"
+      (buttonClick)="importFromFile()"
+    />
   </div>
 
   <div class="flex gap-12 full-width">

@@ -12,27 +12,6 @@
   width: 100%;
 }
 
-.export-wallet__password-input {
-  width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--white);
-  outline: none;
-  transition: border-color 0.2s ease;
-
-  &::placeholder {
-    color: var(--gray-60);
-  }
-
-  &.error {
-    border-color: rgba(224, 66, 66, 0.8);
-  }
-}
-
-.export-wallet__password-error {
-  color: var(--red-10);
-}
-
 .export-wallet__content {
   width: 100%;
 }

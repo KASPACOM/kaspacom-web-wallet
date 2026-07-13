@@ -29,7 +29,6 @@ import {
   MOBILE_BREAKPOINT,
 } from '../../services/desktop-view.service';
 
-import { KcSnackbarComponent } from 'kaspacom-ui';
 import { KcSpinnerComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import { WalletService } from '../../../services/wallet.service';
 import { AssetsManagerService } from '../../../services/assets-manager/assets-manager.service';
@@ -44,7 +43,6 @@ import { AssetsManagerService } from '../../../services/assets-manager/assets-ma
     DynamicFlowPageOutletComponent,
     DynamicQuickActionDialogOutletComponent,
     ReviewActionComponent,
-    KcSnackbarComponent,
     KcSpinnerComponent,
     KcIconComponent,
     IframeAccountSelectionComponent,

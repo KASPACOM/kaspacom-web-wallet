@@ -6,12 +6,6 @@
   @if (isAllowedDomain() && !incompatibleBrowserReason()) {
     <!--        <app-header></app-header>-->
     <router-outlet />
-    <app-message-popup
-      [message]="messagePopupService.message().message"
-      [type]="messagePopupService.message().type"
-      [show]="messagePopupService.message().show"
-      (close)="messagePopupService.hideMessage()"
-    />
   } @else {
     @if (!isAllowedDomain()) {
       <p class="not-supported-url">
@@ -27,3 +21,4 @@
     }
   }
 </div>
+<kc-snackbar />

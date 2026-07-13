@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
+import { KcDropdownSelectComponent, DropdownOption } from '@kaspacom/ui-kit';
 import { INftWithMetadata } from '../../../../../common/interfaces/nft.interface';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
 import { Krc721MetadataService } from '../../../../../../../../services/asset-metadata/krc721-metadata.service';
@@ -30,6 +31,7 @@ import { NftRankTagComponent } from '../../asset/krc721-asset/components/nft-ran
     SkeletonComponent,
     InfiniteScrollDirective,
     NftRankTagComponent,
+    KcDropdownSelectComponent,
   ],
   templateUrl: './krc721-summary.component.html',
   styleUrl: './krc721-summary.component.scss',
@@ -188,6 +190,11 @@ export class Krc721SummaryComponent
     return [...tickers].sort();
   });
 
+  tickerOptions = computed<DropdownOption[]>(() => [
+    { value: '', label: 'All Tickers' },
+    ...this.uniqueTickers().map((tick) => ({ value: tick, label: tick.toUpperCase() })),
+  ]);
+
   // Loading states - portfolio pattern
   loading = computed(() => {
     if (this.nfts().length > 0) {
@@ -273,10 +280,9 @@ export class Krc721SummaryComponent
   /**
    * Filter handling
    */
-  onTickerChange(event: Event): void {
-    const target = event.target as HTMLSelectElement;
-    this.selectedTicker.set(target.value);
-    this.krc721ListService.setFilter(target.value);
+  onTickerChange(value: string): void {
+    this.selectedTicker.set(value);
+    this.krc721ListService.setFilter(value);
   }
 
   /**

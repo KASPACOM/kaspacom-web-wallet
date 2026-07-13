@@ -1,7 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 
-import { NotificationService } from 'kaspacom-ui';
-import { KcButtonComponent } from '@kaspacom/ui-kit';
+import { KcButtonComponent, KcInputComponent, NotificationService } from '@kaspacom/ui-kit';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
 import { WalletService } from '../../../../../services/wallet.service';
@@ -15,7 +14,7 @@ interface ExportAccountFlowData {
 @Component({
   selector: 'app-export-account',
   standalone: true,
-  imports: [KcButtonComponent, FormsModule],
+  imports: [KcButtonComponent, KcInputComponent, FormsModule],
   templateUrl: './export-account.component.html',
   styleUrl: './export-account.component.scss',
 })

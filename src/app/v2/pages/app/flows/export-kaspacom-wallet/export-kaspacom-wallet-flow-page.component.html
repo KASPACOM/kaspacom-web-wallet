@@ -48,25 +48,18 @@
 
       <div class="password-form flex column gap-16 full-width max-width-400">
         <div class="input-group flex column gap-8">
-          <label class="typo-text-1 text-gray-60" for="password-input"
-            >Password</label
-          >
-          <input
-            id="password-input"
-            type="password"
-            class="password-input p-16 rounded-lg typo-text-1"
-            [class.error]="passwordError()"
-            placeholder="Enter your password"
+          <kc-input
+            [label]="'Password'"
+            [type]="'password'"
+            [placeholder]="'Enter your password'"
+            [isValid]="!passwordError()"
             [(ngModel)]="password"
-            (input)="onPasswordInput()"
+            (ngModelChange)="onPasswordInput()"
             (keyup.enter)="onVerifyPassword()"
-            [disabled]="isLoading()"
-            #passwordInput
+            [isDisabled]="isLoading()"
           />
           @if (passwordError()) {
-            <div class="error-message typo-text-2">
-              {{ passwordError() }}
-            </div>
+            <span class="kc-input-error-text">{{ passwordError() }}</span>
           }
         </div>
 

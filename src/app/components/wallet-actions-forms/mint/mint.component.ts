@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
+import { NotificationService } from '@kaspacom/ui-kit';
 import { FormsModule } from '@angular/forms';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import { MessagePopupService } from '../../../services/message-popup.service';
 import { Krc20WalletActionService } from '../../../services/protocols/krc20/krc20-wallet-actions.service';
 import { UtilsHelper } from '../../../services/utils.service';
 import { WalletActionService } from '../../../services/wallet-action.service';
@@ -16,7 +16,7 @@ export class MintComponent {
   private utilsService = inject(UtilsHelper);
   private walletActionService = inject(WalletActionService);
   private krc20ActionWalletService = inject(Krc20WalletActionService);
-  private messagePopupService = inject(MessagePopupService);
+  private notificationService = inject(NotificationService);
 
   protected selectedToken = '';
 
@@ -29,7 +29,7 @@ export class MintComponent {
         await this.walletActionService.validateAndDoActionAfterApproval(action);
 
       if (!result.success) {
-        this.messagePopupService.showError(
+        this.notificationService.error('Error',
           result.errorCode
             ? ERROR_CODES_MESSAGES[result.errorCode]
             : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR],

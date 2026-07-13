@@ -1,0 +1,9 @@
+// Vendored from the old `kaspacom-ui` package (removed as an npm dependency
+// once ui-kit migration finished). ~64 files still reference these bare
+// --gray-*/--blue-*/--kaspa-* CSS variables and utility classes
+// (.flex/.gap-*/.typo-*/etc.) directly. Renaming them to @kaspacom/ui-kit's
+// --kc-* tokens is a separate cosmetic follow-up, not a blocker.
+@forward "common";
+@forward "responsive";
+@forward "overlay.style";
+@forward "colors.style";

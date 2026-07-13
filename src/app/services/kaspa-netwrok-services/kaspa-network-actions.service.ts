@@ -648,7 +648,7 @@ export class KaspaNetworkActionsService {
     if (action.type === WalletActionType.COVENANT_DEPLOY) {
       return (
         action.data.amountSompi +
-        await this.estimateCovenantActionFee(action, wallet)
+        (await this.estimateCovenantActionFee(action, wallet))
       );
     }
 
@@ -667,7 +667,7 @@ export class KaspaNetworkActionsService {
       return (
         walletAddedAmount +
         senderFeeBuffer +
-        await this.estimateCovenantActionFee(action, wallet)
+        (await this.estimateCovenantActionFee(action, wallet))
       );
     }
 

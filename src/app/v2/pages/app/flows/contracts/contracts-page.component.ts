@@ -1312,7 +1312,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   private currentWalletPubkeyHash(): string | undefined {
     const pubkey = this.currentWalletPubkey();
-    return pubkey ? this.computeBlake2bHex(this.hex32ToBytes(pubkey)) : undefined;
+    return pubkey
+      ? this.computeBlake2bHex(this.hex32ToBytes(pubkey))
+      : undefined;
   }
 
   private async loadIndexerDashboardEntries(): Promise<
@@ -3356,7 +3358,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       (c) => c.id === this.selectedContractId(),
     );
     const oldCovenantId = oldEntry?.covenantId;
-    const keepAliveAbi = compiled.abi.find((entry) => entry.name === 'keepAlive');
+    const keepAliveAbi = compiled.abi.find(
+      (entry) => entry.name === 'keepAlive',
+    );
     const supportsDeadlineKeepAlive =
       keepAliveAbi?.inputs.some((input) => input.name === 'newDeadline') &&
       (compiled.ast as any)?.fields?.some(
@@ -3364,7 +3368,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       );
     if (!supportsDeadlineKeepAlive) {
       this.dmsKeepAliveError.set(
-        'This Dead Man\'s Switch was deployed with the old inactivity-period contract. It cannot be migrated to the new deadline contract with keepAlive; deploy a new deadline-based Dead Man\'s Switch.',
+        "This Dead Man's Switch was deployed with the old inactivity-period contract. It cannot be migrated to the new deadline contract with keepAlive; deploy a new deadline-based Dead Man's Switch.",
       );
       return;
     }

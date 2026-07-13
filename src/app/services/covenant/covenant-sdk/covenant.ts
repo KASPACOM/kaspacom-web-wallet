@@ -540,8 +540,7 @@ export async function deployContract(
 
       reconcileDeployFee(tx, network, senderAddress, priorityFee);
       tx.finalize();
-      finalFee =
-        getTransactionInputAmount(tx) - getTransactionOutputAmount(tx);
+      finalFee = getTransactionInputAmount(tx) - getTransactionOutputAmount(tx);
 
       if (options.estimateOnly) {
         finalTransaction = tx;

@@ -15,6 +15,17 @@
   background: black url(/svgs/background.svg) 100% 100% no-repeat;
 }
 
+::ng-deep .kc-snackbar-container {
+  .kc-snackbar-description {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+  }
+
+  .kc-snackbar-content {
+    gap: 0px !important;
+  }
+}
+
 .not-supported-url {
   font-size: 2rem;
   font-weight: bold;

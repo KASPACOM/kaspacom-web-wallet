@@ -1,10 +1,6 @@
 import { NgOptimizedImage } from '@angular/common';
 import { Component, OnInit, computed, inject, output } from '@angular/core';
-import {
-  KcButtonComponent,
-  KcIconComponent,
-  NotificationService,
-} from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent, NotificationService } from '@kaspacom/ui-kit';
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 import { WalletService } from '../../../../../../../services/wallet.service';
 import { Router } from '@angular/router';

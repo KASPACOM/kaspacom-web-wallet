@@ -11,7 +11,7 @@ import {
   ScriptPublicKey,
   UtxoEntryReference,
 } from '../../../../public/kaspa/kaspa';
-import { Injectable, Signal } from '@angular/core';
+import { Injectable, Signal, inject } from '@angular/core';
 import { LOCAL_STORAGE_KEYS } from '../../config/consts';
 import {
   CommitRevealActionResult,
@@ -42,7 +42,12 @@ import {
   CovenantCompletePartialAction,
 } from '../../types/wallet-action';
 import { AppWallet } from '../../classes/AppWallet';
-import { CompoundUtxosActionResult } from '../../types/wallet-action-result';
+import {
+  CompoundUtxosActionResult,
+  CovenantCompletePartialActionResult,
+  CovenantDeployActionResult,
+  CovenantSpendActionResult,
+} from '../../types/wallet-action-result';
 import { UnfinishedCommitRevealAction } from '../../types/kaspa-network/unfinished-commit-reveal-action.interface';
 import { PsktTransaction } from '../../types/kaspa-network/pskt-transaction.interface';
 import { UtilsHelper } from '../utils.service';
@@ -51,11 +56,6 @@ import { TransactionRequest } from 'ethers';
 import { createEIP1193Response } from '../etherium-services/create-eip-1193-response';
 import { KaspaWalletMnemonicActionsService } from './kaspa-wallet-mnemonic-actions.service';
 import { CovenantService } from '../covenant/covenant.service';
-import {
-  CovenantCompletePartialActionResult,
-  CovenantDeployActionResult,
-  CovenantSpendActionResult,
-} from '../../types/wallet-action-result';
 
 const MINIMAL_TRANSACTION_MASS = 10000n;
 const COVENANT_ESTIMATED_TRANSACTION_MASS = 25000n;
@@ -69,12 +69,14 @@ const ESTIMATED_REVEAL_ACTION = 1715n;
   providedIn: 'root',
 })
 export class KaspaNetworkActionsService {
-  constructor(
-    private readonly transactionsManager: KaspaNetworkTransactionsManagerService,
-    private readonly utils: UtilsHelper,
-    private readonly kaspaWalletMnemonicActions: KaspaWalletMnemonicActionsService,
-    private readonly covenantService: CovenantService,
-  ) {}
+  private readonly transactionsManager = inject(
+    KaspaNetworkTransactionsManagerService,
+  );
+  private readonly utils = inject(UtilsHelper);
+  private readonly kaspaWalletMnemonicActions = inject(
+    KaspaWalletMnemonicActionsService,
+  );
+  private readonly covenantService = inject(CovenantService);
 
   async connectAndDo<T>(
     fn: () => Promise<T>,

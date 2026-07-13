@@ -1,54 +1,54 @@
 <div
   class="flow-page-overlay"
-  [class.open]="isOpen"
-  [class.no-background]="!showBackground"
+  [class.open]="isOpen()"
+  [class.no-background]="!showBackground()"
   (click)="onBackdropClick()"
 >
   <div
     class="flow-page-content"
-    [class.no-background]="!showBackground"
-    [@slideDown]="isOpen ? 'open' : 'closed'"
+    [class.no-background]="!showBackground()"
+    [@slideDown]="isOpen() ? 'open' : 'closed'"
     (@slideDown.start)="onAnimationStart()"
     (@slideDown.done)="onAnimationDone()"
     (click)="$event.stopPropagation()"
   >
-    @if (showTitle) {
+    @if (showTitle()) {
       <div class="flow-page-header">
         <div class="flow-page-header__left">
-          @if (canNavigateBack) {
+          @if (canNavigateBack()) {
             <kc-icon
               class="flow-page-back"
               [iconClass]="'icon-chevron-left'"
               [size]="'lg'"
               (click)="onNavigateBack()"
               kcTooltip="Back"
-              tooltipPosition="bottom"
-            ></kc-icon>
+              tooltipPosition="bottom-center"
+            />
           }
           <div class="flow-page-title-group">
-            <h2 class="flow-page-title typo-title-4">{{ title }}</h2>
-            @if (subtitle) {
-              <p class="flow-page-subtitle typo-text-2">{{ subtitle }}</p>
+            <h2 class="flow-page-title typo-title-4">{{ title() }}</h2>
+            @if (subtitle()) {
+              <p class="flow-page-subtitle typo-text-2">{{ subtitle() }}</p>
             }
           </div>
         </div>
         <div class="flow-page-header__right">
-          @if (canClose) {
+          @if (canClose()) {
             <kc-icon
               class="flow-page-close"
               [iconClass]="'icon-close'"
               [size]="'md'"
               (click)="onClose()"
               kcTooltip="Close"
-              tooltipPosition="bottom"
-            ></kc-icon>
+              tooltipPosition="bottom-center"
+            />
           }
         </div>
       </div>
     }
 
     <div class="flow-page-body">
-      <ng-content></ng-content>
+      <ng-content />
     </div>
   </div>
 </div>

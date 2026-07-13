@@ -1,7 +1,7 @@
 <div class="header-container-home full-height">
   <div class="profile-section">
     <div class="profile-container" (click)="toggleAccountSettings()">
-      <app-wallet-profile-orb class="profile-container__chain-icon"></app-wallet-profile-orb>
+      <app-wallet-profile-orb class="profile-container__chain-icon" />
       <div class="profile-container__info">
         <div class="profile-container__wallet-name-section">
           <div class="profile-container__wallet-name">{{ walletName() }}</div>
@@ -11,8 +11,12 @@
         </div>
       </div>
     </div>
-    <app-copy-button class="external-copy-button" [value]="walletAddress()" [size]="'sm'"
-      (click)="onCopyButtonClick($event)"></app-copy-button>
+    <app-copy-button
+      class="external-copy-button"
+      [value]="walletAddress()"
+      [size]="'sm'"
+      (click)="onCopyButtonClick($event)"
+    />
   </div>
   <div class="network-selection-section">
     <div class="network-info" (click)="onNetworkSelectionClick()">
@@ -20,40 +24,43 @@
         @if (currentNetworkInfo().icon) {
           <img [src]="currentNetworkInfo()!.icon!" alt="" class="chain-icon" />
         } @else {
-          <span class="chain-icon" aria-label="Generic network icon" role="img">🌐</span>
+          <span class="chain-icon" aria-label="Generic network icon" role="img"
+            >🌐</span
+          >
         }
       </div>
       <div class="network-name">
-        {{ currentNetworkInfo().name || 'Kaspa L1' }}
+        {{ currentNetworkInfo().name || "Kaspa L1" }}
       </div>
     </div>
 
-    <kc-icon class="settings-icon" [iconClass]="'icon-settings'" [size]="'md'" (click)="onSettingsClick()" kcTooltip="Settings" tooltipPosition="bottom"></kc-icon>
+    <kc-icon
+      class="settings-icon"
+      [iconClass]="'icon-settings'"
+      [size]="'md'"
+      (click)="onSettingsClick()"
+      kcTooltip="Settings"
+      tooltipPosition="bottom-center"
+    />
 
     @if (!desktopViewService.isIframe) {
-      <button
+      <kc-icon-button
         class="expand-toggle"
-        (click)="desktopViewService.toggle()"
-        [title]="desktopViewService.isExpandedView() ? 'Compact view' : 'Expand view'"
-        [attr.aria-label]="desktopViewService.isExpandedView() ? 'Compact view' : 'Expand view'"
-      >
-        @if (desktopViewService.isExpandedView()) {
-          <!-- compress icon -->
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="4 14 10 14 10 20"/>
-            <polyline points="20 10 14 10 14 4"/>
-            <line x1="10" y1="14" x2="3" y2="21"/>
-            <line x1="21" y1="3" x2="14" y2="10"/>
-          </svg>
-        } @else {
-          <!-- expand icon -->
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 3 21 3 21 9"/>
-            <polyline points="9 21 3 21 3 15"/>
-            <line x1="21" y1="3" x2="14" y2="10"/>
-            <line x1="3" y1="21" x2="10" y2="14"/>
-          </svg>
-        }
-      </button>
+        [icon]="
+          desktopViewService.isExpandedView()
+            ? 'icon-fullscreen-exit'
+            : 'icon-fullscreen'
+        "
+        [size]="'sm'"
+        [variant]="'secondary'"
+        (buttonClick)="desktopViewService.toggle()"
+        [title]="
+          desktopViewService.isExpandedView() ? 'Compact view' : 'Expand view'
+        "
+        [ariaLabel]="
+          desktopViewService.isExpandedView() ? 'Compact view' : 'Expand view'
+        "
+      />
     }
   </div>
+</div>

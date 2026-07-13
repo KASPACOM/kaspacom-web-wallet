@@ -4,7 +4,7 @@
     [style.left]="selectedIndicatorOffset()"
   ></div>
   @for (item of routes(); track $index) {
-    <a [routerLink]="[item.link]" routerLinkActive="active" class="nav-item" [kcTooltip]="item.alt" tooltipPosition="top">
+    <a [routerLink]="[item.link]" routerLinkActive="active" class="nav-item" [kcTooltip]="item.alt" tooltipPosition="top-center">
       <span class="icon" [innerHTML]="item.svgContent"></span>
     </a>
   }

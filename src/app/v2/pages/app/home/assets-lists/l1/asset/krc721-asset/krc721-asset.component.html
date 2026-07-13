@@ -10,8 +10,7 @@
         [size]="'md'"
         (click)="goBack()"
         class="cursor-pointer hover-opacity"
-      >
-      </kc-icon>
+      />
       <div class="flex column gap-4">
         <div class="flex align-items-center gap-8">
           <h1 class="asset-title text-gray-90 m-0">{{ getDisplayName() }}</h1>
@@ -21,8 +20,7 @@
               [totalSupply]="totalSupply() ?? 0"
               [isLegendary]="legendary() ?? false"
               [size]="'md'"
-            >
-            </app-nft-rank-tag>
+            />
           }
         </div>
       </div>
@@ -32,7 +30,7 @@
   <!-- NFT image - centered under header -->
   <div class="nft-image-section flex justify-content-center mb-24">
     @if (metadataLoading()) {
-      <app-skeleton [height]="'256px'" [width]="'256px'"></app-skeleton>
+      <app-skeleton [height]="'256px'" [width]="'256px'" />
     } @else {
       <div class="nft-image-container">
         @if (getImageUrl()) {
@@ -55,13 +53,12 @@
   <div class="action-buttons flex gap-12 mb-24">
     <kc-button
       [variant]="'primary'"
-      [size]="'md'"
+      [size]="'m'"
       [text]="'Send'"
       class="flex-1"
       [isDisabled]="isListed()"
       (click)="onSendAction()"
-    >
-    </kc-button>
+    />
   </div>
 
   @if (isListed()) {
@@ -74,25 +71,13 @@
   <div class="nft-details">
     @if (metadataLoading()) {
       <!-- Description skeleton -->
-      <app-skeleton
-        [height]="'24px'"
-        [width]="'150px'"
-        class="mb-16"
-      ></app-skeleton>
-      <app-skeleton
-        [height]="'60px'"
-        [width]="'100%'"
-        class="mb-24"
-      ></app-skeleton>
+      <app-skeleton [height]="'24px'" [width]="'150px'" class="mb-16" />
+      <app-skeleton [height]="'60px'" [width]="'100%'" class="mb-24" />
       <!-- Attributes skeleton -->
-      <app-skeleton
-        [height]="'24px'"
-        [width]="'120px'"
-        class="mb-16"
-      ></app-skeleton>
+      <app-skeleton [height]="'24px'" [width]="'120px'" class="mb-16" />
       <div class="attributes-grid gap-12">
         @for (item of [1, 2, 3, 4]; track item) {
-          <app-skeleton [height]="'70px'" [width]="'100%'"></app-skeleton>
+          <app-skeleton [height]="'70px'" [width]="'100%'" />
         }
       </div>
     } @else {

@@ -1,87 +1,110 @@
-<div class="modal-overlay" *ngIf="currentActionSignal()">
-  <div class="transaction-review-container">
-    <div class="transaction-header">
-      <h2 class="typo-title-4" *ngIf="isActionHasPriorityFee">Transaction Review</h2>
-      <h2 class="typo-title-4" *ngIf="!isActionHasPriorityFee">Action Review</h2>
-      <p class="typo-text-3">Please review the details below before proceeding.</p>
-    </div>
-
-    <div class="transaction-content">
-      <ng-container *ngIf="currentActionDisplay(); else unknownAction">
-        <h3 class="typo-title-3">{{ currentActionDisplay()!.title }}</h3>
-        <h4 class="typo-text-3" *ngIf="currentActionDisplay()!.subtitle">{{ currentActionDisplay()!.subtitle }}</h4>
-
-        <div class="details-list">
-          <div *ngFor="let row of currentActionDisplay()!.rows">
-            <div *ngIf="row.inputField; else noInputField">
-              <div *ngIf="row.inputField.fieldType == InputFieldType.CHECKBOX">
-                <div class="checkbox-container">
-                  <kc-checkbox
-                    [label]="row.fieldName"
-                    [isChecked]="row.fieldValue === 'true'"
-                    (checkedChange)="additionalParams[row.inputField.fieldParam] = $event"
-                    size="md">
-                  </kc-checkbox>
-                </div>
+@if (currentActionSignal()) {
+  <div class="modal-overlay">
+    <div class="transaction-review-container">
+      <div class="transaction-header">
+        @if (isActionHasPriorityFee) {
+          <h2 class="typo-title-4">Transaction Review</h2>
+        }
+        @if (!isActionHasPriorityFee) {
+          <h2 class="typo-title-4">Action Review</h2>
+        }
+        <p class="typo-text-3">
+          Please review the details below before proceeding.
+        </p>
+      </div>
+      <div class="transaction-content">
+        @if (currentActionDisplay()) {
+          <h3 class="typo-title-3">{{ currentActionDisplay()!.title }}</h3>
+          @if (currentActionDisplay()!.subtitle) {
+            <h4 class="typo-text-3">{{ currentActionDisplay()!.subtitle }}</h4>
+          }
+          <div class="details-list">
+            @for (row of currentActionDisplay()!.rows; track row) {
+              <div>
+                @if (row.inputField) {
+                  <div>
+                    @if (row.inputField.fieldType == InputFieldType.CHECKBOX) {
+                      <div>
+                        <div class="checkbox-container">
+                          <app-checkbox-input
+                            [checked]="row.fieldValue === 'true'"
+                            (checkedChange)="
+                              additionalParams[row.inputField.fieldParam] =
+                                $event
+                            "
+                          >
+                            {{ row.fieldName }}
+                          </app-checkbox-input>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <div
+                    [class]="{
+                      detail: !row.isCodeBlock,
+                      'detail-signing-message': row.isCodeBlock,
+                    }"
+                  >
+                    <div class="label typo-caption-semibold">
+                      {{ row.fieldName }}
+                    </div>
+                    <div class="value typo-text-2">{{ row.fieldValue }}</div>
+                  </div>
+                }
               </div>
-            </div>
-            <ng-template #noInputField>
-              <div [ngClass]="{'detail': !row.isCodeBlock, 'detail-signing-message': row.isCodeBlock}">
-                <div class="label typo-caption-semibold">{{ row.fieldName }}</div>
-                <div class="value typo-text-2">{{ row.fieldValue }}</div>
-              </div>
-            </ng-template>
+            }
           </div>
-        </div>
-      </ng-container>
-
-      <ng-template #unknownAction>
-        <p class="typo-text-3">Unknown Action Type ({{ currentActionSignal()?.action?.type }})</p>
-      </ng-template>
-
-      <!-- Priority fee -->
-      <priority-fee-selection *ngIf="isActionHasPriorityFee && currentActionSignal()"
-        [action]="currentActionSignal()!.action" [wallet]="wallet"
-        (priorityFeeSelected)="setCurrentPriorityFee($event)"></priority-fee-selection>
-    </div>
-
-    <!-- Actions buttons -->
-    <div class="transaction-actions">
-      <kc-button
-        text="Approve"
-        variant="primary"
-        size="lg"
-        [isFullWidth]="true"
-        [isDisabled]="!isAvailableForApproval()"
-        (buttonClick)="acceptTransaction()">
-      </kc-button>
-      <kc-button
-        text="Reject"
-        variant="tertiary"
-        size="lg"
-        [isFullWidth]="true"
-        (buttonClick)="rejectTransaction()">
-      </kc-button>
+        } @else {
+          <p class="typo-text-3">
+            Unknown Action Type ({{ currentActionSignal()?.action?.type }})
+          </p>
+        }
+        <!-- Priority fee -->
+        @if (isActionHasPriorityFee && currentActionSignal()) {
+          <priority-fee-selection
+            [action]="currentActionSignal()!.action"
+            [wallet]="wallet"
+            (priorityFeeSelected)="setCurrentPriorityFee($event)"
+          />
+        }
+      </div>
+      <!-- Actions buttons -->
+      <div class="transaction-actions">
+        <kc-button
+          text="Approve"
+          variant="primary"
+          size="m"
+          [isFullWidth]="true"
+          [isDisabled]="!isAvailableForApproval()"
+          (buttonClick)="acceptTransaction()"
+        />
+        <kc-button
+          text="Reject"
+          variant="secondary"
+          size="m"
+          [isFullWidth]="true"
+          (buttonClick)="rejectTransaction()"
+        />
+      </div>
     </div>
   </div>
-</div>
+}
 
 <!-- Progress and result handling - shown without modal overlay -->
-<ng-container *ngIf="!currentActionSignal()">
-  <ng-container *ngIf="currentProgressSignal() !== undefined || actionResultSignal(); else noActionToShow">
+@if (!currentActionSignal()) {
+  @if (currentProgressSignal() !== undefined || actionResultSignal()) {
     <div class="modal-overlay">
       <div class="transaction-review-container">
-        <ng-container *ngIf="currentProgressSignal() !== undefined">
+        @if (currentProgressSignal() !== undefined) {
           <div class="progress-container">
             <h3 class="typo-title-4">Processing Action...</h3>
             <div class="progress-bar">
               <div class="progress-fill"></div>
             </div>
           </div>
-        </ng-container>
+        }
       </div>
     </div>
-  </ng-container>
-
-  <ng-template #noActionToShow></ng-template>
-</ng-container>
+  } @else {}
+}

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import pkg from '../../../package.json';
 import { LOCAL_STORAGE_KEYS } from '../config/consts';
 import { UserWalletsData } from '../types/user-wallets-data';
@@ -9,12 +9,10 @@ import { UtilsHelper } from './utils.service';
   providedIn: 'root',
 })
 export class PasswordManagerService {
-  private password: string | null = null;
+  private readonly encryptionService = inject(EncryptionService);
+  private utils = inject(UtilsHelper);
 
-  constructor(
-    private readonly encryptionService: EncryptionService,
-    private utils: UtilsHelper
-  ) {}
+  private password: string | null = null;
 
   isUserHasSavedPassword(): boolean {
     return !!localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA);
@@ -22,7 +20,7 @@ export class PasswordManagerService {
 
   async setSavedPassword(
     password: string,
-    force: boolean = false
+    force: boolean = false,
   ): Promise<void> {
     if (localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA) && !force) {
       throw new Error('Password already set');
@@ -48,7 +46,7 @@ export class PasswordManagerService {
   }
 
   async getUserDataWithPassword(
-    password: string
+    password: string,
   ): Promise<UserWalletsData | null> {
     const encryptedMessage = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA);
 
@@ -59,13 +57,12 @@ export class PasswordManagerService {
     try {
       const UserDataJson = await this.encryptionService.decrypt(
         encryptedMessage,
-        password
+        password,
       );
 
       if (UserDataJson) {
-
         const userData: UserWalletsData = JSON.parse(UserDataJson);
-        
+
         if (userData.version) {
           return userData;
         }
@@ -96,7 +93,7 @@ export class PasswordManagerService {
     if (!this.password) {
       throw new Error('Password not found');
     }
-    
+
     const userData = await this.getUserDataWithPassword(this.password!);
 
     if (!userData) {
@@ -116,7 +113,7 @@ export class PasswordManagerService {
 
   async saveWalletsData(
     walletsData: UserWalletsData,
-    password: string
+    password: string,
   ): Promise<boolean> {
     if (!password || this.utils.isNullOrEmptyString(password)) {
       return false;
@@ -124,7 +121,7 @@ export class PasswordManagerService {
 
     const encryptedMessage = await this.encryptionService.encrypt(
       JSON.stringify(walletsData),
-      password
+      password,
     );
 
     localStorage.setItem(LOCAL_STORAGE_KEYS.USER_DATA, encryptedMessage);
@@ -132,7 +129,7 @@ export class PasswordManagerService {
   }
 
   async saveWalletsDataWithStoredPassword(
-    walletsData: UserWalletsData
+    walletsData: UserWalletsData,
   ): Promise<boolean> {
     if (!this.password) {
       return false;

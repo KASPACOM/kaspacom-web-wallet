@@ -1,5 +1,5 @@
-import { Component, Input } from '@angular/core';
-import { CommonModule, NgFor, NgIf } from '@angular/common';
+import { Component, Input, input, inject } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
 import {
@@ -11,20 +11,23 @@ import { KRC20OperationType } from '../../../types/kaspa-network/krc20-operation
 import { AppWallet } from '../../../classes/AppWallet';
 
 @Component({
-    selector: 'krc20-operations-history',
-    templateUrl: './krc20-operation-history.component.html',
-    styleUrls: ['./krc20-operation-history.component.scss'],
-    imports: [NgIf, NgFor, FormsModule, SompiToNumberPipe, CommonModule]
+  selector: 'krc20-operations-history',
+  templateUrl: './krc20-operation-history.component.html',
+  styleUrls: ['./krc20-operation-history.component.scss'],
+  imports: [FormsModule, SompiToNumberPipe],
 })
 export class Krc20OperationHistoryComponent {
+  protected readonly utils = inject(UtilsHelper);
+
   public AcceptedStatus = AcceptedStatus;
   public KRC20OperationType = KRC20OperationType;
   public Number = Number;
 
+  // TODO: Skipped for migration because:
+  //  This input is used in a control flow expression (e.g. `@if` or `*ngIf`)
+  //  and migrating would break narrowing currently.
   @Input() operations: undefined | OperationDetails[];
-  @Input() wallet!: AppWallet;
-
-  constructor(protected readonly utils: UtilsHelper) {}
+  readonly wallet = input.required<AppWallet>();
 
   public isNullOrEmptyString(value: string | null | undefined): boolean {
     return this.utils.isNullOrEmptyString(value);
@@ -34,19 +37,20 @@ export class Krc20OperationHistoryComponent {
     let op = operation.op.charAt(0).toUpperCase() + operation.op.slice(1);
 
     if (operation.op === KRC20OperationType.SEND) {
+      const wallet = this.wallet();
       if (
-        operation.from === this.wallet.getAddress() &&
-        operation.to === this.wallet.getAddress()
+        operation.from === wallet.getAddress() &&
+        operation.to === wallet.getAddress()
       ) {
         op = `${op} (Cancel List)`;
       } else if (
         operation.op === KRC20OperationType.SEND &&
-        operation.to === this.wallet.getAddress()
+        operation.to === wallet.getAddress()
       ) {
         op = `${op} (Buy)`;
       } else if (
         operation.op === KRC20OperationType.SEND &&
-        operation.from === this.wallet.getAddress()
+        operation.from === wallet.getAddress()
       ) {
         op = `${op} (Sell)`;
       }
@@ -76,7 +80,7 @@ export class Krc20OperationHistoryComponent {
         };
       case KRC20OperationType.TRANSFER:
       case KRC20OperationType.SEND:
-        const isToThisWallet = operation.to === this.wallet.getAddress();
+        const isToThisWallet = operation.to === this.wallet().getAddress();
 
         return {
           balance:

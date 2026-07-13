@@ -1,13 +1,13 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute, Router } from '@angular/router';
-import { KcIconComponent, KcButtonComponent } from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import { Erc20ActivityItem } from '../../activity/activity.component';
 
 @Component({
   selector: 'app-erc20-transaction-details',
   standalone: true,
-  imports: [CommonModule, KcIconComponent, KcButtonComponent],
+  imports: [KcIconComponent, KcButtonComponent],
   template: `
     <div
       class="transaction-details-container flex column full-width full-height p-24"
@@ -18,10 +18,10 @@ import { Erc20ActivityItem } from '../../activity/activity.component';
           <div class="flex justify-content-between align-items-center mb-16">
             <h2 class="text-white typo-title-3">Transaction Details</h2>
             <kc-button
-              variant="tertiary"
-              size="sm"
+              variant="secondary"
+              size="s"
               (click)="navigateBack()"
-              icon="icon-arrow-left"
+              prefixIcon="icon-arrow-left"
             >
               Back
             </kc-button>
@@ -34,8 +34,7 @@ import { Erc20ActivityItem } from '../../activity/activity.component';
                 [iconClass]="getStatusIcon()"
                 [size]="'md'"
                 [color]="getStatusColor()"
-              >
-              </kc-icon>
+              />
               <span class="text-white typo-text-2 font-weight-medium">
                 {{ getStatusText() }}
               </span>
@@ -61,7 +60,7 @@ import { Erc20ActivityItem } from '../../activity/activity.component';
             <div class="detail-label text-gray-60 typo-text-2">Token</div>
             <div class="detail-value text-white typo-text-1">
               <div class="flex align-items-center gap-8">
-                <kc-icon [iconClass]="'icon-tokens'" [size]="'sm'"></kc-icon>
+                <kc-icon [iconClass]="'icon-tokens'" [size]="'sm'" />
                 <span>{{ transaction.tokenName || 'Unknown Token' }}</span>
                 <span class="text-gray-60"
                   >({{ shortenAddress(transaction.tokenAddress) }})</span
@@ -81,15 +80,14 @@ import { Erc20ActivityItem } from '../../activity/activity.component';
                   [iconClass]="'icon-arrow-up'"
                   [size]="'sm'"
                   [color]="'var(--red-20)'"
-                ></kc-icon>
+                />
                 <span>{{ shortenAddress(transaction.fromAddress || '') }}</span>
                 <kc-button
-                  variant="tertiary"
-                  size="sm"
-                  icon="icon-copy"
+                  variant="secondary"
+                  size="s"
+                  prefixIcon="icon-copy"
                   (click)="copyToClipboard(transaction.fromAddress || '')"
-                >
-                </kc-button>
+                />
               </div>
             </div>
           </div>
@@ -105,15 +103,14 @@ import { Erc20ActivityItem } from '../../activity/activity.component';
                   [iconClass]="'icon-arrow-down'"
                   [size]="'sm'"
                   [color]="'var(--green-20)'"
-                ></kc-icon>
+                />
                 <span>{{ shortenAddress(transaction.toAddress || '') }}</span>
                 <kc-button
-                  variant="tertiary"
-                  size="sm"
-                  icon="icon-copy"
+                  variant="secondary"
+                  size="s"
+                  prefixIcon="icon-copy"
                   (click)="copyToClipboard(transaction.toAddress || '')"
-                >
-                </kc-button>
+                />
               </div>
             </div>
           </div>
@@ -127,12 +124,11 @@ import { Erc20ActivityItem } from '../../activity/activity.component';
               <div class="flex align-items-center gap-8">
                 <span>{{ shortenHash(transaction.id) }}</span>
                 <kc-button
-                  variant="tertiary"
-                  size="sm"
-                  icon="icon-copy"
+                  variant="secondary"
+                  size="s"
+                  prefixIcon="icon-copy"
                   (click)="copyToClipboard(transaction.id)"
-                >
-                </kc-button>
+                />
               </div>
             </div>
           </div>
@@ -174,7 +170,7 @@ import { Erc20ActivityItem } from '../../activity/activity.component';
             [iconClass]="'icon-clock'"
             [size]="'xlg'"
             [color]="'var(--gray-60)'"
-          ></kc-icon>
+          />
           <h3 class="text-gray-60 typo-title-3 mt-16">Transaction Not Found</h3>
         </div>
       }

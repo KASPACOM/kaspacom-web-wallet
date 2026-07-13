@@ -7,20 +7,26 @@
 >
   <!-- Content slot for wallet options menu -->
   <div slot="content" class="wallet-options-menu">
-    <div class="wallet-option-item card-0 card-hover" (click)="onChangeWallet()">
+    <div
+      class="wallet-option-item card-0 card-hover"
+      (click)="onChangeWallet()"
+    >
       <kc-icon
         [iconClass]="'icon-update'"
         [size]="'sm'"
         class="wallet-option-icon"
-      ></kc-icon>
+      />
       <div class="wallet-option-text">Change wallet</div>
     </div>
-    <div class="wallet-option-item card-0 card-hover" (click)="onExportWallet()">
+    <div
+      class="wallet-option-item card-0 card-hover"
+      (click)="onExportWallet()"
+    >
       <kc-icon
         [iconClass]="'icon-download'"
         [size]="'sm'"
         class="wallet-option-icon"
-      ></kc-icon>
+      />
       <div class="wallet-option-text">Export Wallet</div>
     </div>
     <div class="wallet-option-item card-0 card-hover" (click)="onAddWallet()">
@@ -28,10 +34,8 @@
         [iconClass]="'icon-add'"
         [size]="'sm'"
         class="wallet-option-icon"
-      ></kc-icon>
+      />
       <div class="wallet-option-text">Add Wallet</div>
     </div>
   </div>
 </app-quick-action-dialog>
-
-

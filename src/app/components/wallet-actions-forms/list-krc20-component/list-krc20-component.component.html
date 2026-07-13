@@ -2,18 +2,20 @@
   <h2>List Asset</h2>
 
   <!-- Asset Selection -->
-   <div *ngIf="assets && assets.length > 0; else noAssetsToChoose">
-    <label for="assetInput" >Choose Asset:</label>
-    <select id="assetInput" [(ngModel)]="selectedAsset">
-      <option *ngFor="let asset of assets" [value]="getAssetId(asset)">
-        {{ asset.name }}
-      </option>
-    </select>
-  
-   </div>
-   <ng-template #noAssetsToChoose>
+  @if (assets && assets.length > 0) {
+    <div>
+      <label for="assetInput">Choose Asset:</label>
+      <select id="assetInput" [(ngModel)]="selectedAsset">
+        @for (asset of assets; track asset) {
+          <option [value]="getAssetId(asset)">
+            {{ asset.name }}
+          </option>
+        }
+      </select>
+    </div>
+  } @else {
     <p>Loading...</p>
-  </ng-template>
+  }
 
   <!-- Amount Input -->
   <label for="amount">Amount:</label>
@@ -37,5 +39,3 @@
   <!-- Send Button -->
   <button (click)="sendAsset()" [disabled]="!isFormValid()">Send</button>
 </div>
-
-  

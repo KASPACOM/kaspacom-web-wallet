@@ -1,8 +1,8 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { KcButtonComponent, KcIconComponent, KcInputComponent } from 'kaspacom-ui';
+import { KcInputComponent, KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
 import { FlowPagesService } from '../../../../services/flow-pages.service';
@@ -17,7 +17,7 @@ import {
 @Component({
   selector: 'app-delete-wallet-confirmation',
   standalone: true,
-  imports: [CommonModule, FormsModule, KcButtonComponent, KcIconComponent, KcInputComponent],
+  imports: [FormsModule, KcButtonComponent, KcIconComponent, KcInputComponent],
   templateUrl: './delete-wallet-confirmation.component.html',
   styleUrl: './delete-wallet-confirmation.component.scss',
 })
@@ -56,13 +56,13 @@ export class DeleteWalletConfirmationComponent extends FlowPageBaseComponent {
     try {
       // Clear all wallet data
       await this.passwordManagerService.clearAllData();
-      
+
       // Deselect current wallet from memory
       await this.walletService.deselectCurrentWallet();
-      
+
       // Close all flow pages
       this.flowPagesService.closePage();
-      
+
       // Force page reload to ensure clean state
       window.location.reload();
     } catch (error) {

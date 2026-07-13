@@ -10,17 +10,21 @@
         placeholder="Enter your password"
         required
       />
-      <div *ngIf="password?.invalid && password?.touched" class="error-message">
-        Password is required.
-      </div>
+      @if (password?.invalid && password?.touched) {
+        <div class="error-message">Password is required.</div>
+      }
     </div>
     <button type="submit" [disabled]="loginForm.invalid">Login</button>
   </form>
-  <div *ngIf="loginError" class="error-message">
-    Incorrect password. Please try again.
-  </div>
+  @if (loginError) {
+    <div class="error-message">Incorrect password. Please try again.</div>
+  }
   <div class="clear-data-section">
-    <button type="button" (click)="navigateToClearData()" class="clear-data-button">
+    <button
+      type="button"
+      (click)="navigateToClearData()"
+      class="clear-data-button"
+    >
       Clear All Data
     </button>
   </div>

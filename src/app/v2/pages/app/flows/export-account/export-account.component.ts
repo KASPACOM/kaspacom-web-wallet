@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { KcButtonComponent, NotificationService } from 'kaspacom-ui';
+
+import { KcButtonComponent, KcInputComponent, NotificationService } from '@kaspacom/ui-kit';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
 import { WalletService } from '../../../../../services/wallet.service';
@@ -14,7 +14,7 @@ interface ExportAccountFlowData {
 @Component({
   selector: 'app-export-account',
   standalone: true,
-  imports: [CommonModule, KcButtonComponent, FormsModule],
+  imports: [KcButtonComponent, KcInputComponent, FormsModule],
   templateUrl: './export-account.component.html',
   styleUrl: './export-account.component.scss',
 })
@@ -68,9 +68,8 @@ export class ExportAccountComponent extends FlowPageBaseComponent {
     this.isVerifying.set(true);
 
     try {
-      const isValid = await this.passwordManagerService.checkAndLoadPassword(
-        passwordValue,
-      );
+      const isValid =
+        await this.passwordManagerService.checkAndLoadPassword(passwordValue);
 
       if (!isValid) {
         this.passwordError.set('Incorrect password. Please try again.');
@@ -173,9 +172,8 @@ export class ExportAccountComponent extends FlowPageBaseComponent {
       return false;
     }
 
-    const wallet = this.walletService.getWalletByIdAndAccount(
-      walletIdWithAccount,
-    );
+    const wallet =
+      this.walletService.getWalletByIdAndAccount(walletIdWithAccount);
 
     if (!wallet) {
       this.loadError.set(true);
@@ -229,5 +227,3 @@ export class ExportAccountComponent extends FlowPageBaseComponent {
     return `${normalized || 'account'}-private-key.txt`;
   }
 }
-
-

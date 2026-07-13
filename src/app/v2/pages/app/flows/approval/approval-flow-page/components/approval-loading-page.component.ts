@@ -1,21 +1,17 @@
 import { Component, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ApprovalFlowService } from '../../../../../../services/approval-flow.service';
-import { KcIconComponent } from 'kaspacom-ui';
+import { KcIconComponent } from '@kaspacom/ui-kit';
 import { KaspaNodesBackgroundComponent } from '../../../../common/components/kaspa-nodes-background/kaspa-nodes-background.component';
 
 @Component({
   selector: 'app-approval-loading-page',
   standalone: true,
-  imports: [
-    CommonModule,
-    KcIconComponent,
-    KaspaNodesBackgroundComponent
-  ],
+  imports: [KcIconComponent, KaspaNodesBackgroundComponent],
   template: `
     <div class="loading-container">
       <!-- Background Canvas -->
-      <kaspa-nodes-background class="background-canvas"></kaspa-nodes-background>
+      <kaspa-nodes-background class="background-canvas" />
 
       <!-- Loading Header -->
       <div class="loading-header">
@@ -24,27 +20,25 @@ import { KaspaNodesBackgroundComponent } from '../../../../common/components/kas
             <kc-icon
               [iconClass]="'icon-refresh'"
               [size]="'xlg'"
-              class="spinner-icon">
-            </kc-icon>
+              class="spinner-icon"
+            />
           </div>
         </div>
         <h2 class="loading-title">Processing Transaction</h2>
-        <p class="loading-subtitle">Please wait while your transaction is being processed...</p>
+        <p class="loading-subtitle">
+          Please wait while your transaction is being processed...
+        </p>
       </div>
 
       <!-- Progress Bar -->
       <div class="progress-section">
         <div class="progress-bar">
-          <div
-            class="progress-fill"
-            [style.width.%]="currentProgress()">
-          </div>
+          <div class="progress-fill" [style.width.%]="currentProgress()"></div>
         </div>
       </div>
-
     </div>
   `,
-  styleUrl: './approval-loading-page.component.scss'
+  styleUrl: './approval-loading-page.component.scss',
 })
 export class ApprovalLoadingPageComponent {
   private approvalFlowService = inject(ApprovalFlowService);

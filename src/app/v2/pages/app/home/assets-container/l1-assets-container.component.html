@@ -5,19 +5,17 @@
   (selectedTabChange)="onTabChange($event)"
 >
   @switch (selectedTabId()) {
-    @case ('utxos') {
-      <app-utxos-summary></app-utxos-summary>
+    @case ("utxos") {
+      <app-utxos-summary />
     }
-    @case ('krc20') {
-      <app-krc20-summary></app-krc20-summary>
+    @case ("krc20") {
+      <app-krc20-summary />
     }
-    @case ('krc721') {
-      <app-krc721-summary></app-krc721-summary>
+    @case ("krc721") {
+      <app-krc721-summary />
     }
-    @case ('kns') {
-      <app-kns-summary></app-kns-summary>
+    @case ("kns") {
+      <app-kns-summary />
     }
   }
 </kc-labeled-tabs>
-
-

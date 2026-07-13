@@ -1,9 +1,7 @@
-@use "kaspacom-ui/lib/styles/index" as *;
+@use "styles/legacy-tokens" as *;
+@use "@kaspacom/ui-kit/tokens/index.scss" as kcTokens;
 @use "styles/common";
 @use "styles/responsive";
-
-/* Import icon fonts from kaspacom-ui */
-@import "kaspacom-ui/assets/icons/style.css";
 
 /* CSS Custom Properties */
 :root {

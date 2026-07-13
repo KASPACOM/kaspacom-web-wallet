@@ -1,4 +1,11 @@
-import { Injectable, OnDestroy, Signal, signal, WritableSignal } from '@angular/core';
+import {
+  Injectable,
+  OnDestroy,
+  Signal,
+  signal,
+  WritableSignal,
+  inject,
+} from '@angular/core';
 import { RpcService } from './rpc.service';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
 import { ConnectStrategy, RpcClient } from '../../../../public/kaspa/kaspa';
@@ -12,6 +19,8 @@ const MAX_RECONNECT_DELAY = 30 * 1000;
   providedIn: 'root',
 })
 export class KaspaNetworkConnectionManagerService implements OnDestroy {
+  private readonly rpcService = inject(RpcService);
+
   private connectionPromise?: Promise<void>;
   private connectionGeneration = 0;
   private activeConnectingRpc?: RpcClient;
@@ -24,7 +33,7 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
   private connectionStatusSignal: WritableSignal<RpcConnectionStatus> =
     signal<RpcConnectionStatus>(RpcConnectionStatus.DISCONNECTED);
 
-  constructor(private readonly rpcService: RpcService) {
+  constructor() {
     this.listenForBrowserResume();
   }
 
@@ -35,7 +44,10 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
         this.onlineHandler = undefined;
       }
       if (this.visibilityHandler) {
-        document.removeEventListener('visibilitychange', this.visibilityHandler);
+        document.removeEventListener(
+          'visibilitychange',
+          this.visibilityHandler,
+        );
         this.visibilityHandler = undefined;
       }
     }
@@ -137,7 +149,8 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
   }
 
   private getReconnectDelay(): number {
-    const exponentialDelay = BASE_RECONNECT_DELAY * Math.pow(2, this.reconnectAttempts++);
+    const exponentialDelay =
+      BASE_RECONNECT_DELAY * Math.pow(2, this.reconnectAttempts++);
     const jitter = Math.floor(Math.random() * 500);
     return Math.min(exponentialDelay + jitter, MAX_RECONNECT_DELAY);
   }
@@ -150,7 +163,7 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
 
     const currentRpc = forceRefresh
       ? this.rpcService.refreshRpc({ resetConfiguredRpcUrl: true })
-      : this.rpcService.getRpc() ?? this.rpcService.refreshRpc();
+      : (this.rpcService.getRpc() ?? this.rpcService.refreshRpc());
 
     if (!currentRpc) {
       throw new Error('RPC client is not initialized');
@@ -174,7 +187,10 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
         'Rpc connection timeout',
       );
 
-      if (generation !== this.connectionGeneration || this.rpcService.getRpc() !== currentRpc) {
+      if (
+        generation !== this.connectionGeneration ||
+        this.rpcService.getRpc() !== currentRpc
+      ) {
         await this.disconnectRpc(currentRpc);
         throw new Error('RPC client was replaced while connecting');
       }
@@ -189,11 +205,20 @@ export class KaspaNetworkConnectionManagerService implements OnDestroy {
         this.activeConnectingRpc = undefined;
       }
 
-      if (generation === this.connectionGeneration && this.rpcService.isUsingConfiguredRpcUrl()) {
+      if (
+        generation === this.connectionGeneration &&
+        this.rpcService.isUsingConfiguredRpcUrl()
+      ) {
         if (this.rpcService.useNextConfiguredRpcUrl()) {
-          console.warn('Configured Kaspa RPC failed; trying next configured RPC', err);
+          console.warn(
+            'Configured Kaspa RPC failed; trying next configured RPC',
+            err,
+          );
         } else {
-          console.warn('Configured Kaspa RPCs failed; falling back to resolver', err);
+          console.warn(
+            'Configured Kaspa RPCs failed; falling back to resolver',
+            err,
+          );
           this.rpcService.useResolver();
         }
 

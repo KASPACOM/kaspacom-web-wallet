@@ -1,5 +1,5 @@
 import { Component, input, output } from '@angular/core';
-import { KcIconComponent } from 'kaspacom-ui';
+import { KcIconComponent } from '@kaspacom/ui-kit';
 
 export interface ContractsSidebarItem {
   key: string;

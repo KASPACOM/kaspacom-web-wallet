@@ -1,4 +1,10 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  AfterViewInit,
+  OnDestroy,
+  viewChild,
+} from '@angular/core';
 
 interface CanvasNode {
   x: number;
@@ -17,28 +23,33 @@ interface CanvasNode {
   selector: 'app-startup-background-canvas',
   standalone: true,
   template: `<canvas #canvas class="background-canvas"></canvas>`,
-  styles: [`
-    :host {
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: -1;
-      pointer-events: none;
-      display: block;
-    }
+  styles: [
+    `
+      :host {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -1;
+        pointer-events: none;
+        display: block;
+      }
 
-    .background-canvas {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-    }
-  `]
+      .background-canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+    `,
+  ],
 })
-export class StartupBackgroundCanvasComponent implements AfterViewInit, OnDestroy {
-  @ViewChild('canvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
+export class StartupBackgroundCanvasComponent
+  implements AfterViewInit, OnDestroy
+{
+  readonly canvasRef =
+    viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
 
   private canvas!: HTMLCanvasElement;
   private ctx!: CanvasRenderingContext2D;
@@ -60,9 +71,9 @@ export class StartupBackgroundCanvasComponent implements AfterViewInit, OnDestro
   };
 
   ngAfterViewInit(): void {
-    this.canvas = this.canvasRef.nativeElement;
+    this.canvas = this.canvasRef().nativeElement;
     const context = this.canvas.getContext('2d');
-    
+
     if (!context) {
       console.warn('Canvas 2D context not available');
       return;
@@ -132,7 +143,10 @@ export class StartupBackgroundCanvasComponent implements AfterViewInit, OnDestro
 
     if (!node.isVisible) return;
 
-    const fadeProgress = Math.min(1, (now - node.fadeStart) / this.config.fadeDuration);
+    const fadeProgress = Math.min(
+      1,
+      (now - node.fadeStart) / this.config.fadeDuration,
+    );
     node.opacity = node.targetOpacity * fadeProgress;
 
     node.x += node.vx;
@@ -145,8 +159,14 @@ export class StartupBackgroundCanvasComponent implements AfterViewInit, OnDestro
       node.vy = -node.vy;
     }
 
-    node.x = Math.max(node.radius, Math.min(this.canvas.width - node.radius, node.x));
-    node.y = Math.max(node.radius, Math.min(this.canvas.height - node.radius, node.y));
+    node.x = Math.max(
+      node.radius,
+      Math.min(this.canvas.width - node.radius, node.x),
+    );
+    node.y = Math.max(
+      node.radius,
+      Math.min(this.canvas.height - node.radius, node.y),
+    );
   }
 
   private drawConnections(): void {
@@ -205,10 +225,9 @@ export class StartupBackgroundCanvasComponent implements AfterViewInit, OnDestro
     this.drawNodes();
 
     this.animationFrameId = requestAnimationFrame(this.animate);
-  }
+  };
 
   private startAnimation(): void {
     this.animate();
   }
 }
-

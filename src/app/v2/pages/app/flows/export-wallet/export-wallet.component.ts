@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { KcButtonComponent, NotificationService } from 'kaspacom-ui';
+
+import { KcButtonComponent, KcInputComponent, NotificationService } from '@kaspacom/ui-kit';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
 import { WalletService } from '../../../../../services/wallet.service';
@@ -18,7 +18,7 @@ interface ExportWalletTransientState {
 @Component({
   selector: 'app-export-wallet',
   standalone: true,
-  imports: [CommonModule, KcButtonComponent, SeedPhraseWordComponent, FormsModule],
+  imports: [KcButtonComponent, KcInputComponent, SeedPhraseWordComponent, FormsModule],
   templateUrl: './export-wallet.component.html',
   styleUrl: './export-wallet.component.scss',
 })
@@ -47,7 +47,9 @@ export class ExportWalletComponent extends FlowPageBaseComponent {
 
   override async ngOnInit(): Promise<void> {
     super.ngOnInit();
-    this.hasMnemonic.set(this.walletService.getCurrentWallet()?.isHasMnemonic() ?? false);
+    this.hasMnemonic.set(
+      this.walletService.getCurrentWallet()?.isHasMnemonic() ?? false,
+    );
 
     const saved = this.restoreTransientState<ExportWalletTransientState>();
     if (saved) {
@@ -89,9 +91,8 @@ export class ExportWalletComponent extends FlowPageBaseComponent {
     this.isVerifying.set(true);
 
     try {
-      const isValid = await this.passwordManagerService.checkAndLoadPassword(
-        passwordValue,
-      );
+      const isValid =
+        await this.passwordManagerService.checkAndLoadPassword(passwordValue);
 
       if (!isValid) {
         this.passwordError.set('Incorrect password. Please try again.');

@@ -1,19 +1,18 @@
-import { DOCUMENT, NgIf } from '@angular/common';
 import {
   AfterViewInit,
   Component,
-  Inject,
   NgZone,
   OnDestroy,
   OnInit,
   Renderer2,
   inject,
+  DOCUMENT,
 } from '@angular/core';
 import { Meta } from '@angular/platform-browser';
 import { RouterOutlet } from '@angular/router';
+import { KcSnackbarComponent } from '@kaspacom/ui-kit';
 import { KaspaNetworkActionsService } from './services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { environment } from '../environments/environment';
-import { MessagePopupComponent } from './components/message-popup/message-popup.component';
 import { StartupBackgroundCanvasComponent } from './components/startup-background-canvas/startup-background-canvas.component';
 import { AssetsManagerService } from './services/assets-manager/assets-manager.service';
 import { IFrameCommunicationApp } from './services/communication-service/communication-app/iframe-communication.service';
@@ -21,7 +20,6 @@ import { CommunicationManagerService } from './services/communication-service/co
 import { ConsentService } from './services/consent.service';
 import { EthereumWalletChainManager } from './services/etherium-services/etherium-wallet-chain.manager';
 import { KaspaNetworkConnectionManagerService } from './services/kaspa-netwrok-services/kaspa-network-connection-manager.service';
-import { MessagePopupService } from './services/message-popup.service';
 import { ReferralService } from './services/referral.service';
 import { WalletService } from './services/wallet.service';
 
@@ -29,8 +27,7 @@ import { WalletService } from './services/wallet.service';
   selector: 'app-root',
   imports: [
     RouterOutlet,
-    NgIf,
-    MessagePopupComponent,
+    KcSnackbarComponent,
     StartupBackgroundCanvasComponent,
   ],
   templateUrl: './app.component.html',
@@ -38,10 +35,16 @@ import { WalletService } from './services/wallet.service';
   providers: [KaspaNetworkActionsService],
 })
 export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
+  private readonly communicationManagerService = inject(
+    CommunicationManagerService,
+  );
+  private readonly renderer = inject(Renderer2);
+  private readonly document = inject<Document>(DOCUMENT);
+  private readonly zone = inject(NgZone);
+
   title = 'kaspiano-wallet';
   rpcConnectionRejectReason = '';
   walletService = inject(WalletService);
-  messagePopupService = inject(MessagePopupService);
   communicationService = inject(CommunicationManagerService);
   kaspaConnectionService = inject(KaspaNetworkConnectionManagerService);
   ethereumWalletChainManager = inject(EthereumWalletChainManager);
@@ -50,13 +53,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly meta = inject(Meta);
   private referralService = inject(ReferralService);
   private teardownLoader?: VoidFunction;
-
-  constructor(
-    private readonly communicationManagerService: CommunicationManagerService,
-    private readonly renderer: Renderer2,
-    @Inject(DOCUMENT) private readonly document: Document,
-    private readonly zone: NgZone,
-  ) {}
 
   async ngOnInit() {
     console.log('App component initialized');

@@ -105,55 +105,13 @@
           flex-shrink: 0;
 
           .btn-delete-network {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            padding: 4px;
-            border-radius: 6px;
-            color: var(--color-text-secondary);
             opacity: 0;
-            transition: opacity 0.15s ease, color 0.15s ease;
-
-            &:hover {
-              color: var(--red-50, #ef4444);
-            }
+            transition: opacity 0.15s ease;
           }
 
           .delete-confirm-row {
             display: flex;
             gap: 6px;
-
-            button {
-              padding: 4px 10px;
-              border-radius: 6px;
-              border: 1px solid transparent;
-              cursor: pointer;
-              font-size: 12px;
-              font-weight: 600;
-              transition: all 0.15s ease;
-            }
-
-            .btn-confirm-delete {
-              background: var(--red-50, #ef4444);
-              color: #fff;
-
-              &:hover {
-                background: var(--red-60, #dc2626);
-              }
-            }
-
-            .btn-cancel-delete {
-              background: transparent;
-              border-color: var(--gray-30, #d1d5db);
-              color: var(--color-text-secondary);
-
-              &:hover {
-                background: var(--gray-10, #f3f4f6);
-              }
-            }
           }
         }
 

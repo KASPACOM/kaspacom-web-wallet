@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, inject, input } from '@angular/core';
+import { Component, inject, input, output } from '@angular/core';
 import {
   CommonModule,
   DecimalPipe,
@@ -28,7 +28,7 @@ export class Krc20AssetCardComponent {
   krc20 = input<ITokenWithMetadata | undefined>(undefined);
   kaspaPriceService = inject(KaspaPriceService);
 
-  @Output() cardClick = new EventEmitter<void>();
+  readonly cardClick = output<void>();
 
   onClick(): void {
     this.cardClick.emit();

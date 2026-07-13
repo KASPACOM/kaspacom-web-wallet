@@ -1,6 +1,18 @@
-import { Component, ViewChild, computed, inject, OnInit, OnDestroy, AfterViewInit, ElementRef, DestroyRef, signal } from '@angular/core';
+import {
+  Component,
+  ViewChild,
+  computed,
+  inject,
+  OnInit,
+  OnDestroy,
+  AfterViewInit,
+  ElementRef,
+  DestroyRef,
+  signal,
+} from '@angular/core';
 import { TitleCasePipe, UpperCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
+import { KcDropdownSelectComponent, DropdownOption } from '@kaspacom/ui-kit';
 import { INftWithMetadata } from '../../../../../common/interfaces/nft.interface';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
 import { Krc721MetadataService } from '../../../../../../../../services/asset-metadata/krc721-metadata.service';
@@ -13,14 +25,23 @@ import { NftRankTagComponent } from '../../asset/krc721-asset/components/nft-ran
 @Component({
   selector: 'app-krc721-summary',
   standalone: true,
-  imports: [TitleCasePipe, UpperCasePipe, SkeletonComponent, InfiniteScrollDirective, NftRankTagComponent],
+  imports: [
+    TitleCasePipe,
+    UpperCasePipe,
+    SkeletonComponent,
+    InfiniteScrollDirective,
+    NftRankTagComponent,
+    KcDropdownSelectComponent,
+  ],
   templateUrl: './krc721-summary.component.html',
   styleUrl: './krc721-summary.component.scss',
   host: {
     '[class.full-width]': 'true',
   },
 })
-export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy {
+export class Krc721SummaryComponent
+  implements OnInit, AfterViewInit, OnDestroy
+{
   // Services - portfolio pattern
   krc721ListService = inject(Krc721ListService);
   private krc721MetadataService = inject(Krc721MetadataService);
@@ -32,6 +53,8 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
   private _infiniteScrollDirective?: InfiniteScrollDirective;
 
   // Reference to the infinite scroll directive
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ViewChild(InfiniteScrollDirective)
   set infiniteScrollDirective(directive: InfiniteScrollDirective | undefined) {
     this._infiniteScrollDirective = directive;
@@ -51,12 +74,14 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
 
   // Loading skeletons - portfolio pattern with opacity cascade
   private static readonly SKELETON_COUNT = 8;
-  loadingSkeletons: unknown[] = Array.from({ length: Krc721SummaryComponent.SKELETON_COUNT }).map(() => ({}));
+  loadingSkeletons: unknown[] = Array.from({
+    length: Krc721SummaryComponent.SKELETON_COUNT,
+  }).map(() => ({}));
 
   constructor() {
     toObservable(this.krc721ListService.nfts)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(nfts => {
+      .subscribe((nfts) => {
         if (!nfts || nfts.length === 0) {
           if (this.metadataInitialized) {
             this.krc721MetadataService.reset();
@@ -76,7 +101,7 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
 
     toObservable(this.krc721ListService.shouldCheckScrollPosition)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(shouldReset => {
+      .subscribe((shouldReset) => {
         if (!shouldReset) {
           return;
         }
@@ -93,7 +118,10 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
   selectedTicker = signal<string>('');
 
   // Cache to preserve object identity and prevent screen flicker
-  private nftCache = new Map<string, { raw: any, metadata: any, result: INftWithMetadata }>();
+  private nftCache = new Map<
+    string,
+    { raw: any; metadata: any; result: INftWithMetadata }
+  >();
 
   // Data from service - portfolio pattern
   nfts = computed<INftWithMetadata[]>(() => {
@@ -101,16 +129,19 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
     const rawNfts = this.krc721ListService.nfts();
     const paginatedMetadata = this.krc721MetadataService.paginatedAssets();
 
-    const metadataById = new Map<string, typeof paginatedMetadata[number]>();
-    paginatedMetadata.forEach(item => {
+    const metadataById = new Map<string, (typeof paginatedMetadata)[number]>();
+    paginatedMetadata.forEach((item) => {
       const assetId = `${item.data.tick}-${item.data.tokenId}`;
       metadataById.set(assetId, item);
     });
 
-    const newCache = new Map<string, { raw: any, metadata: any, result: INftWithMetadata }>();
+    const newCache = new Map<
+      string,
+      { raw: any; metadata: any; result: INftWithMetadata }
+    >();
 
     // Merge NFT data with metadata with memoization
-    const result = rawNfts.map(nft => {
+    const result = rawNfts.map((nft) => {
       const id = `${nft.tick}-${nft.tokenId}`;
       const metadataItem = metadataById.get(id);
       const metadata = metadataItem?.metadata || nft.metadata;
@@ -137,7 +168,7 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
         isLoadingMetadata: metadataItem?.isLoadingMetadata || false,
         rarityRank: nft.rarityRank,
         legendary: nft.legendary,
-        totalSupply: nft.totalSupply
+        totalSupply: nft.totalSupply,
       };
 
       // Cache it
@@ -158,6 +189,11 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
     const tickers = this.krc721ListService.getAvailableTickers()();
     return [...tickers].sort();
   });
+
+  tickerOptions = computed<DropdownOption[]>(() => [
+    { value: '', label: 'All Tickers' },
+    ...this.uniqueTickers().map((tick) => ({ value: tick, label: tick.toUpperCase() })),
+  ]);
 
   // Loading states - portfolio pattern
   loading = computed(() => {
@@ -236,17 +272,17 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
   onImageError(event: Event): void {
     const target = event.target as HTMLImageElement;
     if (target) {
-      target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjMzMzIiByeD0iOCIvPgo8c3ZnIHg9IjEyIiB5PSIxMiIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzY2NiIgc3Ryb2tlLXdpZHRoPSIyIj4KPHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjE4IiBoZWlnaHQ9IjE4IiByeD0iMiIgcnk9IjIiLz4KPGNpcmNsZSBjeD0iOC41IiBjeT0iOC41IiByPSIxLjUiLz4KPGR5bGluZSB4MT0iMjEiIHkxPSIxNSIgeDI9IjEyIiB5Mj0iNiIvPgo8L3N2Zz4KPC9zdmc+';
+      target.src =
+        'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjMzMzIiByeD0iOCIvPgo8c3ZnIHg9IjEyIiB5PSIxMiIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzY2NiIgc3Ryb2tlLXdpZHRoPSIyIj4KPHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjE4IiBoZWlnaHQ9IjE4IiByeD0iMiIgcnk9IjIiLz4KPGNpcmNsZSBjeD0iOC41IiBjeT0iOC41IiByPSIxLjUiLz4KPGR5bGluZSB4MT0iMjEiIHkxPSIxNSIgeDI9IjEyIiB5Mj0iNiIvPgo8L3N2Zz4KPC9zdmc+';
     }
   }
 
   /**
    * Filter handling
    */
-  onTickerChange(event: Event): void {
-    const target = event.target as HTMLSelectElement;
-    this.selectedTicker.set(target.value);
-    this.krc721ListService.setFilter(target.value);
+  onTickerChange(value: string): void {
+    this.selectedTicker.set(value);
+    this.krc721ListService.setFilter(value);
   }
 
   /**
@@ -254,7 +290,9 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
    */
   private getItemElements(): HTMLElement[] {
     const container = this.elementRef.nativeElement;
-    return Array.from(container.querySelectorAll('.krc721-summary-container__card'));
+    return Array.from(
+      container.querySelectorAll('.krc721-summary-container__card'),
+    );
   }
 
   /**
@@ -264,6 +302,4 @@ export class Krc721SummaryComponent implements OnInit, AfterViewInit, OnDestroy 
     const itemElements = this.getItemElements();
     this.krc721MetadataService.loadMetadataForVisibleItems(itemElements);
   }
-
-
 }

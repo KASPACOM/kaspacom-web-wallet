@@ -6,31 +6,38 @@
   (close)="onClose()"
 >
   <div slot="content" class="delete-confirmation">
-    <p *ngIf="!isLastWallet()">
-      Are you sure you want to delete the wallet <strong>{{ walletName }}</strong>?
-      This will remove all accounts associated with this wallet from this device.
-    </p>
-    <p *ngIf="isLastWallet()">
-      You can't delete the last wallet. You can remove only all wallets info from the settings menu.
-    </p>
+    @if (!isLastWallet()) {
+      <p>
+        Are you sure you want to delete the wallet
+        <strong>{{ walletName }}</strong
+        >? This will remove all accounts associated with this wallet from this
+        device.
+      </p>
+    }
+    @if (isLastWallet()) {
+      <p>
+        You can't delete the last wallet. You can remove only all wallets info
+        from the settings menu.
+      </p>
+    }
   </div>
 
   <div slot="footer" class="button-row">
     <kc-button
       [text]="'Cancel'"
-      [variant]="'tertiary'"
-      [size]="'md'"
+      [variant]="'secondary'"
+      [size]="'m'"
       [isFullWidth]="true"
       (buttonClick)="onCancel()"
-    ></kc-button>
+    />
     <kc-button
+      class="kc-button-danger"
       [text]="'Delete wallet'"
       [variant]="'secondary'"
-      [role]="'danger'"
-      [size]="'md'"
+      [size]="'m'"
       [isFullWidth]="true"
       [isDisabled]="isLastWallet()"
       (buttonClick)="onDelete()"
-    ></kc-button>
+    />
   </div>
-</app-quick-action-dialog> 
+</app-quick-action-dialog>

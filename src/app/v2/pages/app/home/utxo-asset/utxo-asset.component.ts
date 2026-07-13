@@ -1,7 +1,7 @@
 import { Component, computed, inject, OnInit } from '@angular/core';
 
 import { ActivatedRoute } from '@angular/router';
-import { KcIconComponent } from 'kaspacom-ui';
+import { KcIconComponent } from '@kaspacom/ui-kit';
 import {
   BaseAssetPageComponent,
   AssetDetail,

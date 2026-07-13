@@ -21,7 +21,7 @@ import { AppWallet } from '../../../classes/AppWallet';
 import { IFeeEstimate } from '../../../../../public/kaspa/kaspa';
 import { FormsModule } from '@angular/forms';
 import { Krc20OperationDataService } from '../../../services/protocols/krc20/krc20-operation-data.service';
-import { KcIconComponent, KcInputComponent } from 'kaspacom-ui';
+import { KcNumberInputComponent, KcIconComponent } from '@kaspacom/ui-kit';
 
 type BucketFeeRate = {
   priorityFee: bigint;
@@ -42,7 +42,7 @@ const MINIMUM_FEE_MULTIPLIER = 100n;
     TitleCasePipe,
     CommonModule,
     KcIconComponent,
-    KcInputComponent,
+    KcNumberInputComponent,
   ],
   animations: [
     trigger('slideDown', [

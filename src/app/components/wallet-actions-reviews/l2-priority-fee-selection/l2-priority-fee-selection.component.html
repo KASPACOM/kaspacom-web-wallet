@@ -127,8 +127,8 @@
               <span class="custom-fee-unit">in wei</span>
             </div>
             <div class="custom-fee-input">
-              <kc-input
-                type="number"
+              <kc-number-input
+                [enforceEthersFormat]="false"
                 placeholder="Min 1 wei"
                 [(ngModel)]="customFee"
                 (valueChange)="selectOption('custom')"
@@ -146,8 +146,8 @@
               <span class="custom-fee-title">Gas Limit</span>
             </div>
             <div class="custom-fee-input">
-              <kc-input
-                type="number"
+              <kc-number-input
+                [enforceEthersFormat]="false"
                 placeholder="Min 21,000"
                 [(ngModel)]="gasLimit"
                 (valueChange)="updateGasLimit()"

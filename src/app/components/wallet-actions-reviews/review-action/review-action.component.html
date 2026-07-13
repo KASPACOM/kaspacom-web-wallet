@@ -26,15 +26,15 @@
                     @if (row.inputField.fieldType == InputFieldType.CHECKBOX) {
                       <div>
                         <div class="checkbox-container">
-                          <kc-checkbox
-                            [label]="row.fieldName"
-                            [isChecked]="row.fieldValue === 'true'"
+                          <app-checkbox-input
+                            [checked]="row.fieldValue === 'true'"
                             (checkedChange)="
                               additionalParams[row.inputField.fieldParam] =
                                 $event
                             "
-                            size="md"
-                          />
+                          >
+                            {{ row.fieldName }}
+                          </app-checkbox-input>
                         </div>
                       </div>
                     }
@@ -74,15 +74,15 @@
         <kc-button
           text="Approve"
           variant="primary"
-          size="lg"
+          size="m"
           [isFullWidth]="true"
           [isDisabled]="!isAvailableForApproval()"
           (buttonClick)="acceptTransaction()"
         />
         <kc-button
           text="Reject"
-          variant="tertiary"
-          size="lg"
+          variant="secondary"
+          size="m"
           [isFullWidth]="true"
           (buttonClick)="rejectTransaction()"
         />

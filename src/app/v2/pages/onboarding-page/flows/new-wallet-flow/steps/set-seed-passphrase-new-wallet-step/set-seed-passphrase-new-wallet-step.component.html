@@ -12,12 +12,11 @@
       <div class="flex column align-items-center gap-16 full-width">
         <div class="full-width">
           <kc-input
-            [isFullWidth]="true"
             [label]="'Seed Passphrase (optional)'"
             [type]="'password'"
             [placeholder]="'Enter passphrase'"
             [ngModel]="seedPassphrase()"
-            (valueChange)="onSeedPassphraseChange($event)"
+            (valueChange)="onSeedPassphraseChange($any($event))"
           />
 
           <div class="full-width text-gray-60 typo-text-2 pt-8">
@@ -35,7 +34,7 @@
       <div class="full-width">
         <kc-button
           [isFullWidth]="true"
-          [variant]="'tertiary'"
+          [variant]="'secondary'"
           [text]="'Back'"
           (buttonClick)="onBack()"
         />

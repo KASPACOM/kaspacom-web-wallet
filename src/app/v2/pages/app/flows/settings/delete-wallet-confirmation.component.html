@@ -32,9 +32,8 @@
       <kc-input
         class="confirmation-input"
         [placeholder]="deleteConfirmationPhrase"
-        [isFullWidth]="true"
         [ngModel]="deleteConfirmationInput()"
-        (valueChange)="onDeleteConfirmationChange($event)"
+        (valueChange)="onDeleteConfirmationChange($any($event))"
       />
     </div>
 
@@ -42,18 +41,18 @@
     <div class="action-buttons">
       <kc-button
         [text]="'Cancel'"
-        variant="tertiary"
-        size="lg"
+        variant="secondary"
+        size="m"
         [isFullWidth]="true"
         (buttonClick)="onCancel()"
         class="cancel-button"
       />
 
       <kc-button
+        class="kc-button-danger"
         [text]="'Delete Wallet'"
         variant="secondary"
-        role="danger"
-        size="lg"
+        size="m"
         [isFullWidth]="true"
         [isDisabled]="!isDeleteConfirmationValid()"
         (buttonClick)="onDeleteWallet()"

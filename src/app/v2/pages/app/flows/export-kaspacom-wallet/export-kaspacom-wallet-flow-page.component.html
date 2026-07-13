@@ -22,7 +22,7 @@
         <kc-button
           [text]="'Export wallet'"
           variant="primary"
-          size="lg"
+          size="m"
           [isFullWidth]="true"
           (buttonClick)="onStartExport()"
         />
@@ -74,7 +74,7 @@
           <kc-button
             [text]="'Verify Password'"
             variant="primary"
-            size="lg"
+            size="m"
             [isFullWidth]="true"
             [isLoading]="isLoading()"
             [isDisabled]="!password().trim()"
@@ -83,8 +83,8 @@
 
           <kc-button
             [text]="'Cancel'"
-            variant="tertiary"
-            size="md"
+            variant="secondary"
+            size="m"
             [isFullWidth]="true"
             [isDisabled]="isLoading()"
             (buttonClick)="onHideKeyInfo()"
@@ -121,7 +121,7 @@
             <kc-button
               [text]="'Copy Data'"
               variant="secondary"
-              size="md"
+              size="m"
               (buttonClick)="onCopyQrData()"
             />
           </div>
@@ -134,7 +134,7 @@
           <div class="warning-box p-16 rounded-lg">
             <div class="flex align-items-start gap-12">
               <kc-icon
-                name="alert-triangle"
+                iconClass="icon-warning"
                 size="sm"
                 class="text-warning flex-shrink-0"
               />
@@ -164,7 +164,7 @@
         <kc-button
           [text]="'Download Key File'"
           variant="primary"
-          size="lg"
+          size="m"
           (buttonClick)="onDownloadKeyFile()"
         />
       </div>
@@ -173,8 +173,8 @@
       <div class="export-actions flex column gap-12 mt-16">
         <kc-button
           [text]="'Done'"
-          variant="tertiary"
-          size="md"
+          variant="secondary"
+          size="m"
           [isFullWidth]="true"
           (buttonClick)="onHideKeyInfo()"
         />

@@ -1,12 +1,8 @@
 import { Component, computed, inject, signal } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
-import {
-  KcButtonComponent,
-  KcInputComponent,
-  KcIconComponent,
-  NotificationService,
-} from 'kaspacom-ui';
+import { NotificationService } from 'kaspacom-ui';
+import { KcInputComponent, KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import { Erc20Token } from '@kaspacom/swap-sdk';
 import { ethers } from 'ethers';
 import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';

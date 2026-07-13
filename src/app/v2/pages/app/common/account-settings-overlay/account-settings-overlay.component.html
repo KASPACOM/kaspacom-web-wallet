@@ -37,7 +37,7 @@
               [size]="'sm'"
               (click)="deleteWallet(wallet); $event.stopPropagation()"
               kcTooltip="Delete wallet"
-              tooltipPosition="top"
+              tooltipPosition="top-center"
             ></kc-icon>
           </div>
         }
@@ -48,14 +48,14 @@
       <kc-button
         [text]="'Add wallet'"
         [variant]="'primary'"
-        [size]="'md'"
+        [size]="'m'"
         [isFullWidth]="true"
         (buttonClick)="addWallet()"
       ></kc-button>
       <kc-button
         [text]="'Create wallet'"
-        [variant]="'tertiary'"
-        [size]="'md'"
+        [variant]="'secondary'"
+        [size]="'m'"
         [isFullWidth]="true"
         (buttonClick)="createWallet()"
       ></kc-button>

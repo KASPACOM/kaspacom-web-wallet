@@ -10,7 +10,7 @@ import {
 } from './base-assets-container';
 import { Erc20SummaryComponent } from '../assets-lists/l2/summary/erc20-summary/erc20-summary.component';
 import { L2TxHistoryComponent } from '../assets-lists/l2/l2-tx-history/l2-tx-history.component';
-import { KcButtonComponent } from 'kaspacom-ui';
+import { KcButtonComponent } from '@kaspacom/ui-kit';
 import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';
 import { L2_ASSET_KEYS } from '../../../../../services/assets-manager/assets-stores/l2-assets-store.service';
 import { FlowPagesService } from '../../../../services/flow-pages.service';

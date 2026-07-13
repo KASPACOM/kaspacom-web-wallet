@@ -13,25 +13,23 @@
           [label]="'Contract Address'"
           [placeholder]="'0x...'"
           [type]="'text'"
-          [isFullWidth]="true"
           [isValid]="state() !== 'error' && state() !== 'already-imported'"
-          [invalidReason]="
-            state() === 'error' || state() === 'already-imported'
-              ? errorMessage()
-              : ''
-          "
           [ngModel]="contractAddress()"
-          (valueChange)="onAddressChange($event)"
+          (valueChange)="onAddressChange($any($event))"
         />
       </div>
       <kc-button
         [variant]="'secondary'"
-        [size]="'md'"
+        [size]="'m'"
         [text]="'Paste'"
         class="paste-btn"
         (buttonClick)="pasteFromClipboard()"
       />
     </div>
+
+    @if (state() === 'error' || state() === 'already-imported') {
+      <span class="kc-input-error-text">{{ errorMessage() }}</span>
+    }
 
     @if (showAddressError()) {
       <div class="address-error typo-text-1 text-red">
@@ -41,7 +39,7 @@
 
     <kc-button
       [variant]="'primary'"
-      [size]="'md'"
+      [size]="'m'"
       [text]="state() === 'loading' ? 'Looking up...' : 'Look Up Token'"
       [isDisabled]="!isAddressValid() || state() === 'loading'"
       class="full-width"
@@ -111,7 +109,7 @@
 
       <kc-button
         [variant]="'secondary'"
-        [size]="'md'"
+        [size]="'m'"
         [text]="'Close'"
         class="full-width"
         (buttonClick)="onCancel()"
@@ -172,14 +170,14 @@
       <div class="action-buttons flex gap-12">
         <kc-button
           [variant]="'secondary'"
-          [size]="'md'"
+          [size]="'m'"
           [text]="'Cancel'"
           class="flex-1"
           (buttonClick)="onCancel()"
         />
         <kc-button
           [variant]="'primary'"
-          [size]="'md'"
+          [size]="'m'"
           [text]="isSaving() ? 'Importing...' : 'Import Token'"
           [isDisabled]="isSaving()"
           class="flex-1"

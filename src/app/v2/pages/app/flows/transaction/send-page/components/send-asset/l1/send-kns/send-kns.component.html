@@ -18,13 +18,13 @@
 
     <!-- Replace By Fee Checkbox -->
     <div class="form-field">
-      <kc-checkbox
-        [label]="'Replace By Fee (RBF)'"
-        [isChecked]="replaceByFee"
+      <app-checkbox-input
+        [checked]="replaceByFee"
         [isDisabled]="isLoading"
         (checkedChange)="onRbfChange($event)"
-        size="md"
-      />
+      >
+        Replace By Fee (RBF)
+      </app-checkbox-input>
     </div>
 
     <!-- Send Button -->

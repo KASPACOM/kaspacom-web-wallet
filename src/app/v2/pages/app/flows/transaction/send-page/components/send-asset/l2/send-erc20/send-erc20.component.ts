@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { Erc20Token } from '@kaspacom/swap-sdk';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { parseUnits } from 'ethers';
-import { KcButtonComponent, KcInputComponent } from 'kaspacom-ui';
+import { KcNumberInputComponent, KcButtonComponent } from '@kaspacom/ui-kit';
 import { TokenLogoComponent } from '../../../../../../../../../../components/token-logo/token-logo.component';
 import { ERC20Contract } from '../../../../../../../../../../services/etherium-services/smart-contracts/contracts/erc20-contract';
 import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
@@ -23,7 +23,7 @@ import { IFlowPageConfig } from '../../../../../../../common/flow-page/interface
   standalone: true,
   imports: [
     CommonModule,
-    KcInputComponent,
+    KcNumberInputComponent,
     KcButtonComponent,
     FormsModule,
     TokenLogoComponent,

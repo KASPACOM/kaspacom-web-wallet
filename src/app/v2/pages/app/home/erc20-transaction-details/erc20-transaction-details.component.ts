@@ -1,7 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 
 import { ActivatedRoute, Router } from '@angular/router';
-import { KcIconComponent, KcButtonComponent } from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import { Erc20ActivityItem } from '../../activity/activity.component';
 
 @Component({
@@ -18,10 +18,10 @@ import { Erc20ActivityItem } from '../../activity/activity.component';
           <div class="flex justify-content-between align-items-center mb-16">
             <h2 class="text-white typo-title-3">Transaction Details</h2>
             <kc-button
-              variant="tertiary"
-              size="sm"
+              variant="secondary"
+              size="s"
               (click)="navigateBack()"
-              icon="icon-arrow-left"
+              prefixIcon="icon-arrow-left"
             >
               Back
             </kc-button>
@@ -83,9 +83,9 @@ import { Erc20ActivityItem } from '../../activity/activity.component';
                 />
                 <span>{{ shortenAddress(transaction.fromAddress || '') }}</span>
                 <kc-button
-                  variant="tertiary"
-                  size="sm"
-                  icon="icon-copy"
+                  variant="secondary"
+                  size="s"
+                  prefixIcon="icon-copy"
                   (click)="copyToClipboard(transaction.fromAddress || '')"
                 />
               </div>
@@ -106,9 +106,9 @@ import { Erc20ActivityItem } from '../../activity/activity.component';
                 />
                 <span>{{ shortenAddress(transaction.toAddress || '') }}</span>
                 <kc-button
-                  variant="tertiary"
-                  size="sm"
-                  icon="icon-copy"
+                  variant="secondary"
+                  size="s"
+                  prefixIcon="icon-copy"
                   (click)="copyToClipboard(transaction.toAddress || '')"
                 />
               </div>
@@ -124,9 +124,9 @@ import { Erc20ActivityItem } from '../../activity/activity.component';
               <div class="flex align-items-center gap-8">
                 <span>{{ shortenHash(transaction.id) }}</span>
                 <kc-button
-                  variant="tertiary"
-                  size="sm"
-                  icon="icon-copy"
+                  variant="secondary"
+                  size="s"
+                  prefixIcon="icon-copy"
                   (click)="copyToClipboard(transaction.id)"
                 />
               </div>

@@ -8,7 +8,7 @@ import {
   ProtocolType,
 } from '@kaspacom/wallet-messages';
 import { CompletedActionOverviewService } from '../../../../../../../services/action-info-services/completed-action-overview.service';
-import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import { ApprovalFlowService } from '../../../../../../services/approval-flow.service';
 import {
   trigger,
@@ -87,7 +87,7 @@ import { WalletActionService } from '../../../../../../../services/wallet-action
         <kc-button
           [text]="'Done'"
           variant="primary"
-          size="lg"
+          size="m"
           [isFullWidth]="true"
           (buttonClick)="onDone()"
           class="done-button"

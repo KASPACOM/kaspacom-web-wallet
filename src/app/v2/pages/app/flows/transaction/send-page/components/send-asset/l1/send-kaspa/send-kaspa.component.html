@@ -29,15 +29,11 @@
 
     <!-- Amount Input -->
     <div class="form-field">
-      <kc-input
+      <kc-number-input
         [label]="'Amount of Kaspa'"
         [placeholder]="'0.00'"
-        [type]="'number'"
-        [min]="0"
-        [max]="availableBalance()"
-        [isFullWidth]="true"
+        [available]="availableBalance().toString()"
         [isValid]="isAmountValid"
-        [invalidReason]="amountErrorMessage"
         [isDisabled]="isLoading"
         [ngModel]="kaspaAmount"
         (valueChange)="onAmountChange($event)"
@@ -49,18 +45,21 @@
         >
           <span>Max</span>
         </div>
-      </kc-input>
+      </kc-number-input>
+      @if (!isAmountValid && amountErrorMessage) {
+        <span class="kc-input-error-text">{{ amountErrorMessage }}</span>
+      }
     </div>
 
     <!-- Replace By Fee Checkbox -->
     <div class="form-field">
-      <kc-checkbox
-        [label]="'Replace By Fee (RBF)'"
-        [isChecked]="replaceByFee"
+      <app-checkbox-input
+        [checked]="replaceByFee"
         [isDisabled]="isLoading"
         (checkedChange)="onRbfChange($event)"
-        size="md"
-      />
+      >
+        Replace By Fee (RBF)
+      </app-checkbox-input>
     </div>
 
     <!-- Send Button -->

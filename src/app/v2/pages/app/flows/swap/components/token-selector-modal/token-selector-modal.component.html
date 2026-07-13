@@ -9,9 +9,8 @@
       <kc-input
         placeholder="Search name, symbol, or address"
         type="text"
-        [isFullWidth]="true"
-        prefixIcon="pi pi-search"
-        (valueChange)="onSearchChange($event)"
+        prefixIcon="icon-search"
+        (valueChange)="onSearchChange($any($event))"
       />
 
       <div class="token-list">

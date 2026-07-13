@@ -16,12 +16,8 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router } from '@angular/router';
-import {
-  KcButtonComponent,
-  KcIconComponent,
-  KcInputComponent,
-  KcSnackbarComponent,
-} from 'kaspacom-ui';
+import { KcSnackbarComponent } from 'kaspacom-ui';
+import { KcInputComponent, KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import { OnboardingStep } from '../onboarding-page/onboarding-step.enum';
 import { ImportExistingFlowComponent } from '../onboarding-page/flows/import-existing-flow/import-existing-flow.component';
 import { NewWalletFlowComponent } from '../onboarding-page/flows/new-wallet-flow/new-wallet-flow.component';

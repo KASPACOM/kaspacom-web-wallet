@@ -87,6 +87,7 @@ type ContractsTransientState = {
   interactInputAmount?: string;
   interactOutputAddress?: string;
   interactOutputAmount?: string;
+  topUpAmount?: string;
   partialSpendJson?: string;
   interactResult?: { txid: string; functionName: string };
 };
@@ -140,6 +141,12 @@ type ContractDetailState = {
   utxos: IndexerCovenantUtxo[];
 };
 
+type ContractDetailParameter = {
+  label: string;
+  value: string;
+  type?: string;
+};
+
 type DeployIndexerState = {
   txid: string;
   status: 'checking' | 'indexed' | 'not-indexed' | 'unavailable';
@@ -170,6 +177,7 @@ type DeployIndexerState = {
 })
 export class ContractsPageComponent implements OnInit, OnDestroy {
   readonly MIN_DEPLOY_AMOUNT_KAS = 0.5;
+  private readonly MIN_CONTINUATION_AMOUNT_SOMPI = 50_000_000n;
 
   private walletService = inject(WalletService);
   private walletActionService = inject(WalletActionService);
@@ -210,6 +218,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const wallet = this.selectedAccount();
     if (!wallet) return '';
     return wallet.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString();
+  });
+
+  selectedPubkeyHash = computed(() => {
+    const pubkey = this.selectedPubkey();
+    return pubkey ? this.computeBlake2bHex(this.hex32ToBytes(pubkey)) : '';
   });
 
   // Deploy form - plain properties for ngModel
@@ -306,6 +319,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   // Lookup form
   lookupContractJson = '';
   interactOutputAmount = '';
+  topUpAmount = '';
   selectedFunction = '';
   useSenderFee = true;
 
@@ -344,7 +358,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   registryContractOptions = computed<DropdownOption[]>(() =>
     this.registryContracts().map((contract) => ({
       value: contract.id,
-      label: `${contract.contractName} (${this.truncate(contract.contractAddress, 20)})`,
+      label: `${contract.contractName} (${this.getRegistryContractIdentityLabel(contract)})`,
       disabled: contract.status === 'spent',
     })),
   );
@@ -401,6 +415,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (
       this.selectedFunction === 'arbitrate' &&
       contract.contract_name === 'Escrow'
+    )
+      return [];
+    if (
+      contract.contract_name === 'DeadManSwitch' &&
+      (this.selectedFunction === 'keepAlive' ||
+        this.selectedFunction === 'withdraw')
     )
       return [];
     // Only render extra-arg inputs the interact flow can actually collect/pass
@@ -499,6 +519,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.interactOutputAddress = state.interactOutputAddress;
     if (state.interactOutputAmount !== undefined)
       this.interactOutputAmount = state.interactOutputAmount;
+    if (state.topUpAmount !== undefined) this.topUpAmount = state.topUpAmount;
     if (state.partialSpendJson !== undefined)
       this.partialSpendJson.set(state.partialSpendJson);
     if (state.interactResult !== undefined)
@@ -553,10 +574,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   ): ContractDashboardEntry | undefined {
     return this.dashboardContracts().find(
       (entry) =>
-        entry.covenantId === preview.covenantId ||
-        entry.scriptHash === preview.action.scriptHashHex ||
-        entry.deployTxid === preview.deployTxid ||
-        entry.currentAddress === preview.contractAddress,
+        this.sameIdentity(entry.covenantId, preview.covenantId) ||
+        this.sameIdentity(entry.deployTxid, preview.deployTxid) ||
+        this.sameIdentity(entry.scriptHash, preview.action.scriptHashHex),
     );
   }
 
@@ -583,11 +603,31 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       sort: 'recent',
       limit: 10,
     });
-    const row = rows.find((item) =>
+    const supportedRows = rows.filter((item) =>
       this.supportedIndexerTemplates.includes(
         this.getIndexerTemplateName(item),
       ),
     );
+    const normalizedQuery = this.normalizeIdentity(query);
+    const exactRow =
+      supportedRows.find(
+        (item) =>
+          this.normalizeIdentity(item.covenantIdHex) === normalizedQuery,
+      ) ||
+      supportedRows.find(
+        (item) =>
+          this.normalizeIdentity(item.genesisTxidHex) === normalizedQuery,
+      ) ||
+      supportedRows.find(
+        (item) =>
+          this.normalizeIdentity(item.scriptHashHex) === normalizedQuery,
+      );
+    if (!exactRow && supportedRows.length > 1) {
+      throw new Error(
+        'That address matches multiple wallet-supported covenants. Open by covenant ID or deploy transaction to choose the exact contract.',
+      );
+    }
+    const row = exactRow || supportedRows[0];
     const identifier =
       row?.covenantIdHex || row?.scriptHashHex || row?.genesisTxidHex;
     if (identifier) {
@@ -786,7 +826,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             value: String(
               this.parseDateToUnixMs(
                 String(this.templateFormValues['expiry'] ?? '').trim(),
-                'Initial Expiry (Unix timestamp)',
+                'Check-in Deadline',
               ),
             ),
           },
@@ -852,13 +892,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     try {
       await this.generateContract();
       const generated = this.generatedContractJson();
-      if (!generated) return;
+      if (!generated) {
+        const message =
+          this.templateError() || 'Failed to generate contract from template';
+        this.deployError.set(message);
+        return;
+      }
       this.deployContractJson.set(generated);
       await this.deployContract();
     } catch (error: any) {
-      this.templateError.set(
-        error?.message || 'Failed to prepare contract for deployment',
-      );
+      const message =
+        error?.message || 'Failed to prepare contract for deployment';
+      this.templateError.set(message);
+      this.deployError.set(message);
     }
   }
 
@@ -898,7 +944,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       timeout:
         'The earliest date when the recovery wallet can use the backup withdrawal path.',
       expiry:
-        'The deadline used by this covenant. The wallet converts this date to the timestamp format required by Kaspa.',
+        this.activeTemplate()?.id === 'dead-mans-switch'
+          ? 'How many days the owner can be inactive before the heir can claim.'
+          : 'The deadline used by this covenant. The wallet converts this date to the timestamp format required by Kaspa.',
     };
 
     return help[field.paramName] || field.description;
@@ -1138,8 +1186,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   async loadContracts() {
     this.dashboardLoading.set(true);
     this.dashboardError.set(null);
-    this.selectedDetail.set(null);
-    this.selectedDetailError.set(null);
+    if (this.activeTab() !== 'detail') {
+      this.selectedDetail.set(null);
+      this.selectedDetailError.set(null);
+    }
 
     const filtered = this.getCurrentWalletLocalContracts();
     this.registryContracts.set(filtered);
@@ -1252,13 +1302,28 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     );
   }
 
+  private currentWalletPubkey(): string | undefined {
+    return this.currentWallet()
+      ?.getPrivateKey()
+      .toPublicKey()
+      .toXOnlyPublicKey()
+      .toString();
+  }
+
+  private currentWalletPubkeyHash(): string | undefined {
+    const pubkey = this.currentWalletPubkey();
+    return pubkey
+      ? this.computeBlake2bHex(this.hex32ToBytes(pubkey))
+      : undefined;
+  }
+
   private async loadIndexerDashboardEntries(): Promise<
     ContractDashboardEntry[]
   > {
     const wallet = this.currentWallet();
     const identifiers = [
       wallet?.getAddress(),
-      wallet?.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString(),
+      this.currentWalletPubkeyHash(),
     ].filter((value): value is string => !!value);
 
     if (identifiers.length === 0) return [];
@@ -1288,7 +1353,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         this.indexerSummaryToDashboard(row),
       );
       for (const entry of entries) {
-        byKey.set(entry.covenantId || entry.scriptHash || entry.id, entry);
+        byKey.set(this.getDashboardIdentityKey(entry), entry);
       }
     }
 
@@ -1302,35 +1367,38 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     localEntries: ContractDashboardEntry[],
   ): ContractDashboardEntry[] {
     const merged = new Map<string, ContractDashboardEntry>();
-    const normalize = (value?: string) => String(value || '').toLowerCase();
     const hasAmount = (entry?: ContractDashboardEntry) =>
       BigInt(String(entry?.amountSompi || '0')) > 0n;
     const isMatch = (
       indexerEntry: ContractDashboardEntry,
       localEntry: ContractDashboardEntry,
-    ) =>
-      (!!indexerEntry.covenantId &&
-        normalize(localEntry.covenantId) ===
-          normalize(indexerEntry.covenantId)) ||
-      (!!indexerEntry.scriptHash &&
-        normalize(localEntry.scriptHash) ===
-          normalize(indexerEntry.scriptHash)) ||
-      (!!indexerEntry.deployTxid &&
-        normalize(localEntry.deployTxid) ===
-          normalize(indexerEntry.deployTxid)) ||
-      (!!indexerEntry.currentAddress &&
-        normalize(localEntry.currentAddress) ===
-          normalize(indexerEntry.currentAddress));
+    ) => {
+      if (indexerEntry.covenantId && localEntry.covenantId) {
+        return this.sameIdentity(
+          indexerEntry.covenantId,
+          localEntry.covenantId,
+        );
+      }
+      if (indexerEntry.deployTxid && localEntry.deployTxid) {
+        return this.sameIdentity(
+          indexerEntry.deployTxid,
+          localEntry.deployTxid,
+        );
+      }
+      if (indexerEntry.scriptHash && localEntry.scriptHash) {
+        return this.sameIdentity(
+          indexerEntry.scriptHash,
+          localEntry.scriptHash,
+        );
+      }
+      return false;
+    };
 
     for (const entry of localEntries) {
-      merged.set(
-        entry.covenantId || entry.scriptHash || entry.deployTxid || entry.id,
-        entry,
-      );
+      merged.set(this.getDashboardIdentityKey(entry), entry);
     }
     for (const entry of indexerEntries) {
-      const key =
-        entry.covenantId || entry.scriptHash || entry.deployTxid || entry.id;
+      const key = this.getDashboardIdentityKey(entry);
       const matchingLocalEntries = Array.from(merged.values()).filter(
         (candidate) => isMatch(entry, candidate),
       );
@@ -1342,30 +1410,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         matchingLocalEntries[0];
 
       for (const matchedLocal of matchingLocalEntries) {
-        merged.delete(
-          matchedLocal.covenantId ||
-            matchedLocal.scriptHash ||
-            matchedLocal.deployTxid ||
-            matchedLocal.id,
-        );
+        merged.delete(this.getDashboardIdentityKey(matchedLocal));
       }
 
       merged.set(local?.id || key, {
         ...entry,
         source: local ? 'both' : entry.source,
-        status: local?.status === 'spent' ? 'spent' : entry.status,
-        amountSompi:
-          local && local.status === 'spent' && hasAmount(local)
-            ? local.amountSompi
-            : entry.amountSompi,
-        latestTxid:
-          local?.status === 'spent' && local.latestTxid
-            ? local.latestTxid
-            : entry.latestTxid,
-        latestAction:
-          local?.status === 'spent' && local.latestAction
-            ? local.latestAction
-            : entry.latestAction,
+        status: entry.status,
+        amountSompi: entry.amountSompi,
+        latestTxid: entry.latestTxid,
+        latestAction: entry.latestAction,
         registryEntry: local?.registryEntry,
       });
     }
@@ -1477,6 +1531,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return labels[this.normalizeContractName(name)] || name || 'Covenant';
   }
 
+  private getRegistryContractIdentityLabel(
+    contract: ContractRegistryEntry,
+  ): string {
+    const primary =
+      contract.covenantId ||
+      contract.deployTxid ||
+      `${contract.outpoint.txid}:${contract.outpoint.vout}`;
+    return this.truncate(primary, 20);
+  }
+
   private localParticipants(
     contract: ContractRegistryEntry,
   ): Array<{ label: string; value: string }> {
@@ -1560,6 +1624,43 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return labels[role] || role;
   }
 
+  getContractDetailParameters(
+    detail: ContractDetailState,
+  ): ContractDetailParameter[] {
+    const covenant = detail.response?.covenant || detail.entry.indexerSummary;
+    const params: ContractDetailParameter[] = [];
+    const seen = new Set<string>();
+    const addParam = (name: string, value: unknown, type?: string) => {
+      if (value === undefined || value === null || value === '') return;
+      const key = name.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      params.push({
+        label: this.roleLabel(name),
+        value: String(value),
+        type,
+      });
+    };
+
+    for (const arg of covenant?.claimedArgs?.args || []) {
+      addParam(arg.name, arg.value, arg.type);
+    }
+
+    const constructorArgs = covenant?.constructor || {};
+    for (const [name, value] of Object.entries(constructorArgs)) {
+      addParam(name, value);
+    }
+
+    if (params.length > 0) {
+      return params;
+    }
+
+    return detail.entry.participants.map((participant) => ({
+      label: participant.label,
+      value: participant.value,
+    }));
+  }
+
   private getNextActionLabel(
     contractName: string,
     status: ContractDashboardEntry['status'],
@@ -1590,7 +1691,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const wallet = this.currentWallet();
     const candidates = [
       wallet?.getAddress(),
-      wallet?.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString(),
+      this.currentWalletPubkey(),
+      this.currentWalletPubkeyHash(),
     ]
       .filter((value): value is string => !!value)
       .map((value) => value.toLowerCase());
@@ -1638,26 +1740,40 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
     this.scrollContractsContentToTop();
 
-    const identifier = entry.covenantId || entry.scriptHash;
+    const identifier = entry.covenantId || entry.scriptHash || entry.deployTxid;
     if (!identifier) {
       this.selectedDetailLoading.set(false);
       this.selectedDetailError.set(
-        'This local contract has no indexer id yet. Use the action flow or import by tx once indexed.',
+        'This local contract has no indexer id or deploy transaction yet. Use the action flow or import by tx once indexed.',
       );
       return;
     }
 
     try {
-      const [response, actions, utxos] = await Promise.all([
-        this.fetchIndexerCovenantByIdOrHash(identifier),
-        this.covenantIndexerService.getCovenantActions(identifier),
-        this.covenantIndexerService.getCovenantUtxos(identifier),
-      ]);
+      const resolved = await this.fetchIndexerCovenant(identifier);
+      const detailIdentifier =
+        resolved.covenant?.covenantIdHex ||
+        resolved.covenant?.scriptHashHex ||
+        entry.covenantId ||
+        entry.scriptHash;
+      const [actions, utxos] = detailIdentifier
+        ? await Promise.all([
+            this.covenantIndexerService.getCovenantActions(detailIdentifier),
+            this.covenantIndexerService.getCovenantUtxos(detailIdentifier),
+          ])
+        : [resolved.actions, [] as IndexerCovenantUtxo[]];
+      const response: IndexerCovenantResponse = {
+        actions,
+        covenant: resolved.covenant,
+      };
       const latestAction = this.latestAction(actions);
       const lockedSompi = utxos.reduce(
         (total, utxo) => total + BigInt(String(utxo.amountSompi ?? 0)),
         0n,
       );
+      const resolvedStatus = detailIdentifier
+        ? this.statusFromActiveUtxoCount(utxos.length)
+        : entry.status;
       const updatedEntry: ContractDashboardEntry = {
         ...entry,
         latestTxid: latestAction?.txidHex || entry.latestTxid,
@@ -1665,8 +1781,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           latestAction?.entrypoint ||
           latestAction?.action ||
           entry.latestAction,
-        status: this.statusFromActiveUtxoCount(utxos.length),
-        amountSompi: lockedSompi.toString(),
+        covenantId: resolved.covenant?.covenantIdHex || entry.covenantId,
+        scriptHash: resolved.covenant?.scriptHashHex || entry.scriptHash,
+        status: resolvedStatus,
+        amountSompi: detailIdentifier
+          ? lockedSompi.toString()
+          : entry.amountSompi,
       };
       this.selectedDetail.set({
         entry: updatedEntry,
@@ -1700,7 +1820,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     entry: ContractDashboardEntry,
   ): Promise<boolean> {
     if (entry.registryEntry) {
-      this.selectedContractId.set(entry.registryEntry.id);
+      const registryEntry = this.syncRegistryEntryForDashboardAction(entry);
+      this.selectedContractId.set(registryEntry.id);
       this.selectContractFromRegistry();
       this.selectDefaultFunctionForContract(entry.contractName);
       return true;
@@ -1716,10 +1837,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       return false;
     }
 
-    const identifier = entry.covenantId || entry.scriptHash;
+    const identifier = entry.covenantId || entry.scriptHash || entry.deployTxid;
     if (!identifier) {
       this.dashboardError.set(
-        'This contract cannot be opened for actions until it has an indexer covenant id or script hash.',
+        'This contract cannot be opened for actions until it has an indexer covenant id, script hash, or deploy transaction.',
       );
       return false;
     }
@@ -1736,8 +1857,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           (contract) =>
             contract.network === this.network() &&
             this.isCurrentWalletRegistryEntry(contract) &&
-            (contract.covenantId === preview.covenantId ||
-              (contract.outpoint.txid === preview.outpoint.txid &&
+            (this.sameIdentity(contract.covenantId, preview.covenantId) ||
+              (this.sameIdentity(
+                contract.outpoint.txid,
+                preview.outpoint.txid,
+              ) &&
                 contract.outpoint.vout === preview.outpoint.vout)),
         );
       if (imported) {
@@ -1756,6 +1880,51 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.selectedDetailLoading.set(false);
     }
     return false;
+  }
+
+  private syncRegistryEntryForDashboardAction(
+    entry: ContractDashboardEntry,
+  ): ContractRegistryEntry {
+    const registryEntry = entry.registryEntry!;
+    const detail = this.selectedDetail();
+    const activeUtxo = detail?.utxos.length === 1 ? detail.utxos[0] : undefined;
+    const amountSompi = String(
+      activeUtxo?.amountSompi ?? entry.amountSompi ?? registryEntry.amountSompi,
+    );
+    const contractAddress =
+      activeUtxo?.address ||
+      entry.currentAddress ||
+      registryEntry.contractAddress;
+
+    const updates: Partial<ContractRegistryEntry> = {
+      amountSompi,
+      contractAddress,
+      covenantId: entry.covenantId || registryEntry.covenantId,
+      deployTxid: entry.deployTxid || registryEntry.deployTxid,
+      lastChecked: Date.now(),
+      status:
+        entry.status === 'active' ||
+        entry.status === 'spent' ||
+        entry.status === 'unknown'
+          ? entry.status
+          : registryEntry.status,
+    };
+
+    if (activeUtxo?.txidHex && activeUtxo.vout !== undefined) {
+      updates.outpoint = {
+        txid: activeUtxo.txidHex,
+        vout: Number(activeUtxo.vout),
+      };
+    }
+
+    this.registryService.updateContract(registryEntry.id, updates);
+    const updatedEntry = { ...registryEntry, ...updates };
+    this.registryContracts.set(
+      this.registryContracts().map((contract) =>
+        contract.id === updatedEntry.id ? updatedEntry : contract,
+      ),
+    );
+    return updatedEntry;
   }
 
   setDashboardFilter(filter: ContractDashboardFilter) {
@@ -1833,13 +2002,39 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private findDashboardEntryByRouteId(
     routeId: string,
   ): ContractDashboardEntry | undefined {
+    const normalizedRouteId = this.normalizeIdentity(routeId);
     return this.dashboardContracts().find(
-      (entry) => this.getContractRouteId(entry) === routeId,
+      (entry) =>
+        this.normalizeIdentity(this.getContractRouteId(entry)) ===
+          normalizedRouteId ||
+        this.normalizeIdentity(entry.deployTxid) === normalizedRouteId ||
+        this.normalizeIdentity(entry.scriptHash) === normalizedRouteId,
     );
   }
 
   private getContractRouteId(entry: ContractDashboardEntry): string {
     return entry.covenantId || entry.scriptHash || entry.deployTxid || entry.id;
+  }
+
+  private getDashboardIdentityKey(entry: ContractDashboardEntry): string {
+    return (
+      this.normalizeIdentity(entry.covenantId) ||
+      this.normalizeIdentity(entry.deployTxid) ||
+      this.normalizeIdentity(entry.scriptHash) ||
+      entry.id
+    );
+  }
+
+  private sameIdentity(left?: string, right?: string): boolean {
+    const normalizedLeft = this.normalizeIdentity(left);
+    const normalizedRight = this.normalizeIdentity(right);
+    return !!normalizedLeft && normalizedLeft === normalizedRight;
+  }
+
+  private normalizeIdentity(value?: string): string {
+    return String(value || '')
+      .trim()
+      .toLowerCase();
   }
 
   private clearInteractContractSelection() {
@@ -1859,7 +2054,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private selectDefaultFunctionForContract(contractName: string) {
     const normalized = this.normalizeContractName(contractName);
     const preferred: Record<string, string[]> = {
-      DeadManSwitch: ['keepAlive', 'claim'],
+      DeadManSwitch: ['keepAlive', 'withdraw', 'claim'],
       TimeLockVault: ['spend', 'recover', 'withdraw'],
       MultiSigVault: ['spend12', 'spend', 'release'],
       EscrowWithArbiter: ['release', 'refund', 'arbitrate'],
@@ -1910,16 +2105,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       if (entry.network !== this.network()) return false;
       if (!this.isCurrentWalletRegistryEntry(entry)) return false;
       const sameOutpoint =
-        entry.outpoint.txid === preview.outpoint.txid &&
+        this.sameIdentity(entry.outpoint.txid, preview.outpoint.txid) &&
         entry.outpoint.vout === preview.outpoint.vout;
       if (sameOutpoint) return true;
 
-      const sameAddress = entry.contractAddress === preview.contractAddress;
-      if (!sameAddress) return false;
-
       return (
-        entry.covenantId === preview.covenantId ||
-        entry.deployTxid === preview.deployTxid
+        this.sameIdentity(entry.covenantId, preview.covenantId) ||
+        this.sameIdentity(entry.deployTxid, preview.deployTxid)
       );
     });
     if (existing) {
@@ -2363,7 +2555,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         return {
           owner: requireArg('owner'),
           heir: requireArg('heir'),
-          expiry: requireArg('checkInDeadline'),
+          expiry:
+            byName.get('inactivityPeriodDays') ??
+            byName.get('inactivityPeriod') ??
+            requireArg('checkInDeadline'),
         };
       default:
         throw new Error(`Unsupported covenant template "${template.name}".`);
@@ -2389,6 +2584,73 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       descriptor,
       newArgs,
     ) as CompiledContract;
+  }
+
+  private async extractTemplateIntField(
+    compiled: CompiledContract,
+    templateId: string,
+    paramName: string,
+  ): Promise<bigint | undefined> {
+    const template = this.templateById(templateId);
+    if (!template) return undefined;
+
+    try {
+      const baseCompiled = await firstValueFrom(
+        this.http.get<any>(template.assetPath),
+      );
+      const descriptor = this.templatePatcher.extractPatchDescriptor(
+        baseCompiled,
+        template.placeholderArgs,
+      );
+      const param = descriptor.params.find((entry) => entry.name === paramName);
+      const position = param?.positions[0];
+      if (!param || param.paramType !== 'int_field' || !position) {
+        return undefined;
+      }
+
+      const bytes = compiled.script.slice(
+        position.offset,
+        position.offset + position.length,
+      );
+      let value = 0n;
+      for (let index = 0; index < bytes.length; index += 1) {
+        value += BigInt(bytes[index] & 0xff) << BigInt(index * 8);
+      }
+      return value;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private async extractTemplatePubkeyHex(
+    compiled: CompiledContract,
+    templateId: string,
+    paramName: string,
+  ): Promise<string | undefined> {
+    const template = this.templateById(templateId);
+    if (!template) return undefined;
+
+    try {
+      const baseCompiled = await firstValueFrom(
+        this.http.get<any>(template.assetPath),
+      );
+      const descriptor = this.templatePatcher.extractPatchDescriptor(
+        baseCompiled,
+        template.placeholderArgs,
+      );
+      const param = descriptor.params.find((entry) => entry.name === paramName);
+      const position = param?.positions[0];
+      if (!param || param.paramType !== 'pubkey' || !position) {
+        return undefined;
+      }
+
+      return compiled.script
+        .slice(position.offset, position.offset + position.length)
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join('');
+    } catch {
+      return undefined;
+    }
   }
 
   /**
@@ -2685,9 +2947,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const vout = parseInt(this.interactOutpointVout, 10);
     const inputAmountSompi = this.interactInputAmount;
     const functionName = this.selectedFunction;
-    const outputAddress =
+    let outputAddress =
       this.interactResolvedOutputAddress || this.interactOutputAddress;
     const outputAmountKas = parseFloat(this.interactOutputAmount);
+    const topUpAmountKas = parseFloat(this.topUpAmount);
 
     if (!contractJson) {
       this.interactError.set('Contract JSON is required');
@@ -2720,8 +2983,41 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       // Build outputs based on function type
       let outputs: SpendOutput[];
       let extraArgsOverride: Record<string, bigint> | undefined;
+      let useSenderFeeOverride: boolean | undefined;
 
-      if (functionName === 'arbitrate' && compiled.contract_name === 'Escrow') {
+      if (this.isTopUpFunction(functionName)) {
+        if (isNaN(topUpAmountKas) || topUpAmountKas <= 0) {
+          this.interactError.set('Top-up amount must be greater than 0');
+          return;
+        }
+
+        const covenantId = this.selectedContract()?.covenantId;
+        if (!covenantId) {
+          this.interactError.set(
+            'Cannot top up this contract until its covenant ID is known. Refresh/import it from the indexer first.',
+          );
+          return;
+        }
+
+        const topUpAmount = BigInt(Math.floor(topUpAmountKas * 1e8));
+        if (topUpAmount <= 0n) {
+          this.interactError.set(
+            'Top-up amount must be at least 0.00000001 KAS',
+          );
+          return;
+        }
+
+        outputs = [
+          {
+            address: this.covenantService.getContractAddress(compiled),
+            amount: inputAmount + topUpAmount,
+            covenantId,
+          },
+        ];
+      } else if (
+        functionName === 'arbitrate' &&
+        compiled.contract_name === 'Escrow'
+      ) {
         // Escrow arbitrate: the "Withdraw Amount (KAS)" field is reused as amountToSeller.
         if (isNaN(outputAmountKas) || outputAmountKas <= 0) {
           this.interactError.set(
@@ -2793,12 +3089,42 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           this.interactError.set('Output amount must be greater than 0');
           return;
         }
-        outputs = [
-          {
-            address: outputAddress,
-            amount: BigInt(Math.floor(outputAmountKas * 1e8)),
-          },
-        ];
+        const withdrawalAmount = BigInt(Math.floor(outputAmountKas * 1e8));
+        if (
+          compiled.contract_name === 'DeadManSwitch' &&
+          functionName === 'withdraw'
+        ) {
+          if (withdrawalAmount >= inputAmount) {
+            this.interactError.set(
+              "Dead Man's Switch withdraw must leave a continuation in the contract. Use claim after the deadline for the heir path.",
+            );
+            return;
+          }
+          const owner =
+            (await this.extractTemplatePubkeyHex(
+              compiled,
+              'dead-mans-switch',
+              'owner',
+            )) || this.extractPubkeysFromScript(compiled)[0];
+          const ownerAddress = owner ? this.pubkeyToAddress(owner) : '';
+          if (!ownerAddress) {
+            this.interactError.set(
+              'Could not derive owner address from contract script',
+            );
+            return;
+          }
+          outputAddress = ownerAddress;
+          extraArgsOverride = { amount: withdrawalAmount };
+          useSenderFeeOverride = true;
+        }
+        const withdrawalOutputs = this.buildWithdrawalOutputs(
+          compiled,
+          inputAmount,
+          outputAddress,
+          withdrawalAmount,
+        );
+        if (!withdrawalOutputs) return;
+        outputs = withdrawalOutputs;
       } else if (this.isDmsKeepAlive()) {
         // DMS keepAlive — delegate to the dedicated method which handles new-contract generation
         await this.executeDmsKeepAlive(
@@ -2875,6 +3201,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           interactInputAmount: this.interactInputAmount,
           interactOutputAddress: this.interactOutputAddress,
           interactOutputAmount: this.interactOutputAmount,
+          topUpAmount: this.topUpAmount,
           partialSpendJson: partialJson,
           interactResult: {
             txid: '(partial - share with co-signer)',
@@ -2902,7 +3229,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         outputs,
         Object.keys(extraArgs).length > 0 ? extraArgs : undefined,
         undefined,
-        this.useSenderFee,
+        useSenderFeeOverride ?? this.useSenderFee,
       );
       if (!result) return;
 
@@ -2913,13 +3240,42 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
       // Update registry based on function type
       if (this.selectedContractId()) {
-        if (this.functionRequiresOutput(functionName)) {
-          // Withdrawal: funds left the covenant
+        if (this.isTopUpFunction(functionName)) {
           this.registryService.updateContract(this.selectedContractId(), {
-            status: 'spent',
-            spendTxid: result.txid,
             lastChecked: Date.now(),
+            outpoint: { txid: result.txid, vout: 0 },
+            amountSompi: outputs[0].amount.toString(),
+            covenantId:
+              this.selectedContract()?.covenantId || result.covenantId,
           });
+          this.interactOutpointTxid = result.txid;
+          this.interactOutpointVout = '0';
+          this.interactInputAmount = outputs[0].amount.toString();
+          this.topUpAmount = '';
+        } else if (this.functionRequiresOutput(functionName)) {
+          const covenantAddress =
+            this.covenantService.getContractAddress(compiled);
+          const continuationOutputIndex = outputs.findIndex(
+            (output) => output.address === covenantAddress,
+          );
+          if (continuationOutputIndex >= 0) {
+            const continuationAmount = outputs[continuationOutputIndex].amount;
+            this.registryService.updateContract(this.selectedContractId(), {
+              lastChecked: Date.now(),
+              outpoint: { txid: result.txid, vout: continuationOutputIndex },
+              amountSompi: continuationAmount.toString(),
+            });
+            this.interactOutpointTxid = result.txid;
+            this.interactOutpointVout = continuationOutputIndex.toString();
+            this.interactInputAmount = continuationAmount.toString();
+          } else {
+            // Full withdrawal: funds left the covenant
+            this.registryService.updateContract(this.selectedContractId(), {
+              status: 'spent',
+              spendTxid: result.txid,
+              lastChecked: Date.now(),
+            });
+          }
         } else {
           // Redeploy (keepAlive/increment): update the outpoint to the new UTXO
           this.registryService.updateContract(this.selectedContractId(), {
@@ -2940,6 +3296,47 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  private buildWithdrawalOutputs(
+    compiled: CompiledContract,
+    inputAmount: bigint,
+    outputAddress: string,
+    withdrawalAmount: bigint,
+  ): SpendOutput[] | undefined {
+    if (withdrawalAmount > inputAmount) {
+      this.interactError.set(
+        'Withdraw amount cannot exceed the contract balance',
+      );
+      return undefined;
+    }
+
+    const remainder = inputAmount - withdrawalAmount;
+    const outputs: SpendOutput[] = [
+      {
+        address: outputAddress,
+        amount: withdrawalAmount,
+      },
+    ];
+
+    if (remainder === 0n) {
+      return outputs;
+    }
+
+    if (remainder < this.MIN_CONTINUATION_AMOUNT_SOMPI) {
+      this.interactError.set(
+        'Partial withdrawals must leave at least 0.5 KAS in the contract. Withdraw the full amount or reduce the withdrawal.',
+      );
+      return undefined;
+    }
+
+    outputs.push({
+      address: this.covenantService.getContractAddress(compiled),
+      amount: remainder,
+      covenantId: this.selectedContract()?.covenantId,
+    });
+
+    return outputs;
+  }
+
   /**
    * Execute a Dead Man's Switch keepAlive:
    *   1. Validates the new expiry input.
@@ -2957,135 +3354,89 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   ): Promise<void> {
     this.dmsKeepAliveError.set(null);
 
-    // 1. Validate new expiry
-    const newExpiryRaw = this.dmsNewExpiry?.toString().trim();
-    if (!newExpiryRaw) {
-      this.interactError.set(
-        'Enter the new expiry timestamp for the refreshed contract.',
-      );
-      return;
-    }
-    let newExpiryMs: number;
-    try {
-      newExpiryMs = this.parseDateToUnixMs(newExpiryRaw, 'New Expiry');
-    } catch (e: any) {
-      this.interactError.set(e?.message || 'Invalid expiry timestamp.');
-      return;
-    }
-
-    // 2. Extract owner and heir pubkey bytes from the current compiled script.
-    //    The DMS constructor order is: owner (param 0), heir (param 1).
-    const pubkeys = this.extractPubkeysFromScript(compiled);
-    if (pubkeys.length < 2) {
-      this.interactError.set(
-        'Could not extract owner/heir pubkeys from the contract script.',
-      );
-      return;
-    }
-    const ownerPubkeyBytes = this.hexStringToBytes(pubkeys[0]);
-    const heirPubkeyBytes = this.hexStringToBytes(pubkeys[1]);
-
-    // 3. Generate new DMS compiled JSON with same owner/heir, new expiry.
-    let newCompiledJson: string;
-    let newCompiled: CompiledContract;
-    try {
-      const template = await firstValueFrom(
-        this.http.get<any>('assets/covenant-templates/dead-mans-switch.json'),
-      );
-      const DMS_TEMPLATE = CONTRACT_TEMPLATES.find(
-        (t) => t.id === 'dead-mans-switch',
-      )!;
-      const descriptor = this.templatePatcher.extractPatchDescriptor(
-        template,
-        DMS_TEMPLATE.placeholderArgs,
-      );
-
-      const newArgs: import('../../../../services/covenant/template-patcher.service').CtorArg[] =
-        [
-          {
-            kind: 'array',
-            data: Array.from(ownerPubkeyBytes).map((b) => ({
-              kind: 'byte' as const,
-              data: b,
-            })),
-          },
-          {
-            kind: 'array',
-            data: Array.from(heirPubkeyBytes).map((b) => ({
-              kind: 'byte' as const,
-              data: b,
-            })),
-          },
-          { kind: 'int', data: newExpiryMs },
-        ];
-
-      const patched = this.templatePatcher.applyPatch(
-        template,
-        descriptor,
-        newArgs,
-      );
-      // Attach TN10 metadata using the current registry entry's stored values
-      const currentEntry = this.registryContracts().find(
-        (c) => c.id === this.selectedContractId(),
-      );
-      const ownerAddress =
-        currentEntry?.deployedBy?.address ||
-        this.currentWallet()?.getAddress() ||
-        '';
-      const heirAddress = this.pubkeyToAddress(pubkeys[1]);
-      patched.tn10 = {
-        v: 1,
-        tmpl: 'DeadManSwitch',
-        args: [
-          { name: 'owner', type: 'address', value: ownerAddress },
-          { name: 'heir', type: 'address', value: heirAddress },
-          {
-            name: 'checkInDeadline',
-            type: 'blueScore',
-            value: String(newExpiryMs),
-          },
-        ],
-      };
-      newCompiledJson = JSON.stringify(patched);
-      newCompiled = this.covenantService.parseCompiledContract(newCompiledJson);
-    } catch (e: any) {
-      this.interactError.set(
-        e?.message || 'Failed to generate new DMS contract.',
-      );
-      return;
-    }
-
-    const newContractAddress =
-      this.covenantService.getContractAddress(newCompiled);
-
-    // 4. Get the covenant ID from the registry for the old contract (for CovenantBinding)
     const oldEntry = this.registryContracts().find(
       (c) => c.id === this.selectedContractId(),
     );
     const oldCovenantId = oldEntry?.covenantId;
+    const keepAliveAbi = compiled.abi.find(
+      (entry) => entry.name === 'keepAlive',
+    );
+    const supportsDeadlineKeepAlive =
+      keepAliveAbi?.inputs.some((input) => input.name === 'newDeadline') &&
+      (compiled.ast as any)?.fields?.some(
+        (field: any) => field.name === 'deadline',
+      );
+    if (!supportsDeadlineKeepAlive) {
+      this.dmsKeepAliveError.set(
+        "This Dead Man's Switch was deployed with the old inactivity-period contract. It cannot be migrated to the new deadline contract with keepAlive; deploy a new deadline-based Dead Man's Switch.",
+      );
+      return;
+    }
+
+    if (!this.dmsNewExpiry.trim()) {
+      this.dmsKeepAliveError.set('Select the new check-in deadline');
+      return;
+    }
+
+    const newDeadline = BigInt(
+      this.parseDateToUnixMs(this.dmsNewExpiry, 'New check-in deadline'),
+    );
+    const currentDeadline = await this.extractTemplateIntField(
+      compiled,
+      'dead-mans-switch',
+      'initDeadline',
+    );
+    if (currentDeadline !== undefined && newDeadline <= currentDeadline) {
+      this.dmsKeepAliveError.set(
+        `New check-in deadline must be later than the current deadline (${this.formatTimestamp(Number(currentDeadline))}).`,
+      );
+      return;
+    }
+    const fallbackPubkeys = this.extractPubkeysFromScript(compiled);
+    const owner =
+      (await this.extractTemplatePubkeyHex(
+        compiled,
+        'dead-mans-switch',
+        'owner',
+      )) || fallbackPubkeys[0];
+    const heir =
+      (await this.extractTemplatePubkeyHex(
+        compiled,
+        'dead-mans-switch',
+        'heir',
+      )) || fallbackPubkeys[1];
+    const ownerAddress = owner ? this.pubkeyToAddress(owner) : '';
+    const heirAddress = heir ? this.pubkeyToAddress(heir) : '';
+    if (!ownerAddress || !heirAddress) {
+      this.dmsKeepAliveError.set(
+        'Could not derive owner/heir addresses from contract script',
+      );
+      return;
+    }
+
+    const template = this.templateById('dead-mans-switch');
+    if (!template) {
+      this.dmsKeepAliveError.set("Dead Man's Switch template is unavailable");
+      return;
+    }
+
+    const nextCompiled = await this.compileTemplateWithFieldValues(template, {
+      owner: ownerAddress,
+      heir: heirAddress,
+      expiry: this.dmsNewExpiry,
+    });
+    const nextContractJson = JSON.stringify(nextCompiled, null, 2);
+    const nextContractAddress =
+      this.covenantService.getContractAddress(nextCompiled);
 
     // Build spend output: full amount → new DMS address, with CovenantBinding if we have a covenantId
     const spendOutputs: SpendOutput[] = [
       {
-        address: newContractAddress,
+        address: nextContractAddress,
         amount: inputAmount,
         covenantId: oldCovenantId, // attach binding to preserve lineage
       },
     ];
-
-    // Build the payload hex for the new contract
-    let newPayloadHex: string | undefined;
-    if (newCompiled.tn10) {
-      try {
-        const payloadJson = JSON.stringify({ tn10: newCompiled.tn10 });
-        const payloadBytes = new TextEncoder().encode(payloadJson);
-        newPayloadHex = Array.from(payloadBytes)
-          .map((b) => b.toString(16).padStart(2, '0'))
-          .join('');
-      } catch (err) {
-        console.warn('Failed to encode new contract payload:', err);
-      }
-    }
 
     // 5. Execute the keepAlive spend on the old contract
     const result = await this.runCovenantSpendAction(
@@ -3095,57 +3446,26 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       inputAmount,
       'keepAlive',
       spendOutputs,
-      undefined,
+      { newDeadline },
       oldCovenantId,
-      this.useSenderFee,
-      newPayloadHex,
+      true,
     );
     if (!result) return;
 
     this.interactResult.set({ txid: result.txid, functionName: 'keepAlive' });
 
-    // Update old registry entry as spent
     if (this.selectedContractId()) {
       this.registryService.updateContract(this.selectedContractId(), {
-        status: 'spent',
-        spendTxid: result.txid,
+        status: 'active',
+        compiledJson: nextContractJson,
+        contractAddress: nextContractAddress,
+        accessRoles: this.parseAccessRoles(nextCompiled),
+        outpoint: { txid: result.txid, vout: 0 },
+        amountSompi: inputAmount.toString(),
         lastChecked: Date.now(),
       });
     }
-
-    // Register the new continuation contract
-    const wallet = this.currentWallet()!;
-    const newEntry: import('../../../../../services/covenant/contract-registry.service').ContractRegistryEntry =
-      {
-        id: this.registryService.generateId(),
-        contractName: 'DeadManSwitch',
-        compiledJson: newCompiledJson,
-        deployTxid: result.txid,
-        contractAddress: newContractAddress,
-        outpoint: { txid: result.txid, vout: 0 },
-        amountSompi: inputAmount.toString(),
-        deployedBy: {
-          address: wallet.getAddress(),
-          pubkey: wallet
-            .getPrivateKey()
-            .toPublicKey()
-            .toXOnlyPublicKey()
-            .toString(),
-          accountName: wallet.getDisplayName(),
-        },
-        deployedAt: Date.now(),
-        network: this.network(),
-        status: 'active',
-        lastChecked: Date.now(),
-        accessRoles: this.parseAccessRoles(newCompiled),
-        covenantId: oldCovenantId ?? result.covenantId,
-        predecessorId: this.selectedContractId() || undefined,
-      };
-    this.registryService.addContract(newEntry);
-
-    // Auto-select the new contract in the interact form
-    this.selectedContractId.set(newEntry.id);
-    this.interactContractJson.set(newCompiledJson);
+    this.interactContractJson.set(nextContractJson);
     this.interactOutpointTxid = result.txid;
     this.interactOutpointVout = '0';
     this.interactInputAmount = inputAmount.toString();
@@ -3530,6 +3850,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   /** Functions that do NOT produce an external withdrawal output */
   private readonly REDEPLOY_FUNCTIONS = new Set(['keepAlive', 'increment']);
 
+  isTopUpFunction(fnName: string): boolean {
+    return fnName === 'topUp';
+  }
+
   /**
    * Returns true when the current function is DMS keepAlive (requires special handling).
    * DMS keepAlive must produce output to a *new* DMS contract (with updated expiry),
@@ -3560,7 +3884,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * keepAlive re-deploys to the covenant itself; increment updates on-chain state.
    */
   functionRequiresOutput(fnName: string): boolean {
-    return !!fnName && !this.REDEPLOY_FUNCTIONS.has(fnName);
+    return (
+      !!fnName &&
+      !this.REDEPLOY_FUNCTIONS.has(fnName) &&
+      !this.isTopUpFunction(fnName)
+    );
   }
 
   /**
@@ -3577,9 +3905,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.partialSpendJson.set(null);
     this.extraArgValues = {};
     this.dmsNewExpiry = '';
+    this.topUpAmount = '';
     this.dmsKeepAliveError.set(null);
 
-    if (this.functionRequiresOutput(name)) {
+    if (this.isTopUpFunction(name)) {
+      this.interactOutputAddress = '';
+      this.interactOutputAmount = '';
+    } else if (this.functionRequiresOutput(name)) {
       // Withdrawal function: default output to user's wallet, clear amount
       this.interactOutputAddress = this.currentWallet()?.getAddress() || '';
       this.interactOutputAmount = '';
@@ -3622,6 +3954,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       increment: '➕ Increment',
       keepAlive: '♻️ Keep Alive',
       execute: '⚡ Execute',
+      topUp: 'Top Up',
     };
     return labels[name] || name;
   }
@@ -3688,6 +4021,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       keepAlive:
         'Re-deploy the contract with a refreshed timer. No funds are withdrawn.',
       execute: "Execute this contract's logic.",
+      topUp:
+        'Add KAS to this covenant by spending the current covenant UTXO and recreating it with the same covenant ID.',
     };
 
     return fallback[name] || `Call the "${name}" function on this contract.`;
@@ -3888,11 +4223,27 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
       // Update registry if we know the contract
       if (this.selectedContractId()) {
-        this.registryService.updateContract(this.selectedContractId(), {
-          status: 'spent',
-          spendTxid: result.txid,
-          lastChecked: Date.now(),
-        });
+        const compiled = this.covenantService.parseCompiledContract(
+          partial.compiledJson,
+        );
+        const covenantAddress =
+          this.covenantService.getContractAddress(compiled);
+        const continuationOutputIndex = partial.outputs.findIndex(
+          (output) => output.address === covenantAddress,
+        );
+        if (continuationOutputIndex >= 0) {
+          this.registryService.updateContract(this.selectedContractId(), {
+            lastChecked: Date.now(),
+            outpoint: { txid: result.txid, vout: continuationOutputIndex },
+            amountSompi: partial.outputs[continuationOutputIndex].amountSompi,
+          });
+        } else {
+          this.registryService.updateContract(this.selectedContractId(), {
+            status: 'spent',
+            spendTxid: result.txid,
+            lastChecked: Date.now(),
+          });
+        }
         this.loadContracts();
       }
     } catch (error: any) {

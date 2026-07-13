@@ -62,10 +62,10 @@ export class WalletActionService {
   }>({});
   private actionToApprove = signal<
     | {
-      action: WalletAction;
-      resolve: (data: { isApproved: boolean; priorityFee?: bigint }) => void;
-      additionalParams?: { [parmName: string]: any };
-    }
+        action: WalletAction;
+        resolve: (data: { isApproved: boolean; priorityFee?: bigint }) => void;
+        additionalParams?: { [parmName: string]: any };
+      }
     | undefined
   >(undefined);
 
@@ -524,13 +524,13 @@ export class WalletActionService {
 
   getActionToApproveSignal(): Signal<
     | {
-      action: WalletAction;
-      resolve: (data: {
-        isApproved: boolean;
-        priorityFee?: bigint;
-        additionalParams?: { [parmName: string]: any };
-      }) => void;
-    }
+        action: WalletAction;
+        resolve: (data: {
+          isApproved: boolean;
+          priorityFee?: bigint;
+          additionalParams?: { [parmName: string]: any };
+        }) => void;
+      }
     | undefined
   > {
     return this.actionToApprove.asReadonly();
@@ -847,6 +847,7 @@ export class WalletActionService {
       const requiredKaspaAmount =
         await this.kaspaNetworkActionsService.getMinimalRequiredAmountForAction(
           action,
+          wallet,
         );
 
       if (currentBalance < requiredKaspaAmount) {
@@ -1076,9 +1077,10 @@ export class WalletActionService {
     }
   }
 
-  private validateCovenantDeployAction(
-    action: CovenantDeployAction,
-  ): { isValidated: boolean; errorCode?: number } {
+  private validateCovenantDeployAction(action: CovenantDeployAction): {
+    isValidated: boolean;
+    errorCode?: number;
+  } {
     if (!action.compiledContractJson || action.amountSompi <= 0n) {
       return {
         isValidated: false,
@@ -1091,9 +1093,10 @@ export class WalletActionService {
     };
   }
 
-  private validateCovenantSpendAction(
-    action: CovenantSpendAction,
-  ): { isValidated: boolean; errorCode?: number } {
+  private validateCovenantSpendAction(action: CovenantSpendAction): {
+    isValidated: boolean;
+    errorCode?: number;
+  } {
     if (
       !action.compiledContractJson ||
       !action.functionName ||
@@ -1145,7 +1148,11 @@ export class WalletActionService {
 
     try {
       const partial = JSON.parse(action.partialSpendJson);
-      if (!partial.compiledJson || !partial.functionName || !partial.outpoint?.txid) {
+      if (
+        !partial.compiledJson ||
+        !partial.functionName ||
+        !partial.outpoint?.txid
+      ) {
         return {
           isValidated: false,
           errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,

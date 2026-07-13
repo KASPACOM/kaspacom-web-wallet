@@ -928,6 +928,25 @@
               </div>
             }
 
+            @if (contract.deployTxid) {
+              <div class="flex column gap-4">
+                <span class="text-gray-60 typo-text-2">Deploy Tx</span>
+                <div class="flex align-items-center gap-8">
+                  <a
+                    [href]="getExplorerLink(contract.deployTxid)"
+                    target="_blank"
+                    class="text-blue typo-text-2"
+                  >
+                    {{ truncate(contract.deployTxid, 24) }}
+                  </a>
+                  <app-copy-button
+                    [value]="contract.deployTxid"
+                    [size]="'sm'"
+                  ></app-copy-button>
+                </div>
+              </div>
+            }
+
             @if (contract.deadlineMs) {
               <div class="flex column gap-4">
                 <span class="text-gray-60 typo-text-2">Deadline</span>
@@ -967,7 +986,7 @@
               </kc-button>
               @if (contract.status === "active") {
                 <kc-button
-                  [text]="contract.nextActionLabel"
+                  [text]="'More Actions'"
                   (buttonClick)="openDashboardAction(contract)"
                 >
                 </kc-button>
@@ -1070,6 +1089,34 @@
               </div>
             </div>
 
+            @if (getContractDetailParameters(selectedDetail()!).length > 0) {
+              <div class="flex column gap-8">
+                <span class="text-gray-60 typo-text-1">Parameters</span>
+                <div class="participant-grid">
+                  @for (
+                    param of getContractDetailParameters(selectedDetail()!);
+                    track param.label + param.value
+                  ) {
+                    <div class="participant-item p-8 rounded">
+                      <div class="flex align-items-center gap-6 flex-wrap">
+                        <span class="text-gray-60 typo-text-2">{{
+                          param.label
+                        }}</span>
+                        @if (param.type) {
+                          <span class="param-tag typo-text-2 rounded p-4">{{
+                            param.type
+                          }}</span>
+                        }
+                      </div>
+                      <span class="text-white typo-text-2 text-mono">{{
+                        truncate(param.value, 36)
+                      }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
             @if (selectedDetail()!.utxos.length > 0) {
               <div class="flex column gap-8">
                 <span class="text-gray-60 typo-text-1">Current UTXO</span>
@@ -1157,6 +1204,14 @@
                     }}</span>
                   </div>
                 }
+                @if (selectedDetail()!.entry.deployTxid) {
+                  <div class="flex column gap-4">
+                    <span class="text-gray-60 typo-text-2">Deploy Tx</span>
+                    <span class="text-white typo-text-2 text-mono">{{
+                      selectedDetail()!.entry.deployTxid
+                    }}</span>
+                  </div>
+                }
               </div>
             </details>
           }
@@ -1226,6 +1281,17 @@
               <span class="text-gray-60 typo-text-2">{{
                 truncate(selectedContract()!.contractAddress, 30)
               }}</span>
+              @if (selectedContract()!.covenantId) {
+                <span class="text-gray-60 typo-text-2 text-mono">
+                  Covenant
+                  {{ truncate(selectedContract()!.covenantId || "", 18) }}
+                </span>
+              }
+              <span class="text-gray-60 typo-text-2 text-mono">
+                UTXO {{ truncate(selectedContract()!.outpoint.txid, 18) }}:{{
+                  selectedContract()!.outpoint.vout
+                }}
+              </span>
             </div>
             <span class="text-gray-60 typo-text-2"
               >{{ formatSompiToKas(selectedContract()!.amountSompi) }} KAS</span
@@ -1345,7 +1411,7 @@
                 [isDisabled]="isInteracting()"
                 [class.active-function]="selectedFunction === fn.name"
                 [style]="
-                  selectedFunction === fn.name ? 'opacity: 1' : 'opacity: 0.6'
+                  selectedFunction === fn.name ? 'opacity: 1' : 'opacity: 0.75'
                 "
                 (buttonClick)="selectFunction(fn.name)"
               >
@@ -1418,10 +1484,42 @@
             "
           >
             <span class="text-gray-75 typo-text-2">
-              A new Dead Man's Switch contract will be generated with the same
-              owner and heir but the updated expiry. Funds will move to the new
-              contract in the same transaction. The covenant lineage is
-              preserved.
+              Keep Alive recreates the covenant output with the same owner and
+              heir, using the new check-in deadline you choose. The heir cannot
+              claim unless the current transaction time reaches that deadline.
+            </span>
+          </div>
+        }
+
+        @if (selectedFunction && isTopUpFunction(selectedFunction)) {
+          <div class="form-group flex column gap-8">
+            <kc-input
+              [label]="'Top Up Amount (KAS)'"
+              [placeholder]="'0'"
+              [type]="'number'"
+              [min]="0"
+              [isFullWidth]="true"
+              [isDisabled]="isInteracting()"
+              [ngModel]="topUpAmount"
+              (valueChange)="
+                topUpAmount = $event || ''; interactError.set(null)
+              "
+            >
+            </kc-input>
+          </div>
+
+          <div
+            class="p-12 rounded-lg"
+            style="
+              background: rgba(111, 199, 186, 0.08);
+              border: 1px solid rgba(111, 199, 186, 0.2);
+            "
+          >
+            <span class="text-gray-75 typo-text-2">
+              The current covenant UTXO will be spent and recreated as output 0
+              with the same covenant ID. The new covenant amount will be the
+              current balance plus the top-up amount before any contract-paid
+              fee deduction.
             </span>
           </div>
         }
@@ -1476,7 +1574,8 @@
         @if (
           selectedFunction &&
           !functionRequiresOutput(selectedFunction) &&
-          !isDmsKeepAlive()
+          !isDmsKeepAlive() &&
+          !isTopUpFunction(selectedFunction)
         ) {
           <div
             class="p-12 rounded-lg"
@@ -1666,10 +1765,22 @@
             [kcTooltip]="
               selectedFunction && isMultiSigFunction(selectedFunction)
                 ? 'Disabled for multi-sig signing. The contract must pay fees because wallet fee inputs would change the transaction after signatures are created.'
-                : 'If enabled, transaction fees will be paid from your wallet balance instead of the contract funds.'
+                : selectedFunction && isTopUpFunction(selectedFunction)
+                  ? 'When enabled, fees are paid from wallet change. When disabled, fees are deducted from the top-up output.'
+                  : 'If enabled, transaction fees will be paid from your wallet balance instead of the contract funds.'
             "
             tooltipPosition="top"
           ></kc-icon>
+          @if (selectedFunction && isTopUpFunction(selectedFunction)) {
+            <span class="text-gray-60 typo-text-2">
+              Selected:
+              {{
+                useSenderFee
+                  ? "wallet pays fees"
+                  : "fees come from the top-up output"
+              }}
+            </span>
+          }
         </div>
         @if (selectedFunction && isMultiSigFunction(selectedFunction)) {
           <div
@@ -1683,6 +1794,21 @@
               Multi-sig transactions must pay fees from the contract funds.
               Wallet-paid fees add inputs and would invalidate the partial
               signatures.
+            </span>
+          </div>
+        }
+        @if (selectedFunction && isTopUpFunction(selectedFunction)) {
+          <div
+            class="p-12 rounded-lg"
+            style="
+              background: rgba(255, 193, 7, 0.08);
+              border: 1px solid rgba(255, 193, 7, 0.2);
+            "
+          >
+            <span class="text-yellow typo-text-2">
+              If wallet-paid fees are off, the top-up amount must be larger than
+              the transaction fee so the recreated covenant output remains
+              larger than the current covenant UTXO.
             </span>
           </div>
         }

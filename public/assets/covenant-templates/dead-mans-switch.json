@@ -2,117 +2,43 @@
   "contract_name": "DeadManSwitch",
   "compiler_version": "0.1.0",
   "script": [
-    107,
-    108,
-    118,
-    0,
-    156,
-    99,
-    117,
-    118,
-    32,
-    170,
-    171,
-    172,
-    173,
-    174,
-    175,
-    176,
-    177,
-    178,
-    179,
-    180,
-    181,
-    182,
-    183,
-    184,
-    185,
-    186,
-    187,
-    188,
-    189,
-    190,
-    191,
-    192,
-    193,
-    194,
-    195,
-    196,
-    197,
-    198,
-    199,
-    200,
-    201,
-    172,
-    105,
-    0,
-    194,
-    185,
-    190,
-    162,
-    105,
-    117,
-    81,
-    103,
-    118,
-    81,
-    156,
-    99,
-    117,
-    118,
-    32,
-    204,
-    205,
-    206,
-    207,
-    208,
-    209,
-    210,
-    211,
-    212,
-    213,
-    214,
-    215,
-    216,
-    217,
-    218,
-    219,
-    220,
-    221,
-    222,
-    223,
-    224,
-    225,
-    226,
-    227,
-    228,
-    229,
-    230,
-    231,
-    232,
-    233,
-    234,
-    235,
-    172,
-    105,
-    6,
-    0,
-    16,
-    165,
-    212,
-    232,
-    0,
-    176,
-    117,
-    81,
-    103,
-    117,
-    0,
-    105,
-    104,
+    107, 8, 0, 16, 165, 212, 232, 0, 0, 0, 108, 118, 0, 156, 99, 117, 82, 121,
+    32, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183,
+    184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198,
+    199, 200, 201, 172, 105, 185, 0, 156, 105, 120, 120, 160, 105, 0, 194, 185,
+    190, 162, 105, 120, 88, 205, 1, 8, 124, 126, 185, 118, 201, 2, 181, 1, 148,
+    118, 81, 147, 188, 124, 126, 185, 118, 201, 118, 2, 181, 1, 148, 90, 147,
+    124, 188, 126, 170, 2, 0, 0, 1, 170, 126, 1, 32, 126, 124, 126, 1, 135, 126,
+    0, 195, 135, 105, 117, 117, 117, 81, 103, 118, 81, 156, 99, 117, 185, 0,
+    156, 105, 0, 194, 185, 190, 160, 105, 0, 195, 185, 191, 135, 105, 118, 88,
+    205, 1, 8, 124, 126, 185, 118, 201, 2, 181, 1, 148, 118, 81, 147, 188, 124,
+    126, 185, 118, 201, 118, 2, 181, 1, 148, 90, 147, 124, 188, 126, 170, 2, 0,
+    0, 1, 170, 126, 1, 32, 126, 124, 126, 1, 135, 126, 0, 195, 135, 105, 117,
+    81, 103, 118, 82, 156, 99, 117, 82, 121, 32, 170, 171, 172, 173, 174, 175,
+    176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190,
+    191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 172, 105, 185, 0,
+    156, 105, 120, 0, 160, 105, 185, 190, 82, 121, 120, 159, 105, 0, 195, 32,
+    170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184,
+    185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199,
+    200, 201, 3, 0, 0, 32, 124, 126, 1, 172, 126, 135, 105, 0, 194, 83, 121,
+    156, 105, 81, 195, 185, 191, 135, 105, 81, 194, 120, 84, 121, 148, 156, 105,
+    120, 88, 205, 1, 8, 124, 126, 185, 118, 201, 2, 181, 1, 148, 118, 81, 147,
+    188, 124, 126, 185, 118, 201, 118, 2, 181, 1, 148, 90, 147, 124, 188, 126,
+    170, 2, 0, 0, 1, 170, 126, 1, 32, 126, 124, 126, 1, 135, 126, 81, 195, 135,
+    105, 0, 122, 117, 117, 117, 117, 81, 103, 118, 83, 156, 99, 117, 120, 32,
+    204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218,
+    219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233,
+    234, 235, 172, 105, 118, 176, 117, 117, 81, 103, 117, 0, 105, 104, 104, 104,
     104
   ],
   "ast": {
+    "pragma": {
+      "name": "silverscript",
+      "value": "^0.1.0",
+      "span": "pragma silverscript ^0.1.0;",
+      "name_span": "silverscript",
+      "value_span": "^0.1.0"
+    },
     "name": "DeadManSwitch",
     "params": [
       {
@@ -137,10 +63,26 @@
         "type_ref": {
           "base": "int"
         },
-        "name": "expiry",
-        "span": "int expiry",
+        "name": "initDeadline",
+        "span": "int initDeadline",
         "type_span": "int ",
-        "name_span": "expiry"
+        "name_span": "initDeadline"
+      }
+    ],
+    "fields": [
+      {
+        "type_ref": {
+          "base": "int"
+        },
+        "name": "deadline",
+        "expr": {
+          "kind": "identifier",
+          "data": "initDeadline",
+          "span": "initDeadline"
+        },
+        "span": "int deadline = initDeadline;",
+        "type_span": "int ",
+        "name_span": "deadline"
       }
     ],
     "constants": [],
@@ -156,6 +98,15 @@
             "span": "sig s",
             "type_span": "sig ",
             "name_span": "s"
+          },
+          {
+            "type_ref": {
+              "base": "int"
+            },
+            "name": "newDeadline",
+            "span": "int newDeadline",
+            "type_span": "int ",
+            "name_span": "newDeadline"
           }
         ],
         "entrypoint": true,
@@ -187,6 +138,56 @@
               },
               "message": null,
               "span": "require(checkSig(s, owner));",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "nullary",
+                    "data": "active_input_index",
+                    "span": "this.activeInputIndex"
+                  },
+                  "right": {
+                    "kind": "int",
+                    "data": 0,
+                    "span": "0"
+                  }
+                },
+                "span": "this.activeInputIndex == 0"
+              },
+              "message": null,
+              "span": "require(this.activeInputIndex == 0);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "gt",
+                  "left": {
+                    "kind": "identifier",
+                    "data": "newDeadline",
+                    "span": "newDeadline"
+                  },
+                  "right": {
+                    "kind": "identifier",
+                    "data": "deadline",
+                    "span": "deadline"
+                  }
+                },
+                "span": "newDeadline > deadline"
+              },
+              "message": null,
+              "span": "require(newDeadline > deadline);",
               "message_span": null
             }
           },
@@ -230,12 +231,584 @@
               "span": "require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);",
               "message_span": null
             }
+          },
+          {
+            "kind": "function_call",
+            "data": {
+              "name": "validateOutputState",
+              "args": [
+                {
+                  "kind": "int",
+                  "data": 0,
+                  "span": "0"
+                },
+                {
+                  "kind": "state_object",
+                  "data": [
+                    {
+                      "name": "deadline",
+                      "expr": {
+                        "kind": "identifier",
+                        "data": "newDeadline",
+                        "span": "newDeadline"
+                      },
+                      "span": "deadline: newDeadline ",
+                      "name_span": "deadline"
+                    }
+                  ],
+                  "span": "{ deadline: newDeadline }"
+                }
+              ],
+              "span": "validateOutputState(0, { deadline: newDeadline });",
+              "name_span": "validateOutputState"
+            }
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function keepAlive(sig s) {\r\n        require(checkSig(s, owner));\r\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);\r\n    }",
+        "span": "entrypoint function keepAlive(sig s, int newDeadline) {\n        require(checkSig(s, owner));\n        require(this.activeInputIndex == 0);\n        require(newDeadline > deadline);\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);\n        validateOutputState(0, { deadline: newDeadline });\n    }",
         "name_span": "keepAlive",
-        "body_span": "require(checkSig(s, owner));\r\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);"
+        "body_span": "require(checkSig(s, owner));\n        require(this.activeInputIndex == 0);\n        require(newDeadline > deadline);\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);\n        validateOutputState(0, { deadline: newDeadline });"
+      },
+      {
+        "name": "topUp",
+        "params": [],
+        "entrypoint": true,
+        "return_types": [],
+        "returns_tuple": false,
+        "body": [
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "nullary",
+                    "data": "active_input_index",
+                    "span": "this.activeInputIndex"
+                  },
+                  "right": {
+                    "kind": "int",
+                    "data": 0,
+                    "span": "0"
+                  }
+                },
+                "span": "this.activeInputIndex == 0"
+              },
+              "message": null,
+              "span": "require(this.activeInputIndex == 0);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "gt",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_value",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".value"
+                    },
+                    "span": "tx.outputs[0].value"
+                  },
+                  "right": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "input_value",
+                      "index": {
+                        "kind": "nullary",
+                        "data": "active_input_index",
+                        "span": "this.activeInputIndex"
+                      },
+                      "field_span": ".value"
+                    },
+                    "span": "tx.inputs[this.activeInputIndex].value"
+                  }
+                },
+                "span": "tx.outputs[0].value > tx.inputs[this.activeInputIndex].value"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_script_pub_key",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".scriptPubKey"
+                    },
+                    "span": "tx.outputs[0].scriptPubKey"
+                  },
+                  "right": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "input_script_pub_key",
+                      "index": {
+                        "kind": "nullary",
+                        "data": "active_input_index",
+                        "span": "this.activeInputIndex"
+                      },
+                      "field_span": ".scriptPubKey"
+                    },
+                    "span": "tx.inputs[this.activeInputIndex].scriptPubKey"
+                  }
+                },
+                "span": "tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "function_call",
+            "data": {
+              "name": "validateOutputState",
+              "args": [
+                {
+                  "kind": "int",
+                  "data": 0,
+                  "span": "0"
+                },
+                {
+                  "kind": "state_object",
+                  "data": [
+                    {
+                      "name": "deadline",
+                      "expr": {
+                        "kind": "identifier",
+                        "data": "deadline",
+                        "span": "deadline"
+                      },
+                      "span": "deadline: deadline ",
+                      "name_span": "deadline"
+                    }
+                  ],
+                  "span": "{ deadline: deadline }"
+                }
+              ],
+              "span": "validateOutputState(0, { deadline: deadline });",
+              "name_span": "validateOutputState"
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function topUp() {\n        require(this.activeInputIndex == 0);\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\n        validateOutputState(0, { deadline: deadline });\n    }",
+        "name_span": "topUp",
+        "body_span": "require(this.activeInputIndex == 0);\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\n        validateOutputState(0, { deadline: deadline });"
+      },
+      {
+        "name": "withdraw",
+        "params": [
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "s",
+            "span": "sig s",
+            "type_span": "sig ",
+            "name_span": "s"
+          },
+          {
+            "type_ref": {
+              "base": "int"
+            },
+            "name": "amount",
+            "span": "int amount",
+            "type_span": "int ",
+            "name_span": "amount"
+          }
+        ],
+        "entrypoint": true,
+        "return_types": [],
+        "returns_tuple": false,
+        "body": [
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "s",
+                      "span": "s"
+                    },
+                    {
+                      "kind": "identifier",
+                      "data": "owner",
+                      "span": "owner"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(s, owner)"
+              },
+              "message": null,
+              "span": "require(checkSig(s, owner));",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "nullary",
+                    "data": "active_input_index",
+                    "span": "this.activeInputIndex"
+                  },
+                  "right": {
+                    "kind": "int",
+                    "data": 0,
+                    "span": "0"
+                  }
+                },
+                "span": "this.activeInputIndex == 0"
+              },
+              "message": null,
+              "span": "require(this.activeInputIndex == 0);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "gt",
+                  "left": {
+                    "kind": "identifier",
+                    "data": "amount",
+                    "span": "amount"
+                  },
+                  "right": {
+                    "kind": "int",
+                    "data": 0,
+                    "span": "0"
+                  }
+                },
+                "span": "amount > 0"
+              },
+              "message": null,
+              "span": "require(amount > 0);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "variable_definition",
+            "data": {
+              "type_ref": {
+                "base": "int"
+              },
+              "modifiers": [],
+              "name": "total",
+              "expr": {
+                "kind": "introspection",
+                "data": {
+                  "kind": "input_value",
+                  "index": {
+                    "kind": "nullary",
+                    "data": "active_input_index",
+                    "span": "this.activeInputIndex"
+                  },
+                  "field_span": ".value"
+                },
+                "span": "tx.inputs[this.activeInputIndex].value"
+              },
+              "span": "int total = tx.inputs[this.activeInputIndex].value;",
+              "type_span": "int ",
+              "modifier_spans": [],
+              "name_span": "total"
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "lt",
+                  "left": {
+                    "kind": "identifier",
+                    "data": "amount",
+                    "span": "amount"
+                  },
+                  "right": {
+                    "kind": "identifier",
+                    "data": "total",
+                    "span": "total"
+                  }
+                },
+                "span": "amount < total"
+              },
+              "message": null,
+              "span": "require(amount < total);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "variable_definition",
+            "data": {
+              "type_ref": {
+                "base": "byte",
+                "array_dims": [
+                  {
+                    "kind": "fixed",
+                    "value": 34
+                  }
+                ]
+              },
+              "modifiers": [],
+              "name": "ownerLock",
+              "expr": {
+                "kind": "new",
+                "data": {
+                  "name": "ScriptPubKeyP2PK",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "owner",
+                      "span": "owner"
+                    }
+                  ],
+                  "name_span": "ScriptPubKeyP2PK"
+                },
+                "span": "new ScriptPubKeyP2PK(owner)"
+              },
+              "span": "byte[34] ownerLock = new ScriptPubKeyP2PK(owner);",
+              "type_span": "byte[34]",
+              "modifier_spans": [],
+              "name_span": "ownerLock"
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_script_pub_key",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".scriptPubKey"
+                    },
+                    "span": "tx.outputs[0].scriptPubKey"
+                  },
+                  "right": {
+                    "kind": "call",
+                    "data": {
+                      "name": "byte[]",
+                      "args": [
+                        {
+                          "kind": "identifier",
+                          "data": "ownerLock",
+                          "span": "ownerLock"
+                        }
+                      ],
+                      "name_span": "byte[]"
+                    },
+                    "span": "byte[](ownerLock)"
+                  }
+                },
+                "span": "tx.outputs[0].scriptPubKey == byte[](ownerLock)"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].scriptPubKey == byte[](ownerLock));",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_value",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".value"
+                    },
+                    "span": "tx.outputs[0].value"
+                  },
+                  "right": {
+                    "kind": "identifier",
+                    "data": "amount",
+                    "span": "amount"
+                  }
+                },
+                "span": "tx.outputs[0].value == amount"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].value == amount);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_script_pub_key",
+                      "index": {
+                        "kind": "int",
+                        "data": 1,
+                        "span": "1"
+                      },
+                      "field_span": ".scriptPubKey"
+                    },
+                    "span": "tx.outputs[1].scriptPubKey"
+                  },
+                  "right": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "input_script_pub_key",
+                      "index": {
+                        "kind": "nullary",
+                        "data": "active_input_index",
+                        "span": "this.activeInputIndex"
+                      },
+                      "field_span": ".scriptPubKey"
+                    },
+                    "span": "tx.inputs[this.activeInputIndex].scriptPubKey"
+                  }
+                },
+                "span": "tx.outputs[1].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey"
+              },
+              "message": null,
+              "span": "require(tx.outputs[1].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_value",
+                      "index": {
+                        "kind": "int",
+                        "data": 1,
+                        "span": "1"
+                      },
+                      "field_span": ".value"
+                    },
+                    "span": "tx.outputs[1].value"
+                  },
+                  "right": {
+                    "kind": "binary",
+                    "data": {
+                      "op": "sub",
+                      "left": {
+                        "kind": "identifier",
+                        "data": "total",
+                        "span": "total"
+                      },
+                      "right": {
+                        "kind": "identifier",
+                        "data": "amount",
+                        "span": "amount"
+                      }
+                    },
+                    "span": "total - amount"
+                  }
+                },
+                "span": "tx.outputs[1].value == total - amount"
+              },
+              "message": null,
+              "span": "require(tx.outputs[1].value == total - amount);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "function_call",
+            "data": {
+              "name": "validateOutputState",
+              "args": [
+                {
+                  "kind": "int",
+                  "data": 1,
+                  "span": "1"
+                },
+                {
+                  "kind": "state_object",
+                  "data": [
+                    {
+                      "name": "deadline",
+                      "expr": {
+                        "kind": "identifier",
+                        "data": "deadline",
+                        "span": "deadline"
+                      },
+                      "span": "deadline: deadline ",
+                      "name_span": "deadline"
+                    }
+                  ],
+                  "span": "{ deadline: deadline }"
+                }
+              ],
+              "span": "validateOutputState(1, { deadline: deadline });",
+              "name_span": "validateOutputState"
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function withdraw(sig s, int amount) {\n        require(checkSig(s, owner));\n        require(this.activeInputIndex == 0);\n        require(amount > 0);\n\n        int total = tx.inputs[this.activeInputIndex].value;\n        require(amount < total);\n        byte[34] ownerLock = new ScriptPubKeyP2PK(owner);\n\n        require(tx.outputs[0].scriptPubKey == byte[](ownerLock));\n        require(tx.outputs[0].value == amount);\n        require(tx.outputs[1].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\n        require(tx.outputs[1].value == total - amount);\n        validateOutputState(1, { deadline: deadline });\n    }",
+        "name_span": "withdraw",
+        "body_span": "require(checkSig(s, owner));\n        require(this.activeInputIndex == 0);\n        require(amount > 0);\n\n        int total = tx.inputs[this.activeInputIndex].value;\n        require(amount < total);\n        byte[34] ownerLock = new ScriptPubKeyP2PK(owner);\n\n        require(tx.outputs[0].scriptPubKey == byte[](ownerLock));\n        require(tx.outputs[0].value == amount);\n        require(tx.outputs[1].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\n        require(tx.outputs[1].value == total - amount);\n        validateOutputState(1, { deadline: deadline });"
       },
       {
         "name": "claim",
@@ -288,23 +861,23 @@
               "tx_var": "tx_time",
               "expr": {
                 "kind": "identifier",
-                "data": "expiry",
-                "span": "expiry"
+                "data": "deadline",
+                "span": "deadline"
               },
               "message": null,
-              "span": "require(tx.time >= expiry);",
+              "span": "require(tx.time >= deadline);",
               "tx_var_span": "tx.time",
               "message_span": null
             }
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function claim(sig s) {\r\n        require(checkSig(s, heir));\r\n        require(tx.time >= expiry);\r\n    }",
+        "span": "entrypoint function claim(sig s) {\n        require(checkSig(s, heir));\n        require(tx.time >= deadline);\n    }",
         "name_span": "claim",
-        "body_span": "require(checkSig(s, heir));\r\n        require(tx.time >= expiry);"
+        "body_span": "require(checkSig(s, heir));\n        require(tx.time >= deadline);"
       }
     ],
-    "span": "contract DeadManSwitch(pubkey owner, pubkey heir, int expiry) {\r\n\r\n    entrypoint function keepAlive(sig s) {\r\n        require(checkSig(s, owner));\r\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);\r\n    }\r\n    \r\n    entrypoint function claim(sig s) {\r\n        require(checkSig(s, heir));\r\n        require(tx.time >= expiry);\r\n    }\r\n}",
+    "span": "contract DeadManSwitch(pubkey owner, pubkey heir, int initDeadline) {\n    int deadline = initDeadline;\n\n    entrypoint function keepAlive(sig s, int newDeadline) {\n        require(checkSig(s, owner));\n        require(this.activeInputIndex == 0);\n        require(newDeadline > deadline);\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);\n        validateOutputState(0, { deadline: newDeadline });\n    }\n\n    entrypoint function topUp() {\n        require(this.activeInputIndex == 0);\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\n        validateOutputState(0, { deadline: deadline });\n    }\n\n    entrypoint function withdraw(sig s, int amount) {\n        require(checkSig(s, owner));\n        require(this.activeInputIndex == 0);\n        require(amount > 0);\n\n        int total = tx.inputs[this.activeInputIndex].value;\n        require(amount < total);\n        byte[34] ownerLock = new ScriptPubKeyP2PK(owner);\n\n        require(tx.outputs[0].scriptPubKey == byte[](ownerLock));\n        require(tx.outputs[0].value == amount);\n        require(tx.outputs[1].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\n        require(tx.outputs[1].value == total - amount);\n        validateOutputState(1, { deadline: deadline });\n    }\n\n    entrypoint function claim(sig s) {\n        require(checkSig(s, heir));\n        require(tx.time >= deadline);\n    }\n}",
     "name_span": "DeadManSwitch"
   },
   "abi": [
@@ -314,6 +887,27 @@
         {
           "name": "s",
           "type_name": "sig"
+        },
+        {
+          "name": "newDeadline",
+          "type_name": "int"
+        }
+      ]
+    },
+    {
+      "name": "topUp",
+      "inputs": []
+    },
+    {
+      "name": "withdraw",
+      "inputs": [
+        {
+          "name": "s",
+          "type_name": "sig"
+        },
+        {
+          "name": "amount",
+          "type_name": "int"
         }
       ]
     },
@@ -330,7 +924,7 @@
   "without_selector": false,
   "state_layout": {
     "start": 1,
-    "len": 0
+    "len": 9
   },
   "debug_info": null
 }

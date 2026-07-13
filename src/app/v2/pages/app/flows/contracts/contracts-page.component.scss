@@ -798,65 +798,27 @@ $tpl-accents: (
 }
 
 // ── wizard ─────────────────────────────────────────────────────────────
-.stepper {
+.deploy-stepper {
   display: flex;
   align-items: center;
+  width: 100%;
   gap: 8px;
 }
-.step {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.deploy-stepper__item {
   flex: 1;
   min-width: 0;
-}
-.step-dot {
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  background: var(--gray-15);
-  color: var(--gray-45);
-  border: 1px solid var(--border-secondary);
-}
-.step-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--gray-45);
-  white-space: nowrap;
-}
-.step-line {
-  flex: 1;
-  height: 1px;
-  background: var(--border-secondary);
-}
-.step.active .step-dot {
-  background: var(--kaspa-20);
-  color: #07211d;
-  border-color: var(--kaspa-20);
-}
-.step.active .step-label {
-  color: var(--white);
-}
-.step.done .step-dot {
-  background: rgba(111, 199, 186, 0.2);
-  color: var(--kaspa-20);
-  border-color: var(--kaspa-20);
-}
-.step.done .step-label {
-  color: var(--kaspa-20);
-}
-@media (max-width: 560px) {
-  .step-label {
-    display: none;
+
+  ::ng-deep .stepper-progress {
+    flex: 1;
+    min-width: 0;
   }
-  .step:not(.active) .step-label {
-    display: none;
+
+  &--last {
+    flex: 0 0 auto;
+
+    ::ng-deep .stepper-progress {
+      display: none;
+    }
   }
 }
 

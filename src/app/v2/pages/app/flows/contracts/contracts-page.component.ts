@@ -19,6 +19,7 @@ import {
   KcIconComponent,
   KcInputComponent,
   KcNumberInputComponent,
+  KcStepperComponent,
   KcTooltipDirective,
 } from '@kaspacom/ui-kit';
 import { blake2b } from '@noble/hashes/blake2b';
@@ -187,6 +188,7 @@ type DeployIndexerState = {
     KcIconComponent,
     KcInputComponent,
     KcNumberInputComponent,
+    KcStepperComponent,
     KcTooltipDirective,
     CopyButtonComponent,
     AddressSmartInputComponent,
@@ -386,6 +388,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   contractTemplates = CONTRACT_TEMPLATES;
   createMode = signal<CreateMode>('template');
   activeTemplate = signal<ContractTemplate | null>(null);
+  deploySteps = computed<{ label: string; value: number }[]>(() => {
+    const pastChooseType =
+      this.activeTemplate() !== null || this.createMode() === 'custom';
+
+    return [
+      { label: 'Choose type', value: pastChooseType ? 100 : 0 },
+      {
+        label: 'Set details',
+        value: !pastChooseType ? 0 : this.isDeploying() ? 100 : 50,
+      },
+      { label: 'Review & deploy', value: this.isDeploying() ? 50 : 0 },
+    ];
+  });
   templateFormValues: { [paramName: string]: string } = {};
   templateFieldTouched: { [paramName: string]: boolean } = {};
   templateFieldErrors: { [paramName: string]: string } = {};

@@ -52,28 +52,18 @@
   @if (activeTab() === "deploy") {
     <div class="panel flex column gap-20">
       <!-- Stepper -->
-      <div class="stepper">
-        <div
-          class="step"
-          [class.active]="!activeTemplate() && createMode() !== 'custom'"
-          [class.done]="activeTemplate() || createMode() === 'custom'"
-        >
-          <span class="step-dot">1</span
-          ><span class="step-label">Choose type</span
-          ><span class="step-line"></span>
-        </div>
-        <div
-          class="step"
-          [class.active]="activeTemplate() || createMode() === 'custom'"
-        >
-          <span class="step-dot">2</span
-          ><span class="step-label">Set details</span
-          ><span class="step-line"></span>
-        </div>
-        <div class="step">
-          <span class="step-dot">3</span
-          ><span class="step-label">Review &amp; deploy</span>
-        </div>
+      <div class="deploy-stepper">
+        @for (step of deploySteps(); track step.label; let last = $last) {
+          <kc-stepper
+            class="deploy-stepper__item"
+            [class.deploy-stepper__item--last]="last"
+            [orientation]="'horizontal'"
+            [size]="'sm'"
+            [width]="'100%'"
+            [title]="step.label"
+            [value]="step.value"
+          />
+        }
       </div>
 
       <!-- Step 1: pick a template -->
@@ -1513,7 +1503,7 @@
   @if (activeTab() === "lookup-import") {
     <div class="flex column gap-16">
       <!-- Import from indexer / share -->
-      <div class="panel flex column gap-14">
+      <div class="panel flex column gap-20">
         <div class="flex column gap-4">
           <h3
             class="text-white"
@@ -1620,7 +1610,7 @@
       </div>
 
       <!-- Share a contract -->
-      <div class="panel flex column gap-14">
+      <div class="panel flex column gap-20">
         <div class="flex column gap-4">
           <h3
             class="text-white"

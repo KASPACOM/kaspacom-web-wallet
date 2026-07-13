@@ -10,11 +10,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import {
-  KcButtonComponent,
-  KcCheckboxComponent,
-  KcInputComponent,
-} from 'kaspacom-ui';
+import { KcNumberInputComponent, KcButtonComponent } from '@kaspacom/ui-kit';
 import {
   KaspaNetworkActionsService,
   MINIMAL_AMOUNT_TO_SEND,
@@ -29,14 +25,15 @@ import { AddressSmartInputComponent } from '../../../../../../../../../shared/ui
 import { FlowPageBaseComponent } from '../../../../../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../../../../../common/flow-page/interfaces/flow-page.interface';
 import { Krc20TokenLogoComponent } from '../../../../../../../home/assets-lists/l1/logo/krc20-token-logo/krc20-token-logo.component';
+import { CheckboxInputComponent } from '../../../../../../../../../shared/ui/input/checkbox/checkbox-input/checkbox-input.component';
 
 @Component({
   selector: 'app-send-kaspa',
   standalone: true,
   imports: [
     CommonModule,
-    KcInputComponent,
-    KcCheckboxComponent,
+    KcNumberInputComponent,
+    CheckboxInputComponent,
     KcButtonComponent,
     FormsModule,
     Krc20TokenLogoComponent,

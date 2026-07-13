@@ -1,8 +1,10 @@
+import { TestBed } from "@angular/core/testing";
 import { WalletActionResultType } from "@kaspacom/wallet-messages";
 import { AppWallet } from "../../../classes/AppWallet";
 import { CommitRevealAction } from "../../../types/wallet-action";
 import { Krc721CompletedActionDataService } from "./krc721-completed-action-data.service";
 import { Krc721ReviewActionDataService } from "./krc721-review-action-data.service";
+import { KaspaNetworkActionsService } from "../../kaspa-netwrok-services/kaspa-network-actions.service";
 
 describe('KRC721 action display services', () => {
     const walletAddress = 'kaspatest:qwalletaddress';
@@ -25,7 +27,12 @@ describe('KRC721 action display services', () => {
         let service: Krc721ReviewActionDataService;
 
         beforeEach(() => {
-            service = new Krc721ReviewActionDataService(kaspaNetworkActionsService as any);
+            TestBed.configureTestingModule({
+                providers: [
+                    { provide: KaspaNetworkActionsService, useValue: kaspaNetworkActionsService },
+                ],
+            });
+            service = TestBed.inject(Krc721ReviewActionDataService);
         });
 
         it('displays KRC721 list actions with collection, token id, wallet, and PSKT price', () => {

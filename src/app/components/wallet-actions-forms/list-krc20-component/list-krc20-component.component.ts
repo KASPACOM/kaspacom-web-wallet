@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { WalletService } from '../../../services/wallet.service';
 
@@ -17,18 +17,16 @@ import { MessagePopupService } from '../../../services/message-popup.service';
   imports: [FormsModule, ReactiveFormsModule],
 })
 export class ListKrc20Component implements OnInit {
+  private walletService = inject(WalletService);
+  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  private walletActionService = inject(WalletActionService);
+  private krc20WalletActionService = inject(Krc20WalletActionService);
+  private messagePopupService = inject(MessagePopupService);
+
   assets: undefined | TransferableAsset[] = undefined; // Replace with your dynamic asset list
   selectedAsset: undefined | string = undefined;
   amount: number | null = null;
   totalPrice: number | null = null;
-
-  constructor(
-    private walletService: WalletService,
-    private kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private walletActionService: WalletActionService,
-    private krc20WalletActionService: Krc20WalletActionService,
-    private messagePopupService: MessagePopupService,
-  ) {}
 
   async ngOnInit(): Promise<void> {
     this.assets =

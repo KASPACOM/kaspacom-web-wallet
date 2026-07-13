@@ -6,16 +6,14 @@
   <div class="wrapper" [class.wrapper--expanded]="isExpandedLayout()">
     <!-- Iframe account selection overlay - shows when account needs to be selected -->
     @if (shouldShowAccountSelectionOverlay()) {
-      <app-iframe-account-selection
-        (accountSelected)="onAccountSelected()"
-      ></app-iframe-account-selection>
+      <app-iframe-account-selection (accountSelected)="onAccountSelected()" />
     }
 
     <!-- Iframe loading spinner - shows during initial load -->
     @if (shouldEnforceAccountSelection() && showIframeLoader()) {
       <div class="iframe-overlay-cover">
         <div class="iframe-loader">
-          <kc-spinner size="lg"></kc-spinner>
+          <kc-spinner size="lg" />
         </div>
       </div>
     }
@@ -28,12 +26,12 @@
           class="wrapper__content full-width"
         >
           <div class="wrapper__header">
-            <app-wrapper-header></app-wrapper-header>
+            <app-wrapper-header />
           </div>
-          <router-outlet #outlet="outlet"></router-outlet>
+          <router-outlet #outlet="outlet" />
         </div>
         <div class="wrapper__nav">
-          <app-wrapper-nav></app-wrapper-nav>
+          <app-wrapper-nav />
         </div>
       </div>
 
@@ -51,7 +49,7 @@
                   [iconClass]="'icon-chevron-left'"
                   [size]="'lg'"
                   (click)="flowPagesService.navigateBack()"
-                ></kc-icon>
+                />
               }
               <span class="wrapper__right-title typo-title-4">
                 {{ flowPagesService.activePage()?.title }}
@@ -62,7 +60,7 @@
                   [iconClass]="'icon-close'"
                   [size]="'md'"
                   (click)="onFlowPageClose()"
-                ></kc-icon>
+                />
               }
             </div>
           } @else {
@@ -73,7 +71,7 @@
         <!-- Right-panel body -->
         <div class="wrapper__right-body">
           @if (flowPagesService.isAnyPageOpen()) {
-            <app-dynamic-flow-page-outlet></app-dynamic-flow-page-outlet>
+            <app-dynamic-flow-page-outlet />
           } @else {
             <!-- Placeholder shown when no action is active -->
             <div class="wrapper__right-placeholder">
@@ -108,13 +106,13 @@
         class="wrapper__content full-width"
       >
         <div class="wrapper__header">
-          <app-wrapper-header></app-wrapper-header>
+          <app-wrapper-header />
         </div>
-        <router-outlet #outlet="outlet"></router-outlet>
+        <router-outlet #outlet="outlet" />
       </div>
 
       <div class="wrapper__nav">
-        <app-wrapper-nav></app-wrapper-nav>
+        <app-wrapper-nav />
       </div>
 
       <!-- Flow Pages System (overlay) – only in normal mode -->
@@ -129,17 +127,17 @@
         (backdropClick)="onFlowPageBackdropClick()"
         (close)="onFlowPageClose()"
       >
-        <app-dynamic-flow-page-outlet></app-dynamic-flow-page-outlet>
+        <app-dynamic-flow-page-outlet />
       </app-flow-page>
     }
 
     <!-- Review Action Component – always present -->
-    <review-action></review-action>
+    <review-action />
 
     <!-- Quick Action Dialog – always present -->
-    <app-dynamic-quick-action-dialog-outlet></app-dynamic-quick-action-dialog-outlet>
+    <app-dynamic-quick-action-dialog-outlet />
 
     <!-- Notification Snackbar – always present -->
-    <kc-snackbar></kc-snackbar>
+    <kc-snackbar />
   </div>
 </div>

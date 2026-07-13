@@ -1,14 +1,13 @@
 import {
   Component,
-  Input,
-  Output,
-  EventEmitter,
   inject,
   ChangeDetectorRef,
   AfterViewInit,
+  input,
+  output,
 } from '@angular/core';
 
-import { KcIconComponent } from 'kaspacom-ui';
+import { KcIconComponent } from '@kaspacom/ui-kit';
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
 import { FlowPagesService } from '../../../../../../services/flow-pages.service';
 
@@ -20,10 +19,10 @@ import { FlowPagesService } from '../../../../../../services/flow-pages.service'
   styleUrl: './wallet-options-quick-action-dialog.component.scss',
 })
 export class WalletOptionsQuickActionDialogComponent implements AfterViewInit {
-  @Input() isOpen = false;
-  @Input() data: any;
-  @Output() backdropClick = new EventEmitter<void>();
-  @Output() close = new EventEmitter<void>();
+  readonly isOpen = input(false);
+  readonly data = input<any>();
+  readonly backdropClick = output<void>();
+  readonly close = output<void>();
 
   private cdr = inject(ChangeDetectorRef);
   private flowPagesService = inject(FlowPagesService);

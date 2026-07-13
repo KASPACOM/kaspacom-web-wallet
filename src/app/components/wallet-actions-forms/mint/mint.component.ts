@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { MessagePopupService } from '../../../services/message-popup.service';
@@ -13,14 +13,12 @@ import { WalletActionService } from '../../../services/wallet-action.service';
   imports: [FormsModule],
 })
 export class MintComponent {
-  protected selectedToken = '';
+  private utilsService = inject(UtilsHelper);
+  private walletActionService = inject(WalletActionService);
+  private krc20ActionWalletService = inject(Krc20WalletActionService);
+  private messagePopupService = inject(MessagePopupService);
 
-  constructor(
-    private utilsService: UtilsHelper,
-    private walletActionService: WalletActionService,
-    private krc20ActionWalletService: Krc20WalletActionService,
-    private messagePopupService: MessagePopupService,
-  ) {}
+  protected selectedToken = '';
 
   async mintToken() {
     if (!this.isTokenNameEmpty()) {

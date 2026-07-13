@@ -9,7 +9,7 @@
         (click)="settingsOpen.set(true)"
         title="Settings"
       >
-        <kc-icon [iconClass]="'icon-settings'" [size]="'sm'"></kc-icon>
+        <kc-icon [iconClass]="'icon-settings'" [size]="'sm'" />
       </button>
     </div>
 
@@ -78,12 +78,12 @@
                 [ticker]="fromToken()!.symbol"
                 [address]="fromToken()!.address"
                 size="md"
-              ></kc-token-logo>
+              />
               <span class="token-symbol">{{ fromToken()?.symbol }}</span>
             } @else {
               <span class="select-token-text">Select</span>
             }
-            <kc-icon iconClass="icon-chevron-down" size="xs"></kc-icon>
+            <kc-icon iconClass="icon-chevron-down" size="xs" />
           </button>
         </div>
       </div>
@@ -96,7 +96,7 @@
           title="Switch tokens"
         >
           <div class="switch-arrows">
-            <kc-icon iconClass="icon-switch-vertical-01" size="sm"></kc-icon>
+            <kc-icon iconClass="icon-switch-vertical-01" size="sm" />
           </div>
         </button>
       </div>
@@ -126,12 +126,12 @@
                 [ticker]="toToken()!.symbol"
                 [address]="toToken()!.address"
                 size="md"
-              ></kc-token-logo>
+              />
               <span class="token-symbol">{{ toToken()?.symbol }}</span>
             } @else {
               <span class="select-token-text">Select</span>
             }
-            <kc-icon iconClass="icon-chevron-down" size="xs"></kc-icon>
+            <kc-icon iconClass="icon-chevron-down" size="xs" />
           </button>
         </div>
         <!-- Min Received -->
@@ -160,8 +160,7 @@
       [isFullWidth]="true"
       [isDisabled]="isSwapDisabled()"
       (buttonClick)="executeSwap()"
-    >
-    </kc-button>
+    />
   </div>
 
   <app-token-selector-modal
@@ -171,14 +170,12 @@
     [excludedToken]="tokenModalOpen() === 'from' ? toToken() : fromToken()"
     (close)="tokenModalOpen.set(null)"
     (selectToken)="onTokenSelect($event)"
-  >
-  </app-token-selector-modal>
+  />
 
   <app-swap-settings-modal
     [open]="settingsOpen()"
     [initialSettings]="currentSettings()"
     (close)="settingsOpen.set(false)"
     (save)="onSettingsSave($event)"
-  >
-  </app-swap-settings-modal>
+  />
 </div>

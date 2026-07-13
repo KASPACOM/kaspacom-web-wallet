@@ -101,7 +101,7 @@
           </div>
           <div class="mempoll-transactions">
             <h3>Pending Transactions:</h3>
-            <mempool-transactions></mempool-transactions>
+            <mempool-transactions />
           </div>
           <!-- KRC20 Tokens -->
           <div class="krc20-tokens">
@@ -124,7 +124,7 @@
       }
       <div class="secondary-component">
         <div>
-          <review-action #reviewActionComponent></review-action>
+          <review-action #reviewActionComponent />
         </div>
         <!-- Tabs -->
         <div class="tabs-container">
@@ -177,22 +177,22 @@
           <div class="tab-content">
             @if (activeTab === "send") {
               <div class="send-assets-container">
-                <send-asset></send-asset>
+                <send-asset />
               </div>
             }
             @if (activeTab === "mint") {
               <div class="mint-container">
-                <mint></mint>
+                <mint />
               </div>
             }
             @if (activeTab === "deploy") {
               <div class="deploy-container">
-                <deploy></deploy>
+                <deploy />
               </div>
             }
             @if (activeTab === "kasplex-l2") {
               <div class="kasplex-l2-container">
-                <l2-transaction></l2-transaction>
+                <l2-transaction />
               </div>
             }
             <!-- This is for development -->
@@ -235,7 +235,7 @@
         <div class="tab-content">
           @if (infoActiveTab === "utxos") {
             <div>
-              <utxos-list [wallet]="wallet"></utxos-list>
+              <utxos-list [wallet]="wallet" />
             </div>
           }
           @if (infoActiveTab === "kaspa-transactions") {
@@ -243,7 +243,7 @@
               <transaction-history
                 [transactions]="kaspaTransactionsHistory"
                 [wallet]="wallet"
-              ></transaction-history>
+              />
             </div>
           }
           @if (infoActiveTab === "krc20-actions") {
@@ -251,7 +251,7 @@
               <krc20-operations-history
                 [operations]="krc20OperationHistory"
                 [wallet]="wallet"
-              ></krc20-operations-history>
+              />
             </div>
           }
         </div>
@@ -267,7 +267,7 @@
       <add-l2-chain
         (chainAdded)="onChainAdded($event)"
         (cancelled)="hideAddChainForm()"
-      ></add-l2-chain>
+      />
     </div>
   </div>
 }

@@ -1,4 +1,4 @@
-import { Injectable, Signal, signal } from '@angular/core';
+import { Injectable, Signal, signal, inject } from '@angular/core';
 import {
   SignPsktTransactionAction,
   WalletPsktSignInput,
@@ -51,6 +51,18 @@ const INSTANT_ACTIONS: { [key: string]: boolean } = {
   providedIn: 'root',
 })
 export class WalletActionService {
+  private walletService = inject(WalletService);
+  private utils = inject(UtilsHelper);
+  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  private krc20WalletActionService = inject(Krc20WalletActionService);
+  private baseProtocolClassesService = inject(BaseProtocolClassesService);
+  private readonly router = inject(Router);
+  private readonly ethereumHandleActionRequestService = inject(
+    EthereumHandleActionRequestService,
+  );
+  private readonly approvalFlowService = inject(ApprovalFlowService);
+  private readonly monitorService = inject(MonitorService);
+
   private actionsListByWallet = signal<{
     [walletIdWithAccount: string]: WalletActionListItem[];
   }>({});
@@ -59,10 +71,10 @@ export class WalletActionService {
   }>({});
   private actionToApprove = signal<
     | {
-      action: WalletAction;
-      resolve: (data: { isApproved: boolean; priorityFee?: bigint }) => void;
-      additionalParams?: { [parmName: string]: any };
-    }
+        action: WalletAction;
+        resolve: (data: { isApproved: boolean; priorityFee?: bigint }) => void;
+        additionalParams?: { [parmName: string]: any };
+      }
     | undefined
   >(undefined);
 
@@ -71,17 +83,7 @@ export class WalletActionService {
     undefined,
   );
 
-  constructor(
-    private walletService: WalletService,
-    private utils: UtilsHelper,
-    private kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private krc20WalletActionService: Krc20WalletActionService,
-    private baseProtocolClassesService: BaseProtocolClassesService,
-    private readonly router: Router,
-    private readonly ethereumHandleActionRequestService: EthereumHandleActionRequestService,
-    private readonly approvalFlowService: ApprovalFlowService,
-    private readonly monitorService: MonitorService,
-  ) {
+  constructor() {
     this.actionsListByWallet.set({});
     this.isActionsRunningByWallet.set({});
 
@@ -502,13 +504,13 @@ export class WalletActionService {
 
   getActionToApproveSignal(): Signal<
     | {
-      action: WalletAction;
-      resolve: (data: {
-        isApproved: boolean;
-        priorityFee?: bigint;
-        additionalParams?: { [parmName: string]: any };
-      }) => void;
-    }
+        action: WalletAction;
+        resolve: (data: {
+          isApproved: boolean;
+          priorityFee?: bigint;
+          additionalParams?: { [parmName: string]: any };
+        }) => void;
+      }
     | undefined
   > {
     return this.actionToApprove.asReadonly();
@@ -731,13 +733,11 @@ export class WalletActionService {
     if (isRevealOnly) {
       const actionData = action.data as CommitRevealAction;
       // Retreive kas only, no need for validation
-      if (
-        !(
-          actionData.options?.additionalOutputs ||
-          actionData.options?.revealPriorityFee ||
-          checkAlsoProtocolData
-        )
-      ) {
+      if (!(
+        actionData.options?.additionalOutputs ||
+        actionData.options?.revealPriorityFee ||
+        checkAlsoProtocolData
+      )) {
         return {
           isValidated: true,
         };

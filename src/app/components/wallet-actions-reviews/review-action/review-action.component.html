@@ -26,23 +26,22 @@
                     @if (row.inputField.fieldType == InputFieldType.CHECKBOX) {
                       <div>
                         <div class="checkbox-container">
-                          <kc-checkbox
-                            [label]="row.fieldName"
-                            [isChecked]="row.fieldValue === 'true'"
+                          <app-checkbox-input
+                            [checked]="row.fieldValue === 'true'"
                             (checkedChange)="
                               additionalParams[row.inputField.fieldParam] =
                                 $event
                             "
-                            size="md"
                           >
-                          </kc-checkbox>
+                            {{ row.fieldName }}
+                          </app-checkbox-input>
                         </div>
                       </div>
                     }
                   </div>
                 } @else {
                   <div
-                    [ngClass]="{
+                    [class]="{
                       detail: !row.isCodeBlock,
                       'detail-signing-message': row.isCodeBlock,
                     }"
@@ -67,7 +66,7 @@
             [action]="currentActionSignal()!.action"
             [wallet]="wallet"
             (priorityFeeSelected)="setCurrentPriorityFee($event)"
-          ></priority-fee-selection>
+          />
         }
       </div>
       <!-- Actions buttons -->
@@ -75,20 +74,18 @@
         <kc-button
           text="Approve"
           variant="primary"
-          size="lg"
+          size="m"
           [isFullWidth]="true"
           [isDisabled]="!isAvailableForApproval()"
           (buttonClick)="acceptTransaction()"
-        >
-        </kc-button>
+        />
         <kc-button
           text="Reject"
-          variant="tertiary"
-          size="lg"
+          variant="secondary"
+          size="m"
           [isFullWidth]="true"
           (buttonClick)="rejectTransaction()"
-        >
-        </kc-button>
+        />
       </div>
     </div>
   </div>

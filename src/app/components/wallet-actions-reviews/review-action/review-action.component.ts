@@ -1,5 +1,5 @@
-import { Component, computed } from '@angular/core';
-import { NgClass } from '@angular/common';
+import { Component, computed, inject } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import {
   SignPsktTransactionAction,
@@ -17,7 +17,8 @@ import {
   EIP1193RequestType,
 } from '@kaspacom/wallet-messages';
 import { InputFieldType } from '../../../types/action-display.type';
-import { KcButtonComponent, KcCheckboxComponent } from 'kaspacom-ui';
+import { KcButtonComponent } from '@kaspacom/ui-kit';
+import { CheckboxInputComponent } from '../../../v2/shared/ui/input/checkbox/checkbox-input/checkbox-input.component';
 
 const TIMEOUT = 2 * 60 * 1000;
 
@@ -26,14 +27,17 @@ const TIMEOUT = 2 * 60 * 1000;
   templateUrl: './review-action.component.html',
   styleUrls: ['./review-action.component.scss'],
   imports: [
-    NgClass,
     PriorityFeeSelectionComponent,
     FormsModule,
     KcButtonComponent,
-    KcCheckboxComponent,
+    CheckboxInputComponent,
   ],
 })
 export class ReviewActionComponent {
+  private walletService = inject(WalletService);
+  private walletActionService = inject(WalletActionService);
+  private readonly reviewActionDataService = inject(ReviewActionDataService);
+
   public WalletActionType = WalletActionType;
   public KRC20OperationType = KRC20OperationType;
   public InputFieldType = InputFieldType;
@@ -66,12 +70,6 @@ export class ReviewActionComponent {
   // Result
   protected currentPriorityFee: bigint | undefined = undefined;
   protected additionalParams: { [key: string]: any } = {};
-
-  constructor(
-    private walletService: WalletService,
-    private walletActionService: WalletActionService,
-    private readonly reviewActionDataService: ReviewActionDataService,
-  ) {}
 
   requestUserConfirmation(action: WalletAction): Promise<{
     isApproved: boolean;

@@ -14,8 +14,8 @@
           <kc-token-logo
             [ticker]="fromToken().symbol"
             [address]="fromToken().address"
-            size="lg">
-          </kc-token-logo>
+            size="lg"
+          />
           <div class="token-details">
             <span class="token-label">Sell</span>
             <span class="token-symbol">{{ fromToken().symbol }}</span>
@@ -28,7 +28,7 @@
 
       <!-- Arrow -->
       <div class="swap-arrow">
-        <kc-icon iconClass="icon-arrow-down" size="sm"></kc-icon>
+        <kc-icon iconClass="icon-arrow-down" size="sm" />
       </div>
 
       <!-- To Token -->
@@ -37,8 +37,8 @@
           <kc-token-logo
             [ticker]="toToken().symbol"
             [address]="toToken().address"
-            size="lg">
-          </kc-token-logo>
+            size="lg"
+          />
           <div class="token-details">
             <span class="token-label">Buy</span>
             <span class="token-symbol">{{ toToken().symbol }}</span>
@@ -61,13 +61,19 @@
       <!-- Min Received -->
       <div class="detail-row">
         <span class="detail-label">Min Received</span>
-        <span class="detail-value">{{ minReceived() | commaFormatter }} {{ toToken().symbol }}</span>
+        <span class="detail-value"
+          >{{ minReceived() | commaFormatter }} {{ toToken().symbol }}</span
+        >
       </div>
 
       <!-- Price Impact -->
       <div class="detail-row">
         <span class="detail-label">Price Impact</span>
-        <span class="detail-value" [class.warning]="priceImpact() !== '0' && +priceImpact() > 3">{{ priceImpact() }}%</span>
+        <span
+          class="detail-value"
+          [class.warning]="priceImpact() !== '0' && +priceImpact() > 3"
+          >{{ priceImpact() }}%</span
+        >
       </div>
 
       <!-- Max Slippage -->
@@ -95,7 +101,7 @@
       </div>
     </div>
 
-    <ng-content></ng-content>
+    <ng-content />
 
     <!-- Action Buttons -->
     <div class="action-buttons-section">
@@ -103,21 +109,21 @@
         <kc-button
           [text]="isLoading() ? 'Processing...' : 'Approve Swap'"
           variant="primary"
-          size="lg"
+          size="m"
           [isFullWidth]="true"
           [isDisabled]="isLoading() || !canApprove()"
           [isLoading]="isLoading()"
-          (buttonClick)="onApprove()">
-        </kc-button>
+          (buttonClick)="onApprove()"
+        />
 
         <kc-button
           text="Reject"
-          variant="tertiary"
-          size="lg"
+          variant="secondary"
+          size="m"
           [isFullWidth]="true"
           [isDisabled]="isLoading()"
-          (buttonClick)="onReject()">
-        </kc-button>
+          (buttonClick)="onReject()"
+        />
       </div>
     </div>
   </div>

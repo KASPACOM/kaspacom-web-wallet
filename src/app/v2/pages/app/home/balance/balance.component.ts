@@ -1,10 +1,6 @@
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
-import {
-  KcIconComponent,
-  KcSpinnerComponent,
-  KcTooltipDirective,
-} from 'kaspacom-ui';
+import { KcIconComponent, KcSpinnerComponent, KcTooltipDirective } from '@kaspacom/ui-kit';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { WalletService } from '../../../../../services/wallet.service';

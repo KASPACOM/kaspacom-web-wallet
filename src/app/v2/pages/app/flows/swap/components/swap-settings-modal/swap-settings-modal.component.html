@@ -1,41 +1,78 @@
-@if (open) {
-<kc-base-modal title="Settings" [showCloseButton]="true" [autoWidth]="false" (close)="onClose()">
+@if (open()) {
+  <kc-base-modal
+    title="Settings"
+    [showCloseButton]="true"
+    [autoWidth]="false"
+    (close)="onClose()"
+  >
     <div class="settings-content" [formGroup]="settingsForm">
-        <div class="form-field">
-            <div class="slippage-row">
-                <kc-input label="Slippage tolerance (%)" type="number" [isFullWidth]="true" placeholder="0.5"
-                    formControlName="maxSlippage"></kc-input>
-                <div class="slippage-options">
-                    <button class="slippage-btn" [class.active]="selectedSlippage() === 0.1" (click)="onSlippageClick(0.1)">0.1%</button>
-                    <button class="slippage-btn" [class.active]="selectedSlippage() === 0.5" (click)="onSlippageClick(0.5)">0.5%</button>
-                    <button class="slippage-btn" [class.active]="selectedSlippage() === 1.5" (click)="onSlippageClick(1.5)">1.5%</button>
-                </div>
-            </div>
-            <kc-form-error-message
-                [control]="settingsForm.get('maxSlippage')"
-                fieldName="Slippage"
-                validPatternExample="0.5"
-                [customErrorMessages]="{
-                    min: 'Slippage must be at least 0.01%',
-                    max: 'Slippage cannot exceed 50%'
-                }">
-            </kc-form-error-message>
+      <div class="form-field">
+        <div class="slippage-row">
+          <kc-number-input
+            label="Slippage tolerance (%)"
+            [enforceEthersFormat]="false"
+            placeholder="0.5"
+            formControlName="maxSlippage"
+          />
+          <div class="slippage-options">
+            <button
+              class="slippage-btn"
+              [class.active]="selectedSlippage() === 0.1"
+              (click)="onSlippageClick(0.1)"
+            >
+              0.1%
+            </button>
+            <button
+              class="slippage-btn"
+              [class.active]="selectedSlippage() === 0.5"
+              (click)="onSlippageClick(0.5)"
+            >
+              0.5%
+            </button>
+            <button
+              class="slippage-btn"
+              [class.active]="selectedSlippage() === 1.5"
+              (click)="onSlippageClick(1.5)"
+            >
+              1.5%
+            </button>
+          </div>
         </div>
+        <kc-form-error-message
+          [control]="settingsForm.get('maxSlippage')"
+          fieldName="Slippage"
+          validPatternExample="0.5"
+          [customErrorMessages]="{
+            min: 'Slippage must be at least 0.01%',
+            max: 'Slippage cannot exceed 50%',
+          }"
+        />
+      </div>
 
-        <div class="form-field">
-            <kc-input label="Transaction deadline (minutes)" type="number" [isFullWidth]="true" placeholder="20"
-                formControlName="swapDeadline"></kc-input>
-            <kc-form-error-message
-                [control]="settingsForm.get('swapDeadline')"
-                fieldName="Deadline"
-                [customErrorMessages]="{
-                    min: 'Deadline must be at least 1 minute',
-                    max: 'Deadline cannot exceed 4320 minutes (3 days)'
-                }">
-            </kc-form-error-message>
-        </div>
+      <div class="form-field">
+        <kc-number-input
+          label="Transaction deadline (minutes)"
+          [enforceEthersFormat]="false"
+          placeholder="20"
+          formControlName="swapDeadline"
+        />
+        <kc-form-error-message
+          [control]="settingsForm.get('swapDeadline')"
+          fieldName="Deadline"
+          [customErrorMessages]="{
+            min: 'Deadline must be at least 1 minute',
+            max: 'Deadline cannot exceed 4320 minutes (3 days)',
+          }"
+        />
+      </div>
 
-        <kc-button text="Save" variant="primary" [isFullWidth]="true" [isDisabled]="settingsForm.invalid" (buttonClick)="onSave()"></kc-button>
+      <kc-button
+        text="Save"
+        variant="primary"
+        [isFullWidth]="true"
+        [isDisabled]="settingsForm.invalid"
+        (buttonClick)="onSave()"
+      />
     </div>
-</kc-base-modal>
+  </kc-base-modal>
 }

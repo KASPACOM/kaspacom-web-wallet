@@ -8,9 +8,13 @@ import { Component, input, output } from '@angular/core';
 })
 export class CheckboxInputComponent {
   checked = input.required<boolean>();
+  isDisabled = input<boolean>(false);
   checkedChange = output<boolean>();
 
   toggle(event: Event) {
+    if (this.isDisabled()) {
+      return;
+    }
     const input = event.target as HTMLInputElement;
     this.checkedChange.emit(input.checked);
   }

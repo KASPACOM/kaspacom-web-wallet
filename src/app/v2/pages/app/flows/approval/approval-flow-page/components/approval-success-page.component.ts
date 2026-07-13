@@ -1,4 +1,4 @@
-import { Component, computed, inject, Input, OnInit } from '@angular/core';
+import { Component, computed, inject, OnInit, input } from '@angular/core';
 
 import { Router } from '@angular/router';
 import {
@@ -8,7 +8,7 @@ import {
   ProtocolType,
 } from '@kaspacom/wallet-messages';
 import { CompletedActionOverviewService } from '../../../../../../../services/action-info-services/completed-action-overview.service';
-import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import { ApprovalFlowService } from '../../../../../../services/approval-flow.service';
 import {
   trigger,
@@ -47,11 +47,7 @@ import { WalletActionService } from '../../../../../../../services/wallet-action
           <!-- Details Toggle Header -->
           <div class="details-spoiler-toggle" (click)="toggleDetails()">
             <div class="spoiler-left">
-              <kc-icon
-                iconClass="icon-info"
-                size="sm"
-                color="#6fc7ba"
-              ></kc-icon>
+              <kc-icon iconClass="icon-info" size="sm" color="#6fc7ba" />
               <span class="spoiler-label">Transaction Details</span>
             </div>
             <div class="spoiler-chevron">
@@ -61,8 +57,7 @@ import { WalletActionService } from '../../../../../../../services/wallet-action
                 "
                 size="sm"
                 color="var(--gray-60, #9E9E9E)"
-              >
-              </kc-icon>
+              />
             </div>
           </div>
           <!-- Details Content (Collapsible) -->
@@ -92,12 +87,11 @@ import { WalletActionService } from '../../../../../../../services/wallet-action
         <kc-button
           [text]="'Done'"
           variant="primary"
-          size="lg"
+          size="m"
           [isFullWidth]="true"
           (buttonClick)="onDone()"
           class="done-button"
-        >
-        </kc-button>
+        />
       </div>
     </div>
   `,
@@ -133,17 +127,18 @@ export class ApprovalSuccessPageComponent {
   private router = inject(Router);
   private walletActionService = inject(WalletActionService);
 
-  @Input() actionResult!: WalletActionResult;
+  readonly actionResult = input.required<WalletActionResult>();
 
   // Spoiler state
   protected showDetails = false;
 
   get successTitle(): string {
-    if (!this.actionResult) {
+    const actionResult = this.actionResult();
+    if (!actionResult) {
       return 'Transaction Successful!';
     }
 
-    switch (this.actionResult.type) {
+    switch (actionResult.type) {
       case WalletActionResultType.CompoundUtxos:
         return 'UTXOs compounded successfully!';
       default:
@@ -152,7 +147,7 @@ export class ApprovalSuccessPageComponent {
   }
 
   actionDisplay = computed(() =>
-    this.completedActionOverviewService.getActionDisplay(this.actionResult),
+    this.completedActionOverviewService.getActionDisplay(this.actionResult()),
   );
 
   toggleDetails() {
@@ -161,7 +156,7 @@ export class ApprovalSuccessPageComponent {
 
   onDone() {
     // Determine the appropriate tab based on the action result
-    const tab = this.getTabForActionResult(this.actionResult);
+    const tab = this.getTabForActionResult(this.actionResult());
 
     // Navigate to homepage with the correct tab
     this.router.navigate(['/app/home'], { queryParams: { tab } });

@@ -13,8 +13,7 @@
         [size]="'md'"
         (click)="goBack()"
         class="cursor-pointer hover-opacity"
-      >
-      </kc-icon>
+      />
       <h1 class="transaction-title text-gray-90">Transaction Details</h1>
     </div>
 
@@ -27,20 +26,12 @@
   @if (loading()) {
     <!-- Loading state -->
     <div class="details-section flex column gap-16">
-      <app-skeleton
-        [height]="'24px'"
-        [width]="'180px'"
-        class="mb-16"
-      ></app-skeleton>
+      <app-skeleton [height]="'24px'" [width]="'180px'" class="mb-16" />
       <div class="details-grid">
         @for (item of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; track item) {
           <div class="detail-card">
-            <app-skeleton
-              [height]="'16px'"
-              [width]="'80px'"
-              class="mb-8"
-            ></app-skeleton>
-            <app-skeleton [height]="'20px'" [width]="'100%'"></app-skeleton>
+            <app-skeleton [height]="'16px'" [width]="'80px'" class="mb-8" />
+            <app-skeleton [height]="'20px'" [width]="'100%'" />
           </div>
         }
       </div>
@@ -69,8 +60,7 @@
             <app-copy-button
               [value]="operationDetails()?.from || ''"
               [size]="'xs'"
-            >
-            </app-copy-button>
+            />
           </div>
         </div>
 
@@ -85,8 +75,7 @@
               <app-copy-button
                 [value]="operationDetails()?.to || ''"
                 [size]="'xs'"
-              >
-              </app-copy-button>
+              />
             </div>
           </div>
         }
@@ -149,8 +138,7 @@
             <app-copy-button
               [value]="operationDetails()?.checkpoint || ''"
               [size]="'xs'"
-            >
-            </app-copy-button>
+            />
           </div>
         </div>
 
@@ -183,15 +171,14 @@
             <app-copy-button
               [value]="operationDetails()?.hashRev || ''"
               [size]="'xs'"
-            >
-            </app-copy-button>
+            />
             <kc-icon
               [iconClass]="'icon-link'"
               [size]="'xs'"
               [color]="'var(--gray-60)'"
               class="cursor-pointer hover-opacity"
               (click)="openTransactionInExplorer()"
-            ></kc-icon>
+            />
           </div>
         </div>
       </div>

@@ -1,4 +1,12 @@
-import { Component, ViewChild, computed, inject, OnInit, AfterViewInit, DestroyRef } from '@angular/core';
+import {
+  Component,
+  ViewChild,
+  computed,
+  inject,
+  OnInit,
+  AfterViewInit,
+  DestroyRef,
+} from '@angular/core';
 import { TitleCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
@@ -24,15 +32,19 @@ export class KnsSummaryComponent implements OnInit, AfterViewInit {
   private destroyRef = inject(DestroyRef);
   private pendingThresholdReset = false;
   private _infiniteScrollDirective?: InfiniteScrollDirective;
-  
+
   // Configuration
   readonly config = L1_PAGINATION_CONFIG.kns;
-  
+
   // Loading skeletons - portfolio pattern with opacity cascade
   private static readonly SKELETON_COUNT = 6;
-  loadingSkeletons: unknown[] = Array.from({ length: KnsSummaryComponent.SKELETON_COUNT }).map(() => ({}));
-  
+  loadingSkeletons: unknown[] = Array.from({
+    length: KnsSummaryComponent.SKELETON_COUNT,
+  }).map(() => ({}));
+
   // Reference to infinite scroll directive
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ViewChild(InfiniteScrollDirective)
   set infiniteScrollDirective(directive: InfiniteScrollDirective | undefined) {
     this._infiniteScrollDirective = directive;
@@ -50,7 +62,7 @@ export class KnsSummaryComponent implements OnInit, AfterViewInit {
   constructor() {
     toObservable(this.knsListService.shouldCheckScrollPosition)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(shouldCheck => {
+      .subscribe((shouldCheck) => {
         if (!shouldCheck) {
           return;
         }
@@ -66,7 +78,7 @@ export class KnsSummaryComponent implements OnInit, AfterViewInit {
 
   // Data from service - portfolio pattern
   domains = computed(() => this.knsListService.domains());
-  
+
   // Loading states - portfolio pattern
   loading = computed(() => {
     if (this.domains().length > 0) {
@@ -78,9 +90,9 @@ export class KnsSummaryComponent implements OnInit, AfterViewInit {
       this.knsListService.isLoading()
     );
   });
-  
+
   isLoadingMore = computed(() => this.knsListService.isLoading());
-  
+
   hasMore = computed(() => this.knsListService.hasMore());
 
   ngOnInit(): void {
@@ -111,7 +123,7 @@ export class KnsSummaryComponent implements OnInit, AfterViewInit {
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   }
 
@@ -124,4 +136,4 @@ export class KnsSummaryComponent implements OnInit, AfterViewInit {
   onDomainClick(domain: KnsDomainAsset): void {
     this.router.navigate(['/app/home/asset/kns', domain.assetId]);
   }
-} 
+}

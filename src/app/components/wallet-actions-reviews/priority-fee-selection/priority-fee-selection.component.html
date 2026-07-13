@@ -3,11 +3,7 @@
     <!-- Fee Toggle Header -->
     <div class="fee-spoiler-toggle" (click)="toggleFeeSelection()">
       <div class="fee-summary-left">
-        <kc-icon
-          iconClass="icon-chain"
-          size="sm"
-          color="var(--kaspa-20)"
-        ></kc-icon>
+        <kc-icon iconClass="icon-chain" size="sm" color="var(--kaspa-20)" />
         <span class="fee-label">
           @if (totalTransactionsMass && totalTransactionsMass.length > 1) {
             Estimated Total Fees:
@@ -20,7 +16,7 @@
           @if (totalTransactionsMass && totalTransactionsMass.length > 1) {
             <span>≈{{ getEstimatedTotalFees() | sompiToNumber }}</span>
             <!-- Always show kaspa icon for fees -->
-            <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+            <kc-icon iconClass="icon-kaspa-coin" size="sm" />
           }
           @if (totalTransactionsMass && totalTransactionsMass.length == 1) {
             @if (additionalPriorityFee === undefined) {
@@ -29,7 +25,7 @@
             @if (additionalPriorityFee !== undefined) {
               <span>{{ getEstimatedTotalFees() | sompiToNumber }}</span>
               <!-- Always show kaspa icon for fees -->
-              <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+              <kc-icon iconClass="icon-kaspa-coin" size="sm" />
             }
           }
         </div>
@@ -41,8 +37,7 @@
           "
           size="sm"
           color="var(--gray-60)"
-        >
-        </kc-icon>
+        />
       </div>
     </div>
     <!-- Fee Selection Content (Collapsible) -->
@@ -63,7 +58,7 @@
               <div class="option-fee">
                 <span>{{ option.value.priorityFee | sompiToNumber }}</span>
                 <!-- Always show kaspa icon for fees -->
-                <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+                <kc-icon iconClass="icon-kaspa-coin" size="sm" />
               </div>
               <div class="option-time">
                 ~{{ option.value.estimatedSeconds.toFixed(1) }}s
@@ -82,17 +77,16 @@
               <span class="custom-fee-title">Custom Fee</span>
             </div>
             <div class="custom-fee-input">
-              <kc-input
-                type="number"
+              <kc-number-input
                 placeholder="Enter amount"
                 [(ngModel)]="customFee"
                 (valueChange)="selectOption('custom')"
               >
                 <div rightSideSlot class="input-icon">
                   <!-- Always show kaspa icon for fees -->
-                  <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+                  <kc-icon iconClass="icon-kaspa-coin" size="sm" />
                 </div>
-              </kc-input>
+              </kc-number-input>
             </div>
           </div>
         </div>
@@ -105,7 +99,7 @@
                 transactionMass! * minimumFeeMultiplier | sompiToNumber
               }}</span>
               <!-- Always show kaspa icon for fees -->
-              <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+              <kc-icon iconClass="icon-kaspa-coin" size="sm" />
             </div>
           </div>
           <div class="fee-detail-row">
@@ -117,7 +111,7 @@
               @if (additionalPriorityFee !== undefined) {
                 <span>{{ additionalPriorityFee | sompiToNumber }}</span>
                 <!-- Always show kaspa icon for fees -->
-                <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+                <kc-icon iconClass="icon-kaspa-coin" size="sm" />
               }
             </div>
           </div>
@@ -129,7 +123,7 @@
                   getAdditionalCommitActionPrice() | sompiToNumber
                 }}</span>
                 <!-- Always show kaspa icon for fees -->
-                <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+                <kc-icon iconClass="icon-kaspa-coin" size="sm" />
               </div>
             </div>
           }

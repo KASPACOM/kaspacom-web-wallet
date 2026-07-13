@@ -4,16 +4,16 @@ import {
   Component,
   ElementRef,
   OnDestroy,
-  ViewChild,
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { NavIcons } from './icons/nav-icons';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { filter } from 'rxjs';
-import { KcTooltipDirective } from 'kaspacom-ui';
+import { KcTooltipDirective } from '@kaspacom/ui-kit';
 
 export interface INavRoute {
   svgContent: SafeHtml;
@@ -27,9 +27,12 @@ export interface INavRoute {
   styleUrl: './wrapper-nav.component.scss',
 })
 export class WrapperNavComponent implements AfterViewInit, OnDestroy {
+  private router = inject(Router);
+
   private readonly domSanitizer = inject(DomSanitizer);
 
-  @ViewChild('navHost') myElementRef!: ElementRef<HTMLElement>;
+  readonly myElementRef =
+    viewChild.required<ElementRef<HTMLElement>>('navHost');
 
   private resizeObserver!: ResizeObserver;
   navHostWidth = signal(0);
@@ -63,7 +66,7 @@ export class WrapperNavComponent implements AfterViewInit, OnDestroy {
     return `${dist}px`;
   });
 
-  constructor(private router: Router) {
+  constructor() {
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe((eventGen) => {
@@ -80,11 +83,11 @@ export class WrapperNavComponent implements AfterViewInit, OnDestroy {
     this.updateWidth();
 
     this.resizeObserver = new ResizeObserver(() => this.updateWidth());
-    this.resizeObserver.observe(this.myElementRef.nativeElement);
+    this.resizeObserver.observe(this.myElementRef().nativeElement);
   }
 
   updateWidth() {
-    const el = this.myElementRef.nativeElement;
+    const el = this.myElementRef().nativeElement;
     this.navHostWidth.set(el.offsetWidth);
   }
 

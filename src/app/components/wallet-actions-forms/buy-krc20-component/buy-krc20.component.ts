@@ -1,4 +1,4 @@
-import { Component, effect, signal } from '@angular/core';
+import { Component, effect, signal, inject } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { WalletService } from '../../../services/wallet.service';
 
@@ -17,16 +17,16 @@ import { Krc20WalletActionService } from '../../../services/protocols/krc20/krc2
   imports: [FormsModule, ReactiveFormsModule, SompiToNumberPipe],
 })
 export class BuyKrc20Component {
+  private walletService = inject(WalletService);
+  private walletActionService = inject(WalletActionService);
+  private krc20WalletActionService = inject(Krc20WalletActionService);
+  private kasplexService = inject(KasplexKrc20Service);
+
   protected listings: ListingInfoEntry[] | undefined = undefined;
   protected selectedTicker = signal<string>('');
   protected onlyWalletListing = signal<boolean>(false);
 
-  constructor(
-    private walletService: WalletService,
-    private walletActionService: WalletActionService,
-    private krc20WalletActionService: Krc20WalletActionService,
-    private kasplexService: KasplexKrc20Service,
-  ) {
+  constructor() {
     effect(() => {
       this.onlyWalletListing;
 

@@ -1,12 +1,11 @@
 import {
   Component,
-  EventEmitter,
-  Input,
-  Output,
   computed,
   inject,
   OnChanges,
   SimpleChanges,
+  input,
+  output,
 } from '@angular/core';
 
 import {
@@ -15,11 +14,8 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
-import {
-  KcBaseModalComponent,
-  KcInputComponent,
-  KcButtonComponent,
-} from 'kaspacom-ui';
+import { KcBaseModalComponent } from 'kaspacom-ui';
+import { KcNumberInputComponent, KcButtonComponent } from '@kaspacom/ui-kit';
 import { FormErrorMessageComponent } from '../../../../../../shared/components/form-error/form-error.component';
 import type { SwapSettings } from '@kaspacom/swap-sdk';
 
@@ -29,7 +25,7 @@ import type { SwapSettings } from '@kaspacom/swap-sdk';
   imports: [
     ReactiveFormsModule,
     KcBaseModalComponent,
-    KcInputComponent,
+    KcNumberInputComponent,
     KcButtonComponent,
     FormErrorMessageComponent,
   ],
@@ -39,10 +35,10 @@ import type { SwapSettings } from '@kaspacom/swap-sdk';
 export class SwapSettingsModalComponent implements OnChanges {
   private fb = inject(FormBuilder);
 
-  @Input() open = false;
-  @Input() initialSettings: Partial<SwapSettings> | undefined;
-  @Output() close = new EventEmitter<void>();
-  @Output() save = new EventEmitter<SwapSettings>();
+  readonly open = input(false);
+  readonly initialSettings = input<Partial<SwapSettings>>();
+  readonly close = output<void>();
+  readonly save = output<SwapSettings>();
 
   settingsForm: FormGroup;
 
@@ -66,11 +62,10 @@ export class SwapSettingsModalComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['initialSettings'] || changes['open']) {
-      if (this.open && this.initialSettings) {
-        const maxSlippageValue = this.initialSettings.maxSlippage || '0.5';
-        const swapDeadlineValue = String(
-          this.initialSettings.swapDeadline || 20,
-        );
+      const initialSettings = this.initialSettings();
+      if (this.open() && initialSettings) {
+        const maxSlippageValue = initialSettings.maxSlippage || '0.5';
+        const swapDeadlineValue = String(initialSettings.swapDeadline || 20);
         this.settingsForm = this.createForm(
           maxSlippageValue,
           swapDeadlineValue,

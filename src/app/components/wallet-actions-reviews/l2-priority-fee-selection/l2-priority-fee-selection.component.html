@@ -12,11 +12,7 @@
     <!-- Gas Estimation Error Banner -->
     @if (hasGasLimitError) {
       <div class="error-banner">
-        <kc-icon
-          iconClass="icon-warning"
-          size="sm"
-          color="var(--orange-20)"
-        ></kc-icon>
+        <kc-icon iconClass="icon-warning" size="sm" color="var(--orange-20)" />
         <span
           >Gas estimation failed — the transaction may be invalid. Please verify
           it and adjust the gas limit manually.</span
@@ -26,16 +22,12 @@
     <!-- Fee Toggle Header (Spoiler) -->
     <div class="fee-spoiler-toggle" (click)="toggleFeeSelection()">
       <div class="fee-summary-left">
-        <kc-icon
-          iconClass="icon-chain"
-          size="sm"
-          color="var(--kaspa-20)"
-        ></kc-icon>
+        <kc-icon iconClass="icon-chain" size="sm" color="var(--kaspa-20)" />
         <span class="fee-label">Total Fee:</span>
         <div class="fee-value">
           @if (totalFeeDisplay() !== undefined) {
             <span>{{ totalFeeDisplay() | number: "1.4-8" }}</span>
-            <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+            <kc-icon iconClass="icon-kaspa-coin" size="sm" />
           } @else {
             <span class="not-selected">Not selected</span>
           }
@@ -48,8 +40,7 @@
           "
           size="sm"
           color="var(--gray-60)"
-        >
-        </kc-icon>
+        />
       </div>
     </div>
     <!-- Fee Selection Content (Collapsible) -->
@@ -71,7 +62,7 @@
                 <span>{{
                   gasFeeOptionToDisplay()!["low"].display | number: "1.4-8"
                 }}</span>
-                <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+                <kc-icon iconClass="icon-kaspa-coin" size="sm" />
               </div>
             }
             @if (gasFeeOtions()) {
@@ -91,7 +82,7 @@
                 <span>{{
                   gasFeeOptionToDisplay()!["normal"].display | number: "1.4-8"
                 }}</span>
-                <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+                <kc-icon iconClass="icon-kaspa-coin" size="sm" />
               </div>
             }
             @if (gasFeeOtions()) {
@@ -111,7 +102,7 @@
                 <span>{{
                   gasFeeOptionToDisplay()!["priority"].display | number: "1.4-8"
                 }}</span>
-                <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+                <kc-icon iconClass="icon-kaspa-coin" size="sm" />
               </div>
             }
             @if (gasFeeOtions()) {
@@ -136,13 +127,12 @@
               <span class="custom-fee-unit">in wei</span>
             </div>
             <div class="custom-fee-input">
-              <kc-input
-                type="number"
+              <kc-number-input
+                [enforceEthersFormat]="false"
                 placeholder="Min 1 wei"
                 [(ngModel)]="customFee"
                 (valueChange)="selectOption('custom')"
-              >
-              </kc-input>
+              />
             </div>
             @if (selectedOption() === "custom" && !isCustomFeeValid()) {
               <div class="validation-error">Minimum custom fee is 1 wei</div>
@@ -156,13 +146,12 @@
               <span class="custom-fee-title">Gas Limit</span>
             </div>
             <div class="custom-fee-input">
-              <kc-input
-                type="number"
+              <kc-number-input
+                [enforceEthersFormat]="false"
                 placeholder="Min 21,000"
                 [(ngModel)]="gasLimit"
                 (valueChange)="updateGasLimit()"
-              >
-              </kc-input>
+              />
             </div>
             @if (!isGasLimitValid()) {
               <div class="validation-error">
@@ -177,7 +166,7 @@
             <span class="detail-label">Base Fee</span>
             <div class="detail-value">
               <span>{{ currentBaseFee() | number: "1.4-8" }}</span>
-              <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+              <kc-icon iconClass="icon-kaspa-coin" size="sm" />
             </div>
           </div>
           @if (gasFeeOtions()) {
@@ -206,7 +195,7 @@
               <span class="detail-label">Total Fee</span>
               <div class="detail-value highlight">
                 <span>{{ totalFeeDisplay() | number: "1.4-8" }}</span>
-                <kc-icon iconClass="icon-kaspa-coin" size="sm"></kc-icon>
+                <kc-icon iconClass="icon-kaspa-coin" size="sm" />
               </div>
             </div>
           }

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   CommitRevealAction,
   CompoundUtxosAction,
@@ -29,10 +29,12 @@ import { formatUnits } from 'ethers';
   providedIn: 'root',
 })
 export class ReviewActionDataService {
-  constructor(
-    private readonly kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private readonly baseProtocolClassesService: BaseProtocolClassesService,
-  ) { }
+  private readonly kaspaNetworkActionsService = inject(
+    KaspaNetworkActionsService,
+  );
+  private readonly baseProtocolClassesService = inject(
+    BaseProtocolClassesService,
+  );
 
   public getActionDisplay(
     action: WalletAction | undefined,
@@ -212,18 +214,18 @@ export class ReviewActionDataService {
       0n,
     );
 
-
     const outputsSum = transactionData.outputs.reduce(
       (sum, input) => sum + input.value,
       0n,
     );
 
     if (inputsSum > 0n && transactionData.outputs.length) {
-
       for (let i = 0; i < transactionData.outputs.length; i++) {
-        if (transactionData.outputs[i].scriptPublicKey.script === transactionData.inputs[0].utxo!.scriptPublicKey.script) {
+        if (
+          transactionData.outputs[i].scriptPublicKey.script ===
+          transactionData.inputs[0].utxo!.scriptPublicKey.script
+        ) {
           if (transactionData.outputs[i].value - inputsSum < 0n) {
-
             const outputs = transactionData.outputs;
             outputs.splice(i, 1);
 
@@ -240,10 +242,17 @@ export class ReviewActionDataService {
 
     const transactionFee = inputsSum - outputsSum;
 
-    const feeRow = transactionFee > 0n ? [{
-      fieldName: 'Transaction Fee',
-      fieldValue: this.kaspaNetworkActionsService.sompiToNumber(transactionFee) + ' KAS',
-    }] : [];
+    const feeRow =
+      transactionFee > 0n
+        ? [
+            {
+              fieldName: 'Transaction Fee',
+              fieldValue:
+                this.kaspaNetworkActionsService.sompiToNumber(transactionFee) +
+                ' KAS',
+            },
+          ]
+        : [];
 
     return {
       title: `Sign${actionData.submitTransaction ? ' & Submit' : ''} PSKT Transaction`,

@@ -29,7 +29,7 @@
       [disabled]="isImporting()"
       type="button"
     >
-      <kc-icon [iconClass]="'icon-upload'" [size]="'sm'"></kc-icon>
+      <kc-icon [iconClass]="'icon-upload'" [size]="'sm'" />
       <span class="typo-text-2">Upload File</span>
     </button>
   </div>
@@ -38,17 +38,16 @@
     <kc-button
       [isFullWidth]="true"
       [text]="'Back'"
-      [variant]="'tertiary'"
+      [variant]="'secondary'"
       (buttonClick)="previous.emit()"
       [isDisabled]="isImporting()"
-    ></kc-button>
+    />
     <kc-button
       [isFullWidth]="true"
       [text]="isImporting() ? 'Importing...' : 'Import'"
       [variant]="'primary'"
       (buttonClick)="importBackup()"
       [isDisabled]="isImporting() || !backupData.trim()"
-    ></kc-button>
+    />
   </div>
 </div>
-

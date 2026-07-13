@@ -13,8 +13,7 @@
         [size]="'md'"
         (click)="goBack()"
         class="cursor-pointer hover-opacity"
-      >
-      </kc-icon>
+      />
       <h1 class="transaction-title text-gray-90">Transaction Details</h1>
     </div>
 
@@ -27,20 +26,12 @@
   @if (loading()) {
     <!-- Loading state -->
     <div class="details-section flex column gap-16">
-      <app-skeleton
-        [height]="'24px'"
-        [width]="'180px'"
-        class="mb-16"
-      ></app-skeleton>
+      <app-skeleton [height]="'24px'" [width]="'180px'" class="mb-16" />
       <div class="details-grid">
         @for (item of [1, 2, 3, 4, 5, 6, 7, 8]; track item) {
           <div class="detail-card">
-            <app-skeleton
-              [height]="'16px'"
-              [width]="'80px'"
-              class="mb-8"
-            ></app-skeleton>
-            <app-skeleton [height]="'20px'" [width]="'100%'"></app-skeleton>
+            <app-skeleton [height]="'16px'" [width]="'80px'" class="mb-8" />
+            <app-skeleton [height]="'20px'" [width]="'100%'" />
           </div>
         }
       </div>
@@ -56,7 +47,7 @@
           <div class="detail-label">Net Amount</div>
           <div class="detail-value-container flex align-items-center">
             <div class="kaspa-amount-display flex align-items-center gap-8">
-              <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'sm'"> </kc-icon>
+              <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'sm'" />
               <div
                 class="detail-value kaspa-amount font-weight-bold"
                 [style.color]="
@@ -79,7 +70,7 @@
           <div class="detail-label">Transaction Fee</div>
           <div class="detail-value-container flex align-items-center">
             <div class="kaspa-amount-display flex align-items-center gap-8">
-              <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'sm'"> </kc-icon>
+              <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'sm'" />
               <div
                 class="detail-value kaspa-amount font-weight-bold text-white"
               >
@@ -94,7 +85,7 @@
           <div class="detail-label">Total Input</div>
           <div class="detail-value-container flex align-items-center">
             <div class="kaspa-amount-display flex align-items-center gap-8">
-              <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'sm'"> </kc-icon>
+              <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'sm'" />
               <div
                 class="detail-value kaspa-amount font-weight-bold text-white"
               >
@@ -109,7 +100,7 @@
           <div class="detail-label">Total Output</div>
           <div class="detail-value-container flex align-items-center">
             <div class="kaspa-amount-display flex align-items-center gap-8">
-              <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'sm'"> </kc-icon>
+              <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'sm'" />
               <div
                 class="detail-value kaspa-amount font-weight-bold text-white"
               >
@@ -145,8 +136,7 @@
               <div class="detail-value font-mono break-all">
                 {{ shortenAddress(getBlockHashDisplay()) }}
               </div>
-              <app-copy-button [value]="getBlockHashDisplay()" [size]="'xs'">
-              </app-copy-button>
+              <app-copy-button [value]="getBlockHashDisplay()" [size]="'xs'" />
             </div>
           </div>
         }
@@ -164,15 +154,14 @@
             <app-copy-button
               [value]="transactionDetails()?.transaction_id || ''"
               [size]="'xs'"
-            >
-            </app-copy-button>
+            />
             <kc-icon
               [iconClass]="'icon-link'"
               [size]="'xs'"
               [color]="'var(--gray-60)'"
               class="cursor-pointer hover-opacity"
               (click)="openTransactionInExplorer()"
-            ></kc-icon>
+            />
           </div>
         </div>
       </div>
@@ -200,8 +189,7 @@
                   <div
                     class="kaspa-amount-display flex align-items-center gap-8"
                   >
-                    <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'sm'">
-                    </kc-icon>
+                    <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'sm'" />
                     <div
                       class="detail-value kaspa-amount font-weight-bold text-white"
                     >
@@ -218,8 +206,7 @@
                   <app-copy-button
                     [value]="input.previous_outpoint_address || ''"
                     [size]="'xs'"
-                  >
-                  </app-copy-button>
+                  />
                 </div>
               </div>
             }
@@ -246,8 +233,7 @@
                   <div
                     class="kaspa-amount-display flex align-items-center gap-8"
                   >
-                    <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'sm'">
-                    </kc-icon>
+                    <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'sm'" />
                     <div
                       class="detail-value kaspa-amount font-weight-bold text-white"
                     >
@@ -264,8 +250,7 @@
                   <app-copy-button
                     [value]="output.script_public_key_address || ''"
                     [size]="'xs'"
-                  >
-                  </app-copy-button>
+                  />
                 </div>
               </div>
             }

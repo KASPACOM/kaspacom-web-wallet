@@ -14,9 +14,7 @@ import { IFlowPageConfig } from './interfaces/flow-page.interface';
   imports: [CommonModule, NgComponentOutlet],
   template: `
     @if (componentToRender(); as comp) {
-      <ng-container
-        *ngComponentOutlet="comp; inputs: componentInputs()"
-      ></ng-container>
+      <ng-container *ngComponentOutlet="comp; inputs: componentInputs()" />
     }
   `,
 })

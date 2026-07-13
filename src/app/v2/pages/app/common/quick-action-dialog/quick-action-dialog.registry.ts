@@ -1,4 +1,4 @@
-import { Type, EventEmitter } from '@angular/core';
+import { Type, InputSignal, OutputEmitterRef } from '@angular/core';
 import { CreateWalletAccountQuickActionDialogComponent } from './implementations/create-wallet-account/create-wallet-account-quick-action-dialog.component';
 import { EditWalletQuickActionDialogComponent } from './implementations/edit-wallet/edit-wallet-quick-action-dialog.component';
 import { DeleteWalletAccountQuickActionDialogComponent } from './implementations/delete-wallet-account/delete-wallet-account-quick-action-dialog.component';
@@ -6,10 +6,10 @@ import { WalletOptionsQuickActionDialogComponent } from './implementations/walle
 import { DeleteWalletQuickActionDialogComponent } from './implementations/delete-wallet/delete-wallet-quick-action-dialog.component';
 
 export interface IQuickActionDialogComponent {
-  isOpen: boolean;
-  data: any;
-  backdropClick: EventEmitter<void>;
-  close: EventEmitter<void>;
+  isOpen: InputSignal<boolean>;
+  data: InputSignal<any>;
+  backdropClick: OutputEmitterRef<void>;
+  close: OutputEmitterRef<void>;
 }
 
 export type QuickActionDialogRegistryEntry = Type<IQuickActionDialogComponent>;

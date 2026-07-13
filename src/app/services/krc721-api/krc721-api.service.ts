@@ -1,31 +1,32 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, of, throwError } from 'rxjs';
-import { 
-  Krc721Collection, 
-  Krc721CollectionResponse, 
-  Krc721CollectionsResponse 
+import {
+  Krc721Collection,
+  Krc721CollectionResponse,
+  Krc721CollectionsResponse,
 } from './dtos/krc721-collection.dto';
-import { 
-  Krc721Nft, 
-  Krc721NftResponse, 
-  Krc721NftsResponse, 
-  Krc721TokenOwner, 
-  Krc721TokenOwnersResponse 
+import {
+  Krc721Nft,
+  Krc721NftResponse,
+  Krc721NftsResponse,
+  Krc721TokenOwner,
+  Krc721TokenOwnersResponse,
 } from './dtos/krc721-nft.dto';
-import { 
-  Krc721Operation, 
-  Krc721OperationsResponse 
+import {
+  Krc721Operation,
+  Krc721OperationsResponse,
 } from './dtos/krc721-operations.dto';
-import { Krc721PortfolioDetailResponse, Krc721PortfolioResponse } from './dtos/krc721-portfolio.dto';
+import {
+  Krc721PortfolioDetailResponse,
+  Krc721PortfolioResponse,
+} from './dtos/krc721-portfolio.dto';
 import { KaspaL1NetworkService } from '../kaspa-netwrok-services/kaspa-l1-network.service';
 
 @Injectable({ providedIn: 'root' })
 export class Krc721ApiService {
-  constructor(
-    private readonly httpClient: HttpClient,
-    private readonly kaspaL1NetworkService: KaspaL1NetworkService,
-  ) {}
+  private readonly httpClient = inject(HttpClient);
+  private readonly kaspaL1NetworkService = inject(KaspaL1NetworkService);
 
   private get baseUrl(): string | undefined {
     return this.kaspaL1NetworkService.getKrc721ApiBaseurl();
@@ -46,16 +47,23 @@ export class Krc721ApiService {
     }
 
     const params = new HttpParams().set('walletAddress', address);
-    return this.httpClient.get<Krc721PortfolioResponse>(`${this.kaspaComBaseUrl}/krc721/portfolio`, { params })
+    return this.httpClient
+      .get<Krc721PortfolioResponse>(
+        `${this.kaspaComBaseUrl}/krc721/portfolio`,
+        { params },
+      )
       .pipe(
-        catchError(err => {
+        catchError((err) => {
           console.error('Error fetching portfolio:', err);
           return of([]);
-        })
+        }),
       );
   }
 
-  getPortfolioDetails(address: string, ticker: string): Observable<Krc721PortfolioDetailResponse> {
+  getPortfolioDetails(
+    address: string,
+    ticker: string,
+  ): Observable<Krc721PortfolioDetailResponse> {
     if (!this.baseUrl || !this.kaspaComBaseUrl) {
       return of([]);
     }
@@ -63,13 +71,17 @@ export class Krc721ApiService {
     const params = new HttpParams()
       .set('walletAddress', address)
       .set('ticker', ticker.toUpperCase()); // Ensure ticker is uppercase
-      
-    return this.httpClient.get<Krc721PortfolioDetailResponse>(`${this.kaspaComBaseUrl}/krc721/portfolio`, { params })
+
+    return this.httpClient
+      .get<Krc721PortfolioDetailResponse>(
+        `${this.kaspaComBaseUrl}/krc721/portfolio`,
+        { params },
+      )
       .pipe(
-        catchError(err => {
+        catchError((err) => {
           console.error(`Error fetching portfolio details for ${ticker}:`, err);
           return of([]);
-        })
+        }),
       );
   }
 
@@ -77,7 +89,7 @@ export class Krc721ApiService {
   getCollections(
     offset: number = 0,
     limit: number = 50,
-    direction: 'forward' | 'backward' = 'forward'
+    direction: 'forward' | 'backward' = 'forward',
   ): Observable<Krc721CollectionsResponse> {
     if (!this.baseUrl) {
       return of({ message: 'success', result: [] });
@@ -94,7 +106,7 @@ export class Krc721ApiService {
         catchError((error) => {
           console.error('Error fetching collections:', error);
           return of({ message: 'error', result: [] });
-        })
+        }),
       );
   }
 
@@ -115,14 +127,20 @@ export class Krc721ApiService {
           if (error?.status === 404) {
             return of({ message: 'error', result: null as any });
           }
-          console.error(`Error fetching collection details for ${tick}:`, error);
+          console.error(
+            `Error fetching collection details for ${tick}:`,
+            error,
+          );
           return throwError(() => error);
-        })
+        }),
       );
   }
 
   // NFTs / Tokens
-  getTokenDetails(tick: string, tokenId: string): Observable<Krc721NftResponse> {
+  getTokenDetails(
+    tick: string,
+    tokenId: string,
+  ): Observable<Krc721NftResponse> {
     if (!this.baseUrl) {
       return throwError(
         () => new Error('KRC721 is not supported on the current network'),
@@ -138,9 +156,12 @@ export class Krc721ApiService {
           if (error?.status === 404) {
             return of({ message: 'error', result: null as any });
           }
-          console.error(`Error fetching token details for ${tick}/${tokenId}:`, error);
+          console.error(
+            `Error fetching token details for ${tick}/${tokenId}:`,
+            error,
+          );
           return throwError(() => error);
-        })
+        }),
       );
   }
 
@@ -149,7 +170,7 @@ export class Krc721ApiService {
     address: string,
     offset?: number,
     limit?: number,
-    direction: 'forward' | 'backward' = 'forward'
+    direction: 'forward' | 'backward' = 'forward',
   ): Observable<Krc721NftsResponse> {
     if (!this.baseUrl) {
       return of({ message: 'success', result: [] });
@@ -166,13 +187,13 @@ export class Krc721ApiService {
         catchError((error) => {
           console.error(`Error fetching NFTs for address ${address}:`, error);
           return of({ message: 'error', result: [] });
-        })
+        }),
       );
   }
 
   getAddressCollectionHoldings(
     address: string,
-    tick: string
+    tick: string,
   ): Observable<Krc721NftsResponse> {
     if (!this.baseUrl) {
       return of({ message: 'success', result: [] });
@@ -184,10 +205,10 @@ export class Krc721ApiService {
         catchError((error) => {
           console.error(
             `Error fetching holdings for address ${address} and collection ${tick}:`,
-            error
+            error,
           );
           return of({ message: 'error', result: [] });
-        })
+        }),
       );
   }
 
@@ -195,7 +216,7 @@ export class Krc721ApiService {
   getTokenOwners(
     tick: string,
     offset?: number,
-    limit?: number
+    limit?: number,
   ): Observable<Krc721TokenOwnersResponse> {
     if (!this.baseUrl) {
       return of({ message: 'success', result: [] });
@@ -206,19 +227,21 @@ export class Krc721ApiService {
     if (limit !== undefined) params = params.set('limit', limit.toString());
 
     return this.httpClient
-      .get<Krc721TokenOwnersResponse>(`${this.baseUrl}/owners/${tick}`, { params })
+      .get<Krc721TokenOwnersResponse>(`${this.baseUrl}/owners/${tick}`, {
+        params,
+      })
       .pipe(
         catchError((error) => {
           console.error(`Error fetching token owners for ${tick}:`, error);
           return throwError(error);
-        })
+        }),
       );
   }
 
   // Operations
   getOperations(
     offset?: string,
-    direction: 'forward' | 'backward' = 'forward'
+    direction: 'forward' | 'backward' = 'forward',
   ): Observable<Krc721OperationsResponse> {
     if (!this.baseUrl) {
       return of({ message: 'success', result: [] });
@@ -234,11 +257,13 @@ export class Krc721ApiService {
         catchError((error) => {
           console.error('Error fetching operations:', error);
           return of({ message: 'error', result: [] });
-        })
+        }),
       );
   }
 
-  getOperationByScore(score: string): Observable<{ message: string; result: Krc721Operation }> {
+  getOperationByScore(
+    score: string,
+  ): Observable<{ message: string; result: Krc721Operation }> {
     if (!this.baseUrl) {
       return throwError(
         () => new Error('KRC721 is not supported on the current network'),
@@ -246,16 +271,20 @@ export class Krc721ApiService {
     }
 
     return this.httpClient
-      .get<{ message: string; result: Krc721Operation }>(`${this.baseUrl}/ops/score/${score}`)
+      .get<{ message: string; result: Krc721Operation }>(
+        `${this.baseUrl}/ops/score/${score}`,
+      )
       .pipe(
         catchError((error) => {
           console.error(`Error fetching operation by score ${score}:`, error);
           return of({ message: 'error', result: null as any });
-        })
+        }),
       );
   }
 
-  getOperationByTxId(txId: string): Observable<{ message: string; result: Krc721Operation }> {
+  getOperationByTxId(
+    txId: string,
+  ): Observable<{ message: string; result: Krc721Operation }> {
     if (!this.baseUrl) {
       return throwError(
         () => new Error('KRC721 is not supported on the current network'),
@@ -263,52 +292,61 @@ export class Krc721ApiService {
     }
 
     return this.httpClient
-      .get<{ message: string; result: Krc721Operation }>(`${this.baseUrl}/ops/txid/${txId}`)
+      .get<{ message: string; result: Krc721Operation }>(
+        `${this.baseUrl}/ops/txid/${txId}`,
+      )
       .pipe(
         catchError((error) => {
           console.error(`Error fetching operation by txId ${txId}:`, error);
           return of({ message: 'error', result: null as any });
-        })
+        }),
       );
   }
 
   // Royalties
   getRoyaltyFees(
     address: string,
-    tick: string
+    tick: string,
   ): Observable<{ message: string; result: string }> {
     if (!this.baseUrl) {
       return of({ message: 'error', result: '0' });
     }
 
     return this.httpClient
-      .get<{ message: string; result: string }>(`${this.baseUrl}/royalties/${address}/${tick}`)
+      .get<{ message: string; result: string }>(
+        `${this.baseUrl}/royalties/${address}/${tick}`,
+      )
       .pipe(
         catchError((error) => {
           console.error(
             `Error fetching royalty fees for address ${address} and collection ${tick}:`,
-            error
+            error,
           );
           return of({ message: 'error', result: '0' });
-        })
+        }),
       );
   }
 
   // Rejection Reasons
   getRejectionReason(
-    txId: string
+    txId: string,
   ): Observable<{ message: string; result: string }> {
     if (!this.baseUrl) {
       return of({ message: 'error', result: '' });
     }
 
     return this.httpClient
-      .get<{ message: string; result: string }>(`${this.baseUrl}/rejections/txid/${txId}`)
+      .get<{ message: string; result: string }>(
+        `${this.baseUrl}/rejections/txid/${txId}`,
+      )
       .pipe(
         catchError((error) => {
-          console.error(`Error fetching rejection reason for txId ${txId}:`, error);
+          console.error(
+            `Error fetching rejection reason for txId ${txId}:`,
+            error,
+          );
           return of({ message: 'error', result: '' });
-        })
+        }),
       );
   }
 
@@ -316,7 +354,7 @@ export class Krc721ApiService {
   getOwnershipHistory(
     tick: string,
     tokenId: string,
-    offset?: string
+    offset?: string,
   ): Observable<Krc721TokenOwnersResponse> {
     if (!this.baseUrl) {
       return of({ message: 'success', result: [] });
@@ -326,15 +364,18 @@ export class Krc721ApiService {
     if (offset) params = params.set('offset', offset);
 
     return this.httpClient
-      .get<Krc721TokenOwnersResponse>(`${this.baseUrl}/history/${tick}/${tokenId}`, { params })
+      .get<Krc721TokenOwnersResponse>(
+        `${this.baseUrl}/history/${tick}/${tokenId}`,
+        { params },
+      )
       .pipe(
         catchError((error) => {
           console.error(
             `Error fetching ownership history for ${tick}/${tokenId}:`,
-            error
+            error,
           );
           return of({ message: 'error', result: [] });
-        })
+        }),
       );
   }
 
@@ -343,7 +384,7 @@ export class Krc721ApiService {
     try {
       const response = await this.getAddressNfts(address).toPromise();
       if (response?.message === 'success' && response.result) {
-        const collections = new Set(response.result.map(nft => nft.tick));
+        const collections = new Set(response.result.map((nft) => nft.tick));
         return Array.from(collections);
       }
       return [];
@@ -353,9 +394,15 @@ export class Krc721ApiService {
     }
   }
 
-  async getWalletNftsByCollection(address: string, tick: string): Promise<Krc721Nft[]> {
+  async getWalletNftsByCollection(
+    address: string,
+    tick: string,
+  ): Promise<Krc721Nft[]> {
     try {
-      const response = await this.getAddressCollectionHoldings(address, tick).toPromise();
+      const response = await this.getAddressCollectionHoldings(
+        address,
+        tick,
+      ).toPromise();
       return response?.result || [];
     } catch (error) {
       console.error(`Error getting NFTs for collection ${tick}:`, error);
@@ -365,20 +412,17 @@ export class Krc721ApiService {
 
   // Load NFT metadata from cache
   getNftMetadata(tick: string, tokenId: string): Observable<any> {
-
     if (!this.cacheStreamUrl) {
       return of(null);
     }
 
     const metadataUrl = `${this.cacheStreamUrl}/metadata/${tick}/${tokenId}`;
-    
-    return this.httpClient
-      .get<any>(metadataUrl)
-      .pipe(
-        catchError((error) => {
-          console.error(`Error fetching metadata for ${tick}/${tokenId}:`, error);
-          return of(null);
-        })
-      );
+
+    return this.httpClient.get<any>(metadataUrl).pipe(
+      catchError((error) => {
+        console.error(`Error fetching metadata for ${tick}/${tokenId}:`, error);
+        return of(null);
+      }),
+    );
   }
 }

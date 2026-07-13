@@ -19,8 +19,7 @@
                   [wallet]="wallet()"
                   (priorityFeeSelected)="setL2CurrentPriorityFee($event)"
                   (gasLimitSelected)="setL2GasLimit($event)"
-                >
-                </l2-priority-fee-selection>
+                />
               }
             </app-swap-approval>
           } @else {
@@ -95,7 +94,7 @@
                     iconClass="icon-warning"
                     size="lg"
                     color="var(--orange-20)"
-                  ></kc-icon>
+                  />
                   <h3>Unknown Action</h3>
                   <p>
                     This action type is not recognized. Please proceed with
@@ -109,8 +108,7 @@
                   [action]="approvalConfig()!.action"
                   [wallet]="wallet()"
                   (priorityFeeSelected)="setCurrentPriorityFee($event)"
-                >
-                </priority-fee-selection>
+                />
               }
               <!-- Priority Fee Selection -->
               @if (isActionHasL2PriorityFee()) {
@@ -119,8 +117,7 @@
                   [wallet]="wallet()"
                   (priorityFeeSelected)="setL2CurrentPriorityFee($event)"
                   (gasLimitSelected)="setL2GasLimit($event)"
-                >
-                </l2-priority-fee-selection>
+                />
               }
               <!-- Action Buttons - Last element that gets pushed to bottom -->
               <div class="action-buttons-section">
@@ -128,24 +125,22 @@
                   <kc-button
                     [text]="isLoading() ? 'Processing...' : 'Approve'"
                     variant="primary"
-                    size="lg"
+                    size="m"
                     [isFullWidth]="true"
                     [isDisabled]="!isAvailableForApproval()"
                     [isLoading]="isLoading()"
                     (buttonClick)="onAccept()"
                     class="accept-button"
-                  >
-                  </kc-button>
+                  />
                   <kc-button
                     [text]="'Reject'"
-                    variant="tertiary"
-                    size="lg"
+                    variant="secondary"
+                    size="m"
                     [isFullWidth]="true"
                     [isDisabled]="isLoading()"
                     (buttonClick)="onReject()"
                     class="reject-button"
-                  >
-                  </kc-button>
+                  />
                 </div>
               </div>
             </div>
@@ -155,23 +150,18 @@
       }
       <!-- Processing/Loading State -->
       @case (ApprovalFlowState.PROCESSING) {
-        <app-approval-loading-page> </app-approval-loading-page>
+        <app-approval-loading-page />
       }
       <!-- Success State -->
       @case (ApprovalFlowState.SUCCESS) {
-        <app-approval-success-page [actionResult]="approvalConfig()!.result!">
-        </app-approval-success-page>
+        <app-approval-success-page [actionResult]="approvalConfig()!.result!" />
       }
       <!-- Error State -->
       @case (ApprovalFlowState.ERROR) {
         <div class="error-container">
           <div class="error-content">
             <div class="error-icon-wrapper">
-              <kc-icon
-                iconClass="icon-warning"
-                size="lg"
-                color="#f87171"
-              ></kc-icon>
+              <kc-icon iconClass="icon-warning" size="lg" color="#f87171" />
             </div>
             <h2>Transaction Failed</h2>
             <div class="error-message">
@@ -180,11 +170,10 @@
             <kc-button
               [text]="'Close'"
               variant="secondary"
-              size="lg"
+              size="m"
               [isFullWidth]="true"
               (buttonClick)="approvalFlowService.closeApproval()"
-            >
-            </kc-button>
+            />
           </div>
         </div>
       }

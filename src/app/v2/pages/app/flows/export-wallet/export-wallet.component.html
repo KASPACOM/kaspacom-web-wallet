@@ -33,7 +33,7 @@
           [text]="'Continue'"
           [isDisabled]="isVerifying() || !password().trim()"
           (buttonClick)="onVerifyPassword()"
-        ></kc-button>
+        />
       </div>
     </div>
   } @else {
@@ -56,7 +56,7 @@
               class="seed-container__word"
               [idx]="$index + 1"
               [word]="item"
-            ></app-seed-phrase-word>
+            />
           }
         </div>
       } @else {
@@ -70,17 +70,17 @@
       @if (hasMnemonic()) {
         <div class="flex full-width justify-content-between">
           <kc-button
-            [variant]="'tertiary'"
+            [variant]="'secondary'"
             [suffixIcon]="'icon-copy'"
             [text]="'Copy'"
             (buttonClick)="copySeedToClipboard()"
-          ></kc-button>
+          />
           <kc-button
             [variant]="'primary'"
             [suffixIcon]="'icon-download'"
             [text]="'Download .txt'"
             (buttonClick)="downloadSeedAsTxt()"
-          ></kc-button>
+          />
         </div>
       }
     </div>

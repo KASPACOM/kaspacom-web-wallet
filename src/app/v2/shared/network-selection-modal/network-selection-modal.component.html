@@ -25,7 +25,7 @@
           </div>
           <div class="network-status">
             @if (isCurrentL1Network(network)) {
-              <kc-icon [iconClass]="'icon-check'" [size]="'sm'"></kc-icon>
+              <kc-icon [iconClass]="'icon-check'" [size]="'sm'" />
             }
           </div>
         </div>
@@ -93,7 +93,7 @@
               </div>
             } @else {
               @if (isCurrentNetwork(network.chainId)) {
-                <kc-icon [iconClass]="'icon-check'" [size]="'sm'"></kc-icon>
+                <kc-icon [iconClass]="'icon-check'" [size]="'sm'" />
               }
               @if (isCustomNetwork(network.chainId)) {
                 <button
@@ -105,7 +105,7 @@
                   "
                   (click)="confirmDelete($event, network.chainId)"
                 >
-                  <kc-icon [iconClass]="'icon-trash'" [size]="'sm'"></kc-icon>
+                  <kc-icon [iconClass]="'icon-trash'" [size]="'sm'" />
                 </button>
               }
             }
@@ -124,7 +124,7 @@
       (keydown.space)="onAddNetworkSpaceKey($event)"
     >
       <div class="add-network-icon">
-        <kc-icon [iconClass]="'icon-plus'" [size]="'sm'"></kc-icon>
+        <kc-icon [iconClass]="'icon-plus'" [size]="'sm'" />
       </div>
       <span class="add-network-label">Add custom network</span>
     </div>

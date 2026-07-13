@@ -1,183 +1,32 @@
 @if (open()) {
-<kc-base-modal title="Select a token" [showCloseButton]="true" [autoWidth]="false" (close)="onClose()">
-  <div class="token-selector-content">
+  <kc-base-modal
+    title="Select a token"
+    [showCloseButton]="true"
+    [autoWidth]="false"
+    (close)="onClose()"
+  >
+    <div class="token-selector-content">
+      <kc-input
+        placeholder="Search name, symbol, or address"
+        type="text"
+        prefixIcon="icon-search"
+        (valueChange)="onSearchChange($any($event))"
+      />
 
-    <kc-input
-      placeholder="Search name, symbol, or address"
-      type="text"
-      [isFullWidth]="true"
-      prefixIcon="pi pi-search"
-      (valueChange)="onSearchChange($event)"
-    ></kc-input>
-
-    <div class="token-list">
-
-      <!-- ── SEARCH ACTIVE ── -->
-      @if (searchQuery().trim()) {
-
-        @if (searchLoading()) {
-          <div class="section-loading">Searching...</div>
-        } @else if (searchResults().length === 0) {
-          <div class="no-tokens">
-            <span>No tokens found</span>
-            <span class="no-tokens-hint">Try another name or paste a contract address.</span>
-          </div>
-        } @else {
-          @for (token of searchResults(); track token.address) {
-            <div
-              class="token-item"
-              role="button"
-              tabindex="0"
-              (click)="onTokenSelect(token)"
-              (keydown)="onRowKey($event, token)"
-            >
-              <div class="token-info">
-                <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
-                <div class="token-details">
-                  <div class="token-symbol-row">
-                    <span class="token-symbol">{{ token.symbol }}</span>
-                    @if (isVerifiedToken(token)) {
-                      <span class="verified-badge" kcTooltip="Verified token" role="img" aria-label="Verified token">
-                        <kc-icon [iconClass]="'icon-check-verified-02'" [size]="'xs'"></kc-icon>
-                      </span>
-                    }
-                    @if (isPotentialHarm(token)) {
-                      <span class="harm-badge" kcTooltip="This token uses the same symbol as a verified token but has a different address. It may be fraudulent." role="img" aria-label="Potentially fraudulent token">
-                        <kc-icon [iconClass]="'icon-warning'" [size]="'xs'" [color]="'var(--red-20)'"></kc-icon>
-                      </span>
-                    }
-                  </div>
-                  <div class="token-meta">
-                    <span class="token-name">{{ token.name }}</span>
-                    <button
-                      type="button"
-                      class="token-address"
-                      (click)="copyAddress($event, token.address)"
-                      (keydown.enter)="$event.stopPropagation()"
-                      (keydown.space)="$event.stopPropagation()"
-                      [attr.aria-label]="'Copy address for ' + token.symbol"
-                    >
-                      {{ shortenAddress(token.address) }}
-                    </button>
-                  </div>
-                </div>
-              </div>
-              @if (token.balance) {
-                <span class="token-balance">{{ token.balance | commaFormatter }}</span>
-              }
+      <div class="token-list">
+        <!-- ── SEARCH ACTIVE ── -->
+        @if (searchQuery().trim()) {
+          @if (searchLoading()) {
+            <div class="section-loading">Searching...</div>
+          } @else if (searchResults().length === 0) {
+            <div class="no-tokens">
+              <span>No tokens found</span>
+              <span class="no-tokens-hint"
+                >Try another name or paste a contract address.</span
+              >
             </div>
-          }
-        }
-
-      } @else {
-
-        <!-- ── NO QUERY: YOUR TOKENS ── -->
-        @if (isLoading()) {
-          <div class="section-loading">Loading tokens...</div>
-        } @else if (userTokens().length) {
-          <div class="section-header">Your tokens</div>
-          @for (token of userTokens(); track token.address) {
-            <div
-              class="token-item"
-              role="button"
-              tabindex="0"
-              (click)="onTokenSelect(token)"
-              (keydown)="onRowKey($event, token)"
-            >
-              <div class="token-info">
-                <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
-                <div class="token-details">
-                  <div class="token-symbol-row">
-                    <span class="token-symbol">{{ token.symbol }}</span>
-                    @if (isVerifiedToken(token)) {
-                      <span class="verified-badge" kcTooltip="Verified token" role="img" aria-label="Verified token">
-                        <kc-icon [iconClass]="'icon-check-verified-02'" [size]="'xs'"></kc-icon>
-                      </span>
-                    }
-                    @if (isPotentialHarm(token)) {
-                      <span class="harm-badge" kcTooltip="This token uses the same symbol as a verified token but has a different address. It may be fraudulent." role="img" aria-label="Potentially fraudulent token">
-                        <kc-icon [iconClass]="'icon-warning'" [size]="'xs'" [color]="'var(--red-20)'"></kc-icon>
-                      </span>
-                    }
-                  </div>
-                  <div class="token-meta">
-                    <span class="token-name">{{ token.name }}</span>
-                    <button
-                      type="button"
-                      class="token-address"
-                      (click)="copyAddress($event, token.address)"
-                      (keydown.enter)="$event.stopPropagation()"
-                      (keydown.space)="$event.stopPropagation()"
-                      [attr.aria-label]="'Copy address for ' + token.symbol"
-                    >
-                      {{ shortenAddress(token.address) }}
-                    </button>
-                  </div>
-                </div>
-              </div>
-              @if (token.balance) {
-                <span class="token-balance">{{ token.balance | commaFormatter }}</span>
-              }
-            </div>
-          }
-        }
-
-        <!-- ── NO QUERY: MOST TRADED ── -->
-        @if (mostTradedLoading()) {
-          <div class="section-loading">Loading popular tokens...</div>
-        } @else if (mostTradedTokens().length) {
-          <div class="section-header">Most traded</div>
-          @for (token of mostTradedTokens(); track token.address) {
-            <div
-              class="token-item"
-              role="button"
-              tabindex="0"
-              (click)="onTokenSelect(token)"
-              (keydown)="onRowKey($event, token)"
-            >
-              <div class="token-info">
-                <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
-                <div class="token-details">
-                  <div class="token-symbol-row">
-                    <span class="token-symbol">{{ token.symbol }}</span>
-                    @if (isVerifiedToken(token)) {
-                      <span class="verified-badge" kcTooltip="Verified token" role="img" aria-label="Verified token">
-                        <kc-icon [iconClass]="'icon-check-verified-02'" [size]="'xs'"></kc-icon>
-                      </span>
-                    }
-                    @if (isPotentialHarm(token)) {
-                      <span class="harm-badge" kcTooltip="This token uses the same symbol as a verified token but has a different address. It may be fraudulent." role="img" aria-label="Potentially fraudulent token">
-                        <kc-icon [iconClass]="'icon-warning'" [size]="'xs'" [color]="'var(--red-20)'"></kc-icon>
-                      </span>
-                    }
-                  </div>
-                  <div class="token-meta">
-                    <span class="token-name">{{ token.name }}</span>
-                    <button
-                      type="button"
-                      class="token-address"
-                      (click)="copyAddress($event, token.address)"
-                      (keydown.enter)="$event.stopPropagation()"
-                      (keydown.space)="$event.stopPropagation()"
-                      [attr.aria-label]="'Copy address for ' + token.symbol"
-                    >
-                      {{ shortenAddress(token.address) }}
-                    </button>
-                  </div>
-                </div>
-              </div>
-              @if (token.balance) {
-                <span class="token-balance">{{ token.balance | commaFormatter }}</span>
-              }
-            </div>
-          }
-        }
-
-        <!-- ── NO QUERY: RECENT SEARCHES ── -->
-        @if (searchHistory().length) {
-          <div class="section-header">Recent searches</div>
-          @for (token of searchHistory(); track token.address) {
-            @if (token?.address?.toLowerCase() !== excludedToken()?.address?.toLowerCase()) {
+          } @else {
+            @for (token of searchResults(); track token.address) {
               <div
                 class="token-item"
                 role="button"
@@ -186,18 +35,39 @@
                 (keydown)="onRowKey($event, token)"
               >
                 <div class="token-info">
-                  <kc-token-logo [ticker]="token.symbol" [address]="token.address" size="lg"></kc-token-logo>
+                  <kc-token-logo
+                    [ticker]="token.symbol"
+                    [address]="token.address"
+                    size="lg"
+                  />
                   <div class="token-details">
                     <div class="token-symbol-row">
                       <span class="token-symbol">{{ token.symbol }}</span>
                       @if (isVerifiedToken(token)) {
-                        <span class="verified-badge" kcTooltip="Verified token" role="img" aria-label="Verified token">
-                          <kc-icon [iconClass]="'icon-check-verified-02'" [size]="'xs'"></kc-icon>
+                        <span
+                          class="verified-badge"
+                          kcTooltip="Verified token"
+                          role="img"
+                          aria-label="Verified token"
+                        >
+                          <kc-icon
+                            [iconClass]="'icon-check-verified-02'"
+                            [size]="'xs'"
+                          />
                         </span>
                       }
                       @if (isPotentialHarm(token)) {
-                        <span class="harm-badge" kcTooltip="This token uses the same symbol as a verified token but has a different address. It may be fraudulent." role="img" aria-label="Potentially fraudulent token">
-                          <kc-icon [iconClass]="'icon-warning'" [size]="'xs'" [color]="'var(--red-20)'"></kc-icon>
+                        <span
+                          class="harm-badge"
+                          kcTooltip="This token uses the same symbol as a verified token but has a different address. It may be fraudulent."
+                          role="img"
+                          aria-label="Potentially fraudulent token"
+                        >
+                          <kc-icon
+                            [iconClass]="'icon-warning'"
+                            [size]="'xs'"
+                            [color]="'var(--red-20)'"
+                          />
                         </span>
                       }
                     </div>
@@ -217,27 +87,260 @@
                   </div>
                 </div>
                 @if (token.balance) {
-                  <span class="token-balance">{{ token.balance | commaFormatter }}</span>
+                  <span class="token-balance">{{
+                    token.balance | commaFormatter
+                  }}</span>
                 }
               </div>
             }
           }
-        }
+        } @else {
+          <!-- ── NO QUERY: YOUR TOKENS ── -->
+          @if (isLoading()) {
+            <div class="section-loading">Loading tokens...</div>
+          } @else if (userTokens().length) {
+            <div class="section-header">Your tokens</div>
+            @for (token of userTokens(); track token.address) {
+              <div
+                class="token-item"
+                role="button"
+                tabindex="0"
+                (click)="onTokenSelect(token)"
+                (keydown)="onRowKey($event, token)"
+              >
+                <div class="token-info">
+                  <kc-token-logo
+                    [ticker]="token.symbol"
+                    [address]="token.address"
+                    size="lg"
+                  />
+                  <div class="token-details">
+                    <div class="token-symbol-row">
+                      <span class="token-symbol">{{ token.symbol }}</span>
+                      @if (isVerifiedToken(token)) {
+                        <span
+                          class="verified-badge"
+                          kcTooltip="Verified token"
+                          role="img"
+                          aria-label="Verified token"
+                        >
+                          <kc-icon
+                            [iconClass]="'icon-check-verified-02'"
+                            [size]="'xs'"
+                          />
+                        </span>
+                      }
+                      @if (isPotentialHarm(token)) {
+                        <span
+                          class="harm-badge"
+                          kcTooltip="This token uses the same symbol as a verified token but has a different address. It may be fraudulent."
+                          role="img"
+                          aria-label="Potentially fraudulent token"
+                        >
+                          <kc-icon
+                            [iconClass]="'icon-warning'"
+                            [size]="'xs'"
+                            [color]="'var(--red-20)'"
+                          />
+                        </span>
+                      }
+                    </div>
+                    <div class="token-meta">
+                      <span class="token-name">{{ token.name }}</span>
+                      <button
+                        type="button"
+                        class="token-address"
+                        (click)="copyAddress($event, token.address)"
+                        (keydown.enter)="$event.stopPropagation()"
+                        (keydown.space)="$event.stopPropagation()"
+                        [attr.aria-label]="'Copy address for ' + token.symbol"
+                      >
+                        {{ shortenAddress(token.address) }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                @if (token.balance) {
+                  <span class="token-balance">{{
+                    token.balance | commaFormatter
+                  }}</span>
+                }
+              </div>
+            }
+          }
 
-        <!-- ── EMPTY STATE (all sections empty) ── -->
-        @if (!isLoading() && !mostTradedLoading() && userTokens().length === 0 && mostTradedTokens().length === 0 && searchHistory().length === 0) {
-          @if (!hasChain()) {
-            <div class="no-tokens">
-              <span>No network selected</span>
-              <span class="no-tokens-hint">Switch to an L2 network to browse popular tokens.</span>
-            </div>
-          } @else {
-            <div class="no-tokens">No tokens available</div>
+          <!-- ── NO QUERY: MOST TRADED ── -->
+          @if (mostTradedLoading()) {
+            <div class="section-loading">Loading popular tokens...</div>
+          } @else if (mostTradedTokens().length) {
+            <div class="section-header">Most traded</div>
+            @for (token of mostTradedTokens(); track token.address) {
+              <div
+                class="token-item"
+                role="button"
+                tabindex="0"
+                (click)="onTokenSelect(token)"
+                (keydown)="onRowKey($event, token)"
+              >
+                <div class="token-info">
+                  <kc-token-logo
+                    [ticker]="token.symbol"
+                    [address]="token.address"
+                    size="lg"
+                  />
+                  <div class="token-details">
+                    <div class="token-symbol-row">
+                      <span class="token-symbol">{{ token.symbol }}</span>
+                      @if (isVerifiedToken(token)) {
+                        <span
+                          class="verified-badge"
+                          kcTooltip="Verified token"
+                          role="img"
+                          aria-label="Verified token"
+                        >
+                          <kc-icon
+                            [iconClass]="'icon-check-verified-02'"
+                            [size]="'xs'"
+                          />
+                        </span>
+                      }
+                      @if (isPotentialHarm(token)) {
+                        <span
+                          class="harm-badge"
+                          kcTooltip="This token uses the same symbol as a verified token but has a different address. It may be fraudulent."
+                          role="img"
+                          aria-label="Potentially fraudulent token"
+                        >
+                          <kc-icon
+                            [iconClass]="'icon-warning'"
+                            [size]="'xs'"
+                            [color]="'var(--red-20)'"
+                          />
+                        </span>
+                      }
+                    </div>
+                    <div class="token-meta">
+                      <span class="token-name">{{ token.name }}</span>
+                      <button
+                        type="button"
+                        class="token-address"
+                        (click)="copyAddress($event, token.address)"
+                        (keydown.enter)="$event.stopPropagation()"
+                        (keydown.space)="$event.stopPropagation()"
+                        [attr.aria-label]="'Copy address for ' + token.symbol"
+                      >
+                        {{ shortenAddress(token.address) }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                @if (token.balance) {
+                  <span class="token-balance">{{
+                    token.balance | commaFormatter
+                  }}</span>
+                }
+              </div>
+            }
+          }
+
+          <!-- ── NO QUERY: RECENT SEARCHES ── -->
+          @if (searchHistory().length) {
+            <div class="section-header">Recent searches</div>
+            @for (token of searchHistory(); track token.address) {
+              @if (
+                token?.address?.toLowerCase() !==
+                excludedToken()?.address?.toLowerCase()
+              ) {
+                <div
+                  class="token-item"
+                  role="button"
+                  tabindex="0"
+                  (click)="onTokenSelect(token)"
+                  (keydown)="onRowKey($event, token)"
+                >
+                  <div class="token-info">
+                    <kc-token-logo
+                      [ticker]="token.symbol"
+                      [address]="token.address"
+                      size="lg"
+                    />
+                    <div class="token-details">
+                      <div class="token-symbol-row">
+                        <span class="token-symbol">{{ token.symbol }}</span>
+                        @if (isVerifiedToken(token)) {
+                          <span
+                            class="verified-badge"
+                            kcTooltip="Verified token"
+                            role="img"
+                            aria-label="Verified token"
+                          >
+                            <kc-icon
+                              [iconClass]="'icon-check-verified-02'"
+                              [size]="'xs'"
+                            />
+                          </span>
+                        }
+                        @if (isPotentialHarm(token)) {
+                          <span
+                            class="harm-badge"
+                            kcTooltip="This token uses the same symbol as a verified token but has a different address. It may be fraudulent."
+                            role="img"
+                            aria-label="Potentially fraudulent token"
+                          >
+                            <kc-icon
+                              [iconClass]="'icon-warning'"
+                              [size]="'xs'"
+                              [color]="'var(--red-20)'"
+                            />
+                          </span>
+                        }
+                      </div>
+                      <div class="token-meta">
+                        <span class="token-name">{{ token.name }}</span>
+                        <button
+                          type="button"
+                          class="token-address"
+                          (click)="copyAddress($event, token.address)"
+                          (keydown.enter)="$event.stopPropagation()"
+                          (keydown.space)="$event.stopPropagation()"
+                          [attr.aria-label]="'Copy address for ' + token.symbol"
+                        >
+                          {{ shortenAddress(token.address) }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  @if (token.balance) {
+                    <span class="token-balance">{{
+                      token.balance | commaFormatter
+                    }}</span>
+                  }
+                </div>
+              }
+            }
+          }
+
+          <!-- ── EMPTY STATE (all sections empty) ── -->
+          @if (
+            !isLoading() &&
+            !mostTradedLoading() &&
+            userTokens().length === 0 &&
+            mostTradedTokens().length === 0 &&
+            searchHistory().length === 0
+          ) {
+            @if (!hasChain()) {
+              <div class="no-tokens">
+                <span>No network selected</span>
+                <span class="no-tokens-hint"
+                  >Switch to an L2 network to browse popular tokens.</span
+                >
+              </div>
+            } @else {
+              <div class="no-tokens">No tokens available</div>
+            }
           }
         }
-
-      }
+      </div>
     </div>
-  </div>
-</kc-base-modal>
+  </kc-base-modal>
 }

@@ -1,10 +1,5 @@
-@if (open()) {
-  <kc-base-modal
-    title="Select a token"
-    [showCloseButton]="true"
-    [autoWidth]="false"
-    (close)="onClose()"
-  >
+<kc-dialog>
+  <ng-template #contentTemplate>
     <div class="token-selector-content">
       <kc-input
         placeholder="Search name, symbol, or address"
@@ -342,5 +337,5 @@
         }
       </div>
     </div>
-  </kc-base-modal>
-}
+  </ng-template>
+</kc-dialog>

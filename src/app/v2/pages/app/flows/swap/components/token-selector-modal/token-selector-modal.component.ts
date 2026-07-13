@@ -2,17 +2,21 @@ import {
   Component,
   OnInit,
   inject,
-  input,
   signal,
   computed,
   effect,
   untracked,
   DestroyRef,
-  output,
+  Signal,
 } from '@angular/core';
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 
-import { KcBaseModalComponent } from 'kaspacom-ui';
-import { KcInputComponent, KcIconComponent, KcTooltipDirective } from '@kaspacom/ui-kit';
+import {
+  KcDialogComponent,
+  KcInputComponent,
+  KcIconComponent,
+  KcTooltipDirective,
+} from '@kaspacom/ui-kit';
 import { MessagePopupService } from '../../../../../../../services/message-popup.service';
 import type { Erc20Token } from '@kaspacom/swap-sdk';
 import { CommaFormatterPipe } from '../../../../../../../pipes/comma-formatter.pipe';
@@ -47,11 +51,20 @@ function isLocalStorageAvailable(): boolean {
   }
 }
 
+export interface TokenSelectorDialogData {
+  // Reserved keys read by KcDialogComponent itself off the same DIALOG_DATA.
+  title?: string;
+  showCloseButton?: boolean;
+  tokens: Signal<Erc20Token[]>;
+  isLoading: Signal<boolean>;
+  excludedToken: Signal<Erc20Token | null>;
+}
+
 @Component({
   selector: 'app-token-selector-modal',
   standalone: true,
   imports: [
-    KcBaseModalComponent,
+    KcDialogComponent,
     KcInputComponent,
     KcIconComponent,
     KcTooltipDirective,
@@ -66,6 +79,8 @@ export class TokenSelectorModalComponent implements OnInit {
   private defiApiService = inject(KaspaComDefiApiService);
   private chainManager = inject(EthereumWalletChainManager);
   private destroyRef = inject(DestroyRef);
+  private dialogRef = inject(DialogRef<Erc20Token | undefined>);
+  private data = inject<TokenSelectorDialogData>(DIALOG_DATA);
 
   hasChain = computed(() => !!this.chainManager.getCurrentChainSignal()());
 
@@ -104,12 +119,9 @@ export class TokenSelectorModalComponent implements OnInit {
     return `${HISTORY_STORAGE_KEY_PREFIX}-${network}-${env}`;
   });
 
-  open = input(false);
-  isLoading = input(false);
-  tokens = input<Erc20Token[]>([]);
-  excludedToken = input<Erc20Token | null>(null);
-  readonly close = output<void>();
-  readonly selectToken = output<Erc20Token>();
+  tokens = this.data.tokens;
+  isLoading = this.data.isLoading;
+  excludedToken = this.data.excludedToken;
 
   // Search state
   searchQuery = signal('');
@@ -126,56 +138,34 @@ export class TokenSelectorModalComponent implements OnInit {
   private destroyed = false;
   private searchRequestId = 0;
   private mostTradedRequestId = 0;
-  // Track which chain the cached mostTradedTokens were fetched for.
-  private mostTradedChainId: string | undefined = undefined;
+  private isFirstChainLoad = true;
 
   constructor() {
-    // Reload when the modal opens so timing issues on initial mount don't leave
-    // the section empty (the component is always in the DOM, ngOnInit fires once).
+    // Loads chain-scoped state on mount (the dialog only exists while open,
+    // so mount = open) and again whenever the chain changes while it stays
+    // open. On the first (mount) run the search box is cleared for a fresh
+    // start; on later chain-change runs, whatever the user typed is kept
+    // and re-searched against the new chain.
     effect(() => {
-      const isOpen = this.open();
+      const chainId = this.chainManager.getCurrentChainSignal()();
       untracked(() => {
-        if (!isOpen) {
-          if (this.searchDebounceTimer) {
-            clearTimeout(this.searchDebounceTimer);
-            this.searchDebounceTimer = null;
-          }
-          this.searchRequestId++;
-          this.mostTradedRequestId++;
-          this.mostTradedLoading.set(false);
-          this.searchResults.set([]);
-          this.searchLoading.set(false);
-          return;
-        }
-        this.searchQuery.set('');
-        this.searchResults.set([]);
+        const isFirstLoad = this.isFirstChainLoad;
+        this.isFirstChainLoad = false;
+
         if (this.searchDebounceTimer) {
           clearTimeout(this.searchDebounceTimer);
           this.searchDebounceTimer = null;
         }
-        this.loadSearchHistory();
-        const currentChainId = this.chainManager.getCurrentChainSignal()();
-        if (currentChainId) {
-          const chainChanged = currentChainId !== this.mostTradedChainId;
-          if (
-            (!this.mostTradedTokens().length || chainChanged) &&
-            !this.mostTradedLoading()
-          ) {
-            this.loadMostTradedTokens();
-          }
-        }
-      });
-    });
 
-    // When the chain changes while the modal is already open, refresh chain-scoped state.
-    effect(() => {
-      const chainId = this.chainManager.getCurrentChainSignal()();
-      untracked(() => {
-        if (!this.open()) return;
+        if (isFirstLoad) {
+          this.searchQuery.set('');
+          this.searchResults.set([]);
+        }
         const currentQuery = this.searchQuery().trim();
+
         this.resetChainScopedState();
-        if (!chainId) return;
         this.loadSearchHistory();
+        if (!chainId) return;
         this.loadMostTradedTokens();
         if (currentQuery) {
           const requestId = ++this.searchRequestId;
@@ -197,7 +187,6 @@ export class TokenSelectorModalComponent implements OnInit {
     this.searchResults.set([]);
     this.searchHistory.set([]);
     this.mostTradedTokens.set([]);
-    this.mostTradedChainId = undefined;
   }
   // User's own tokens (sorted by balance, minus excluded)
   userTokens = computed(() => {
@@ -256,11 +245,7 @@ export class TokenSelectorModalComponent implements OnInit {
 
   async onTokenSelect(token: Erc20Token): Promise<void> {
     this.addToHistory(token);
-    this.selectToken.emit(token);
-  }
-
-  onClose(): void {
-    this.close.emit();
+    this.dialogRef.close(token);
   }
 
   async copyAddress(event: Event, address: string): Promise<void> {
@@ -447,7 +432,6 @@ export class TokenSelectorModalComponent implements OnInit {
 
       if (!this.destroyed && requestId === this.mostTradedRequestId) {
         this.mostTradedTokens.set(Array.from(uniqueTokens.values()));
-        this.mostTradedChainId = chainIdAtFetch;
       }
     } catch (err) {
       console.warn('[TokenSelector] Failed to load most traded tokens:', err);

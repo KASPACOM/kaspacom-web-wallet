@@ -6,7 +6,7 @@
       <span class="swap-title">Swap</span>
       <button
         class="settings-btn"
-        (click)="settingsOpen.set(true)"
+        (click)="openSettingsModal()"
         title="Settings"
       >
         <kc-icon [iconClass]="'icon-settings'" [size]="'sm'" />
@@ -162,20 +162,4 @@
       (buttonClick)="executeSwap()"
     />
   </div>
-
-  <app-token-selector-modal
-    [open]="!!tokenModalOpen()"
-    [tokens]="allTokens()"
-    [isLoading]="loadingTokens()"
-    [excludedToken]="tokenModalOpen() === 'from' ? toToken() : fromToken()"
-    (close)="tokenModalOpen.set(null)"
-    (selectToken)="onTokenSelect($event)"
-  />
-
-  <app-swap-settings-modal
-    [open]="settingsOpen()"
-    [initialSettings]="currentSettings()"
-    (close)="settingsOpen.set(false)"
-    (save)="onSettingsSave($event)"
-  />
 </div>

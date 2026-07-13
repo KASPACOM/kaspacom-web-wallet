@@ -4,48 +4,40 @@
   (see HANDOFF.md): dashboardFilter(), setDashboardFilter(), filteredDashboardContracts(),
   getTemplateKey(entry). Everything else already exists on the component.
 -->
-<div
-  class="contracts-container"
-  [class.contracts-container--wide]="wideWorkspaceService.isActive()"
->
-  @if (wideWorkspaceService.isActive()) {
-    <app-contracts-sidebar
-      [items]="sidebarItems()"
-      [active]="sidebarActiveKey()"
-      (select)="onSidebarSelect($event)"
-    ></app-contracts-sidebar>
-  } @else {
-    <!-- Segmented tabs -->
-    <div class="seg-tabs" role="tablist">
-      <button
-        class="seg-tab"
-        role="tab"
-        [attr.aria-selected]="activeTab() === 'deploy'"
-        [class.active]="activeTab() === 'deploy'"
-        (click)="switchTab('deploy')"
-      >
-        Create
-      </button>
-      <button
-        class="seg-tab"
-        role="tab"
-        [attr.aria-selected]="activeTab() === 'my-contracts'"
-        [class.active]="activeTab() === 'my-contracts'"
-        (click)="switchTab('my-contracts')"
-      >
-        My Contracts
-      </button>
-      <button
-        class="seg-tab"
-        role="tab"
-        [attr.aria-selected]="activeTab() === 'lookup-import'"
-        [class.active]="activeTab() === 'lookup-import'"
-        (click)="switchTab('lookup-import')"
-      >
-        Import / Share
-      </button>
-    </div>
-  }
+<div class="contracts-container">
+  <!-- Segmented tabs -->
+  <div class="seg-tabs" role="tablist">
+    <button
+      class="seg-tab"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'deploy'"
+      [class.active]="activeTab() === 'deploy'"
+      (click)="switchTab('deploy')"
+    >
+      Create
+    </button>
+    <button
+      class="seg-tab"
+      role="tab"
+      [attr.aria-selected]="isMyContractsTabActive()"
+      [class.active]="isMyContractsTabActive()"
+      (click)="switchTab('my-contracts')"
+    >
+      <span class="seg-tab-label">My Contracts</span>
+      @if (dashboardContracts().length > 0) {
+        <span class="seg-tab-badge">{{ dashboardContracts().length }}</span>
+      }
+    </button>
+    <button
+      class="seg-tab"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'lookup-import'"
+      [class.active]="activeTab() === 'lookup-import'"
+      (click)="switchTab('lookup-import')"
+    >
+      Import / Share
+    </button>
+  </div>
 
   <div class="contracts-main">
   <!-- ═══════════════ CREATE / DEPLOY ═══════════════ -->

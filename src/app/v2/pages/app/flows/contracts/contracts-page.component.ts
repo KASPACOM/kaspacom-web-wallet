@@ -72,10 +72,6 @@ import { ApprovalFlowService } from '../../../../services/approval-flow.service'
 import { AddressSmartInputComponent } from '../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { CovenantDateTimeInputComponent } from './covenant-date-time-input.component';
 import { WalletProfileOrbComponent } from '../../../../shared/ui/wallet-profile-orb/wallet-profile-orb.component';
-import {
-  ContractsSidebarComponent,
-  ContractsSidebarItem,
-} from './components/contracts-sidebar/contracts-sidebar.component';
 
 type TabName =
   | 'deploy'
@@ -194,7 +190,6 @@ type DeployIndexerState = {
     AddressSmartInputComponent,
     CovenantDateTimeInputComponent,
     WalletProfileOrbComponent,
-    ContractsSidebarComponent,
   ],
   templateUrl: './contracts-page.component.html',
   styleUrl: './contracts-page.component.scss',
@@ -782,26 +777,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Nav items for the wide-workspace sidebar. */
-  sidebarItems = computed<ContractsSidebarItem[]>(() => [
-    {
-      key: 'my-contracts',
-      label: 'My Contracts',
-      iconClass: 'icon-folder',
-      badge: this.dashboardContracts().length,
-    },
-    { key: 'deploy', label: 'Create', iconClass: 'icon-add-circle' },
-    { key: 'lookup-import', label: 'Import / Share', iconClass: 'icon-download' },
-  ]);
-
-  /** Active sidebar key — 'detail' maps back to 'my-contracts' (its parent section). */
-  sidebarActiveKey = computed<string>(() =>
-    this.activeTab() === 'detail' ? 'my-contracts' : this.activeTab(),
+  /** 'detail' belongs to the My Contracts section for tab-highlighting purposes. */
+  isMyContractsTabActive = computed(
+    () =>
+      this.activeTab() === 'my-contracts' || this.activeTab() === 'detail',
   );
-
-  onSidebarSelect(key: string) {
-    this.switchTab(key as TabName);
-  }
 
   selectTemplate(template: ContractTemplate) {
     this.createMode.set('template');

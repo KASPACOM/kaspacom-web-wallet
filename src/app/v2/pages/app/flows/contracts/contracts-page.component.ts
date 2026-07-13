@@ -383,6 +383,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   interactInputAmount = '';
   interactOutputAddress = '';
   interactResolvedOutputAddress: string | null = null;
+  newHeirAddress = '';
+  newHeirResolvedAddress: string | null = null;
 
   // Lookup form
   lookupContractJson = '';
@@ -459,6 +461,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       funcs.push({
         name: 'transfer',
         inputs: [{ name: 'recipient', type_name: 'pubkey' }],
+      } as any);
+    }
+
+    // Inject 'changeHeir' action for Dead Man's Switch contracts. This entrypoint
+    // does not exist on-chain yet — see isChangeHeirFunction() — the button is a
+    // UI stub until the DMS contract supports mutable heir state.
+    if (
+      contract.contract_name === 'DeadManSwitch' &&
+      !funcs.some((f) => f.name === 'changeHeir')
+    ) {
+      funcs.push({
+        name: 'changeHeir',
+        inputs: [{ name: 'newHeir', type_name: 'pubkey' }],
       } as any);
     }
 
@@ -3046,6 +3061,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // TODO(covenant): changeHeir is a UI stub — see isChangeHeirFunction() for why
+    // there's no on-chain call to make yet.
+    if (this.isChangeHeirFunction(functionName)) {
+      this.interactError.set(
+        "Change Heir isn't available yet — it requires a Dead Man's Switch contract update to support changing the heir after deployment. Check with the team for status.",
+      );
+      return;
+    }
+
     try {
       this.isInteracting.set(true);
 
@@ -3929,6 +3953,18 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * TODO(covenant): changeHeir is UI-only for now. The DMS contract bakes `heir`
+   * into the constructor script bytes rather than tracking it as covenant state
+   * (unlike `deadline`, which keepAlive threads through validateOutputState), so
+   * there is no on-chain entrypoint to call yet. Wire this up once the DMS
+   * SilverScript template adds a real changeHeir entrypoint (or a heir-changing
+   * redeploy path is agreed) — see the early return in interactContract().
+   */
+  isChangeHeirFunction(fnName: string): boolean {
+    return fnName === 'changeHeir';
+  }
+
+  /**
    * Returns true when the current function is DMS keepAlive (requires special handling).
    * DMS keepAlive must produce output to a *new* DMS contract (with updated expiry),
    * not to the same contract address.
@@ -3961,7 +3997,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return (
       !!fnName &&
       !this.REDEPLOY_FUNCTIONS.has(fnName) &&
-      !this.isTopUpFunction(fnName)
+      !this.isTopUpFunction(fnName) &&
+      !this.isChangeHeirFunction(fnName)
     );
   }
 
@@ -3980,9 +4017,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.extraArgValues = {};
     this.dmsNewExpiry = '';
     this.topUpAmount = '';
+    this.newHeirAddress = '';
+    this.newHeirResolvedAddress = null;
     this.dmsKeepAliveError.set(null);
 
-    if (this.isTopUpFunction(name)) {
+    if (this.isTopUpFunction(name) || this.isChangeHeirFunction(name)) {
       this.interactOutputAddress = '';
       this.interactOutputAmount = '';
     } else if (this.functionRequiresOutput(name)) {
@@ -4020,15 +4059,17 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    */
   getFunctionLabel(name: string): string {
     const labels: Record<string, string> = {
-      spend: '💰 Withdraw',
-      recover: '🔐 Recovery Withdraw',
-      claim: '📥 Claim',
-      release: '🔓 Release',
-      refund: '↩️ Refund',
-      increment: '➕ Increment',
-      keepAlive: '♻️ Keep Alive',
-      execute: '⚡ Execute',
+      spend: 'Withdraw',
+      withdraw: 'Withdraw',
+      recover: 'Recovery Withdraw',
+      claim: 'Claim',
+      release: 'Release',
+      refund: 'Refund',
+      increment: 'Increment',
+      keepAlive: 'Keep Alive',
+      execute: 'Execute',
       topUp: 'Top Up',
+      changeHeir: 'Change Heir',
     };
     return labels[name] || name;
   }
@@ -4047,11 +4088,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         recover:
           'Emergency recovery using the backup key. Only available after the timelock expires.',
       },
-      deadmansswitch: {
+      deadmanswitch: {
         keepAlive:
           "Prove you're still active. Re-deploys the contract with a fresh expiry — no withdrawal needed.",
+        withdraw:
+          'Withdraw part of the locked funds using the owner key. Must leave at least 0.5 KAS behind as a continuation.',
         claim:
           'Claim the inheritance. Only available if the owner missed their keepAlive deadline.',
+        changeHeir:
+          'Change the beneficiary who can claim the funds if you miss the deadline. Not available yet — this requires a Dead Man\'s Switch contract update.',
       },
       escrow: {
         release:
@@ -4142,6 +4187,35 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       title: 'Scan recipient address',
       onSuccess: (address: string) =>
         this.onInteractOutputAddressChange(address),
+      onError: (error: string) =>
+        console.error('[Contracts] QR scanning error:', error),
+    });
+  }
+
+  onNewHeirAddressChange(value: string) {
+    this.newHeirAddress = value || '';
+    this.newHeirResolvedAddress = null;
+    this.interactError.set(null);
+  }
+
+  onNewHeirAddressResolved(result: any) {
+    if (result?.effectiveAddress) {
+      this.newHeirResolvedAddress = result.effectiveAddress;
+    } else {
+      this.newHeirResolvedAddress = null;
+    }
+  }
+
+  onNewHeirQrClick() {
+    if (this.qrScannerService.isCurrentlyScanning()) {
+      this.qrScannerService.stopScanning();
+      return;
+    }
+
+    this.qrScannerService.startScanning({
+      scannerId: 'qr-scanner-covenant-change-heir',
+      title: 'Scan new heir address',
+      onSuccess: (address: string) => this.onNewHeirAddressChange(address),
       onError: (error: string) =>
         console.error('[Contracts] QR scanning error:', error),
     });

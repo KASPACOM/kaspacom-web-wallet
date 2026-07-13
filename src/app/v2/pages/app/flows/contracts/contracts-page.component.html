@@ -208,7 +208,7 @@
       } @else {
         <!-- Step 2: parameters -->
         <div
-          class="flex justify-content-between align-items-center gap-12 flex-wrap"
+          class="flex justify-content-between align-items-center gap-12 wrap"
         >
           <div class="flex align-items-center gap-12">
             <span
@@ -614,7 +614,7 @@
     <div class="flex column gap-20">
       @if (activeTab() === "detail") {
         <div
-          class="detail-route-header flex justify-content-between align-items-center gap-12 flex-wrap"
+          class="detail-route-header flex justify-content-between align-items-center gap-12 wrap"
         >
           <button
             class="back-button p-8 typo-text-2"
@@ -1147,7 +1147,7 @@
                 }
               </span>
               <div class="flex column" style="flex: 1; min-width: 0">
-                <div class="flex align-items-center gap-8 flex-wrap">
+                <div class="flex align-items-center gap-8 wrap">
                   <h2 class="detail-title">
                     {{ selectedDetail()!.entry.displayName }}
                   </h2>
@@ -1696,7 +1696,14 @@
   }
 
   <!-- ═══════════════ INTERACT (advanced / manual — carried over) ═══════════════ -->
-  @if (activeTab() === "interact") {
+  @if (
+    activeTab() === "interact" ||
+    (activeTab() === "detail" &&
+      detailPanelTab() === "action" &&
+      selectedDetail() &&
+      selectedDetail()!.entry.status === "active" &&
+      interactContractJson())
+  ) {
     <div class="panel flex column gap-20">
       <div class="form-group flex column gap-8">
         <label class="field-label">Select contract</label>
@@ -1782,7 +1789,7 @@
               tooltipPosition="top"
             ></kc-icon>
           </div>
-          <div class="flex gap-8 flex-wrap">
+          <div class="flex gap-8 wrap">
             @for (fn of availableFunctions(); track fn.name) {
               <kc-button
                 [text]="getFunctionLabel(fn.name)"
@@ -1893,6 +1900,37 @@
           </div>
         }
 
+        @if (selectedFunction && isChangeHeirFunction(selectedFunction)) {
+          <div class="form-group flex column gap-8">
+            <app-address-smart-input
+              [label]="'New heir wallet'"
+              [placeholder]="'Enter new beneficiary wallet address or KNS domain'"
+              [isFullWidth]="true"
+              [isValid]="true"
+              [invalidReason]="''"
+              [isDisabled]="isInteracting()"
+              [value]="newHeirAddress"
+              (valueChange)="onNewHeirAddressChange($event)"
+              (resolved)="onNewHeirAddressResolved($event)"
+              (qrClick)="onNewHeirQrClick()"
+            ></app-address-smart-input>
+          </div>
+
+          <div
+            class="p-12 rounded-lg"
+            style="
+              background: rgba(255, 193, 7, 0.08);
+              border: 1px solid rgba(255, 193, 7, 0.2);
+            "
+          >
+            <span class="text-yellow typo-text-2">
+              Not available yet — changing the heir requires an update to the
+              Dead Man's Switch contract itself (the heir is currently fixed at
+              deploy time). This form is a preview of the upcoming flow.
+            </span>
+          </div>
+        }
+
         @if (
           selectedFunction &&
           functionRequiresOutput(selectedFunction) &&
@@ -1940,7 +1978,8 @@
           selectedFunction &&
           !functionRequiresOutput(selectedFunction) &&
           !isDmsKeepAlive() &&
-          !isTopUpFunction(selectedFunction)
+          !isTopUpFunction(selectedFunction) &&
+          !isChangeHeirFunction(selectedFunction)
         ) {
           <div
             class="p-12 rounded-lg"
@@ -2213,7 +2252,7 @@
         </div>
       } @else {
         <div
-          class="flex justify-content-between align-items-center gap-12 flex-wrap"
+          class="flex justify-content-between align-items-center gap-12 wrap"
         >
           <div class="flex align-items-center gap-12">
             <button

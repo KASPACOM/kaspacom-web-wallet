@@ -3,6 +3,8 @@ import { isPlatformBrowser } from '@angular/common';
 
 const STORAGE_KEY = 'kw-desktop-expanded';
 export const MOBILE_BREAKPOINT = 960;
+/** Minimum viewport width for the Contracts wide-workspace layout. */
+export const WIDE_BREAKPOINT = 1100;
 
 @Injectable({ providedIn: 'root' })
 export class DesktopViewService {

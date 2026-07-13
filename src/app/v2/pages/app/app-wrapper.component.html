@@ -3,7 +3,11 @@
   <div class="screen__backdrop screen__backdrop--first"></div>
   <div class="screen__backdrop screen__backdrop--second"></div>
 
-  <div class="wrapper" [class.wrapper--expanded]="isExpandedLayout()">
+  <div
+    class="wrapper"
+    [class.wrapper--expanded]="isExpandedLayout()"
+    [class.wrapper--wide-flow]="isContractsWide()"
+  >
     <!-- Iframe account selection overlay - shows when account needs to be selected -->
     @if (shouldShowAccountSelectionOverlay()) {
       <app-iframe-account-selection
@@ -21,7 +25,7 @@
       </div>
     </div>
 
-    @if (isExpandedLayout()) {
+    @if (isExpandedLayout() && !isContractsWide()) {
       <!-- ── EXPANDED MODE: two-column layout ── -->
       <div class="wrapper__left">
         <div
@@ -121,7 +125,7 @@
         <router-outlet #outlet="outlet"></router-outlet>
       </div>
 
-      <div class="wrapper__nav">
+      <div class="wrapper__nav" [class.hide]="isContractsWide()">
         <app-wrapper-nav></app-wrapper-nav>
       </div>
 

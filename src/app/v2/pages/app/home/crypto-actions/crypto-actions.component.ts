@@ -93,6 +93,7 @@ export class CryptoActionsComponent {
       subtitle:
         'Deploy and track SilverScript covenants involving this wallet.',
       canNavigateBack: true,
+      wide: true,
     });
   }
 }

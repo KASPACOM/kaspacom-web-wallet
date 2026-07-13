@@ -4,38 +4,50 @@
   (see HANDOFF.md): dashboardFilter(), setDashboardFilter(), filteredDashboardContracts(),
   getTemplateKey(entry). Everything else already exists on the component.
 -->
-<div class="contracts-container">
-  <!-- Segmented tabs -->
-  <div class="seg-tabs" role="tablist">
-    <button
-      class="seg-tab"
-      role="tab"
-      [attr.aria-selected]="activeTab() === 'deploy'"
-      [class.active]="activeTab() === 'deploy'"
-      (click)="switchTab('deploy')"
-    >
-      Create
-    </button>
-    <button
-      class="seg-tab"
-      role="tab"
-      [attr.aria-selected]="activeTab() === 'my-contracts'"
-      [class.active]="activeTab() === 'my-contracts'"
-      (click)="switchTab('my-contracts')"
-    >
-      My Contracts
-    </button>
-    <button
-      class="seg-tab"
-      role="tab"
-      [attr.aria-selected]="activeTab() === 'lookup-import'"
-      [class.active]="activeTab() === 'lookup-import'"
-      (click)="switchTab('lookup-import')"
-    >
-      Import / Share
-    </button>
-  </div>
+<div
+  class="contracts-container"
+  [class.contracts-container--wide]="wideWorkspaceService.isActive()"
+>
+  @if (wideWorkspaceService.isActive()) {
+    <app-contracts-sidebar
+      [items]="sidebarItems()"
+      [active]="sidebarActiveKey()"
+      (select)="onSidebarSelect($event)"
+    ></app-contracts-sidebar>
+  } @else {
+    <!-- Segmented tabs -->
+    <div class="seg-tabs" role="tablist">
+      <button
+        class="seg-tab"
+        role="tab"
+        [attr.aria-selected]="activeTab() === 'deploy'"
+        [class.active]="activeTab() === 'deploy'"
+        (click)="switchTab('deploy')"
+      >
+        Create
+      </button>
+      <button
+        class="seg-tab"
+        role="tab"
+        [attr.aria-selected]="activeTab() === 'my-contracts'"
+        [class.active]="activeTab() === 'my-contracts'"
+        (click)="switchTab('my-contracts')"
+      >
+        My Contracts
+      </button>
+      <button
+        class="seg-tab"
+        role="tab"
+        [attr.aria-selected]="activeTab() === 'lookup-import'"
+        [class.active]="activeTab() === 'lookup-import'"
+        (click)="switchTab('lookup-import')"
+      >
+        Import / Share
+      </button>
+    </div>
+  }
 
+  <div class="contracts-main">
   <!-- ═══════════════ CREATE / DEPLOY ═══════════════ -->
   @if (activeTab() === "deploy") {
     <div class="panel flex column gap-20">
@@ -1170,6 +1182,14 @@
                   timeline.
                 </p>
               </div>
+              @if (selectedDetail()!.entry.covenantId) {
+                <button
+                  class="back-button p-8 typo-text-2"
+                  (click)="copyContractShareLink(selectedDetail()!.entry)"
+                >
+                  Share
+                </button>
+              }
               <button
                 class="back-button p-8 typo-text-2"
                 (click)="backToContractsList()"
@@ -1189,12 +1209,6 @@
 
             <div class="state-grid">
               <div class="state-cell">
-                <span class="cell-label">Status</span
-                ><span class="cell-value">{{
-                  getStatusLabel(selectedDetail()!.entry)
-                }}</span>
-              </div>
-              <div class="state-cell">
                 <span class="cell-label">Locked</span
                 ><span class="cell-value"
                   >{{
@@ -1204,19 +1218,25 @@
                 >
               </div>
               <div class="state-cell">
-                <span class="cell-label">Active UTXOs</span
+                <span class="cell-label">Status</span
                 ><span class="cell-value">{{
-                  selectedDetail()!.utxos.length
+                  getStatusLabel(selectedDetail()!.entry)
                 }}</span>
               </div>
               @if (selectedDetail()!.entry.deadlineMs) {
                 <div class="state-cell">
-                  <span class="cell-label">Deadline</span
+                  <span class="cell-label">Check-in deadline</span
                   ><span class="cell-value" style="font-size: 14px">{{
                     formatTimestamp(selectedDetail()!.entry.deadlineMs)
                   }}</span>
                 </div>
               }
+              <div class="state-cell">
+                <span class="cell-label">Active UTXOs</span
+                ><span class="cell-value">{{
+                  selectedDetail()!.utxos.length
+                }}</span>
+              </div>
             </div>
           </div>
 
@@ -1231,6 +1251,9 @@
                   >
                     Available actions
                   </h4>
+                  @if (getCurrentRoleLabel(selectedDetail()!.entry.participants); as role) {
+                    <span class="role-pill">You are {{ role }}</span>
+                  }
                 </div>
                 <p class="text-gray-60 typo-text-2" style="margin: 0 0 14px">
                   The wallet enables only the action available for your role and
@@ -1239,29 +1262,40 @@
                 </p>
                 <div class="action-list">
                   @if (selectedDetail()!.entry.status !== "spent") {
-                    <button
-                      class="action-item primary"
-                      (click)="openDashboardAction(selectedDetail()!.entry)"
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
+                    @for (
+                      action of getAvailableActions(selectedDetail()!);
+                      track action.fnName
+                    ) {
+                      <button
+                        class="action-item"
+                        [class.primary]="action.enabled"
+                        [disabled]="!action.enabled"
+                        (click)="
+                          action.enabled &&
+                            openDashboardActionFor(
+                              selectedDetail()!.entry,
+                              action.fnName
+                            )
+                        "
                       >
-                        <path d="M9 18l6-6-6-6" />
-                      </svg>
-                      <span class="ai-text"
-                        ><span class="ai-title">{{
-                          selectedDetail()!.entry.nextActionLabel
-                        }}</span
-                        ><span class="ai-hint">{{
-                          selectedDetail()!.entry.actionHint
-                        }}</span></span
-                      >
-                    </button>
+                        <kc-icon [iconClass]="action.iconClass" [size]="'sm'"></kc-icon>
+                        <span class="ai-text">
+                          <span class="ai-title">{{ action.label }}</span>
+                          <span class="ai-hint">{{
+                            action.enabled
+                              ? action.description
+                              : action.disabledReason
+                          }}</span>
+                        </span>
+                        @if (!action.enabled) {
+                          <kc-icon
+                            class="ai-lock"
+                            [iconClass]="'icon-lock'"
+                            [size]="'xs'"
+                          ></kc-icon>
+                        }
+                      </button>
+                    }
                   }
                   <button
                     class="action-item"
@@ -1582,8 +1616,60 @@
         }
       </div>
 
-      <!-- On-chain address lookup -->
-      <div class="panel flex column gap-16">
+      <!-- Share a contract -->
+      <div class="panel flex column gap-14">
+        <div class="flex column gap-4">
+          <h3
+            class="text-white"
+            style="margin: 0; font-size: 16px; font-weight: 600"
+          >
+            Share a contract
+          </h3>
+          <p class="text-gray-60 typo-text-2" style="margin: 0">
+            A share link carries only the network and canonical covenant ID —
+            never private data or compiled JSON. Whoever opens it previews the
+            contract before tracking it.
+          </p>
+        </div>
+
+        @if (shareableContracts().length === 0) {
+          <div class="text-gray-60 typo-text-2 p-12">
+            No trackable contracts yet — deploy or import one first.
+          </div>
+        } @else {
+          <div class="field">
+            <label class="field-label">Contract</label>
+            <kc-dropdown-select
+              [options]="shareableContractOptions()"
+              [placeholder]="'Select a contract'"
+              [isFullWidth]="true"
+              [value]="effectiveShareableContractId()"
+              (valueChange)="onShareableContractChange($event)"
+            ></kc-dropdown-select>
+          </div>
+          <div class="flex gap-8 align-items-end">
+            <div class="field" style="flex: 1">
+              <kc-input
+                [label]="'Share link'"
+                [type]="'text'"
+                [isFullWidth]="true"
+                [isDisabled]="true"
+                [ngModel]="shareableContractLink()"
+              ></kc-input>
+            </div>
+            <kc-button
+              [text]="'Copy'"
+              [isDisabled]="!shareableContractLink()"
+              (buttonClick)="copyShareableContractLink()"
+            ></kc-button>
+          </div>
+        }
+      </div>
+
+      <!-- On-chain address lookup (advanced) -->
+      <details class="advanced-section">
+        <summary>Advanced: look up by address</summary>
+      <div class="panel flex column gap-16 adv-body">
         <div class="flex column gap-4">
           <h3
             class="text-white"
@@ -1692,6 +1778,7 @@
           </div>
         }
       </div>
+      </details>
     </div>
   }
 
@@ -2387,4 +2474,5 @@
       }
     </div>
   }
+  </div>
 </div>

@@ -13,7 +13,8 @@ import { DynamicFlowPageOutletComponent } from './common/flow-page/dynamic-flow-
 import { DynamicQuickActionDialogOutletComponent } from './common/quick-action-dialog/dynamic-quick-action-dialog-outlet.component';
 import { IframeAccountSelectionComponent } from './iframe-account-selection/iframe-account-selection.component';
 import { IframeAccountSelectionService } from '../../services/iframe-account-selection.service';
-import { DesktopViewService, MOBILE_BREAKPOINT } from '../../services/desktop-view.service';
+import { DesktopViewService, MOBILE_BREAKPOINT, WIDE_BREAKPOINT } from '../../services/desktop-view.service';
+import { WideWorkspaceService } from '../../services/wide-workspace.service';
 
 import { KcSnackbarComponent, KcSpinnerComponent, KcIconComponent } from 'kaspacom-ui';
 import { WalletService } from '../../../services/wallet.service';
@@ -54,6 +55,7 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   protected assetsManager = inject(AssetsManagerService);
   iframeAccountSelectionService = inject(IframeAccountSelectionService);
   desktopViewService = inject(DesktopViewService);
+  wideWorkspaceService = inject(WideWorkspaceService);
   shouldEnforceAccountSelection = signal(this.iframeAccountSelectionService.shouldEnforceAccountSelection());
 
   // Detect if running in iframe mode
@@ -69,6 +71,13 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
       !this.desktopViewService.isIframe &&
       this.desktopViewService.isExpandedView() &&
       this.windowWidth() >= MOBILE_BREAKPOINT,
+  );
+
+  /** True when the Contracts wide-workspace layout should take over the wrapper. */
+  readonly isContractsWide = computed(
+    () =>
+      this.wideWorkspaceService.isActive() &&
+      this.windowWidth() >= WIDE_BREAKPOINT,
   );
 
   // Computed signal to determine if account selection overlay should be shown

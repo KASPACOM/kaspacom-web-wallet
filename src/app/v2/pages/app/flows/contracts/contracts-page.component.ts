@@ -65,10 +65,15 @@ import {
   CovenantSpendActionResult,
 } from '../../../../../types/wallet-action-result';
 import { FlowPagesService } from '../../../../services/flow-pages.service';
+import { WideWorkspaceService } from '../../../../services/wide-workspace.service';
 import { ApprovalFlowService } from '../../../../services/approval-flow.service';
 import { AddressSmartInputComponent } from '../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { CovenantDateTimeInputComponent } from './covenant-date-time-input.component';
 import { WalletProfileOrbComponent } from '../../../../shared/ui/wallet-profile-orb/wallet-profile-orb.component';
+import {
+  ContractsSidebarComponent,
+  ContractsSidebarItem,
+} from './components/contracts-sidebar/contracts-sidebar.component';
 
 type TabName =
   | 'deploy'
@@ -155,6 +160,15 @@ type ContractDetailParameter = {
   type?: string;
 };
 
+type AvailableAction = {
+  fnName: string;
+  label: string;
+  description: string;
+  iconClass: string;
+  enabled: boolean;
+  disabledReason?: string;
+};
+
 type DeployIndexerState = {
   txid: string;
   status: 'checking' | 'indexed' | 'not-indexed' | 'unavailable';
@@ -176,6 +190,7 @@ type DeployIndexerState = {
     AddressSmartInputComponent,
     CovenantDateTimeInputComponent,
     WalletProfileOrbComponent,
+    ContractsSidebarComponent,
   ],
   templateUrl: './contracts-page.component.html',
   styleUrl: './contracts-page.component.scss',
@@ -200,6 +215,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private kaspaL1NetworkService = inject(KaspaL1NetworkService);
   private flowPagesService = inject(FlowPagesService);
+  wideWorkspaceService = inject(WideWorkspaceService);
   private approvalFlowService = inject(ApprovalFlowService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -553,6 +569,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.wideWorkspaceService.activate();
     this.restoreTransientState();
     this.routeSubscription = this.route.paramMap.subscribe((params) => {
       const contractId = params.get('contractId');
@@ -577,6 +594,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.wideWorkspaceService.deactivate();
     this.routeSubscription?.unsubscribe();
   }
 
@@ -741,6 +759,27 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (tab === 'my-contracts') {
       this.loadContracts();
     }
+  }
+
+  /** Nav items for the wide-workspace sidebar. */
+  sidebarItems = computed<ContractsSidebarItem[]>(() => [
+    {
+      key: 'my-contracts',
+      label: 'My Contracts',
+      iconClass: 'icon-folder',
+      badge: this.dashboardContracts().length,
+    },
+    { key: 'deploy', label: 'Create', iconClass: 'icon-add-circle' },
+    { key: 'lookup-import', label: 'Import / Share', iconClass: 'icon-download' },
+  ]);
+
+  /** Active sidebar key — 'detail' maps back to 'my-contracts' (its parent section). */
+  sidebarActiveKey = computed<string>(() =>
+    this.activeTab() === 'detail' ? 'my-contracts' : this.activeTab(),
+  );
+
+  onSidebarSelect(key: string) {
+    this.switchTab(key as TabName);
   }
 
   selectTemplate(template: ContractTemplate) {
@@ -1787,6 +1826,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     );
   }
 
+  /** Public wrapper for the detail page's "You are <role>" pill. */
+  getCurrentRoleLabel(participants: Array<{ label: string; value: string }>): string {
+    return this.currentWalletRole(participants);
+  }
+
   private extractDeadlineMs(
     summary: IndexerCovenantDetails,
   ): number | undefined {
@@ -1897,6 +1941,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.detailPanelTab.set('action');
     this.activeTab.set('detail');
     await this.openContractDetail(entry);
+  }
+
+  /** Same as openDashboardAction(), but preselects a specific entrypoint instead of the type's default. */
+  async openDashboardActionFor(entry: ContractDashboardEntry, fnName: string) {
+    await this.openDashboardAction(entry);
+    if (this.availableFunctions().some((fn) => fn.name === fnName)) {
+      this.selectFunction(fnName);
+    }
   }
 
   private async prepareDashboardAction(
@@ -2138,6 +2190,147 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.partialSpendJson.set(null);
     this.partialCompleteError.set(null);
     this.partialCompleteResult.set(null);
+  }
+
+  /** Per-(contract type, entrypoint) authored copy + availability rules for the detail page's action list. */
+  private readonly actionMetaTable: Record<
+    string,
+    Record<
+      string,
+      {
+        label: string;
+        description: string;
+        iconClass: string;
+        requiredRole?: string;
+        extraGuard?: (detail: ContractDetailState) => string | null;
+      }
+    >
+  > = {
+    DeadManSwitch: {
+      keepAlive: {
+        label: 'Keep alive',
+        description: 'Reset the check-in deadline and keep the funds yours.',
+        iconClass: 'icon-refresh-ccw-04',
+        requiredRole: 'Owner',
+      },
+      withdraw: {
+        label: 'Withdraw',
+        description:
+          'Withdraw part of the locked funds using the owner key.',
+        iconClass: 'icon-coins-02',
+        requiredRole: 'Owner',
+      },
+      claim: {
+        label: 'Claim',
+        description: 'Claim the inheritance as the designated heir.',
+        iconClass: 'icon-gift',
+        requiredRole: 'Heir',
+        extraGuard: (detail) => {
+          const deadline = detail.entry.deadlineMs;
+          if (deadline && Date.now() < deadline) {
+            return 'Only the heir, only after the check-in deadline passes.';
+          }
+          return null;
+        },
+      },
+    },
+    TimeLockVault: {
+      spend: {
+        label: 'Withdraw',
+        description: 'Withdraw funds using the owner key.',
+        iconClass: 'icon-coins-02',
+        requiredRole: 'Owner',
+      },
+      recover: {
+        label: 'Recover',
+        description: 'Emergency withdrawal using the recovery key.',
+        iconClass: 'icon-shield',
+        requiredRole: 'Recovery',
+        extraGuard: (detail) => {
+          const deadline = detail.entry.deadlineMs;
+          if (deadline && Date.now() < deadline) {
+            return 'Only the recovery wallet, only after the timelock expires.';
+          }
+          return null;
+        },
+      },
+    },
+    MultiSigVault: {
+      spend12: {
+        label: '2-of-3 Withdraw',
+        description:
+          'Withdraw using 2-of-3 multi-sig. Requires signatures from two key holders.',
+        iconClass: 'icon-coins-02',
+      },
+      spend: {
+        label: 'Owner Withdraw',
+        description: 'Withdraw immediately using the owner key.',
+        iconClass: 'icon-coins-02',
+        requiredRole: 'Owner',
+      },
+    },
+    EscrowWithArbiter: {
+      release: {
+        label: 'Release',
+        description:
+          'Both buyer and seller agree to release funds to the recipient.',
+        iconClass: 'icon-send-01',
+      },
+      refund: {
+        label: 'Refund',
+        description: 'Cancel the escrow and return funds to the sender.',
+        iconClass: 'icon-coins-02',
+      },
+      arbitrate: {
+        label: 'Arbitrate',
+        description: 'Resolve the dispute as the trusted arbiter.',
+        iconClass: 'icon-shield',
+        requiredRole: 'Arbiter',
+      },
+    },
+  };
+
+  /**
+   * Full list of possible actions for the detail page's "Available actions"
+   * panel — unlike getNextActionLabel() (one suggestion), this returns every
+   * entrypoint the contract type supports, each flagged enabled/disabled with
+   * a human-readable reason so the user understands why an action is greyed
+   * out (wrong role, or a state condition like an unpassed deadline).
+   */
+  getAvailableActions(detail: ContractDetailState): AvailableAction[] {
+    const normalized = this.normalizeContractName(detail.entry.contractName);
+    const table = this.actionMetaTable[normalized];
+    if (!table) return [];
+
+    const available = this.availableFunctions();
+    const currentRole = this.currentWalletRole(detail.entry.participants);
+
+    return Object.entries(table).map(([fnName, meta]) => {
+      const existsOnChain =
+        available.length === 0 || available.some((fn) => fn.name === fnName);
+
+      let disabledReason: string | null = null;
+      if (!existsOnChain) {
+        disabledReason = 'Not available on this contract version.';
+      } else if (
+        meta.requiredRole &&
+        currentRole &&
+        currentRole !== meta.requiredRole
+      ) {
+        disabledReason = `Only the ${meta.requiredRole.toLowerCase()} can do this.`;
+      } else {
+        disabledReason = meta.extraGuard?.(detail) ?? null;
+      }
+
+      return {
+        fnName,
+        label: meta.label,
+        description: meta.description,
+        iconClass: meta.iconClass,
+        enabled: !disabledReason,
+        disabledReason: disabledReason ?? undefined,
+      };
+    });
   }
 
   private selectDefaultFunctionForContract(contractName: string) {
@@ -3798,17 +3991,24 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return labels[action] || action;
   }
 
+  /**
+   * Builds a share link that carries only the network and canonical covenant
+   * ID — never private data or compiled JSON. The receiving wallet imports
+   * current state from the indexer when the link is opened.
+   */
+  buildShareLink(covenantId: string): string {
+    const url = new URL(`${window.location.origin}/app/contracts/${covenantId}`);
+    url.searchParams.set('network', this.network());
+    return url.toString();
+  }
+
   copyContractShareLink(contract: ContractDashboardEntry) {
     const id = contract.covenantId;
     if (!id) return;
-
-    // Share links intentionally carry only public lookup state. The receiving
-    // wallet still imports/loads current state from the indexer.
-    const url = new URL(`${window.location.origin}/app/contracts/${id}`);
-    url.searchParams.set('network', this.network());
-    navigator.clipboard.writeText(url.toString()).then(
+    const link = this.buildShareLink(id);
+    navigator.clipboard.writeText(link).then(
       () => alert('Contract share link copied.'),
-      () => prompt('Copy this contract link:', url.toString()),
+      () => prompt('Copy this contract link:', link),
     );
   }
 
@@ -3816,12 +4016,53 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const id =
       this.deployIndexerState()?.covenantId || this.deployResult()?.covenantId;
     if (!id) return;
-
-    const url = new URL(`${window.location.origin}/app/contracts/${id}`);
-    url.searchParams.set('network', this.network());
-    navigator.clipboard.writeText(url.toString()).then(
+    const link = this.buildShareLink(id);
+    navigator.clipboard.writeText(link).then(
       () => alert('Contract share link copied.'),
-      () => prompt('Copy this contract link:', url.toString()),
+      () => prompt('Copy this contract link:', link),
+    );
+  }
+
+  /** Contract explicitly picked in the "Share a contract" card; empty = auto-default to most recent. */
+  shareableContractId = signal<string>('');
+
+  /** Dropdown options for the "Share a contract" card — only contracts with a covenant ID can be shared. */
+  shareableContracts = computed<ContractDashboardEntry[]>(() =>
+    this.dashboardContracts().filter((c) => !!c.covenantId),
+  );
+
+  /** Effective selection — the explicit pick, or the most-recently-interacted contract. */
+  effectiveShareableContractId = computed<string>(
+    () => this.shareableContractId() || this.shareableContracts()[0]?.id || '',
+  );
+
+  /** Dropdown options for the "Share a contract" card. */
+  shareableContractOptions = computed<DropdownOption[]>(() =>
+    this.shareableContracts().map((contract) => ({
+      value: contract.id,
+      label: contract.displayName,
+    })),
+  );
+
+  /** Readonly link shown in the "Share a contract" card. */
+  shareableContractLink = computed<string>(() => {
+    const id = this.effectiveShareableContractId();
+    if (!id) return '';
+    const contract = this.shareableContracts().find((c) => c.id === id);
+    if (!contract?.covenantId) return '';
+    return this.buildShareLink(contract.covenantId);
+  });
+
+  onShareableContractChange(value: string) {
+    this.shareableContractId.set(value || '');
+  }
+
+  copyShareableContractLink() {
+    const link = this.shareableContractLink();
+    if (!link) return;
+    navigator.clipboard.writeText(link).then(
+      () => alert('Contract share link copied.'),
+      () => prompt('Copy this contract link:', link),
     );
   }
 

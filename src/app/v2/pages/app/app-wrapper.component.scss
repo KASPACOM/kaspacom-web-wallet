@@ -162,6 +162,10 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
     flex-shrink: 0;
     border-top: 1px dashed rgba(#6fc7ba, 0.25);
     z-index: 100;
+
+    &.hide {
+      display: none;
+    }
   }
 
   &__content {
@@ -221,6 +225,14 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
 
   // Override mobile/compact sizing when on a wide enough viewport
   height: 82vh;
+}
+
+// ── Contracts wide-workspace layout ──────────────────────────────────────────
+// Mutually exclusive with .wrapper--expanded at the template level (see
+// app-wrapper.component.html), so no specificity handling is needed here.
+.wrapper--wide-flow {
+  width: min(1180px, calc(100vw - 32px));
+  height: 86vh;
 }
 
 .wrapper__left {

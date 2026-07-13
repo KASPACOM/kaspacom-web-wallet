@@ -34,6 +34,32 @@ $tpl-accents: (
   }
 }
 
+.contracts-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+// ── wide-workspace layout (Contracts only, see WideWorkspaceService) ───────
+.contracts-container--wide {
+  max-width: none;
+  height: 100%;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+
+  .contracts-main {
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+    padding: 24px 28px 48px;
+    box-sizing: border-box;
+  }
+}
+
 // ── segmented tab control ─────────────────────────────────────────────────
 .seg-tabs {
   display: grid;
@@ -646,6 +672,12 @@ $tpl-accents: (
   }
   &:disabled .ai-title {
     color: var(--gray-45);
+  }
+
+  .ai-lock {
+    margin-left: auto;
+    flex-shrink: 0;
+    opacity: 0.6;
   }
 }
 

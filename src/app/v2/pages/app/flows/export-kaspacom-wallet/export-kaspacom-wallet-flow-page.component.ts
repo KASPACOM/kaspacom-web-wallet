@@ -7,8 +7,7 @@ import {
 } from '@angular/core';
 
 import { QRCodeComponent } from 'angularx-qrcode';
-import { NotificationService } from 'kaspacom-ui';
-import { KcButtonComponent, KcIconComponent, KcInputComponent } from '@kaspacom/ui-kit';
+import { KcButtonComponent, KcIconComponent, KcInputComponent, NotificationService } from '@kaspacom/ui-kit';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
 import { PasswordManagerService } from '../../../../../services/password-manager.service';

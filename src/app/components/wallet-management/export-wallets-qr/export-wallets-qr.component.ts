@@ -1,8 +1,8 @@
 import { Component, HostListener, inject } from '@angular/core';
+import { NotificationService } from '@kaspacom/ui-kit';
 import { QRCodeComponent } from 'angularx-qrcode';
 import { PasswordManagerService } from '../../../services/password-manager.service';
 import { LOCAL_STORAGE_KEYS } from '../../../config/consts';
-import { MessagePopupService } from '../../../services/message-popup.service';
 
 @Component({
   selector: 'export-wallets-qr',
@@ -12,7 +12,7 @@ import { MessagePopupService } from '../../../services/message-popup.service';
 })
 export class ExportWalletsQrComponent {
   private passwordManagerService = inject(PasswordManagerService);
-  private messagePopupService = inject(MessagePopupService);
+  private notificationService = inject(NotificationService);
 
   showPasswordPrompt: boolean = false; // Signal to display the password prompt
   passwordFilled: boolean = false; // Signal to display the QR code
@@ -50,7 +50,7 @@ export class ExportWalletsQrComponent {
         this.encryptedUserData = encryptedUserData;
       }
     } else {
-      this.messagePopupService.showError(
+      this.notificationService.error('Error',
         'Incorrect password. Please try again.',
       );
     }

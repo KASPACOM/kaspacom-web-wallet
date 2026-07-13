@@ -1,14 +1,7 @@
-@use "kaspacom-ui/lib/styles/index" as *;
-// TODO(ui-kit migration): kaspacom-ui's token import above is still needed —
-// ~50 files reference its bare --gray-*/--blue-*/--kaspa-* variables
-// directly, not just through Kc* components. Remove it once those are
-// migrated to @kaspacom/ui-kit's --kc-* tokens too.
+@use "styles/legacy-tokens" as *;
 @use "@kaspacom/ui-kit/tokens/index.scss" as kcTokens;
 @use "styles/common";
 @use "styles/responsive";
-
-/* Import icon fonts from kaspacom-ui */
-@import "kaspacom-ui/assets/icons/style.css";
 
 /* CSS Custom Properties */
 :root {

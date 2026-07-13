@@ -9,10 +9,9 @@ import {
 } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
-import { KcInputComponent, KcButtonComponent } from '@kaspacom/ui-kit';
+import { KcInputComponent, KcButtonComponent, NotificationService } from '@kaspacom/ui-kit';
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
 import { WalletService } from '../../../../../../../services/wallet.service';
-import { MessagePopupService } from '../../../../../../../services/message-popup.service';
 
 @Component({
   selector: 'app-edit-wallet-quick-action-dialog',
@@ -33,7 +32,7 @@ export class EditWalletQuickActionDialogComponent implements AfterViewInit {
   readonly close = output<void>();
 
   private walletService = inject(WalletService);
-  private messagePopupService = inject(MessagePopupService);
+  private notificationService = inject(NotificationService);
   private cdr = inject(ChangeDetectorRef);
 
   // Form data
@@ -98,7 +97,7 @@ export class EditWalletQuickActionDialogComponent implements AfterViewInit {
         if (success) {
           // The updateWalletName method already updates the current wallet signal
           // No need to call loadWallets() - state is already updated
-          this.messagePopupService.showSuccess(
+          this.notificationService.success('Success',
             `Wallet renamed to "${this.walletName}"`,
           );
 
@@ -107,7 +106,7 @@ export class EditWalletQuickActionDialogComponent implements AfterViewInit {
             data.onSuccess();
           }
         } else {
-          this.messagePopupService.showError('Failed to update wallet name');
+          this.notificationService.error('Error', 'Failed to update wallet name');
         }
       }
 
@@ -118,7 +117,7 @@ export class EditWalletQuickActionDialogComponent implements AfterViewInit {
       this.closeDialog();
     } catch (error) {
       console.error('Error updating wallet name:', error);
-      this.messagePopupService.showError('Failed to update wallet name');
+      this.notificationService.error('Error', 'Failed to update wallet name');
     }
   }
 }

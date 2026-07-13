@@ -11,13 +11,7 @@ import {
 } from '@angular/core';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 
-import {
-  KcDialogComponent,
-  KcInputComponent,
-  KcIconComponent,
-  KcTooltipDirective,
-} from '@kaspacom/ui-kit';
-import { MessagePopupService } from '../../../../../../../services/message-popup.service';
+import { KcDialogComponent, KcInputComponent, KcIconComponent, KcTooltipDirective, NotificationService } from '@kaspacom/ui-kit';
 import type { Erc20Token } from '@kaspacom/swap-sdk';
 import { CommaFormatterPipe } from '../../../../../../../pipes/comma-formatter.pipe';
 import { TokenLogoComponent } from '../../../../../../../components/token-logo/token-logo.component';
@@ -75,7 +69,7 @@ export interface TokenSelectorDialogData {
   styleUrl: './token-selector-modal.component.scss',
 })
 export class TokenSelectorModalComponent implements OnInit {
-  private messagePopupService = inject(MessagePopupService);
+  private notificationService = inject(NotificationService);
   private defiApiService = inject(KaspaComDefiApiService);
   private chainManager = inject(EthereumWalletChainManager);
   private destroyRef = inject(DestroyRef);
@@ -252,9 +246,9 @@ export class TokenSelectorModalComponent implements OnInit {
     event.stopPropagation();
     try {
       await navigator.clipboard.writeText(address);
-      this.messagePopupService.showSuccess('Address copied to clipboard');
+      this.notificationService.success('Success', 'Address copied to clipboard');
     } catch {
-      this.messagePopupService.showError('Failed to copy address');
+      this.notificationService.error('Error', 'Failed to copy address');
     }
   }
 

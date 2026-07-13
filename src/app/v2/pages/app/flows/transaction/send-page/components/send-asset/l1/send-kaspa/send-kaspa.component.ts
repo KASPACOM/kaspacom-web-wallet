@@ -10,12 +10,11 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import { KcNumberInputComponent, KcButtonComponent } from '@kaspacom/ui-kit';
+import { KcNumberInputComponent, KcButtonComponent, NotificationService } from '@kaspacom/ui-kit';
 import {
   KaspaNetworkActionsService,
   MINIMAL_AMOUNT_TO_SEND,
 } from '../../../../../../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
-import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
 import { QrScannerService } from '../../../../../../../../../../services/qr-scanner.service';
 import { UtilsHelper } from '../../../../../../../../../../services/utils.service';
 import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';
@@ -50,7 +49,7 @@ export class SendKaspaComponent
   private walletActionService = inject(WalletActionService);
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private utilsHelper = inject(UtilsHelper);
-  private messagePopupService = inject(MessagePopupService);
+  private notificationService = inject(NotificationService);
   private approvalFlowService = inject(ApprovalFlowService);
   private qrScannerService = inject(QrScannerService);
   private router = inject(Router);
@@ -101,7 +100,7 @@ export class SendKaspaComponent
 
         if (completion.success) {
           // Transaction was successful, navigate back
-          this.messagePopupService.showSuccess(
+          this.notificationService.success('Success',
             'Transaction sent successfully!',
           );
           this.navigateBack();
@@ -276,7 +275,7 @@ export class SendKaspaComponent
 
     const currentWallet = this.walletService.getCurrentWallet();
     if (!currentWallet) {
-      this.messagePopupService.showError('No wallet selected');
+      this.notificationService.error('Error', 'No wallet selected');
       return;
     }
 
@@ -288,7 +287,7 @@ export class SendKaspaComponent
 
       // Check if utxo processor manager is available
       if (!currentWallet.getUtxoProcessorManager()) {
-        this.messagePopupService.showError(
+        this.notificationService.error('Error',
           'Wallet is not ready for transactions. Please wait and try again.',
         );
         return;
@@ -324,7 +323,7 @@ export class SendKaspaComponent
         // Only show success message and navigate if not using v2 flow
         // v2 flow handles success display in the approval flow
         if (!result.isUsingV2Flow) {
-          this.messagePopupService.showSuccess(
+          this.notificationService.success('Success',
             'Transaction sent successfully!',
           );
           this.navigateBack();
@@ -337,7 +336,7 @@ export class SendKaspaComponent
           const errorMessage = result.errorCode
             ? ERROR_CODES_MESSAGES[result.errorCode]
             : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR];
-          this.messagePopupService.showError(errorMessage);
+          this.notificationService.error('Error', errorMessage);
         }
 
         // Reset the waiting flag if transaction failed
@@ -345,7 +344,7 @@ export class SendKaspaComponent
       }
     } catch (error) {
       console.error('Error sending transaction:', error);
-      this.messagePopupService.showError('Failed to send transaction');
+      this.notificationService.error('Error', 'Failed to send transaction');
     } finally {
       this.isLoading = false;
     }

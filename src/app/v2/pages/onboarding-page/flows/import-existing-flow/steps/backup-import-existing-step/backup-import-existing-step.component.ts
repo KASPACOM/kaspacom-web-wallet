@@ -1,7 +1,6 @@
 import { Component, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { NotificationService } from 'kaspacom-ui';
-import { KcButtonComponent } from '@kaspacom/ui-kit';
+import { KcButtonComponent, NotificationService } from '@kaspacom/ui-kit';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
 import { PasswordManagerService } from '../../../../../../../services/password-manager.service';
 import { Router } from '@angular/router';

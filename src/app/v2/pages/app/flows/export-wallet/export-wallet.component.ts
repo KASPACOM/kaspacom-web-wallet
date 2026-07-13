@@ -1,7 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 
-import { NotificationService } from 'kaspacom-ui';
-import { KcButtonComponent, KcInputComponent } from '@kaspacom/ui-kit';
+import { KcButtonComponent, KcInputComponent, NotificationService } from '@kaspacom/ui-kit';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
 import { WalletService } from '../../../../../services/wallet.service';

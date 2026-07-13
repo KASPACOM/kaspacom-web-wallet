@@ -16,7 +16,11 @@
 
     <!-- Percentage Options -->
     <div class="percentage-options-wrapper flex justify-content-end">
-      <div class="percentage-options flex gap-8">
+      <div
+        class="percentage-options flex gap-8"
+        role="group"
+        aria-label="Select percentage of balance"
+      >
         @for (option of percentageOptions; track option.value) {
           <kc-button
             [text]="option.label"

@@ -8,7 +8,7 @@ import {
   OnChanges,
   SimpleChanges,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import {
   ReactiveFormsModule,
   FormBuilder,
@@ -27,7 +27,6 @@ import type { SwapSettings } from '@kaspacom/swap-sdk';
   selector: 'app-swap-settings-modal',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     KcBaseModalComponent,
     KcInputComponent,

@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { KcIconComponent, KcSpinnerComponent } from 'kaspacom-ui';
 import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
@@ -7,7 +6,7 @@ import { WalletService } from '../../../../../services/wallet.service';
 @Component({
   selector: 'app-pending-transactions-banner',
   standalone: true,
-  imports: [CommonModule, KcIconComponent, KcSpinnerComponent],
+  imports: [KcIconComponent, KcSpinnerComponent],
   templateUrl: './pending-transactions-banner.component.html',
   styleUrl: './pending-transactions-banner.component.scss',
 })

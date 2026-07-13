@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, inject, output, signal } from '@angular/core';
 import {
   AbstractControl,
@@ -17,7 +16,6 @@ import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 @Component({
   selector: 'app-create-password-new-wallet-step',
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     KcInputComponent,
     KcButtonComponent,
@@ -41,7 +39,7 @@ export class CreatePasswordNewWalletStepComponent {
         [
           Validators.required,
           Validators.minLength(8),
-          Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/)
+          Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/),
         ],
       ],
       confirmPassword: [

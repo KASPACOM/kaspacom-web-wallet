@@ -21,18 +21,33 @@
         autocomplete="off"
         required
       />
-      <div *ngIf="clearDataForm.get('confirmation')?.invalid && clearDataForm.get('confirmation')?.touched" class="error-message">
-        Please type "DELETE ALL DATA" exactly to confirm
-      </div>
+      @if (
+        clearDataForm.get("confirmation")?.invalid &&
+        clearDataForm.get("confirmation")?.touched
+      ) {
+        <div class="error-message">
+          Please type "DELETE ALL DATA" exactly to confirm
+        </div>
+      }
     </div>
 
     <div class="button-group">
-      <button type="button" (click)="cancel()" class="cancel-button">Cancel</button>
-      <button type="submit" [disabled]="clearDataForm.invalid" class="delete-button">Clear All Data</button>
+      <button type="button" (click)="cancel()" class="cancel-button">
+        Cancel
+      </button>
+      <button
+        type="submit"
+        [disabled]="clearDataForm.invalid"
+        class="delete-button"
+      >
+        Clear All Data
+      </button>
     </div>
   </form>
 
-  <div *ngIf="error" class="error-message">
-    {{ error }}
-  </div>
-</div> 
+  @if (error) {
+    <div class="error-message">
+      {{ error }}
+    </div>
+  }
+</div>

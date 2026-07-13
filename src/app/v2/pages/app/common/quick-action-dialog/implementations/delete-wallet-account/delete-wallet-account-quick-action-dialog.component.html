@@ -7,15 +7,22 @@
 >
   <!-- Content slot for confirmation message -->
   <div slot="content" class="delete-confirmation">
-    <p *ngIf="!isLastWalletAccount()">
-      Are you sure you want to delete the account <strong>{{ accountName }}</strong>?
-      This action cannot be undone and you will lose access to this account permanently.
-    </p>
-    <p *ngIf="isLastWalletAccount()">
-      You can't delete the last wallet. You can remove only all wallets info from the settings menu.
-    </p>
+    @if (!isLastWalletAccount()) {
+      <p>
+        Are you sure you want to delete the account
+        <strong>{{ accountName }}</strong
+        >? This action cannot be undone and you will lose access to this account
+        permanently.
+      </p>
+    }
+    @if (isLastWalletAccount()) {
+      <p>
+        You can't delete the last wallet. You can remove only all wallets info
+        from the settings menu.
+      </p>
+    }
   </div>
-  
+
   <!-- Footer slot for action buttons -->
   <div slot="footer" class="button-row">
     <kc-button
@@ -36,5 +43,3 @@
     ></kc-button>
   </div>
 </app-quick-action-dialog>
-
-

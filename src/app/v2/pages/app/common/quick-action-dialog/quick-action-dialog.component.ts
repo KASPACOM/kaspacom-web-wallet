@@ -1,42 +1,67 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  OnChanges,
+  SimpleChanges,
+} from '@angular/core';
+
 import { KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
-import { trigger, state, style, transition, animate } from '@angular/animations';
+import {
+  trigger,
+  state,
+  style,
+  transition,
+  animate,
+} from '@angular/animations';
 
 @Component({
   selector: 'app-quick-action-dialog',
   standalone: true,
-  imports: [CommonModule, KcIconComponent, KcTooltipDirective],
+  imports: [KcIconComponent, KcTooltipDirective],
   templateUrl: './quick-action-dialog.component.html',
   styleUrl: './quick-action-dialog.component.scss',
   animations: [
     trigger('slideUp', [
-      state('closed', style({
-        transform: 'translateY(600px)',
-        opacity: 0
-      })),
-      state('open', style({
-        transform: 'translateY(0)',
-        opacity: 1
-      })),
+      state(
+        'closed',
+        style({
+          transform: 'translateY(600px)',
+          opacity: 0,
+        }),
+      ),
+      state(
+        'open',
+        style({
+          transform: 'translateY(0)',
+          opacity: 1,
+        }),
+      ),
       transition('closed => open', [
         style({
           transform: 'translateY(600px)',
-          opacity: 0
+          opacity: 0,
         }),
-        animate('300ms ease-out', style({
-          transform: 'translateY(0)',
-          opacity: 1
-        }))
+        animate(
+          '300ms ease-out',
+          style({
+            transform: 'translateY(0)',
+            opacity: 1,
+          }),
+        ),
       ]),
       transition('open => closed', [
-        animate('300ms ease-in', style({
-          transform: 'translateY(600px)',
-          opacity: 0
-        }))
-      ])
-    ])
-  ]
+        animate(
+          '300ms ease-in',
+          style({
+            transform: 'translateY(600px)',
+            opacity: 0,
+          }),
+        ),
+      ]),
+    ]),
+  ],
 })
 export class QuickActionDialogComponent implements OnChanges {
   @Input() isOpen = false;

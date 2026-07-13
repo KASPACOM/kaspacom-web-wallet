@@ -1,11 +1,10 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input, resource } from '@angular/core';
 import { UtilsService } from '../../services/utils/utils.service';
 import { ComponentSize } from '../../v2/pages/app/common/types/sizing.type';
 
 @Component({
   selector: 'kc-token-logo',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './token-logo.component.html',
   styleUrl: './token-logo.component.scss',
 })

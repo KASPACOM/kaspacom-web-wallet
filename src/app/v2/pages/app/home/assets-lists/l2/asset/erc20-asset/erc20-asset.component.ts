@@ -1,8 +1,11 @@
-import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { formatUnits, getAddress } from 'ethers';
-import { KcButtonComponent, KcIconComponent, NotificationService } from 'kaspacom-ui';
+import {
+  KcButtonComponent,
+  KcIconComponent,
+  NotificationService,
+} from 'kaspacom-ui';
 import { AssetsManagerService } from '../../../../../../../../services/assets-manager/assets-manager.service';
 import { L2AssetsStoreService } from '../../../../../../../../services/assets-manager/assets-stores/l2-assets-store.service';
 import { ERC20Contract } from '../../../../../../../../services/etherium-services/smart-contracts/contracts/erc20-contract';
@@ -26,7 +29,6 @@ interface Erc20TokenInfo {
 @Component({
   selector: 'app-erc20-asset',
   imports: [
-    CommonModule,
     KcButtonComponent,
     KcIconComponent,
     SkeletonComponent,
@@ -56,7 +58,8 @@ export class Erc20AssetComponent
   protected tokenInfo = signal<Erc20TokenInfo | null>(null);
 
   private get l2Store(): L2AssetsStoreService {
-    return this.assetsManagerService.getAllAssetStores().l2 as L2AssetsStoreService;
+    return this.assetsManagerService.getAllAssetStores()
+      .l2 as L2AssetsStoreService;
   }
 
   override ngOnInit(): void {
@@ -171,11 +174,17 @@ export class Erc20AssetComponent
         ...info,
         address: getAddress(info.address),
       });
-      this.notificationService.success('Token Removed', `${info.symbol} has been removed from your wallet`);
+      this.notificationService.success(
+        'Token Removed',
+        `${info.symbol} has been removed from your wallet`,
+      );
       this.isTokenSaved.set(false);
       this.goBack();
     } catch (err: any) {
-      this.notificationService.error('Remove Failed', err?.message || 'Failed to remove token');
+      this.notificationService.error(
+        'Remove Failed',
+        err?.message || 'Failed to remove token',
+      );
     } finally {
       this.isRemoving.set(false);
     }

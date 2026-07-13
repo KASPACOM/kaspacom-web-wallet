@@ -1,5 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FlowPageBaseComponent } from '../../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../../common/flow-page/interfaces/flow-page.interface';
 import { L1SendAssetsContainerComponent } from './l1-send-assets-container.component';
@@ -9,11 +9,7 @@ import { WalletService } from '../../../../../../services/wallet.service';
 @Component({
   selector: 'app-send-page',
   standalone: true,
-  imports: [
-    CommonModule,
-    L1SendAssetsContainerComponent,
-    L2SendAssetsContainerComponent,
-  ],
+  imports: [L1SendAssetsContainerComponent, L2SendAssetsContainerComponent],
   templateUrl: './send-page.component.html',
   styleUrl: './send-page.component.scss',
 })

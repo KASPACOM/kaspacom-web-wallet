@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
@@ -12,12 +11,7 @@ import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-backup-import-existing-step',
-  imports: [
-    CommonModule,
-    FormsModule,
-    KcButtonComponent,
-    KcIconComponent,
-  ],
+  imports: [FormsModule, KcButtonComponent, KcIconComponent],
   templateUrl: './backup-import-existing-step.component.html',
   styleUrl: './backup-import-existing-step.component.scss',
 })
@@ -64,18 +58,18 @@ export class BackupImportExistingStepComponent {
     this.isImporting.set(true);
 
     // Small delay to ensure UI updates
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     try {
       // Import the encrypted data
       const success = this.passwordManagerService.importFromEncryptedData(
-        this.backupData.trim()
+        this.backupData.trim(),
       );
-      
+
       if (!success) {
         this.notificationService.error(
           'Invalid Backup',
-          'Please check your backup data and try again.'
+          'Please check your backup data and try again.',
         );
         this.isImporting.set(false);
         return;
@@ -83,7 +77,7 @@ export class BackupImportExistingStepComponent {
 
       this.notificationService.success(
         'Success',
-        'Backup imported! Redirecting to login...'
+        'Backup imported! Redirecting to login...',
       );
 
       // Reload the page to refresh the login state
@@ -94,10 +88,9 @@ export class BackupImportExistingStepComponent {
       console.error('Error importing backup:', error);
       this.notificationService.error(
         'Import Failed',
-        'Unable to import backup. Please try again.'
+        'Unable to import backup. Please try again.',
       );
       this.isImporting.set(false);
     }
   }
 }
-

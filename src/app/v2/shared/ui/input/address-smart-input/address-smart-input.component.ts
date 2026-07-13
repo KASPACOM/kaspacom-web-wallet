@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   Component,
   EventEmitter,
@@ -26,7 +25,6 @@ import {
   selector: 'app-address-smart-input',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     KcInputComponent,
     KcIconComponent,
@@ -148,10 +146,11 @@ export class AddressSmartInputComponent implements OnChanges {
       // KNS domain resolution - show resolved address section
       this.isResolving.set(false);
       this.isDomainCandidate.set(false);
-      
+
       if (result.effectiveAddress) {
         this.resolvedAddress.set(result.effectiveAddress);
-        if (result.resolvedDomain) this.resolvedDomain.set(result.resolvedDomain);
+        if (result.resolvedDomain)
+          this.resolvedDomain.set(result.resolvedDomain);
         this.resolveError.set('');
         this.displayIsValid.set(true);
         this.displayInvalidReason.set('');
@@ -168,7 +167,7 @@ export class AddressSmartInputComponent implements OnChanges {
       this.isDomainCandidate.set(false);
       this.resolvedAddress.set('');
       this.resolvedDomain.set('');
-      
+
       if (result.error) {
         // Address format validation error
         this.resolveError.set(result.error);

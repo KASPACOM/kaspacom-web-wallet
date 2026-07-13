@@ -11,8 +11,13 @@ import {
   untracked,
   DestroyRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { KcBaseModalComponent, KcInputComponent, KcIconComponent, KcTooltipDirective } from 'kaspacom-ui';
+
+import {
+  KcBaseModalComponent,
+  KcInputComponent,
+  KcIconComponent,
+  KcTooltipDirective,
+} from 'kaspacom-ui';
 import { MessagePopupService } from '../../../../../../../services/message-popup.service';
 import type { Erc20Token } from '@kaspacom/swap-sdk';
 import { CommaFormatterPipe } from '../../../../../../../pipes/comma-formatter.pipe';
@@ -51,7 +56,6 @@ function isLocalStorageAvailable(): boolean {
   selector: 'app-token-selector-modal',
   standalone: true,
   imports: [
-    CommonModule,
     KcBaseModalComponent,
     KcInputComponent,
     KcIconComponent,
@@ -78,7 +82,9 @@ export class TokenSelectorModalComponent implements OnInit {
 
   isVerifiedToken(token: Erc20Token): boolean {
     const addr = token.address.toLowerCase();
-    return this.verifiedTokensList().some((v) => v.address.toLowerCase() === addr);
+    return this.verifiedTokensList().some(
+      (v) => v.address.toLowerCase() === addr,
+    );
   }
 
   isPotentialHarm(token: Erc20Token): boolean {
@@ -87,7 +93,8 @@ export class TokenSelectorModalComponent implements OnInit {
     const symbol = token.symbol.toLowerCase();
     const addr = token.address.toLowerCase();
     return verified.some(
-      (v) => v.symbol.toLowerCase() === symbol && v.address.toLowerCase() !== addr,
+      (v) =>
+        v.symbol.toLowerCase() === symbol && v.address.toLowerCase() !== addr,
     );
   }
 

@@ -6,7 +6,7 @@ import {
   WritableSignal,
   OnDestroy,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { KcButtonComponent } from 'kaspacom-ui';
 import { KcIconComponent } from 'kaspacom-ui';
@@ -33,7 +33,6 @@ import { SwapContextService } from '../../../../../services/swap-context.service
 @Component({
   selector: 'app-approval-flow-page',
   imports: [
-    CommonModule,
     FormsModule,
     KcButtonComponent,
     KcIconComponent,
@@ -126,7 +125,8 @@ export class ApprovalFlowPageComponent implements OnDestroy {
   });
 
   // Form state
-  protected currentPriorityFee: WritableSignal<bigint | undefined> = signal(undefined);
+  protected currentPriorityFee: WritableSignal<bigint | undefined> =
+    signal(undefined);
   protected currentL2PriorityFee: WritableSignal<
     Partial<L2PriorityInfo> | undefined
   > = signal(undefined);
@@ -197,9 +197,9 @@ export class ApprovalFlowPageComponent implements OnDestroy {
   setL2CurrentPriorityFee(
     info:
       | {
-        priorityFee: bigint;
-        baseFee: bigint;
-      }
+          priorityFee: bigint;
+          baseFee: bigint;
+        }
       | undefined,
   ) {
     if (info == undefined) {

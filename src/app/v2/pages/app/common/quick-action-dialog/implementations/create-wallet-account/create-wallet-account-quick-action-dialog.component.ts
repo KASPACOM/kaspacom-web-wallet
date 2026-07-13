@@ -1,7 +1,19 @@
-import { Component, Input, Output, EventEmitter, inject, ChangeDetectorRef, AfterViewInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  inject,
+  ChangeDetectorRef,
+  AfterViewInit,
+} from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
-import { KcInputComponent, KcButtonComponent, NotificationService } from 'kaspacom-ui';
+import {
+  KcInputComponent,
+  KcButtonComponent,
+  NotificationService,
+} from 'kaspacom-ui';
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
 import { WalletService } from '../../../../../../../services/wallet.service';
 import { AppWallet } from '../../../../../../../classes/AppWallet';
@@ -9,9 +21,14 @@ import { AppWallet } from '../../../../../../../classes/AppWallet';
 @Component({
   selector: 'app-create-wallet-account-quick-action-dialog',
   standalone: true,
-  imports: [CommonModule, FormsModule, KcInputComponent, KcButtonComponent, QuickActionDialogComponent],
+  imports: [
+    FormsModule,
+    KcInputComponent,
+    KcButtonComponent,
+    QuickActionDialogComponent,
+  ],
   templateUrl: './create-wallet-account-quick-action-dialog.component.html',
-  styleUrl: './create-wallet-account-quick-action-dialog.component.scss'
+  styleUrl: './create-wallet-account-quick-action-dialog.component.scss',
 })
 export class CreateWalletAccountQuickActionDialogComponent implements AfterViewInit {
   @Input() isOpen = false;
@@ -85,27 +102,42 @@ export class CreateWalletAccountQuickActionDialogComponent implements AfterViewI
               this.accountName,
             );
             if (success) {
-              this.notificationService.success('Success', `Account name updated successfully!`);
+              this.notificationService.success(
+                'Success',
+                `Account name updated successfully!`,
+              );
               // Account name is already updated in storage, no need to reload
               // Call the success callback to refresh the parent component
               if (this.data?.onSuccess) {
                 this.data.onSuccess();
               }
             } else {
-              this.notificationService.error('Error', 'Failed to update account name');
+              this.notificationService.error(
+                'Error',
+                'Failed to update account name',
+              );
             }
           } else {
             // This is a wallet without accounts, update wallet name
-            const success = await this.walletService.updateWalletName(wallet, this.accountName);
+            const success = await this.walletService.updateWalletName(
+              wallet,
+              this.accountName,
+            );
             if (success) {
-              this.notificationService.success('Success', `Wallet name updated successfully!`);
+              this.notificationService.success(
+                'Success',
+                `Wallet name updated successfully!`,
+              );
               // The updateWalletName method already updates the wallet signal
               // Call the success callback to refresh the parent component
               if (this.data?.onSuccess) {
                 this.data.onSuccess();
               }
             } else {
-              this.notificationService.error('Error', 'Failed to update wallet name');
+              this.notificationService.error(
+                'Error',
+                'Failed to update wallet name',
+              );
             }
           }
         } else {
@@ -118,7 +150,9 @@ export class CreateWalletAccountQuickActionDialogComponent implements AfterViewI
 
           // Get all wallets for this wallet ID
           const allWallets = this.walletService.getAllWallets(false)() || [];
-          const walletGroup = allWallets.filter(w => w.getId() === currentWallet.getId());
+          const walletGroup = allWallets.filter(
+            (w) => w.getId() === currentWallet.getId(),
+          );
 
           if (walletGroup.length === 0) {
             this.notificationService.error('Error', 'Wallet not found');
@@ -127,7 +161,9 @@ export class CreateWalletAccountQuickActionDialogComponent implements AfterViewI
 
           // Calculate next account number
           const accounts = walletGroup.map((wallet) =>
-            this.walletService.getWalletAccountNumberFromDerivedPath(wallet.getDerivedPath()!)
+            this.walletService.getWalletAccountNumberFromDerivedPath(
+              wallet.getDerivedPath()!,
+            ),
           );
           const maxAccount = Math.max(...accounts);
           const newAccountNumber = maxAccount + 1;
@@ -137,14 +173,17 @@ export class CreateWalletAccountQuickActionDialogComponent implements AfterViewI
             walletGroup[0].getId(),
             this.walletService.replaceWalletAccountNumberFromDerivedPath(
               walletGroup[0].getDerivedPath()!,
-              newAccountNumber
+              newAccountNumber,
             ),
-            this.accountName
+            this.accountName,
           );
 
           if (result.success) {
             // Show success notification
-            this.notificationService.success('Success', `Account "${this.accountName}" added successfully!`);
+            this.notificationService.success(
+              'Success',
+              `Account "${this.accountName}" added successfully!`,
+            );
             // Note: addWalletAccount already updates the wallet service's signal,
             // so we don't need to call loadWallets() here
             // Call the success callback to refresh the parent component
@@ -152,7 +191,10 @@ export class CreateWalletAccountQuickActionDialogComponent implements AfterViewI
               this.data.onSuccess();
             }
           } else {
-            this.notificationService.error('Error', result.error || 'Failed to add account');
+            this.notificationService.error(
+              'Error',
+              result.error || 'Failed to add account',
+            );
           }
         }
 

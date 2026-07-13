@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { KcButtonComponent, KcIconComponent } from 'kaspacom-ui';
@@ -27,7 +27,6 @@ interface NftMetadata {
   selector: 'app-krc721-asset',
   standalone: true,
   imports: [
-    CommonModule,
     KcButtonComponent,
     KcIconComponent,
     SkeletonComponent,

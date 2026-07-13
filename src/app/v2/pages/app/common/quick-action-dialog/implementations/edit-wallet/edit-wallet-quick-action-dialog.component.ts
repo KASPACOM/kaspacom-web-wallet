@@ -8,7 +8,7 @@ import {
   inject,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { KcInputComponent, KcButtonComponent } from 'kaspacom-ui';
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
@@ -19,7 +19,6 @@ import { MessagePopupService } from '../../../../../../../services/message-popup
   selector: 'app-edit-wallet-quick-action-dialog',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     KcInputComponent,
     KcButtonComponent,

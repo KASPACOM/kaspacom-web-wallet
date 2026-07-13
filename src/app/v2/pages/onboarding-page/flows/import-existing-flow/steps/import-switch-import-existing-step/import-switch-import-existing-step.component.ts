@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, inject, output, signal } from '@angular/core';
 import { KcButtonComponent, NotificationService } from 'kaspacom-ui';
 import { ImportSwitchComponent } from './component/import-switch/import-switch.component';
@@ -9,7 +8,7 @@ import { PasswordManagerService } from '../../../../../../../services/password-m
 
 @Component({
   selector: 'app-import-switch-import-existing-step',
-  imports: [CommonModule, KcButtonComponent, ImportSwitchComponent],
+  imports: [KcButtonComponent, ImportSwitchComponent],
   templateUrl: './import-switch-import-existing-step.component.html',
   styleUrl: './import-switch-import-existing-step.component.scss',
 })
@@ -26,7 +25,9 @@ export class ImportSwitchImportExistingStepComponent {
   private readonly notificationService = inject(NotificationService);
 
   importMethod = signal<ImportSwitchMethod>(ImportSwitchMethod.SEED_PHRASE);
-  userHasWallets = computed(() => this.passwordManagerService.isUserHasSavedPassword());
+  userHasWallets = computed(() =>
+    this.passwordManagerService.isUserHasSavedPassword(),
+  );
 
   constructor() {
     this.importMethod.set(
@@ -68,20 +69,20 @@ export class ImportSwitchImportExistingStepComponent {
     try {
       // Import the encrypted data using the same logic as backup file import
       const success = this.passwordManagerService.importFromEncryptedData(
-        backupData.trim()
+        backupData.trim(),
       );
-      
+
       if (!success) {
         this.notificationService.error(
           'Invalid Backup',
-          'Please check your backup QR code and try again.'
+          'Please check your backup QR code and try again.',
         );
         return;
       }
 
       this.notificationService.success(
         'Success',
-        'Backup imported! Redirecting to login...'
+        'Backup imported! Redirecting to login...',
       );
 
       // Reload the page to refresh the login state
@@ -92,7 +93,7 @@ export class ImportSwitchImportExistingStepComponent {
       console.error('Error importing backup from QR:', error);
       this.notificationService.error(
         'Import Failed',
-        'Unable to import backup. Please try again.'
+        'Unable to import backup. Please try again.',
       );
     }
   }

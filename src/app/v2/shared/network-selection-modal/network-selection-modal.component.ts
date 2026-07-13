@@ -1,5 +1,5 @@
 import { Component, computed, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { FlowPagesService } from '../../services/flow-pages.service';
@@ -9,7 +9,10 @@ import { EIP1193ProviderChain } from '@kaspacom/wallet-messages';
 import { WalletService } from '../../../services/wallet.service';
 import { Router } from '@angular/router';
 import { CHAIN_ID_LOGOS } from './chain-id-logos';
-import { COINGECKO_PRICE_URL, NATIVE_TOKEN_COINGECKO_IDS } from './coingecko-native-ids';
+import {
+  COINGECKO_PRICE_URL,
+  NATIVE_TOKEN_COINGECKO_IDS,
+} from './coingecko-native-ids';
 import { L1NetworkConfigInterface } from '../../../../environments/environment.interface';
 import { RpcService } from '../../../services/kaspa-netwrok-services/rpc.service';
 import { KaspaNetworkConnectionManagerService } from '../../../services/kaspa-netwrok-services/kaspa-network-connection-manager.service';
@@ -18,7 +21,6 @@ import { AppWallet } from '../../../classes/AppWallet';
 
 const PRICE_CACHE_TTL_MS = 5 * 60 * 1000;
 
-
 interface PriceCacheEntry {
   priceUsd: number;
   fetchedAt: number;
@@ -26,7 +28,7 @@ interface PriceCacheEntry {
 
 @Component({
   selector: 'network-selection-modal',
-  imports: [CommonModule, KcIconComponent],
+  imports: [KcIconComponent],
   templateUrl: './network-selection-modal.component.html',
   styleUrl: './network-selection-modal.component.scss',
 })
@@ -48,7 +50,9 @@ export class NetworkSelectionModalComponent implements OnInit {
   // Reactive: re-derives whenever a custom chain is added or removed
   protected networks = computed<EIP1193ProviderChain[]>(() => {
     void this.ethereumWalletChainManager.getCustomChainsSignal()();
-    return Object.values(this.ethereumWalletChainManager.getAllChainsByChainId());
+    return Object.values(
+      this.ethereumWalletChainManager.getAllChainsByChainId(),
+    );
   });
 
   protected nativePrices = new Map<string, number>();
@@ -83,10 +87,12 @@ export class NetworkSelectionModalComponent implements OnInit {
     const uniqueSymbols = [...symbolToChainIds.keys()];
     if (!uniqueSymbols.length) return;
 
-    const geckoIdList = [...new Set(uniqueSymbols.map(s => NATIVE_TOKEN_COINGECKO_IDS[s]))];
+    const geckoIdList = [
+      ...new Set(uniqueSymbols.map((s) => NATIVE_TOKEN_COINGECKO_IDS[s])),
+    ];
     const geckoIds = geckoIdList.join(',');
     const now = Date.now();
-    const allCached = geckoIdList.every(id => {
+    const allCached = geckoIdList.every((id) => {
       const entry = this.priceCache.get(id);
       return entry && now - entry.fetchedAt < PRICE_CACHE_TTL_MS;
     });
@@ -101,7 +107,10 @@ export class NetworkSelectionModalComponent implements OnInit {
         for (const geckoId of geckoIdList) {
           const price = resp[geckoId]?.usd;
           if (price !== undefined) {
-            this.priceCache.set(geckoId, { priceUsd: price, fetchedAt: Date.now() });
+            this.priceCache.set(geckoId, {
+              priceUsd: price,
+              fetchedAt: Date.now(),
+            });
           }
         }
       } catch {
@@ -132,7 +141,8 @@ export class NetworkSelectionModalComponent implements OnInit {
 
   getNetworkIcon(network: EIP1193ProviderChain): string | null {
     return (
-      this.ethereumWalletChainManager.getChainEnvConfig(network.chainId)?.icon ||
+      this.ethereumWalletChainManager.getChainEnvConfig(network.chainId)
+        ?.icon ||
       CHAIN_ID_LOGOS[network.chainId.toLowerCase()] ||
       null
     );
@@ -147,7 +157,9 @@ export class NetworkSelectionModalComponent implements OnInit {
 
   isCurrentNetwork(networkId: string): boolean {
     return (
-      this.ethereumWalletChainManager.getCurrentChainSignal()()?.toLowerCase() === networkId.toLowerCase()
+      this.ethereumWalletChainManager
+        .getCurrentChainSignal()()
+        ?.toLowerCase() === networkId.toLowerCase()
     );
   }
 

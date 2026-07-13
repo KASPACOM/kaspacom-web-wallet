@@ -1,4 +1,4 @@
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage } from '@angular/common';
 import {
   AfterViewInit,
   Component,
@@ -22,7 +22,7 @@ export interface INavRoute {
 }
 @Component({
   selector: 'app-wrapper-nav',
-  imports: [CommonModule, RouterModule, KcTooltipDirective],
+  imports: [RouterModule, KcTooltipDirective],
   templateUrl: './wrapper-nav.component.html',
   styleUrl: './wrapper-nav.component.scss',
 })

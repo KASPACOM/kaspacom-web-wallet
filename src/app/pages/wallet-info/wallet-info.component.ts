@@ -8,7 +8,7 @@ import {
 import { Router } from '@angular/router';
 import { WalletService } from '../../services/wallet.service'; // Assume you have a service to fetch wallets
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { CommonModule, NgFor, NgIf, Time } from '@angular/common';
+import { Time } from '@angular/common';
 import { AppWallet } from '../../classes/AppWallet';
 import { catchError, firstValueFrom, map, of, tap } from 'rxjs';
 import { KasplexKrc20Service } from '../../services/kasplex-api/kasplex-api.service';
@@ -40,27 +40,24 @@ type ActionTabs = 'send' | 'mint' | 'deploy' | 'list' | 'buy' | 'kasplex-l2';
 type InfoTabs = 'utxos' | 'kaspa-transactions' | 'krc20-actions';
 
 @Component({
-    selector: 'wallet-info',
-    templateUrl: './wallet-info.component.html',
-    styleUrls: ['./wallet-info.component.scss'],
-    imports: [
-        FormsModule,
-        ReactiveFormsModule,
-        NgIf,
-        NgFor,
-        SompiToNumberPipe,
-        SendAssetComponent,
-        MintComponent,
-        ReviewActionComponent,
-        CommonModule,
-        DeployComponent,
-        UtxosListComponent,
-        TransactionHistoryComponent,
-        Krc20OperationHistoryComponent,
-        MempoolTransactionsComponent,
-        AddL2ChainComponent,
-        L2TransactionComponent,
-    ]
+  selector: 'wallet-info',
+  templateUrl: './wallet-info.component.html',
+  styleUrls: ['./wallet-info.component.scss'],
+  imports: [
+    FormsModule,
+    ReactiveFormsModule,
+    SompiToNumberPipe,
+    SendAssetComponent,
+    MintComponent,
+    ReviewActionComponent,
+    DeployComponent,
+    UtxosListComponent,
+    TransactionHistoryComponent,
+    Krc20OperationHistoryComponent,
+    MempoolTransactionsComponent,
+    AddL2ChainComponent,
+    L2TransactionComponent,
+  ],
 })
 export class WalletInfoComponent implements OnInit, OnDestroy {
   @ViewChild('reviewActionComponent')
@@ -70,7 +67,8 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
   protected tokens: undefined | { ticker: string; balance: number }[] =
     undefined;
 
-  protected unfinishedAction: undefined | UnfinishedCommitRevealAction = undefined;
+  protected unfinishedAction: undefined | UnfinishedCommitRevealAction =
+    undefined;
   protected canCompleteUnfinishedAction: boolean = false;
 
   protected kaspaTransactionsHistory: undefined | FullTransactionResponse =
@@ -105,20 +103,31 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
     private kaspaApiService: KaspaApiService,
     private ethereumWalletChainManager: EthereumWalletChainManager,
   ) {
-    toObservable(this.ethereumWalletChainManager.getCurrentChainSignal()).subscribe((chain) => {
+    toObservable(
+      this.ethereumWalletChainManager.getCurrentChainSignal(),
+    ).subscribe((chain) => {
       this.selectedChain = chain;
     });
   }
 
-  walletUtxoStateBalanceSignal = computed(() => this.wallet?.getCurrentWalletStateBalanceSignalValue());
-  currentL2Chain = computed(() => this.ethereumWalletChainManager.getCurrentChainSignal()());
+  walletUtxoStateBalanceSignal = computed(() =>
+    this.wallet?.getCurrentWalletStateBalanceSignalValue(),
+  );
+  currentL2Chain = computed(() =>
+    this.ethereumWalletChainManager.getCurrentChainSignal()(),
+  );
 
   l2WalletInfo = computed(() => this.wallet?.getL2WalletStateSignal()());
   l2WalletInfoFormatted = computed(() => {
-    return this.l2WalletInfo() ? {
-      address: this.l2WalletInfo()?.address,
-      balance: this.l2WalletInfo()?.balanceFormatted + ' ' + this.wallet?.getL2Provider()?.getConfig().nativeCurrency.symbol,
-    } : undefined;
+    return this.l2WalletInfo()
+      ? {
+          address: this.l2WalletInfo()?.address,
+          balance:
+            this.l2WalletInfo()?.balanceFormatted +
+            ' ' +
+            this.wallet?.getL2Provider()?.getConfig().nativeCurrency.symbol,
+        }
+      : undefined;
   });
 
   ngOnInit(): void {
@@ -142,7 +151,8 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
   }
 
   private initializeL2Networks() {
-    const chainsByChainId = this.ethereumWalletChainManager.getAllChainsByChainId();
+    const chainsByChainId =
+      this.ethereumWalletChainManager.getAllChainsByChainId();
     this.availableChains = Object.values(chainsByChainId);
 
     // Set initial selected chain
@@ -151,7 +161,9 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
   }
 
   protected onChainChange() {
-    this.ethereumWalletChainManager.setCurrentChain(this.selectedChain == 'undefined' ? undefined : this.selectedChain);
+    this.ethereumWalletChainManager.setCurrentChain(
+      this.selectedChain == 'undefined' ? undefined : this.selectedChain,
+    );
   }
 
   async loadKrc20Tokens() {
@@ -165,7 +177,7 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
         .getWalletTokenList(
           this.wallet!.getAddress(),
           paginationKey,
-          this.paginationDirection
+          this.paginationDirection,
         )
         .pipe(
           tap((response) => {
@@ -176,28 +188,26 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
             return response.result.map((token) => ({
               ticker: token.tick,
               balance: this.kaspaNetworkActionsService.sompiToNumber(
-                BigInt(+token.balance)
+                BigInt(+token.balance),
               ),
             }));
           }),
           catchError((err) => {
             console.error(
               `Error fetching token list for address ${this.wallet!.getAddress()}:`,
-              err
+              err,
             );
 
             return of(undefined);
-          })
-        )
+          }),
+        ),
     );
   }
 
   async loadKrc20Operations() {
     this.krc20OperationHistory = await firstValueFrom(
       this.kasplexService
-        .getWalletOperationHistory(
-          this.wallet!.getAddress(),
-        )
+        .getWalletOperationHistory(this.wallet!.getAddress())
         .pipe(
           map((response) => {
             return response.result;
@@ -205,12 +215,12 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
           catchError((err) => {
             console.error(
               `Error fetching krc20 operation list for address ${this.wallet!.getAddress()}:`,
-              err
+              err,
             );
 
             return of(undefined);
-          })
-        )
+          }),
+        ),
     );
   }
 
@@ -220,12 +230,12 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
         catchError((err) => {
           console.error(
             `Error fetching transactions list for address ${this.wallet!.getAddress()}:`,
-            err
+            err,
           );
 
           return of(undefined);
-        })
-      )
+        }),
+      ),
     );
   }
 
@@ -267,15 +277,16 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
 
   async checkForUnfinishedActions() {
     try {
-      const unfinishedAction = await this.kaspaNetworkActionsService.getWalletUnfinishedActions(
-        this.wallet!
-      );
+      const unfinishedAction =
+        await this.kaspaNetworkActionsService.getWalletUnfinishedActions(
+          this.wallet!,
+        );
 
       if (unfinishedAction) {
-        this.canCompleteUnfinishedAction = await this.checkIfCanFinishUnfinishedAction(unfinishedAction);
+        this.canCompleteUnfinishedAction =
+          await this.checkIfCanFinishUnfinishedAction(unfinishedAction);
       }
       this.unfinishedAction = unfinishedAction;
-
     } catch (error) {
       console.error(error);
     }
@@ -285,7 +296,9 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
     }, 60 * 1000);
   }
 
-  async checkIfCanFinishUnfinishedAction(unfinishedAction: UnfinishedCommitRevealAction): Promise<boolean> {
+  async checkIfCanFinishUnfinishedAction(
+    unfinishedAction: UnfinishedCommitRevealAction,
+  ): Promise<boolean> {
     const result = await this.walletActionService.validateAction(
       this.walletActionService.createUnfinishedCommitRevealAction(
         unfinishedAction.operationData,
@@ -293,7 +306,7 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
       ),
       this.walletService.getCurrentWallet()!,
       true,
-    )
+    );
 
     return result.isValidated;
   }
@@ -306,8 +319,8 @@ export class WalletInfoComponent implements OnInit, OnDestroy {
     await this.walletActionService.validateAndDoActionAfterApproval(
       this.walletActionService.createUnfinishedCommitRevealAction(
         this.unfinishedAction!.operationData,
-        shouldFinish
-      )
+        shouldFinish,
+      ),
     );
 
     this.checkForUnfinishedActions();

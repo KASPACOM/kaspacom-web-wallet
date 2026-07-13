@@ -7,7 +7,7 @@ import {
   ChangeDetectorRef,
   AfterViewInit,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { KcIconComponent } from 'kaspacom-ui';
 import { QuickActionDialogComponent } from '../../quick-action-dialog.component';
 import { FlowPagesService } from '../../../../../../services/flow-pages.service';
@@ -15,7 +15,7 @@ import { FlowPagesService } from '../../../../../../services/flow-pages.service'
 @Component({
   selector: 'app-wallet-options-quick-action-dialog',
   standalone: true,
-  imports: [CommonModule, KcIconComponent, QuickActionDialogComponent],
+  imports: [KcIconComponent, QuickActionDialogComponent],
   templateUrl: './wallet-options-quick-action-dialog.component.html',
   styleUrl: './wallet-options-quick-action-dialog.component.scss',
 })
@@ -66,7 +66,7 @@ export class WalletOptionsQuickActionDialogComponent implements AfterViewInit {
     this.closeDialog();
   }
 
-    onChangeWallet(): void {
+  onChangeWallet(): void {
     this.flowPagesService.navigateToPage({
       id: 'wallet-selection',
       title: 'Select wallet',
@@ -89,5 +89,3 @@ export class WalletOptionsQuickActionDialogComponent implements AfterViewInit {
     this.closeDialog();
   }
 }
-
-

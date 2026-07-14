@@ -1166,7 +1166,7 @@
                   }
                 }
               </span>
-              <div class="flex column" style="flex: 1; min-width: 0">
+              <div class="detail-title-main">
                 <div class="flex align-items-center gap-8 wrap">
                   <h2 class="detail-title">
                     {{ selectedDetail()!.entry.displayName }}
@@ -1190,20 +1190,22 @@
                   timeline.
                 </p>
               </div>
-              @if (selectedDetail()!.entry.covenantId) {
+              <div class="detail-title-actions">
+                @if (selectedDetail()!.entry.covenantId) {
+                  <button
+                    class="back-button p-8 typo-text-2"
+                    (click)="copyContractShareLink(selectedDetail()!.entry)"
+                  >
+                    Share
+                  </button>
+                }
                 <button
                   class="back-button p-8 typo-text-2"
-                  (click)="copyContractShareLink(selectedDetail()!.entry)"
+                  (click)="backToContractsList()"
                 >
-                  Share
+                  Close
                 </button>
-              }
-              <button
-                class="back-button p-8 typo-text-2"
-                (click)="backToContractsList()"
-              >
-                Close
-              </button>
+              </div>
             </div>
 
             @if (selectedDetailLoading()) {

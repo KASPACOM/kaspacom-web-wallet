@@ -76,7 +76,7 @@ $tpl-accents: (
   font: inherit;
   font-size: 13px;
   font-weight: 500;
-  padding: 9px 10px;
+  padding: 9px 8px;
   border-radius: 9px;
   cursor: pointer;
   transition:
@@ -86,7 +86,10 @@ $tpl-accents: (
   align-items: center;
   justify-content: center;
   gap: 6px;
+  row-gap: 2px;
+  flex-wrap: wrap;
   min-width: 0;
+  text-align: center;
 
   &:hover {
     color: var(--gray-75);
@@ -99,9 +102,8 @@ $tpl-accents: (
 }
 
 .seg-tab-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
+  white-space: normal;
   min-width: 0;
 }
 
@@ -170,6 +172,18 @@ $tpl-accents: (
   }
   .filter-spacer {
     margin-left: auto;
+  }
+
+  // kc-button's "m" size variant enforces a 300px min-width on its inner
+  // .kc-button element (a ui-kit design-token default meant for standalone
+  // CTAs), which overflows this row's available space on narrow (320px)
+  // viewports since it's not opted into [isFullWidth] here. Let it hug its
+  // own content instead.
+  kc-button {
+    flex-shrink: 0;
+    ::ng-deep .kc-button {
+      min-width: 0;
+    }
   }
 }
 
@@ -581,6 +595,21 @@ $tpl-accents: (
   gap: 14px;
   flex-wrap: wrap;
 }
+// Flex basis (not just min-width: 0) so this column wraps the Share/Close
+// buttons to their own line on narrow viewports instead of shrinking the
+// title down to a near-zero-width, one-letter-per-line sliver.
+.detail-title-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 160px;
+  min-width: 0;
+}
+.detail-title-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
 .detail-title {
   margin: 0;
   font-size: 20px;
@@ -668,9 +697,6 @@ $tpl-accents: (
   gap: 16px;
   align-items: start;
   grid-template-columns: 1fr;
-  @media (min-width: 900px) {
-    grid-template-columns: 1fr 1fr;
-  }
 }
 .detail-col {
   display: flex;
@@ -1370,6 +1396,20 @@ $tpl-accents: (
 }
 .fw-bold {
   font-weight: 600;
+}
+
+// kc-button's "m" size variant enforces a 300px min-width on its inner
+// .kc-button element (an ui-kit design-token default sized for standalone
+// CTAs). Wherever a kc-button sits inline next to an input or alongside
+// other buttons in this page (instead of opting into [isFullWidth]), that
+// fixed minimum overflows the row on narrow (320px) viewports. Let those
+// buttons hug their own content instead.
+.flex.gap-8.align-items-end.wrap kc-button,
+.flex.gap-8.wrap kc-button,
+.flex.align-items-center.gap-8 kc-button {
+  ::ng-deep .kc-button {
+    min-width: 0;
+  }
 }
 
 // Active function button highlight — kc-button's host element has no

@@ -1312,11 +1312,6 @@ $tpl-accents: (
     border-color: var(--kaspa-20);
   }
 }
-.active-function {
-  border-color: var(--kaspa-20) !important;
-  background: rgba(111, 199, 186, 0.15) !important;
-}
-
 .max-text {
   display: flex;
   align-items: center;
@@ -1377,12 +1372,18 @@ $tpl-accents: (
   font-weight: 600;
 }
 
-// Active function button highlight
+// Active function button highlight — kc-button's host element has no
+// border-radius of its own (the rounding lives on its inner .kc-button),
+// so styling the host directly draws a sharp-cornered box around a rounded
+// button. Target the inner element instead so the highlight follows the
+// button's actual corners.
 .active-function {
-  border-color: var(--kaspa-20) !important;
-  background: rgba(111, 199, 186, 0.22) !important;
-  box-shadow: 0 0 0 2px rgba(111, 199, 186, 0.18) !important;
-  color: #fff !important;
+  ::ng-deep .kc-button {
+    border-color: var(--kaspa-20) !important;
+    background: rgba(111, 199, 186, 0.22) !important;
+    box-shadow: 0 0 0 2px rgba(111, 199, 186, 0.18) !important;
+    color: #fff !important;
+  }
 }
 .cursor-pointer {
   cursor: pointer;

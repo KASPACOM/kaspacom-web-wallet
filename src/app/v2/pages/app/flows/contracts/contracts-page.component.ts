@@ -489,6 +489,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.extraArgValues[name] = value || '';
   }
 
+  onTopUpAmountChange(value: any) {
+    this.topUpAmount = value || '';
+    this.interactError.set(null);
+  }
+
   // Current network
   network = computed(() => this.rpcService.getNetwork());
 

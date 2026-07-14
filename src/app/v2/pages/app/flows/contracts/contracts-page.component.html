@@ -551,8 +551,8 @@
         <div class="field">
           <kc-number-input
             [label]="'Amount to lock (KAS)'"
-            [placeholder]="'0'"
-            [min]="'0'"
+            [placeholder]="'0.5'"
+            [min]="MIN_DEPLOY_AMOUNT_KAS.toString()"
             [max]="deployAvailableBalance().toString()"
             [isValid]="!deployAmountError()"
             [isDisabled]="isDeploying()"
@@ -1892,9 +1892,7 @@
               [min]="'0'"
               [isDisabled]="isInteracting()"
               [ngModel]="topUpAmount"
-              (valueChange)="
-                topUpAmount = $event || ''; interactError.set(null)
-              "
+              (valueChange)="onTopUpAmountChange($event)"
             ></kc-number-input>
           </div>
 

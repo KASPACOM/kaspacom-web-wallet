@@ -428,7 +428,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   // DMS keepAlive specific state
   dmsNewExpiry = ''; // new expiry timestamp (unix seconds) entered by user
-  dmsKeepAliveError = signal<string | null>(null);
   interactResult = signal<{ txid: string; functionName: string } | null>(null);
   interactError = signal<string | null>(null);
   isInteracting = signal(false);
@@ -1328,16 +1327,17 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const updatedLocal = this.getCurrentWalletLocalContracts();
     this.registryContracts.set(updatedLocal);
 
+    const localDashboardEntries = await Promise.all(
+      updatedLocal.map((entry) => this.localEntryToDashboard(entry)),
+    );
+
     try {
       // Indexer-backed tracking is the source of truth for contracts involving
       // the wallet. Local registry entries are merged below so older local-only
       // deployments still remain visible while the indexer catches up.
       const indexerEntries = await this.loadIndexerDashboardEntries();
       this.dashboardContracts.set(
-        this.mergeDashboardEntries(
-          indexerEntries,
-          updatedLocal.map((entry) => this.localEntryToDashboard(entry)),
-        ),
+        this.mergeDashboardEntries(indexerEntries, localDashboardEntries),
       );
     } catch (error: any) {
       console.warn('[Contracts] Indexer dashboard load failed:', error);
@@ -1345,9 +1345,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         error?.message ||
           'Indexer tracking is unavailable. Showing locally saved contracts only.',
       );
-      this.dashboardContracts.set(
-        updatedLocal.map((entry) => this.localEntryToDashboard(entry)),
-      );
+      this.dashboardContracts.set(localDashboardEntries);
     } finally {
       this.dashboardLoading.set(false);
     }
@@ -1355,6 +1353,23 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const routeId = this.detailRouteId();
     if (routeId) {
       await this.openDetailFromRoute(routeId);
+    } else if (this.activeTab() === 'detail' && this.selectedDetail()) {
+      // An open detail view isn't cleared above (so the panel doesn't flash
+      // empty), but it also needs to be re-fetched with the freshly merged
+      // entry — otherwise fields like the check-in deadline stay stuck at
+      // whatever they were when the panel was first opened, even after an
+      // action (e.g. keepAlive) has changed them on-chain.
+      const current = this.selectedDetail()!.entry;
+      const refreshed = this.dashboardContracts().find(
+        (entry) =>
+          this.sameIdentity(entry.covenantId, current.covenantId) ||
+          this.sameIdentity(entry.deployTxid, current.deployTxid) ||
+          this.sameIdentity(entry.scriptHash, current.scriptHash) ||
+          entry.id === current.id,
+      );
+      if (refreshed) {
+        await this.openContractDetail(refreshed);
+      }
     }
   }
 
@@ -1553,6 +1568,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         amountSompi: entry.amountSompi,
         latestTxid: entry.latestTxid,
         latestAction: entry.latestAction,
+        // The indexer's deadline is a genesis-time snapshot that never
+        // reflects later continuations (e.g. a keepAlive's new deadline) —
+        // prefer the local entry's script-derived value when we have one.
+        deadlineMs: local?.deadlineMs ?? entry.deadlineMs,
         registryEntry: local?.registryEntry,
       });
     }
@@ -1562,9 +1581,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     );
   }
 
-  private localEntryToDashboard(
+  private async localEntryToDashboard(
     contract: ContractRegistryEntry,
-  ): ContractDashboardEntry {
+  ): Promise<ContractDashboardEntry> {
     const contractName = this.normalizeContractName(contract.contractName);
     const participants = this.localParticipants(contract);
     return {
@@ -1580,6 +1599,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       latestTxid:
         contract.spendTxid || contract.outpoint?.txid || contract.deployTxid,
       latestAction: contract.spendTxid ? 'spend' : 'deploy',
+      deadlineMs: await this.extractLocalDmsDeadlineMs(contract, contractName),
       participants,
       nextActionLabel: this.getNextActionLabel(
         contractName,
@@ -1589,6 +1609,39 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       actionHint: 'Open wallet action flow',
       registryEntry: contract,
     };
+  }
+
+  /**
+   * The indexer's claimedArgs snapshot is frozen at genesis and never
+   * reflects a covenant's later continuations (e.g. a keepAlive's extended
+   * deadline). For contracts this wallet has a local compiled JSON for, read
+   * the deadline straight from the current script bytes instead — the same
+   * ground truth executeDmsKeepAlive() validates the new deadline against.
+   */
+  private async extractLocalDmsDeadlineMs(
+    contract: ContractRegistryEntry,
+    normalizedContractName: string,
+  ): Promise<number | undefined> {
+    if (normalizedContractName !== 'DeadManSwitch' || !contract.compiledJson) {
+      return undefined;
+    }
+    try {
+      const compiled = this.covenantService.parseCompiledContract(
+        contract.compiledJson,
+      );
+      const deadline = await this.extractTemplateIntField(
+        compiled,
+        'dead-mans-switch',
+        'initDeadline',
+      );
+      if (deadline === undefined) return undefined;
+      const deadlineMs = Number(deadline);
+      return Number.isFinite(deadlineMs) && deadlineMs > 0
+        ? deadlineMs
+        : undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   private indexerSummaryToDashboard(
@@ -1844,12 +1897,20 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   private extractDeadlineMs(
     summary: IndexerCovenantDetails,
+    utxoState?: Record<string, any> | null,
   ): number | undefined {
     const source = {
       ...(summary.constructor || {}),
       ...this.argsArrayToRecord(summary.claimedArgs?.args || []),
+      // The active UTXO's decoded state reflects the covenant's current
+      // field values (e.g. after a keepAlive extends the deadline), whereas
+      // `constructor`/`claimedArgs` can still describe the deploy this
+      // covenant lineage started from — prefer state when it's available.
+      ...(utxoState || {}),
     };
     const raw =
+      source['deadline'] ??
+      source['initDeadline'] ??
       source['checkInDeadline'] ??
       source['expiry'] ??
       source['timeout'] ??
@@ -1925,6 +1986,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         amountSompi: detailIdentifier
           ? lockedSompi.toString()
           : entry.amountSompi,
+        deadlineMs: resolved.covenant
+          ? this.extractDeadlineMs(resolved.covenant, utxos[0]?.state)
+          : entry.deadlineMs,
       };
       this.selectedDetail.set({
         entry: updatedEntry,
@@ -1937,6 +2001,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         updatedEntry.status === 'active'
       ) {
         await this.prepareDashboardAction(updatedEntry);
+        await this.refreshDmsDeadlineFromScript();
       }
     } catch (error: any) {
       this.selectedDetailError.set(
@@ -1946,6 +2011,34 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.selectedDetailLoading.set(false);
       this.scrollContractsContentToTop();
     }
+  }
+
+  /**
+   * The indexer's decoded deadline can lag behind the actual on-chain value
+   * (e.g. right after a keepAlive, before the indexer reclassifies the new
+   * continuation as a recognized template instance). The compiled contract's
+   * script bytes are ground truth — it's the same source executeDmsKeepAlive()
+   * validates the new deadline against — so once it's loaded, prefer it over
+   * the indexer-derived guess used for the initial display.
+   */
+  private async refreshDmsDeadlineFromScript() {
+    const contract = this.parsedInteractContract();
+    const detail = this.selectedDetail();
+    if (!contract || !detail || contract.contract_name !== 'DeadManSwitch') {
+      return;
+    }
+    const deadline = await this.extractTemplateIntField(
+      contract,
+      'dead-mans-switch',
+      'initDeadline',
+    );
+    if (deadline === undefined) return;
+    const deadlineMs = Number(deadline);
+    if (!Number.isFinite(deadlineMs) || deadlineMs <= 0) return;
+    this.selectedDetail.set({
+      ...detail,
+      entry: { ...detail.entry, deadlineMs },
+    });
   }
 
   async openDashboardAction(entry: ContractDashboardEntry) {
@@ -3703,7 +3796,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     outpoint: CovenantOutpoint,
     inputAmount: bigint,
   ): Promise<void> {
-    this.dmsKeepAliveError.set(null);
+    this.interactError.set(null);
 
     const oldEntry = this.registryContracts().find(
       (c) => c.id === this.selectedContractId(),
@@ -3718,14 +3811,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         (field: any) => field.name === 'deadline',
       );
     if (!supportsDeadlineKeepAlive) {
-      this.dmsKeepAliveError.set(
+      this.interactError.set(
         "This Dead Man's Switch was deployed with the old inactivity-period contract. It cannot be migrated to the new deadline contract with keepAlive; deploy a new deadline-based Dead Man's Switch.",
       );
       return;
     }
 
     if (!this.dmsNewExpiry.trim()) {
-      this.dmsKeepAliveError.set('Select the new check-in deadline');
+      this.interactError.set('Select the new check-in deadline');
       return;
     }
 
@@ -3738,7 +3831,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       'initDeadline',
     );
     if (currentDeadline !== undefined && newDeadline <= currentDeadline) {
-      this.dmsKeepAliveError.set(
+      this.interactError.set(
         `New check-in deadline must be later than the current deadline (${this.formatTimestamp(Number(currentDeadline))}).`,
       );
       return;
@@ -3759,7 +3852,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const ownerAddress = owner ? this.pubkeyToAddress(owner) : '';
     const heirAddress = heir ? this.pubkeyToAddress(heir) : '';
     if (!ownerAddress || !heirAddress) {
-      this.dmsKeepAliveError.set(
+      this.interactError.set(
         'Could not derive owner/heir addresses from contract script',
       );
       return;
@@ -3767,7 +3860,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
     const template = this.templateById('dead-mans-switch');
     if (!template) {
-      this.dmsKeepAliveError.set("Dead Man's Switch template is unavailable");
+      this.interactError.set("Dead Man's Switch template is unavailable");
       return;
     }
 
@@ -4324,7 +4417,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.topUpAmount = '';
     this.newHeirAddress = '';
     this.newHeirResolvedAddress = null;
-    this.dmsKeepAliveError.set(null);
 
     if (this.isTopUpFunction(name) || this.isChangeHeirFunction(name)) {
       this.interactOutputAddress = '';
@@ -4466,7 +4558,18 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const sompi = this.interactInputAmount;
     if (!sompi) return;
     try {
-      const inputSompi = BigInt(sompi);
+      let inputSompi = BigInt(sompi);
+      const contract = this.parsedInteractContract();
+      if (
+        contract?.contract_name === 'DeadManSwitch' &&
+        this.selectedFunction === 'withdraw'
+      ) {
+        // DMS withdraw must leave a continuation in the contract — cap Max
+        // at the largest amount that still leaves the minimum continuation
+        // behind, instead of the full balance (which always fails).
+        inputSompi -= this.MIN_CONTINUATION_AMOUNT_SOMPI;
+        if (inputSompi <= 0n) return;
+      }
       const outputKas = Number(inputSompi) / 1e8;
       this.interactOutputAmount = outputKas.toFixed(8).replace(/\.?0+$/, '');
     } catch {

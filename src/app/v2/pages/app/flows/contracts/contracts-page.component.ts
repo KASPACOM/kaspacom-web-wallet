@@ -1933,6 +1933,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   async openContractDetail(entry: ContractDashboardEntry) {
     this.selectedDetailLoading.set(true);
     this.selectedDetailError.set(null);
+    this.dashboardError.set(null);
     this.selectedDetail.set({ entry, actions: [], utxos: [] });
     if (this.detailRouteId() || this.activeTab() === 'detail') {
       this.clearInteractContractSelection();
@@ -2053,6 +2054,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     await this.openDashboardAction(entry);
     if (this.availableFunctions().some((fn) => fn.name === fnName)) {
       this.selectFunction(fnName);
+    } else if (!this.dashboardError()) {
+      this.dashboardError.set(
+        `Could not load the "${fnName}" action for this contract. The indexer may not have this covenant's current state yet.`,
+      );
     }
   }
 
@@ -2825,7 +2830,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       activeAction.outputs.address !== computedAddress;
     if (computedAddress !== contractAddress) {
       throw new Error(
-        'Template parameters do not match the covenant address reported by the indexer.',
+        "This covenant's constructor args (e.g. a check-in deadline updated by a later keepAlive) do not match its current on-chain address — the indexer only decoded an earlier state and has no way to know the latest one. " +
+          'If you know the current values (ask whoever last kept this contract alive), use "Advanced: paste contract JSON" in the Interact tab to build and sign the transaction manually.',
       );
     }
 

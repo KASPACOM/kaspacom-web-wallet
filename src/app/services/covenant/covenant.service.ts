@@ -1,20 +1,36 @@
 import { Injectable } from '@angular/core';
 import { RpcService } from '../kaspa-netwrok-services/rpc.service';
-import { getCovenantAddress, deployContract, spendContract, getCovenantUtxos, buildPartialSpend, completePartialSpend } from './covenant-sdk/covenant';
-import { CompiledContract, CovenantOutpoint, CovenantUtxoInfo, SpendOutput, DeployResult, SpendResult, PartiallySignedSpend } from './covenant-sdk/types';
+import {
+  getCovenantAddress,
+  deployContract,
+  spendContract,
+  getCovenantUtxos,
+  buildPartialSpend,
+  completePartialSpend,
+} from './covenant-sdk/covenant';
+import {
+  CompiledContract,
+  CovenantOutpoint,
+  CovenantUtxoInfo,
+  SpendOutput,
+  DeployResult,
+  SpendResult,
+  PartiallySignedSpend,
+  CovenantTransactionOptions,
+} from './covenant-sdk/types';
 
 @Injectable({
   providedIn: 'root',
 })
 export class CovenantService {
-  constructor(
-    private readonly rpcService: RpcService,
-  ) { }
+  constructor(private readonly rpcService: RpcService) {}
 
   private getManagedRpc() {
     const rpc = this.rpcService.getRpc();
     if (!rpc) {
-      throw new Error('RPC is not available. Connect the wallet before using covenants.');
+      throw new Error(
+        'RPC is not available. Connect the wallet before using covenants.',
+      );
     }
 
     return rpc;
@@ -36,9 +52,37 @@ export class CovenantService {
     amountSompi: bigint,
     privateKeyHex: string,
     priorityFee: bigint = 0n,
+    options: CovenantTransactionOptions = {},
   ): Promise<DeployResult> {
     const network = this.rpcService.getNetwork();
-    return deployContract(compiled, amountSompi, privateKeyHex, network, this.getManagedRpc(), priorityFee);
+    return deployContract(
+      compiled,
+      amountSompi,
+      privateKeyHex,
+      network,
+      this.getManagedRpc(),
+      priorityFee,
+      options,
+    );
+  }
+
+  async estimateDeployFee(
+    compiled: CompiledContract,
+    amountSompi: bigint,
+    privateKeyHex: string,
+    priorityFee: bigint = 0n,
+  ): Promise<bigint> {
+    const result = await this.deploy(
+      compiled,
+      amountSompi,
+      privateKeyHex,
+      priorityFee,
+      { estimateOnly: true },
+    );
+    if (result.fee === undefined) {
+      throw new Error('Failed to estimate covenant deploy fee');
+    }
+    return result.fee;
   }
 
   /**
@@ -56,15 +100,66 @@ export class CovenantService {
     priorityFee: bigint = 0n,
     useSenderFee: boolean = false,
     transactionPayloadHex?: string,
+    options: CovenantTransactionOptions = {},
   ): Promise<SpendResult> {
     const network = this.rpcService.getNetwork();
-    return spendContract(compiled, outpoint, inputAmountSompi, functionName, outputs, privateKeyHex, network, this.getManagedRpc(), covenantId, extraArgs, priorityFee, useSenderFee, transactionPayloadHex);
+    return spendContract(
+      compiled,
+      outpoint,
+      inputAmountSompi,
+      functionName,
+      outputs,
+      privateKeyHex,
+      network,
+      this.getManagedRpc(),
+      covenantId,
+      extraArgs,
+      priorityFee,
+      useSenderFee,
+      transactionPayloadHex,
+      options,
+    );
+  }
+
+  async estimateSpendFee(
+    compiled: CompiledContract,
+    outpoint: CovenantOutpoint,
+    inputAmountSompi: bigint,
+    functionName: string,
+    outputs: SpendOutput[],
+    privateKeyHex: string,
+    extraArgs?: Record<string, bigint>,
+    covenantId?: string,
+    priorityFee: bigint = 0n,
+    useSenderFee: boolean = false,
+    transactionPayloadHex?: string,
+  ): Promise<bigint> {
+    const result = await this.spend(
+      compiled,
+      outpoint,
+      inputAmountSompi,
+      functionName,
+      outputs,
+      privateKeyHex,
+      extraArgs,
+      covenantId,
+      priorityFee,
+      useSenderFee,
+      transactionPayloadHex,
+      { estimateOnly: true },
+    );
+    if (result.fee === undefined) {
+      throw new Error('Failed to estimate covenant spend fee');
+    }
+    return result.fee;
   }
 
   /**
    * Query UTXOs for a deployed covenant, including covenantId metadata
    */
-  async queryCovenantUtxos(compiled: CompiledContract): Promise<CovenantUtxoInfo[]> {
+  async queryCovenantUtxos(
+    compiled: CompiledContract,
+  ): Promise<CovenantUtxoInfo[]> {
     const network = this.rpcService.getNetwork();
     return getCovenantUtxos(compiled, network, this.getManagedRpc());
   }
@@ -82,9 +177,49 @@ export class CovenantService {
     privateKeyHex: string,
     priorityFee: bigint = 0n,
     extraArgs?: Record<string, bigint>,
+    options: CovenantTransactionOptions = {},
   ): Promise<PartiallySignedSpend> {
     const network = this.rpcService.getNetwork();
-    return buildPartialSpend(compiled, functionName, outpoint, inputAmountSompi, outputs, privateKeyHex, network, this.getManagedRpc(), priorityFee, extraArgs);
+    return buildPartialSpend(
+      compiled,
+      functionName,
+      outpoint,
+      inputAmountSompi,
+      outputs,
+      privateKeyHex,
+      network,
+      this.getManagedRpc(),
+      priorityFee,
+      extraArgs,
+      options,
+    );
+  }
+
+  async estimateBuildPartialFee(
+    compiled: CompiledContract,
+    functionName: string,
+    outpoint: CovenantOutpoint,
+    inputAmountSompi: bigint,
+    outputs: SpendOutput[],
+    privateKeyHex: string,
+    priorityFee: bigint = 0n,
+    extraArgs?: Record<string, bigint>,
+  ): Promise<bigint> {
+    const result = await this.buildPartial(
+      compiled,
+      functionName,
+      outpoint,
+      inputAmountSompi,
+      outputs,
+      privateKeyHex,
+      priorityFee,
+      extraArgs,
+      { estimateOnly: true },
+    );
+    if (result.fee === undefined) {
+      throw new Error('Failed to estimate covenant partial fee');
+    }
+    return BigInt(result.fee);
   }
 
   /**
@@ -94,8 +229,27 @@ export class CovenantService {
   async completePartial(
     partialSpend: PartiallySignedSpend,
     privateKeyHex: string,
+    options: CovenantTransactionOptions = {},
   ): Promise<SpendResult> {
-    return completePartialSpend(partialSpend, privateKeyHex, this.getManagedRpc());
+    return completePartialSpend(
+      partialSpend,
+      privateKeyHex,
+      this.getManagedRpc(),
+      options,
+    );
+  }
+
+  async estimateCompletePartialFee(
+    partialSpend: PartiallySignedSpend,
+    privateKeyHex: string,
+  ): Promise<bigint> {
+    const result = await this.completePartial(partialSpend, privateKeyHex, {
+      estimateOnly: true,
+    });
+    if (result.fee === undefined) {
+      throw new Error('Failed to estimate covenant completion fee');
+    }
+    return result.fee;
   }
 
   /**

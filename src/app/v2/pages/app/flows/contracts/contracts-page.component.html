@@ -1813,7 +1813,7 @@
                 [isDisabled]="isInteracting()"
                 [class.active-function]="selectedFunction === fn.name"
                 [style]="
-                  selectedFunction === fn.name ? 'opacity: 1' : 'opacity: 0.6'
+                  selectedFunction === fn.name ? 'opacity: 1' : 'opacity: 0.75'
                 "
                 (buttonClick)="selectFunction(fn.name)"
               ></kc-button>
@@ -1884,6 +1884,36 @@
           </div>
         }
 
+        @if (selectedFunction && isTopUpFunction(selectedFunction)) {
+          <div class="form-group flex column gap-8">
+            <kc-number-input
+              [label]="'Top up amount (KAS)'"
+              [placeholder]="'0'"
+              [min]="'0'"
+              [isDisabled]="isInteracting()"
+              [ngModel]="topUpAmount"
+              (valueChange)="
+                topUpAmount = $event || ''; interactError.set(null)
+              "
+            ></kc-number-input>
+          </div>
+
+          <div
+            class="p-12 rounded-lg"
+            style="
+              background: rgba(111, 199, 186, 0.08);
+              border: 1px solid rgba(111, 199, 186, 0.2);
+            "
+          >
+            <span class="text-gray-75 typo-text-2"
+              >The current covenant UTXO will be spent and recreated as output
+              0 with the same covenant ID. The new covenant amount will be the
+              current balance plus the top-up amount before any contract-paid
+              fee deduction.</span
+            >
+          </div>
+        }
+
         @if (
           selectedFunction &&
           functionRequiresOutput(selectedFunction) &&
@@ -1928,7 +1958,8 @@
         @if (
           selectedFunction &&
           !functionRequiresOutput(selectedFunction) &&
-          !isDmsKeepAlive()
+          !isDmsKeepAlive() &&
+          !isTopUpFunction(selectedFunction)
         ) {
           <div
             class="p-12 rounded-lg"
@@ -2087,10 +2118,22 @@
             [kcTooltip]="
               selectedFunction && isMultiSigFunction(selectedFunction)
                 ? 'Disabled for multi-sig signing. The contract must pay fees because wallet fee inputs would change the transaction after signatures are created.'
-                : 'If enabled, transaction fees will be paid from your wallet balance instead of the contract funds.'
+                : selectedFunction && isTopUpFunction(selectedFunction)
+                  ? 'When enabled, fees are paid from wallet change. When disabled, fees are deducted from the top-up output.'
+                  : 'If enabled, transaction fees will be paid from your wallet balance instead of the contract funds.'
             "
             tooltipPosition="top-center"
           ></kc-icon>
+          @if (selectedFunction && isTopUpFunction(selectedFunction)) {
+            <span class="text-gray-60 typo-text-2">
+              Selected:
+              {{
+                useSenderFee
+                  ? "wallet pays fees"
+                  : "fees come from the top-up output"
+              }}
+            </span>
+          }
         </div>
         @if (selectedFunction && isMultiSigFunction(selectedFunction)) {
           <div
@@ -2105,6 +2148,21 @@
               Wallet-paid fees add inputs and would invalidate the partial
               signatures.</span
             >
+          </div>
+        }
+        @if (selectedFunction && isTopUpFunction(selectedFunction)) {
+          <div
+            class="p-12 rounded-lg"
+            style="
+              background: rgba(255, 193, 7, 0.08);
+              border: 1px solid rgba(255, 193, 7, 0.2);
+            "
+          >
+            <span class="text-yellow typo-text-2">
+              If wallet-paid fees are off, the top-up amount must be larger than
+              the transaction fee so the recreated covenant output remains
+              larger than the current covenant UTXO.
+            </span>
           </div>
         }
       }

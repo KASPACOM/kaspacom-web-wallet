@@ -34,7 +34,7 @@
     <!-- Amount Input -->
     <div class="form-field">
       <kc-number-input
-        [label]="'Amount of ' + (token()?.symbol | uppercase)"
+        [infoLabel]="{ label: 'Amount of ' + (token()?.symbol | uppercase) }"
         [placeholder]="'0.00'"
         [available]="availableBalance.toString()"
         [isValid]="isAmountValid"

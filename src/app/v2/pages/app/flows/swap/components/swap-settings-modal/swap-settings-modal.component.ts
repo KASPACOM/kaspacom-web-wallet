@@ -1,4 +1,5 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, Signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 
 import {
@@ -11,7 +12,6 @@ import {
   KcDialogComponent,
   KcNumberInputComponent,
   KcButtonComponent,
-  KcSwitchComponent,
   SwitchOption,
 } from '@kaspacom/ui-kit';
 import { FormErrorMessageComponent } from '../../../../../../shared/components/form-error/form-error.component';
@@ -32,7 +32,6 @@ export interface SwapSettingsDialogData {
     KcDialogComponent,
     KcNumberInputComponent,
     KcButtonComponent,
-    KcSwitchComponent,
     FormErrorMessageComponent,
   ],
   templateUrl: './swap-settings-modal.component.html',
@@ -46,6 +45,7 @@ export class SwapSettingsModalComponent {
   });
 
   settingsForm: FormGroup;
+  selectedSlippage: Signal<number | null>;
 
   slippageOptions: SwitchOption[] = [
     { label: '0.1%', value: 0.1 },
@@ -53,26 +53,32 @@ export class SwapSettingsModalComponent {
     { label: '1.5%', value: 1.5 },
   ];
 
-  selectedSlippage = computed(() => {
-    const slippage = parseFloat(
-      this.settingsForm?.get('maxSlippage')?.value || '',
-    );
-    if (isNaN(slippage)) return null;
-
-    const tolerance = 0.001;
-    if (Math.abs(slippage - 0.1) < tolerance) return 0.1;
-    if (Math.abs(slippage - 0.5) < tolerance) return 0.5;
-    if (Math.abs(slippage - 1.5) < tolerance) return 1.5;
-
-    return null;
-  });
-
   constructor() {
     const initialSettings = this.data?.initialSettings;
     this.settingsForm = this.createForm(
       initialSettings?.maxSlippage || '0.5',
       String(initialSettings?.swapDeadline || 20),
     );
+
+    // FormControl.value is a plain getter, not a signal - computed() would
+    // never re-run on click since nothing reactive is read. Bridge
+    // valueChanges into a signal so it actually updates.
+    const maxSlippageControl = this.settingsForm.get('maxSlippage')!;
+    const maxSlippageValue = toSignal(maxSlippageControl.valueChanges, {
+      initialValue: maxSlippageControl.value,
+    });
+
+    this.selectedSlippage = computed(() => {
+      const slippage = parseFloat(maxSlippageValue() || '');
+      if (isNaN(slippage)) return null;
+
+      const tolerance = 0.001;
+      if (Math.abs(slippage - 0.1) < tolerance) return 0.1;
+      if (Math.abs(slippage - 0.5) < tolerance) return 0.5;
+      if (Math.abs(slippage - 1.5) < tolerance) return 1.5;
+
+      return null;
+    });
   }
 
   private createForm(maxSlippage: string, swapDeadline: string): FormGroup {

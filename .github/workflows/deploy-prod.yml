@@ -5,21 +5,27 @@ on:
     branches:
       - main  # Change this to the branch you want to deploy from
 
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
-        node-version: '20'  # Specify the Node.js version you need
+        node-version: '24'  # Specify the Node.js version you need
 
     - name: Install dependencies
       run: npm install
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build Angular app
       run: npm run build

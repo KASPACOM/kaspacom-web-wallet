@@ -32,6 +32,22 @@ $swap-input-row-height: 45px;
   color: var(--color-text-primary);
 }
 
+// tag-secondary's default sizing/selected-state contrast is tuned for
+// larger filter-chip UI, not a compact percentage selector - scope down
+// the size and use the app's primary accent color for the selected state
+// so it's actually visible against the dark theme.
+.percentage-options ::ng-deep .kc-button.tag-secondary {
+  min-height: unset;
+  padding: 5px 10px;
+  font-size: 13px;
+
+  &.selected {
+    background-color: rgba(111, 199, 186, 0.15);
+    border-color: var(--kaspa-20, #6fc7ba);
+    color: var(--kaspa-20, #6fc7ba);
+  }
+}
+
 // Token Inputs Wrapper
 .token-inputs-wrapper {
   position: relative;
@@ -102,12 +118,6 @@ $swap-input-row-height: 45px;
   &.error-text {
     color: var(--error, #e04242);
   }
-}
-
-// Percentage Options
-.percentage-options {
-  float: right;
-  width: max-content;
 }
 
 .token-input-row {

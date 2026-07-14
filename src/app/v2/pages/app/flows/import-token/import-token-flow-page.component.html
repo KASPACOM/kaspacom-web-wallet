@@ -3,14 +3,10 @@
 >
   <!-- Address Input Section -->
   <div class="input-section flex column gap-12">
-    <div class="section-label typo-text-1 text-gray-60">
-      Token Contract Address
-    </div>
-
-    <div class="address-input-row flex gap-8 align-items-start">
+    <div class="address-input-row flex gap-8 align-items-end">
       <div class="flex-1">
         <kc-input
-          [label]="'Contract Address'"
+          [infoLabel]="{ label: 'Token Contract Address' }"
           [placeholder]="'0x...'"
           [type]="'text'"
           [isValid]="state() !== 'error' && state() !== 'already-imported'"
@@ -32,9 +28,7 @@
     }
 
     @if (showAddressError()) {
-      <div class="address-error typo-text-1 text-red">
-        Invalid contract address format
-      </div>
+      <span class="kc-input-error-text">Invalid contract address format</span>
     }
 
     <kc-button
@@ -42,7 +36,7 @@
       [size]="'m'"
       [text]="state() === 'loading' ? 'Looking up...' : 'Look Up Token'"
       [isDisabled]="!isAddressValid() || state() === 'loading'"
-      class="full-width"
+      [isFullWidth]="true"
       (buttonClick)="lookupToken()"
     />
   </div>
@@ -111,7 +105,7 @@
         [variant]="'secondary'"
         [size]="'m'"
         [text]="'Close'"
-        class="full-width"
+        [isFullWidth]="true"
         (buttonClick)="onCancel()"
       />
     </div>
@@ -180,6 +174,7 @@
           [size]="'m'"
           [text]="isSaving() ? 'Importing...' : 'Import Token'"
           [isDisabled]="isSaving()"
+          [isFullWidth]="true"
           class="flex-1"
           (buttonClick)="onAccept()"
         />

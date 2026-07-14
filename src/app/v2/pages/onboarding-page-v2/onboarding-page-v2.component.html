@@ -122,34 +122,36 @@
                 [formGroup]="loginForm"
                 (ngSubmit)="onSubmit()"
               >
-                <kc-input
-                  formControlName="password"
-                  [placeholder]="'Password'"
-                  [type]="passwordType()"
-                  [isValid]="!isInvalid('password')"
-                  [isDisabled]="isSubmitting()"
-                >
-                  <div
-                    (click)="!isSubmitting() && togglePwVisibility()"
-                    [class]="
-                      isSubmitting()
-                        ? 'onboarding-v2__visibility-toggle onboarding-v2__visibility-toggle--disabled'
-                        : 'onboarding-v2__visibility-toggle clickable'
-                    "
-                    rightSideSlot
+                <div class="onboarding-v2__login-field">
+                  <kc-input
+                    formControlName="password"
+                    [placeholder]="'Password'"
+                    [type]="passwordType()"
+                    [isValid]="!isInvalid('password')"
+                    [isDisabled]="isSubmitting()"
                   >
-                    <kc-icon
-                      iconClass="{{ passwordIcon() }}"
-                      [size]="'xs'"
-                      [class]="isSubmitting() ? 'disabled-icon' : ''"
-                    />
-                  </div>
-                </kc-input>
-                @if (isInvalid('password') && getPasswordError()) {
-                  <span class="kc-input-error-text">{{
-                    getPasswordError()
-                  }}</span>
-                }
+                    <div
+                      (click)="!isSubmitting() && togglePwVisibility()"
+                      [class]="
+                        isSubmitting()
+                          ? 'onboarding-v2__visibility-toggle onboarding-v2__visibility-toggle--disabled'
+                          : 'onboarding-v2__visibility-toggle clickable'
+                      "
+                      rightSideSlot
+                    >
+                      <kc-icon
+                        iconClass="{{ passwordIcon() }}"
+                        [size]="'xs'"
+                        [class]="isSubmitting() ? 'disabled-icon' : ''"
+                      />
+                    </div>
+                  </kc-input>
+                  @if (isInvalid('password') && getPasswordError()) {
+                    <span class="kc-input-error-text">{{
+                      getPasswordError()
+                    }}</span>
+                  }
+                </div>
 
                 <div class="onboarding-v2__login-actions">
                   <kc-button

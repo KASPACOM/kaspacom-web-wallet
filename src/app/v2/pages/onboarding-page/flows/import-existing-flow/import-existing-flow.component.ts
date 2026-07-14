@@ -1,4 +1,11 @@
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  computed,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { ImportExistingStep } from './import-existing-step.enum';
 import { ImportExistingFlowService } from './service/import-existing-flow.service';
 import {
@@ -6,7 +13,7 @@ import {
   slideAnimation,
 } from '../../shared/animation/slide.animation';
 import { StepIndicatorComponent } from '../../shared/component/step-indicator/step-indicator.component';
-import { CommonModule } from '@angular/common';
+
 import { ImportSwitchImportExistingStepComponent } from './steps/import-switch-import-existing-step/import-switch-import-existing-step.component';
 import { CreatePinImportExistingStepComponent } from './steps/create-pin-import-existing-step/create-pin-import-existing-step.component';
 import { SuccessImportExistingStepComponent } from './steps/success-import-existing-step/success-import-existing-step.component';
@@ -19,7 +26,6 @@ import { BackupImportExistingStepComponent } from './steps/backup-import-existin
 @Component({
   selector: 'app-import-existing-flow',
   imports: [
-    CommonModule,
     StepIndicatorComponent,
     ImportSwitchImportExistingStepComponent,
     SeedPhraseImportExistingStepComponent,

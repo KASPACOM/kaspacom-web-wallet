@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectorRef,
   Component,
@@ -13,11 +12,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import {
-  KcButtonComponent,
-  KcInputComponent,
-  NotificationService,
-} from 'kaspacom-ui';
+import { KcInputComponent, KcButtonComponent, NotificationService } from '@kaspacom/ui-kit';
 import { RadioInputComponent } from '../../../../../../shared/ui/input/radio/radio-input/radio-input.component';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
 import { WalletService } from '../../../../../../../services/wallet.service';
@@ -26,7 +21,6 @@ import { ImportSwitchMethod } from '../import-switch-import-existing-step/compon
 @Component({
   selector: 'app-seed-phrase-import-existing-step',
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     KcButtonComponent,
     KcInputComponent,

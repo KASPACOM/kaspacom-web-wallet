@@ -16,11 +16,11 @@ export class Erc20TokenLogoComponent {
   size = input.required<ComponentSize>();
 
   imageResource = resource({
-    request: () => ({ address: this.address(), ticker: this.ticker() }),
-    loader: async ({ request }) => {
+    params: () => ({ address: this.address(), ticker: this.ticker() }),
+    loader: async ({ params }) => {
       return await this.utilsService.checkLogoImageUrl(
-        request.address,
-        request.ticker,
+        params.address,
+        params.ticker,
         false,
       );
     },

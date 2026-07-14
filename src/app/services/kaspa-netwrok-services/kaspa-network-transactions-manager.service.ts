@@ -1,4 +1,4 @@
-import { Injectable, input, Signal } from '@angular/core';
+import { Injectable, input, Signal, inject } from '@angular/core';
 import {
   Address,
   addressFromScriptPublicKey,
@@ -35,7 +35,12 @@ import { UtilsHelper } from '../utils.service';
 import { TotalBalanceWithUtxosInterface } from '../../types/kaspa-network/total-balance-with-utxos.interface';
 import { UtxoProcessorManager } from '../../classes/UtxoProcessorManager';
 import { RpcConnectionStatus } from '../../types/kaspa-network/rpc-connection-status.enum';
-import { ERROR_CODES, KasTransactionParams, ProtocolScriptDataAndAddress, ProtocolType } from '@kaspacom/wallet-messages';
+import {
+  ERROR_CODES,
+  KasTransactionParams,
+  ProtocolScriptDataAndAddress,
+  ProtocolType,
+} from '@kaspacom/wallet-messages';
 import type { WalletPsktSignInput } from '../../types/wallet-action';
 import {
   MAX_TRANSACTION_FEE,
@@ -49,15 +54,14 @@ import { EtherService } from '../etherium-services/ether.service';
 import { KaspaWalletMnemonicActionsService } from './kaspa-wallet-mnemonic-actions.service';
 
 const MIN_TRANSACTION_FEE = 1817n;
-export const SUBMIT_REVEAL_MIN_UTXO_AMOUNT = 300000000n
-export const MIN_FOR_SUBMIT_REVEAL_OUTPUT = 100000000n
+export const SUBMIT_REVEAL_MIN_UTXO_AMOUNT = 300000000n;
+export const MIN_FOR_SUBMIT_REVEAL_OUTPUT = 100000000n;
 const REVEAL_WASM_FIX_AMOUNT = 25000n;
-
 
 type DoTransactionOptions = {
   notifyCreatedTransactions?: (transactionId: string) => Promise<any>;
   specialSignTransactionFunc?: (
-    transaction: PendingTransaction
+    transaction: PendingTransaction,
   ) => Promise<any>;
   additionalProtocolPaymentAmount?: bigint;
   minPriorityFeeFix?: bigint;
@@ -75,18 +79,19 @@ type DoTransactionOptions = {
   providedIn: 'root',
 })
 export class KaspaNetworkTransactionsManagerService {
-  constructor(
-    private readonly rpcService: RpcService,
-    private readonly connectionManager: KaspaNetworkConnectionManagerService,
-    private readonly utils: UtilsHelper,
-    private readonly etherService: EtherService,
-    private readonly kaspaWalletMnemonicActionsService: KaspaWalletMnemonicActionsService,
-  ) {
-  }
+  private readonly rpcService = inject(RpcService);
+  private readonly connectionManager = inject(
+    KaspaNetworkConnectionManagerService,
+  );
+  private readonly utils = inject(UtilsHelper);
+  private readonly etherService = inject(EtherService);
+  private readonly kaspaWalletMnemonicActionsService = inject(
+    KaspaWalletMnemonicActionsService,
+  );
 
   async connectAndDo<T>(
     fn: () => Promise<T>,
-    attempts: number = Infinity
+    attempts: number = Infinity,
   ): Promise<T> {
     await this.utils.retryOnError(async () => {
       await this.connectionManager.waitForConnection();
@@ -122,7 +127,10 @@ export class KaspaNetworkTransactionsManagerService {
       .addData(buf)
       .addOp(Opcodes.OpEndIf);
 
-    const scriptAddress = addressFromScriptPublicKey(script.createPayToScriptHashScript(), this.rpcService.getNetwork());
+    const scriptAddress = addressFromScriptPublicKey(
+      script.createPayToScriptHashScript(),
+      this.rpcService.getNetwork(),
+    );
 
     return {
       scriptAddress: scriptAddress!.toString(),
@@ -146,8 +154,7 @@ export class KaspaNetworkTransactionsManagerService {
     });
   }
 
-  async initMempoolTransactionManager(
-    address: string) {
+  async initMempoolTransactionManager(address: string) {
     return await this.connectAndDo(async () => {
       const mempoolManager = new MempoolTransactionManager(
         this.rpcService.getRpc()!,
@@ -169,7 +176,7 @@ export class KaspaNetworkTransactionsManagerService {
     privateKey: PrivateKey,
     priorityFee: bigint,
     outputs: IPaymentOutput[],
-    additionalOptions: DoTransactionOptions = {}
+    additionalOptions: DoTransactionOptions = {},
   ): Promise<{
     success: boolean;
     errorCode?: number;
@@ -180,13 +187,15 @@ export class KaspaNetworkTransactionsManagerService {
     const sendAll = additionalOptions.sendAll || false;
     let totalPaymentsAmount = outputs.reduce(
       (previousValue, currentValue) => previousValue + currentValue.amount,
-      0n
+      0n,
     );
 
-    let priorityEntriesSum = additionalOptions.priorityEntries ? additionalOptions.priorityEntries.reduce(
-      (previousValue, currentValue) => previousValue + currentValue.amount,
-      0n
-    ) : 0n;
+    let priorityEntriesSum = additionalOptions.priorityEntries
+      ? additionalOptions.priorityEntries.reduce(
+          (previousValue, currentValue) => previousValue + currentValue.amount,
+          0n,
+        )
+      : 0n;
 
     return await this.connectAndDo<{
       success: boolean;
@@ -194,7 +203,6 @@ export class KaspaNetworkTransactionsManagerService {
       result?: ICreateTransactions;
     }>(async () => {
       const context = utxoProcessonManager.getContext()!;
-
 
       if (sendAll) {
         const remeaingAmountToSend =
@@ -210,10 +218,13 @@ export class KaspaNetworkTransactionsManagerService {
         outputs[0].amount = remeaingAmountToSend;
         totalPaymentsAmount = outputs.reduce(
           (previousValue, currentValue) => previousValue + currentValue.amount,
-          0n
+          0n,
         );
       } else {
-        if ((context.balance!.mature || 0n) + priorityEntriesSum < totalPaymentsAmount) {
+        if (
+          (context.balance!.mature || 0n) + priorityEntriesSum <
+          totalPaymentsAmount
+        ) {
           return {
             success: false,
             errorCode: ERROR_CODES.WALLET_ACTION.INSUFFICIENT_BALANCE,
@@ -223,7 +234,10 @@ export class KaspaNetworkTransactionsManagerService {
 
       let finalPriorityFee = priorityFee;
 
-      if (additionalOptions.minPriorityFeeFix && finalPriorityFee < additionalOptions.minPriorityFeeFix) {
+      if (
+        additionalOptions.minPriorityFeeFix &&
+        finalPriorityFee < additionalOptions.minPriorityFeeFix
+      ) {
         finalPriorityFee = additionalOptions.minPriorityFeeFix;
       }
 
@@ -237,7 +251,9 @@ export class KaspaNetworkTransactionsManagerService {
         outputs,
         changeAddress:
           additionalOptions.changeWalletAddress ||
-          this.kaspaWalletMnemonicActionsService.convertPrivateKeyToAddress(privateKey.toString()),
+          this.kaspaWalletMnemonicActionsService.convertPrivateKeyToAddress(
+            privateKey.toString(),
+          ),
         priorityFee: {
           amount: finalPriorityFee,
           source: sendAll ? FeeSource.ReceiverPays : FeeSource.SenderPays,
@@ -247,7 +263,8 @@ export class KaspaNetworkTransactionsManagerService {
       };
 
       if (
-        (context.balance!.mature || 0n) + priorityEntriesSum < totalPaymentsAmount ||
+        (context.balance!.mature || 0n) + priorityEntriesSum <
+          totalPaymentsAmount ||
         (outputs.length && outputs[0].amount <= MINIMAL_AMOUNT_TO_SEND)
       ) {
         return {
@@ -262,7 +279,7 @@ export class KaspaNetworkTransactionsManagerService {
 
       console.log(
         'current transaction amount',
-        currentTransactions.transactions.length
+        currentTransactions.transactions.length,
       );
       console.log('current transaction summry', currentTransactions.summary);
 
@@ -275,7 +292,7 @@ export class KaspaNetworkTransactionsManagerService {
 
       if (additionalOptions.notifyCreatedTransactions) {
         await additionalOptions.notifyCreatedTransactions(
-          currentTransactions.summary.finalTransactionId!
+          currentTransactions.summary.finalTransactionId!,
         );
       }
 
@@ -298,11 +315,11 @@ export class KaspaNetworkTransactionsManagerService {
 
         await this.connectAndDo(async () => {
           if (additionalOptions.rbf) {
-            await this.rpcService.getRpc()!.submitTransactionReplacement(
-              {
-                transaction: Transaction.deserializeFromSafeJSON(transaction.serializeToSafeJSON()),
-              }
-            )
+            await this.rpcService.getRpc()!.submitTransactionReplacement({
+              transaction: Transaction.deserializeFromSafeJSON(
+                transaction.serializeToSafeJSON(),
+              ),
+            });
           } else {
             await transaction.submit(this.rpcService.getRpc()!);
           }
@@ -313,7 +330,10 @@ export class KaspaNetworkTransactionsManagerService {
         if (additionalOptions.waitForTransactionToBeConfirmed) {
           const mempoolTransactionManager = new MempoolTransactionManager(
             this.rpcService.getRpc()!,
-            additionalOptions.revealScriptAddress || this.kaspaWalletMnemonicActionsService.convertPrivateKeyToAddress(privateKey.toString()),
+            additionalOptions.revealScriptAddress ||
+              this.kaspaWalletMnemonicActionsService.convertPrivateKeyToAddress(
+                privateKey.toString(),
+              ),
           );
 
           try {
@@ -340,7 +360,7 @@ export class KaspaNetworkTransactionsManagerService {
     operationScript: ProtocolScriptDataAndAddress,
     maxPriorityFee: bigint = 0n,
     baseTransactionAmount = SUBMIT_REVEAL_MIN_UTXO_AMOUNT,
-    transactionOptions: DoTransactionOptions = {}
+    transactionOptions: DoTransactionOptions = {},
   ) {
     // Ensure wallet has utxo processor manager initialized
     const utxoProcessorManager = wallet.getUtxoProcessorManager();
@@ -364,7 +384,7 @@ export class KaspaNetworkTransactionsManagerService {
       wallet.getPrivateKey(),
       maxPriorityFee,
       outputs,
-      transactionOptions
+      transactionOptions,
     );
   }
 
@@ -374,9 +394,8 @@ export class KaspaNetworkTransactionsManagerService {
     maxPriorityFee: bigint = 0n,
     commitUtxoTransactionId?: string,
     additionalOutputs: { address: string; amount: bigint }[] = [],
-    transactionOptions: DoTransactionOptions = {}
+    transactionOptions: DoTransactionOptions = {},
   ) {
-
     if (!transactionOptions.estimateOnly) {
       await wallet.waitForWalletToBeReadyForTransactions();
     }
@@ -386,44 +405,44 @@ export class KaspaNetworkTransactionsManagerService {
         return await this.rpcService.getRpc()!.getUtxosByAddresses({
           addresses: [operationScript.scriptAddress.toString()],
         });
-      }
+      },
     );
 
     let entry: UtxoEntryReference | undefined = commitUtxos.entries[0];
 
     if (commitUtxoTransactionId) {
       entry = commitUtxos.entries.find(
-        (entry) => entry.outpoint.transactionId === commitUtxoTransactionId
+        (entry) => entry.outpoint.transactionId === commitUtxoTransactionId,
       );
     }
 
     if (!entry) {
       throw new Error(
-        `Reveal-only commit UTXO not found. The listing commit may already be spent or is not available at the derived script address. commitTransactionId: ${commitUtxoTransactionId || 'not provided'}, scriptAddress: ${operationScript.scriptAddress}, walletAddress: ${wallet.getAddress()}`
+        `Reveal-only commit UTXO not found. The listing commit may already be spent or is not available at the derived script address. commitTransactionId: ${commitUtxoTransactionId || 'not provided'}, scriptAddress: ${operationScript.scriptAddress}, walletAddress: ${wallet.getAddress()}`,
       );
     }
 
     const priorityEntries = [entry];
 
     const specialSignTransactionFunc = async (
-      transaction: PendingTransaction
+      transaction: PendingTransaction,
     ) => {
       transaction.sign([wallet.getPrivateKey()], false);
       const ourOutput = transaction.transaction.inputs.findIndex(
-        (input) => input.signatureScript === ''
+        (input) => input.signatureScript === '',
       );
 
       if (ourOutput !== -1) {
         const signature = await transaction.createInputSignature(
           ourOutput,
-          wallet.getPrivateKey()
+          wallet.getPrivateKey(),
         );
 
         transaction.fillInput(
           ourOutput,
           ScriptBuilder.fromScript(
-            operationScript.scriptData
-          ).encodePayToScriptHashSignatureScript(signature)
+            operationScript.scriptData,
+          ).encodePayToScriptHashSignatureScript(signature),
         );
       }
     };
@@ -437,8 +456,6 @@ export class KaspaNetworkTransactionsManagerService {
 
       ...(transactionOptions || {}),
     };
-
-
 
     // Ensure wallet has utxo processor manager initialized
     const utxoProcessorManager = wallet.getUtxoProcessorManager();
@@ -455,9 +472,8 @@ export class KaspaNetworkTransactionsManagerService {
       wallet.getPrivateKey(),
       maxPriorityFee,
       outputs,
-      transactionOptionsToSend
+      transactionOptionsToSend,
     );
-
   }
 
   async doEtherSigningTransaction(
@@ -485,35 +501,50 @@ export class KaspaNetworkTransactionsManagerService {
       return {
         success: false,
         errorCode: ERROR_CODES.WALLET_ACTION.WALLET_NOT_SELECTED,
-      }
+      };
     }
 
-    const l2Transaction = await this.etherService.createTransactionAndPopulate(transactionOptions, l2Wallet);
+    const l2Transaction = await this.etherService.createTransactionAndPopulate(
+      transactionOptions,
+      l2Wallet,
+    );
 
-    const signedTransactionString = await this.etherService.signTransaction(l2Transaction, l2Wallet);
+    const signedTransactionString = await this.etherService.signTransaction(
+      l2Transaction,
+      l2Wallet,
+    );
     const signedTransactionHash = keccak256(signedTransactionString);
 
     if (!submitTransaction) {
       return {
         success: true,
         result: { signedTransactionString, signedTransactionHash },
-      }
+      };
     }
 
     if (!sendToL1) {
-      const transactionHash = await this.etherService.sendTransactionToL2(wallet.getL2Provider()!, signedTransactionString);
+      const transactionHash = await this.etherService.sendTransactionToL2(
+        wallet.getL2Provider()!,
+        signedTransactionString,
+      );
       return {
         success: true,
-        result: { signedTransactionString, signedTransactionHash: transactionHash },
-      }
+        result: {
+          signedTransactionString,
+          signedTransactionHash: transactionHash,
+        },
+      };
     }
 
-    const payload = this.etherService.encodeTransactionPayload(signedTransactionString);
+    const payload = this.etherService.encodeTransactionPayload(
+      signedTransactionString,
+    );
 
-    const payments = kaspaTransactionParams?.outputs?.map(output => ({
-      address: output.address,
-      amount: output.amount,
-    })) || [];
+    const payments =
+      kaspaTransactionParams?.outputs?.map((output) => ({
+        address: output.address,
+        amount: output.amount,
+      })) || [];
 
     // Ensure wallet has utxo processor manager initialized
     const utxoProcessorManager = wallet.getUtxoProcessorManager();
@@ -535,7 +566,7 @@ export class KaspaNetworkTransactionsManagerService {
         estimateOnly,
         rbf,
         payload,
-      }
+      },
     );
 
     return {
@@ -545,8 +576,8 @@ export class KaspaNetworkTransactionsManagerService {
         transaction: result.result,
         signedTransactionString,
         signedTransactionHash,
-      }
-    }
+      },
+    };
   }
 
   async doKaspaTransferTransactionWithUtxoProcessor(
@@ -584,10 +615,9 @@ export class KaspaNetworkTransactionsManagerService {
         estimateOnly,
         rbf,
         payload: payload,
-      }
+      },
     );
   }
-
 
   public async doCommitRevealActionTransactionsAndNotifyWithUtxoProcessor(
     wallet: AppWallet,
@@ -596,7 +626,9 @@ export class KaspaNetworkTransactionsManagerService {
     operationCost: bigint,
     maxPriorityFee: bigint,
     alreadyFinishedTransactions: Partial<CommitRevealActionTransactions>,
-    notifyUpdate: (result: Partial<CommitRevealActionTransactions>) => Promise<void>,
+    notifyUpdate: (
+      result: Partial<CommitRevealActionTransactions>,
+    ) => Promise<void>,
     baseTransactionOptions?: DoTransactionOptions,
     additionalRevealOutputs?: { address: string; amount: bigint }[],
     revealTransactioAdditionalOptions?: DoTransactionOptions,
@@ -609,7 +641,7 @@ export class KaspaNetworkTransactionsManagerService {
       commitMass?: bigint[];
       reveal?: string;
       revealMass?: bigint[];
-    }
+    };
   }> {
     const holderWalletPublicAddress = wallet.getAddress();
     const operationScript = await this.createGenericScriptFromString(
@@ -628,7 +660,8 @@ export class KaspaNetworkTransactionsManagerService {
       ...(commitTransactionAdditionalOptions || {}),
     };
 
-    const minimalOperationCost = operationCost < MIN_TRANSACTION_FEE ? MIN_TRANSACTION_FEE : operationCost;
+    const minimalOperationCost =
+      operationCost < MIN_TRANSACTION_FEE ? MIN_TRANSACTION_FEE : operationCost;
 
     const revealOptions: DoTransactionOptions = {
       notifyCreatedTransactions: async (transactionId) => {
@@ -644,7 +677,10 @@ export class KaspaNetworkTransactionsManagerService {
     const resultTransactions = { ...alreadyFinishedTransactions };
 
     const totalOutputsAmount =
-      additionalRevealOutputs?.reduce((previousValue, currentValue) => previousValue + currentValue.amount, 0n) || 0n;
+      additionalRevealOutputs?.reduce(
+        (previousValue, currentValue) => previousValue + currentValue.amount,
+        0n,
+      ) || 0n;
 
     let commitTransactionId = resultTransactions.commitTransactionId;
 
@@ -656,7 +692,7 @@ export class KaspaNetworkTransactionsManagerService {
         commitMass?: bigint[];
         reveal?: string;
         revealMass?: bigint[];
-      }
+      };
     }>(async () => {
       if (!resultTransactions.commitTransactionId) {
         const walletBalance = await this.getWalletTotalBalanceAndUtxos(
@@ -667,54 +703,65 @@ export class KaspaNetworkTransactionsManagerService {
 
         if (
           totalWalletAmountAtStart < operationCost + totalOutputsAmount ||
-          totalWalletAmountAtStart < SUBMIT_REVEAL_MIN_UTXO_AMOUNT + totalOutputsAmount
+          totalWalletAmountAtStart <
+            SUBMIT_REVEAL_MIN_UTXO_AMOUNT + totalOutputsAmount
         ) {
           throw new Error('Not enough wallet balance');
         }
 
-        let baseTransactionAmount = SUBMIT_REVEAL_MIN_UTXO_AMOUNT - operationCost > MIN_FOR_SUBMIT_REVEAL_OUTPUT ? SUBMIT_REVEAL_MIN_UTXO_AMOUNT : operationCost + SUBMIT_REVEAL_MIN_UTXO_AMOUNT;
+        let baseTransactionAmount =
+          SUBMIT_REVEAL_MIN_UTXO_AMOUNT - operationCost >
+          MIN_FOR_SUBMIT_REVEAL_OUTPUT
+            ? SUBMIT_REVEAL_MIN_UTXO_AMOUNT
+            : operationCost + SUBMIT_REVEAL_MIN_UTXO_AMOUNT;
 
         baseTransactionAmount += totalOutputsAmount;
 
-        const commitTransactionResult = await this.doProtocolCommitTransactionWithUtxoProcessor(
-          wallet,
-          operationScript,
-          maxPriorityFee,
-          baseTransactionAmount,
-          commitOptions,
-        );
+        const commitTransactionResult =
+          await this.doProtocolCommitTransactionWithUtxoProcessor(
+            wallet,
+            operationScript,
+            maxPriorityFee,
+            baseTransactionAmount,
+            commitOptions,
+          );
 
         if (!commitTransactionResult.success) {
           return {
             success: false,
             errorCode: commitTransactionResult.errorCode,
-          }
+          };
         }
 
         if (commitOptions.estimateOnly) {
           return {
             success: true,
             result: {
-              commit: commitTransactionResult.result?.summary.finalTransactionId,
-              commitMass: commitTransactionResult.result?.transactions.map(t => t.mass)
+              commit:
+                commitTransactionResult.result?.summary.finalTransactionId,
+              commitMass: commitTransactionResult.result?.transactions.map(
+                (t) => t.mass,
+              ),
             },
           };
         }
 
-        commitTransactionId = commitTransactionResult.result?.summary.finalTransactionId;
+        commitTransactionId =
+          commitTransactionResult.result?.summary.finalTransactionId;
       }
 
       let revealTransactionId = resultTransactions.revealTransactionId;
 
       if (!resultTransactions.revealTransactionId) {
-        const revealTransactionResult = await this.doProtocolRevealTransactionWithUtxoProcessor(
-          wallet,
-          operationScript,
-          maxPriorityFee,
-          commitTransactionId,
-          additionalRevealOutputs,
-          revealOptions,
-        );
+        const revealTransactionResult =
+          await this.doProtocolRevealTransactionWithUtxoProcessor(
+            wallet,
+            operationScript,
+            maxPriorityFee,
+            commitTransactionId,
+            additionalRevealOutputs,
+            revealOptions,
+          );
 
         if (!revealTransactionResult.success) {
           return {
@@ -730,13 +777,17 @@ export class KaspaNetworkTransactionsManagerService {
           return {
             success: true,
             result: {
-              reveal: revealTransactionResult.result?.summary.finalTransactionId,
-              revealMass: revealTransactionResult.result?.transactions.map(t => t.mass + (REVEAL_WASM_FIX_AMOUNT / 100n))
+              reveal:
+                revealTransactionResult.result?.summary.finalTransactionId,
+              revealMass: revealTransactionResult.result?.transactions.map(
+                (t) => t.mass + REVEAL_WASM_FIX_AMOUNT / 100n,
+              ),
             },
           };
         }
 
-        revealTransactionId = revealTransactionResult.result?.summary.finalTransactionId;
+        revealTransactionId =
+          revealTransactionResult.result?.summary.finalTransactionId;
       }
 
       return {
@@ -744,7 +795,7 @@ export class KaspaNetworkTransactionsManagerService {
         result: {
           commit: commitTransactionId,
           reveal: revealTransactionId,
-        }
+        },
       };
     });
   }
@@ -758,7 +809,6 @@ export class KaspaNetworkTransactionsManagerService {
       amount: bigint;
     }[],
   ): Promise<Transaction> {
-
     let entry: UtxoEntryReference | undefined = undefined;
 
     const revealUTXOs = await this.connectAndDo<IGetUtxosByAddressesResponse>(
@@ -766,12 +816,12 @@ export class KaspaNetworkTransactionsManagerService {
         return await this.rpcService.getRpc()!.getUtxosByAddresses({
           addresses: [script.scriptAddress],
         });
-      }
+      },
     );
 
     if (unxoEntryTransactionId) {
       entry = revealUTXOs.entries.find(
-        (entry) => entry.outpoint.transactionId === unxoEntryTransactionId
+        (entry) => entry.outpoint.transactionId === unxoEntryTransactionId,
       );
     }
 
@@ -788,8 +838,8 @@ export class KaspaNetworkTransactionsManagerService {
       },
     ];
 
-    const transactionOutputs: ITransactionOutput[] = outputs?.map(
-      (output) => ({
+    const transactionOutputs: ITransactionOutput[] =
+      outputs?.map((output) => ({
         scriptPublicKey: payToAddressScript(output.address),
         value: output.amount,
       })) || [];
@@ -797,7 +847,6 @@ export class KaspaNetworkTransactionsManagerService {
     if (transactionOutputs[0]) {
       transactionOutputs[0].value += entry!.amount;
     }
-
 
     let transaction = new Transaction({
       version: 0,
@@ -813,13 +862,12 @@ export class KaspaNetworkTransactionsManagerService {
       transaction,
       0,
       wallet.getPrivateKey(),
-      SighashType.SingleAnyOneCanPay
+      SighashType.SingleAnyOneCanPay,
     );
 
-    transaction.inputs[0].signatureScript =
-      ScriptBuilder.fromScript(script.scriptData).encodePayToScriptHashSignatureScript(
-        signature
-      );
+    transaction.inputs[0].signatureScript = ScriptBuilder.fromScript(
+      script.scriptData,
+    ).encodePayToScriptHashSignatureScript(signature);
 
     return transaction;
   }
@@ -840,22 +888,18 @@ export class KaspaNetworkTransactionsManagerService {
     const transaction = Transaction.deserializeFromSafeJSON(transactionJson);
 
     if (signOnly) {
-      const inputsToSign = signInputs ?? this.getWalletOwnedPsktSignInputs(
-        transaction,
-        wallet,
-      );
+      const inputsToSign =
+        signInputs ?? this.getWalletOwnedPsktSignInputs(transaction, wallet);
 
       for (const input of inputsToSign) {
         const i = input.index;
 
         if (!transaction.inputs[i].signatureScript) {
-
-
           const signature = createInputSignature(
             transaction,
             i,
             wallet.getPrivateKey(),
-            (input.sighashType ?? SighashType.All) as SighashType
+            (input.sighashType ?? SighashType.All) as SighashType,
           );
 
           transaction.inputs[i].signatureScript = signature;
@@ -880,13 +924,12 @@ export class KaspaNetworkTransactionsManagerService {
       }
 
       return result;
-
     }
 
     return await this.connectAndDo(async () => {
       const totalOutputs = transaction.outputs.reduce(
         (total, output) => total + output.value,
-        0n
+        0n,
       );
       const totalRequiredOutputs =
         totalOutputs +
@@ -931,12 +974,12 @@ export class KaspaNetworkTransactionsManagerService {
 
       const totalInputsAmount = transaction.inputs.reduce(
         (total, input) => total + input.utxo!.amount,
-        0n
+        0n,
       );
 
       const totalOutputsAmount = transaction.outputs.reduce(
         (total, output) => total + output.value,
-        0n
+        0n,
       );
 
       const change = totalInputsAmount - totalOutputsAmount;
@@ -956,14 +999,13 @@ export class KaspaNetworkTransactionsManagerService {
         ...transaction.outputs.slice(1),
       ];
 
-      const transactionFee = (calculateTransactionFee(
-        this.rpcService.getNetwork(),
-        transaction
-      )) || kaspaToSompi('0.01');
+      const transactionFee =
+        calculateTransactionFee(this.rpcService.getNetwork(), transaction) ||
+        kaspaToSompi('0.01');
 
       const transactionMass = calculateTransactionMass(
         this.rpcService.getNetwork(),
-        transaction
+        transaction,
       );
 
       if (!transactionFee) {
@@ -985,7 +1027,7 @@ export class KaspaNetworkTransactionsManagerService {
               transaction,
               input.index,
               wallet.getPrivateKey(),
-              (input.sighashType ?? SighashType.All) as SighashType
+              (input.sighashType ?? SighashType.All) as SighashType,
             );
 
             transaction.inputs[input.index].signatureScript = signature;
@@ -998,7 +1040,7 @@ export class KaspaNetworkTransactionsManagerService {
           transaction,
           index,
           wallet.getPrivateKey(),
-          SighashType.All
+          SighashType.All,
         );
 
         transaction.inputs[i].signatureScript = signature;
@@ -1007,11 +1049,11 @@ export class KaspaNetworkTransactionsManagerService {
       // Validation (IMPORTANT!)
       const inputsSum = transaction.inputs.reduce(
         (sum, input) => sum + input.utxo!.amount,
-        0n
+        0n,
       );
       const outputsSum = transaction.outputs.reduce(
         (sum, output) => sum + output.value,
-        0n
+        0n,
       );
 
       if (inputsSum !== outputsSum + totalFees) {
@@ -1046,7 +1088,6 @@ export class KaspaNetworkTransactionsManagerService {
     });
   }
 
-
   //   // ================================================================
   //   // OTHER
   //   // ================================================================
@@ -1078,7 +1119,7 @@ export class KaspaNetworkTransactionsManagerService {
   }
 
   async getWalletTotalBalanceAndUtxos(
-    address: string
+    address: string,
   ): Promise<TotalBalanceWithUtxosInterface> {
     const utxoEntries = await this.getWalletUtxos(address);
 
@@ -1098,10 +1139,12 @@ export class KaspaNetworkTransactionsManagerService {
     });
   }
 
-  getWalletAddressFromScriptPublicKey(scriptPublicKey: string | IScriptPublicKey | ScriptPublicKey): string {
+  getWalletAddressFromScriptPublicKey(
+    scriptPublicKey: string | IScriptPublicKey | ScriptPublicKey,
+  ): string {
     const result = addressFromScriptPublicKey(
       scriptPublicKey as any,
-      this.rpcService.getNetwork()
+      this.rpcService.getNetwork(),
     );
 
     if (!result) {
@@ -1119,7 +1162,7 @@ export class KaspaNetworkTransactionsManagerService {
 
   signMessage(
     privateKey: PrivateKey,
-    message: string
+    message: string,
   ): {
     signedMessage: string;
     publickey: string;

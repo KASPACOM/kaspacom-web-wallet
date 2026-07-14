@@ -11,9 +11,7 @@ import {
 import { DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { Krc20AssetCardComponent } from '../../asset-card/krc20-asset-card/krc20-asset-card.component';
-import {
-  ITokenWithMetadata,
-} from '../../../../../common/interfaces/token.interface';
+import { ITokenWithMetadata } from '../../../../../common/interfaces/token.interface';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
 import { Krc20MetadataService } from '../../../../../../../../services/asset-metadata/krc20-metadata.service';
 import { InfiniteScrollDirective } from '../../../../../../../../directives/infinite-scroll.directive';
@@ -24,7 +22,12 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-krc20-summary',
-  imports: [SkeletonComponent, InfiniteScrollDirective, Krc20AssetCardComponent, DecimalPipe],
+  imports: [
+    SkeletonComponent,
+    InfiniteScrollDirective,
+    Krc20AssetCardComponent,
+    DecimalPipe,
+  ],
   templateUrl: './krc20-summary.component.html',
   styleUrl: './krc20-summary.component.scss',
   host: {
@@ -43,6 +46,8 @@ export class Krc20SummaryComponent implements OnInit, AfterViewInit {
   private pendingThresholdReset = false;
   private _infiniteScrollDirective?: InfiniteScrollDirective;
 
+  // TODO: Skipped for migration because:
+  //  Accessor queries cannot be migrated as they are too complex.
   @ViewChild(InfiniteScrollDirective)
   set infiniteScrollDirective(directive: InfiniteScrollDirective | undefined) {
     this._infiniteScrollDirective = directive;
@@ -56,18 +61,20 @@ export class Krc20SummaryComponent implements OnInit, AfterViewInit {
   get infiniteScrollDirective(): InfiniteScrollDirective | undefined {
     return this._infiniteScrollDirective;
   }
-  
+
   // Configuration
   readonly config = L1_PAGINATION_CONFIG.krc20;
-  
+
   // Loading skeletons - portfolio pattern with opacity cascade
   private static readonly SKELETON_COUNT = 8;
-  loadingSkeletons: unknown[] = Array.from({ length: Krc20SummaryComponent.SKELETON_COUNT }).map(() => ({}));
+  loadingSkeletons: unknown[] = Array.from({
+    length: Krc20SummaryComponent.SKELETON_COUNT,
+  }).map(() => ({}));
 
   constructor() {
     toObservable(this.krc20ListService.tokens)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(tokens => {
+      .subscribe((tokens) => {
         if (!tokens || tokens.length === 0) {
           if (this.metadataInitialized) {
             this.krc20MetadataService.reset();
@@ -87,7 +94,7 @@ export class Krc20SummaryComponent implements OnInit, AfterViewInit {
 
     toObservable(this.krc20ListService.shouldCheckScrollPosition)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(shouldReset => {
+      .subscribe((shouldReset) => {
         if (!shouldReset) {
           return;
         }
@@ -122,9 +129,10 @@ export class Krc20SummaryComponent implements OnInit, AfterViewInit {
         address: token.tick,
         balance: token.balance,
         priceKas: token.priceKas,
-        isLoadingMetadata: metadataMap.get(token.tick)?.isLoadingMetadata || false,
+        isLoadingMetadata:
+          metadataMap.get(token.tick)?.isLoadingMetadata || false,
       }))
-      .sort((a, b) => (b.priceKas * b.balance) - (a.priceKas * a.balance));
+      .sort((a, b) => b.priceKas * b.balance - a.priceKas * a.balance);
   });
 
   // Loading states - portfolio pattern
@@ -139,11 +147,12 @@ export class Krc20SummaryComponent implements OnInit, AfterViewInit {
     );
   });
 
-  isLoadingMore = computed(() => 
-    this.krc20MetadataService.isLoading() &&
-    this.krc20MetadataService.paginatedAssets().length > 0
+  isLoadingMore = computed(
+    () =>
+      this.krc20MetadataService.isLoading() &&
+      this.krc20MetadataService.paginatedAssets().length > 0,
   );
-  
+
   hasMore = computed(() => this.krc20MetadataService.hasMoreItems());
 
   ngOnInit(): void {
@@ -206,7 +215,10 @@ export class Krc20SummaryComponent implements OnInit, AfterViewInit {
   }
 
   totalValueKas(): number {
-    return this.tokens().reduce((acc, token) => acc + token.priceKas * token.balance, 0);
+    return this.tokens().reduce(
+      (acc, token) => acc + token.priceKas * token.balance,
+      0,
+    );
   }
 
   totalValueUsd(): number {

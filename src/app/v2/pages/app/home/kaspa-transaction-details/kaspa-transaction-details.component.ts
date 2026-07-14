@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute, Router } from '@angular/router';
-import {  KcIconComponent } from 'kaspacom-ui';
+import { KcIconComponent } from '@kaspacom/ui-kit';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { KaspaApiService } from '../../../../../services/kaspa-api/kaspa-api.service';
@@ -12,14 +12,9 @@ import { KaspaL1NetworkService } from '../../../../../services/kaspa-netwrok-ser
 
 @Component({
   selector: 'app-kaspa-transaction-details',
-  imports: [
-    CommonModule,
-    KcIconComponent,
-    SkeletonComponent,
-    CopyButtonComponent
-  ],
+  imports: [KcIconComponent, SkeletonComponent, CopyButtonComponent],
   templateUrl: './kaspa-transaction-details.component.html',
-  styleUrl: './kaspa-transaction-details.component.scss'
+  styleUrl: './kaspa-transaction-details.component.scss',
 })
 export class KaspaTransactionDetailsComponent implements OnInit {
   private route = inject(ActivatedRoute);
@@ -30,7 +25,9 @@ export class KaspaTransactionDetailsComponent implements OnInit {
   private kaspaL1NetworkService = inject(KaspaL1NetworkService);
 
   protected transactionId: string | null = null;
-  protected transactionDetails = signal<FullTransactionResponseItem | null>(null);
+  protected transactionDetails = signal<FullTransactionResponseItem | null>(
+    null,
+  );
   protected loading = signal<boolean>(true);
 
   ngOnInit(): void {
@@ -66,7 +63,10 @@ export class KaspaTransactionDetailsComponent implements OnInit {
       }
 
       // If no transaction data is available, we can't load the details
-      console.warn('No transaction data available for transaction ID:', this.transactionId);
+      console.warn(
+        'No transaction data available for transaction ID:',
+        this.transactionId,
+      );
       this.loading.set(false);
     } catch (error) {
       console.error('Failed to load transaction details:', error);
@@ -82,7 +82,7 @@ export class KaspaTransactionDetailsComponent implements OnInit {
     const numAmount = this.kaspaNetworkActionsService.sompiToNumber(amount);
     return numAmount.toLocaleString('en-US', {
       minimumFractionDigits: 0,
-      maximumFractionDigits: 8
+      maximumFractionDigits: 8,
     });
   }
 
@@ -95,7 +95,7 @@ export class KaspaTransactionDetailsComponent implements OnInit {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
-      hour12: true
+      hour12: true,
     });
   }
 
@@ -104,7 +104,9 @@ export class KaspaTransactionDetailsComponent implements OnInit {
     return `${address.slice(0, 10)}...${address.slice(-8)}`;
   }
 
-  protected getTransactionStatus(transaction: FullTransactionResponseItem): string {
+  protected getTransactionStatus(
+    transaction: FullTransactionResponseItem,
+  ): string {
     return transaction.is_accepted ? 'Accepted' : 'Pending';
   }
 
@@ -163,7 +165,7 @@ export class KaspaTransactionDetailsComponent implements OnInit {
     const netAmount = outputAmount - inputAmount;
     return {
       amount: netAmount < 0n ? -netAmount : netAmount,
-      isIncoming: netAmount > 0n
+      isIncoming: netAmount > 0n,
     };
   }
 
@@ -181,6 +183,8 @@ export class KaspaTransactionDetailsComponent implements OnInit {
       return '';
     }
     // Return the first block hash if it's an array
-    return Array.isArray(transaction.block_hash) ? transaction.block_hash[0] : transaction.block_hash;
+    return Array.isArray(transaction.block_hash)
+      ? transaction.block_hash[0]
+      : transaction.block_hash;
   }
 }

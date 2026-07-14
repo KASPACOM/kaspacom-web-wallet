@@ -1,8 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { NotificationService } from '@kaspacom/ui-kit';
 import { FormsModule } from '@angular/forms';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
-import { MessagePopupService } from '../../../services/message-popup.service';
 import { Krc20WalletActionService } from '../../../services/protocols/krc20/krc20-wallet-actions.service';
 import { WalletActionService } from '../../../services/wallet-action.service';
 
@@ -13,17 +13,15 @@ import { WalletActionService } from '../../../services/wallet-action.service';
   imports: [FormsModule],
 })
 export class DeployComponent {
+  private walletActionService = inject(WalletActionService);
+  private krc20WalletActionService = inject(Krc20WalletActionService);
+  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  private notificationService = inject(NotificationService);
+
   protected selectedToken = '';
   protected maxSupply: number = 100000000;
   protected limitPerMint = 1000;
   protected preAllocation = 0;
-
-  constructor(
-    private walletActionService: WalletActionService,
-    private krc20WalletActionService: Krc20WalletActionService,
-    private kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private messagePopupService: MessagePopupService,
-  ) {}
 
   async deployToken() {
     const action = this.krc20WalletActionService.createDeployWalletAction(
@@ -42,7 +40,7 @@ export class DeployComponent {
       await this.walletActionService.validateAndDoActionAfterApproval(action);
 
     if (!result.success) {
-      this.messagePopupService.showError(
+      this.notificationService.error('Error',
         result.errorCode
           ? ERROR_CODES_MESSAGES[result.errorCode]
           : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR],

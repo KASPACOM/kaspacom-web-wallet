@@ -1,4 +1,4 @@
-import { Inject, inject, Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { DEFI_API_BASE_URL } from '../../config/injection-tokens';
 import { LfgToken, LfgTokenResponse } from '../../types/lfg-token.model';
@@ -21,6 +21,8 @@ import { ImageService } from '../image-service/image.service';
   providedIn: 'root',
 })
 export class LfgTokensCacheService {
+  private baseUrl = inject(DEFI_API_BASE_URL);
+
   private readonly imageService = inject(ImageService);
   private readonly CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
   private readonly ERROR_BACKOFF_MS = 30 * 1000; // 30 seconds before retrying after a failure
@@ -31,8 +33,6 @@ export class LfgTokensCacheService {
   private cacheTimestamp: number | null = null;
   private errorBackoffUntil = 0;
   private responseCache = signal<LfgTokenResponse | null>(null);
-
-  constructor(@Inject(DEFI_API_BASE_URL) private baseUrl: string) {}
 
   /**
    * Get all tokens from the LFG API

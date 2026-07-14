@@ -5,11 +5,11 @@
   (selectedTabChange)="onTabChange($event)"
 >
   @switch (selectedTabId()) {
-    @case ('l2-ERC20') {
-      <app-erc20-summary></app-erc20-summary>
+    @case ("l2-ERC20") {
+      <app-erc20-summary />
     }
-    @case ('l2-tx-history') {
-      <app-l2-tx-history></app-l2-tx-history>
+    @case ("l2-tx-history") {
+      <app-l2-tx-history />
     }
   }
 </kc-labeled-tabs>
@@ -18,9 +18,9 @@
   <div class="import-token-fab">
     <kc-button
       [variant]="'secondary'"
-      [size]="'sm'"
+      [size]="'s'"
       [text]="'+ Import Token'"
-      (buttonClick)="onImportToken()">
-    </kc-button>
+      (buttonClick)="onImportToken()"
+    />
   </div>
 }

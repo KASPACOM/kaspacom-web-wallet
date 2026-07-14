@@ -1,6 +1,8 @@
 <div class="export-account-wrapper">
-  @if (currentStep() === 'password') {
-    <div class="export-account__password-step flex column gap-24 align-items-center">
+  @if (currentStep() === "password") {
+    <div
+      class="export-account__password-step flex column gap-24 align-items-center"
+    >
       <div class="flex column gap-8 text-align-center">
         <span class="typo-title-3">Confirm Password</span>
         <span class="typo-text-2 text-medium">
@@ -8,30 +10,24 @@
         </span>
       </div>
       <div class="export-account__password-form flex column gap-16">
-        <label class="typo-text-1 text-gray-60" for="export-account-password">
-          Password
-        </label>
-        <input
-          id="export-account-password"
-          type="password"
-          class="export-account__password-input p-16 rounded-lg typo-text-1"
-          [class.error]="passwordError()"
-          placeholder="Enter your password"
+        <kc-input
+          [label]="'Password'"
+          [type]="'password'"
+          [placeholder]="'Enter your password'"
+          [isValid]="!passwordError()"
           [(ngModel)]="password"
           (ngModelChange)="onPasswordInput()"
           (keyup.enter)="onVerifyPassword()"
         />
         @if (passwordError()) {
-          <span class="export-account__password-error typo-text-2">
-            {{ passwordError() }}
-          </span>
+          <span class="kc-input-error-text">{{ passwordError() }}</span>
         }
         <kc-button
           [text]="'Continue'"
           [variant]="'primary'"
           [isDisabled]="isVerifying() || !password().trim()"
           (buttonClick)="onVerifyPassword()"
-        ></kc-button>
+        />
       </div>
     </div>
   } @else {
@@ -39,7 +35,8 @@
       <div class="export-account">
         <div class="export-account__warning">
           <span class="typo-text-2">
-            Keep your private key secure. Anyone with this key can control this account.
+            Keep your private key secure. Anyone with this key can control this
+            account.
           </span>
         </div>
 
@@ -69,30 +66,31 @@
         <div class="export-account__actions">
           <kc-button
             [text]="'Copy'"
-            [variant]="'tertiary'"
+            [variant]="'secondary'"
             [suffixIcon]="'icon-copy'"
             [isDisabled]="!privateKey()"
             (buttonClick)="copyPrivateKey()"
-          ></kc-button>
+          />
           <kc-button
             [text]="'Download .txt'"
             [variant]="'primary'"
             [suffixIcon]="'icon-download'"
             [isDisabled]="!privateKey()"
             (buttonClick)="downloadPrivateKey()"
-          ></kc-button>
+          />
         </div>
       </div>
     } @else {
       <div class="export-account__error">
-        <span class="typo-text-2">Unable to load this account's private key.</span>
+        <span class="typo-text-2"
+          >Unable to load this account's private key.</span
+        >
         <kc-button
           [text]="'Back'"
-          [variant]="'tertiary'"
+          [variant]="'secondary'"
           (buttonClick)="navigateBackToPrevious()"
-        ></kc-button>
+        />
       </div>
     }
   }
 </div>
-

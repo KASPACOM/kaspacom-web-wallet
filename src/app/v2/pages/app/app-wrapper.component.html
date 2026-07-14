@@ -6,17 +6,17 @@
   <div class="wrapper" [class.wrapper--expanded]="isExpandedLayout()">
     <!-- Iframe account selection overlay - shows when account needs to be selected -->
     @if (shouldShowAccountSelectionOverlay()) {
-      <app-iframe-account-selection
-        (accountSelected)="onAccountSelected()"
-      ></app-iframe-account-selection>
+      <app-iframe-account-selection (accountSelected)="onAccountSelected()" />
     }
 
     <!-- Iframe loading spinner - shows during initial load -->
-    <div class="iframe-overlay-cover" *ngIf="shouldEnforceAccountSelection() && showIframeLoader()">
-      <div class="iframe-loader">
-        <kc-spinner size="lg"></kc-spinner>
+    @if (shouldEnforceAccountSelection() && showIframeLoader()) {
+      <div class="iframe-overlay-cover">
+        <div class="iframe-loader">
+          <kc-spinner size="lg" />
+        </div>
       </div>
-    </div>
+    }
 
     @if (isExpandedLayout()) {
       <!-- ── EXPANDED MODE: two-column layout ── -->
@@ -26,19 +26,22 @@
           class="wrapper__content full-width"
         >
           <div class="wrapper__header">
-            <app-wrapper-header></app-wrapper-header>
+            <app-wrapper-header />
           </div>
-          <router-outlet #outlet="outlet"></router-outlet>
+          <router-outlet #outlet="outlet" />
         </div>
         <div class="wrapper__nav">
-          <app-wrapper-nav></app-wrapper-nav>
+          <app-wrapper-nav />
         </div>
       </div>
 
       <div class="wrapper__right">
         <!-- Right-panel header (title + navigation controls) -->
         <div class="wrapper__right-header">
-          @if (flowPagesService.isAnyPageOpen() && (flowPagesService.activePage()?.showTitle ?? true)) {
+          @if (
+            flowPagesService.isAnyPageOpen() &&
+            (flowPagesService.activePage()?.showTitle ?? true)
+          ) {
             <div class="wrapper__right-nav">
               @if (flowPagesService.canNavigateBack()) {
                 <kc-icon
@@ -46,7 +49,7 @@
                   [iconClass]="'icon-chevron-left'"
                   [size]="'lg'"
                   (click)="flowPagesService.navigateBack()"
-                ></kc-icon>
+                />
               }
               <span class="wrapper__right-title typo-title-4">
                 {{ flowPagesService.activePage()?.title }}
@@ -57,7 +60,7 @@
                   [iconClass]="'icon-close'"
                   [size]="'md'"
                   (click)="onFlowPageClose()"
-                ></kc-icon>
+                />
               }
             </div>
           } @else {
@@ -68,26 +71,34 @@
         <!-- Right-panel body -->
         <div class="wrapper__right-body">
           @if (flowPagesService.isAnyPageOpen()) {
-            <app-dynamic-flow-page-outlet></app-dynamic-flow-page-outlet>
+            <app-dynamic-flow-page-outlet />
           } @else {
             <!-- Placeholder shown when no action is active -->
             <div class="wrapper__right-placeholder">
               <div class="wrapper__right-placeholder-icon">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="3" width="7" height="7" rx="1"/>
-                  <rect x="14" y="3" width="7" height="7" rx="1"/>
-                  <rect x="3" y="14" width="7" height="7" rx="1"/>
-                  <path d="M14 14h7v7h-7z" opacity="0.35"/>
+                <svg
+                  width="48"
+                  height="48"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="3" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="3" width="7" height="7" rx="1" />
+                  <rect x="3" y="14" width="7" height="7" rx="1" />
+                  <path d="M14 14h7v7h-7z" opacity="0.35" />
                 </svg>
               </div>
               <p class="wrapper__right-placeholder-text">
-                Open Swap or another action<br>to see it here
+                Open Swap or another action<br />to see it here
               </p>
             </div>
           }
         </div>
       </div>
-
     } @else {
       <!-- ── NORMAL MODE: existing single-column layout ── -->
       <div
@@ -95,13 +106,13 @@
         class="wrapper__content full-width"
       >
         <div class="wrapper__header">
-          <app-wrapper-header></app-wrapper-header>
+          <app-wrapper-header />
         </div>
-        <router-outlet #outlet="outlet"></router-outlet>
+        <router-outlet #outlet="outlet" />
       </div>
 
       <div class="wrapper__nav">
-        <app-wrapper-nav></app-wrapper-nav>
+        <app-wrapper-nav />
       </div>
 
       <!-- Flow Pages System (overlay) – only in normal mode -->
@@ -116,17 +127,14 @@
         (backdropClick)="onFlowPageBackdropClick()"
         (close)="onFlowPageClose()"
       >
-        <app-dynamic-flow-page-outlet></app-dynamic-flow-page-outlet>
+        <app-dynamic-flow-page-outlet />
       </app-flow-page>
     }
 
     <!-- Review Action Component – always present -->
-    <review-action></review-action>
+    <review-action />
 
     <!-- Quick Action Dialog – always present -->
-    <app-dynamic-quick-action-dialog-outlet></app-dynamic-quick-action-dialog-outlet>
-
-    <!-- Notification Snackbar – always present -->
-    <kc-snackbar></kc-snackbar>
+    <app-dynamic-quick-action-dialog-outlet />
   </div>
 </div>

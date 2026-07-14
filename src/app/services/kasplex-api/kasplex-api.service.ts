@@ -1,7 +1,10 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { catchError, firstValueFrom, map, Observable, of } from 'rxjs';
-import { GetTokenWalletInfoDto, GetTokenWalletInfoResponse } from './dtos/get-token-wallet-info-response.dto';
+import {
+  GetTokenWalletInfoDto,
+  GetTokenWalletInfoResponse,
+} from './dtos/get-token-wallet-info-response.dto';
 import {
   GetTokenInfoResponse,
   GetTokenListResponse,
@@ -13,10 +16,8 @@ import { KaspaL1NetworkService } from '../kaspa-netwrok-services/kaspa-l1-networ
 
 @Injectable({ providedIn: 'root' })
 export class KasplexKrc20Service {
-  constructor(
-    private readonly httpClient: HttpClient,
-    private readonly kaspaL1NetworkService: KaspaL1NetworkService,
-  ) {}
+  private readonly httpClient = inject(HttpClient);
+  private readonly kaspaL1NetworkService = inject(KaspaL1NetworkService);
 
   get baseurl(): string | undefined {
     return this.kaspaL1NetworkService.getKasplexApiBaseurl();
@@ -29,7 +30,7 @@ export class KasplexKrc20Service {
   getWalletTokenList(
     address: string,
     paginationKey: string | null = null,
-    direction: 'next' | 'prev' | null = null
+    direction: 'next' | 'prev' | null = null,
   ): Observable<GetTokenListResponse> {
     let queryParam = '';
     if (paginationKey && direction) {
@@ -42,12 +43,12 @@ export class KasplexKrc20Service {
 
     const url = `${this.baseurl}/krc20/address/${address}/tokenlist${queryParam}`;
 
-    return this.httpClient.get<GetTokenListResponse>(url)
+    return this.httpClient.get<GetTokenListResponse>(url);
   }
 
   getTokenWalletBalanceInfo(
     address: string,
-    ticker: string
+    ticker: string,
   ): Observable<GetTokenWalletInfoResponse> {
     if (!this.baseurl) {
       return of({ message: 'successful', result: [] });
@@ -61,7 +62,6 @@ export class KasplexKrc20Service {
     address: string,
     ticker?: string,
   ): Observable<GetWalletOperationsResponse> {
-
     if (!this.baseurl) {
       return of({ message: 'successful', prev: '', next: '', result: [] });
     }
@@ -90,7 +90,7 @@ export class KasplexKrc20Service {
   getListingInfo(
     ticker: string,
     walletAddress?: string,
-    txid?: string
+    txid?: string,
   ): Observable<ListingInfoResponse> {
     if (!this.baseurl) {
       return of({ message: 'successful', prev: '', next: '', result: [] });
@@ -112,7 +112,7 @@ export class KasplexKrc20Service {
   }
 
   getOperationDetails(
-    operationTransactionId: string
+    operationTransactionId: string,
   ): Observable<OperationDetailsResponse> {
     if (!this.baseurl) {
       return of({ message: 'successful', result: [] });
@@ -126,16 +126,16 @@ export class KasplexKrc20Service {
   async isListingStillExists(
     ticker: string,
     walletAddress: string,
-    txid: string
+    txid: string,
   ): Promise<boolean> {
     const result = await firstValueFrom(
-      this.getListingInfo(ticker, walletAddress, txid)
+      this.getListingInfo(ticker, walletAddress, txid),
     );
 
     if (result.message != 'successful') {
       console.error(
         `Error fetching token info for ${ticker} at address ${walletAddress}:`,
-        result
+        result,
       );
       throw new Error(result.message);
     }

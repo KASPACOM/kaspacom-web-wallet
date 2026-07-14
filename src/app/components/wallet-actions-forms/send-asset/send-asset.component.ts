@@ -1,34 +1,35 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
+import { NotificationService } from '@kaspacom/ui-kit';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { WalletService } from '../../../services/wallet.service';
-import { NgFor, NgIf } from '@angular/common';
-import { AssetType, TransferableAsset } from '../../../types/transferable-asset';
+
+import {
+  AssetType,
+  TransferableAsset,
+} from '../../../types/transferable-asset';
 import { WalletAction, WalletActionType } from '../../../types/wallet-action';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
 import { WalletActionService } from '../../../services/wallet-action.service';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
-import { MessagePopupService } from '../../../services/message-popup.service';
 
 @Component({
-    selector: 'send-asset',
-    templateUrl: './send-asset.component.html',
-    styleUrls: ['./send-asset.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, NgIf, NgFor]
+  selector: 'send-asset',
+  templateUrl: './send-asset.component.html',
+  styleUrls: ['./send-asset.component.scss'],
+  imports: [FormsModule, ReactiveFormsModule],
 })
 export class SendAssetComponent implements OnInit {
+  private walletService = inject(WalletService);
+  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  private walletActionService = inject(WalletActionService);
+  private notificationService = inject(NotificationService);
+
   public AssetType = AssetType;
   assets: undefined | TransferableAsset[] = undefined; // Replace with your dynamic asset list
   selectedAsset: undefined | string = undefined;
   amount: number | null = null;
   recipientAddress: string = '';
   rbf: boolean = false;
-
-  constructor(
-    private walletService: WalletService,
-    private kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private walletActionService: WalletActionService,
-    private messagePopupService: MessagePopupService,
-  ) {}
 
   async ngOnInit(): Promise<void> {
     this.assets =
@@ -58,7 +59,7 @@ export class SendAssetComponent implements OnInit {
           this.recipientAddress,
           this.kaspaNetworkActionsService.kaspaToSompiFromNumber(this.amount!),
           this.walletService.getCurrentWallet()!,
-          this.rbf
+          this.rbf,
         );
 
       const result =
@@ -68,14 +69,20 @@ export class SendAssetComponent implements OnInit {
         this.amount = null;
       } else {
         if (result.errorCode != ERROR_CODES.EIP1193.USER_REJECTED) {
-          this.messagePopupService.showError(result.errorCode ? ERROR_CODES_MESSAGES[result.errorCode] : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR]);
+          this.notificationService.error('Error',
+            result.errorCode
+              ? ERROR_CODES_MESSAGES[result.errorCode]
+              : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR],
+          );
           return;
         }
       }
 
       // Add your transaction logic here
     } else {
-      this.messagePopupService.showError('Please fill in all fields correctly.');
+      this.notificationService.error('Error',
+        'Please fill in all fields correctly.',
+      );
     }
   }
 
@@ -85,7 +92,7 @@ export class SendAssetComponent implements OnInit {
 
   currentSelectedAsset(): undefined | TransferableAsset {
     return this.assets?.find(
-      (asset) => this.selectedAsset == this.getAssetId(asset)
+      (asset) => this.selectedAsset == this.getAssetId(asset),
     );
   }
 }

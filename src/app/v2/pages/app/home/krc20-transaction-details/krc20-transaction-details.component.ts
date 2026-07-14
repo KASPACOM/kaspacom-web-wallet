@@ -1,8 +1,8 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { KcIconComponent } from 'kaspacom-ui';
+import { KcIconComponent } from '@kaspacom/ui-kit';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { KasplexKrc20Service } from '../../../../../services/kasplex-api/kasplex-api.service';
@@ -12,14 +12,9 @@ import { KaspaL1NetworkService } from '../../../../../services/kaspa-netwrok-ser
 
 @Component({
   selector: 'app-krc20-transaction-details',
-  imports: [
-    CommonModule,
-    KcIconComponent,
-    SkeletonComponent,
-    CopyButtonComponent
-  ],
+  imports: [KcIconComponent, SkeletonComponent, CopyButtonComponent],
   templateUrl: './krc20-transaction-details.component.html',
-  styleUrl: './krc20-transaction-details.component.scss'
+  styleUrl: './krc20-transaction-details.component.scss',
 })
 export class Krc20TransactionDetailsComponent implements OnInit {
   private route = inject(ActivatedRoute);
@@ -50,7 +45,7 @@ export class Krc20TransactionDetailsComponent implements OnInit {
     try {
       this.loading.set(true);
       const response = await firstValueFrom(
-        this.kasplexService.getOperationDetails(this.transactionId)
+        this.kasplexService.getOperationDetails(this.transactionId),
       );
 
       if (response.message === 'successful' && response.result?.length > 0) {
@@ -68,7 +63,8 @@ export class Krc20TransactionDetailsComponent implements OnInit {
     const navigationState = this.router.getCurrentNavigation()?.extras?.state;
     const historyState = history.state;
 
-    const returnTo = navigationState?.['returnTo'] || historyState?.['returnTo'];
+    const returnTo =
+      navigationState?.['returnTo'] || historyState?.['returnTo'];
 
     if (returnTo === 'activity') {
       this.router.navigate(['/app/activity']);
@@ -82,10 +78,11 @@ export class Krc20TransactionDetailsComponent implements OnInit {
   protected formatAmount(amount: string | undefined): string {
     if (!amount) return '0';
     const amountInSompi = BigInt(amount);
-    const numAmount = this.kaspaNetworkActionsService.sompiToNumber(amountInSompi);
+    const numAmount =
+      this.kaspaNetworkActionsService.sompiToNumber(amountInSompi);
     return numAmount.toLocaleString('en-US', {
       minimumFractionDigits: 0,
-      maximumFractionDigits: 8
+      maximumFractionDigits: 8,
     });
   }
 
@@ -98,7 +95,7 @@ export class Krc20TransactionDetailsComponent implements OnInit {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
-      hour12: true
+      hour12: true,
     });
   }
 

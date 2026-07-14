@@ -1,12 +1,8 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import {
-  KcButtonComponent,
-  KcIconComponent,
-  KcTooltipDirective,
-} from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent, KcTooltipDirective } from '@kaspacom/ui-kit';
 import { BaseAssetPageComponent } from '../../../../../common/base-asset-page/base-asset-page.component';
 import { SkeletonComponent } from '../../../../../../../shared/ui/skeleton/skeleton.component';
 import { FlowPagesService } from '../../../../../../../services/flow-pages.service';
@@ -23,7 +19,6 @@ import { KaspaL1NetworkService } from '../../../../../../../../services/kaspa-ne
 @Component({
   selector: 'app-kns-asset',
   imports: [
-    CommonModule,
     KcButtonComponent,
     KcIconComponent,
     KcTooltipDirective,

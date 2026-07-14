@@ -1,6 +1,6 @@
 import { Component, inject, signal, computed, Signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { KcButtonComponent, KcIconComponent, KcTooltipDirective, KcSpinnerComponent } from 'kaspacom-ui';
+
+import { KcButtonComponent, KcIconComponent, KcTooltipDirective, KcSpinnerComponent } from '@kaspacom/ui-kit';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
 import { WalletService } from '../../../../../services/wallet.service';
@@ -22,7 +22,13 @@ interface WalletGroupItem {
 @Component({
   selector: 'app-wallet-selection-page',
   standalone: true,
-  imports: [CommonModule, KcButtonComponent, KcIconComponent, KcTooltipDirective, KcSpinnerComponent, ShortenAddressPipe],
+  imports: [
+    KcButtonComponent,
+    KcIconComponent,
+    KcTooltipDirective,
+    KcSpinnerComponent,
+    ShortenAddressPipe,
+  ],
   templateUrl: './wallet-selection-page.component.html',
   styleUrl: './wallet-selection-page.component.scss',
 })
@@ -65,7 +71,7 @@ export class WalletSelectionPageComponent extends FlowPageBaseComponent {
       const name = group[0].getName();
       const address = this.getWalletAddress(group[0]);
       const isSelected = currentWallet ? currentWallet.getId() === id : false;
-      
+
       // Check if any wallet in the group has pending transactions
       const hasPendingTransactions = computed(() => {
         return group.some((wallet) => {
@@ -163,12 +169,14 @@ export class WalletSelectionPageComponent extends FlowPageBaseComponent {
     event.stopPropagation();
     const currentWallets = this.wallets();
     const updatedWallets = currentWallets.map((w) =>
-      w.id === item.id ? { ...w, isExpanded: !w.isExpanded } : w
+      w.id === item.id ? { ...w, isExpanded: !w.isExpanded } : w,
     );
     this.wallets.set(updatedWallets);
   }
 
   private getWalletAddress(wallet: AppWallet): string {
-    return this.walletService.isL2Display() ? wallet.getL2WalletAddress() : wallet.getAddress();
+    return this.walletService.isL2Display()
+      ? wallet.getL2WalletAddress()
+      : wallet.getAddress();
   }
 }

@@ -1,10 +1,7 @@
-<div
-  class="quick-action-dialog-overlay"
-  (click)="onBackdropClick()"
->
+<div class="quick-action-dialog-overlay" (click)="onBackdropClick()">
   <div
     class="quick-action-dialog-content"
-    [@slideUp]="isOpen ? 'open' : 'closed'"
+    [@slideUp]="isOpen() ? 'open' : 'closed'"
     (@slideUp.start)="onAnimationStart()"
     (@slideUp.done)="onAnimationDone()"
     (click)="$event.stopPropagation()"
@@ -21,19 +18,19 @@
             [size]="'md'"
             (click)="onClose()"
             kcTooltip="Close"
-            tooltipPosition="bottom"
-          ></kc-icon>
+            tooltipPosition="bottom-center"
+          />
         }
       </div>
     }
 
-        <div class="quick-action-dialog-body">
+    <div class="quick-action-dialog-body">
       <div class="dialog-content">
-        <ng-content select="[slot=content]"></ng-content>
+        <ng-content select="[slot=content]" />
       </div>
-      
+
       <div class="dialog-footer">
-        <ng-content select="[slot=footer]"></ng-content>
+        <ng-content select="[slot=footer]" />
       </div>
     </div>
   </div>

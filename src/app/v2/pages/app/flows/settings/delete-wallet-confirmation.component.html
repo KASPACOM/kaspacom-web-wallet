@@ -1,21 +1,24 @@
 <div class="delete-wallet-confirmation-container">
   <div class="delete-wallet-confirmation-content">
-
     <!-- Warning Content -->
     <div class="warning-content">
-      <h2 class="warning-title">Are you sure you want to delete your wallet?</h2>
+      <h2 class="warning-title">
+        Are you sure you want to delete your wallet?
+      </h2>
       <div class="warning-message">
         <p class="warning-text">
-          You are about to delete your wallet. Please make sure you have exported your wallet or saved your wallets separately before deleting.
+          You are about to delete your wallet. Please make sure you have
+          exported your wallet or saved your wallets separately before deleting.
         </p>
         <div class="warning-highlight">
           <kc-icon
             iconClass="icon-info"
             size="sm"
-            color="var(--warning-color, #FFB800)">
-          </kc-icon>
+            color="var(--warning-color, #FFB800)"
+          />
           <span class="highlight-text">
-            Without your seed phrase or backup, you will permanently lose access to your funds.
+            Without your seed phrase or backup, you will permanently lose access
+            to your funds.
           </span>
         </div>
       </div>
@@ -29,33 +32,32 @@
       <kc-input
         class="confirmation-input"
         [placeholder]="deleteConfirmationPhrase"
-        [isFullWidth]="true"
         [ngModel]="deleteConfirmationInput()"
-        (valueChange)="onDeleteConfirmationChange($event)"
-      ></kc-input>
+        (valueChange)="onDeleteConfirmationChange($any($event))"
+      />
     </div>
 
     <!-- Action Buttons -->
     <div class="action-buttons">
       <kc-button
         [text]="'Cancel'"
-        variant="tertiary"
-        size="lg"
+        variant="secondary"
+        size="m"
         [isFullWidth]="true"
         (buttonClick)="onCancel()"
-        class="cancel-button">
-      </kc-button>
-      
+        class="cancel-button"
+      />
+
       <kc-button
+        class="kc-button-danger"
         [text]="'Delete Wallet'"
         variant="secondary"
-        role="danger"
-        size="lg"
+        size="m"
         [isFullWidth]="true"
         [isDisabled]="!isDeleteConfirmationValid()"
         (buttonClick)="onDeleteWallet()"
-        class="delete-wallet-button">
-      </kc-button>
+        class="delete-wallet-button"
+      />
     </div>
   </div>
 </div>

@@ -3,12 +3,12 @@ import {
   computed,
   effect,
   inject,
-  ViewChild,
   ViewContainerRef,
   ComponentRef,
   Type,
+  viewChild,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { QuickActionDialogService } from '../../../../services/quick-action-dialog.service';
 import {
   IQuickActionDialogComponent,
@@ -19,14 +19,15 @@ import {
 @Component({
   selector: 'app-dynamic-quick-action-dialog-outlet',
   standalone: true,
-  imports: [CommonModule],
-  template: ` <ng-template #host></ng-template> `,
+  imports: [],
+  template: ` <ng-template #host /> `,
 })
 export class DynamicQuickActionDialogOutletComponent {
   private quickActionDialogService = inject(QuickActionDialogService);
 
-  @ViewChild('host', { read: ViewContainerRef, static: true })
-  private hostContainer!: ViewContainerRef;
+  private readonly hostContainer = viewChild.required('host', {
+    read: ViewContainerRef,
+  });
 
   readonly activeDialog = computed(() =>
     this.quickActionDialogService.activeDialog(),
@@ -46,14 +47,14 @@ export class DynamicQuickActionDialogOutletComponent {
   }
 
   private render(id: QuickActionDialogId | null, data: unknown) {
-    this.hostContainer.clear();
+    this.hostContainer().clear();
     if (!id) return;
 
     const componentType = QUICK_ACTION_DIALOG_REGISTRY[id];
     if (!componentType) return;
 
     const componentRef: ComponentRef<IQuickActionDialogComponent> =
-      this.hostContainer.createComponent(componentType);
+      this.hostContainer().createComponent(componentType);
 
     // Set inputs via ComponentRef.setInput (Angular v16+)
     componentRef.setInput('isOpen', this.isOpen());

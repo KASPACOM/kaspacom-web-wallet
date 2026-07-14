@@ -1,27 +1,26 @@
-import { NgIf } from '@angular/common';
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, inject } from '@angular/core';
+import { NotificationService } from '@kaspacom/ui-kit';
 import { QRCodeComponent } from 'angularx-qrcode';
 import { PasswordManagerService } from '../../../services/password-manager.service';
 import { LOCAL_STORAGE_KEYS } from '../../../config/consts';
-import { MessagePopupService } from '../../../services/message-popup.service';
 
 @Component({
   selector: 'export-wallets-qr',
   templateUrl: './export-wallets-qr.component.html',
   styleUrls: ['./export-wallets-qr.component.scss'],
-  imports: [NgIf, QRCodeComponent],
+  imports: [QRCodeComponent],
 })
 export class ExportWalletsQrComponent {
+  private passwordManagerService = inject(PasswordManagerService);
+  private notificationService = inject(NotificationService);
+
   showPasswordPrompt: boolean = false; // Signal to display the password prompt
   passwordFilled: boolean = false; // Signal to display the QR code
   encryptedUserData: string | null = null;
   maxDataLength = 2331;
   qrCodeSize: number = 400; // Default size for desktop
 
-  constructor(
-    private passwordManagerService: PasswordManagerService,
-    private messagePopupService: MessagePopupService
-  ) {
+  constructor() {
     this.updateQrCodeSize();
   }
 
@@ -44,15 +43,15 @@ export class ExportWalletsQrComponent {
       this.showPasswordPrompt = false;
 
       const encryptedUserData = localStorage.getItem(
-        LOCAL_STORAGE_KEYS.USER_DATA
+        LOCAL_STORAGE_KEYS.USER_DATA,
       );
 
       if (encryptedUserData) {
         this.encryptedUserData = encryptedUserData;
       }
     } else {
-      this.messagePopupService.showError(
-        'Incorrect password. Please try again.'
+      this.notificationService.error('Error',
+        'Incorrect password. Please try again.',
       );
     }
   }
@@ -67,8 +66,8 @@ export class ExportWalletsQrComponent {
     link.setAttribute(
       'href',
       `data:text/plain;charset=utf-8,${encodeURIComponent(
-        this.encryptedUserData!
-      )}`
+        this.encryptedUserData!,
+      )}`,
     );
     link.setAttribute('download', 'kaspacom-wallets.key');
 

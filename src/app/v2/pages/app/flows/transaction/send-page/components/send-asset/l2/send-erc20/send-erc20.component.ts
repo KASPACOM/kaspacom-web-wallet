@@ -5,10 +5,9 @@ import { Router } from '@angular/router';
 import { Erc20Token } from '@kaspacom/swap-sdk';
 import { ERROR_CODES, ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { parseUnits } from 'ethers';
-import { KcButtonComponent, KcInputComponent } from 'kaspacom-ui';
+import { KcNumberInputComponent, KcButtonComponent, NotificationService } from '@kaspacom/ui-kit';
 import { TokenLogoComponent } from '../../../../../../../../../../components/token-logo/token-logo.component';
 import { ERC20Contract } from '../../../../../../../../../../services/etherium-services/smart-contracts/contracts/erc20-contract';
-import { MessagePopupService } from '../../../../../../../../../../services/message-popup.service';
 import { QrScannerService } from '../../../../../../../../../../services/qr-scanner.service';
 import { UtilsHelper } from '../../../../../../../../../../services/utils.service';
 import { WalletActionService } from '../../../../../../../../../../services/wallet-action.service';
@@ -23,7 +22,7 @@ import { IFlowPageConfig } from '../../../../../../../common/flow-page/interface
   standalone: true,
   imports: [
     CommonModule,
-    KcInputComponent,
+    KcNumberInputComponent,
     KcButtonComponent,
     FormsModule,
     TokenLogoComponent,
@@ -39,7 +38,7 @@ export class SendErc20Component
   private walletService = inject(WalletService);
   private walletActionService = inject(WalletActionService);
   private utilsHelper = inject(UtilsHelper);
-  private messagePopupService = inject(MessagePopupService);
+  private notificationService = inject(NotificationService);
   private approvalFlowService = inject(ApprovalFlowService);
   private qrScannerService = inject(QrScannerService);
   private router = inject(Router);
@@ -76,7 +75,7 @@ export class SendErc20Component
 
         if (completion.success) {
           // Transaction was successful, navigate back
-          this.messagePopupService.showSuccess(
+          this.notificationService.success('Success',
             'ERC20 token sent successfully!',
           );
           this.navigateBack();
@@ -135,7 +134,7 @@ export class SendErc20Component
     } else {
       // No token data passed, can't proceed
       this.loading.set(false);
-      this.messagePopupService.showError('No token selected');
+      this.notificationService.error('Error', 'No token selected');
       this.navigateBack();
     }
   }
@@ -218,7 +217,7 @@ export class SendErc20Component
 
     const currentWallet = this.walletService.getCurrentWallet();
     if (!currentWallet) {
-      this.messagePopupService.showError('No wallet selected');
+      this.notificationService.error('Error', 'No wallet selected');
       return;
     }
 
@@ -263,7 +262,7 @@ export class SendErc20Component
           const errorMessage = result.errorCode
             ? ERROR_CODES_MESSAGES[result.errorCode]
             : ERROR_CODES_MESSAGES[ERROR_CODES.GENERAL.UNKNOWN_ERROR];
-          this.messagePopupService.showError(errorMessage);
+          this.notificationService.error('Error', errorMessage);
         }
 
         // Reset the waiting flag if transaction failed
@@ -271,7 +270,7 @@ export class SendErc20Component
       }
     } catch (error) {
       console.error('Error sending ERC20 token:', error);
-      this.messagePopupService.showError('Failed to send ERC20 token');
+      this.notificationService.error('Error', 'Failed to send ERC20 token');
       this.waitingForApprovalCompletion = false;
     } finally {
       this.isLoading = false;

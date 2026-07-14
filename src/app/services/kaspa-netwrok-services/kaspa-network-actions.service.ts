@@ -11,7 +11,7 @@ import {
   ScriptPublicKey,
   UtxoEntryReference,
 } from '../../../../public/kaspa/kaspa';
-import { Injectable, Signal } from '@angular/core';
+import { Injectable, Signal, inject } from '@angular/core';
 import { LOCAL_STORAGE_KEYS } from '../../config/consts';
 import {
   CommitRevealActionResult,
@@ -69,12 +69,14 @@ const ESTIMATED_REVEAL_ACTION = 1715n;
   providedIn: 'root',
 })
 export class KaspaNetworkActionsService {
-  constructor(
-    private readonly transactionsManager: KaspaNetworkTransactionsManagerService,
-    private readonly utils: UtilsHelper,
-    private readonly kaspaWalletMnemonicActions: KaspaWalletMnemonicActionsService,
-    private readonly covenantService: CovenantService,
-  ) {}
+  private readonly transactionsManager = inject(
+    KaspaNetworkTransactionsManagerService,
+  );
+  private readonly utils = inject(UtilsHelper);
+  private readonly kaspaWalletMnemonicActions = inject(
+    KaspaWalletMnemonicActionsService,
+  );
+  private readonly covenantService = inject(CovenantService);
 
   async connectAndDo<T>(
     fn: () => Promise<T>,

@@ -3,11 +3,7 @@
   <div class="nft-info-header card-0 align-items-center gap-16 p-16 mb-24">
     <div class="nft-image-container">
       @if (loading()) {
-        <app-skeleton
-          [height]="'48px'"
-          [width]="'48px'"
-          [fullRound]="false"
-        ></app-skeleton>
+        <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false" />
       } @else if (getImageUrl()) {
         <img
           [src]="getImageUrl()"
@@ -52,20 +48,18 @@
         (valueChange)="onWalletAddressChange($event)"
         (resolved)="onAddressResolved($event)"
         (qrClick)="onQrScanClick()"
-      >
-      </app-address-smart-input>
+      />
     </div>
 
     <!-- Replace By Fee Checkbox -->
     <div class="form-field">
-      <kc-checkbox
-        [label]="'Replace By Fee (RBF)'"
-        [isChecked]="replaceByFee"
+      <app-checkbox-input
+        [checked]="replaceByFee"
         [isDisabled]="isListed()"
         (checkedChange)="onRbfChange($event)"
-        size="md"
       >
-      </kc-checkbox>
+        Replace By Fee (RBF)
+      </app-checkbox-input>
     </div>
 
     <!-- Send Button -->
@@ -76,8 +70,7 @@
         [isFullWidth]="true"
         [isDisabled]="!isFormValid"
         (buttonClick)="onSendClick()"
-      >
-      </kc-button>
+      />
     </div>
   </div>
 </div>

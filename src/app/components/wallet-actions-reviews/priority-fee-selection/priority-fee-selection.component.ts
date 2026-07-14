@@ -1,18 +1,19 @@
 import {
   Component,
-  EventEmitter,
-  Input,
   OnChanges,
-  Output,
   SimpleChanges,
+  input,
+  output,
+  inject,
 } from '@angular/core';
-import { trigger, state, style, transition, animate } from '@angular/animations';
 import {
-  CommonModule,
-  NgFor,
-  NgIf,
-  TitleCasePipe,
-} from '@angular/common';
+  trigger,
+  state,
+  style,
+  transition,
+  animate,
+} from '@angular/animations';
+import { CommonModule, TitleCasePipe } from '@angular/common';
 import { SompiToNumberPipe } from '../../../pipes/sompi-to-number.pipe';
 import { WalletAction, WalletActionType } from '../../../types/wallet-action';
 import { KaspaNetworkActionsService } from '../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
@@ -20,7 +21,7 @@ import { AppWallet } from '../../../classes/AppWallet';
 import { IFeeEstimate } from '../../../../../public/kaspa/kaspa';
 import { FormsModule } from '@angular/forms';
 import { Krc20OperationDataService } from '../../../services/protocols/krc20/krc20-operation-data.service';
-import { KcIconComponent, KcInputComponent } from 'kaspacom-ui';
+import { KcNumberInputComponent, KcIconComponent } from '@kaspacom/ui-kit';
 
 type BucketFeeRate = {
   priorityFee: bigint;
@@ -36,40 +37,43 @@ const MINIMUM_FEE_MULTIPLIER = 100n;
   templateUrl: './priority-fee-selection.component.html',
   styleUrls: ['./priority-fee-selection.component.scss'],
   imports: [
-    NgIf,
-    NgFor,
     SompiToNumberPipe,
     FormsModule,
     TitleCasePipe,
     CommonModule,
     KcIconComponent,
-    KcInputComponent,
+    KcNumberInputComponent,
   ],
   animations: [
     trigger('slideDown', [
-      state('closed', style({
-        height: '0px',
-        opacity: 0,
-        overflow: 'hidden'
-      })),
-      state('open', style({
-        height: '*',
-        opacity: 1,
-        overflow: 'visible'
-      })),
-      transition('closed => open', [
-        animate('400ms ease-out')
-      ]),
-      transition('open => closed', [
-        animate('300ms ease-in')
-      ])
-    ])
-  ]
+      state(
+        'closed',
+        style({
+          height: '0px',
+          opacity: 0,
+          overflow: 'hidden',
+        }),
+      ),
+      state(
+        'open',
+        style({
+          height: '*',
+          opacity: 1,
+          overflow: 'visible',
+        }),
+      ),
+      transition('closed => open', [animate('400ms ease-out')]),
+      transition('open => closed', [animate('300ms ease-in')]),
+    ]),
+  ],
 })
 export class PriorityFeeSelectionComponent implements OnChanges {
-  @Input() action!: WalletAction;
-  @Input() wallet!: AppWallet;
-  @Output() priorityFeeSelected = new EventEmitter<bigint | undefined>();
+  protected kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  protected krc20OperationsDataService = inject(Krc20OperationDataService);
+
+  readonly action = input.required<WalletAction>();
+  readonly wallet = input.required<AppWallet>();
+  readonly priorityFeeSelected = output<bigint | undefined>();
 
   protected minimumFeeMultiplier = MINIMUM_FEE_MULTIPLIER;
   protected totalTransactionsMass: undefined | bigint[] = undefined;
@@ -78,30 +82,30 @@ export class PriorityFeeSelectionComponent implements OnChanges {
   protected currentOptions:
     | undefined
     | {
-      low: BucketFeeRate;
-      normal: BucketFeeRate;
-      priority: BucketFeeRate;
-    } = undefined;
+        low: BucketFeeRate;
+        normal: BucketFeeRate;
+        priority: BucketFeeRate;
+      } = undefined;
 
   protected customFee: number = 0;
   protected selectedOption: AvailableOption = 'normal';
   protected additionalPriorityFee: bigint | undefined = undefined;
   protected showPriorityFeeSelection: boolean = false;
 
-  constructor(
-    protected kaspaNetworkActionsService: KaspaNetworkActionsService,
-    protected krc20OperationsDataService: Krc20OperationDataService,
-  ) { }
-
   // Methods to determine transaction type and asset info
-  getTransactionAssetInfo(): { type: 'kaspa' | 'krc20' | 'krc721' | 'kns', ticker?: string, imageUrl?: string } {
-    if (this.action.type === WalletActionType.TRANSFER_KAS) {
+  getTransactionAssetInfo(): {
+    type: 'kaspa' | 'krc20' | 'krc721' | 'kns';
+    ticker?: string;
+    imageUrl?: string;
+  } {
+    const action = this.action();
+    if (action.type === WalletActionType.TRANSFER_KAS) {
       return { type: 'kaspa' };
     }
 
-    if (this.action.type === WalletActionType.COMMIT_REVEAL) {
+    if (action.type === WalletActionType.COMMIT_REVEAL) {
       try {
-        const actionScript = this.action.data.actionScript?.stringifyAction;
+        const actionScript = action.data.actionScript?.stringifyAction;
         if (actionScript) {
           const parsed = JSON.parse(actionScript);
           if (parsed.p === 'krc-20') {
@@ -131,13 +135,13 @@ export class PriorityFeeSelectionComponent implements OnChanges {
   async ngOnChanges(changes: SimpleChanges): Promise<void> {
     this.totalTransactionsMass = undefined;
     this.feeSelected(undefined);
-    await this.loadPriorityFeeDataAndEmit(this.action);
+    await this.loadPriorityFeeDataAndEmit(this.action());
   }
 
   async loadPriorityFeeDataAndEmit(action: WalletAction) {
     await Promise.all([
       this.kaspaNetworkActionsService
-        .estimateWalletActionMass(action, this.wallet)
+        .estimateWalletActionMass(action, this.wallet())
         .then((result) => {
           this.totalTransactionsMass = result;
         }),
@@ -147,7 +151,7 @@ export class PriorityFeeSelectionComponent implements OnChanges {
     ]);
 
     const maxTransactionMass = Math.max(
-      ...this.totalTransactionsMass!.map((m) => Number(m))
+      ...this.totalTransactionsMass!.map((m) => Number(m)),
     );
 
     this.transactionMass = BigInt(maxTransactionMass);
@@ -157,22 +161,28 @@ export class PriorityFeeSelectionComponent implements OnChanges {
 
     this.currentOptions = {
       low: {
-        priorityFee: BigInt(Math.round(
-          this.currentFeeRates!.lowBuckets[0].feerate * maxTransactionMass)
+        priorityFee: BigInt(
+          Math.round(
+            this.currentFeeRates!.lowBuckets[0].feerate * maxTransactionMass,
+          ),
         ),
 
         estimatedSeconds: this.currentFeeRates!.lowBuckets[0].estimatedSeconds,
       },
       normal: {
-        priorityFee: BigInt(Math.round(
-          this.currentFeeRates!.normalBuckets[0].feerate * maxTransactionMass)
+        priorityFee: BigInt(
+          Math.round(
+            this.currentFeeRates!.normalBuckets[0].feerate * maxTransactionMass,
+          ),
         ),
         estimatedSeconds:
           this.currentFeeRates!.normalBuckets[0].estimatedSeconds,
       },
       priority: {
-        priorityFee: BigInt(Math.round(
-          this.currentFeeRates!.priorityBucket.feerate * maxTransactionMass)
+        priorityFee: BigInt(
+          Math.round(
+            this.currentFeeRates!.priorityBucket.feerate * maxTransactionMass,
+          ),
         ),
         estimatedSeconds: this.currentFeeRates!.priorityBucket.estimatedSeconds,
       },
@@ -184,9 +194,9 @@ export class PriorityFeeSelectionComponent implements OnChanges {
   feeSelected(amount: bigint | undefined) {
     this.additionalPriorityFee =
       amount !== undefined
-        ? amount - (this.transactionMass! * MINIMUM_FEE_MULTIPLIER) < 0n
+        ? amount - this.transactionMass! * MINIMUM_FEE_MULTIPLIER < 0n
           ? 0n
-          : amount - (this.transactionMass! * MINIMUM_FEE_MULTIPLIER)
+          : amount - this.transactionMass! * MINIMUM_FEE_MULTIPLIER
         : undefined;
 
     this.priorityFeeSelected.emit(this.additionalPriorityFee);
@@ -206,7 +216,7 @@ export class PriorityFeeSelectionComponent implements OnChanges {
       this.feeSelected(fee);
     } else if (option == 'custom') {
       this.feeSelected(
-        this.kaspaNetworkActionsService.kaspaToSompiFromNumber(this.customFee!)
+        this.kaspaNetworkActionsService.kaspaToSompiFromNumber(this.customFee!),
       );
     }
   }
@@ -220,15 +230,17 @@ export class PriorityFeeSelectionComponent implements OnChanges {
     }
 
     return (
-      (this.totalTransactionsMass.reduce((a, b) => a + b, 0n) * MINIMUM_FEE_MULTIPLIER) +
+      this.totalTransactionsMass.reduce((a, b) => a + b, 0n) *
+        MINIMUM_FEE_MULTIPLIER +
       this.additionalPriorityFee * BigInt(this.totalTransactionsMass.length) +
       this.getAdditionalCommitActionPrice()
     );
   }
 
   getAdditionalCommitActionPrice(): bigint {
-    if (this.action.type == WalletActionType.COMMIT_REVEAL) {
-      return this.action.data.options?.revealPriorityFee || 0n;
+    const action = this.action();
+    if (action.type == WalletActionType.COMMIT_REVEAL) {
+      return action.data.options?.revealPriorityFee || 0n;
     }
 
     return 0n;

@@ -6,10 +6,9 @@ import {
   WritableSignal,
   OnDestroy,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { KcButtonComponent } from 'kaspacom-ui';
-import { KcIconComponent } from 'kaspacom-ui';
+
+import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
+import { CheckboxInputComponent } from '../../../../../shared/ui/input/checkbox/checkbox-input/checkbox-input.component';
 import { PriorityFeeSelectionComponent } from '../../../../../../components/wallet-actions-reviews/priority-fee-selection/priority-fee-selection.component';
 import {
   ApprovalFlowService,
@@ -33,10 +32,9 @@ import { SwapContextService } from '../../../../../services/swap-context.service
 @Component({
   selector: 'app-approval-flow-page',
   imports: [
-    CommonModule,
-    FormsModule,
     KcButtonComponent,
     KcIconComponent,
+    CheckboxInputComponent,
     PriorityFeeSelectionComponent,
     L2PriorityFeeSelectionComponent,
     ApprovalSuccessPageComponent,
@@ -127,7 +125,8 @@ export class ApprovalFlowPageComponent implements OnDestroy {
   });
 
   // Form state
-  protected currentPriorityFee: WritableSignal<bigint | undefined> = signal(undefined);
+  protected currentPriorityFee: WritableSignal<bigint | undefined> =
+    signal(undefined);
   protected currentL2PriorityFee: WritableSignal<
     Partial<L2PriorityInfo> | undefined
   > = signal(undefined);
@@ -198,9 +197,9 @@ export class ApprovalFlowPageComponent implements OnDestroy {
   setL2CurrentPriorityFee(
     info:
       | {
-        priorityFee: bigint;
-        baseFee: bigint;
-      }
+          priorityFee: bigint;
+          baseFee: bigint;
+        }
       | undefined,
   ) {
     if (info == undefined) {

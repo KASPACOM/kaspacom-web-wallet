@@ -381,6 +381,30 @@ $tpl-accents: (
   }
 }
 
+.card-id {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+
+  .card-id-label {
+    font-size: 10px;
+    color: var(--gray-45);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+  }
+  .card-id-value {
+    font-size: 11px;
+    color: var(--gray-60);
+    font-family: var(--font-mono, monospace);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+}
+
 .role-chips {
   display: flex;
   flex-wrap: wrap;
@@ -601,6 +625,41 @@ $tpl-accents: (
   .cell-sub {
     font-size: 11px;
     color: var(--gray-60);
+  }
+}
+
+.identifiers-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.identifier {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 220px;
+
+  .identifier-label {
+    font-size: 11px;
+    color: var(--gray-45);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .identifier-value-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .identifier-value {
+    font-size: 12px;
+    color: var(--gray-75);
+    font-family: var(--font-mono, monospace);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
   }
 }
 

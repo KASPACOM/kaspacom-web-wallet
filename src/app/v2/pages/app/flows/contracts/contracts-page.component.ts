@@ -1543,6 +1543,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
       merged.set(local?.id || key, {
         ...entry,
+        // Keep the local entry's id stable across merges — otherwise a
+        // contract's id flips from `local:...` to `indexer:...` the moment
+        // the indexer catches up, breaking any UI state (e.g. the Share
+        // dropdown's selection) that was keyed on the previous id.
+        id: local?.id || entry.id,
         source: local ? 'both' : entry.source,
         status: entry.status,
         amountSompi: entry.amountSompi,
@@ -1947,6 +1952,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.detailPanelTab.set('action');
     this.activeTab.set('detail');
     await this.openContractDetail(entry);
+    this.scrollToActionPanel();
   }
 
   /** Same as openDashboardAction(), but preselects a specific entrypoint instead of the type's default. */
@@ -1955,6 +1961,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (this.availableFunctions().some((fn) => fn.name === fnName)) {
       this.selectFunction(fnName);
     }
+  }
+
+  /**
+   * The action form renders as a separate block below the whole detail view
+   * (participants, UTXOs, timeline, etc.), so clicking an action button can
+   * look like nothing happened unless we bring it into view.
+   */
+  private scrollToActionPanel() {
+    setTimeout(() => {
+      document
+        .getElementById('contract-action-panel')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   private async prepareDashboardAction(
@@ -2239,6 +2258,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           return null;
         },
       },
+      topUp: {
+        label: 'Top Up',
+        description: 'Add more KAS to the locked funds without withdrawing anything.',
+        iconClass: 'icon-plus',
+      },
     },
     TimeLockVault: {
       spend: {
@@ -2260,19 +2284,35 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           return null;
         },
       },
+      topUp: {
+        label: 'Top Up',
+        description: 'Add more KAS to the locked funds without withdrawing anything.',
+        iconClass: 'icon-plus',
+      },
     },
     MultiSigVault: {
       spend12: {
-        label: '2-of-3 Withdraw',
+        label: '2-of-3 Withdraw (Signer 1 + 2)',
         description:
-          'Withdraw using 2-of-3 multi-sig. Requires signatures from two key holders.',
+          'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 1 and Signer 2.',
         iconClass: 'icon-coins-02',
       },
-      spend: {
-        label: 'Owner Withdraw',
-        description: 'Withdraw immediately using the owner key.',
+      spend13: {
+        label: '2-of-3 Withdraw (Signer 1 + 3)',
+        description:
+          'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 1 and Signer 3.',
         iconClass: 'icon-coins-02',
-        requiredRole: 'Owner',
+      },
+      spend23: {
+        label: '2-of-3 Withdraw (Signer 2 + 3)',
+        description:
+          'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 2 and Signer 3.',
+        iconClass: 'icon-coins-02',
+      },
+      topUp: {
+        label: 'Top Up',
+        description: 'Add more KAS to the locked funds without withdrawing anything.',
+        iconClass: 'icon-plus',
       },
     },
     EscrowWithArbiter: {
@@ -2286,6 +2326,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         label: 'Refund',
         description: 'Cancel the escrow and return funds to the sender.',
         iconClass: 'icon-coins-02',
+      },
+      topUp: {
+        label: 'Top Up',
+        description: 'Add more KAS to the locked funds without withdrawing anything.',
+        iconClass: 'icon-plus',
       },
       arbitrate: {
         label: 'Arbitrate',
@@ -2344,7 +2389,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const preferred: Record<string, string[]> = {
       DeadManSwitch: ['keepAlive', 'withdraw', 'claim'],
       TimeLockVault: ['spend', 'recover', 'withdraw'],
-      MultiSigVault: ['spend12', 'spend', 'release'],
+      MultiSigVault: ['spend12', 'spend13', 'spend23'],
       EscrowWithArbiter: ['release', 'refund', 'arbitrate'],
     };
     const available = this.availableFunctions();
@@ -4320,6 +4365,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   getFunctionLabel(name: string): string {
     const labels: Record<string, string> = {
       spend: 'Withdraw',
+      spend12: '2-of-3 Withdraw (Signer 1 + 2)',
+      spend13: '2-of-3 Withdraw (Signer 1 + 3)',
+      spend23: '2-of-3 Withdraw (Signer 2 + 3)',
       withdraw: 'Withdraw',
       recover: 'Recovery Withdraw',
       claim: 'Claim',
@@ -4366,7 +4414,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       },
       multisigvault: {
         spend12:
-          'Withdraw using 2-of-3 multi-sig. Requires signatures from two key holders.',
+          'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 1 and Signer 2.',
+        spend13:
+          'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 1 and Signer 3.',
+        spend23:
+          'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 2 and Signer 3.',
       },
       counter: {
         increment:

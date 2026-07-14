@@ -961,6 +961,28 @@
                   }
                 </div>
 
+                @if (contract.covenantId || contract.currentAddress) {
+                  <div class="card-id">
+                    <span class="card-id-label">{{
+                      contract.covenantId ? "Covenant ID" : "Address"
+                    }}</span>
+                    <span
+                      class="card-id-value"
+                      [title]="contract.covenantId || contract.currentAddress"
+                      >{{
+                        truncate(
+                          contract.covenantId || contract.currentAddress || "",
+                          22
+                        )
+                      }}</span
+                    >
+                    <app-copy-button
+                      [value]="contract.covenantId || contract.currentAddress || ''"
+                      [size]="'sm'"
+                    ></app-copy-button>
+                  </div>
+                }
+
                 @if (contract.participants.length > 0) {
                   <div class="role-chips">
                     @for (
@@ -1224,6 +1246,37 @@
                 }}</span>
               </div>
             </div>
+
+            <div class="identifiers-row">
+              @if (selectedDetail()!.entry.covenantId; as covenantId) {
+                <div class="identifier">
+                  <span class="identifier-label">Covenant ID</span>
+                  <div class="identifier-value-row">
+                    <span class="identifier-value" [title]="covenantId">{{
+                      truncate(covenantId, 28)
+                    }}</span>
+                    <app-copy-button
+                      [value]="covenantId"
+                      [size]="'sm'"
+                    ></app-copy-button>
+                  </div>
+                </div>
+              }
+              @if (selectedDetail()!.entry.currentAddress; as currentAddress) {
+                <div class="identifier">
+                  <span class="identifier-label">Contract address</span>
+                  <div class="identifier-value-row">
+                    <span class="identifier-value" [title]="currentAddress">{{
+                      truncate(currentAddress, 28)
+                    }}</span>
+                    <app-copy-button
+                      [value]="currentAddress"
+                      [size]="'sm'"
+                    ></app-copy-button>
+                  </div>
+                </div>
+              }
+            </div>
           </div>
 
           <div class="detail-cols">
@@ -1329,10 +1382,14 @@
                         ></app-wallet-profile-orb>
                         <div class="p-body">
                           <span class="p-role">{{ p.label }}</span
-                          ><span class="p-val">{{
+                          ><span class="p-val" [title]="p.value">{{
                             truncate(p.value, 28)
                           }}</span>
                         </div>
+                        <app-copy-button
+                          [value]="p.value"
+                          [size]="'sm'"
+                        ></app-copy-button>
                       </div>
                     }
                   </div>
@@ -1458,28 +1515,16 @@
                   Advanced technical data
                 </summary>
                 <div class="adv-body">
-                  @if (selectedDetail()!.entry.covenantId) {
+                  @if (selectedDetail()!.entry.scriptHash; as scriptHash) {
                     <div class="adv-row">
-                      <span class="adv-label">Covenant ID</span
-                      ><span class="adv-value">{{
-                        selectedDetail()!.entry.covenantId
-                      }}</span>
-                    </div>
-                  }
-                  @if (selectedDetail()!.entry.scriptHash) {
-                    <div class="adv-row">
-                      <span class="adv-label">Script hash</span
-                      ><span class="adv-value">{{
-                        selectedDetail()!.entry.scriptHash
-                      }}</span>
-                    </div>
-                  }
-                  @if (selectedDetail()!.entry.currentAddress) {
-                    <div class="adv-row">
-                      <span class="adv-label">Current address</span
-                      ><span class="adv-value">{{
-                        selectedDetail()!.entry.currentAddress
-                      }}</span>
+                      <span class="adv-label">Script hash</span>
+                      <div class="identifier-value-row">
+                        <span class="adv-value">{{ scriptHash }}</span>
+                        <app-copy-button
+                          [value]="scriptHash"
+                          [size]="'sm'"
+                        ></app-copy-button>
+                      </div>
                     </div>
                   }
                 </div>
@@ -1509,7 +1554,7 @@
             imported.
           </p>
         </div>
-        <div class="flex gap-8 align-items-end">
+        <div class="flex gap-8 align-items-end wrap">
           <div class="field" style="flex: 1">
             <kc-input
               [label]="'Contract lookup'"
@@ -1533,7 +1578,7 @@
 
         @if (indexerImportPreview()) {
           <div class="lookup-result flex column gap-12 p-16">
-            <div class="flex justify-content-between align-items-center">
+            <div class="flex justify-content-between align-items-center wrap">
               <h4 class="text-white typo-text-1 fw-bold">
                 {{ indexerImportPreview()!.template.name }}
               </h4>
@@ -1586,9 +1631,19 @@
               ) {
                 <div class="param-item p-8 flex column gap-4">
                   <span class="text-white typo-text-2">{{ field.label }}</span>
-                  <span class="text-gray-60 typo-text-2 text-mono">{{
-                    indexerImportPreview()!.fieldValues[field.paramName]
-                  }}</span>
+                  <div class="flex align-items-center gap-8">
+                    <span
+                      class="text-gray-60 typo-text-2 text-mono text-truncate"
+                      [title]="indexerImportPreview()!.fieldValues[field.paramName]"
+                      >{{
+                        indexerImportPreview()!.fieldValues[field.paramName]
+                      }}</span
+                    >
+                    <app-copy-button
+                      [value]="indexerImportPreview()!.fieldValues[field.paramName]"
+                      [size]="'sm'"
+                    ></app-copy-button>
+                  </div>
                 </div>
               }
             </div>
@@ -1632,7 +1687,7 @@
               (valueChange)="onShareableContractChange($any($event))"
             ></kc-dropdown-select>
           </div>
-          <div class="flex gap-8 align-items-end">
+          <div class="flex gap-8 align-items-end wrap">
             <div class="field" style="flex: 1">
               <kc-input
                 [label]="'Share link'"
@@ -1665,7 +1720,7 @@
             Check a contract address's on-chain state (balance, UTXOs) directly.
           </p>
         </div>
-        <div class="flex gap-8 align-items-end">
+        <div class="flex gap-8 align-items-end wrap">
           <div class="field" style="flex: 1">
             <kc-input
               [label]="'Contract address'"
@@ -1689,7 +1744,7 @@
 
         @if (lookupResult()) {
           <div class="lookup-result flex column gap-12 p-16">
-            <div class="flex justify-content-between align-items-center">
+            <div class="flex justify-content-between align-items-center wrap">
               <h4 class="text-white typo-text-1 fw-bold">Contract state</h4>
               <a
                 [href]="getExplorerAddressLink(lookupResult()!.address)"
@@ -1774,7 +1829,7 @@
       selectedDetail()!.entry.status === "active" &&
       interactContractJson())
   ) {
-    <div class="panel flex column gap-20">
+    <div class="panel flex column gap-20" id="contract-action-panel">
       <div class="form-group flex column gap-8">
         <label class="field-label">Select contract</label>
         <kc-dropdown-select

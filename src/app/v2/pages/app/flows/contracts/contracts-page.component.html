@@ -1470,6 +1470,11 @@
               (valueChange)="dmsNewExpiry = $event"
             >
             </app-covenant-date-time-input>
+            @if (dmsKeepAliveError()) {
+              <div class="error-message p-12 rounded-lg text-red typo-text-2">
+                {{ dmsKeepAliveError() }}
+              </div>
+            }
             <!--
         🔗 Convert date to timestamp →
       -->
@@ -1490,6 +1495,36 @@
               Keep Alive recreates the covenant output with the same owner and
               heir, using the new check-in deadline you choose. The heir cannot
               claim unless the current transaction time reaches that deadline.
+            </span>
+          </div>
+        }
+
+        @if (isDmsChangeHeir()) {
+          <div class="form-group flex column gap-8">
+            <app-address-smart-input
+              [label]="'New Heir Wallet'"
+              [placeholder]="'Enter heir wallet address or KNS domain'"
+              [isFullWidth]="true"
+              [isValid]="true"
+              [invalidReason]="''"
+              [isDisabled]="isInteracting()"
+              [value]="interactOutputAddress"
+              (valueChange)="onInteractOutputAddressChange($event)"
+              (resolved)="onInteractOutputAddressResolved($event)"
+              (qrClick)="onInteractOutputQrClick()"
+            >
+            </app-address-smart-input>
+          </div>
+
+          <div
+            class="p-12 rounded-lg"
+            style="
+              background: rgba(111, 199, 186, 0.08);
+              border: 1px solid rgba(111, 199, 186, 0.2);
+            "
+          >
+            <span class="text-gray-75 typo-text-2">
+              Funds stay locked in the covenant. Only the heir wallet changes.
             </span>
           </div>
         }
@@ -1527,7 +1562,8 @@
         @if (
           selectedFunction &&
           functionRequiresOutput(selectedFunction) &&
-          !isDmsKeepAlive()
+          !isDmsKeepAlive() &&
+          !isDmsChangeHeir()
         ) {
           <div class="form-group flex column gap-8">
             <app-address-smart-input
@@ -1572,6 +1608,7 @@
           selectedFunction &&
           !functionRequiresOutput(selectedFunction) &&
           !isDmsKeepAlive() &&
+          !isDmsChangeHeir() &&
           !isTopUpFunction(selectedFunction)
         ) {
           <div

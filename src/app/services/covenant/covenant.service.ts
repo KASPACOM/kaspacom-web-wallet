@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { RpcService } from '../kaspa-netwrok-services/rpc.service';
+import type { CovenantFunctionArg } from './covenant-sdk/covenant';
 import {
   getCovenantAddress,
   deployContract,
@@ -95,7 +96,7 @@ export class CovenantService {
     functionName: string,
     outputs: SpendOutput[],
     privateKeyHex: string,
-    extraArgs?: Record<string, bigint>,
+    extraArgs?: Record<string, CovenantFunctionArg>,
     covenantId?: string,
     priorityFee: bigint = 0n,
     useSenderFee: boolean = false,
@@ -128,7 +129,7 @@ export class CovenantService {
     functionName: string,
     outputs: SpendOutput[],
     privateKeyHex: string,
-    extraArgs?: Record<string, bigint>,
+    extraArgs?: Record<string, CovenantFunctionArg>,
     covenantId?: string,
     priorityFee: bigint = 0n,
     useSenderFee: boolean = false,

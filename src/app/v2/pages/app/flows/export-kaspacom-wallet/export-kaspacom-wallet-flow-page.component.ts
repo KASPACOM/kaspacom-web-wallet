@@ -48,6 +48,10 @@ export class ExportKaspacomWalletFlowPageComponent extends FlowPageBaseComponent
   isLoading = signal<boolean>(false);
   encryptedUserData = signal<string | null>(null);
   passwordError = signal<string | null>(null);
+  // kc-input's writeValue() re-emits a change event on programmatic value
+  // updates, which routes back through onPasswordInput(). This suppresses
+  // that echo so a password.set('') reset doesn't clear an error we just set.
+  private suppressNextPasswordInputEcho = false;
 
   // QR Code settings
   maxDataLength = 2331;
@@ -91,6 +95,10 @@ export class ExportKaspacomWalletFlowPageComponent extends FlowPageBaseComponent
   }
 
   onPasswordInput(): void {
+    if (this.suppressNextPasswordInputEcho) {
+      this.suppressNextPasswordInputEcho = false;
+      return;
+    }
     // Clear error when user starts typing
     if (this.passwordError()) {
       this.passwordError.set(null);
@@ -115,8 +123,9 @@ export class ExportKaspacomWalletFlowPageComponent extends FlowPageBaseComponent
         await this.passwordManagerService.checkPassword(passwordValue);
 
       if (!isValid) {
-        this.passwordError.set('Incorrect password. Please try again.');
+        this.suppressNextPasswordInputEcho = true;
         this.password.set('');
+        this.passwordError.set('Incorrect password. Please try again.');
         return;
       }
 

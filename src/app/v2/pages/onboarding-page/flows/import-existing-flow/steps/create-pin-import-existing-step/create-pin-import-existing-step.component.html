@@ -28,9 +28,14 @@
           somewhere safe.
         </p>
       </div>
-      <form [formGroup]="passwordForm" (ngSubmit)="onSubmit()">
+      <form
+        class="flex column gap-16 full-width align-items-stretch align-self-stretch"
+        [formGroup]="passwordForm"
+        (ngSubmit)="onSubmit()"
+      >
         <div class="flex column gap-4">
           <kc-input
+            class="full-width"
             formControlName="password"
             [label]="'Enter your password'"
             [placeholder]="'Password'"
@@ -48,6 +53,7 @@
             }}</span>
           }
           <kc-input
+            class="full-width"
             formControlName="confirmPassword"
             [label]="'Confirm your password'"
             [placeholder]="'Confirm password'"

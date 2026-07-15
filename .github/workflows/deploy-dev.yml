@@ -3,7 +3,7 @@ name: Deploy Dev ENV
 on:
   push:
     branches:
-      - develop  # Change this to the branch you want to deploy from
+      - develop # Change this to the branch you want to deploy from
 
 permissions:
   contents: read
@@ -14,81 +14,81 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '24'  # Specify the Node.js version you need
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24" # Specify the Node.js version you need
 
-    - name: Install dependencies
-      run: npm install
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install dependencies
+        run: npm install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build Angular app
-      run: npm run build:dev
-      env:
-        SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      - name: Build Angular app
+        run: npm run build:dev
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
-    - name: Install AWS CLI
-      run: |
-        sudo apt-get update
-        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-        unzip awscliv2.zip
-        sudo ./aws/install --update
+      - name: Install AWS CLI
+        run: |
+          sudo apt-get update
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install --update
 
-    - name: Verify AWS CLI Installation
-      run: aws --version
+      - name: Verify AWS CLI Installation
+        run: aws --version
 
-    - name: Debug AWS Configuration
-      run: |
-        aws s3 ls --region ${{ env.AWS_REGION }}
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_REGION: ${{ secrets.AWS_REGION }}
+      - name: Debug AWS Configuration
+        run: |
+          aws s3 ls --region ${{ env.AWS_REGION }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
 
-    - name: Deploy to S3 and Invalidate CloudFront
-      run: |
-        # 1. Sync hashed build artifacts with immutable caching
-        aws s3 sync dist/wallet-front-new/browser s3://${{ env.S3_BUCKET_NAME_DEV }}/ \
-          --delete \
-          --exclude "index.html" \
-          --exclude "favicon.ico" \
-          --exclude "logo.png" \
-          --exclude "images/*" \
-          --exclude "images/**" \
-          --exclude "svgs/*" \
-          --exclude "svgs/**" \
-          --exclude "kaspa/*" \
-          --exclude "kaspa/**" \
-          --cache-control "public,max-age=31536000,immutable"
+      - name: Deploy to S3 and Invalidate CloudFront
+        run: |
+          # 1. Sync hashed build artifacts with immutable caching
+          aws s3 sync dist/wallet-front-new/browser s3://${{ env.S3_BUCKET_NAME_DEV }}/ \
+            --delete \
+            --exclude "index.html" \
+            --exclude "favicon.ico" \
+            --exclude "logo.png" \
+            --exclude "images/*" \
+            --exclude "images/**" \
+            --exclude "svgs/*" \
+            --exclude "svgs/**" \
+            --exclude "kaspa/*" \
+            --exclude "kaspa/**" \
+            --cache-control "public,max-age=31536000,immutable"
 
-        # 2. Upload unhashed public assets with short-lived cache
-        aws s3 sync dist/wallet-front-new/browser s3://${{ env.S3_BUCKET_NAME_DEV }}/ \
-          --exclude "*" \
-          --include "favicon.ico" \
-          --include "logo.png" \
-          --include "images/*" \
-          --include "images/**" \
-          --include "svgs/*" \
-          --include "svgs/**" \
-          --include "kaspa/*" \
-          --include "kaspa/**" \
-          --cache-control "public,max-age=3600"
+          # 2. Upload unhashed public assets with short-lived cache
+          aws s3 sync dist/wallet-front-new/browser s3://${{ env.S3_BUCKET_NAME_DEV }}/ \
+            --exclude "*" \
+            --include "favicon.ico" \
+            --include "logo.png" \
+            --include "images/*" \
+            --include "images/**" \
+            --include "svgs/*" \
+            --include "svgs/**" \
+            --include "kaspa/*" \
+            --include "kaspa/**" \
+            --cache-control "public,max-age=3600"
 
-        # 3. Upload index.html with strict no-cache headers
-        aws s3 cp dist/wallet-front-new/browser/index.html s3://${{ env.S3_BUCKET_NAME_DEV }}/index.html \
-          --metadata-directive REPLACE \
-          --cache-control "no-cache, no-store, must-revalidate" \
-          --content-type "text/html"
+          # 3. Upload index.html with strict no-cache headers
+          aws s3 cp dist/wallet-front-new/browser/index.html s3://${{ env.S3_BUCKET_NAME_DEV }}/index.html \
+            --metadata-directive REPLACE \
+            --cache-control "no-cache, no-store, must-revalidate" \
+            --content-type "text/html"
 
-        # 4. Invalidate CloudFront — full site to cover SPA deep links
-        aws cloudfront create-invalidation --distribution-id E17A4DSJBQJRBU --paths "/*"
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_REGION: ${{ secrets.AWS_REGION }}
-        S3_BUCKET_NAME_DEV: ${{ secrets.S3_BUCKET_NAME_DEV }}
+          # 4. Invalidate CloudFront — full site to cover SPA deep links
+          aws cloudfront create-invalidation --distribution-id E17A4DSJBQJRBU --paths "/*"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          S3_BUCKET_NAME_DEV: ${{ secrets.S3_BUCKET_NAME_DEV }}

@@ -2,7 +2,11 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { WalletAction, WalletActionType } from '../../types/wallet-action';
 import { FlowPagesService } from './flow-pages.service';
 import { Router } from '@angular/router';
-import { WalletActionResult, EIP1193RequestPayload, EIP1193RequestType } from '@kaspacom/wallet-messages';
+import {
+  WalletActionResult,
+  EIP1193RequestPayload,
+  EIP1193RequestType,
+} from '@kaspacom/wallet-messages';
 
 export enum ApprovalDisplayMode {
   FLOW_PAGE = 'flow_page', // For regular app usage - integrated flow
@@ -28,7 +32,7 @@ export type ApprovalPageResultParams = {
   priorityFee?: bigint;
   l2PriorityInfo?: L2PriorityInfo;
   additionalParams?: { [key: string]: any };
-}
+};
 
 export interface ApprovalFlowConfig {
   mode: ApprovalDisplayMode;
@@ -63,9 +67,8 @@ export class ApprovalFlowService {
   );
 
   // Resolve function for the current approval
-  private currentResolve:
-    | ((result: ApprovalPageResultParams) => void)
-    | null = null;
+  private currentResolve: ((result: ApprovalPageResultParams) => void) | null =
+    null;
 
   // Signal to track completion events for components to listen to
   private completionSignal = signal<{
@@ -355,7 +358,8 @@ export class ApprovalFlowService {
       case WalletActionType.SIGN_PSKT_TRANSACTION:
         return 'Sign Transaction';
       case WalletActionType.EIP1193_PROVIDER_REQUEST:
-        const eipData = action.data as EIP1193RequestPayload<EIP1193RequestType>;
+        const eipData =
+          action.data as EIP1193RequestPayload<EIP1193RequestType>;
         switch (eipData.method) {
           case EIP1193RequestType.SEND_TRANSACTION:
           case EIP1193RequestType.KAS_SEND_TRANSACTION:

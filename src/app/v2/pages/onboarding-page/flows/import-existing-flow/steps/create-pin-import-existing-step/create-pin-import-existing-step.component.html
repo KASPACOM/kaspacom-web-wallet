@@ -46,7 +46,7 @@
               <kc-icon iconClass="{{ passwordIcon() }}" [size]="'xs'" />
             </div>
           </kc-input>
-          @if (isInvalid('password') && getPasswordErrorMessage()) {
+          @if (isInvalid("password") && getPasswordErrorMessage()) {
             <span class="kc-input-error-text">{{
               getPasswordErrorMessage()
             }}</span>
@@ -67,7 +67,9 @@
               <kc-icon [iconClass]="passwordConfirmIcon()" [size]="'xs'" />
             </div>
           </kc-input>
-          @if (isInvalid('confirmPassword') && getConfirmPasswordErrorMessage()) {
+          @if (
+            isInvalid("confirmPassword") && getConfirmPasswordErrorMessage()
+          ) {
             <span class="kc-input-error-text">{{
               getConfirmPasswordErrorMessage()
             }}</span>

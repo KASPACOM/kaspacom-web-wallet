@@ -70,11 +70,11 @@
 }
 
 .balance-wallet-address {
-    width: 80%;
-    word-break: break-word;
-    text-align: center;
-    display: flex;
-    min-height: 40px;
+  width: 80%;
+  word-break: break-word;
+  text-align: center;
+  display: flex;
+  min-height: 40px;
 }
 
 .wallet-address-display {
@@ -99,7 +99,9 @@
   height: 28px;
   cursor: pointer;
   color: var(--gray-60);
-  transition: color 0.2s ease, opacity 0.2s ease;
+  transition:
+    color 0.2s ease,
+    opacity 0.2s ease;
 
   &:hover {
     color: var(--gray-40);

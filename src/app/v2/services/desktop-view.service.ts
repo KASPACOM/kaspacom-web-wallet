@@ -1,4 +1,10 @@
-import { inject, Injectable, PLATFORM_ID, signal, WritableSignal } from '@angular/core';
+import {
+  inject,
+  Injectable,
+  PLATFORM_ID,
+  signal,
+  WritableSignal,
+} from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
 const STORAGE_KEY = 'kw-desktop-expanded';
@@ -31,7 +37,10 @@ export class DesktopViewService {
     }
 
     const stored = this.isBrowser ? this.readStorage() : null;
-    const isDesktop = this.isBrowser && !this.isIframe && window.innerWidth >= MOBILE_BREAKPOINT;
+    const isDesktop =
+      this.isBrowser &&
+      !this.isIframe &&
+      window.innerWidth >= MOBILE_BREAKPOINT;
     this.isExpandedView = signal(
       stored !== null ? stored === 'true' : isDesktop,
     );

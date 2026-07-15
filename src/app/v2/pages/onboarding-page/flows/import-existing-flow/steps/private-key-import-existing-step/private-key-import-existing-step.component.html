@@ -31,7 +31,7 @@
             <kc-icon [iconClass]="privateKeyFieldIcon()" [size]="'xs'" />
           </div>
         </kc-input>
-        @if (isPrivateKeyInvalid('privateKey')) {
+        @if (isPrivateKeyInvalid("privateKey")) {
           <span class="kc-input-error-text">Cannot be empty</span>
         }
       </form>

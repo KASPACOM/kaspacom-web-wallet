@@ -118,11 +118,7 @@ type IndexerImportPreview = {
 
 type ContractDashboardSource = 'indexer' | 'local' | 'both';
 type ContractDashboardFilter =
-  | 'all'
-  | 'deadman'
-  | 'timelock'
-  | 'multisig'
-  | 'escrow';
+  'all' | 'deadman' | 'timelock' | 'multisig' | 'escrow';
 // Status dimension, composed on top of the template-type filter above.
 type ContractStatusFilter = 'all' | 'active' | 'history';
 
@@ -782,8 +778,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   /** 'detail' belongs to the My Contracts section for tab-highlighting purposes. */
   isMyContractsTabActive = computed(
-    () =>
-      this.activeTab() === 'my-contracts' || this.activeTab() === 'detail',
+    () => this.activeTab() === 'my-contracts' || this.activeTab() === 'detail',
   );
 
   selectTemplate(template: ContractTemplate) {
@@ -1878,7 +1873,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   /** Public wrapper for the detail page's "You are <role>" pill. */
-  getCurrentRoleLabel(participants: Array<{ label: string; value: string }>): string {
+  getCurrentRoleLabel(
+    participants: Array<{ label: string; value: string }>,
+  ): string {
     return this.currentWalletRole(participants);
   }
 
@@ -2346,8 +2343,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       },
       withdraw: {
         label: 'Withdraw',
-        description:
-          'Withdraw part of the locked funds using the owner key.',
+        description: 'Withdraw part of the locked funds using the owner key.',
         iconClass: 'icon-coins-02',
         requiredRole: 'Owner',
       },
@@ -2366,7 +2362,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       },
       topUp: {
         label: 'Top Up',
-        description: 'Add more KAS to the locked funds without withdrawing anything.',
+        description:
+          'Add more KAS to the locked funds without withdrawing anything.',
         iconClass: 'icon-plus',
       },
       changeHeir: {
@@ -2398,7 +2395,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       },
       topUp: {
         label: 'Top Up',
-        description: 'Add more KAS to the locked funds without withdrawing anything.',
+        description:
+          'Add more KAS to the locked funds without withdrawing anything.',
         iconClass: 'icon-plus',
       },
     },
@@ -2423,7 +2421,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       },
       topUp: {
         label: 'Top Up',
-        description: 'Add more KAS to the locked funds without withdrawing anything.',
+        description:
+          'Add more KAS to the locked funds without withdrawing anything.',
         iconClass: 'icon-plus',
       },
     },
@@ -2441,7 +2440,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       },
       topUp: {
         label: 'Top Up',
-        description: 'Add more KAS to the locked funds without withdrawing anything.',
+        description:
+          'Add more KAS to the locked funds without withdrawing anything.',
         iconClass: 'icon-plus',
       },
       arbitrate: {
@@ -4361,7 +4361,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * current state from the indexer when the link is opened.
    */
   buildShareLink(covenantId: string): string {
-    const url = new URL(`${window.location.origin}/app/contracts/${covenantId}`);
+    const url = new URL(
+      `${window.location.origin}/app/contracts/${covenantId}`,
+    );
     url.searchParams.set('network', this.network());
     return url.toString();
   }
@@ -4698,7 +4700,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         claim:
           'Claim the inheritance. Only available if the owner missed their keepAlive deadline.',
         changeHeir:
-          'Change the beneficiary who can claim the funds if you miss the deadline. Not available yet — this requires a Dead Man\'s Switch contract update.',
+          "Change the beneficiary who can claim the funds if you miss the deadline. Not available yet — this requires a Dead Man's Switch contract update.",
       },
       escrow: {
         release:

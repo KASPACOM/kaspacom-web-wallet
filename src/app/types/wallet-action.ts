@@ -1,8 +1,14 @@
-import { EIP1193RequestPayload, EIP1193RequestType, ProtocolScript, ProtocolScriptDataAndAddress, ProtocolType, PsktActionsEnum } from '@kaspacom/wallet-messages';
+import {
+  EIP1193RequestPayload,
+  EIP1193RequestType,
+  ProtocolScript,
+  ProtocolScriptDataAndAddress,
+  ProtocolType,
+  PsktActionsEnum,
+} from '@kaspacom/wallet-messages';
 import { WalletActionResultWithError } from './wallet-action-result';
 import { BaseCommunicationApp } from '../services/communication-service/communication-app/base-communication-app';
 import type { CovenantFunctionArg } from '../services/covenant/covenant-sdk/covenant';
-
 
 export enum WalletActionType {
   TRANSFER_KAS = 'transfer-kas',
@@ -42,7 +48,6 @@ export type WalletAction = {
   };
 }[keyof WalletActionDataMap];
 
-
 export interface WalletActionListItem {
   action: WalletAction;
   promise: Promise<WalletActionResultWithError>;
@@ -51,14 +56,13 @@ export interface WalletActionListItem {
   notifyUpdate: (transactionId: string) => Promise<any>;
 }
 
-
 export interface TransferKasAction {
   amount: bigint;
   to: string;
   sendAll?: boolean;
 }
 
-export interface CompoundUtxosAction { }
+export interface CompoundUtxosAction {}
 
 export interface ActionWithPsktGenerationData {
   totalPrice: bigint;
@@ -106,8 +110,8 @@ export interface CommitRevealAction {
         address: string;
         amount: bigint;
       }[];
-      script: ProtocolScriptDataAndAddress,
-    }
+      script: ProtocolScriptDataAndAddress;
+    };
   };
 }
 

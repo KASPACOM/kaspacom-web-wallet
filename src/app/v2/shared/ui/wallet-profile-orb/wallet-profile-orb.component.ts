@@ -108,11 +108,11 @@ export class WalletProfileOrbComponent {
       this.walletService.getCurrentDisplayWalletAddressAsString(),
   );
 
-  avatarConfig = computed(
-    (): AvatarConfig => computeAvatar(this.walletAddress()),
+  avatarConfig = computed((): AvatarConfig =>
+    computeAvatar(this.walletAddress()),
   );
-  l1AvatarConfig = computed(
-    (): L1AvatarConfig => computeL1Avatar(this.walletAddress()),
+  l1AvatarConfig = computed((): L1AvatarConfig =>
+    computeL1Avatar(this.walletAddress()),
   );
   l1AvatarError = signal(false);
 

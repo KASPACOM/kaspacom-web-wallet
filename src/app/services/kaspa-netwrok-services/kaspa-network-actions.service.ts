@@ -699,7 +699,7 @@ export class KaspaNetworkActionsService {
     const privateKeyHex = wallet?.getPrivateKey().toString();
 
     if (!privateKeyHex) {
-      return COVENANT_ESTIMATED_TRANSACTION_MASS;
+      return COVENANT_ESTIMATED_TRANSACTION_MASS * MINIMUM_FEE_PER_MASS;
     }
 
     if (action.type === WalletActionType.COVENANT_DEPLOY) {

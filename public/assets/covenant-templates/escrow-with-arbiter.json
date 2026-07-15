@@ -19,16 +19,17 @@
     126, 1, 172, 126, 135, 105, 117, 81, 103, 118, 82, 156, 99, 117, 82, 121,
     170, 32, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216,
     217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231,
-    232, 233, 234, 235, 135, 105, 120, 83, 121, 172, 105, 0, 195, 32, 187, 188,
-    189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203,
-    204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218,
-    3, 0, 0, 32, 124, 126, 1, 172, 126, 135, 105, 0, 194, 120, 156, 105, 81,
-    195, 32, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182,
-    183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197,
-    198, 199, 200, 201, 3, 0, 0, 32, 124, 126, 1, 172, 126, 135, 105, 81, 194,
-    185, 190, 82, 121, 148, 156, 105, 117, 117, 117, 81, 103, 118, 83, 156, 99,
-    117, 185, 0, 156, 105, 0, 194, 185, 190, 160, 105, 0, 195, 185, 191, 135,
-    105, 81, 103, 117, 0, 105, 104, 104, 104, 104
+    232, 233, 234, 235, 135, 105, 120, 83, 121, 172, 105, 185, 190, 120, 0, 162,
+    105, 120, 120, 161, 105, 0, 195, 32, 187, 188, 189, 190, 191, 192, 193, 194,
+    195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209,
+    210, 211, 212, 213, 214, 215, 216, 217, 218, 3, 0, 0, 32, 124, 126, 1, 172,
+    126, 135, 105, 0, 194, 82, 121, 156, 105, 81, 195, 32, 170, 171, 172, 173,
+    174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188,
+    189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 3, 0, 0,
+    32, 124, 126, 1, 172, 126, 135, 105, 81, 194, 120, 83, 121, 148, 156, 105,
+    0, 122, 117, 117, 117, 117, 81, 103, 118, 83, 156, 99, 117, 185, 0, 156,
+    105, 0, 194, 185, 190, 160, 105, 0, 195, 185, 191, 135, 105, 81, 103, 117,
+    0, 105, 104, 104, 104, 104
   ],
   "ast": {
     "pragma": {
@@ -521,6 +522,56 @@
             }
           },
           {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "ge",
+                  "left": {
+                    "kind": "identifier",
+                    "data": "amountToSeller",
+                    "span": "amountToSeller"
+                  },
+                  "right": {
+                    "kind": "int",
+                    "data": 0,
+                    "span": "0"
+                  }
+                },
+                "span": "amountToSeller >= 0"
+              },
+              "message": null,
+              "span": "require(amountToSeller >= 0);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "le",
+                  "left": {
+                    "kind": "identifier",
+                    "data": "amountToSeller",
+                    "span": "amountToSeller"
+                  },
+                  "right": {
+                    "kind": "identifier",
+                    "data": "total",
+                    "span": "total"
+                  }
+                },
+                "span": "amountToSeller <= total"
+              },
+              "message": null,
+              "span": "require(amountToSeller <= total);",
+              "message_span": null
+            }
+          },
+          {
             "kind": "variable_definition",
             "data": {
               "type_ref": {
@@ -756,9 +807,9 @@
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function arbitrate(pubkey pk, sig s, int amountToSeller) {\n        // Arbiter resolves dispute\n        require(blake2b(pk) == arbiterHash);\n        require(checkSig(s, pk));\n        \n        int total = tx.inputs[this.activeInputIndex].value;\n        byte[34] sellerLock = new ScriptPubKeyP2PK(seller);\n        byte[34] buyerLock = new ScriptPubKeyP2PK(buyer);\n        \n        // Verify splits and destinations. Transaction fees must be paid by wallet inputs.\n        require(tx.outputs[0].scriptPubKey == byte[](sellerLock));\n        require(tx.outputs[0].value == amountToSeller);\n        require(tx.outputs[1].scriptPubKey == byte[](buyerLock));\n        require(tx.outputs[1].value == total - amountToSeller);\n    }",
+        "span": "entrypoint function arbitrate(pubkey pk, sig s, int amountToSeller) {\n        // Arbiter resolves dispute\n        require(blake2b(pk) == arbiterHash);\n        require(checkSig(s, pk));\n        \n        int total = tx.inputs[this.activeInputIndex].value;\n        require(amountToSeller >= 0);\n        require(amountToSeller <= total);\n\n        byte[34] sellerLock = new ScriptPubKeyP2PK(seller);\n        byte[34] buyerLock = new ScriptPubKeyP2PK(buyer);\n        \n        // Verify splits and destinations. Transaction fees must be paid by wallet inputs.\n        require(tx.outputs[0].scriptPubKey == byte[](sellerLock));\n        require(tx.outputs[0].value == amountToSeller);\n        require(tx.outputs[1].scriptPubKey == byte[](buyerLock));\n        require(tx.outputs[1].value == total - amountToSeller);\n    }",
         "name_span": "arbitrate",
-        "body_span": "require(blake2b(pk) == arbiterHash);\n        require(checkSig(s, pk));\n        \n        int total = tx.inputs[this.activeInputIndex].value;\n        byte[34] sellerLock = new ScriptPubKeyP2PK(seller);\n        byte[34] buyerLock = new ScriptPubKeyP2PK(buyer);\n        \n        // Verify splits and destinations. Transaction fees must be paid by wallet inputs.\n        require(tx.outputs[0].scriptPubKey == byte[](sellerLock));\n        require(tx.outputs[0].value == amountToSeller);\n        require(tx.outputs[1].scriptPubKey == byte[](buyerLock));\n        require(tx.outputs[1].value == total - amountToSeller);"
+        "body_span": "require(blake2b(pk) == arbiterHash);\n        require(checkSig(s, pk));\n        \n        int total = tx.inputs[this.activeInputIndex].value;\n        require(amountToSeller >= 0);\n        require(amountToSeller <= total);\n\n        byte[34] sellerLock = new ScriptPubKeyP2PK(seller);\n        byte[34] buyerLock = new ScriptPubKeyP2PK(buyer);\n        \n        // Verify splits and destinations. Transaction fees must be paid by wallet inputs.\n        require(tx.outputs[0].scriptPubKey == byte[](sellerLock));\n        require(tx.outputs[0].value == amountToSeller);\n        require(tx.outputs[1].scriptPubKey == byte[](buyerLock));\n        require(tx.outputs[1].value == total - amountToSeller);"
       },
       {
         "name": "topUp",
@@ -881,7 +932,7 @@
         "body_span": "require(this.activeInputIndex == 0);\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);"
       }
     ],
-    "span": "contract Escrow(\n    pubkey buyer,\n    pubkey seller,\n    byte[32] arbiterHash,\n    int expiry\n) {\n    entrypoint function release(sig buyerSig, sig sellerSig) {\n        // Both parties agree - release to seller\n        require(checkSig(buyerSig, buyer));\n        require(checkSig(sellerSig, seller));\n        \n        // Enforce output goes to seller\n        byte[34] sellerLock = new ScriptPubKeyP2PK(seller);\n        require(tx.outputs[0].scriptPubKey == byte[](sellerLock));\n    }\n\n    entrypoint function refund(sig s) {\n        // Buyer can refund after expiry\n        require(checkSig(s, buyer));\n        require(tx.time >= expiry);\n        \n        byte[34] buyerLock = new ScriptPubKeyP2PK(buyer);\n        require(tx.outputs[0].scriptPubKey == byte[](buyerLock));\n    }\n\n    entrypoint function arbitrate(pubkey pk, sig s, int amountToSeller) {\n        // Arbiter resolves dispute\n        require(blake2b(pk) == arbiterHash);\n        require(checkSig(s, pk));\n        \n        int total = tx.inputs[this.activeInputIndex].value;\n        byte[34] sellerLock = new ScriptPubKeyP2PK(seller);\n        byte[34] buyerLock = new ScriptPubKeyP2PK(buyer);\n        \n        // Verify splits and destinations. Transaction fees must be paid by wallet inputs.\n        require(tx.outputs[0].scriptPubKey == byte[](sellerLock));\n        require(tx.outputs[0].value == amountToSeller);\n        require(tx.outputs[1].scriptPubKey == byte[](buyerLock));\n        require(tx.outputs[1].value == total - amountToSeller);\n    }\n\n    entrypoint function topUp() {\n        require(this.activeInputIndex == 0);\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\n    }\n}",
+    "span": "contract Escrow(\n    pubkey buyer,\n    pubkey seller,\n    byte[32] arbiterHash,\n    int expiry\n) {\n    entrypoint function release(sig buyerSig, sig sellerSig) {\n        // Both parties agree - release to seller\n        require(checkSig(buyerSig, buyer));\n        require(checkSig(sellerSig, seller));\n        \n        // Enforce output goes to seller\n        byte[34] sellerLock = new ScriptPubKeyP2PK(seller);\n        require(tx.outputs[0].scriptPubKey == byte[](sellerLock));\n    }\n\n    entrypoint function refund(sig s) {\n        // Buyer can refund after expiry\n        require(checkSig(s, buyer));\n        require(tx.time >= expiry);\n        \n        byte[34] buyerLock = new ScriptPubKeyP2PK(buyer);\n        require(tx.outputs[0].scriptPubKey == byte[](buyerLock));\n    }\n\n    entrypoint function arbitrate(pubkey pk, sig s, int amountToSeller) {\n        // Arbiter resolves dispute\n        require(blake2b(pk) == arbiterHash);\n        require(checkSig(s, pk));\n        \n        int total = tx.inputs[this.activeInputIndex].value;\n        require(amountToSeller >= 0);\n        require(amountToSeller <= total);\n\n        byte[34] sellerLock = new ScriptPubKeyP2PK(seller);\n        byte[34] buyerLock = new ScriptPubKeyP2PK(buyer);\n        \n        // Verify splits and destinations. Transaction fees must be paid by wallet inputs.\n        require(tx.outputs[0].scriptPubKey == byte[](sellerLock));\n        require(tx.outputs[0].value == amountToSeller);\n        require(tx.outputs[1].scriptPubKey == byte[](buyerLock));\n        require(tx.outputs[1].value == total - amountToSeller);\n    }\n\n    entrypoint function topUp() {\n        require(this.activeInputIndex == 0);\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\n    }\n}",
     "name_span": "Escrow"
   },
   "abi": [

@@ -59,8 +59,20 @@
   }
 }
 
+.flow-page-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .flow-page-title {
   color: var(--white);
+  margin: 0;
+}
+
+.flow-page-subtitle {
+  margin: 0;
+  color: var(--gray-60);
 }
 
 .flow-page-body {

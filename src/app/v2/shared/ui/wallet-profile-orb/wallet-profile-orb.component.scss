@@ -1,6 +1,11 @@
+:host {
+  --orb-size: 38px;
+  display: inline-flex;
+}
+
 .wallet-avatar-orb {
-  width: 38px;
-  height: 38px;
+  width: var(--orb-size);
+  height: var(--orb-size);
   border-radius: 100%;
   overflow: hidden;
   flex-shrink: 0;
@@ -19,15 +24,15 @@
 
   img {
     display: block;
-    width: 26px;
-    height: 26px;
+    width: calc(var(--orb-size) * 0.68);
+    height: calc(var(--orb-size) * 0.68);
     transform-origin: center;
   }
 }
 
 .wallet-profile-orb {
-  width: 38px;
-  height: 38px;
+  width: var(--orb-size);
+  height: var(--orb-size);
   border-radius: 100%;
   overflow: hidden;
   flex-shrink: 0;

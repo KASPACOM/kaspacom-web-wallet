@@ -15,7 +15,7 @@
             <kc-input
               class="seed-container__word"
               [placeholder]="`${item.index + 1}.`"
-              [label]="`Word #${item.index + 1}`"
+              [infoLabel]="{ label: 'Word #' + (item.index + 1) }"
               [ngModel]="item.input"
               (valueChange)="onInputChange($index, $any($event))"
             />

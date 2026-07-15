@@ -4,19 +4,25 @@
       <div class="form-field">
         <div class="slippage-row">
           <kc-number-input
-            label="Slippage tolerance (%)"
+            [infoLabel]="{ label: 'Slippage tolerance (%)' }"
             [enforceEthersFormat]="false"
             placeholder="0.5"
             formControlName="maxSlippage"
           />
-          <kc-switch
-            class="slippage-options"
-            [options]="slippageOptions"
-            [selectedValue]="selectedSlippage() ?? undefined"
-            [size]="'s'"
-            [ariaLabel]="'Select slippage tolerance'"
-            (selectionChange)="onSlippageClick($any($event.value))"
-          />
+          <div
+            class="slippage-options flex gap-8"
+            role="group"
+            aria-label="Select slippage tolerance"
+          >
+            @for (option of slippageOptions; track option.value) {
+              <kc-button
+                [text]="option.label"
+                [variant]="'tag-secondary'"
+                [isSelected]="selectedSlippage() === option.value"
+                (buttonClick)="onSlippageClick($any(option.value))"
+              />
+            }
+          </div>
         </div>
         <kc-form-error-message
           [control]="settingsForm.get('maxSlippage')"
@@ -31,7 +37,7 @@
 
       <div class="form-field">
         <kc-number-input
-          label="Transaction deadline (minutes)"
+          [infoLabel]="{ label: 'Transaction deadline (minutes)' }"
           [enforceEthersFormat]="false"
           placeholder="20"
           formControlName="swapDeadline"

@@ -1,6 +1,6 @@
 // =============================================================================
 // contracts-page.component.scss — REDESIGN (visual pass for PR #257)
-// Uses global wallet tokens (var(--*)) from kaspacom-ui. No new colors invented.
+// Uses global wallet tokens (var(--*)) from @kaspacom/ui-kit. No new colors invented.
 // Mobile-first; the layout scales from the compact 480px wallet column up to the
 // full-screen /app/contracts workspace.
 // =============================================================================
@@ -32,61 +32,37 @@ $tpl-accents: (
   @media (min-width: 768px) {
     padding: 24px 24px 56px;
   }
+
+  // Matches WIDE_BREAKPOINT — extra breathing room once the outer app
+  // chrome hands Contracts the full viewport (see app-wrapper.component.ts).
+  @media (min-width: 1100px) {
+    max-width: 1400px;
+    padding: 24px 32px 56px;
+  }
 }
 
-// ── header ───────────────────────────────────────────────────────────────
-.contracts-header {
+.contracts-main {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-
-  h1 {
-    margin: 0;
-    font-size: 22px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    color: var(--white);
-  }
-  p {
-    margin: 0;
-    font-size: 13px;
-    color: var(--gray-60);
-  }
-
-  @media (min-width: 768px) {
-    h1 {
-      font-size: 24px;
-    }
-  }
-}
-
-.header-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  flex-wrap: wrap;
-
-  .header-actions {
-    display: flex;
-    gap: 10px;
-    margin-left: auto;
-    flex-wrap: wrap;
-  }
+  gap: 24px;
+  min-width: 0;
 }
 
 // ── segmented tab control ─────────────────────────────────────────────────
 .seg-tabs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
+  gap: 2px;
   padding: 4px;
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid var(--border-secondary);
   border-radius: 12px;
+  max-width: 100%;
+  box-sizing: border-box;
 
   @media (min-width: 640px) {
     display: inline-grid;
-    grid-auto-columns: minmax(140px, 1fr);
+    grid-auto-columns: minmax(0, 1fr);
     grid-auto-flow: column;
     grid-template-columns: none;
   }
@@ -100,13 +76,20 @@ $tpl-accents: (
   font: inherit;
   font-size: 13px;
   font-weight: 500;
-  padding: 9px 14px;
+  padding: 9px 8px;
   border-radius: 9px;
   cursor: pointer;
   transition:
     color 0.15s,
     background 0.15s;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  row-gap: 2px;
+  flex-wrap: wrap;
+  min-width: 0;
+  text-align: center;
 
   &:hover {
     color: var(--gray-75);
@@ -115,6 +98,45 @@ $tpl-accents: (
     background: rgba(111, 199, 186, 0.15);
     color: var(--white);
     box-shadow: inset 0 0 0 1px var(--kaspa-20);
+  }
+}
+
+.seg-tab-label {
+  overflow-wrap: break-word;
+  white-space: normal;
+  min-width: 0;
+}
+
+.seg-tab-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--gray-60);
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.seg-tab.active .seg-tab-badge {
+  background: rgba(111, 199, 186, 0.2);
+  color: var(--kaspa-20);
+}
+
+// ── dashboard toolbar (create + search) ────────────────────────────────────
+.dashboard-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  .dashboard-search {
+    flex: 1;
+    min-width: 220px;
   }
 }
 
@@ -127,11 +149,41 @@ $tpl-accents: (
 
   .filter-chips {
     display: flex;
+    flex: 1 1 auto;
     gap: 6px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    min-width: 0;
+    max-width: 100%;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+    // Room for the scrollbar so it doesn't clip the chips' bottom border.
+    padding-bottom: 4px;
+    margin-bottom: -4px;
+
+    &::-webkit-scrollbar {
+      height: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: var(--gray-30);
+      border-radius: 4px;
+    }
   }
   .filter-spacer {
     margin-left: auto;
+  }
+
+  // kc-button's "m" size variant enforces a 300px min-width on its inner
+  // .kc-button element (a ui-kit design-token default meant for standalone
+  // CTAs), which overflows this row's available space on narrow (320px)
+  // viewports since it's not opted into [isFullWidth] here. Let it hug its
+  // own content instead.
+  kc-button {
+    flex-shrink: 0;
+    ::ng-deep .kc-button {
+      min-width: 0;
+    }
   }
 }
 
@@ -148,6 +200,7 @@ $tpl-accents: (
   color: var(--gray-60);
   transition: all 0.15s;
   white-space: nowrap;
+  flex-shrink: 0;
 
   &:hover {
     color: var(--gray-75);
@@ -281,6 +334,16 @@ $tpl-accents: (
     width: 22px;
     height: 22px;
   }
+
+  // Covers standalone icons that carry [data-tpl] directly (e.g. the step-2
+  // header icon). Icons nested inside an already-accented ancestor
+  // (.contract-card, .detail-header, .template-card) inherit --tpl-accent
+  // from the parent instead.
+  @each $name, $color in $tpl-accents {
+    &[data-tpl="#{$name}"] {
+      --tpl-accent: #{$color};
+    }
+  }
 }
 
 .card-title-wrap {
@@ -329,6 +392,30 @@ $tpl-accents: (
   }
   .stat-value.sm {
     font-size: 14px;
+  }
+}
+
+.card-id {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+
+  .card-id-label {
+    font-size: 10px;
+    color: var(--gray-45);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+  }
+  .card-id-value {
+    font-size: 11px;
+    color: var(--gray-60);
+    font-family: var(--font-mono, monospace);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
   }
 }
 
@@ -495,12 +582,33 @@ $tpl-accents: (
   @media (min-width: 768px) {
     padding: 22px;
   }
+
+  @each $name, $color in $tpl-accents {
+    &[data-tpl="#{$name}"] {
+      --tpl-accent: #{$color};
+    }
+  }
 }
 .detail-title-row {
   display: flex;
   align-items: flex-start;
   gap: 14px;
   flex-wrap: wrap;
+}
+// Flex basis (not just min-width: 0) so this column wraps the Share/Close
+// buttons to their own line on narrow viewports instead of shrinking the
+// title down to a near-zero-width, one-letter-per-line sliver.
+.detail-title-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 160px;
+  min-width: 0;
+}
+.detail-title-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 .detail-title {
   margin: 0;
@@ -549,14 +657,46 @@ $tpl-accents: (
   }
 }
 
+.identifiers-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.identifier {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 220px;
+
+  .identifier-label {
+    font-size: 11px;
+    color: var(--gray-45);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .identifier-value-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .identifier-value {
+    font-size: 12px;
+    color: var(--gray-75);
+    font-family: var(--font-mono, monospace);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+}
+
 .detail-cols {
   display: grid;
   gap: 16px;
   align-items: start;
   grid-template-columns: 1fr;
-  @media (min-width: 900px) {
-    grid-template-columns: 1fr 1fr;
-  }
 }
 .detail-col {
   display: flex;
@@ -635,6 +775,12 @@ $tpl-accents: (
   &:disabled .ai-title {
     color: var(--gray-45);
   }
+
+  .ai-lock {
+    margin-left: auto;
+    flex-shrink: 0;
+    opacity: 0.6;
+  }
 }
 
 // participants
@@ -652,17 +798,7 @@ $tpl-accents: (
   border-radius: 9px;
   padding: 9px 11px;
   .p-avatar {
-    width: 26px;
-    height: 26px;
     flex-shrink: 0;
-    border-radius: 7px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: 600;
-    background: rgba(111, 199, 186, 0.15);
-    color: var(--kaspa-20);
   }
   .p-body {
     display: flex;
@@ -731,11 +867,13 @@ $tpl-accents: (
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 .tl-action {
   font-size: 13px;
   font-weight: 500;
   color: var(--white);
+  flex-shrink: 0;
 }
 .tl-when {
   font-size: 11px;
@@ -752,71 +890,43 @@ $tpl-accents: (
   text-decoration: none;
   font-family: var(--font-mono, monospace);
   margin-left: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   &:hover {
     text-decoration: underline;
   }
 }
 
 // ── wizard ─────────────────────────────────────────────────────────────
-.stepper {
+.deploy-stepper {
   display: flex;
   align-items: center;
+  width: 100%;
   gap: 8px;
 }
-.step {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.deploy-stepper__item {
   flex: 1;
   min-width: 0;
-}
-.step-dot {
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  background: var(--gray-15);
-  color: var(--gray-45);
-  border: 1px solid var(--border-secondary);
-}
-.step-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--gray-45);
-  white-space: nowrap;
-}
-.step-line {
-  flex: 1;
-  height: 1px;
-  background: var(--border-secondary);
-}
-.step.active .step-dot {
-  background: var(--kaspa-20);
-  color: #07211d;
-  border-color: var(--kaspa-20);
-}
-.step.active .step-label {
-  color: var(--white);
-}
-.step.done .step-dot {
-  background: rgba(111, 199, 186, 0.2);
-  color: var(--kaspa-20);
-  border-color: var(--kaspa-20);
-}
-.step.done .step-label {
-  color: var(--kaspa-20);
-}
-@media (max-width: 560px) {
-  .step-label {
-    display: none;
+
+  ::ng-deep .stepper-progress {
+    flex: 1;
+    min-width: 0;
   }
-  .step:not(.active) .step-label {
-    display: none;
+
+  ::ng-deep .stepper-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  &--last {
+    flex: 0 0 auto;
+
+    ::ng-deep .stepper-progress {
+      display: none;
+    }
   }
 }
 
@@ -840,11 +950,16 @@ $tpl-accents: (
   transition: all 0.15s;
 
   &:hover {
-    border-color: var(--kaspa-20);
+    border-color: var(--tpl-accent, var(--kaspa-20));
     background: rgba(255, 255, 255, 0.04);
   }
   &.custom {
     border-style: dashed;
+  }
+  @each $name, $color in $tpl-accents {
+    &[data-tpl="#{$name}"] {
+      --tpl-accent: #{$color};
+    }
   }
   .tc-body {
     display: flex;
@@ -870,7 +985,7 @@ $tpl-accents: (
     height: 18px;
   }
   &:hover .tc-chevron {
-    color: var(--kaspa-20);
+    color: var(--tpl-accent, var(--kaspa-20));
   }
 }
 
@@ -1181,6 +1296,17 @@ $tpl-accents: (
   &:hover {
     border-color: rgba(255, 255, 255, 0.15);
   }
+  > a,
+  > span:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  > span:last-child {
+    flex-shrink: 0;
+  }
 }
 .pubkey-display {
   background: rgba(255, 204, 0, 0.08);
@@ -1212,11 +1338,6 @@ $tpl-accents: (
     border-color: var(--kaspa-20);
   }
 }
-.active-function {
-  border-color: var(--kaspa-20) !important;
-  background: rgba(111, 199, 186, 0.15) !important;
-}
-
 .max-text {
   display: flex;
   align-items: center;
@@ -1252,6 +1373,7 @@ $tpl-accents: (
 }
 .text-truncate {
   max-width: 100%;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1274,6 +1396,34 @@ $tpl-accents: (
 }
 .fw-bold {
   font-weight: 600;
+}
+
+// kc-button's "m" size variant enforces a 300px min-width on its inner
+// .kc-button element (an ui-kit design-token default sized for standalone
+// CTAs). Wherever a kc-button sits inline next to an input or alongside
+// other buttons in this page (instead of opting into [isFullWidth]), that
+// fixed minimum overflows the row on narrow (320px) viewports. Let those
+// buttons hug their own content instead.
+.flex.gap-8.align-items-end.wrap kc-button,
+.flex.gap-8.wrap kc-button,
+.flex.align-items-center.gap-8 kc-button {
+  ::ng-deep .kc-button {
+    min-width: 0;
+  }
+}
+
+// Active function button highlight — kc-button's host element has no
+// border-radius of its own (the rounding lives on its inner .kc-button),
+// so styling the host directly draws a sharp-cornered box around a rounded
+// button. Target the inner element instead so the highlight follows the
+// button's actual corners.
+.active-function {
+  ::ng-deep .kc-button {
+    border-color: var(--kaspa-20) !important;
+    background: rgba(111, 199, 186, 0.22) !important;
+    box-shadow: 0 0 0 2px rgba(111, 199, 186, 0.18) !important;
+    color: #fff !important;
+  }
 }
 .cursor-pointer {
   cursor: pointer;

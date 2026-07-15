@@ -28,11 +28,15 @@
           somewhere safe.
         </p>
       </div>
-      <form [formGroup]="passwordForm" (ngSubmit)="onSubmit()">
-        <div class="flex column gap-4">
+      <form
+        class="full-width"
+        [formGroup]="passwordForm"
+        (ngSubmit)="onSubmit()"
+      >
+        <div class="flex column gap-4 full-width">
           <kc-input
             formControlName="password"
-            [label]="'Enter your password'"
+            [infoLabel]="{ label: 'Enter your password' }"
             [placeholder]="'Password'"
             [type]="passwordType()"
             [isValid]="!isInvalid('password')"
@@ -42,14 +46,14 @@
               <kc-icon iconClass="{{ passwordIcon() }}" [size]="'xs'" />
             </div>
           </kc-input>
-          @if (isInvalid('password') && getPasswordErrorMessage()) {
+          @if (isInvalid("password") && getPasswordErrorMessage()) {
             <span class="kc-input-error-text">{{
               getPasswordErrorMessage()
             }}</span>
           }
           <kc-input
             formControlName="confirmPassword"
-            [label]="'Confirm your password'"
+            [infoLabel]="{ label: 'Confirm your password' }"
             [placeholder]="'Confirm password'"
             [type]="passwordConfirmType()"
             [isValid]="!isInvalid('confirmPassword')"
@@ -63,7 +67,9 @@
               <kc-icon [iconClass]="passwordConfirmIcon()" [size]="'xs'" />
             </div>
           </kc-input>
-          @if (isInvalid('confirmPassword') && getConfirmPasswordErrorMessage()) {
+          @if (
+            isInvalid("confirmPassword") && getConfirmPasswordErrorMessage()
+          ) {
             <span class="kc-input-error-text">{{
               getConfirmPasswordErrorMessage()
             }}</span>

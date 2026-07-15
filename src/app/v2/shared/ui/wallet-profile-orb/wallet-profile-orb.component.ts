@@ -1,4 +1,11 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { WalletService } from '../../../../services/wallet.service';
 import { KaspaL1NetworkService } from '../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
 
@@ -72,10 +79,17 @@ function computeL1Avatar(address: string): L1AvatarConfig {
   imports: [],
   templateUrl: './wallet-profile-orb.component.html',
   styleUrl: './wallet-profile-orb.component.scss',
+  host: {
+    '[style.--orb-size.px]': 'sizePx()',
+  },
 })
 export class WalletProfileOrbComponent {
   private walletService = inject(WalletService);
   private l1NetworkService = inject(KaspaL1NetworkService);
+
+  // When unset, falls back to the currently active wallet's address (original behavior).
+  readonly address = input<string | undefined>(undefined);
+  readonly sizePx = input<number>(38);
 
   // Reactive: re-derives on L1 network switch; null when the selected
   // network has no KRC721 cache stream (e.g. TN12) so no broken URL is built.
@@ -88,10 +102,18 @@ export class WalletProfileOrbComponent {
   });
 
   isL2 = this.walletService.getIsL2DisplaySignal();
-  walletAddress = this.walletService.getCurrentDisplayWalletAddressAsString;
+  walletAddress = computed(
+    () =>
+      this.address() ??
+      this.walletService.getCurrentDisplayWalletAddressAsString(),
+  );
 
-  avatarConfig = computed((): AvatarConfig => computeAvatar(this.walletAddress()));
-  l1AvatarConfig = computed((): L1AvatarConfig => computeL1Avatar(this.walletAddress()));
+  avatarConfig = computed((): AvatarConfig =>
+    computeAvatar(this.walletAddress()),
+  );
+  l1AvatarConfig = computed((): L1AvatarConfig =>
+    computeL1Avatar(this.walletAddress()),
+  );
   l1AvatarError = signal(false);
 
   constructor() {

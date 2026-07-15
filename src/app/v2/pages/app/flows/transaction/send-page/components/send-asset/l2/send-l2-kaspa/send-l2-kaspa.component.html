@@ -34,7 +34,7 @@
     <!-- Amount Input -->
     <div class="form-field">
       <kc-number-input
-        [label]="'Amount of Kaspa'"
+        [infoLabel]="{ label: 'Amount of Kaspa' }"
         [placeholder]="'0.00'"
         [available]="availableBalance().toString()"
         [isValid]="isAmountValid"

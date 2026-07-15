@@ -26,6 +26,14 @@
   }
 }
 
+// The ui-kit snackbar container ships with a fixed z-index (1002) that sits
+// below some of our full-screen dialogs/overlays (e.g. iframe account
+// selection at 10000), causing notifications to render behind their blur
+// backdrop. Force it above every dialog/overlay z-index used in this app.
+::ng-deep .kc-snackbars-container {
+  z-index: 100000 !important;
+}
+
 .not-supported-url {
   font-size: 2rem;
   font-weight: bold;

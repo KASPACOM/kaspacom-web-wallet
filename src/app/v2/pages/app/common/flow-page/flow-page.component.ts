@@ -62,6 +62,7 @@ import {
 export class FlowPageComponent {
   readonly isOpen = input(false);
   readonly title = input('');
+  readonly subtitle = input('');
   readonly canNavigateBack = input(false);
   readonly canClose = input(false);
   readonly showTitle = input(true);

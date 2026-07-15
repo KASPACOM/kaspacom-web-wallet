@@ -145,9 +145,9 @@
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function spend12(sig s1, sig s2) {\r\n        require(checkSig(s1, key1));\r\n        require(checkSig(s2, key2));\r\n    }",
+        "span": "entrypoint function spend12(sig s1, sig s2) {\n        require(checkSig(s1, key1));\n        require(checkSig(s2, key2));\n    }",
         "name_span": "spend12",
-        "body_span": "require(checkSig(s1, key1));\r\n        require(checkSig(s2, key2));"
+        "body_span": "require(checkSig(s1, key1));\n        require(checkSig(s2, key2));"
       },
       {
         "name": "spend13",
@@ -233,9 +233,9 @@
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function spend13(sig s1, sig s3) {\r\n        require(checkSig(s1, key1));\r\n        require(checkSig(s3, key3));\r\n    }",
+        "span": "entrypoint function spend13(sig s1, sig s3) {\n        require(checkSig(s1, key1));\n        require(checkSig(s3, key3));\n    }",
         "name_span": "spend13",
-        "body_span": "require(checkSig(s1, key1));\r\n        require(checkSig(s3, key3));"
+        "body_span": "require(checkSig(s1, key1));\n        require(checkSig(s3, key3));"
       },
       {
         "name": "spend23",
@@ -321,9 +321,9 @@
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function spend23(sig s2, sig s3) {\r\n        require(checkSig(s2, key2));\r\n        require(checkSig(s3, key3));\r\n    }",
+        "span": "entrypoint function spend23(sig s2, sig s3) {\n        require(checkSig(s2, key2));\n        require(checkSig(s3, key3));\n    }",
         "name_span": "spend23",
-        "body_span": "require(checkSig(s2, key2));\r\n        require(checkSig(s3, key3));"
+        "body_span": "require(checkSig(s2, key2));\n        require(checkSig(s3, key3));"
       },
       {
         "name": "topUp",
@@ -441,12 +441,12 @@
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function topUp() {\r\n        require(this.activeInputIndex == 0);\r\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\r\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\r\n    }",
+        "span": "entrypoint function topUp() {\n        require(this.activeInputIndex == 0);\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\n    }",
         "name_span": "topUp",
-        "body_span": "require(this.activeInputIndex == 0);\r\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\r\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);"
+        "body_span": "require(this.activeInputIndex == 0);\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);"
       }
     ],
-    "span": "contract MultiSigVault(pubkey key1, pubkey key2, pubkey key3) {\r\n    // Key1 + Key2 sign\r\n    entrypoint function spend12(sig s1, sig s2) {\r\n        require(checkSig(s1, key1));\r\n        require(checkSig(s2, key2));\r\n    }\r\n\r\n    // Key1 + Key3 sign\r\n    entrypoint function spend13(sig s1, sig s3) {\r\n        require(checkSig(s1, key1));\r\n        require(checkSig(s3, key3));\r\n    }\r\n\r\n    // Key2 + Key3 sign\r\n    entrypoint function spend23(sig s2, sig s3) {\r\n        require(checkSig(s2, key2));\r\n        require(checkSig(s3, key3));\r\n    }\r\n\r\n    entrypoint function topUp() {\r\n        require(this.activeInputIndex == 0);\r\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\r\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\r\n    }\r\n}",
+    "span": "contract MultiSigVault(pubkey key1, pubkey key2, pubkey key3) {\n    // Key1 + Key2 sign\n    entrypoint function spend12(sig s1, sig s2) {\n        require(checkSig(s1, key1));\n        require(checkSig(s2, key2));\n    }\n\n    // Key1 + Key3 sign\n    entrypoint function spend13(sig s1, sig s3) {\n        require(checkSig(s1, key1));\n        require(checkSig(s3, key3));\n    }\n\n    // Key2 + Key3 sign\n    entrypoint function spend23(sig s2, sig s3) {\n        require(checkSig(s2, key2));\n        require(checkSig(s3, key3));\n    }\n\n    entrypoint function topUp() {\n        require(this.activeInputIndex == 0);\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\n    }\n}",
     "name_span": "MultiSigVault"
   },
   "abi": [

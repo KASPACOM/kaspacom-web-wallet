@@ -3,10 +3,7 @@
   @if (isLoading() || isRefreshing()) {
     <app-skeleton [height]="'76px'" [width]="'300px'" [fullRound]="false" />
   } @else {
-    <div
-      class="balance-container__value text-white typo-title-6 fade-in"
-      style="font-size: 4rem"
-    >
+    <div class="balance-container__value text-white typo-title-6 fade-in">
       ${{ usdBalance() | number: "1.2" }}
     </div>
   }

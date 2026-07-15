@@ -15,8 +15,8 @@
   </div>
 
   @if (
-    wallet?.getBalanceSignal() !== undefined &&
-    wallet?.getBalanceSignal()!() !== undefined
+    wallet.getBalanceSignal() !== undefined &&
+    wallet.getBalanceSignal()!() !== undefined
   ) {
     <ul>
       @for (utxo of wallet.getBalanceSignal()()!.utxoEntries; track utxo) {

@@ -48,6 +48,7 @@ import {
   PartiallySignedSpend,
   SpendOutput,
 } from '../../../../../services/covenant/covenant-sdk/types';
+import type { CovenantFunctionArg } from '../../../../../services/covenant/covenant-sdk/covenant';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import {
   CONTRACT_TEMPLATES,
@@ -411,8 +412,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   interactInputAmount = '';
   interactOutputAddress = '';
   interactResolvedOutputAddress: string | null = null;
-  newHeirAddress = '';
-  newHeirResolvedAddress: string | null = null;
 
   // Lookup form
   lookupContractJson = '';
@@ -491,9 +490,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       } as any);
     }
 
-    // Inject 'changeHeir' action for Dead Man's Switch contracts. This entrypoint
-    // does not exist on-chain yet — see isChangeHeirFunction() — the button is a
-    // UI stub until the DMS contract supports mutable heir state.
+    // Inject 'changeHeir' action for Dead Man's Switch contracts in case the
+    // compiled ABI predates this entrypoint being added to the template.
     if (
       contract.contract_name === 'DeadManSwitch' &&
       !funcs.some((f) => f.name === 'changeHeir')
@@ -2485,7 +2483,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private selectDefaultFunctionForContract(contractName: string) {
     const normalized = this.normalizeContractName(contractName);
     const preferred: Record<string, string[]> = {
-      DeadManSwitch: ['keepAlive', 'withdraw', 'claim'],
+      DeadManSwitch: ['keepAlive', 'changeHeir', 'topUp', 'claim'],
       TimeLockVault: ['spend', 'recover', 'withdraw'],
       MultiSigVault: ['spend12', 'spend13', 'spend23'],
       EscrowWithArbiter: ['release', 'refund', 'arbitrate'],
@@ -2992,6 +2990,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           owner: requireArg('owner'),
           heir: requireArg('heir'),
           expiry:
+            byName.get('checkInDeadline') ??
+            byName.get('deadline') ??
+            byName.get('initDeadline') ??
             byName.get('inactivityPeriodDays') ??
             byName.get('inactivityPeriod') ??
             requireArg('checkInDeadline'),
@@ -3413,15 +3414,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // TODO(covenant): changeHeir is a UI stub — see isChangeHeirFunction() for why
-    // there's no on-chain call to make yet.
-    if (this.isChangeHeirFunction(functionName)) {
-      this.interactError.set(
-        "Change Heir isn't available yet — it requires a Dead Man's Switch contract update to support changing the heir after deployment. Check with the team for status.",
-      );
-      return;
-    }
-
     try {
       this.isInteracting.set(true);
 
@@ -3432,7 +3424,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
       // Build outputs based on function type
       let outputs: SpendOutput[];
-      let extraArgsOverride: Record<string, bigint> | undefined;
+      let extraArgsOverride: Record<string, CovenantFunctionArg> | undefined;
       let useSenderFeeOverride: boolean | undefined;
 
       if (this.isTopUpFunction(functionName)) {
@@ -3529,6 +3521,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           }
           return;
         }
+      } else if (this.isDmsChangeHeir()) {
+        await this.executeDmsChangeHeir(
+          compiled,
+          contractJson,
+          outpoint,
+          inputAmount,
+          outputAddress,
+        );
+        return;
       } else if (this.functionRequiresOutput(functionName)) {
         // Withdrawal function — validate user-provided output
         if (!outputAddress) {
@@ -3604,6 +3605,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
       // Multi-sig functions: build partial spend instead of broadcasting
       if (this.isMultiSigFunction(functionName)) {
+        const partialExtraArgs = this.collectExtraArgs(compiled, functionName);
         const approvalResult =
           await this.walletActionService.validateAndApproveAction({
             type: WalletActionType.COVENANT_SPEND,
@@ -3615,7 +3617,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
               functionName,
               outputs,
               extraArgs:
-                Object.keys(extraArgs).length > 0 ? extraArgs : undefined,
+                Object.keys(partialExtraArgs).length > 0
+                  ? partialExtraArgs
+                  : undefined,
               useSenderFee: false,
             },
           });
@@ -3638,7 +3642,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           outputs,
           privateKey,
           approvalResult.priorityFee,
-          extraArgs,
+          partialExtraArgs,
         );
         const partialJson = JSON.stringify(partial, null, 2);
         this.partialSpendJson.set(partialJson);
@@ -3790,11 +3794,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   /**
    * Execute a Dead Man's Switch keepAlive:
    *   1. Validates the new expiry input.
-   *   2. Extracts owner + heir pubkeys from the current compiled script.
-   *   3. Generates a new DMS compiled JSON with the same owner/heir but new expiry.
-   *   4. Spends the old DMS UTXO via keepAlive, sending funds to the new DMS address.
-   *      The existing covenantId is attached via CovenantBinding to preserve lineage.
-   *   5. Marks old registry entry as spent, registers a new entry for the continuation.
+   *   2. Builds a continuation script with the same owner/heir and new deadline.
+   *   3. Calls keepAlive(sig, newDeadline), sending funds to the continuation script.
+   *   4. Updates the local outpoint for the continued covenant UTXO.
    */
   private async executeDmsKeepAlive(
     compiled: CompiledContract,
@@ -3842,19 +3844,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       );
       return;
     }
-    const fallbackPubkeys = this.extractPubkeysFromScript(compiled);
-    const owner =
-      (await this.extractTemplatePubkeyHex(
-        compiled,
-        'dead-mans-switch',
-        'owner',
-      )) || fallbackPubkeys[0];
-    const heir =
-      (await this.extractTemplatePubkeyHex(
-        compiled,
-        'dead-mans-switch',
-        'heir',
-      )) || fallbackPubkeys[1];
+    const owner = await this.extractDmsPubkeyHex(compiled, 'owner');
+    const heir = await this.extractDmsPubkeyHex(compiled, 'heir');
     const ownerAddress = owner ? this.pubkeyToAddress(owner) : '';
     const heirAddress = heir ? this.pubkeyToAddress(heir) : '';
     if (!ownerAddress || !heirAddress) {
@@ -3864,22 +3855,21 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const template = this.templateById('dead-mans-switch');
-    if (!template) {
-      this.interactError.set("Dead Man's Switch template is unavailable");
-      return;
-    }
-
-    const nextCompiled = await this.compileTemplateWithFieldValues(template, {
-      owner: ownerAddress,
-      heir: heirAddress,
-      expiry: this.dmsNewExpiry,
+    const nextCompiled = await this.compileDmsContinuation({
+      ownerAddress,
+      heirAddress,
+      deadlineMs: newDeadline,
     });
     const nextContractJson = JSON.stringify(nextCompiled, null, 2);
     const nextContractAddress =
       this.covenantService.getContractAddress(nextCompiled);
+    const payloadHex = this.buildDmsPayloadHex({
+      ownerAddress,
+      heirAddress,
+      deadlineMs: newDeadline,
+    });
 
-    // Build spend output: full amount → new DMS address, with CovenantBinding if we have a covenantId
+    // Build spend output: full amount -> updated-state DMS address, with CovenantBinding if we have a covenantId.
     const spendOutputs: SpendOutput[] = [
       {
         address: nextContractAddress,
@@ -3888,7 +3878,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       },
     ];
 
-    // 5. Execute the keepAlive spend on the old contract
     const result = await this.runCovenantSpendAction(
       compiled,
       contractJson,
@@ -3899,6 +3888,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       { newDeadline },
       oldCovenantId,
       true,
+      payloadHex,
     );
     if (!result) return;
 
@@ -3924,6 +3914,193 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.loadContracts();
   }
 
+  private async executeDmsChangeHeir(
+    compiled: CompiledContract,
+    contractJson: string,
+    outpoint: CovenantOutpoint,
+    inputAmount: bigint,
+    newHeirAddress: string,
+  ): Promise<void> {
+    this.interactError.set(null);
+
+    if (!newHeirAddress) {
+      this.interactError.set('New heir wallet address is required');
+      return;
+    }
+
+    const covenantId = this.selectedContract()?.covenantId;
+    if (!covenantId) {
+      this.interactError.set(
+        'Cannot change heir until this contract covenant ID is known. Refresh/import it from the indexer first.',
+      );
+      return;
+    }
+
+    let newHeir: Uint8Array;
+    try {
+      newHeir = Uint8Array.from(
+        this.templatePatcher.kaspaAddressToPubkeyBytes(newHeirAddress),
+      );
+    } catch {
+      this.interactError.set('Enter a valid new heir wallet address');
+      return;
+    }
+
+    const owner = await this.extractDmsPubkeyHex(compiled, 'owner');
+    const ownerAddress = owner ? this.pubkeyToAddress(owner) : '';
+    const currentDeadline = await this.extractTemplateIntField(
+      compiled,
+      'dead-mans-switch',
+      'initDeadline',
+    );
+    if (!ownerAddress || currentDeadline === undefined) {
+      this.interactError.set(
+        'Could not derive owner/deadline from contract script',
+      );
+      return;
+    }
+
+    const nextCompiled = await this.compileDmsContinuation({
+      ownerAddress,
+      heirAddress: newHeirAddress,
+      deadlineMs: currentDeadline,
+    });
+    const nextContractJson = JSON.stringify(nextCompiled, null, 2);
+    const nextContractAddress =
+      this.covenantService.getContractAddress(nextCompiled);
+    const payloadHex = this.buildDmsPayloadHex({
+      ownerAddress,
+      heirAddress: newHeirAddress,
+      deadlineMs: currentDeadline,
+    });
+
+    const result = await this.runCovenantSpendAction(
+      compiled,
+      contractJson,
+      outpoint,
+      inputAmount,
+      'changeHeir',
+      [
+        {
+          address: nextContractAddress,
+          amount: inputAmount,
+          covenantId,
+        },
+      ],
+      { newHeir },
+      covenantId,
+      true,
+      payloadHex,
+    );
+    if (!result) return;
+
+    this.interactResult.set({ txid: result.txid, functionName: 'changeHeir' });
+
+    if (this.selectedContractId()) {
+      this.registryService.updateContract(this.selectedContractId(), {
+        status: 'active',
+        compiledJson: nextContractJson,
+        contractAddress: nextContractAddress,
+        accessRoles: this.parseAccessRoles(nextCompiled),
+        outpoint: { txid: result.txid, vout: 0 },
+        amountSompi: inputAmount.toString(),
+        lastChecked: Date.now(),
+      });
+    }
+    this.interactContractJson.set(nextContractJson);
+    this.interactOutpointTxid = result.txid;
+    this.interactOutpointVout = '0';
+    this.interactInputAmount = inputAmount.toString();
+    this.interactOutputAddress = '';
+    this.interactResolvedOutputAddress = null;
+
+    this.loadContracts();
+  }
+
+  private async compileDmsContinuation(values: {
+    ownerAddress: string;
+    heirAddress: string;
+    deadlineMs: bigint;
+  }): Promise<CompiledContract> {
+    const template = this.templateById('dead-mans-switch');
+    if (!template) {
+      throw new Error("Dead Man's Switch template is unavailable");
+    }
+
+    const compiled = await firstValueFrom(
+      this.http.get<any>(template.assetPath),
+    );
+    const descriptor = this.templatePatcher.extractPatchDescriptor(
+      compiled,
+      template.placeholderArgs,
+    );
+    return this.templatePatcher.applyPatch(compiled, descriptor, [
+      this.bytesArg(
+        this.templatePatcher.kaspaAddressToPubkeyBytes(values.ownerAddress),
+      ),
+      this.bytesArg(
+        this.templatePatcher.kaspaAddressToPubkeyBytes(values.heirAddress),
+      ),
+      this.intArg(Number(values.deadlineMs)),
+    ]) as CompiledContract;
+  }
+
+  private async extractDmsPubkeyHex(
+    compiled: CompiledContract,
+    field: 'owner' | 'heir',
+  ): Promise<string | undefined> {
+    if (field === 'owner') {
+      return this.extractTemplatePubkeyHex(
+        compiled,
+        'dead-mans-switch',
+        'owner',
+      );
+    }
+
+    return (
+      (await this.extractTemplatePubkeyHex(
+        compiled,
+        'dead-mans-switch',
+        'initHeir',
+      )) ||
+      (await this.extractTemplatePubkeyHex(
+        compiled,
+        'dead-mans-switch',
+        'heir',
+      ))
+    );
+  }
+
+  private buildDmsPayloadHex(values: {
+    ownerAddress: string;
+    heirAddress: string;
+    deadlineMs: bigint;
+  }): string {
+    return this.stringToHex(
+      JSON.stringify({
+        tn10: {
+          v: 1,
+          tmpl: 'DeadManSwitch',
+          args: [
+            { name: 'owner', type: 'address', value: values.ownerAddress },
+            { name: 'heir', type: 'address', value: values.heirAddress },
+            {
+              name: 'checkInDeadline',
+              type: 'blueScore',
+              value: values.deadlineMs.toString(),
+            },
+          ],
+        },
+      }),
+    );
+  }
+
+  private stringToHex(value: string): string {
+    return Array.from(new TextEncoder().encode(value))
+      .map((byte) => byte.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
   /** Convert a hex string to Uint8Array */
   private hexStringToBytes(hex: string): Uint8Array {
     const normalized = hex.replace(/^0x/i, '');
@@ -3941,7 +4118,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     inputAmountSompi: bigint,
     functionName: string,
     outputs: SpendOutput[],
-    extraArgs?: Record<string, bigint>,
+    extraArgs?: Record<string, CovenantFunctionArg>,
     covenantId?: string,
     useSenderFee = false,
     transactionPayloadHex?: string,
@@ -4357,18 +4534,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * TODO(covenant): changeHeir is UI-only for now. The DMS contract bakes `heir`
-   * into the constructor script bytes rather than tracking it as covenant state
-   * (unlike `deadline`, which keepAlive threads through validateOutputState), so
-   * there is no on-chain entrypoint to call yet. Wire this up once the DMS
-   * SilverScript template adds a real changeHeir entrypoint (or a heir-changing
-   * redeploy path is agreed) — see the early return in interactContract().
-   */
-  isChangeHeirFunction(fnName: string): boolean {
-    return fnName === 'changeHeir';
-  }
-
-  /**
    * Returns true when the current function is DMS keepAlive (requires special handling).
    * DMS keepAlive must produce output to a *new* DMS contract (with updated expiry),
    * not to the same contract address.
@@ -4376,6 +4541,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   isDmsKeepAlive(): boolean {
     const contract = this.parsedInteractContract();
     if (!contract || this.selectedFunction !== 'keepAlive') return false;
+    return (contract.contract_name || '')
+      .toLowerCase()
+      .replace(/[\s_-]/g, '')
+      .includes('deadman');
+  }
+
+  isDmsChangeHeir(): boolean {
+    const contract = this.parsedInteractContract();
+    if (!contract || this.selectedFunction !== 'changeHeir') return false;
     return (contract.contract_name || '')
       .toLowerCase()
       .replace(/[\s_-]/g, '')
@@ -4402,7 +4576,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       !!fnName &&
       !this.REDEPLOY_FUNCTIONS.has(fnName) &&
       !this.isTopUpFunction(fnName) &&
-      !this.isChangeHeirFunction(fnName)
+      !this.isDmsChangeHeir()
     );
   }
 
@@ -4421,10 +4595,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.extraArgValues = {};
     this.dmsNewExpiry = '';
     this.topUpAmount = '';
-    this.newHeirAddress = '';
-    this.newHeirResolvedAddress = null;
 
-    if (this.isTopUpFunction(name) || this.isChangeHeirFunction(name)) {
+    if (this.isTopUpFunction(name) || this.isDmsChangeHeir()) {
       this.interactOutputAddress = '';
       this.interactOutputAmount = '';
     } else if (this.functionRequiresOutput(name)) {
@@ -4608,35 +4780,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       title: 'Scan recipient address',
       onSuccess: (address: string) =>
         this.onInteractOutputAddressChange(address),
-      onError: (error: string) =>
-        console.error('[Contracts] QR scanning error:', error),
-    });
-  }
-
-  onNewHeirAddressChange(value: string) {
-    this.newHeirAddress = value || '';
-    this.newHeirResolvedAddress = null;
-    this.interactError.set(null);
-  }
-
-  onNewHeirAddressResolved(result: any) {
-    if (result?.effectiveAddress) {
-      this.newHeirResolvedAddress = result.effectiveAddress;
-    } else {
-      this.newHeirResolvedAddress = null;
-    }
-  }
-
-  onNewHeirQrClick() {
-    if (this.qrScannerService.isCurrentlyScanning()) {
-      this.qrScannerService.stopScanning();
-      return;
-    }
-
-    this.qrScannerService.startScanning({
-      scannerId: 'qr-scanner-covenant-change-heir',
-      title: 'Scan new heir address',
-      onSuccess: (address: string) => this.onNewHeirAddressChange(address),
       onError: (error: string) =>
         console.error('[Contracts] QR scanning error:', error),
     });

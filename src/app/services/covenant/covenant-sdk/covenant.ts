@@ -33,7 +33,8 @@ import {
 const SUBNETWORK_ID_NATIVE = '0000000000000000000000000000000000000000';
 const DUMMY_SIGNATURE_BYTES = new Uint8Array(65);
 
-type SupportedSigArg = Uint8Array | bigint;
+export type CovenantFunctionArg = Uint8Array | bigint;
+type SupportedSigArg = CovenantFunctionArg;
 
 function toScriptBytes(compiled: CompiledContract): Uint8Array {
   return Uint8Array.from(compiled.script);
@@ -254,7 +255,7 @@ function resolveSpendFunctionArgs(
   functionName: string,
   signature: Uint8Array,
   privateKey: PrivateKey,
-  extraArgs?: Record<string, bigint>,
+  extraArgs?: Record<string, CovenantFunctionArg>,
 ): SupportedSigArg[] {
   const entry = getAbiEntry(compiled, functionName);
   const xOnlyPubkey = hexToBytes(
@@ -266,6 +267,10 @@ function resolveSpendFunctionArgs(
       return signature;
     }
     if (input.type_name === 'pubkey') {
+      const val = extraArgs?.[input.name];
+      if (val instanceof Uint8Array) {
+        return val;
+      }
       return xOnlyPubkey;
     }
     if (input.type_name === 'int' || input.type_name === 'bool') {
@@ -294,7 +299,7 @@ function applyEstimatedSignatureScripts(
   compiled: CompiledContract,
   functionName: string,
   privateKey: PrivateKey,
-  extraArgs?: Record<string, bigint>,
+  extraArgs?: Record<string, CovenantFunctionArg>,
 ): void {
   const functionArgs = resolveSpendFunctionArgs(
     compiled,
@@ -637,7 +642,7 @@ export async function spendContract(
   network: string,
   rpc: RpcClient,
   covenantId?: string,
-  extraArgs?: Record<string, bigint>,
+  extraArgs?: Record<string, CovenantFunctionArg>,
   priorityFee: bigint = 0n,
   useSenderFee: boolean = false,
   transactionPayloadHex?: string,

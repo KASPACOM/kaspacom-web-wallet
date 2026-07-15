@@ -2016,6 +2016,36 @@
           </div>
         }
 
+        @if (isDmsChangeHeir()) {
+          <div class="form-group flex column gap-8">
+            <app-address-smart-input
+              [label]="'New Heir Wallet'"
+              [placeholder]="'Enter heir wallet address or KNS domain'"
+              [isFullWidth]="true"
+              [isValid]="true"
+              [invalidReason]="''"
+              [isDisabled]="isInteracting()"
+              [value]="interactOutputAddress"
+              (valueChange)="onInteractOutputAddressChange($event)"
+              (resolved)="onInteractOutputAddressResolved($event)"
+              (qrClick)="onInteractOutputQrClick()"
+            >
+            </app-address-smart-input>
+          </div>
+
+          <div
+            class="p-12 rounded-lg"
+            style="
+              background: rgba(111, 199, 186, 0.08);
+              border: 1px solid rgba(111, 199, 186, 0.2);
+            "
+          >
+            <span class="text-gray-75 typo-text-2">
+              Funds stay locked in the covenant. Only the heir wallet changes.
+            </span>
+          </div>
+        }
+
         @if (selectedFunction && isTopUpFunction(selectedFunction)) {
           <div class="form-group flex column gap-8">
             <kc-number-input
@@ -2044,41 +2074,11 @@
           </div>
         }
 
-        @if (selectedFunction && isChangeHeirFunction(selectedFunction)) {
-          <div class="form-group flex column gap-8">
-            <app-address-smart-input
-              [label]="'New heir wallet'"
-              [placeholder]="'Enter new beneficiary wallet address or KNS domain'"
-              [isFullWidth]="true"
-              [isValid]="true"
-              [invalidReason]="''"
-              [isDisabled]="isInteracting()"
-              [value]="newHeirAddress"
-              (valueChange)="onNewHeirAddressChange($event)"
-              (resolved)="onNewHeirAddressResolved($event)"
-              (qrClick)="onNewHeirQrClick()"
-            ></app-address-smart-input>
-          </div>
-
-          <div
-            class="p-12 rounded-lg"
-            style="
-              background: rgba(255, 193, 7, 0.08);
-              border: 1px solid rgba(255, 193, 7, 0.2);
-            "
-          >
-            <span class="text-yellow typo-text-2">
-              Not available yet — changing the heir requires an update to the
-              Dead Man's Switch contract itself (the heir is currently fixed at
-              deploy time). This form is a preview of the upcoming flow.
-            </span>
-          </div>
-        }
-
         @if (
           selectedFunction &&
           functionRequiresOutput(selectedFunction) &&
-          !isDmsKeepAlive()
+          !isDmsKeepAlive() &&
+          !isDmsChangeHeir()
         ) {
           <div class="form-group flex column gap-8">
             <app-address-smart-input
@@ -2120,8 +2120,8 @@
           selectedFunction &&
           !functionRequiresOutput(selectedFunction) &&
           !isDmsKeepAlive() &&
-          !isTopUpFunction(selectedFunction) &&
-          !isChangeHeirFunction(selectedFunction)
+          !isDmsChangeHeir() &&
+          !isTopUpFunction(selectedFunction)
         ) {
           <div
             class="p-12 rounded-lg"

@@ -2468,11 +2468,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       let disabledReason: string | null = null;
       if (!existsOnChain) {
         disabledReason = 'Not available on this contract version.';
-      } else if (
-        meta.requiredRole &&
-        currentRole &&
-        currentRole !== meta.requiredRole
-      ) {
+      } else if (meta.requiredRole && currentRole !== meta.requiredRole) {
         disabledReason = `Only the ${meta.requiredRole.toLowerCase()} can do this.`;
       } else {
         disabledReason = meta.extraGuard?.(detail) ?? null;

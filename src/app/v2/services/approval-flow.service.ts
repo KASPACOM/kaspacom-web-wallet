@@ -70,6 +70,11 @@ export class ApprovalFlowService {
   private currentResolve: ((result: ApprovalPageResultParams) => void) | null =
     null;
 
+  // Identifies the current approval instance so a deferred reject scheduled
+  // for a detached page can detect that a newer approval has since started.
+  private approvalInstanceCounter = 0;
+  private currentApprovalInstanceId = 0;
+
   // Signal to track completion events for components to listen to
   private completionSignal = signal<{
     success: boolean;
@@ -102,6 +107,7 @@ export class ApprovalFlowService {
     }
 
     this.currentApprovalConfigSignal.set(config);
+    this.currentApprovalInstanceId = ++this.approvalInstanceCounter;
 
     return new Promise((resolve) => {
       this.currentResolve = resolve;
@@ -238,9 +244,16 @@ export class ApprovalFlowService {
     if (this.pendingDetachReject !== null) {
       clearTimeout(this.pendingDetachReject);
     }
+    const detachedApprovalInstanceId = this.currentApprovalInstanceId;
     this.pendingDetachReject = setTimeout(() => {
       this.pendingDetachReject = null;
-      this.rejectIfPending();
+      // A new approval may have started since this page was detached
+      // (e.g. this one was already resolved and cleaned up while a fresh
+      // action was dispatched before this timer fired) - only reject if
+      // we're still looking at the same approval instance.
+      if (this.currentApprovalInstanceId === detachedApprovalInstanceId) {
+        this.rejectIfPending();
+      }
     }, 0);
   }
 

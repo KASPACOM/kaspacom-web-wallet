@@ -19,6 +19,19 @@ $tpl-accents: (
   default: var(--kaspa-20),
 );
 
+// Applies the per-template accent var to every element that carries
+// [data-tpl] (card, icon, detail header, template picker card). Generated
+// once here instead of once per selector to avoid a 4x blowup of near-
+// identical rules in the compiled output.
+@each $name, $color in $tpl-accents {
+  .contract-card[data-tpl="#{$name}"],
+  .tpl-icon[data-tpl="#{$name}"],
+  .detail-header[data-tpl="#{$name}"],
+  .template-card[data-tpl="#{$name}"] {
+    --tpl-accent: #{$color};
+  }
+}
+
 .contracts-container {
   max-width: 1120px;
   width: 100%;
@@ -48,105 +61,23 @@ $tpl-accents: (
   min-width: 0;
 }
 
-// ── segmented tab control ─────────────────────────────────────────────────
-.seg-tabs {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2px;
-  padding: 4px;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid var(--border-secondary);
-  border-radius: 12px;
-  max-width: 100%;
-  box-sizing: border-box;
+// .seg-tabs/.seg-tab* (segmented tab control) now live in
+// src/styles/shared-ui.scss.
 
-  @media (min-width: 640px) {
-    display: inline-grid;
-    grid-auto-columns: minmax(0, 1fr);
-    grid-auto-flow: column;
-    grid-template-columns: none;
-  }
-}
-
-.seg-tab {
-  appearance: none;
-  border: none;
-  background: transparent;
-  color: var(--gray-60);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  padding: 9px 8px;
-  border-radius: 9px;
-  cursor: pointer;
-  transition:
-    color 0.15s,
-    background 0.15s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  row-gap: 2px;
-  flex-wrap: wrap;
-  min-width: 0;
-  text-align: center;
-
-  &:hover {
-    color: var(--gray-75);
-  }
-  &.active {
-    background: rgba(111, 199, 186, 0.15);
-    color: var(--white);
-    box-shadow: inset 0 0 0 1px var(--kaspa-20);
-  }
-}
-
-.seg-tab-label {
-  overflow-wrap: break-word;
-  white-space: normal;
-  min-width: 0;
-}
-
-.seg-tab-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--gray-60);
-  font-size: 11px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.seg-tab.active .seg-tab-badge {
-  background: rgba(111, 199, 186, 0.2);
-  color: var(--kaspa-20);
-}
-
-// ── dashboard toolbar (create + search) ────────────────────────────────────
-.dashboard-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-
-  .dashboard-search {
-    flex: 1;
-    min-width: 220px;
-  }
-}
-
-// ── filter chips ──────────────────────────────────────────────────────────
+// ── dashboard toolbar (create + search) / filter chips ─────────────────────
+.dashboard-toolbar,
 .filter-row {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+}
+.dashboard-toolbar .dashboard-search {
+  flex: 1;
+  min-width: 220px;
+}
 
+.filter-row {
   .filter-chips {
     display: flex;
     flex: 1 1 auto;
@@ -181,83 +112,12 @@ $tpl-accents: (
   // own content instead.
   kc-button {
     flex-shrink: 0;
-    ::ng-deep .kc-button {
-      min-width: 0;
-    }
   }
 }
 
-.filter-chip {
-  appearance: none;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 7px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid var(--border-secondary);
-  color: var(--gray-60);
-  transition: all 0.15s;
-  white-space: nowrap;
-  flex-shrink: 0;
+// .filter-chip now lives in src/styles/shared-ui.scss.
 
-  &:hover {
-    color: var(--gray-75);
-    border-color: var(--gray-45);
-  }
-  &.active {
-    background: rgba(111, 199, 186, 0.15);
-    border-color: var(--kaspa-20);
-    color: var(--white);
-  }
-}
-
-// ── status toggle (active / history segmented control) ────────────────────
-.status-toggle {
-  display: inline-flex;
-  gap: 2px;
-  padding: 3px;
-  border-radius: 9px;
-  background: var(--gray-15);
-  border: 1px solid var(--border-secondary);
-}
-.status-seg {
-  appearance: none;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 7px;
-  cursor: pointer;
-  background: transparent;
-  color: var(--gray-60);
-  transition: all 0.15s;
-  white-space: nowrap;
-
-  &:hover {
-    color: var(--gray-75);
-  }
-  &.active {
-    background: rgba(111, 199, 186, 0.15);
-    color: var(--white);
-  }
-}
-
-// ── panels ────────────────────────────────────────────────────────────────
-.panel {
-  background: var(--gray-10);
-  border: 1px solid var(--border-secondary);
-  border-radius: 14px;
-  padding: 20px;
-  box-sizing: border-box;
-  min-width: 0;
-
-  @media (min-width: 768px) {
-    padding: 22px;
-  }
-}
+// .status-toggle/.status-seg and .panel now live in src/styles/shared-ui.scss.
 
 // ── contract card grid ──────────────────────────────────────────────────
 .card-grid {
@@ -301,12 +161,6 @@ $tpl-accents: (
   &.is-spent {
     opacity: 0.55;
   }
-
-  @each $name, $color in $tpl-accents {
-    &[data-tpl="#{$name}"] {
-      --tpl-accent: #{$color};
-    }
-  }
 }
 
 .card-head {
@@ -334,19 +188,12 @@ $tpl-accents: (
     width: 22px;
     height: 22px;
   }
-
-  // Covers standalone icons that carry [data-tpl] directly (e.g. the step-2
-  // header icon). Icons nested inside an already-accented ancestor
-  // (.contract-card, .detail-header, .template-card) inherit --tpl-accent
-  // from the parent instead.
-  @each $name, $color in $tpl-accents {
-    &[data-tpl="#{$name}"] {
-      --tpl-accent: #{$color};
-    }
-  }
 }
 
-.card-title-wrap {
+// shared with .deploy-stepper__item (+ its nested .stepper-progress) below
+.card-title-wrap,
+.deploy-stepper__item,
+.deploy-stepper__item ::ng-deep .stepper-progress {
   flex: 1;
   min-width: 0;
 }
@@ -369,16 +216,19 @@ $tpl-accents: (
   gap: 20px;
   flex-wrap: wrap;
 }
+// shared uppercase micro-label used by stat/state-cell/identifier blocks
+.stat .stat-label,
+.state-cell .cell-label,
+.identifier .identifier-label {
+  font-size: 11px;
+  color: var(--gray-45);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
 .stat {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  .stat-label {
-    font-size: 11px;
-    color: var(--gray-45);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
   .stat-value {
     font-size: 18px;
     font-weight: 600;
@@ -395,12 +245,15 @@ $tpl-accents: (
   }
 }
 
-.card-id {
+// shared with .identifier .identifier-value-row below (same inline-row layout)
+.card-id,
+.identifier .identifier-value-row {
   display: flex;
   align-items: center;
   gap: 6px;
   min-width: 0;
-
+}
+.card-id {
   .card-id-label {
     font-size: 10px;
     color: var(--gray-45);
@@ -419,37 +272,7 @@ $tpl-accents: (
   }
 }
 
-.role-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.role-chip {
-  font-size: 11px;
-  border-radius: 6px;
-  padding: 3px 9px;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--gray-75);
-  &.owner {
-    background: rgba(230, 162, 35, 0.15);
-    color: var(--orange-20);
-  }
-  &.heir,
-  &.recovery,
-  &.seller {
-    background: rgba(89, 92, 255, 0.15);
-    color: var(--blue-20);
-  }
-  &.signer,
-  &.buyer {
-    background: rgba(111, 199, 186, 0.15);
-    color: var(--kaspa-20);
-  }
-  &.arbiter {
-    background: rgba(158, 158, 158, 0.15);
-    color: var(--gray-60);
-  }
-}
+// .role-chips/.role-chip now live in src/styles/shared-ui.scss.
 
 .card-latest {
   display: flex;
@@ -459,14 +282,17 @@ $tpl-accents: (
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   font-size: 12px;
   color: var(--gray-75);
-  .muted {
-    color: var(--gray-45);
-  }
   .push {
     margin-left: auto;
-    color: var(--gray-45);
     font-size: 11px;
   }
+}
+// shared muted-text color used by .card-latest .muted/.push and the
+// disabled action-item title
+.card-latest .muted,
+.card-latest .push,
+.action-item:disabled .ai-title {
+  color: var(--gray-45);
 }
 
 .card-actions {
@@ -474,87 +300,8 @@ $tpl-accents: (
   gap: 8px;
 }
 
-// ── status badges ─────────────────────────────────────────────────────────
-.status-badge {
-  font-size: 11px;
-  font-weight: 500;
-  border-radius: 7px;
-  padding: 3px 10px;
-  white-space: nowrap;
-  align-self: flex-start;
-  &.active {
-    color: var(--green-20);
-    background: rgba(63, 199, 83, 0.12);
-    border: 1px solid var(--green-20);
-  }
-  &.spent {
-    color: var(--gray-60);
-    background: var(--gray-15);
-    border: 1px solid var(--border-secondary);
-  }
-  &.tracking,
-  &.unknown {
-    color: var(--yellow-20);
-    background: rgba(255, 193, 7, 0.1);
-    border: 1px solid rgba(255, 193, 7, 0.4);
-  }
-}
-
-.source-badge {
-  font-size: 11px;
-  color: var(--gray-60);
-  border: 1px solid var(--border-secondary);
-  border-radius: 6px;
-  padding: 2px 8px;
-  white-space: nowrap;
-}
-
-// ── buttons (bind to kc-button in template; these style native fallbacks) ──
-.btn {
-  appearance: none;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 10px;
-  padding: 10px 16px;
-  cursor: pointer;
-  border: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.15s;
-  white-space: nowrap;
-
-  &.primary {
-    background: var(
-      --gradient-kaspa,
-      linear-gradient(180deg, #6fc7ba 0%, #15ffb5 100%)
-    );
-    color: #07211d;
-  }
-  &.secondary {
-    background: var(--gray-10);
-    border: 1px solid var(--border-secondary);
-    color: var(--white);
-    font-weight: 500;
-  }
-  &.ghost {
-    background: transparent;
-    color: var(--gray-75);
-    font-weight: 500;
-  }
-  &.full {
-    width: 100%;
-  }
-  &.grow {
-    flex: 1;
-  }
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.55;
-  }
-}
+// .status-badge, .source-badge, .btn base styles now live in
+// src/styles/shared-ui.scss (generic, reused by other v2 flow pages).
 .card-actions .btn.secondary {
   flex: 1;
 }
@@ -581,12 +328,6 @@ $tpl-accents: (
 
   @media (min-width: 768px) {
     padding: 22px;
-  }
-
-  @each $name, $color in $tpl-accents {
-    &[data-tpl="#{$name}"] {
-      --tpl-accent: #{$color};
-    }
   }
 }
 .detail-title-row {
@@ -640,20 +381,10 @@ $tpl-accents: (
   display: flex;
   flex-direction: column;
   gap: 3px;
-  .cell-label {
-    font-size: 11px;
-    color: var(--gray-45);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
   .cell-value {
     font-size: 16px;
     font-weight: 600;
     color: var(--white);
-  }
-  .cell-sub {
-    font-size: 11px;
-    color: var(--gray-60);
   }
 }
 
@@ -669,18 +400,6 @@ $tpl-accents: (
   min-width: 0;
   flex: 1 1 220px;
 
-  .identifier-label {
-    font-size: 11px;
-    color: var(--gray-45);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-  .identifier-value-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    min-width: 0;
-  }
   .identifier-value {
     font-size: 12px;
     color: var(--gray-75);
@@ -722,7 +441,9 @@ $tpl-accents: (
   border-radius: 6px;
   padding: 2px 9px;
 }
-.action-list {
+// shared with .template-picker below (same list layout)
+.action-list,
+.template-picker {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -742,11 +463,6 @@ $tpl-accents: (
   color: var(--white);
   cursor: pointer;
 
-  svg {
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-  }
   .ai-text {
     display: flex;
     flex-direction: column;
@@ -757,10 +473,6 @@ $tpl-accents: (
     font-size: 13px;
     font-weight: 600;
   }
-  .ai-hint {
-    font-size: 11px;
-    color: var(--gray-60);
-  }
 
   &.primary {
     border-color: var(--kaspa-20);
@@ -770,9 +482,6 @@ $tpl-accents: (
     cursor: not-allowed;
     opacity: 0.6;
     background: rgba(255, 255, 255, 0.02);
-    color: var(--gray-45);
-  }
-  &:disabled .ai-title {
     color: var(--gray-45);
   }
 
@@ -819,13 +528,6 @@ $tpl-accents: (
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-  .p-you {
-    font-size: 10px;
-    color: var(--kaspa-20);
-    border: 1px solid rgba(111, 199, 186, 0.3);
-    border-radius: 5px;
-    padding: 1px 6px;
   }
 }
 
@@ -875,14 +577,11 @@ $tpl-accents: (
   color: var(--white);
   flex-shrink: 0;
 }
-.tl-when {
+// shared with .action-item .ai-hint above (small muted meta text)
+.tl-when,
+.action-item .ai-hint {
   font-size: 11px;
   color: var(--gray-60);
-}
-.tl-note {
-  font-size: 11px;
-  color: var(--gray-45);
-  margin-top: 3px;
 }
 .tl-tx {
   font-size: 11px;
@@ -907,14 +606,6 @@ $tpl-accents: (
   gap: 8px;
 }
 .deploy-stepper__item {
-  flex: 1;
-  min-width: 0;
-
-  ::ng-deep .stepper-progress {
-    flex: 1;
-    min-width: 0;
-  }
-
   ::ng-deep .stepper-title {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -930,11 +621,6 @@ $tpl-accents: (
   }
 }
 
-.template-picker {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
 .template-card {
   display: flex;
   align-items: center;
@@ -956,11 +642,6 @@ $tpl-accents: (
   &.custom {
     border-style: dashed;
   }
-  @each $name, $color in $tpl-accents {
-    &[data-tpl="#{$name}"] {
-      --tpl-accent: #{$color};
-    }
-  }
   .tc-body {
     display: flex;
     flex-direction: column;
@@ -979,112 +660,23 @@ $tpl-accents: (
     line-height: 1.45;
   }
   .tc-chevron {
-    flex-shrink: 0;
     color: var(--gray-45);
-    width: 18px;
-    height: 18px;
   }
   &:hover .tc-chevron {
     color: var(--tpl-accent, var(--kaspa-20));
   }
 }
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.field-label {
-  font-size: 12px;
-  color: var(--gray-75);
-  font-weight: 500;
-}
-.field-help {
-  font-size: 11px;
-  color: var(--gray-45);
-  line-height: 1.4;
+// shared 18px icon sizing between the action-item leading icon and the
+// template-card trailing chevron
+.action-item svg,
+.template-card .tc-chevron {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
-.review-box {
-  border: 1px solid rgba(111, 199, 186, 0.25);
-  background: rgba(111, 199, 186, 0.07);
-  border-radius: 12px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.review-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: baseline;
-  .rr-label {
-    font-size: 12px;
-    color: var(--gray-60);
-  }
-  .rr-value {
-    font-size: 13px;
-    color: var(--white);
-    font-weight: 500;
-    text-align: right;
-  }
-}
-
-// ── banners & states ──────────────────────────────────────────────────────
-.banner {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  border-radius: 12px;
-  padding: 14px 16px;
-  svg {
-    flex-shrink: 0;
-    margin-top: 1px;
-  }
-  .banner-body {
-    flex: 1;
-    font-size: 13px;
-    line-height: 1.5;
-    color: var(--gray-75);
-  }
-  .banner-title {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 2px;
-  }
-
-  &.warn {
-    border: 1px solid rgba(230, 162, 35, 0.35);
-    background: rgba(230, 162, 35, 0.08);
-    svg {
-      color: var(--orange-20);
-    }
-    .banner-title {
-      color: var(--orange-10);
-    }
-  }
-  &.caution {
-    border: 1px solid rgba(255, 193, 7, 0.4);
-    background: rgba(255, 193, 7, 0.09);
-    svg {
-      color: var(--yellow-20);
-    }
-    .banner-title {
-      color: var(--yellow-20);
-    }
-  }
-  &.error {
-    border: 1px solid var(--red-20);
-    background: rgba(224, 66, 66, 0.1);
-    svg {
-      color: var(--red-20);
-    }
-    .banner-title {
-      color: var(--red-20);
-    }
-  }
-}
+// .field*, .review-box/.review-row and .banner base styles now live in
+// src/styles/shared-ui.scss.
 
 .error-message {
   background: rgba(224, 66, 66, 0.1);
@@ -1095,308 +687,22 @@ $tpl-accents: (
   font-size: 13px;
   word-break: break-word;
 }
-.result-panel {
-  background: rgba(63, 199, 83, 0.1);
-  border: 1px solid var(--green-20);
-  border-radius: 12px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
+// .result-panel, .state-block, .skeleton-grid/.skeleton-card (+ kc-pulse
+// keyframes) and .advanced-section base styles now live in
+// src/styles/shared-ui.scss.
 
-.state-block {
-  border: 1px dashed rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 16px;
-  padding: 48px 32px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  .sb-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(111, 199, 186, 0.1);
-    border: 1px solid rgba(111, 199, 186, 0.25);
-    color: var(--kaspa-20);
-  }
-  .sb-title {
-    font-size: 17px;
-    font-weight: 600;
-    color: var(--white);
-  }
-  .sb-text {
-    font-size: 13px;
-    color: var(--gray-60);
-    max-width: 400px;
-    line-height: 1.6;
-  }
-  .sb-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 4px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  &.is-error {
-    border-style: solid;
-    border-color: var(--red-20);
-    background: rgba(224, 66, 66, 0.08);
-    .sb-icon {
-      background: rgba(224, 66, 66, 0.14);
-      color: var(--red-20);
-    }
-  }
-}
-
-// loading skeletons
-.skeleton-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 14px;
-  @media (min-width: 560px) {
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 16px;
-  }
-}
-.skeleton-card {
-  border: 1px solid var(--border-secondary);
-  background: var(--gray-10);
-  border-radius: 14px;
-  padding: 20px;
-  height: 210px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  .sk {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 6px;
-    animation: kc-pulse 1.4s ease-in-out infinite;
-  }
-  .sk.line {
-    height: 12px;
-  }
-  .sk.wide {
-    width: 60%;
-  }
-  .sk.narrow {
-    width: 40%;
-  }
-  .sk.block {
-    flex: 1;
-  }
-  .sk.avatar {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-  }
-}
-@keyframes kc-pulse {
-  0%,
-  100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-// ── advanced drawer & inputs (carry-over from original) ──────────────────
-.advanced-section {
-  border: 1px solid var(--border-secondary);
-  border-radius: 12px;
-  background: var(--gray-10);
-  summary {
-    user-select: none;
-    padding: 14px 16px;
-    cursor: pointer;
-    font-size: 13px;
-    color: var(--gray-75);
-    list-style: none;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    &::-webkit-details-marker {
-      display: none;
-    }
-    &:hover {
-      color: var(--kaspa-20);
-    }
-  }
-  &[open] summary {
-    border-bottom: 1px solid var(--border-secondary);
-  }
-  .adv-body {
-    padding: 14px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .adv-row {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-  }
-  .adv-label {
-    font-size: 11px;
-    color: var(--gray-45);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-  .adv-value {
-    font-size: 12px;
-    color: var(--gray-75);
-    font-family: var(--font-mono, monospace);
-    word-break: break-all;
-  }
-}
-
-.contract-input,
-.form-input {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-secondary);
-  border-radius: 10px;
-  padding: 11px 13px;
-  color: var(--white);
-  font-family: var(--font-mono, monospace);
-  outline: none;
-  transition: border-color 0.2s;
-  width: 100%;
-  box-sizing: border-box;
-  &:focus {
-    border-color: var(--kaspa-20);
-  }
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  &.invalid {
-    border-color: var(--red-20);
-  }
-}
+// .contract-input/.form-input base styles now live in
+// src/styles/shared-ui.scss; only the textarea-specific sizing stays local.
 .contract-input {
   resize: vertical;
   min-height: 120px;
   font-size: 13px;
 }
 
-.utxo-row {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  padding: 12px;
-  min-width: 0;
-  overflow: hidden;
-  &:hover {
-    border-color: rgba(255, 255, 255, 0.15);
-  }
-  > a,
-  > span:first-child {
-    flex: 1 1 auto;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  > span:last-child {
-    flex-shrink: 0;
-  }
-}
-.pubkey-display {
-  background: rgba(255, 204, 0, 0.08);
-  border: 1px solid rgba(255, 204, 0, 0.2);
-  border-radius: 10px;
-}
-.contract-summary {
-  background: rgba(111, 199, 186, 0.08);
-  border: 1px solid var(--kaspa-20);
-  border-radius: 12px;
-}
-.param-item {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-}
-.lookup-result {
-  background: rgba(111, 199, 186, 0.06);
-  border: 1px solid rgba(111, 199, 186, 0.2);
-  border-radius: 12px;
-}
-.back-button {
-  background: var(--gray-10);
-  border: 1px solid var(--border-secondary);
-  color: rgba(255, 255, 255, 0.9);
-  border-radius: 8px;
-  cursor: pointer;
-  &:hover {
-    border-color: var(--kaspa-20);
-  }
-}
-.max-text {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 46px;
-  span {
-    color: var(--gray-30);
-    font-weight: 600;
-    font-size: 14px;
-    padding: 5px 8px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-  }
-  &.clickable {
-    cursor: pointer;
-    span:hover {
-      color: white;
-      background: rgba(255, 255, 255, 0.15);
-    }
-  }
-  &.disabled {
-    cursor: not-allowed;
-    span {
-      opacity: 0.5;
-    }
-  }
-}
-
-// helper text colors reused by template
-.text-mono {
-  font-family: var(--font-mono, monospace);
-  font-size: 13px;
-}
-.text-truncate {
-  max-width: 100%;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.text-blue {
-  color: var(--blue-20);
-  text-decoration: none;
-  &:hover {
-    text-decoration: underline;
-  }
-}
-.text-red {
-  color: var(--red-20);
-}
-.text-green {
-  color: var(--green-20);
-}
-.text-yellow {
-  color: var(--yellow-20);
-}
-.fw-bold {
-  font-weight: 600;
-}
+// .utxo-row, .pubkey-display, .contract-summary, .param-item,
+// .lookup-result and .back-button now live in src/styles/shared-ui.scss.
+// .max-text and the generic .text-*/.fw-bold utilities now live in
+// src/styles/shared-ui.scss.
 
 // kc-button's "m" size variant enforces a 300px min-width on its inner
 // .kc-button element (an ui-kit design-token default sized for standalone
@@ -1404,6 +710,7 @@ $tpl-accents: (
 // other buttons in this page (instead of opting into [isFullWidth]), that
 // fixed minimum overflows the row on narrow (320px) viewports. Let those
 // buttons hug their own content instead.
+.filter-row kc-button,
 .flex.gap-8.align-items-end.wrap kc-button,
 .flex.gap-8.wrap kc-button,
 .flex.align-items-center.gap-8 kc-button {
@@ -1425,6 +732,4 @@ $tpl-accents: (
     color: #fff !important;
   }
 }
-.cursor-pointer {
-  cursor: pointer;
-}
+// .cursor-pointer now lives in src/styles/shared-ui.scss.

@@ -6,6 +6,10 @@ on:
       - develop
       - main
 
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -27,6 +31,8 @@ jobs:
       - name: Install dependencies
         run: npm install
         continue-on-error: false
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Lint check (if applicable)
         run: |
@@ -105,6 +111,8 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
@@ -160,6 +168,8 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
@@ -213,6 +223,8 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run npm audit
         run: npm audit --audit-level=moderate

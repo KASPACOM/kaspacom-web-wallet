@@ -524,8 +524,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       return [];
     if (
       contract.contract_name === 'DeadManSwitch' &&
-      (this.selectedFunction === 'keepAlive' ||
-        this.selectedFunction === 'withdraw')
+      this.selectedFunction === 'keepAlive'
     )
       return [];
     // Only render extra-arg inputs the interact flow can actually collect/pass
@@ -2341,12 +2340,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         iconClass: 'icon-refresh-ccw-04',
         requiredRole: 'Owner',
       },
-      withdraw: {
-        label: 'Withdraw',
-        description: 'Withdraw part of the locked funds using the owner key.',
-        iconClass: 'icon-coins-02',
-        requiredRole: 'Owner',
-      },
       claim: {
         label: 'Claim',
         description: 'Claim the inheritance as the designated heir.',
@@ -2500,7 +2493,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const normalized = this.normalizeContractName(contractName);
     const preferred: Record<string, string[]> = {
       DeadManSwitch: ['keepAlive', 'changeHeir', 'topUp', 'claim'],
-      TimeLockVault: ['spend', 'recover', 'withdraw'],
+      TimeLockVault: ['spend', 'recover'],
       MultiSigVault: ['spend12', 'spend13', 'spend23'],
       EscrowWithArbiter: ['release', 'refund', 'arbitrate'],
     };
@@ -3566,31 +3559,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         }
         const withdrawalAmount = BigInt(Math.floor(outputAmountKas * 1e8));
         if (
-          compiled.contract_name === 'DeadManSwitch' &&
-          functionName === 'withdraw'
+          functionName === 'transfer' &&
+          compiled.contract_name === 'KCC20'
         ) {
-          if (withdrawalAmount >= inputAmount) {
-            this.interactError.set(
-              "Dead Man's Switch withdraw must leave a continuation in the contract. Use claim after the deadline for the heir path.",
-            );
+          try {
+            extraArgsOverride = {
+              recipient: Uint8Array.from(
+                this.templatePatcher.kaspaAddressToPubkeyBytes(outputAddress),
+              ),
+            };
+          } catch {
+            this.interactError.set('Enter a valid recipient Kaspa address');
             return;
           }
-          const owner =
-            (await this.extractTemplatePubkeyHex(
-              compiled,
-              'dead-mans-switch',
-              'owner',
-            )) || this.extractPubkeysFromScript(compiled)[0];
-          const ownerAddress = owner ? this.pubkeyToAddress(owner) : '';
-          if (!ownerAddress) {
-            this.interactError.set(
-              'Could not derive owner address from contract script',
-            );
-            return;
-          }
-          outputAddress = ownerAddress;
-          extraArgsOverride = { amount: withdrawalAmount };
-          useSenderFeeOverride = true;
         }
         const withdrawalOutputs = this.buildWithdrawalOutputs(
           compiled,
@@ -4762,18 +4743,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const sompi = this.interactInputAmount;
     if (!sompi) return;
     try {
-      let inputSompi = BigInt(sompi);
-      const contract = this.parsedInteractContract();
-      if (
-        contract?.contract_name === 'DeadManSwitch' &&
-        this.selectedFunction === 'withdraw'
-      ) {
-        // DMS withdraw must leave a continuation in the contract — cap Max
-        // at the largest amount that still leaves the minimum continuation
-        // behind, instead of the full balance (which always fails).
-        inputSompi -= this.MIN_CONTINUATION_AMOUNT_SOMPI;
-        if (inputSompi <= 0n) return;
-      }
+      const inputSompi = BigInt(sompi);
       const outputKas = Number(inputSompi) / 1e8;
       this.interactOutputAmount = outputKas.toFixed(8).replace(/\.?0+$/, '');
     } catch {

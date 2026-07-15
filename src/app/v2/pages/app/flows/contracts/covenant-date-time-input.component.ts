@@ -2,14 +2,17 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+let nextId = 0;
+
 @Component({
   selector: 'app-covenant-date-time-input',
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
     <div class="date-field flex column gap-6" [class.invalid]="!isValid">
-      <label class="date-field-label text-gray-60 typo-text-1">{{ label }}</label>
+      <label class="date-field-label text-gray-60 typo-text-1" [for]="inputId">{{ label }}</label>
       <input
+        [id]="inputId"
         type="datetime-local"
         class="date-input p-12 rounded-lg text-white typo-text-2"
         [ngModel]="value"
@@ -80,6 +83,8 @@ import { FormsModule } from '@angular/forms';
   `],
 })
 export class CovenantDateTimeInputComponent {
+  readonly inputId = `covenant-date-time-input-${nextId++}`;
+
   @Input() label = '';
   @Input() value = '';
   @Input() isDisabled = false;

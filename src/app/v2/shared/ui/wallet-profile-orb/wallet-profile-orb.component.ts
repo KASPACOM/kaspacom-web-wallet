@@ -92,8 +92,7 @@ export class WalletProfileOrbComponent {
   readonly sizePx = input<number>(38);
 
   // Reactive: re-derives on L1 network switch; null when the selected
-  // network has no KRC721 cache stream (e.g. TN12) so no broken URL is built.
-  readonly l1AvatarBaseUrl = computed<string | null>(() => {
+  // network has no KRC721 cache stream so no broken URL is built.
     const network = this.l1NetworkService.getCurrentNetworkSignal()();
     if (!network.krc721CacheStreamUrl) {
       return null;

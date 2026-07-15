@@ -90,10 +90,17 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
       this.windowWidth() >= MOBILE_BREAKPOINT,
   );
 
-  /** True when the Contracts wide-workspace layout should take over the wrapper. */
+  /**
+   * True when the Contracts wide-workspace layout should take over the wrapper.
+   * Also true while a page is layered on top of Contracts in the flow-page
+   * stack (e.g. an action approval) — the single flow-page outlet unmounts
+   * ContractsPageComponent (and its wideWorkspaceService.activate() call)
+   * the instant that happens, but the layout shouldn't flip mid-transaction.
+   */
   readonly isContractsWide = computed(
     () =>
-      this.wideWorkspaceService.isActive() &&
+      (this.wideWorkspaceService.isActive() ||
+        this.flowPagesService.isPageInStack('contracts')) &&
       this.windowWidth() >= WIDE_BREAKPOINT,
   );
 

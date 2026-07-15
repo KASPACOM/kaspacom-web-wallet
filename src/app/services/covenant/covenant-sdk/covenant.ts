@@ -600,7 +600,12 @@ export async function deployContract(
     const covenant = serialized?.outputs?.[outputIndex]?.covenant;
     if (covenant?.covenantId) {
       covenantId = String(covenant.covenantId);
-      console.log('covenantId', covenantId);
+      // Only meaningful for a broadcast tx — estimate-only passes produce a
+      // different genesis (and therefore a different covenant id) than the
+      // deploy that is eventually submitted, so logging those is misleading.
+      if (!options.estimateOnly) {
+        console.log('covenantId', covenantId);
+      }
     }
   } catch {
     // best-effort; if serialization fails, fall back to whatever was already set

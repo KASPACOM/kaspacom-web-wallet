@@ -155,17 +155,31 @@ export class ApprovalSuccessPageComponent {
   }
 
   onDone() {
-    // Determine the appropriate tab based on the action result
-    const tab = this.getTabForActionResult(this.actionResult());
+    // Covenant actions are dispatched from the contracts page, which stays
+    // mounted behind the approval overlay with the action result rendered on
+    // it — navigating to home would destroy that view, so only close the
+    // overlay for those.
+    if (!this.isCovenantActionResult(this.actionResult())) {
+      // Determine the appropriate tab based on the action result
+      const tab = this.getTabForActionResult(this.actionResult());
 
-    // Navigate to homepage with the correct tab
-    this.router.navigate(['/app/home'], { queryParams: { tab } });
+      // Navigate to homepage with the correct tab
+      this.router.navigate(['/app/home'], { queryParams: { tab } });
+    }
 
     // Close the approval flow
     this.approvalFlowService.closeApproval();
 
     // Clear the action result to dismiss the modal
     this.walletActionService.clearActionResult();
+  }
+
+  private isCovenantActionResult(actionResult: WalletActionResult): boolean {
+    return [
+      'deploy-covenant',
+      'spend-covenant',
+      'complete-covenant-partial',
+    ].includes(actionResult?.type as string);
   }
 
   /**

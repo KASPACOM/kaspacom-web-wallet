@@ -207,6 +207,40 @@ export class ApprovalFlowService {
     this.cleanupApproval();
   }
 
+  private pendingDetachReject: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * Called by the approval flow page when it initializes. Cancels a reject
+   * scheduled by a previous instance's destroy — the page was only relocated
+   * (e.g. the app-wrapper swapped between the overlay and two-column layout
+   * branches when a wide workspace page deactivated), not actually closed.
+   */
+  notifyApprovalPageAttached() {
+    if (this.pendingDetachReject !== null) {
+      clearTimeout(this.pendingDetachReject);
+      this.pendingDetachReject = null;
+    }
+  }
+
+  /**
+   * Called by the approval flow page when it is destroyed. The component is
+   * destroyed both when the user actually leaves the approval (back
+   * navigation / flow closed) and when the layout re-parents it, in which
+   * case a new instance is created within the same change-detection pass.
+   * Defer the auto-reject one tick so the re-created page can cancel it —
+   * otherwise a covenant deploy dispatched from the wide contracts workspace
+   * is silently rejected the moment its approval page opens.
+   */
+  notifyApprovalPageDetached() {
+    if (this.pendingDetachReject !== null) {
+      clearTimeout(this.pendingDetachReject);
+    }
+    this.pendingDetachReject = setTimeout(() => {
+      this.pendingDetachReject = null;
+      this.rejectIfPending();
+    }, 0);
+  }
+
   /**
    * Rejects and cleans up a pending approval without triggering navigation.
    * Used when the approval page is destroyed externally (e.g. user navigated back).

@@ -23,6 +23,7 @@ import {
   KcTooltipDirective,
 } from '@kaspacom/ui-kit';
 import { blake2b } from '@noble/hashes/blake2b';
+import { ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { WalletService } from '../../../../../services/wallet.service';
 import { WalletActionService } from '../../../../../services/wallet-action.service';
 import { QrScannerService } from '../../../../../services/qr-scanner.service';
@@ -1513,27 +1514,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const isMatch = (
       indexerEntry: ContractDashboardEntry,
       localEntry: ContractDashboardEntry,
-    ) => {
-      if (indexerEntry.covenantId && localEntry.covenantId) {
-        return this.sameIdentity(
-          indexerEntry.covenantId,
-          localEntry.covenantId,
-        );
-      }
-      if (indexerEntry.deployTxid && localEntry.deployTxid) {
-        return this.sameIdentity(
-          indexerEntry.deployTxid,
-          localEntry.deployTxid,
-        );
-      }
-      if (indexerEntry.scriptHash && localEntry.scriptHash) {
-        return this.sameIdentity(
-          indexerEntry.scriptHash,
-          localEntry.scriptHash,
-        );
-      }
-      return false;
-    };
+    ) =>
+      // Try every identity signal rather than committing to whichever field
+      // happens to be populated on both sides first — the indexer can assign
+      // a covenantId that differs from what the client recorded at deploy
+      // time (e.g. before full confirmation), in which case deployTxid (the
+      // same underlying transaction on both sides) is still a valid match.
+      this.sameIdentity(indexerEntry.covenantId, localEntry.covenantId) ||
+      this.sameIdentity(indexerEntry.deployTxid, localEntry.deployTxid) ||
+      this.sameIdentity(indexerEntry.scriptHash, localEntry.scriptHash);
 
     for (const entry of localEntries) {
       merged.set(this.getDashboardIdentityKey(entry), entry);
@@ -2003,9 +1992,30 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         await this.refreshDmsDeadlineFromScript();
       }
     } catch (error: any) {
-      this.selectedDetailError.set(
-        error?.message || 'Failed to load indexer detail for this contract.',
-      );
+      if (entry.registryEntry) {
+        // The indexer may not have caught up yet (e.g. right after a fresh
+        // deploy — see trackDeployIndexing()) or may be temporarily
+        // unavailable. The local registry entry already has everything
+        // needed to display this contract and prepare actions on it, so
+        // fall back to that instead of hard-failing.
+        console.warn(
+          '[Contracts] Indexer detail lookup failed, falling back to local registry entry:',
+          error,
+        );
+        this.selectedDetailError.set(
+          "Indexer hasn't caught up with this contract yet — showing your locally saved copy. Try refreshing in a moment for live status.",
+        );
+        if (
+          (this.detailRouteId() || this.activeTab() === 'detail') &&
+          entry.status === 'active'
+        ) {
+          await this.prepareDashboardAction(entry);
+        }
+      } else {
+        this.selectedDetailError.set(
+          error?.message || 'Failed to load indexer detail for this contract.',
+        );
+      }
     } finally {
       this.selectedDetailLoading.set(false);
       this.scrollContractsContentToTop();
@@ -2358,6 +2368,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         label: 'Top Up',
         description: 'Add more KAS to the locked funds without withdrawing anything.',
         iconClass: 'icon-plus',
+      },
+      changeHeir: {
+        label: 'Change Heir',
+        description: 'Update the wallet designated to inherit the funds.',
+        iconClass: 'icon-user-gear',
+        requiredRole: 'Owner',
       },
     },
     TimeLockVault: {
@@ -3216,7 +3232,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         });
 
       if (!actionResult.success || !actionResult.result) {
-        this.deployError.set('Covenant deployment was rejected or failed');
+        const reason =
+          actionResult.errorCode !== undefined
+            ? ERROR_CODES_MESSAGES[actionResult.errorCode]
+            : undefined;
+        this.deployError.set(
+          reason
+            ? `Covenant deployment failed: ${reason}`
+            : 'Covenant deployment was rejected or failed',
+        );
         return;
       }
 

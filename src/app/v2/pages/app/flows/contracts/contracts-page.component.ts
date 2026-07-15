@@ -2341,12 +2341,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         iconClass: 'icon-refresh-ccw-04',
         requiredRole: 'Owner',
       },
-      withdraw: {
-        label: 'Withdraw',
-        description: 'Withdraw part of the locked funds using the owner key.',
-        iconClass: 'icon-coins-02',
-        requiredRole: 'Owner',
-      },
       claim: {
         label: 'Claim',
         description: 'Claim the inheritance as the designated heir.',

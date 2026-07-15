@@ -1,0 +1,74 @@
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { LendingDataService, LendingToken } from '../../services/lending-data.service';
+
+@Component({
+  selector: 'app-lending-borrow',
+  imports: [CommonModule, FormsModule],
+  templateUrl: './lending-borrow.component.html',
+  styleUrl: './lending-borrow.component.scss',
+})
+export class LendingBorrowComponent implements OnInit {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  protected dataService = inject(LendingDataService);
+
+  readonly token = signal<LendingToken | null>(null);
+  readonly amount = signal('');
+  readonly isProcessing = signal(false);
+  readonly txStatus = signal<'idle' | 'success' | 'error'>('idle');
+  readonly txError = signal('');
+
+  readonly maxBorrowUsd = computed(() => this.dataService.userMetrics().availableBorrowsUsd);
+  readonly maxBorrowInToken = computed(() => {
+    const price = this.token()?.usdPrice ?? 0;
+    if (price === 0) return '0';
+    return (this.maxBorrowUsd() / price).toFixed(6);
+  });
+
+  readonly parsedAmount = computed(() => parseFloat(this.amount()) || 0);
+  readonly isValid = computed(
+    () => this.parsedAmount() > 0 && this.parsedAmount() <= parseFloat(this.maxBorrowInToken()),
+  );
+  readonly usdValue = computed(() =>
+    this.dataService.formatUsd(this.parsedAmount() * (this.token()?.usdPrice ?? 0)),
+  );
+
+  ngOnInit() {
+    const address = this.route.snapshot.paramMap.get('address');
+    const load = () => {
+      const token = this.dataService.tokens().find(
+        (t) => t.address.toLowerCase() === (address ?? '').toLowerCase(),
+      );
+      this.token.set(token ?? null);
+    };
+    if (address && this.dataService.tokens().length) {
+      load();
+    } else if (address) {
+      this.dataService.loadData().then(load);
+    }
+  }
+
+  setMax() { this.amount.set(this.maxBorrowInToken()); }
+  onAmountChange(value: string) { this.amount.set(value); }
+
+  async onSubmit() {
+    const token = this.token();
+    if (!token || !this.isValid()) return;
+    this.isProcessing.set(true);
+    this.txStatus.set('idle');
+    const success = await this.dataService.borrow(token, this.amount());
+    if (success) {
+      this.txStatus.set('success');
+      await this.dataService.loadData();
+    } else {
+      this.txStatus.set('error');
+      this.txError.set('Transaction failed or was rejected.');
+    }
+    this.isProcessing.set(false);
+  }
+
+  goBack() { this.router.navigate(['/app/lending']); }
+}

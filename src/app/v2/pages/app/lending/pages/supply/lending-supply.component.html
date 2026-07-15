@@ -1,0 +1,78 @@
+<div class="lending-action">
+  <div class="lending-action__header">
+    <button class="back-btn" (click)="goBack()">← Back</button>
+    <h2 class="lending-action__title">Supply {{ token()?.symbol }}</h2>
+  </div>
+
+  @if (!token()) {
+    <div class="loading-state">Loading…</div>
+  } @else {
+    <!-- Token info -->
+    <div class="token-info-card">
+      <div class="token-info-row">
+        <span class="token-info-row__label">Supply APY</span>
+        <span class="token-info-row__value token-info-row__value--green">{{ token()!.supplyApy.toFixed(2) }}%</span>
+      </div>
+      <div class="token-info-row">
+        <span class="token-info-row__label">Wallet Balance</span>
+        <span class="token-info-row__value">{{ token()!.walletBalance | number: '1.0-6' }} {{ token()!.symbol }}</span>
+      </div>
+      <div class="token-info-row">
+        <span class="token-info-row__label">Currently Supplied</span>
+        <span class="token-info-row__value">{{ token()!.suppliedBalance | number: '1.0-6' }} {{ token()!.symbol }}</span>
+      </div>
+    </div>
+
+    <!-- Amount input -->
+    <div class="amount-input-group">
+      <div class="amount-input-label">
+        <span>Amount to supply</span>
+        <button class="max-btn" (click)="setMax()">MAX</button>
+      </div>
+      <div class="amount-input-wrapper">
+        <input
+          class="amount-input"
+          type="number"
+          placeholder="0.00"
+          [value]="amount()"
+          (input)="onAmountChange($any($event.target).value)"
+          min="0"
+          step="any"
+        />
+        <span class="amount-input__symbol">{{ token()!.symbol }}</span>
+      </div>
+      @if (amount()) {
+        <div class="amount-usd">≈ {{ usdValue() }}</div>
+      }
+    </div>
+
+    <!-- Status messages -->
+    @if (txStatus() === 'success') {
+      <div class="status-msg status-msg--success">
+        ✅ Supply successful! Your position has been updated.
+      </div>
+    }
+    @if (txStatus() === 'error') {
+      <div class="status-msg status-msg--error">
+        ❌ {{ txError() }}
+      </div>
+    }
+
+    <!-- Submit -->
+    <button
+      class="submit-btn"
+      [disabled]="!isValid() || isProcessing()"
+      (click)="onSubmit()"
+    >
+      @if (isProcessing()) {
+        <span class="spinner-sm"></span> Processing…
+      } @else {
+        Supply {{ amount() ? amount() : '' }} {{ token()!.symbol }}
+      }
+    </button>
+
+    <p class="hint">
+      Supplying will first require an ERC-20 approval if your allowance is insufficient.
+    </p>
+  }
+</div>

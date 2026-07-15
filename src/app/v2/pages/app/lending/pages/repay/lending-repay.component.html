@@ -1,0 +1,66 @@
+<div class="lending-action">
+  <div class="lending-action__header">
+    <button class="back-btn" (click)="goBack()">← Back</button>
+    <h2 class="lending-action__title">Repay {{ token()?.symbol }}</h2>
+  </div>
+
+  @if (!token()) {
+    <div class="loading-state">Loading…</div>
+  } @else {
+    <div class="token-info-card">
+      <div class="token-info-row">
+        <span class="token-info-row__label">Borrow APY</span>
+        <span class="token-info-row__value token-info-row__value--orange">{{ token()!.borrowApy.toFixed(2) }}%</span>
+      </div>
+      <div class="token-info-row">
+        <span class="token-info-row__label">Outstanding Debt</span>
+        <span class="token-info-row__value token-info-row__value--red">
+          {{ token()!.borrowedBalance | number: '1.0-6' }} {{ token()!.symbol }}
+        </span>
+      </div>
+      <div class="token-info-row">
+        <span class="token-info-row__label">Wallet Balance</span>
+        <span class="token-info-row__value">{{ token()!.walletBalance | number: '1.0-6' }} {{ token()!.symbol }}</span>
+      </div>
+    </div>
+
+    <div class="amount-input-group">
+      <div class="amount-input-label">
+        <span>Amount to repay</span>
+        <button class="max-btn" (click)="setMax()">MAX</button>
+      </div>
+      <div class="amount-input-wrapper">
+        <input
+          class="amount-input"
+          type="number"
+          placeholder="0.00"
+          [value]="amount()"
+          (input)="onAmountChange($any($event.target).value)"
+          min="0" step="any"
+        />
+        <span class="amount-input__symbol">{{ token()!.symbol }}</span>
+      </div>
+      @if (amount()) {
+        <div class="amount-usd">≈ {{ usdValue() }}</div>
+      }
+    </div>
+
+    @if (txStatus() === 'success') {
+      <div class="status-msg status-msg--success">✅ Repayment successful!</div>
+    }
+    @if (txStatus() === 'error') {
+      <div class="status-msg status-msg--error">❌ {{ txError() }}</div>
+    }
+
+    <button class="submit-btn" [disabled]="!isValid() || isProcessing()" (click)="onSubmit()"
+      style="background: #f44336; color: #fff;">
+      @if (isProcessing()) {
+        <span class="spinner-sm"></span> Processing…
+      } @else {
+        Repay {{ amount() ? amount() : '' }} {{ token()!.symbol }}
+      }
+    </button>
+
+    <p class="hint">Repayment will approve spending if allowance is insufficient.</p>
+  }
+</div>

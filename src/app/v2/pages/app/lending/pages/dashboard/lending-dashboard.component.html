@@ -1,0 +1,215 @@
+<div class="lending-dashboard">
+  <!-- Loading state -->
+  @if (isLoading()) {
+    <div class="lending-dashboard__loading">
+      <div class="spinner"></div>
+      <p>Loading lending data…</p>
+    </div>
+  }
+
+  <!-- Error state -->
+  @if (error()) {
+    <div class="lending-dashboard__error">
+      <span>⚠️ {{ error() }}</span>
+      <button class="btn btn--sm btn--outline" (click)="refresh()">Retry</button>
+    </div>
+  }
+
+  @if (!isLoading() && !error()) {
+    <!-- Health Factor + Metrics -->
+    <div class="lending-dashboard__metrics">
+      <div class="metric-card">
+        <div class="metric-card__label">Net Worth</div>
+        <div class="metric-card__value">
+          {{ formatUsd(userMetrics().totalCollateralUsd - userMetrics().totalDebtUsd) }}
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-card__label">Total Supplied</div>
+        <div class="metric-card__value">{{ formatUsd(userMetrics().totalCollateralUsd) }}</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-card__label">Total Borrowed</div>
+        <div class="metric-card__value">{{ formatUsd(userMetrics().totalDebtUsd) }}</div>
+      </div>
+
+      <div class="metric-card metric-card--hf" [class]="'metric-card--hf metric-card--' + healthFactorClass()">
+        <div class="metric-card__label">Health Factor</div>
+        <div class="metric-card__value metric-card__value--hf">{{ formatHf() }}</div>
+        <div class="metric-card__hf-bar">
+          <div
+            class="metric-card__hf-fill"
+            [class]="'metric-card__hf-fill--' + healthFactorClass()"
+            [style.width.%]="userMetrics().ltv"
+          ></div>
+        </div>
+        <div class="metric-card__hf-hint">
+          LTV: {{ userMetrics().ltv.toFixed(1) }}%
+        </div>
+      </div>
+    </div>
+
+    <!-- Section tabs -->
+    <div class="lending-dashboard__tabs">
+      <button
+        class="tab-btn"
+        [class.tab-btn--active]="activeSection() === 'supply'"
+        (click)="setSection('supply')"
+      >Supply</button>
+      <button
+        class="tab-btn"
+        [class.tab-btn--active]="activeSection() === 'borrow'"
+        (click)="setSection('borrow')"
+      >Borrow</button>
+    </div>
+
+    @if (activeSection() === 'supply') {
+      <!-- Your Supplies -->
+      @if (suppliedTokens().length > 0) {
+        <div class="lending-dashboard__section">
+          <h3 class="section-title">Your Supplies</h3>
+          <div class="asset-table">
+            <div class="asset-table__header">
+              <span>Asset</span>
+              <span>Supplied</span>
+              <span>APY</span>
+              <span>Actions</span>
+            </div>
+            @for (token of suppliedTokens(); track token.address) {
+              <div class="asset-table__row">
+                <div class="asset-info">
+                  <div class="asset-info__symbol">{{ token.symbol }}</div>
+                  @if (token.isCollateral) {
+                    <div class="badge badge--collateral">Collateral</div>
+                  }
+                </div>
+                <div class="asset-amount">
+                  <div>{{ formatBalance(token.suppliedBalance) }}</div>
+                  <div class="asset-amount__usd">
+                    {{ formatUsd(parseFloat(token.suppliedBalance) * token.usdPrice) }}
+                  </div>
+                </div>
+                <div class="apy apy--supply">{{ formatApy(token.supplyApy) }}</div>
+                <div class="asset-actions">
+                  <button class="btn btn--sm btn--primary" (click)="onSupplyClick(token)">Supply</button>
+                  <button class="btn btn--sm btn--outline" (click)="onWithdrawClick(token)">Withdraw</button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Assets to Supply -->
+      <div class="lending-dashboard__section">
+        <h3 class="section-title">Assets to Supply</h3>
+        @if (availableToSupply().length === 0) {
+          <p class="empty-state">No assets available to supply in your wallet.</p>
+        } @else {
+          <div class="asset-table">
+            <div class="asset-table__header">
+              <span>Asset</span>
+              <span>Wallet Balance</span>
+              <span>APY</span>
+              <span>Action</span>
+            </div>
+            @for (token of availableToSupply(); track token.address) {
+              <div class="asset-table__row">
+                <div class="asset-info">
+                  <div class="asset-info__symbol">{{ token.symbol }}</div>
+                </div>
+                <div class="asset-amount">
+                  <div>{{ formatBalance(token.walletBalance) }}</div>
+                  <div class="asset-amount__usd">
+                    {{ formatUsd(parseFloat(token.walletBalance) * token.usdPrice) }}
+                  </div>
+                </div>
+                <div class="apy apy--supply">{{ formatApy(token.supplyApy) }}</div>
+                <div class="asset-actions">
+                  <button class="btn btn--sm btn--primary" (click)="onSupplyClick(token)">Supply</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    @if (activeSection() === 'borrow') {
+      <!-- Your Borrows -->
+      @if (borrowedTokens().length > 0) {
+        <div class="lending-dashboard__section">
+          <h3 class="section-title">Your Borrows</h3>
+          <div class="asset-table">
+            <div class="asset-table__header">
+              <span>Asset</span>
+              <span>Debt</span>
+              <span>APY</span>
+              <span>Actions</span>
+            </div>
+            @for (token of borrowedTokens(); track token.address) {
+              <div class="asset-table__row">
+                <div class="asset-info">
+                  <div class="asset-info__symbol">{{ token.symbol }}</div>
+                </div>
+                <div class="asset-amount">
+                  <div>{{ formatBalance(token.borrowedBalance) }}</div>
+                  <div class="asset-amount__usd">
+                    {{ formatUsd(parseFloat(token.borrowedBalance) * token.usdPrice) }}
+                  </div>
+                </div>
+                <div class="apy apy--borrow">{{ formatApy(token.borrowApy) }}</div>
+                <div class="asset-actions">
+                  <button class="btn btn--sm btn--danger" (click)="onRepayClick(token)">Repay</button>
+                  <button class="btn btn--sm btn--outline" (click)="onBorrowClick(token)">Borrow More</button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Assets to Borrow -->
+      <div class="lending-dashboard__section">
+        <h3 class="section-title">Assets to Borrow</h3>
+        @if (userMetrics().availableBorrowsUsd === 0) {
+          <p class="empty-state">Supply collateral first to enable borrowing.</p>
+        } @else if (availableToBorrow().length === 0) {
+          <p class="empty-state">No assets available to borrow.</p>
+        } @else {
+          <div class="asset-table">
+            <div class="asset-table__header">
+              <span>Asset</span>
+              <span>Available</span>
+              <span>APY</span>
+              <span>Action</span>
+            </div>
+            @for (token of availableToBorrow(); track token.address) {
+              <div class="asset-table__row">
+                <div class="asset-info">
+                  <div class="asset-info__symbol">{{ token.symbol }}</div>
+                </div>
+                <div class="asset-amount">
+                  <div class="asset-amount__usd">
+                    {{ formatUsd(userMetrics().availableBorrowsUsd) }} max
+                  </div>
+                </div>
+                <div class="apy apy--borrow">{{ formatApy(token.borrowApy) }}</div>
+                <div class="asset-actions">
+                  <button class="btn btn--sm btn--secondary" (click)="onBorrowClick(token)">Borrow</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Refresh button -->
+    <div class="lending-dashboard__footer">
+      <button class="btn btn--outline btn--sm" (click)="refresh()">↺ Refresh</button>
+    </div>
+  }
+</div>

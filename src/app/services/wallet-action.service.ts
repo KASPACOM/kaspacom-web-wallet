@@ -676,10 +676,11 @@ export class WalletActionService {
           // This wait can stall indefinitely (pending mempool txs / UTXO
           // processor); without the warning the queued action just silently
           // never executes and there is nothing in the console to explain it.
+          const waitingActionType = actionsList[0].action.type;
           const slowReadinessWarning = setInterval(() => {
             console.warn(
               '[WalletAction] Still waiting for the wallet to be ready before executing',
-              actionsList[0]?.action.type,
+              waitingActionType,
             );
           }, 10_000);
           try {

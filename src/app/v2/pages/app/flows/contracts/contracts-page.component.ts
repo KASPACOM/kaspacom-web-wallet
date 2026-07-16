@@ -475,9 +475,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   availableFunctions = computed(() => {
     const contract = this.parsedInteractContract();
     if (!contract) return [];
-    const funcs = contract.abi.filter((entry) =>
+    let funcs = contract.abi.filter((entry) =>
       contract.ast.functions.find((f) => f.name === entry.name && f.entrypoint),
     );
+
+    // Dead Man's Switch never exposes a generic "withdraw" — it was removed
+    // from the template, but legacy on-chain contracts compiled while it was
+    // briefly part of the template may still report it in their ABI. A
+    // generic withdrawal would let the owner drain the full balance to an
+    // arbitrary address, bypassing the mandatory continuation. Hide it
+    // outright rather than relying on the current template's ABI.
+    if (contract.contract_name === 'DeadManSwitch') {
+      funcs = funcs.filter((f) => f.name !== 'withdraw');
+    }
 
     // Inject 'transfer' action for KCC20 contracts (handled outside the standard ABI flow)
     if (
@@ -3550,6 +3560,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         );
         return;
       } else if (this.functionRequiresOutput(functionName)) {
+        if (
+          compiled.contract_name === 'DeadManSwitch' &&
+          functionName === 'withdraw'
+        ) {
+          // Blocked even though availableFunctions() already hides this —
+          // legacy on-chain contracts may still carry the ABI entry, and a
+          // generic withdrawal would let the owner drain the full balance
+          // to an arbitrary address instead of using keepAlive/claim.
+          this.interactError.set(
+            "Dead Man's Switch doesn't support a direct withdraw. Use Keep Alive to reset the deadline, or Claim after it passes.",
+          );
+          return;
+        }
         // Withdrawal function — validate user-provided output
         if (!outputAddress) {
           this.interactError.set('Output address is required');
@@ -4679,8 +4702,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       deadmanswitch: {
         keepAlive:
           "Prove you're still active. Re-deploys the contract with a fresh expiry — no withdrawal needed.",
-        withdraw:
-          'Withdraw part of the locked funds using the owner key. Must leave at least 0.5 KAS behind as a continuation.',
         claim:
           'Claim the inheritance. Only available if the owner missed their keepAlive deadline.',
         changeHeir:

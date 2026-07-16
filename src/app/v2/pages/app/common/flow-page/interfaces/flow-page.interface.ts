@@ -8,8 +8,6 @@ export interface IFlowPageConfig {
   canClose?: boolean;
   showTitle?: boolean;
   showBackground?: boolean;
-  /** Cosmetic hint only — actual wide-workspace layout is driven by WideWorkspaceService. */
-  wide?: boolean;
   previousPageId?: string | null;
   data?: any;
 }

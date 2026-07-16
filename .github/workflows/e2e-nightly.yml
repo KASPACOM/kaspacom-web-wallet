@@ -2,7 +2,7 @@ name: Nightly E2E Tests
 
 on:
   schedule:
-    - cron: '0 2 * * *' # 02:00 UTC daily
+    - cron: "0 2 * * *" # 02:00 UTC daily
   workflow_dispatch:
 
 permissions:
@@ -27,8 +27,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "24"
+          cache: "npm"
 
       - run: npm install
         env:
@@ -48,7 +48,7 @@ jobs:
       - name: Run full Playwright suite (${{ matrix.project }})
         run: npx playwright test --project=${{ matrix.project }} --reporter=blob
         env:
-          CI: 'true'
+          CI: "true"
           KASPA_E2E_SEED: ${{ secrets.KASPA_E2E_SEED }}
 
       - name: Upload blob report
@@ -76,8 +76,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "24"
+          cache: "npm"
 
       - run: npm install
         env:

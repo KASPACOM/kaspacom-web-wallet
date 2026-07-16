@@ -114,6 +114,12 @@ export class FlowPagesService implements IFlowPageNavigation {
     return activePage?.id === pageId;
   }
 
+  /** True if `pageId` is anywhere in the stack, not just at the top — e.g. a
+   * page layered on top (like an action approval) still has it underneath. */
+  isPageInStack(pageId: FlowPageId): boolean {
+    return this.pageStackSignal().pages.some((page) => page.id === pageId);
+  }
+
   // Get the previous page in the stack
   getPreviousPage(): IFlowPageConfig | null {
     const stack = this.pageStackSignal();

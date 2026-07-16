@@ -6,7 +6,8 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
 
 // Ambient light animations
 @keyframes ambient-float-left {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
   50% {
@@ -15,7 +16,8 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
 }
 
 @keyframes ambient-float-right {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
   50% {
@@ -25,7 +27,8 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
 
 // Mobile-optimized animations with smaller movement
 @keyframes ambient-float-left-mobile {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
   50% {
@@ -34,7 +37,8 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
 }
 
 @keyframes ambient-float-right-mobile {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
   50% {
@@ -158,6 +162,10 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
     flex-shrink: 0;
     border-top: 1px dashed rgba(#6fc7ba, 0.25);
     z-index: 100;
+
+    &.hide {
+      display: none;
+    }
   }
 
   &__content {
@@ -219,6 +227,14 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
   height: 82vh;
 }
 
+// ── Contracts wide-workspace layout ──────────────────────────────────────────
+// Mutually exclusive with .wrapper--expanded at the template level (see
+// app-wrapper.component.html), so no specificity handling is needed here.
+.wrapper--wide-flow {
+  width: min(1180px, calc(100vw - 32px));
+  height: 86vh;
+}
+
 .wrapper__left {
   width: 480px;
   flex-shrink: 0;
@@ -250,9 +266,20 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
   gap: 12px;
 }
 
-.wrapper__right-title {
+.wrapper__right-title-group {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.wrapper__right-title {
   color: var(--white);
+}
+
+.wrapper__right-subtitle {
+  color: var(--gray-60);
 }
 
 .wrapper__right-back {

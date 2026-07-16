@@ -6,8 +6,9 @@ import {
   OnInit,
   OnDestroy,
   effect,
+  PLATFORM_ID,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -19,9 +20,11 @@ import {
   KcIconComponent,
   KcInputComponent,
   KcNumberInputComponent,
+  KcStepperComponent,
   KcTooltipDirective,
 } from '@kaspacom/ui-kit';
 import { blake2b } from '@noble/hashes/blake2b';
+import { ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { WalletService } from '../../../../../services/wallet.service';
 import { WalletActionService } from '../../../../../services/wallet-action.service';
 import { QrScannerService } from '../../../../../services/qr-scanner.service';
@@ -67,9 +70,11 @@ import {
   CovenantSpendActionResult,
 } from '../../../../../types/wallet-action-result';
 import { FlowPagesService } from '../../../../services/flow-pages.service';
+import { WideWorkspaceService } from '../../../../services/wide-workspace.service';
 import { ApprovalFlowService } from '../../../../services/approval-flow.service';
 import { AddressSmartInputComponent } from '../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { CovenantDateTimeInputComponent } from './covenant-date-time-input.component';
+import { WalletProfileOrbComponent } from '../../../../shared/ui/wallet-profile-orb/wallet-profile-orb.component';
 
 type TabName =
   | 'deploy'
@@ -113,7 +118,10 @@ type IndexerImportPreview = {
 };
 
 type ContractDashboardSource = 'indexer' | 'local' | 'both';
-type ContractDashboardFilter = 'active' | 'history';
+type ContractDashboardFilter =
+  'all' | 'deadman' | 'timelock' | 'multisig' | 'escrow';
+// Status dimension, composed on top of the template-type filter above.
+type ContractStatusFilter = 'all' | 'active' | 'history';
 
 type ContractDashboardEntry = {
   id: string;
@@ -149,6 +157,15 @@ type ContractDetailParameter = {
   type?: string;
 };
 
+type AvailableAction = {
+  fnName: string;
+  label: string;
+  description: string;
+  iconClass: string;
+  enabled: boolean;
+  disabledReason?: string;
+};
+
 type DeployIndexerState = {
   txid: string;
   status: 'checking' | 'indexed' | 'not-indexed' | 'unavailable';
@@ -166,10 +183,12 @@ type DeployIndexerState = {
     KcIconComponent,
     KcInputComponent,
     KcNumberInputComponent,
+    KcStepperComponent,
     KcTooltipDirective,
     CopyButtonComponent,
     AddressSmartInputComponent,
     CovenantDateTimeInputComponent,
+    WalletProfileOrbComponent,
   ],
   templateUrl: './contracts-page.component.html',
   styleUrl: './contracts-page.component.scss',
@@ -194,9 +213,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private kaspaL1NetworkService = inject(KaspaL1NetworkService);
   private flowPagesService = inject(FlowPagesService);
+  wideWorkspaceService = inject(WideWorkspaceService);
   private approvalFlowService = inject(ApprovalFlowService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private platformId = inject(PLATFORM_ID);
+  private isBrowser = isPlatformBrowser(this.platformId);
   private routeSubscription?: Subscription;
 
   // Current active tab
@@ -272,18 +294,39 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   // Contract registry (my contracts tab)
   registryContracts = signal<ContractRegistryEntry[]>([]);
   dashboardContracts = signal<ContractDashboardEntry[]>([]);
-  dashboardFilter = signal<ContractDashboardFilter>('active');
-  activeDashboardContracts = computed(() =>
-    this.dashboardContracts().filter((contract) => contract.status !== 'spent'),
-  );
-  historyDashboardContracts = computed(() =>
-    this.dashboardContracts().filter((contract) => contract.status === 'spent'),
-  );
-  filteredDashboardContracts = computed(() =>
-    this.dashboardFilter() === 'history'
-      ? this.historyDashboardContracts()
-      : this.activeDashboardContracts(),
-  );
+  dashboardFilter = signal<ContractDashboardFilter>('all');
+  statusFilter = signal<ContractStatusFilter>('all');
+  dashboardSearch = signal('');
+  // Applies the template-type filter, the active/history status filter, and
+  // the search query together. Status: 'active' = anything not settled
+  // (active / unknown / tracking-incomplete, so ambiguous contracts are never
+  // hidden under Active); 'history' = spent/settled only. Search matches
+  // name, address, and covenant ID so a pasted value finds the right card.
+  filteredDashboardContracts = computed(() => {
+    const key = this.dashboardFilter();
+    const status = this.statusFilter();
+    const search = this.dashboardSearch().trim().toLowerCase();
+    let list = this.dashboardContracts();
+    if (key !== 'all') {
+      list = list.filter((contract) => this.getTemplateKey(contract) === key);
+    }
+    if (status === 'active') {
+      list = list.filter((contract) => contract.status !== 'spent');
+    } else if (status === 'history') {
+      list = list.filter((contract) => contract.status === 'spent');
+    }
+    if (search) {
+      list = list.filter((contract) =>
+        [
+          contract.displayName,
+          contract.contractName,
+          contract.currentAddress,
+          contract.covenantId,
+        ].some((value) => value?.toLowerCase().includes(search)),
+      );
+    }
+    return list;
+  });
   dashboardLoading = signal(false);
   dashboardError = signal<string | null>(null);
   selectedDetail = signal<ContractDetailState | null>(null);
@@ -300,9 +343,60 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     'EscrowWithArbiter',
   ];
 
+  /**
+   * Maps a contract to one of the four v1 template keys — drives card accent,
+   * icon, role labels, and which action UI is shown. Presentation-only.
+   * Reuses the canonical name already computed by normalizeContractName()
+   * (indexer label + argument-name fallback, resolved upstream in #257 and
+   * stored as contractName on every ContractDashboardEntry); unresolved
+   * (custom / tracking-incomplete) → 'default' (neutral UI).
+   */
+  getTemplateKey(
+    input: any,
+  ): 'deadman' | 'timelock' | 'multisig' | 'escrow' | 'default' {
+    // ContractTemplate.id on the Create / Templates tabs.
+    switch (input?.id) {
+      case 'dead-mans-switch':
+        return 'deadman';
+      case 'time-lock-vault':
+        return 'timelock';
+      case 'multi-sig-vault':
+        return 'multisig';
+      case 'escrow-with-arbiter':
+        return 'escrow';
+    }
+    switch (
+      this.normalizeContractName(input?.contractName ?? input?.name ?? '')
+    ) {
+      case 'DeadManSwitch':
+        return 'deadman';
+      case 'TimeLockVault':
+        return 'timelock';
+      case 'MultiSigVault':
+        return 'multisig';
+      case 'EscrowWithArbiter':
+        return 'escrow';
+      default:
+        return 'default';
+    }
+  }
+
   contractTemplates = CONTRACT_TEMPLATES;
   createMode = signal<CreateMode>('template');
   activeTemplate = signal<ContractTemplate | null>(null);
+  deploySteps = computed<{ label: string; value: number }[]>(() => {
+    const pastChooseType =
+      this.activeTemplate() !== null || this.createMode() === 'custom';
+
+    return [
+      { label: 'Choose type', value: pastChooseType ? 100 : 0 },
+      {
+        label: 'Set details',
+        value: !pastChooseType ? 0 : this.isDeploying() ? 100 : 50,
+      },
+      { label: 'Review & deploy', value: this.isDeploying() ? 50 : 0 },
+    ];
+  });
   templateFormValues: { [paramName: string]: string } = {};
   templateFieldTouched: { [paramName: string]: boolean } = {};
   templateFieldErrors: { [paramName: string]: string } = {};
@@ -332,8 +426,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   indexerImportPreview = signal<IndexerImportPreview | null>(null);
 
   // DMS keepAlive specific state
-  dmsNewExpiry = ''; // new expiry timestamp (unix seconds) entered by user
-  dmsKeepAliveError = signal<string | null>(null);
+  dmsNewExpiry = ''; // new expiry entered by user — unix seconds, unix ms, or a date string; see parseDateToUnixMs()
   interactResult = signal<{ txid: string; functionName: string } | null>(null);
   interactError = signal<string | null>(null);
   isInteracting = signal(false);
@@ -382,9 +475,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   availableFunctions = computed(() => {
     const contract = this.parsedInteractContract();
     if (!contract) return [];
-    const funcs = contract.abi.filter((entry) =>
+    let funcs = contract.abi.filter((entry) =>
       contract.ast.functions.find((f) => f.name === entry.name && f.entrypoint),
     );
+
+    // Dead Man's Switch never exposes a generic "withdraw" — it was removed
+    // from the template, but legacy on-chain contracts compiled while it was
+    // briefly part of the template may still report it in their ABI. A
+    // generic withdrawal would let the owner drain the full balance to an
+    // arbitrary address, bypassing the mandatory continuation. Hide it
+    // outright rather than relying on the current template's ABI.
+    if (contract.contract_name === 'DeadManSwitch') {
+      funcs = funcs.filter((f) => f.name !== 'withdraw');
+    }
 
     // Inject 'transfer' action for KCC20 contracts (handled outside the standard ABI flow)
     if (
@@ -394,6 +497,18 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       funcs.push({
         name: 'transfer',
         inputs: [{ name: 'recipient', type_name: 'pubkey' }],
+      } as any);
+    }
+
+    // Inject 'changeHeir' action for Dead Man's Switch contracts in case the
+    // compiled ABI predates this entrypoint being added to the template.
+    if (
+      contract.contract_name === 'DeadManSwitch' &&
+      !funcs.some((f) => f.name === 'changeHeir')
+    ) {
+      funcs.push({
+        name: 'changeHeir',
+        inputs: [{ name: 'newHeir', type_name: 'pubkey' }],
       } as any);
     }
 
@@ -422,8 +537,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       return [];
     if (
       contract.contract_name === 'DeadManSwitch' &&
-      (this.selectedFunction === 'keepAlive' ||
-        this.selectedFunction === 'withdraw')
+      this.selectedFunction === 'keepAlive'
     )
       return [];
     // Only render extra-arg inputs the interact flow can actually collect/pass
@@ -482,6 +596,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.wideWorkspaceService.activate();
     this.restoreTransientState();
     this.routeSubscription = this.route.paramMap.subscribe((params) => {
       const contractId = params.get('contractId');
@@ -506,6 +621,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.wideWorkspaceService.deactivate();
     this.routeSubscription?.unsubscribe();
   }
 
@@ -671,6 +787,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.loadContracts();
     }
   }
+
+  /** 'detail' belongs to the My Contracts section for tab-highlighting purposes. */
+  isMyContractsTabActive = computed(
+    () => this.activeTab() === 'my-contracts' || this.activeTab() === 'detail',
+  );
 
   selectTemplate(template: ContractTemplate) {
     this.createMode.set('template');
@@ -1212,16 +1333,17 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const updatedLocal = this.getCurrentWalletLocalContracts();
     this.registryContracts.set(updatedLocal);
 
+    const localDashboardEntries = await Promise.all(
+      updatedLocal.map((entry) => this.localEntryToDashboard(entry)),
+    );
+
     try {
       // Indexer-backed tracking is the source of truth for contracts involving
       // the wallet. Local registry entries are merged below so older local-only
       // deployments still remain visible while the indexer catches up.
       const indexerEntries = await this.loadIndexerDashboardEntries();
       this.dashboardContracts.set(
-        this.mergeDashboardEntries(
-          indexerEntries,
-          updatedLocal.map((entry) => this.localEntryToDashboard(entry)),
-        ),
+        this.mergeDashboardEntries(indexerEntries, localDashboardEntries),
       );
     } catch (error: any) {
       console.warn('[Contracts] Indexer dashboard load failed:', error);
@@ -1229,9 +1351,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         error?.message ||
           'Indexer tracking is unavailable. Showing locally saved contracts only.',
       );
-      this.dashboardContracts.set(
-        updatedLocal.map((entry) => this.localEntryToDashboard(entry)),
-      );
+      this.dashboardContracts.set(localDashboardEntries);
     } finally {
       this.dashboardLoading.set(false);
     }
@@ -1239,6 +1359,23 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const routeId = this.detailRouteId();
     if (routeId) {
       await this.openDetailFromRoute(routeId);
+    } else if (this.activeTab() === 'detail' && this.selectedDetail()) {
+      // An open detail view isn't cleared above (so the panel doesn't flash
+      // empty), but it also needs to be re-fetched with the freshly merged
+      // entry — otherwise fields like the check-in deadline stay stuck at
+      // whatever they were when the panel was first opened, even after an
+      // action (e.g. keepAlive) has changed them on-chain.
+      const current = this.selectedDetail()!.entry;
+      const refreshed = this.dashboardContracts().find(
+        (entry) =>
+          this.sameIdentity(entry.covenantId, current.covenantId) ||
+          this.sameIdentity(entry.deployTxid, current.deployTxid) ||
+          this.sameIdentity(entry.scriptHash, current.scriptHash) ||
+          entry.id === current.id,
+      );
+      if (refreshed) {
+        await this.openContractDetail(refreshed);
+      }
     }
   }
 
@@ -1384,27 +1521,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const isMatch = (
       indexerEntry: ContractDashboardEntry,
       localEntry: ContractDashboardEntry,
-    ) => {
-      if (indexerEntry.covenantId && localEntry.covenantId) {
-        return this.sameIdentity(
-          indexerEntry.covenantId,
-          localEntry.covenantId,
-        );
-      }
-      if (indexerEntry.deployTxid && localEntry.deployTxid) {
-        return this.sameIdentity(
-          indexerEntry.deployTxid,
-          localEntry.deployTxid,
-        );
-      }
-      if (indexerEntry.scriptHash && localEntry.scriptHash) {
-        return this.sameIdentity(
-          indexerEntry.scriptHash,
-          localEntry.scriptHash,
-        );
-      }
-      return false;
-    };
+    ) =>
+      // Try every identity signal rather than committing to whichever field
+      // happens to be populated on both sides first — the indexer can assign
+      // a covenantId that differs from what the client recorded at deploy
+      // time (e.g. before full confirmation), in which case deployTxid (the
+      // same underlying transaction on both sides) is still a valid match.
+      this.sameIdentity(indexerEntry.covenantId, localEntry.covenantId) ||
+      this.sameIdentity(indexerEntry.deployTxid, localEntry.deployTxid) ||
+      this.sameIdentity(indexerEntry.scriptHash, localEntry.scriptHash);
 
     for (const entry of localEntries) {
       merged.set(this.getDashboardIdentityKey(entry), entry);
@@ -1427,11 +1552,20 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
       merged.set(local?.id || key, {
         ...entry,
+        // Keep the local entry's id stable across merges — otherwise a
+        // contract's id flips from `local:...` to `indexer:...` the moment
+        // the indexer catches up, breaking any UI state (e.g. the Share
+        // dropdown's selection) that was keyed on the previous id.
+        id: local?.id || entry.id,
         source: local ? 'both' : entry.source,
         status: entry.status,
         amountSompi: entry.amountSompi,
         latestTxid: entry.latestTxid,
         latestAction: entry.latestAction,
+        // The indexer's deadline is a genesis-time snapshot that never
+        // reflects later continuations (e.g. a keepAlive's new deadline) —
+        // prefer the local entry's script-derived value when we have one.
+        deadlineMs: local?.deadlineMs ?? entry.deadlineMs,
         registryEntry: local?.registryEntry,
       });
     }
@@ -1441,9 +1575,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     );
   }
 
-  private localEntryToDashboard(
+  private async localEntryToDashboard(
     contract: ContractRegistryEntry,
-  ): ContractDashboardEntry {
+  ): Promise<ContractDashboardEntry> {
     const contractName = this.normalizeContractName(contract.contractName);
     const participants = this.localParticipants(contract);
     return {
@@ -1459,6 +1593,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       latestTxid:
         contract.spendTxid || contract.outpoint?.txid || contract.deployTxid,
       latestAction: contract.spendTxid ? 'spend' : 'deploy',
+      deadlineMs: await this.extractLocalDmsDeadlineMs(contract, contractName),
       participants,
       nextActionLabel: this.getNextActionLabel(
         contractName,
@@ -1468,6 +1603,39 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       actionHint: 'Open wallet action flow',
       registryEntry: contract,
     };
+  }
+
+  /**
+   * The indexer's claimedArgs snapshot is frozen at genesis and never
+   * reflects a covenant's later continuations (e.g. a keepAlive's extended
+   * deadline). For contracts this wallet has a local compiled JSON for, read
+   * the deadline straight from the current script bytes instead — the same
+   * ground truth executeDmsKeepAlive() validates the new deadline against.
+   */
+  private async extractLocalDmsDeadlineMs(
+    contract: ContractRegistryEntry,
+    normalizedContractName: string,
+  ): Promise<number | undefined> {
+    if (normalizedContractName !== 'DeadManSwitch' || !contract.compiledJson) {
+      return undefined;
+    }
+    try {
+      const compiled = this.covenantService.parseCompiledContract(
+        contract.compiledJson,
+      );
+      const deadline = await this.extractTemplateIntField(
+        compiled,
+        'dead-mans-switch',
+        'initDeadline',
+      );
+      if (deadline === undefined) return undefined;
+      const deadlineMs = Number(deadline);
+      return Number.isFinite(deadlineMs) && deadlineMs > 0
+        ? deadlineMs
+        : undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   private indexerSummaryToDashboard(
@@ -1716,14 +1884,29 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     );
   }
 
+  /** Public wrapper for the detail page's "You are <role>" pill. */
+  getCurrentRoleLabel(
+    participants: Array<{ label: string; value: string }>,
+  ): string {
+    return this.currentWalletRole(participants);
+  }
+
   private extractDeadlineMs(
     summary: IndexerCovenantDetails,
+    utxoState?: Record<string, any> | null,
   ): number | undefined {
     const source = {
       ...(summary.constructor || {}),
       ...this.argsArrayToRecord(summary.claimedArgs?.args || []),
+      // The active UTXO's decoded state reflects the covenant's current
+      // field values (e.g. after a keepAlive extends the deadline), whereas
+      // `constructor`/`claimedArgs` can still describe the deploy this
+      // covenant lineage started from — prefer state when it's available.
+      ...(utxoState || {}),
     };
     const raw =
+      source['deadline'] ??
+      source['initDeadline'] ??
       source['checkInDeadline'] ??
       source['expiry'] ??
       source['timeout'] ??
@@ -1746,6 +1929,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   async openContractDetail(entry: ContractDashboardEntry) {
     this.selectedDetailLoading.set(true);
     this.selectedDetailError.set(null);
+    this.dashboardError.set(null);
     this.selectedDetail.set({ entry, actions: [], utxos: [] });
     if (this.detailRouteId() || this.activeTab() === 'detail') {
       this.clearInteractContractSelection();
@@ -1799,6 +1983,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         amountSompi: detailIdentifier
           ? lockedSompi.toString()
           : entry.amountSompi,
+        deadlineMs: resolved.covenant
+          ? this.extractDeadlineMs(resolved.covenant, utxos[0]?.state)
+          : entry.deadlineMs,
       };
       this.selectedDetail.set({
         entry: updatedEntry,
@@ -1811,21 +1998,98 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         updatedEntry.status === 'active'
       ) {
         await this.prepareDashboardAction(updatedEntry);
+        await this.refreshDmsDeadlineFromScript();
       }
     } catch (error: any) {
-      this.selectedDetailError.set(
-        error?.message || 'Failed to load indexer detail for this contract.',
-      );
+      if (entry.registryEntry) {
+        // The indexer may not have caught up yet (e.g. right after a fresh
+        // deploy — see trackDeployIndexing()) or may be temporarily
+        // unavailable. The local registry entry already has everything
+        // needed to display this contract and prepare actions on it, so
+        // fall back to that instead of hard-failing.
+        console.warn(
+          '[Contracts] Indexer detail lookup failed, falling back to local registry entry:',
+          error,
+        );
+        this.selectedDetailError.set(
+          "Indexer hasn't caught up with this contract yet — showing your locally saved copy. Try refreshing in a moment for live status.",
+        );
+        if (
+          (this.detailRouteId() || this.activeTab() === 'detail') &&
+          entry.status === 'active'
+        ) {
+          await this.prepareDashboardAction(entry);
+        }
+      } else {
+        this.selectedDetailError.set(
+          error?.message || 'Failed to load indexer detail for this contract.',
+        );
+      }
     } finally {
       this.selectedDetailLoading.set(false);
       this.scrollContractsContentToTop();
     }
   }
 
+  /**
+   * The indexer's decoded deadline can lag behind the actual on-chain value
+   * (e.g. right after a keepAlive, before the indexer reclassifies the new
+   * continuation as a recognized template instance). The compiled contract's
+   * script bytes are ground truth — it's the same source executeDmsKeepAlive()
+   * validates the new deadline against — so once it's loaded, prefer it over
+   * the indexer-derived guess used for the initial display.
+   */
+  private async refreshDmsDeadlineFromScript() {
+    const contract = this.parsedInteractContract();
+    const detail = this.selectedDetail();
+    if (!contract || !detail || contract.contract_name !== 'DeadManSwitch') {
+      return;
+    }
+    const deadline = await this.extractTemplateIntField(
+      contract,
+      'dead-mans-switch',
+      'initDeadline',
+    );
+    if (deadline === undefined) return;
+    const deadlineMs = Number(deadline);
+    if (!Number.isFinite(deadlineMs) || deadlineMs <= 0) return;
+    this.selectedDetail.set({
+      ...detail,
+      entry: { ...detail.entry, deadlineMs },
+    });
+  }
+
   async openDashboardAction(entry: ContractDashboardEntry) {
     this.detailPanelTab.set('action');
     this.activeTab.set('detail');
     await this.openContractDetail(entry);
+    this.scrollToActionPanel();
+  }
+
+  /** Same as openDashboardAction(), but preselects a specific entrypoint instead of the type's default. */
+  async openDashboardActionFor(entry: ContractDashboardEntry, fnName: string) {
+    await this.openDashboardAction(entry);
+    if (this.availableFunctions().some((fn) => fn.name === fnName)) {
+      this.selectFunction(fnName);
+    } else if (!this.dashboardError()) {
+      this.dashboardError.set(
+        `Could not load the "${fnName}" action for this contract. The indexer may not have this covenant's current state yet.`,
+      );
+    }
+  }
+
+  /**
+   * The action form renders as a separate block below the whole detail view
+   * (participants, UTXOs, timeline, etc.), so clicking an action button can
+   * look like nothing happened unless we bring it into view.
+   */
+  private scrollToActionPanel() {
+    if (!this.isBrowser) return;
+    setTimeout(() => {
+      document
+        .getElementById('contract-action-panel')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   private async prepareDashboardAction(
@@ -1941,6 +2205,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   setDashboardFilter(filter: ContractDashboardFilter) {
     this.dashboardFilter.set(filter);
+    this.selectedDetail.set(null);
+    this.selectedDetailError.set(null);
+  }
+
+  setStatusFilter(filter: ContractStatusFilter) {
+    this.statusFilter.set(filter);
     this.selectedDetail.set(null);
     this.selectedDetailError.set(null);
   }
@@ -2063,12 +2333,199 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.partialCompleteResult.set(null);
   }
 
+  /** Per-(contract type, entrypoint) authored copy + availability rules for the detail page's action list. */
+  private readonly actionMetaTable: Record<
+    string,
+    Record<
+      string,
+      {
+        label: string;
+        description: string;
+        iconClass: string;
+        requiredRole?: string;
+        extraGuard?: (detail: ContractDetailState) => string | null;
+      }
+    >
+  > = {
+    DeadManSwitch: {
+      keepAlive: {
+        label: 'Keep alive',
+        description: 'Reset the check-in deadline and keep the funds yours.',
+        iconClass: 'icon-refresh-ccw-04',
+        requiredRole: 'Owner',
+      },
+      claim: {
+        label: 'Claim',
+        description: 'Claim the inheritance as the designated heir.',
+        iconClass: 'icon-gift',
+        requiredRole: 'Heir',
+        extraGuard: (detail) => {
+          const deadline = detail.entry.deadlineMs;
+          if (deadline && Date.now() < deadline) {
+            return 'Only the heir, only after the check-in deadline passes.';
+          }
+          return null;
+        },
+      },
+      topUp: {
+        label: 'Top Up',
+        description:
+          'Add more KAS to the locked funds without withdrawing anything.',
+        iconClass: 'icon-plus',
+      },
+      changeHeir: {
+        label: 'Change Heir',
+        description: 'Update the wallet designated to inherit the funds.',
+        iconClass: 'icon-user-gear',
+        requiredRole: 'Owner',
+      },
+    },
+    TimeLockVault: {
+      spend: {
+        label: 'Withdraw',
+        description: 'Withdraw funds using the owner key.',
+        iconClass: 'icon-coins-02',
+        requiredRole: 'Owner',
+      },
+      recover: {
+        label: 'Recover',
+        description: 'Emergency withdrawal using the recovery key.',
+        iconClass: 'icon-shield',
+        requiredRole: 'Recovery',
+        extraGuard: (detail) => {
+          const deadline = detail.entry.deadlineMs;
+          if (deadline && Date.now() < deadline) {
+            return 'Only the recovery wallet, only after the timelock expires.';
+          }
+          return null;
+        },
+      },
+      topUp: {
+        label: 'Top Up',
+        description:
+          'Add more KAS to the locked funds without withdrawing anything.',
+        iconClass: 'icon-plus',
+      },
+    },
+    MultiSigVault: {
+      spend12: {
+        label: '2-of-3 Withdraw (Signer 1 + 2)',
+        description:
+          'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 1 and Signer 2.',
+        iconClass: 'icon-coins-02',
+        extraGuard: (detail) =>
+          this.requireOneOfSigners(detail, 'Signer 1', 'Signer 2'),
+      },
+      spend13: {
+        label: '2-of-3 Withdraw (Signer 1 + 3)',
+        description:
+          'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 1 and Signer 3.',
+        iconClass: 'icon-coins-02',
+        extraGuard: (detail) =>
+          this.requireOneOfSigners(detail, 'Signer 1', 'Signer 3'),
+      },
+      spend23: {
+        label: '2-of-3 Withdraw (Signer 2 + 3)',
+        description:
+          'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 2 and Signer 3.',
+        iconClass: 'icon-coins-02',
+        extraGuard: (detail) =>
+          this.requireOneOfSigners(detail, 'Signer 2', 'Signer 3'),
+      },
+      topUp: {
+        label: 'Top Up',
+        description:
+          'Add more KAS to the locked funds without withdrawing anything.',
+        iconClass: 'icon-plus',
+      },
+    },
+    EscrowWithArbiter: {
+      release: {
+        label: 'Release',
+        description:
+          'Both buyer and seller agree to release funds to the recipient.',
+        iconClass: 'icon-send-01',
+      },
+      refund: {
+        label: 'Refund',
+        description: 'Cancel the escrow and return funds to the sender.',
+        iconClass: 'icon-coins-02',
+      },
+      topUp: {
+        label: 'Top Up',
+        description:
+          'Add more KAS to the locked funds without withdrawing anything.',
+        iconClass: 'icon-plus',
+      },
+      arbitrate: {
+        label: 'Arbitrate',
+        description: 'Resolve the dispute as the trusted arbiter.',
+        iconClass: 'icon-shield',
+        requiredRole: 'Arbiter',
+      },
+    },
+  };
+
+  /**
+   * Full list of possible actions for the detail page's "Available actions"
+   * panel — unlike getNextActionLabel() (one suggestion), this returns every
+   * entrypoint the contract type supports, each flagged enabled/disabled with
+   * a human-readable reason so the user understands why an action is greyed
+   * out (wrong role, or a state condition like an unpassed deadline).
+   */
+  getAvailableActions(detail: ContractDetailState): AvailableAction[] {
+    const normalized = this.normalizeContractName(detail.entry.contractName);
+    const table = this.actionMetaTable[normalized];
+    if (!table) return [];
+
+    const available = this.availableFunctions();
+    const currentRole = this.currentWalletRole(detail.entry.participants);
+
+    return Object.entries(table).map(([fnName, meta]) => {
+      const existsOnChain = available.some((fn) => fn.name === fnName);
+
+      let disabledReason: string | null = null;
+      if (!existsOnChain) {
+        disabledReason =
+          available.length === 0
+            ? 'Loading contract functions…'
+            : 'Not available on this contract version.';
+      } else if (meta.requiredRole && currentRole !== meta.requiredRole) {
+        disabledReason = `Only the ${meta.requiredRole.toLowerCase()} can do this.`;
+      } else {
+        disabledReason = meta.extraGuard?.(detail) ?? null;
+      }
+
+      return {
+        fnName,
+        label: meta.label,
+        description: meta.description,
+        iconClass: meta.iconClass,
+        enabled: !disabledReason,
+        disabledReason: disabledReason ?? undefined,
+      };
+    });
+  }
+
+  /** Disables a MultiSig spend action unless the current wallet is one of its required signer pair. */
+  private requireOneOfSigners(
+    detail: ContractDetailState,
+    signerA: string,
+    signerB: string,
+  ): string | null {
+    const role = this.currentWalletRole(detail.entry.participants);
+    if (role !== signerA && role !== signerB) {
+      return `Only ${signerA} or ${signerB} can do this.`;
+    }
+    return null;
+  }
+
   private selectDefaultFunctionForContract(contractName: string) {
     const normalized = this.normalizeContractName(contractName);
     const preferred: Record<string, string[]> = {
       DeadManSwitch: ['keepAlive', 'changeHeir', 'topUp', 'claim'],
-      TimeLockVault: ['spend', 'recover', 'withdraw'],
-      MultiSigVault: ['spend12', 'spend', 'release'],
+      TimeLockVault: ['spend', 'recover'],
+      MultiSigVault: ['spend12', 'spend13', 'spend23'],
       EscrowWithArbiter: ['release', 'refund', 'arbitrate'],
     };
     const available = this.availableFunctions();
@@ -2411,7 +2868,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       activeAction.outputs.address !== computedAddress;
     if (computedAddress !== contractAddress) {
       throw new Error(
-        'Template parameters do not match the covenant address reported by the indexer.',
+        "This covenant's constructor args (e.g. a check-in deadline updated by a later keepAlive) do not match its current on-chain address — the indexer only decoded an earlier state and has no way to know the latest one. " +
+          'If you know the current values (ask whoever last kept this contract alive), use "Advanced: paste contract JSON" in the Interact tab to build and sign the transaction manually.',
       );
     }
 
@@ -2798,7 +3256,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         });
 
       if (!actionResult.success || !actionResult.result) {
-        this.deployError.set('Covenant deployment was rejected or failed');
+        const reason =
+          actionResult.errorCode !== undefined
+            ? ERROR_CODES_MESSAGES[actionResult.errorCode]
+            : undefined;
+        this.deployError.set(
+          reason
+            ? `Covenant deployment failed: ${reason}`
+            : 'Covenant deployment was rejected or failed',
+        );
         return;
       }
 
@@ -3113,6 +3579,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         );
         return;
       } else if (this.functionRequiresOutput(functionName)) {
+        if (
+          compiled.contract_name === 'DeadManSwitch' &&
+          functionName === 'withdraw'
+        ) {
+          // Blocked even though availableFunctions() already hides this —
+          // legacy on-chain contracts may still carry the ABI entry, and a
+          // generic withdrawal would let the owner drain the full balance
+          // to an arbitrary address instead of using keepAlive/claim.
+          this.interactError.set(
+            "Dead Man's Switch doesn't support a direct withdraw. Use Keep Alive to reset the deadline, or Claim after it passes.",
+          );
+          return;
+        }
         // Withdrawal function — validate user-provided output
         if (!outputAddress) {
           this.interactError.set('Output address is required');
@@ -3124,31 +3603,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         }
         const withdrawalAmount = BigInt(Math.floor(outputAmountKas * 1e8));
         if (
-          compiled.contract_name === 'DeadManSwitch' &&
-          functionName === 'withdraw'
+          functionName === 'transfer' &&
+          compiled.contract_name === 'KCC20'
         ) {
-          if (withdrawalAmount >= inputAmount) {
-            this.interactError.set(
-              "Dead Man's Switch withdraw must leave a continuation in the contract. Use claim after the deadline for the heir path.",
-            );
+          try {
+            extraArgsOverride = {
+              recipient: Uint8Array.from(
+                this.templatePatcher.kaspaAddressToPubkeyBytes(outputAddress),
+              ),
+            };
+          } catch {
+            this.interactError.set('Enter a valid recipient Kaspa address');
             return;
           }
-          const owner =
-            (await this.extractTemplatePubkeyHex(
-              compiled,
-              'dead-mans-switch',
-              'owner',
-            )) || this.extractPubkeysFromScript(compiled)[0];
-          const ownerAddress = owner ? this.pubkeyToAddress(owner) : '';
-          if (!ownerAddress) {
-            this.interactError.set(
-              'Could not derive owner address from contract script',
-            );
-            return;
-          }
-          outputAddress = ownerAddress;
-          extraArgsOverride = { amount: withdrawalAmount };
-          useSenderFeeOverride = true;
         }
         const withdrawalOutputs = this.buildWithdrawalOutputs(
           compiled,
@@ -3386,7 +3853,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     outpoint: CovenantOutpoint,
     inputAmount: bigint,
   ): Promise<void> {
-    this.dmsKeepAliveError.set(null);
+    this.interactError.set(null);
 
     const oldEntry = this.registryContracts().find(
       (c) => c.id === this.selectedContractId(),
@@ -3401,26 +3868,37 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         (field: any) => field.name === 'deadline',
       );
     if (!supportsDeadlineKeepAlive) {
-      this.dmsKeepAliveError.set(
+      this.interactError.set(
         "This Dead Man's Switch was deployed with the old inactivity-period contract. It cannot be migrated to the new deadline contract with keepAlive; deploy a new deadline-based Dead Man's Switch.",
       );
       return;
     }
 
     if (!this.dmsNewExpiry.trim()) {
-      this.dmsKeepAliveError.set('Select the new check-in deadline');
+      this.interactError.set('Select the new check-in deadline');
       return;
     }
 
     const newDeadline = BigInt(
       this.parseDateToUnixMs(this.dmsNewExpiry, 'New check-in deadline'),
     );
+    const currentDeadline = await this.extractTemplateIntField(
+      compiled,
+      'dead-mans-switch',
+      'initDeadline',
+    );
+    if (currentDeadline !== undefined && newDeadline <= currentDeadline) {
+      this.interactError.set(
+        `New check-in deadline must be later than the current deadline (${this.formatTimestamp(Number(currentDeadline))}).`,
+      );
+      return;
+    }
     const owner = await this.extractDmsPubkeyHex(compiled, 'owner');
     const heir = await this.extractDmsPubkeyHex(compiled, 'heir');
     const ownerAddress = owner ? this.pubkeyToAddress(owner) : '';
     const heirAddress = heir ? this.pubkeyToAddress(heir) : '';
     if (!ownerAddress || !heirAddress) {
-      this.dmsKeepAliveError.set(
+      this.interactError.set(
         'Could not derive owner/heir addresses from contract script',
       );
       return;
@@ -3902,17 +4380,27 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return labels[action] || action;
   }
 
+  /**
+   * Builds a share link that carries only the network and canonical covenant
+   * ID — never private data or compiled JSON. The receiving wallet imports
+   * current state from the indexer when the link is opened.
+   */
+  buildShareLink(covenantId: string): string {
+    if (!this.isBrowser) return '';
+    const url = new URL(
+      `${window.location.origin}/app/contracts/${covenantId}`,
+    );
+    url.searchParams.set('network', this.network());
+    return url.toString();
+  }
+
   copyContractShareLink(contract: ContractDashboardEntry) {
     const id = contract.covenantId;
     if (!id) return;
-
-    // Share links intentionally carry only public lookup state. The receiving
-    // wallet still imports/loads current state from the indexer.
-    const url = new URL(`${window.location.origin}/app/contracts/${id}`);
-    url.searchParams.set('network', this.network());
-    navigator.clipboard.writeText(url.toString()).then(
+    const link = this.buildShareLink(id);
+    navigator.clipboard.writeText(link).then(
       () => alert('Contract share link copied.'),
-      () => prompt('Copy this contract link:', url.toString()),
+      () => prompt('Copy this contract link:', link),
     );
   }
 
@@ -3920,12 +4408,53 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const id =
       this.deployIndexerState()?.covenantId || this.deployResult()?.covenantId;
     if (!id) return;
-
-    const url = new URL(`${window.location.origin}/app/contracts/${id}`);
-    url.searchParams.set('network', this.network());
-    navigator.clipboard.writeText(url.toString()).then(
+    const link = this.buildShareLink(id);
+    navigator.clipboard.writeText(link).then(
       () => alert('Contract share link copied.'),
-      () => prompt('Copy this contract link:', url.toString()),
+      () => prompt('Copy this contract link:', link),
+    );
+  }
+
+  /** Contract explicitly picked in the "Share a contract" card; empty = auto-default to most recent. */
+  shareableContractId = signal<string>('');
+
+  /** Dropdown options for the "Share a contract" card — only contracts with a covenant ID can be shared. */
+  shareableContracts = computed<ContractDashboardEntry[]>(() =>
+    this.dashboardContracts().filter((c) => !!c.covenantId),
+  );
+
+  /** Effective selection — the explicit pick, or the most-recently-interacted contract. */
+  effectiveShareableContractId = computed<string>(
+    () => this.shareableContractId() || this.shareableContracts()[0]?.id || '',
+  );
+
+  /** Dropdown options for the "Share a contract" card. */
+  shareableContractOptions = computed<DropdownOption[]>(() =>
+    this.shareableContracts().map((contract) => ({
+      value: contract.id,
+      label: contract.displayName,
+    })),
+  );
+
+  /** Readonly link shown in the "Share a contract" card. */
+  shareableContractLink = computed<string>(() => {
+    const id = this.effectiveShareableContractId();
+    if (!id) return '';
+    const contract = this.shareableContracts().find((c) => c.id === id);
+    if (!contract?.covenantId) return '';
+    return this.buildShareLink(contract.covenantId);
+  });
+
+  onShareableContractChange(value: string) {
+    this.shareableContractId.set(value || '');
+  }
+
+  copyShareableContractLink() {
+    const link = this.shareableContractLink();
+    if (!link) return;
+    navigator.clipboard.writeText(link).then(
+      () => alert('Contract share link copied.'),
+      () => prompt('Copy this contract link:', link),
     );
   }
 
@@ -4118,12 +4647,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.extraArgValues = {};
     this.dmsNewExpiry = '';
     this.topUpAmount = '';
-    this.dmsKeepAliveError.set(null);
 
-    if (this.isTopUpFunction(name)) {
-      this.interactOutputAddress = '';
-      this.interactOutputAmount = '';
-    } else if (this.isDmsChangeHeir()) {
+    if (this.isTopUpFunction(name) || this.isDmsChangeHeir()) {
       this.interactOutputAddress = '';
       this.interactOutputAmount = '';
     } else if (this.functionRequiresOutput(name)) {
@@ -4161,15 +4686,20 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    */
   getFunctionLabel(name: string): string {
     const labels: Record<string, string> = {
-      spend: '💰 Withdraw',
-      recover: '🔐 Recovery Withdraw',
-      claim: '📥 Claim',
-      release: '🔓 Release',
-      refund: '↩️ Refund',
-      increment: '➕ Increment',
-      keepAlive: '♻️ Keep Alive',
-      execute: '⚡ Execute',
+      spend: 'Withdraw',
+      spend12: '2-of-3 Withdraw (Signer 1 + 2)',
+      spend13: '2-of-3 Withdraw (Signer 1 + 3)',
+      spend23: '2-of-3 Withdraw (Signer 2 + 3)',
+      withdraw: 'Withdraw',
+      recover: 'Recovery Withdraw',
+      claim: 'Claim',
+      release: 'Release',
+      refund: 'Refund',
+      increment: 'Increment',
+      keepAlive: 'Keep Alive',
+      execute: 'Execute',
       topUp: 'Top Up',
+      changeHeir: 'Change Heir',
     };
     return labels[name] || name;
   }
@@ -4188,11 +4718,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         recover:
           'Emergency recovery using the backup key. Only available after the timelock expires.',
       },
-      deadmansswitch: {
+      deadmanswitch: {
         keepAlive:
           "Prove you're still active. Re-deploys the contract with a fresh expiry — no withdrawal needed.",
         claim:
           'Claim the inheritance. Only available if the owner missed their keepAlive deadline.',
+        changeHeir:
+          'Change the beneficiary who can claim the funds if you miss the deadline.',
       },
       escrow: {
         release:
@@ -4202,7 +4734,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       },
       multisigvault: {
         spend12:
-          'Withdraw using 2-of-3 multi-sig. Requires signatures from two key holders.',
+          'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 1 and Signer 2.',
+        spend13:
+          'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 1 and Signer 3.',
+        spend23:
+          'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 2 and Signer 3.',
       },
       counter: {
         increment:

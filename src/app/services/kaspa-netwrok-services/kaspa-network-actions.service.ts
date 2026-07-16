@@ -42,7 +42,12 @@ import {
   CovenantCompletePartialAction,
 } from '../../types/wallet-action';
 import { AppWallet } from '../../classes/AppWallet';
-import { CompoundUtxosActionResult } from '../../types/wallet-action-result';
+import {
+  CompoundUtxosActionResult,
+  CovenantCompletePartialActionResult,
+  CovenantDeployActionResult,
+  CovenantSpendActionResult,
+} from '../../types/wallet-action-result';
 import { UnfinishedCommitRevealAction } from '../../types/kaspa-network/unfinished-commit-reveal-action.interface';
 import { PsktTransaction } from '../../types/kaspa-network/pskt-transaction.interface';
 import { UtilsHelper } from '../utils.service';
@@ -51,11 +56,6 @@ import { TransactionRequest } from 'ethers';
 import { createEIP1193Response } from '../etherium-services/create-eip-1193-response';
 import { KaspaWalletMnemonicActionsService } from './kaspa-wallet-mnemonic-actions.service';
 import { CovenantService } from '../covenant/covenant.service';
-import {
-  CovenantCompletePartialActionResult,
-  CovenantDeployActionResult,
-  CovenantSpendActionResult,
-} from '../../types/wallet-action-result';
 
 const MINIMAL_TRANSACTION_MASS = 10000n;
 const COVENANT_ESTIMATED_TRANSACTION_MASS = 25000n;

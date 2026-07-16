@@ -10,6 +10,7 @@ import * as Sentry from '@sentry/angular';
 import { provideClientHydration } from '@angular/platform-browser';
 import { provideHttpClient } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { OVERLAY_DEFAULT_CONFIG } from '@angular/cdk/overlay';
 import { V2TMP_ROUTES } from '../v2/v2.routes';
 import { environment } from '../../environments/environment';
 import { DEFI_API_BASE_URL, LOGOS_URL } from '../config/injection-tokens';
@@ -48,6 +49,15 @@ export const appConfig: ApplicationConfig = {
     {
       provide: LOGOS_URL,
       useValue: environment.logosUrl,
+    },
+    {
+      // CDK overlays (dialogs, dropdowns) default to the native Popover API,
+      // which renders them in the browser's top layer — above every other
+      // element regardless of z-index. That makes it impossible for our
+      // kc-snackbar notifications to appear above an open dialog. Disable it
+      // so overlays stack via normal CSS z-index instead.
+      provide: OVERLAY_DEFAULT_CONFIG,
+      useValue: { usePopover: false },
     },
     {
       provide: APP_INITIALIZER,

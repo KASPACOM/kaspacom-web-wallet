@@ -673,7 +673,21 @@ export class WalletActionService {
         const actionsList = this.actionsListByWallet()[walletIdWithAccount];
 
         if (actionsList[0] && !actionsList[0].action.rbf) {
-          await wallet.waitForWalletToBeReadyForTransactions();
+          // This wait can stall indefinitely (pending mempool txs / UTXO
+          // processor); without the warning the queued action just silently
+          // never executes and there is nothing in the console to explain it.
+          const waitingActionType = actionsList[0].action.type;
+          const slowReadinessWarning = setInterval(() => {
+            console.warn(
+              '[WalletAction] Still waiting for the wallet to be ready before executing',
+              waitingActionType,
+            );
+          }, 10_000);
+          try {
+            await wallet.waitForWalletToBeReadyForTransactions();
+          } finally {
+            clearInterval(slowReadinessWarning);
+          }
         }
 
         const action = actionsList!.shift()!;
@@ -693,6 +707,12 @@ export class WalletActionService {
             );
 
             if (!validationResult.isValidated) {
+              console.error(
+                '[WalletAction] Action failed queue-time validation:',
+                action.action.type,
+                'errorCode:',
+                validationResult.errorCode,
+              );
               action.resolve({
                 success: false,
                 errorCode: validationResult.errorCode,

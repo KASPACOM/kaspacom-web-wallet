@@ -47,10 +47,13 @@ export class CryptoActionsComponent {
       });
     }
 
-    if (!this.walletService.getIsL2DisplaySignal()() && !environment.isProduction) {
+    if (
+      !this.walletService.getIsL2DisplaySignal()() &&
+      !environment.isProduction
+    ) {
       baseActions.push({
         title: 'contracts',
-        iconClass: 'icon-file-05',
+        iconClass: 'icon-file-02',
         iconColor: '',
         action: () => this.openContractsPage(),
       });
@@ -87,6 +90,8 @@ export class CryptoActionsComponent {
     this.flowPagesService.openFlow({
       id: 'contracts',
       title: 'Contracts',
+      subtitle:
+        'Deploy and track SilverScript covenants involving this wallet.',
       canNavigateBack: true,
     });
   }

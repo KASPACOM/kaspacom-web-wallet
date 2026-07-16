@@ -1,576 +1,735 @@
+// =============================================================================
+// contracts-page.component.scss — REDESIGN (visual pass for PR #257)
+// Uses global wallet tokens (var(--*)) from @kaspacom/ui-kit. No new colors invented.
+// Mobile-first; the layout scales from the compact 480px wallet column up to the
+// full-screen /app/contracts workspace.
+// =============================================================================
+
 :host {
   width: 100%;
+  display: block;
+}
+
+// Per-template accent, driven by [data-tpl] on cards / headers.
+$tpl-accents: (
+  deadman: var(--orange-20),
+  timelock: var(--kaspa-20),
+  multisig: var(--blue-20),
+  escrow: var(--purple-20),
+  default: var(--kaspa-20),
+);
+
+// Applies the per-template accent var to every element that carries
+// [data-tpl] (card, icon, detail header, template picker card). Generated
+// once here instead of once per selector to avoid a 4x blowup of near-
+// identical rules in the compiled output.
+@each $name, $color in $tpl-accents {
+  .contract-card[data-tpl="#{$name}"],
+  .tpl-icon[data-tpl="#{$name}"],
+  .detail-header[data-tpl="#{$name}"],
+  .template-card[data-tpl="#{$name}"] {
+    --tpl-accent: #{$color};
+  }
 }
 
 .contracts-container {
-  max-width: 1200px;
+  max-width: 1120px;
   width: 100%;
   margin: 0 auto;
-  overflow-y: auto;
-  overflow-x: hidden;
+  padding: 20px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   box-sizing: border-box;
-}
 
-// Tabs
-.tabs {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 8px;
-}
-
-.tab-button {
-  width: 100%;
-  min-height: 40px;
-  white-space: normal;
-  line-height: 1.2;
-  overflow-wrap: anywhere;
-  background: transparent;
-  border: 1px solid var(--border-secondary);
-  color: var(--gray-60);
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--gray-75);
+  @media (min-width: 768px) {
+    padding: 24px 24px 56px;
   }
 
-  &.active {
-    background: rgba(111, 199, 186, 0.15);
-    border-color: var(--kaspa-20);
-    color: #fff;
+  // Matches WIDE_BREAKPOINT — extra breathing room once the outer app
+  // chrome hands Contracts the full viewport (see app-wrapper.component.ts).
+  @media (min-width: 1100px) {
+    max-width: 1400px;
+    padding: 24px 32px 56px;
   }
 }
 
-// Panels and cards
-.panel,
-.contract-card,
-.template-card {
-  background: var(--gray-10);
-  border: 1px solid var(--border-secondary);
-  box-sizing: border-box;
-  min-width: 0; // prevent flex overflow
-  word-break: break-word;
-  overflow-wrap: break-word;
+.contracts-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
 }
 
-.contract-card,
-.template-card {
-  transition: all 0.2s;
+// .seg-tabs/.seg-tab* (segmented tab control) now live in
+// src/styles/shared-ui.scss.
 
-  &:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.15);
-  }
-}
-
-// Form inputs
-.contract-input,
-.form-input {
-  background: var(--gray-10);
-  border: 1px solid var(--border-secondary);
-  outline: none;
-  font-family: "Courier New", monospace;
-  transition: border-color 0.2s;
-
-  &:focus {
-    border-color: var(--kaspa-20);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
-.contract-input {
-  resize: vertical;
-  min-height: 120px;
-  font-size: 13px;
-
-  &.invalid {
-    border-color: var(--red-20);
-  }
-}
-
-select.form-input {
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 36px;
-}
-
-// Status badges
-.status-badge {
-  &.active {
-    background: rgba(63, 199, 83, 0.15);
-    border: 1px solid var(--green-20);
-    color: var(--green-20);
-  }
-
-  &.inactive {
-    background: var(--gray-10);
-    border: 1px solid var(--border-secondary);
-    color: var(--gray-60);
-  }
-
-  &.unknown {
-    background: rgba(255, 193, 7, 0.1);
-    border: 1px solid rgba(255, 193, 7, 0.35);
-    color: var(--yellow-20);
-  }
-}
-
-// Messages
-.error-message {
-  background: rgba(224, 66, 66, 0.1);
-  border: 1px solid var(--red-20);
-  color: var(--red-20);
-  word-break: break-word;
-  overflow-wrap: break-word;
-}
-
-.result-panel {
-  background: rgba(63, 199, 83, 0.1);
-  border: 1px solid var(--green-20);
-}
-
-// Contract summary
-.contract-summary {
-  background: rgba(111, 199, 186, 0.08);
-  border: 1px solid var(--kaspa-20);
-}
-
-.param-item {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.source-badge {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border-secondary);
-  color: var(--gray-60);
-}
-
-.contract-filter {
-  display: inline-flex;
+// ── dashboard toolbar (create + search) / filter chips ─────────────────────
+.dashboard-toolbar,
+.filter-row {
+  display: flex;
   align-items: center;
-  gap: 4px;
-  min-height: 40px;
-  padding: 4px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-secondary);
-  box-sizing: border-box;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.dashboard-toolbar .dashboard-search {
+  flex: 1;
+  min-width: 220px;
 }
 
-.filter-button,
-.refresh-button {
-  min-height: 32px;
-  padding: 0 12px;
-  border: 1px solid transparent;
-  color: var(--gray-60);
-  cursor: pointer;
-  white-space: nowrap;
-  line-height: 1;
-  transition: all 0.2s;
-}
+.filter-row {
+  .filter-chips {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    min-width: 0;
+    max-width: 100%;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+    // Room for the scrollbar so it doesn't clip the chips' bottom border.
+    padding-bottom: 4px;
+    margin-bottom: -4px;
 
-.filter-button {
-  background: transparent;
+    &::-webkit-scrollbar {
+      height: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: var(--gray-30);
+      border-radius: 4px;
+    }
+  }
+  .filter-spacer {
+    margin-left: auto;
+  }
 
-  &.active {
-    background: rgba(111, 199, 186, 0.15);
-    border-color: rgba(111, 199, 186, 0.3);
-    color: #fff;
+  // kc-button's "m" size variant enforces a 300px min-width on its inner
+  // .kc-button element (a ui-kit design-token default meant for standalone
+  // CTAs), which overflows this row's available space on narrow (320px)
+  // viewports since it's not opted into [isFullWidth] here. Let it hug its
+  // own content instead.
+  kc-button {
+    flex-shrink: 0;
   }
 }
 
-.refresh-button {
+// .filter-chip now lives in src/styles/shared-ui.scss.
+
+// .status-toggle/.status-seg and .panel now live in src/styles/shared-ui.scss.
+
+// ── contract card grid ──────────────────────────────────────────────────
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+
+  @media (min-width: 560px) {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+}
+
+.contract-card {
+  position: relative;
   background: var(--gray-10);
-  border-color: var(--border-secondary);
-  color: #fff;
+  border: 1px solid var(--border-secondary);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+  overflow: hidden;
 
-  &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: var(--kaspa-20);
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: var(--tpl-accent, var(--kaspa-20));
+    opacity: 0.9;
   }
 
-  &:disabled {
-    cursor: not-allowed;
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.03);
+  }
+  &.is-spent {
     opacity: 0.55;
   }
 }
 
-.contract-detail-tabs {
-  display: inline-flex;
-  align-items: center;
-  align-self: flex-start;
-  gap: 4px;
-  min-height: 40px;
-  padding: 4px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-secondary);
-  box-sizing: border-box;
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
 }
 
-.detail-tab-button {
-  min-height: 32px;
-  min-width: 88px;
-  padding: 0 12px;
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--gray-60);
-  cursor: pointer;
-  white-space: nowrap;
-  line-height: 1;
-  transition: all 0.2s;
+.tpl-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tpl-accent, var(--kaspa-20));
+  background: color-mix(
+    in srgb,
+    var(--tpl-accent, var(--kaspa-20)) 14%,
+    transparent
+  );
 
-  &.active {
-    background: rgba(111, 199, 186, 0.15);
-    border-color: rgba(111, 199, 186, 0.3);
-    color: #fff;
+  svg {
+    width: 22px;
+    height: 22px;
   }
 }
 
-.detail-route-header {
+// shared with .deploy-stepper__item (+ its nested .stepper-progress) below
+.card-title-wrap,
+.deploy-stepper__item,
+.deploy-stepper__item ::ng-deep .stepper-progress {
+  flex: 1;
   min-width: 0;
 }
+.card-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-sub {
+  font-size: 12px;
+  color: var(--gray-60);
+}
 
-.participant-grid,
-.detail-grid {
-  display: grid;
+.card-stats {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+// shared uppercase micro-label used by stat/state-cell/identifier blocks
+.stat .stat-label,
+.state-cell .cell-label,
+.identifier .identifier-label {
+  font-size: 11px;
+  color: var(--gray-45);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  .stat-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--white);
+    white-space: nowrap;
+  }
+  .stat-value small {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--gray-60);
+  }
+  .stat-value.sm {
+    font-size: 14px;
+  }
+}
+
+// shared with .identifier .identifier-value-row below (same inline-row layout)
+.card-id,
+.identifier .identifier-value-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.card-id {
+  .card-id-label {
+    font-size: 10px;
+    color: var(--gray-45);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+  }
+  .card-id-value {
+    font-size: 11px;
+    color: var(--gray-60);
+    font-family: var(--font-mono, monospace);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+}
+
+// .role-chips/.role-chip now live in src/styles/shared-ui.scss.
+
+.card-latest {
+  display: flex;
+  align-items: center;
   gap: 8px;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 12px;
+  color: var(--gray-75);
+  .push {
+    margin-left: auto;
+    font-size: 11px;
+  }
+}
+// shared muted-text color used by .card-latest .muted/.push and the
+// disabled action-item title
+.card-latest .muted,
+.card-latest .push,
+.action-item:disabled .ai-title {
+  color: var(--gray-45);
 }
 
-.participant-item,
-.detail-item,
-.timeline-row {
-  background: rgba(0, 0, 0, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+.card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+// .status-badge, .source-badge, .btn base styles now live in
+// src/styles/shared-ui.scss (generic, reused by other v2 flow pages).
+.card-actions .btn.secondary {
+  flex: 1;
+}
+.card-actions .btn.action {
+  flex: 1;
+  background: var(--tpl-accent, var(--kaspa-20));
+  color: #0a0d0c;
+}
+.card-actions .btn.action:disabled {
+  background: transparent;
+  border: 1px solid var(--border-secondary);
+  color: var(--gray-45);
+}
+
+// ── detail view ─────────────────────────────────────────────────────────
+.detail-header {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: var(--gray-10);
+  border: 1px solid var(--border-secondary);
+  border-radius: 16px;
+  padding: 20px;
+
+  @media (min-width: 768px) {
+    padding: 22px;
+  }
+}
+.detail-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+// Flex basis (not just min-width: 0) so this column wraps the Share/Close
+// buttons to their own line on narrow viewports instead of shrinking the
+// title down to a near-zero-width, one-letter-per-line sliver.
+.detail-title-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 160px;
   min-width: 0;
 }
+.detail-title-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.detail-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--white);
+}
+.detail-blurb {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--gray-60);
+  line-height: 1.5;
+  max-width: 560px;
+}
 
-.participant-item,
-.detail-item {
+.state-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, 1fr);
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+}
+.state-cell {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  .cell-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--white);
+  }
+}
+
+.identifiers-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.identifier {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+  flex: 1 1 220px;
+
+  .identifier-value {
+    font-size: 12px;
+    color: var(--gray-75);
+    font-family: var(--font-mono, monospace);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
 }
 
-// Access roles
-.access-role {
+.detail-cols {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+  grid-template-columns: 1fr;
+}
+.detail-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+// role-based action panel
+.action-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.role-pill {
+  font-size: 11px;
+  color: var(--kaspa-20);
+  white-space: nowrap;
+  background: rgba(111, 199, 186, 0.12);
+  border: 1px solid rgba(111, 199, 186, 0.3);
+  border-radius: 6px;
+  padding: 2px 9px;
+}
+// shared with .template-picker below (same list layout)
+.action-list,
+.template-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.action-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  border-radius: 11px;
+  padding: 13px 14px;
+  font: inherit;
+  transition: all 0.15s;
+  border: 1px solid var(--border-secondary);
+  background: var(--gray-10);
+  color: var(--white);
+  cursor: pointer;
+
+  .ai-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+  }
+  .ai-title {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  &.primary {
+    border-color: var(--kaspa-20);
+    background: rgba(111, 199, 186, 0.1);
+  }
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--gray-45);
+  }
+
+  .ai-lock {
+    margin-left: auto;
+    flex-shrink: 0;
+    opacity: 0.6;
+  }
+}
+
+// participants
+.participant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.participant {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 9px;
+  padding: 9px 11px;
+  .p-avatar {
+    flex-shrink: 0;
+  }
+  .p-body {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+    flex: 1;
+    min-width: 0;
+  }
+  .p-role {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--white);
+  }
+  .p-val {
+    font-size: 11px;
+    color: var(--gray-60);
+    font-family: var(--font-mono, monospace);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
-.param-tag {
-  background: rgba(111, 199, 186, 0.15);
-  border: 1px solid var(--kaspa-20);
-  color: var(--kaspa-10);
-  font-size: 12px;
+// timeline
+.timeline {
+  display: flex;
+  flex-direction: column;
 }
-
-// Pubkey display
-.pubkey-display {
-  background: rgba(255, 204, 0, 0.1);
-  border: 1px solid rgba(255, 204, 0, 0.2);
+.tl-row {
+  display: flex;
+  gap: 12px;
 }
-
-// Empty state
-.empty-state {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px dashed rgba(255, 255, 255, 0.1);
+.tl-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
-
-// Utilities
-.text-mono {
-  font-family: "Courier New", monospace;
+.tl-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--kaspa-20);
+  border: 2px solid var(--gray-10);
+  box-shadow: 0 0 0 1px var(--kaspa-20);
+  margin-top: 3px;
+}
+.tl-line {
+  flex: 1;
+  width: 2px;
+  background: var(--border-secondary);
+  min-height: 14px;
+}
+.tl-body {
+  padding-bottom: 16px;
+  flex: 1;
+  min-width: 0;
+}
+.tl-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.tl-action {
   font-size: 13px;
+  font-weight: 500;
+  color: var(--white);
+  flex-shrink: 0;
 }
-
-.text-truncate {
-  max-width: 100%;
+// shared with .action-item .ai-hint above (small muted meta text)
+.tl-when,
+.action-item .ai-hint {
+  font-size: 11px;
+  color: var(--gray-60);
+}
+.tl-tx {
+  font-size: 11px;
+  color: var(--blue-20);
+  text-decoration: none;
+  font-family: var(--font-mono, monospace);
+  margin-left: auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.text-red {
-  color: var(--red-20);
-}
-
-.text-green {
-  color: var(--green-20);
-}
-
-.text-blue {
-  color: var(--blue-20);
-  text-decoration: none;
-
   &:hover {
     text-decoration: underline;
   }
 }
 
-.fw-bold {
-  font-weight: 600;
-}
-
-.flex-1 {
-  flex: 1;
-}
-
-.text-left {
-  text-align: left;
-}
-
-.wizard-header,
-.wizard-section {
-  min-width: 0;
-}
-
-.max-text {
+// ── wizard ─────────────────────────────────────────────────────────────
+.deploy-stepper {
   display: flex;
   align-items: center;
-  justify-content: center;
-  height: 100%;
-  min-height: 100%;
-  min-width: 46px;
-  padding-right: 2px;
-
-  span {
-    color: var(--gray-30);
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 1;
-    padding: 5px 8px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    white-space: nowrap;
+  width: 100%;
+  gap: 8px;
+}
+.deploy-stepper__item {
+  ::ng-deep .stepper-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
   }
 
-  &.clickable {
-    cursor: pointer;
+  &--last {
+    flex: 0 0 auto;
 
-    span:hover {
-      color: white;
-      background: rgba(255, 255, 255, 0.15);
-    }
-  }
-
-  &.disabled {
-    cursor: not-allowed;
-
-    span {
-      opacity: 0.5;
+    ::ng-deep .stepper-progress {
+      display: none;
     }
   }
 }
 
-.field-error {
-  color: var(--red-20);
-}
-
-// Template list (compact cards)
-.template-list {
+.template-card {
   display: flex;
-  flex-direction: column;
-}
-
-.template-card-compact {
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  width: 100%;
   background: var(--gray-10);
   border: 1px solid var(--border-secondary);
-  color: inherit;
-  cursor: pointer;
-  transition: all 0.2s;
-  min-height: 72px;
-  width: 100%;
-  text-align: left;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: var(--kaspa-20);
-    transform: translateX(2px);
-  }
-
-  &:active {
-    transform: translateX(0);
-  }
-}
-
-.custom-contract-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px dashed var(--border-secondary);
-  color: inherit;
-  cursor: pointer;
-  min-height: 72px;
-  text-align: left;
-  transition: all 0.2s;
-  width: 100%;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: var(--kaspa-20);
-  }
-}
-
-.template-icon-compact {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(111, 199, 186, 0.15);
-  border: 1px solid var(--kaspa-20);
-  font-size: 20px;
-}
-
-.template-description {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  line-height: 1.4;
-}
-
-.template-chevron {
-  color: var(--gray-60);
-  min-width: max-content;
-  transition:
-    color 0.2s,
-    transform 0.2s;
-}
-
-.template-card-compact:hover .template-chevron {
-  color: var(--kaspa-20);
-  transform: translateX(2px);
-}
-
-// Old template icon (keep for detail view)
-.template-icon {
-  width: 48px;
-  height: 48px;
   border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(111, 199, 186, 0.15);
-  border: 1px solid var(--kaspa-20);
-  font-size: 24px;
-}
-
-.back-button {
-  background: var(--gray-10);
-  border: 1px solid var(--border-secondary);
-  color: rgba(255, 255, 255, 0.9);
+  padding: 16px;
   cursor: pointer;
-  transition: all 0.2s;
+  font: inherit;
+  transition: all 0.15s;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: var(--kaspa-20);
+    border-color: var(--tpl-accent, var(--kaspa-20));
+    background: rgba(255, 255, 255, 0.04);
+  }
+  &.custom {
+    border-style: dashed;
+  }
+  .tc-body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+  }
+  .tc-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--white);
+  }
+  .tc-desc {
+    font-size: 12px;
+    color: var(--gray-60);
+    line-height: 1.45;
+  }
+  .tc-chevron {
+    color: var(--gray-45);
+  }
+  &:hover .tc-chevron {
+    color: var(--tpl-accent, var(--kaspa-20));
+  }
+}
+// shared 18px icon sizing between the action-item leading icon and the
+// template-card trailing chevron
+.action-item svg,
+.template-card .tc-chevron {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+// .field*, .review-box/.review-row and .banner base styles now live in
+// src/styles/shared-ui.scss.
+
+.error-message {
+  background: rgba(224, 66, 66, 0.1);
+  border: 1px solid var(--red-20);
+  color: var(--red-20);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  word-break: break-word;
+}
+// .result-panel, .state-block, .skeleton-grid/.skeleton-card (+ kc-pulse
+// keyframes) and .advanced-section base styles now live in
+// src/styles/shared-ui.scss.
+
+// .contract-input/.form-input base styles now live in
+// src/styles/shared-ui.scss; only the textarea-specific sizing stays local.
+.contract-input {
+  resize: vertical;
+  min-height: 120px;
+  font-size: 13px;
+}
+
+// .utxo-row, .pubkey-display, .contract-summary, .param-item,
+// .lookup-result and .back-button now live in src/styles/shared-ui.scss.
+// .max-text and the generic .text-*/.fw-bold utilities now live in
+// src/styles/shared-ui.scss.
+
+// kc-button's "m" size variant enforces a 300px min-width on its inner
+// .kc-button element (an ui-kit design-token default sized for standalone
+// CTAs). Wherever a kc-button sits inline next to an input or alongside
+// other buttons in this page (instead of opting into [isFullWidth]), that
+// fixed minimum overflows the row on narrow (320px) viewports. Let those
+// buttons hug their own content instead.
+.filter-row kc-button,
+.flex.gap-8.align-items-end.wrap kc-button,
+.flex.gap-8.wrap kc-button,
+.flex.align-items-center.gap-8 kc-button {
+  ::ng-deep .kc-button {
+    min-width: 0;
   }
 }
 
-.detail-close-button {
-  min-width: 72px;
-}
-
-.template-change-button {
-  min-width: 84px;
-}
-
-// Lookup result
-.lookup-result {
-  background: rgba(111, 199, 186, 0.06);
-  border: 1px solid rgba(111, 199, 186, 0.2);
-}
-
-.utxo-row {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: border-color 0.2s;
-  min-width: 0;
-  overflow: hidden;
-
-  &:hover {
-    border-color: rgba(255, 255, 255, 0.15);
-  }
-}
-
-// Advanced section (collapsed by default)
-.advanced-section {
-  summary {
-    user-select: none;
-    padding: 8px 0;
-
-    &:hover {
-      color: var(--kaspa-20);
-    }
-  }
-
-  .mt-8 {
-    margin-top: 8px;
-  }
-}
-
-// Active function button highlight
+// Active function button highlight — kc-button's host element has no
+// border-radius of its own (the rounding lives on its inner .kc-button),
+// so styling the host directly draws a sharp-cornered box around a rounded
+// button. Target the inner element instead so the highlight follows the
+// button's actual corners.
 .active-function {
-  border-color: var(--kaspa-20) !important;
-  background: rgba(111, 199, 186, 0.22) !important;
-  box-shadow: 0 0 0 2px rgba(111, 199, 186, 0.18) !important;
-  color: #fff !important;
-}
-
-// Cursor pointer utility
-.cursor-pointer {
-  cursor: pointer;
-}
-
-// Responsive - mobile first
-@media (max-width: 375px) {
-  .tabs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
-    padding-bottom: 6px;
-  }
-
-  .tab-button {
-    min-height: 44px;
-    padding: 8px 6px;
-  }
-
-  .template-card-compact {
-    padding: 12px;
-    gap: 8px;
-  }
-
-  .template-icon-compact {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    font-size: 18px;
+  ::ng-deep .kc-button {
+    border-color: var(--kaspa-20) !important;
+    background: rgba(111, 199, 186, 0.22) !important;
+    box-shadow: 0 0 0 2px rgba(111, 199, 186, 0.18) !important;
+    color: #fff !important;
   }
 }
-
-// Desktop — wider layout for contracts
-@media (min-width: 768px) {
-  .contracts-container {
-    padding: 0 24px;
-  }
-
-  .contracts-list {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-}
+// .cursor-pointer now lives in src/styles/shared-ui.scss.

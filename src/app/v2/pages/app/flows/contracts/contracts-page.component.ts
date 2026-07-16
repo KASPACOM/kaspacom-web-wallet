@@ -2074,6 +2074,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * look like nothing happened unless we bring it into view.
    */
   private scrollToActionPanel() {
+    if (!this.isBrowser) return;
     setTimeout(() => {
       document
         .getElementById('contract-action-panel')

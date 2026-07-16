@@ -2413,18 +2413,24 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         description:
           'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 1 and Signer 2.',
         iconClass: 'icon-coins-02',
+        extraGuard: (detail) =>
+          this.requireOneOfSigners(detail, 'Signer 1', 'Signer 2'),
       },
       spend13: {
         label: '2-of-3 Withdraw (Signer 1 + 3)',
         description:
           'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 1 and Signer 3.',
         iconClass: 'icon-coins-02',
+        extraGuard: (detail) =>
+          this.requireOneOfSigners(detail, 'Signer 1', 'Signer 3'),
       },
       spend23: {
         label: '2-of-3 Withdraw (Signer 2 + 3)',
         description:
           'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 2 and Signer 3.',
         iconClass: 'icon-coins-02',
+        extraGuard: (detail) =>
+          this.requireOneOfSigners(detail, 'Signer 2', 'Signer 3'),
       },
       topUp: {
         label: 'Top Up',
@@ -2499,6 +2505,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         disabledReason: disabledReason ?? undefined,
       };
     });
+  }
+
+  /** Disables a MultiSig spend action unless the current wallet is one of its required signer pair. */
+  private requireOneOfSigners(
+    detail: ContractDetailState,
+    signerA: string,
+    signerB: string,
+  ): string | null {
+    const role = this.currentWalletRole(detail.entry.participants);
+    if (role !== signerA && role !== signerB) {
+      return `Only ${signerA} or ${signerB} can do this.`;
+    }
+    return null;
   }
 
   private selectDefaultFunctionForContract(contractName: string) {

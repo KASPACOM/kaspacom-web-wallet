@@ -6,8 +6,9 @@ import {
   OnInit,
   OnDestroy,
   effect,
+  PLATFORM_ID,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -216,6 +217,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private approvalFlowService = inject(ApprovalFlowService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private platformId = inject(PLATFORM_ID);
+  private isBrowser = isPlatformBrowser(this.platformId);
   private routeSubscription?: Subscription;
 
   // Current active tab
@@ -423,7 +426,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   indexerImportPreview = signal<IndexerImportPreview | null>(null);
 
   // DMS keepAlive specific state
-  dmsNewExpiry = ''; // new expiry timestamp (unix seconds) entered by user
+  dmsNewExpiry = ''; // new expiry entered by user — unix seconds, unix ms, or a date string; see parseDateToUnixMs()
   interactResult = signal<{ txid: string; functionName: string } | null>(null);
   interactError = signal<string | null>(null);
   isInteracting = signal(false);
@@ -4340,6 +4343,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * current state from the indexer when the link is opened.
    */
   buildShareLink(covenantId: string): string {
+    if (!this.isBrowser) return '';
     const url = new URL(
       `${window.location.origin}/app/contracts/${covenantId}`,
     );

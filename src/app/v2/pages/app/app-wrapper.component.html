@@ -5,7 +5,7 @@
 
   <div
     class="wrapper"
-    [class.wrapper--expanded]="isExpandedLayout()"
+    [class.wrapper--expanded]="isExpandedLayout() && !isContractsWide()"
     [class.wrapper--wide-flow]="isContractsWide()"
   >
     <!-- Iframe account selection overlay - shows when account needs to be selected -->

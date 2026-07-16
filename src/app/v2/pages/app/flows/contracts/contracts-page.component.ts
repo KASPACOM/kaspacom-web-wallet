@@ -4679,7 +4679,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         claim:
           'Claim the inheritance. Only available if the owner missed their keepAlive deadline.',
         changeHeir:
-          "Change the beneficiary who can claim the funds if you miss the deadline. Not available yet — this requires a Dead Man's Switch contract update.",
+          'Change the beneficiary who can claim the funds if you miss the deadline.',
       },
       escrow: {
         release:

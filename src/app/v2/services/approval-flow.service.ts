@@ -214,6 +214,15 @@ export class ApprovalFlowService {
     // Clear completion signal
     this.completionSignal.set(null);
     this.cleanupApproval();
+
+    // Cancel any pending detach-reject timer — the approval is being closed
+    // through the normal path, so the deferred reject from
+    // notifyApprovalPageDetached() would otherwise fire later against a
+    // stale instance and clear state it no longer owns.
+    if (this.pendingDetachReject !== null) {
+      clearTimeout(this.pendingDetachReject);
+      this.pendingDetachReject = null;
+    }
   }
 
   private pendingDetachReject: ReturnType<typeof setTimeout> | null = null;

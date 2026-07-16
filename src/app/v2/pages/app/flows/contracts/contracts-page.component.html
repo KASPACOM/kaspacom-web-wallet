@@ -6,11 +6,11 @@
 -->
 <div class="contracts-container">
   <!-- Segmented tabs -->
-  <div class="seg-tabs" role="tablist">
+  <div class="seg-tabs" role="group" aria-label="Contracts section">
     <button
       class="seg-tab"
-      role="tab"
-      [attr.aria-selected]="activeTab() === 'deploy'"
+      type="button"
+      [attr.aria-pressed]="activeTab() === 'deploy'"
       [class.active]="activeTab() === 'deploy'"
       (click)="switchTab('deploy')"
     >
@@ -18,8 +18,8 @@
     </button>
     <button
       class="seg-tab"
-      role="tab"
-      [attr.aria-selected]="isMyContractsTabActive()"
+      type="button"
+      [attr.aria-pressed]="isMyContractsTabActive()"
       [class.active]="isMyContractsTabActive()"
       (click)="switchTab('my-contracts')"
     >
@@ -30,8 +30,8 @@
     </button>
     <button
       class="seg-tab"
-      role="tab"
-      [attr.aria-selected]="activeTab() === 'lookup-import'"
+      type="button"
+      [attr.aria-pressed]="activeTab() === 'lookup-import'"
       [class.active]="activeTab() === 'lookup-import'"
       (click)="switchTab('lookup-import')"
     >

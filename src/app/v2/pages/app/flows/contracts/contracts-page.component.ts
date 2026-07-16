@@ -2462,12 +2462,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const currentRole = this.currentWalletRole(detail.entry.participants);
 
     return Object.entries(table).map(([fnName, meta]) => {
-      const existsOnChain =
-        available.length === 0 || available.some((fn) => fn.name === fnName);
+      const existsOnChain = available.some((fn) => fn.name === fnName);
 
       let disabledReason: string | null = null;
       if (!existsOnChain) {
-        disabledReason = 'Not available on this contract version.';
+        disabledReason =
+          available.length === 0
+            ? 'Loading contract functions…'
+            : 'Not available on this contract version.';
       } else if (meta.requiredRole && currentRole !== meta.requiredRole) {
         disabledReason = `Only the ${meta.requiredRole.toLowerCase()} can do this.`;
       } else {

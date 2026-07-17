@@ -22,6 +22,7 @@ import {
   KcNumberInputComponent,
   KcStepperComponent,
   KcTooltipDirective,
+  NotificationService,
 } from '@kaspacom/ui-kit';
 import { blake2b } from '@noble/hashes/blake2b';
 import { ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
@@ -218,6 +219,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private platformId = inject(PLATFORM_ID);
+  private notificationService = inject(NotificationService);
   private isBrowser = isPlatformBrowser(this.platformId);
   private routeSubscription?: Subscription;
 
@@ -4493,7 +4495,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (!id) return;
     const link = this.buildShareLink(id);
     navigator.clipboard.writeText(link).then(
-      () => alert('Contract share link copied.'),
+      () =>
+        this.notificationService.success(
+          'Copied',
+          'Contract share link copied.',
+        ),
       () => prompt('Copy this contract link:', link),
     );
   }
@@ -4504,7 +4510,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (!id) return;
     const link = this.buildShareLink(id);
     navigator.clipboard.writeText(link).then(
-      () => alert('Contract share link copied.'),
+      () =>
+        this.notificationService.success(
+          'Copied',
+          'Contract share link copied.',
+        ),
       () => prompt('Copy this contract link:', link),
     );
   }
@@ -4547,7 +4557,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const link = this.shareableContractLink();
     if (!link) return;
     navigator.clipboard.writeText(link).then(
-      () => alert('Contract share link copied.'),
+      () =>
+        this.notificationService.success(
+          'Copied',
+          'Contract share link copied.',
+        ),
       () => prompt('Copy this contract link:', link),
     );
   }
@@ -5107,7 +5121,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const json = this.partialSpendJson();
     if (!json) return;
     navigator.clipboard.writeText(json).then(
-      () => alert('Partial spend JSON copied! Send it to the co-signer.'),
+      () =>
+        this.notificationService.success(
+          'Copied',
+          'Partial spend JSON copied! Send it to the co-signer.',
+        ),
       () => prompt('Copy this partial spend JSON:', json),
     );
   }

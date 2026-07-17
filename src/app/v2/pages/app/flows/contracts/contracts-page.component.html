@@ -1436,6 +1436,42 @@
                   </div>
                 </div>
 
+                @if (partialSpendJsonForDetail(); as pendingSpendJson) {
+                  <div
+                    class="panel"
+                    style="
+                      background: rgba(255, 193, 7, 0.08);
+                      border: 1px solid rgba(255, 193, 7, 0.2);
+                    "
+                  >
+                    <h4
+                      class="text-yellow"
+                      style="
+                        margin: 0 0 8px;
+                        font-size: 14px;
+                        font-weight: 600;
+                      "
+                    >
+                      Pending signature
+                    </h4>
+                    <p class="text-gray-75 typo-text-2" style="margin: 0 0 12px">
+                      Your signature has been added. Copy this JSON and send
+                      it to the co-signer to complete the transaction.
+                    </p>
+                    <textarea
+                      class="contract-input"
+                      rows="4"
+                      readonly
+                      [value]="pendingSpendJson"
+                    ></textarea>
+                    <kc-button
+                      [text]="'Copy partial spend JSON'"
+                      [isFullWidth]="true"
+                      (buttonClick)="copyPartialSpend()"
+                    ></kc-button>
+                  </div>
+                }
+
                 @if (selectedDetail()!.entry.participants.length > 0) {
                   <div class="panel">
                     <h4

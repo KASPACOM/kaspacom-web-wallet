@@ -451,6 +451,21 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     );
   });
 
+  /**
+   * The pending partial-spend JSON (if any), scoped to the contract currently
+   * shown in the "detail" tab. `partialSpendJson` is a single shared signal,
+   * so this guards against showing a stale co-signer JSON left over from a
+   * different contract's action.
+   */
+  partialSpendJsonForDetail = computed(() => {
+    const json = this.partialSpendJson();
+    const detail = this.selectedDetail();
+    if (!json || !detail) return null;
+    const registryId = detail.entry.registryEntry?.id;
+    if (registryId && registryId !== this.selectedContractId()) return null;
+    return json;
+  });
+
   registryContractOptions = computed<DropdownOption[]>(() =>
     this.registryContracts().map((contract) => ({
       value: contract.id,
@@ -1850,26 +1865,32 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   ): string {
     if (status !== 'active') return 'View history';
     const normalized = this.normalizeContractName(contractName);
-    const currentRole = this.currentWalletRole(participants);
+    const currentRoles = this.currentWalletRoles(participants);
     if (normalized === 'DeadManSwitch')
-      return currentRole === 'Owner' ? 'Keep Alive' : 'Claim';
+      return currentRoles.includes('Owner') ? 'Keep Alive' : 'Claim';
     if (normalized === 'TimeLockVault')
-      return currentRole === 'Recovery' ? 'Recover' : 'Withdraw';
+      return currentRoles.includes('Recovery') ? 'Recover' : 'Withdraw';
     if (normalized === 'MultiSigVault')
-      return currentRole.startsWith('Signer')
+      return currentRoles.some((role) => role.startsWith('Signer'))
         ? 'Sign / Complete'
         : 'Open Actions';
     if (normalized === 'EscrowWithArbiter') {
-      if (currentRole === 'Arbiter') return 'Arbitrate';
-      if (currentRole === 'Buyer') return 'Release / Refund';
-      if (currentRole === 'Seller') return 'Release';
+      if (currentRoles.includes('Arbiter')) return 'Arbitrate';
+      if (currentRoles.includes('Buyer')) return 'Release / Refund';
+      if (currentRoles.includes('Seller')) return 'Release';
     }
     return 'Open Actions';
   }
 
-  private currentWalletRole(
+  /**
+   * All participant roles the current wallet matches. A wallet can legitimately
+   * hold more than one role (e.g. the same address used for buyer and arbiter
+   * in a test deploy) — returning just the first match would silently hide
+   * actions gated on a role that isn't the first one listed.
+   */
+  private currentWalletRoles(
     participants: Array<{ label: string; value: string }>,
-  ): string {
+  ): string[] {
     const wallet = this.currentWallet();
     const candidates = [
       wallet?.getAddress(),
@@ -1879,18 +1900,18 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       .filter((value): value is string => !!value)
       .map((value) => value.toLowerCase());
 
-    return (
-      participants.find((participant) =>
+    return participants
+      .filter((participant) =>
         candidates.includes(String(participant.value).toLowerCase()),
-      )?.label || ''
-    );
+      )
+      .map((participant) => participant.label);
   }
 
   /** Public wrapper for the detail page's "You are <role>" pill. */
   getCurrentRoleLabel(
     participants: Array<{ label: string; value: string }>,
   ): string {
-    return this.currentWalletRole(participants);
+    return this.currentWalletRoles(participants).join(' / ');
   }
 
   private extractDeadlineMs(
@@ -2497,7 +2518,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (!table) return [];
 
     const available = this.availableFunctions();
-    const currentRole = this.currentWalletRole(detail.entry.participants);
+    const currentRoles = this.currentWalletRoles(detail.entry.participants);
 
     return Object.entries(table).map(([fnName, meta]) => {
       const existsOnChain = available.some((fn) => fn.name === fnName);
@@ -2508,7 +2529,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           available.length === 0
             ? 'Loading contract functions…'
             : 'Not available on this contract version.';
-      } else if (meta.requiredRole && currentRole !== meta.requiredRole) {
+      } else if (
+        meta.requiredRole &&
+        !currentRoles.includes(meta.requiredRole)
+      ) {
         disabledReason = `Only the ${meta.requiredRole.toLowerCase()} can do this.`;
       } else {
         disabledReason = meta.extraGuard?.(detail) ?? null;
@@ -2531,8 +2555,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     signerA: string,
     signerB: string,
   ): string | null {
-    const role = this.currentWalletRole(detail.entry.participants);
-    if (role !== signerA && role !== signerB) {
+    const roles = this.currentWalletRoles(detail.entry.participants);
+    if (!roles.includes(signerA) && !roles.includes(signerB)) {
       return `Only ${signerA} or ${signerB} can do this.`;
     }
     return null;
@@ -3534,10 +3558,17 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           return;
         }
         const amountToSellerSompi = BigInt(Math.floor(outputAmountKas * 1e8));
-        const amountToBuyerSompi =
-          inputAmount > amountToSellerSompi
-            ? inputAmount - amountToSellerSompi
-            : 0n;
+        // The contract always emits two outputs (seller, buyer). A zero-value
+        // output is invalid on Kaspa's UTXO model and crashes the WASM tx
+        // builder, so awarding the full balance to one side isn't possible —
+        // reject it here with a clear message instead of letting it panic.
+        if (amountToSellerSompi >= inputAmount) {
+          this.interactError.set(
+            'Amount to seller must be less than the full contract balance. Arbitrate always pays out both sides, so the buyer\'s output can\'t be zero.',
+          );
+          return;
+        }
+        const amountToBuyerSompi = inputAmount - amountToSellerSompi;
 
         // Derive seller/buyer addresses from pubkeys baked into the compiled script.
         // Escrow constructor order: buyer (param 0), seller (param 1).
@@ -3587,6 +3618,45 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           }
           return;
         }
+      } else if (
+        functionName === 'release' &&
+        compiled.contract_name === 'Escrow'
+      ) {
+        // Escrow release: the contract enforces
+        // require(tx.outputs[0].scriptPubKey == byte[](sellerLock)),
+        // so output[0] must always pay the seller — regardless of whether
+        // the buyer or seller wallet builds/submits the partial spend.
+        // Derive the seller's address from the pubkey baked into the
+        // compiled script rather than defaulting to the current wallet.
+        if (isNaN(outputAmountKas) || outputAmountKas <= 0) {
+          this.interactError.set(
+            'Enter the amount to release to the seller in the "Withdraw Amount" field',
+          );
+          return;
+        }
+        const releaseAmountSompi = BigInt(Math.floor(outputAmountKas * 1e8));
+
+        // Escrow constructor order: buyer (param 0), seller (param 1).
+        const pubkeys = this.extractPubkeysFromScript(compiled);
+        const sellerAddress = pubkeys[1]
+          ? this.pubkeyToAddress(pubkeys[1])
+          : '';
+
+        if (!sellerAddress) {
+          this.interactError.set(
+            'Could not derive seller address from contract script',
+          );
+          return;
+        }
+
+        const releaseOutputs = this.buildWithdrawalOutputs(
+          compiled,
+          inputAmount,
+          sellerAddress,
+          releaseAmountSompi,
+        );
+        if (!releaseOutputs) return;
+        outputs = releaseOutputs;
       } else if (this.isDmsChangeHeir()) {
         await this.executeDmsChangeHeir(
           compiled,
@@ -5048,22 +5118,37 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   // ─── Helpers for Escrow arbitrate ─────────────────────────────────
 
   /**
-   * Scan the compiled script for all unique 32-byte pubkey pushes (OP_DATA_32 = 0x20).
-   * Returns them in first-appearance order, which matches the SilverScript constructor
-   * parameter order.
+   * Scan the compiled script for 32-byte pubkey pushes (OP_DATA_32 = 0x20) and
+   * return the first two, in first-appearance order (buyer, then seller —
+   * both callers only ever read indices 0 and 1).
+   *
+   * Deliberately NOT deduplicated by value: buyer and seller are separate
+   * constructor slots that can legitimately hold the same pubkey (e.g. one
+   * wallet acting as both parties). Deduping by hex value would collapse
+   * that into a single entry and shift index [1] onto the next distinct
+   * 32-byte push in the script — arbiterHash — silently sending funds to a
+   * bogus derived address instead of the seller.
    */
   private extractPubkeysFromScript(compiled: CompiledContract): string[] {
     const scriptBytes = Uint8Array.from(compiled.script);
-    const seen: string[] = [];
-    for (let i = 0; i <= scriptBytes.length - 33; i++) {
+    const found: string[] = [];
+    // Advance past each consumed push's data instead of scanning every byte
+    // offset — otherwise a stray 0x20 byte inside a real pubkey's own 32
+    // bytes gets misread as a second push opcode, splicing in a bogus
+    // "pubkey" ahead of the real next one and shifting the buyer/seller
+    // indices this function's callers rely on.
+    for (let i = 0; i <= scriptBytes.length - 33 && found.length < 2; ) {
       if (scriptBytes[i] === 0x20) {
         const pkHex = Array.from(scriptBytes.slice(i + 1, i + 33))
           .map((b) => b.toString(16).padStart(2, '0'))
           .join('');
-        if (!seen.includes(pkHex)) seen.push(pkHex);
+        found.push(pkHex);
+        i += 33;
+        continue;
       }
+      i += 1;
     }
-    return seen;
+    return found;
   }
 
   /**

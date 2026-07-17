@@ -53,7 +53,9 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: hidden; // Hide all overflow
+  // `clip`, not `hidden` — see .application-container in app.component.scss
+  // for why: `hidden` is still a programmatically scrollable box.
+  overflow: clip;
   background: var(--background);
   box-sizing: border-box;
 
@@ -137,7 +139,9 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
   height: 80vh;
   width: 480px;
   position: relative;
-  overflow: hidden; // Hide all overflow
+  // `clip`, not `hidden` — see .application-container in app.component.scss
+  // for why: `hidden` is still a programmatically scrollable box.
+  overflow: clip;
   z-index: 2; // Ensure wrapper is above backdrop layers
 
   @include mobile {
@@ -240,7 +244,10 @@ $glass-border-color: rgba(111, 199, 186, 0.2);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  // `clip`, not `hidden` — this wraps .wrapper__content (and its sticky
+  // header) in the two-column layout; see .application-container in
+  // app.component.scss for why `hidden` isn't safe here.
+  overflow: clip;
   border-right: 1px dashed rgba(#6fc7ba, 0.2);
 }
 

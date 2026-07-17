@@ -2086,9 +2086,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private scrollToActionPanel() {
     if (!this.isBrowser) return;
     setTimeout(() => {
-      document
-        .getElementById('contract-action-panel')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const panel = document.getElementById('contract-action-panel');
+      if (!panel) return;
+      // scrollIntoView({block: 'start'}) aligns the panel with the
+      // scroll container's true top, but .wrapper__header is sticky within
+      // that same container — it stays pinned over whatever ends up there,
+      // permanently covering the panel's title. scroll-margin-top tells
+      // scrollIntoView to leave room for it, without us having to guess
+      // which ancestor is the actual scroll container.
+      const headerHeight =
+        document.querySelector<HTMLElement>('.wrapper__header')
+          ?.offsetHeight ?? 0;
+      panel.style.scrollMarginTop = `${headerHeight + 12}px`;
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
 
@@ -2216,9 +2226,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   private scrollContractsContentToTop() {
+    if (!this.isBrowser) return;
     setTimeout(() => {
+      // .contracts-container itself has no overflow — it's not the actual
+      // scroll region. The real scroll container is the app shell's
+      // .wrapper__content (contracts always renders inside it; see
+      // app-wrapper.component.scss). .flow-page-body is the other
+      // possible scroll region, used when the wallet-action overlay is open.
       document
-        .querySelector<HTMLElement>('.contracts-container')
+        .querySelector<HTMLElement>('.wrapper__content')
         ?.scrollTo({ top: 0, behavior: 'auto' });
       document
         .querySelector<HTMLElement>('.flow-page-body')

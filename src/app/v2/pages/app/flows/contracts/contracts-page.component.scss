@@ -353,9 +353,13 @@ $tpl-accents: (
 }
 .detail-title {
   margin: 0;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--white);
+
+  @media (min-width: 768px) {
+    font-size: 20px;
+  }
 }
 .detail-blurb {
   margin: 6px 0 0;
@@ -697,6 +701,12 @@ $tpl-accents: (
   resize: vertical;
   min-height: 120px;
   font-size: 13px;
+}
+
+.interact-contract-title {
+  @media (max-width: 767px) {
+    font-size: 10px;
+  }
 }
 
 // .utxo-row, .pubkey-display, .contract-summary, .param-item,

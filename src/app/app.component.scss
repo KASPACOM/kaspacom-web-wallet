@@ -9,8 +9,16 @@
     height: 100%;
     width: 100%;
   }
-  overflow-y: auto;
-  overflow-x: hidden;
+  // Intentionally not scrollable: .screen/.wrapper below already fill this
+  // box exactly and manage their own internal scrolling (.wrapper__content).
+  // Use `clip`, not `hidden` — `hidden` still creates a programmatically
+  // scrollable box (no visible scrollbar, but scrollIntoView()/scrollTo()
+  // can still shift it), so a second such ancestor here lets the whole
+  // .wrapper — sticky header included — get silently scrolled out of view
+  // with no scrollbar to bring it back, whenever 100vh/100dvh momentarily
+  // disagree or scrollIntoView() needs more room than .wrapper__content
+  // alone can give it. `clip` cannot be scrolled at all, by anything.
+  overflow: clip;
   display: block;
   background: black url(/svgs/background.svg) 100% 100% no-repeat;
 }

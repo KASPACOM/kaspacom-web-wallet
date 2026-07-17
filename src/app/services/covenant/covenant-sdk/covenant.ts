@@ -1414,16 +1414,20 @@ function findMatchingPubkeyParamName(
  * for the specific constructor param named `pubkeyParamName`.
  *
  * Strategy:
- *   1. Scan the script for all `0x20 <32 bytes>` pushes and collect unique
- *      pubkey sequences in first-appearance order.
- *   2. The N-th unique pubkey (0-indexed) corresponds to the N-th constructor
- *      pubkey param (e.g. key1=0, key2=1, key3=2) — this matches how
- *      SilverScript embeds params sequentially per branch.
- *   3. Look up the index of `pubkeyParamName` in the AST params list.
- *   4. Return true only if the caller's pubkey matches that specific slot.
+ *   1. Scan the script for all `0x20 <32 bytes>` pushes, in order.
+ *      Each pubkey is pushed as: 0x20 (OP_DATA_32) followed by 32 bytes.
+ *   2. Walk every `checkSig(sig, keyN)` reference across all AST functions,
+ *      in the same order the compiler emits pushes for them (repeats
+ *      included). This lines up positionally, 1:1, with the pushes above.
+ *   3. The pubkey at `pubkeyParamName`'s first reference position is its
+ *      script value.
  *
- * This ensures signer3 (key3) only claims "s3" params, not "s2" params,
- * even though key3 also appears in the script.
+ * Positional correlation (rather than deduplicating pushes by value and
+ * indexing by constructor param declaration order) is required because two
+ * different signer params can legitimately hold the same address (e.g. the
+ * same wallet used for both signer2/key2 and signer3/key3). Deduplicating by
+ * value would collapse such params into a single slot and leave the later
+ * one unmatched.
  */
 function scriptContainsPubkeyForParam(
   compiled: CompiledContract,
@@ -1433,27 +1437,34 @@ function scriptContainsPubkeyForParam(
 ): boolean {
   if (pubkeyBytes.length !== 32) return false;
 
-  // Step 1: Collect unique 32-byte pubkey values from the script in first-appearance order.
-  // Each pubkey is pushed as: 0x20 (OP_DATA_32) followed by 32 bytes.
-  const seenHexOrder: string[] = [];
+  // Step 1: Collect the 32-byte pubkey pushes from the script, in order.
+  const pushes: string[] = [];
   for (let i = 0; i <= scriptBytes.length - 33; i++) {
     if (scriptBytes[i] === 0x20) {
-      const pkHex = bytesToHex(scriptBytes.slice(i + 1, i + 33));
-      if (!seenHexOrder.includes(pkHex)) {
-        seenHexOrder.push(pkHex);
+      pushes.push(bytesToHex(scriptBytes.slice(i + 1, i + 33)));
+      i += 32;
+    }
+  }
+
+  // Step 2: Collect every checkSig(sig, keyN) reference, in emission order.
+  const referencedNames: string[] = [];
+  for (const fn of compiled.ast.functions) {
+    for (const node of fn.body) {
+      if (node.kind === 'require') {
+        const expr = (node.data as any)?.expr;
+        if (expr?.kind === 'call' && expr.data?.name === 'checkSig') {
+          const keyName = expr.data.args?.[1]?.data as string | undefined;
+          if (keyName) referencedNames.push(keyName);
+        }
       }
     }
   }
 
-  // Step 2: Find the index of pubkeyParamName among the constructor's pubkey params.
-  const pubkeyParams = compiled.ast.params.filter(
-    (p) => p.type_ref.base === 'pubkey',
-  );
-  const paramIndex = pubkeyParams.findIndex((p) => p.name === pubkeyParamName);
+  // Step 3: The push at pubkeyParamName's first reference must match our caller's key.
+  const paramIndex = referencedNames.indexOf(pubkeyParamName);
   if (paramIndex === -1) return false;
 
-  // Step 3: The pubkey at that index in the script must match our caller's key.
-  const expectedPubkeyHex = seenHexOrder[paramIndex];
+  const expectedPubkeyHex = pushes[paramIndex];
   if (!expectedPubkeyHex) return false;
 
   return bytesToHex(pubkeyBytes) === expectedPubkeyHex;

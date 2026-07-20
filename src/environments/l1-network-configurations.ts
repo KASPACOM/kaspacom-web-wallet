@@ -17,6 +17,7 @@ export const KASPA_MAINNET_L1_NETWORK_CONFIG: L1NetworkConfigInterface = {
   knsApiBaseurl: 'https://api.knsdomains.org/mainnet',
   covenantIndexerApiBaseurl: 'https://indexer.kaspa.com',
   kaspaExplorerBaseurl: 'https://explorer.kaspa.org',
+  covenantExplorerBaseurl: 'https://covenants.kaspa.com',
   l1AvatarCollection: 'YONATOSHI',
 };
 

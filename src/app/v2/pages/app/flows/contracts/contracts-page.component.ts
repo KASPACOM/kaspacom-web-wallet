@@ -12,6 +12,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Dialog } from '@angular/cdk/dialog';
 import { firstValueFrom, Subscription } from 'rxjs';
 import {
   DropdownOption,
@@ -53,6 +54,10 @@ import {
 } from '../../../../../services/covenant/covenant-sdk/types';
 import type { CovenantFunctionArg } from '../../../../../services/covenant/covenant-sdk/covenant';
 import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
+import {
+  PartialSpendJsonDialogData,
+  PartialSpendJsonModalComponent,
+} from './components/partial-spend-json-modal/partial-spend-json-modal.component';
 import {
   CONTRACT_TEMPLATES,
   ContractTemplate,
@@ -218,6 +223,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private approvalFlowService = inject(ApprovalFlowService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private dialog = inject(Dialog);
   private platformId = inject(PLATFORM_ID);
   private notificationService = inject(NotificationService);
   private isBrowser = isPlatformBrowser(this.platformId);
@@ -1973,12 +1979,18 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * would otherwise blank the "Available actions" panel and rebuild it,
    * flickering nothing -> actions a second time for data the user is
    * already looking at.
+   * @param options.skipScrollToTop Callers that are about to scroll
+   * somewhere else once loading finishes (e.g. openDashboardAction scrolling
+   * to the action panel) should set this — otherwise the top-of-page scroll
+   * queued here fires right before the caller's own scroll, producing a
+   * visible snap-to-top-then-scroll-down jump.
    */
   async openContractDetail(
     entry: ContractDashboardEntry,
-    options?: { silent?: boolean },
+    options?: { silent?: boolean; skipScrollToTop?: boolean },
   ) {
     const silent = options?.silent ?? false;
+    const skipScrollToTop = options?.skipScrollToTop ?? false;
     const requestToken = ++this.detailRequestToken;
     const isCurrentRequest = () => requestToken === this.detailRequestToken;
 
@@ -1988,7 +2000,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       if (this.detailRouteId() || this.activeTab() === 'detail') {
         this.clearInteractContractSelection();
       }
-      this.scrollContractsContentToTop();
+      if (!skipScrollToTop) this.scrollContractsContentToTop();
     }
     this.selectedDetailError.set(null);
     this.dashboardError.set(null);
@@ -2090,7 +2102,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     } finally {
       if (isCurrentRequest() && !silent) {
         this.selectedDetailLoading.set(false);
-        this.scrollContractsContentToTop();
+        if (!skipScrollToTop) this.scrollContractsContentToTop();
       }
     }
   }
@@ -2127,20 +2139,31 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   async openDashboardAction(entry: ContractDashboardEntry) {
     this.detailPanelTab.set('action');
     this.activeTab.set('detail');
-    await this.openContractDetail(entry);
+    await this.openContractDetail(entry, { skipScrollToTop: true });
     this.scrollToActionPanel();
   }
 
-  /** Same as openDashboardAction(), but preselects a specific entrypoint instead of the type's default. */
-  async openDashboardActionFor(entry: ContractDashboardEntry, fnName: string) {
-    await this.openDashboardAction(entry);
-    if (this.availableFunctions().some((fn) => fn.name === fnName)) {
-      this.selectFunction(fnName);
-    } else if (!this.dashboardError()) {
-      this.dashboardError.set(
-        `Could not load the "${fnName}" action for this contract. The indexer may not have this covenant's current state yet.`,
-      );
+  /**
+   * Used by the "Available actions" list rendered inside an already-open
+   * detail view — that data (and interactContractJson, which the action
+   * panel needs to render) was already loaded when the detail view opened,
+   * so unlike openDashboardAction() this never re-fetches from the indexer.
+   * Re-fetching made the actions list flash to its loading skeleton
+   * (selectedDetailLoading briefly true) and delayed the scroll behind a
+   * full network round trip for data we already had.
+   */
+  selectDetailAction(fnName?: string) {
+    this.detailPanelTab.set('action');
+    if (fnName) {
+      if (this.availableFunctions().some((fn) => fn.name === fnName)) {
+        this.selectFunction(fnName);
+      } else if (!this.dashboardError()) {
+        this.dashboardError.set(
+          `Could not load the "${fnName}" action for this contract. The indexer may not have this covenant's current state yet.`,
+        );
+      }
     }
+    this.scrollToActionPanel();
   }
 
   /**
@@ -2460,7 +2483,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         label: 'Top Up',
         description:
           'Add more KAS to the locked funds without withdrawing anything.',
-        iconClass: 'icon-plus',
+        iconClass: 'icon-add',
       },
       changeHeir: {
         label: 'Change Heir',
@@ -2493,7 +2516,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         label: 'Top Up',
         description:
           'Add more KAS to the locked funds without withdrawing anything.',
-        iconClass: 'icon-plus',
+        iconClass: 'icon-add',
       },
     },
     MultiSigVault: {
@@ -2525,7 +2548,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         label: 'Top Up',
         description:
           'Add more KAS to the locked funds without withdrawing anything.',
-        iconClass: 'icon-plus',
+        iconClass: 'icon-add',
       },
     },
     EscrowWithArbiter: {
@@ -2544,7 +2567,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         label: 'Top Up',
         description:
           'Add more KAS to the locked funds without withdrawing anything.',
-        iconClass: 'icon-plus',
+        iconClass: 'icon-add',
       },
       arbitrate: {
         label: 'Arbitrate',
@@ -3871,6 +3894,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           txid: '(partial — share with co-signer)',
           functionName,
         });
+        this.openPartialSpendJsonDialog(partialJson);
         return;
       }
 
@@ -4465,7 +4489,23 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * Get explorer link for transaction
    */
   getExplorerLink(txid: string): string {
+    const covenantExplorerBaseurl =
+      this.kaspaL1NetworkService.getCovenantExplorerBaseurl();
+    if (covenantExplorerBaseurl) {
+      return `${covenantExplorerBaseurl}/tx/${txid}`;
+    }
     return `${this.kaspaL1NetworkService.getKaspaExplorerBaseurl()}/txs/${txid}`;
+  }
+
+  /**
+   * Get covenant explorer link for a covenant ID (mainnet only, via covenants.kaspa.com)
+   */
+  getCovenantExplorerLink(covenantId: string): string | undefined {
+    const covenantExplorerBaseurl =
+      this.kaspaL1NetworkService.getCovenantExplorerBaseurl();
+    return covenantExplorerBaseurl
+      ? `${covenantExplorerBaseurl}/covenants/${covenantId}`
+      : undefined;
   }
 
   /**
@@ -5167,6 +5207,23 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     } finally {
       this.isCompletingPartial.set(false);
     }
+  }
+
+  /**
+   * Surface the freshly-signed partial spend JSON in a dialog (copy-paste is
+   * awkward from an inline textarea buried in the form) and return to the
+   * contracts list once the co-signer has what they need.
+   */
+  private openPartialSpendJsonDialog(json: string) {
+    this.dialog
+      .open<void, PartialSpendJsonDialogData>(PartialSpendJsonModalComponent, {
+        data: {
+          title: 'Partial spend created',
+          showCloseButton: true,
+          json,
+        },
+      })
+      .closed.subscribe(() => this.backToContractsList());
   }
 
   /**

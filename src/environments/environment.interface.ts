@@ -63,6 +63,8 @@ export interface L1NetworkConfigInterface {
   knsApiBaseurl?: string;
   covenantIndexerApiBaseurl?: string;
   kaspaExplorerBaseurl: string;
+  /** Covenant explorer (covenants.kaspa.com) — mainnet only; other networks fall back to kaspaExplorerBaseurl. */
+  covenantExplorerBaseurl?: string;
   l1AvatarCollection: string;
 }
 

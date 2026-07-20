@@ -620,6 +620,13 @@ $tpl-accents: (
   align-items: center;
   width: 100%;
   gap: 8px;
+
+  // Below 575px there isn't enough room to show 3 horizontal steps without
+  // cropping labels, and the stepper is decorative rather than essential —
+  // just drop it rather than wrapping or truncating.
+  @media (max-width: 575px) {
+    display: none;
+  }
 }
 .deploy-stepper__item {
   ::ng-deep .stepper-title {

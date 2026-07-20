@@ -71,6 +71,10 @@ export class KaspaL1NetworkService {
     return this.getCurrentNetwork().kaspaExplorerBaseurl;
   }
 
+  getCovenantExplorerBaseurl(): string | undefined {
+    return this.getCurrentNetwork().covenantExplorerBaseurl;
+  }
+
   supportsKrc20Assets(): boolean {
     return !!this.getKasplexApiBaseurl();
   }

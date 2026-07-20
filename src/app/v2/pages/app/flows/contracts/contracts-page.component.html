@@ -581,9 +581,26 @@
                   }}</span>
                   @if (deployIndexerState()!.covenantId) {
                     <div class="flex align-items-center gap-8">
-                      <span class="text-gray-60 typo-text-2 text-mono">{{
-                        truncate(deployIndexerState()!.covenantId || "", 28)
-                      }}</span>
+                      @if (
+                        getCovenantExplorerLink(
+                          deployIndexerState()!.covenantId || ""
+                        );
+                        as covenantLink
+                      ) {
+                        <a
+                          [href]="covenantLink"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="text-blue typo-text-2 text-mono"
+                          >{{
+                            truncate(deployIndexerState()!.covenantId || "", 28)
+                          }}</a
+                        >
+                      } @else {
+                        <span class="text-gray-60 typo-text-2 text-mono">{{
+                          truncate(deployIndexerState()!.covenantId || "", 28)
+                        }}</span>
+                      }
                       <app-copy-button
                         [value]="deployIndexerState()!.covenantId || ''"
                         [size]="'sm'"
@@ -1008,18 +1025,33 @@
                       <span class="card-id-label">{{
                         contract.covenantId ? "Covenant ID" : "Address"
                       }}</span>
-                      <span
-                        class="card-id-value"
-                        [title]="contract.covenantId || contract.currentAddress"
-                        >{{
-                          truncate(
-                            contract.covenantId ||
-                              contract.currentAddress ||
-                              "",
-                            22
-                          )
-                        }}</span
-                      >
+                      @if (
+                        contract.covenantId &&
+                        getCovenantExplorerLink(contract.covenantId);
+                        as covenantLink
+                      ) {
+                        <a
+                          class="card-id-value"
+                          [href]="covenantLink"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          [title]="contract.covenantId"
+                          >{{ truncate(contract.covenantId, 22) }}</a
+                        >
+                      } @else {
+                        <span
+                          class="card-id-value"
+                          [title]="contract.covenantId || contract.currentAddress"
+                          >{{
+                            truncate(
+                              contract.covenantId ||
+                                contract.currentAddress ||
+                                "",
+                              22
+                            )
+                          }}</span
+                        >
+                      }
                       <app-copy-button
                         [value]="
                           contract.covenantId || contract.currentAddress || ''
@@ -1302,9 +1334,20 @@
                   <div class="identifier">
                     <span class="identifier-label">Covenant ID</span>
                     <div class="identifier-value-row">
-                      <span class="identifier-value" [title]="covenantId">{{
-                        truncate(covenantId, 28)
-                      }}</span>
+                      @if (getCovenantExplorerLink(covenantId); as covenantLink) {
+                        <a
+                          class="identifier-value"
+                          [href]="covenantLink"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          [title]="covenantId"
+                          >{{ truncate(covenantId, 28) }}</a
+                        >
+                      } @else {
+                        <span class="identifier-value" [title]="covenantId">{{
+                          truncate(covenantId, 28)
+                        }}</span>
+                      }
                       <app-copy-button
                         [value]="covenantId"
                         [size]="'sm'"
@@ -1377,10 +1420,7 @@
                               [disabled]="!action.enabled"
                               (click)="
                                 action.enabled &&
-                                  openDashboardActionFor(
-                                    selectedDetail()!.entry,
-                                    action.fnName
-                                  )
+                                  selectDetailAction(action.fnName)
                               "
                             >
                               <kc-icon
@@ -1409,9 +1449,7 @@
                         } @else {
                           <button
                             class="action-item"
-                            (click)="
-                              openDashboardAction(selectedDetail()!.entry)
-                            "
+                            (click)="selectDetailAction()"
                           >
                             <svg
                               viewBox="0 0 24 24"
@@ -1718,9 +1756,24 @@
               <div class="flex column gap-4">
                 <span class="text-gray-60 typo-text-1">Covenant ID</span>
                 <div class="flex align-items-center gap-8">
-                  <span class="text-white typo-text-2 text-mono">{{
-                    truncate(indexerImportPreview()!.covenantId, 28)
-                  }}</span>
+                  @if (
+                    getCovenantExplorerLink(indexerImportPreview()!.covenantId);
+                    as covenantLink
+                  ) {
+                    <a
+                      [href]="covenantLink"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="text-blue typo-text-2 text-mono"
+                      >{{
+                        truncate(indexerImportPreview()!.covenantId, 28)
+                      }}</a
+                    >
+                  } @else {
+                    <span class="text-white typo-text-2 text-mono">{{
+                      truncate(indexerImportPreview()!.covenantId, 28)
+                    }}</span>
+                  }
                   <app-copy-button
                     [value]="indexerImportPreview()!.covenantId"
                     [size]="'sm'"

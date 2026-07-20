@@ -1357,7 +1357,12 @@
                   </p>
                   <div class="action-list">
                     @if (selectedDetail()!.entry.status !== "spent") {
-                      @if (
+                      @if (!actionsPanelReady()) {
+                        <div class="action-list-skeleton">
+                          <div class="sk-row"></div>
+                          <div class="sk-row"></div>
+                        </div>
+                      } @else if (
                         getAvailableActions(selectedDetail()!);
                         as availableActions
                       ) {

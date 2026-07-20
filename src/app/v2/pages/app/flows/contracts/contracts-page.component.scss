@@ -452,6 +452,18 @@ $tpl-accents: (
   flex-direction: column;
   gap: 10px;
 }
+.action-list-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  .sk-row {
+    height: 52px;
+    border-radius: 11px;
+    border: 1px solid var(--border-secondary);
+    background: var(--gray-10);
+    animation: kc-pulse 1.4s ease-in-out infinite;
+  }
+}
 .action-item {
   display: flex;
   align-items: center;

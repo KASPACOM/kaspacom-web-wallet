@@ -333,6 +333,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   dashboardError = signal<string | null>(null);
   selectedDetail = signal<ContractDetailState | null>(null);
   selectedDetailLoading = signal(false);
+  /**
+   * Bumped on every openContractDetail() call so a slower, superseded fetch
+   * (e.g. a route-driven load racing a direct row click for the same
+   * contract) can detect it's stale and skip writing its results — otherwise
+   * the two interleave and the actions panel flickers ready -> loading ->
+   * ready as each one's writes land out of order.
+   */
+  private detailRequestToken = 0;
   selectedDetailError = signal<string | null>(null);
   detailPanelTab = signal<ContractDetailTab>('details');
   detailRouteId = signal<string | null>(null);
@@ -1391,7 +1399,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           entry.id === current.id,
       );
       if (refreshed) {
-        await this.openContractDetail(refreshed);
+        await this.openContractDetail(refreshed, { silent: true });
       }
     }
   }
@@ -1957,22 +1965,42 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     );
   }
 
-  async openContractDetail(entry: ContractDashboardEntry) {
-    this.selectedDetailLoading.set(true);
+  /**
+   * @param options.silent Re-fetch and merge fresh data into an
+   * already-displayed detail view (e.g. loadContracts() keeping an open
+   * panel in sync after a background dashboard reload) without resetting
+   * the loading flag or the interact-contract selection — both of which
+   * would otherwise blank the "Available actions" panel and rebuild it,
+   * flickering nothing -> actions a second time for data the user is
+   * already looking at.
+   */
+  async openContractDetail(
+    entry: ContractDashboardEntry,
+    options?: { silent?: boolean },
+  ) {
+    const silent = options?.silent ?? false;
+    const requestToken = ++this.detailRequestToken;
+    const isCurrentRequest = () => requestToken === this.detailRequestToken;
+
+    if (!silent) {
+      this.selectedDetailLoading.set(true);
+      this.selectedDetail.set({ entry, actions: [], utxos: [] });
+      if (this.detailRouteId() || this.activeTab() === 'detail') {
+        this.clearInteractContractSelection();
+      }
+      this.scrollContractsContentToTop();
+    }
     this.selectedDetailError.set(null);
     this.dashboardError.set(null);
-    this.selectedDetail.set({ entry, actions: [], utxos: [] });
-    if (this.detailRouteId() || this.activeTab() === 'detail') {
-      this.clearInteractContractSelection();
-    }
-    this.scrollContractsContentToTop();
 
     const identifier = entry.covenantId || entry.scriptHash || entry.deployTxid;
     if (!identifier) {
-      this.selectedDetailLoading.set(false);
-      this.selectedDetailError.set(
-        'This local contract has no indexer id or deploy transaction yet. Use the action flow or import by tx once indexed.',
-      );
+      if (!silent) {
+        this.selectedDetailLoading.set(false);
+        this.selectedDetailError.set(
+          'This local contract has no indexer id or deploy transaction yet. Use the action flow or import by tx once indexed.',
+        );
+      }
       return;
     }
 
@@ -2018,6 +2046,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           ? this.extractDeadlineMs(resolved.covenant, utxos[0]?.state)
           : entry.deadlineMs,
       };
+      if (!isCurrentRequest()) return;
       this.selectedDetail.set({
         entry: updatedEntry,
         response,
@@ -2028,10 +2057,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         (this.detailRouteId() || this.activeTab() === 'detail') &&
         updatedEntry.status === 'active'
       ) {
-        await this.prepareDashboardAction(updatedEntry);
-        await this.refreshDmsDeadlineFromScript();
+        await this.prepareDashboardAction(updatedEntry, requestToken, silent);
+        if (!isCurrentRequest()) return;
+        await this.refreshDmsDeadlineFromScript(requestToken);
       }
     } catch (error: any) {
+      if (!isCurrentRequest()) return;
       if (entry.registryEntry) {
         // The indexer may not have caught up yet (e.g. right after a fresh
         // deploy — see trackDeployIndexing()) or may be temporarily
@@ -2049,7 +2080,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           (this.detailRouteId() || this.activeTab() === 'detail') &&
           entry.status === 'active'
         ) {
-          await this.prepareDashboardAction(entry);
+          await this.prepareDashboardAction(entry, requestToken, silent);
         }
       } else {
         this.selectedDetailError.set(
@@ -2057,8 +2088,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         );
       }
     } finally {
-      this.selectedDetailLoading.set(false);
-      this.scrollContractsContentToTop();
+      if (isCurrentRequest() && !silent) {
+        this.selectedDetailLoading.set(false);
+        this.scrollContractsContentToTop();
+      }
     }
   }
 
@@ -2070,7 +2103,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * validates the new deadline against — so once it's loaded, prefer it over
    * the indexer-derived guess used for the initial display.
    */
-  private async refreshDmsDeadlineFromScript() {
+  private async refreshDmsDeadlineFromScript(requestToken: number) {
     const contract = this.parsedInteractContract();
     const detail = this.selectedDetail();
     if (!contract || !detail || contract.contract_name !== 'DeadManSwitch') {
@@ -2084,6 +2117,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (deadline === undefined) return;
     const deadlineMs = Number(deadline);
     if (!Number.isFinite(deadlineMs) || deadlineMs <= 0) return;
+    if (requestToken !== this.detailRequestToken) return;
     this.selectedDetail.set({
       ...detail,
       entry: { ...detail.entry, deadlineMs },
@@ -2135,6 +2169,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   private async prepareDashboardAction(
     entry: ContractDashboardEntry,
+    requestToken: number,
+    silent = false,
   ): Promise<boolean> {
     if (entry.registryEntry) {
       const registryEntry = this.syncRegistryEntryForDashboardAction(entry);
@@ -2163,9 +2199,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
 
     try {
-      this.selectedDetailLoading.set(true);
+      if (!silent) this.selectedDetailLoading.set(true);
       const response = await this.fetchIndexerCovenant(identifier);
       const preview = await this.buildIndexerImportPreview(response);
+      if (requestToken !== this.detailRequestToken) return false;
       this.indexerImportPreview.set(preview);
       this.importIndexerPreview({ stayOnCurrentTab: true });
       const imported = this.registryService
@@ -2185,16 +2222,21 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         this.selectedContractId.set(imported.id);
         this.selectContractFromRegistry();
         this.selectDefaultFunctionForContract(entry.contractName);
-        this.activeTab.set('detail');
-        this.detailPanelTab.set('action');
+        if (!silent) {
+          this.activeTab.set('detail');
+          this.detailPanelTab.set('action');
+        }
         return true;
       }
     } catch (error: any) {
+      if (requestToken !== this.detailRequestToken) return false;
       this.dashboardError.set(
         error?.message || 'Import this contract before using wallet actions.',
       );
     } finally {
-      this.selectedDetailLoading.set(false);
+      if (requestToken === this.detailRequestToken && !silent) {
+        this.selectedDetailLoading.set(false);
+      }
     }
     return false;
   }
@@ -2512,6 +2554,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       },
     },
   };
+
+  /**
+   * Whether every async source getAvailableActions() reads from has settled.
+   * selectedDetailLoading() alone doesn't cover this: the current wallet
+   * (used for role checks) resolves on its own schedule, independent of the
+   * indexer/contract-detail fetch chain, and can flip currentWalletRoles()
+   * from [] to the real roles after the actions panel has already rendered —
+   * causing a disabled -> enabled flicker. Gate the panel on both settling
+   * before rendering real enabled/disabled state.
+   */
+  actionsPanelReady = computed(
+    () => !this.selectedDetailLoading() && !!this.currentWallet(),
+  );
 
   /**
    * Full list of possible actions for the detail page's "Available actions"

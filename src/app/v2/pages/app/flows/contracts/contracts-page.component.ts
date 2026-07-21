@@ -4498,7 +4498,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Get covenant explorer link for a covenant ID (mainnet only, via covenants.kaspa.com)
+   * Get covenant explorer link for a covenant ID (covenants.kaspa.com), if the current network has one configured
    */
   getCovenantExplorerLink(covenantId: string): string | undefined {
     const covenantExplorerBaseurl =

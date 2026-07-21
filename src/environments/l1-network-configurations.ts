@@ -38,6 +38,7 @@ export const KASPA_TN10_L1_NETWORK_CONFIG: L1NetworkConfigInterface = {
   knsApiBaseurl: 'https://api.knsdomains.org/tn10',
   covenantIndexerApiBaseurl: 'https://tn10-indexer.kaspa.com',
   kaspaExplorerBaseurl: 'https://explorer-tn10.kaspa.org',
+  covenantExplorerBaseurl: 'https://tn10-covenants.kaspa.com',
   l1AvatarCollection: 'PEPINO'
 };
 

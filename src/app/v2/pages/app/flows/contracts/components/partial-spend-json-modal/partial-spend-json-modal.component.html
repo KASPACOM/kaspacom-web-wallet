@@ -17,6 +17,12 @@
         (buttonClick)="copyJson()"
       ></kc-button>
       <kc-button
+        [text]="'Download JSON file'"
+        [variant]="'secondary'"
+        [isFullWidth]="true"
+        (buttonClick)="downloadJson()"
+      ></kc-button>
+      <kc-button
         [text]="'Done'"
         [variant]="'secondary'"
         [isFullWidth]="true"

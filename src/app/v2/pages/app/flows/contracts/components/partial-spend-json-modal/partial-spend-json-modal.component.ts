@@ -5,6 +5,7 @@ import {
   KcDialogComponent,
   NotificationService,
 } from '@kaspacom/ui-kit';
+import { downloadJsonFile } from '../../json-file.util';
 
 export interface PartialSpendJsonDialogData {
   title?: string;
@@ -33,6 +34,10 @@ export class PartialSpendJsonModalComponent {
         ),
       () => prompt('Copy this partial spend JSON:', this.data.json),
     );
+  }
+
+  downloadJson() {
+    downloadJsonFile(this.data.json, 'partial-spend');
   }
 
   onDone() {

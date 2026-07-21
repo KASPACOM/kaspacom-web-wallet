@@ -1512,6 +1512,12 @@
                       [isFullWidth]="true"
                       (buttonClick)="copyPartialSpend()"
                     ></kc-button>
+                    <kc-button
+                      [text]="'Download JSON file'"
+                      [variant]="'secondary'"
+                      [isFullWidth]="true"
+                      (buttonClick)="downloadPartialSpend()"
+                    ></kc-button>
                   </div>
                 }
 
@@ -2348,6 +2354,12 @@
                 [isFullWidth]="true"
                 (buttonClick)="copyPartialSpend()"
               ></kc-button>
+              <kc-button
+                [text]="'Download JSON file'"
+                [variant]="'secondary'"
+                [isFullWidth]="true"
+                (buttonClick)="downloadPartialSpend()"
+              ></kc-button>
             </div>
           }
         }
@@ -2357,8 +2369,9 @@
             <summary>Complete co-signer transaction</summary>
             <div class="adv-body">
               <span class="text-gray-75 typo-text-2"
-                >Paste the partial spend JSON received from the co-signer. Your
-                signature will be added and the transaction broadcast.</span
+                >Paste the partial spend JSON received from the co-signer, or
+                import it from a file. Your signature will be added and the
+                transaction broadcast.</span
               >
               <textarea
                 class="contract-input"
@@ -2367,6 +2380,13 @@
                 [(ngModel)]="importPartialJson"
                 [disabled]="isCompletingPartial()"
               ></textarea>
+              <kc-button
+                [text]="'Import JSON file'"
+                [variant]="'secondary'"
+                [isDisabled]="isCompletingPartial()"
+                [isFullWidth]="true"
+                (buttonClick)="importPartialSpendFromFile()"
+              ></kc-button>
               <kc-button
                 [text]="
                   isCompletingPartial() ? 'Completing...' : 'Sign & broadcast'

@@ -58,6 +58,7 @@ import {
   PartialSpendJsonDialogData,
   PartialSpendJsonModalComponent,
 } from './components/partial-spend-json-modal/partial-spend-json-modal.component';
+import { downloadJsonFile, readJsonFile } from './json-file.util';
 import {
   CONTRACT_TEMPLATES,
   ContractTemplate,
@@ -5240,6 +5241,25 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         ),
       () => prompt('Copy this partial spend JSON:', json),
     );
+  }
+
+  /**
+   * Download the pending partial spend JSON as a .json file.
+   */
+  downloadPartialSpend() {
+    const json = this.partialSpendJson();
+    if (!json) return;
+    downloadJsonFile(json, 'partial-spend');
+  }
+
+  /**
+   * Open a file picker and load a co-signer's partial spend JSON into the
+   * import textarea.
+   */
+  importPartialSpendFromFile() {
+    readJsonFile((content) => {
+      this.importPartialJson = content;
+    });
   }
 
   private getPartialContractName(partial: PartiallySignedSpend): string {

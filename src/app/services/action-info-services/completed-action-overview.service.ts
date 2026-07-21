@@ -14,7 +14,12 @@ import {
 } from '@kaspacom/wallet-messages';
 import { BaseProtocolClassesService } from '../protocols/base-protocol-classes.service';
 import { CompletedActionDisplay } from '../../types/completed-action-display.type';
-import { CompoundUtxosActionResult } from '../../types/wallet-action-result';
+import {
+  CompoundUtxosActionResult,
+  CovenantCompletePartialActionResult,
+  CovenantDeployActionResult,
+  CovenantSpendActionResult,
+} from '../../types/wallet-action-result';
 
 @Injectable({
   providedIn: 'root',
@@ -58,6 +63,18 @@ export class CompletedActionOverviewService {
       case WalletActionResultType.EIP1193ProviderRequest:
         return this.getEip1193ActionDisplay(
           action as EIP1193ProviderRequestActionResult<any>,
+        );
+      case 'deploy-covenant' as WalletActionResultType:
+        return this.getCovenantDeployActionDisplay(
+          action as CovenantDeployActionResult,
+        );
+      case 'spend-covenant' as WalletActionResultType:
+        return this.getCovenantSpendActionDisplay(
+          action as CovenantSpendActionResult,
+        );
+      case 'complete-covenant-partial' as WalletActionResultType:
+        return this.getCovenantCompletePartialActionDisplay(
+          action as CovenantCompletePartialActionResult,
         );
       default:
         return undefined;
@@ -205,6 +222,76 @@ export class CompletedActionOverviewService {
     }
 
     return result;
+  }
+
+  private getCovenantDeployActionDisplay(
+    actionData: CovenantDeployActionResult,
+  ): CompletedActionDisplay {
+    return {
+      title: 'Covenant Contract Deployed',
+      rows: [
+        {
+          fieldName: 'Wallet',
+          fieldValue: actionData.performedByWallet,
+        },
+        {
+          fieldName: 'Contract Address',
+          fieldValue: actionData.contractAddress,
+        },
+        {
+          fieldName: 'Transaction ID',
+          fieldValue: actionData.txid,
+        },
+        {
+          fieldName: 'Outpoint',
+          fieldValue: actionData.outpoint.txid + ':' + actionData.outpoint.vout,
+        },
+      ],
+    };
+  }
+
+  private getCovenantSpendActionDisplay(
+    actionData: CovenantSpendActionResult,
+  ): CompletedActionDisplay {
+    return {
+      title: 'Covenant Interaction Completed',
+      rows: [
+        {
+          fieldName: 'Wallet',
+          fieldValue: actionData.performedByWallet,
+        },
+        {
+          fieldName: 'Function',
+          fieldValue: actionData.functionName,
+        },
+        {
+          fieldName: 'Transaction ID',
+          fieldValue: actionData.txid,
+        },
+      ],
+    };
+  }
+
+  private getCovenantCompletePartialActionDisplay(
+    actionData: CovenantCompletePartialActionResult,
+  ): CompletedActionDisplay {
+    return {
+      title: 'Covenant Interaction Completed',
+      rows: [
+        {
+          fieldName: 'Wallet',
+          fieldValue: actionData.performedByWallet,
+        },
+        {
+          fieldName: 'Function',
+          fieldValue: actionData.functionName,
+        },
+        {
+          fieldName: 'Transaction ID',
+          fieldValue: actionData.txid,
+        },
+      ],
+    };
   }
 
   private getEip1193ActionDisplay(

@@ -1,6 +1,6 @@
 <div class="address-smart-input">
   <kc-input
-    [label]="label()"
+    [infoLabel]="{ label: label() }"
     [placeholder]="placeholder()"
     [type]="'text'"
     [isValid]="
@@ -33,7 +33,8 @@
     </div>
   </kc-input>
   @if (
-    !isResolving() && !isDomainCandidate() &&
+    !isResolving() &&
+    !isDomainCandidate() &&
     (resolveError() || displayInvalidReason())
   ) {
     <span class="kc-input-error-text">{{

@@ -21,7 +21,13 @@ import {
   LoaderStatuses,
   NETWORKS,
 } from '@kaspacom/swap-sdk';
-import { KcButtonComponent, KcIconComponent, KcIconButtonComponent, KcSwitchComponent, SwitchOption, NotificationService } from '@kaspacom/ui-kit';
+import {
+  KcButtonComponent,
+  KcIconComponent,
+  KcIconButtonComponent,
+  SwitchOption,
+  NotificationService,
+} from '@kaspacom/ui-kit';
 import {
   EIP1193RequestPayload,
   EIP1193RequestType,
@@ -61,7 +67,6 @@ import {
     KcButtonComponent,
     KcIconComponent,
     KcIconButtonComponent,
-    KcSwitchComponent,
     CommaFormatterPipe,
     TokenLogoComponent,
   ],

@@ -1,6 +1,61 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
+ * Returns true if the script passed is a pay-to-script-hash (P2SH) format, false otherwise.
+ * @param script - The script ({@link HexString} or Uint8Array).
+ * @category Wallet SDK
+ */
+export function isScriptPayToScriptHash(
+  script: HexString | Uint8Array,
+): boolean;
+/**
+ * Returns the address encoded in a script public key.
+ * @param script_public_key - The script public key ({@link ScriptPublicKey}).
+ * @param network - The network type.
+ * @category Wallet SDK
+ */
+export function addressFromScriptPublicKey(
+  script_public_key: ScriptPublicKey | HexString,
+  network: NetworkType | NetworkId | string,
+): Address | undefined;
+/**
+ * Returns true if the script passed is a pay-to-pubkey.
+ * @param script - The script ({@link HexString} or Uint8Array).
+ * @category Wallet SDK
+ */
+export function isScriptPayToPubkey(script: HexString | Uint8Array): boolean;
+/**
+ * Creates a new script to pay a transaction output to the specified address.
+ * @category Wallet SDK
+ */
+export function payToAddressScript(address: Address | string): ScriptPublicKey;
+/**
+ * Returns returns true if the script passed is an ECDSA pay-to-pubkey.
+ * @param script - The script ({@link HexString} or Uint8Array).
+ * @category Wallet SDK
+ */
+export function isScriptPayToPubkeyECDSA(
+  script: HexString | Uint8Array,
+): boolean;
+/**
+ * Generates a signature script that fits a pay-to-script-hash script.
+ * @param redeem_script - The redeem script ({@link HexString} or Uint8Array).
+ * @param signature - The signature ({@link HexString} or Uint8Array).
+ * @category Wallet SDK
+ */
+export function payToScriptHashSignatureScript(
+  redeem_script: HexString | Uint8Array,
+  signature: HexString | Uint8Array,
+): HexString;
+/**
+ * Takes a script and returns an equivalent pay-to-script-hash script.
+ * @param redeem_script - The redeem script ({@link HexString} or Uint8Array).
+ * @category Wallet SDK
+ */
+export function payToScriptHashScript(
+  redeem_script: HexString | Uint8Array,
+): ScriptPublicKey;
+/**
  * Computes the covenant ID from the genesis outpoint and its authorized outputs.
  *
  * `genesis_outpoint` may be a [`TransactionOutpoint`] instance or a
@@ -12,50 +67,10 @@
  *
  * @category Consensus
  */
-export function covenantId(genesis_outpoint: ITransactionOutpoint | TransactionOutpoint, auth_outputs: ICovenantAuthorizedOutput[]): Hash;
-/**
- * Returns the address encoded in a script public key.
- * @param script_public_key - The script public key ({@link ScriptPublicKey}).
- * @param network - The network type.
- * @category Wallet SDK
- */
-export function addressFromScriptPublicKey(script_public_key: ScriptPublicKey | HexString, network: NetworkType | NetworkId | string): Address | undefined;
-/**
- * Creates a new script to pay a transaction output to the specified address.
- * @category Wallet SDK
- */
-export function payToAddressScript(address: Address | string): ScriptPublicKey;
-/**
- * Generates a signature script that fits a pay-to-script-hash script.
- * @param redeem_script - The redeem script ({@link HexString} or Uint8Array).
- * @param signature - The signature ({@link HexString} or Uint8Array).
- * @category Wallet SDK
- */
-export function payToScriptHashSignatureScript(redeem_script: HexString | Uint8Array, signature: HexString | Uint8Array): HexString;
-/**
- * Returns true if the script passed is a pay-to-script-hash (P2SH) format, false otherwise.
- * @param script - The script ({@link HexString} or Uint8Array).
- * @category Wallet SDK
- */
-export function isScriptPayToScriptHash(script: HexString | Uint8Array): boolean;
-/**
- * Returns returns true if the script passed is an ECDSA pay-to-pubkey.
- * @param script - The script ({@link HexString} or Uint8Array).
- * @category Wallet SDK
- */
-export function isScriptPayToPubkeyECDSA(script: HexString | Uint8Array): boolean;
-/**
- * Takes a script and returns an equivalent pay-to-script-hash script.
- * @param redeem_script - The redeem script ({@link HexString} or Uint8Array).
- * @category Wallet SDK
- */
-export function payToScriptHashScript(redeem_script: HexString | Uint8Array): ScriptPublicKey;
-/**
- * Returns true if the script passed is a pay-to-pubkey.
- * @param script - The script ({@link HexString} or Uint8Array).
- * @category Wallet SDK
- */
-export function isScriptPayToPubkey(script: HexString | Uint8Array): boolean;
+export function covenantId(
+  genesis_outpoint: ITransactionOutpoint | TransactionOutpoint,
+  auth_outputs: ICovenantAuthorizedOutput[],
+): Hash;
 /**
  * Calculates target from difficulty, based on set_difficulty function on
  * <https://github.com/tmrlvi/kaspa-miner/blob/bf361d02a46c580f55f46b5dfa773477634a5753/src/client/stratum.rs#L375>
@@ -63,106 +78,63 @@ export function isScriptPayToPubkey(script: HexString | Uint8Array): boolean;
  */
 export function calculateTarget(difficulty: number): bigint;
 /**
- * Create a basic transaction without any mass limit checks.
- * @category Wallet SDK
+ * a borsh-encoded `Groth16Receipt<ReceiptClaim>` to the
+ * compressed ark-groth16 proof bytes (hex), without touching a builder.
  */
-export function createTransaction(utxo_entry_source: IUtxoEntry[], outputs: IPaymentOutput[], priority_fee: bigint, payload?: HexString | Uint8Array | null, sig_op_count?: number | null): Transaction;
+export function prepareR0Groth16Proof(
+  receipt: HexString | Uint8Array,
+): HexString;
 /**
- * Helper function that creates a set of transactions using the transaction {@link Generator}.
- * @see {@link IGeneratorSettingsObject}, {@link Generator}, {@link estimateTransactions}
- * @category Wallet SDK
+ * a borsh-encoded `SuccinctReceipt<ReceiptClaim>` to its four
+ * on-stack witness byte vectors (hex), without touching a builder.
  */
-export function createTransactions(settings: IGeneratorSettingsObject): Promise<ICreateTransactions>;
+export function prepareR0SuccinctWitness(
+  receipt: HexString | Uint8Array,
+): R0SuccinctWitnessParts;
 /**
- * Helper function that creates an estimate using the transaction {@link Generator}
- * by producing only the {@link GeneratorSummary} containing the estimate.
- * @see {@link IGeneratorSettingsObject}, {@link Generator}, {@link createTransactions}
- * @category Wallet SDK
+ * WASM32 binding for `SHA256d` hash function.
+ * @param data - The data to hash ({@link HexString} or Uint8Array).
+ * @category Encryption
  */
-export function estimateTransactions(settings: IGeneratorSettingsObject): Promise<GeneratorSummary>;
+export function sha256dFromBinary(data: HexString | Uint8Array): HexString;
 /**
- * `maximumStandardTransactionMass()` returns the maximum transaction
- * size allowed by the network.
- *
- * @category Wallet SDK
- * @see {@link calculateTransactionMass}
- * @see {@link updateTransactionMass}
- * @see {@link calculateTransactionFee}
+ * WASM32 binding for `argon2sha256iv` hash function.
+ * @param text - The text string to hash.
+ * @category Encryption
  */
-export function maximumStandardTransactionMass(): bigint;
+export function argon2sha256ivFromText(
+  text: string,
+  byteLength: number,
+): HexString;
 /**
- * `calculateStorageMass()` is a helper function to compute the storage mass of inputs and outputs.
- * This function can be use to calculate the storage mass of transaction inputs and outputs.
- * Note that the storage mass is only a component of the total transaction mass. You are not
- * meant to use this function by itself and should use `calculateTransactionMass()` instead.
- * This function purely exists for diagnostic purposes and to help with complex algorithms that
- * may require a manual UTXO selection for identifying UTXOs and outputs needed for low storage mass.
- *
- * @category Wallet SDK
- * @see {@link maximumStandardTransactionMass}
- * @see {@link calculateTransactionMass}
+ * WASM32 binding for `SHA256` hash function.
+ * @param {string} text - The text string to hash.
+ * @category Encryption
  */
-export function calculateStorageMass(network_id: NetworkId | string, input_values: Array<number>, output_values: Array<number>): bigint | undefined;
+export function sha256FromText(text: string): HexString;
 /**
- * `updateTransactionMass()` updates the mass property of the passed transaction.
- * If the transaction is invalid, the function throws an error.
- *
- * The function returns `true` if the mass is within the maximum standard transaction mass and
- * the transaction mass is updated. Otherwise, the function returns `false`.
- *
- * This is similar to `calculateTransactionMass()` but modifies the supplied
- * `Transaction` object.
- *
- * @category Wallet SDK
- * @see {@link maximumStandardTransactionMass}
- * @see {@link calculateTransactionMass}
- * @see {@link calculateTransactionFee}
+ * WASM32 binding for `decryptXChaCha20Poly1305` function.
+ * @category Encryption
  */
-export function updateTransactionMass(network_id: NetworkId | string, tx: Transaction, minimum_signatures?: number | null): boolean;
+export function decryptXChaCha20Poly1305(
+  base64string: string,
+  password: string,
+): string;
 /**
- * `calculateTransactionFee()` returns minimum fees needed for the transaction to be
- * accepted by the network. If the transaction is invalid or the mass can not be calculated,
- * the function throws an error. If the mass exceeds the maximum standard transaction mass,
- * the function returns `undefined`.
- *
- * @category Wallet SDK
- * @see {@link maximumStandardTransactionMass}
- * @see {@link calculateTransactionMass}
- * @see {@link updateTransactionMass}
+ * WASM32 binding for `encryptXChaCha20Poly1305` function.
+ * @returns The encrypted text as a base64 string.
+ * @category Encryption
  */
-export function calculateTransactionFee(network_id: NetworkId | string, tx: ITransaction | Transaction, minimum_signatures?: number | null): bigint | undefined;
-/**
- * `calculateTransactionMass()` returns the mass of the passed transaction.
- * If the transaction is invalid, or the mass can not be calculated
- * the function throws an error.
- *
- * The mass value must not exceed the maximum standard transaction mass
- * that can be obtained using `maximumStandardTransactionMass()`.
- *
- * @category Wallet SDK
- * @see {@link maximumStandardTransactionMass}
- */
-export function calculateTransactionMass(network_id: NetworkId | string, tx: ITransaction | Transaction, minimum_signatures?: number | null): bigint;
-/**
- * @category Wallet SDK
- */
-export function createAddress(key: PublicKey | string, network: NetworkType | NetworkId | string, ecdsa?: boolean | null, account_kind?: AccountKind | null): Address;
-/**
- * @category Wallet SDK
- */
-export function createMultisigAddress(minimum_signatures: number, keys: (PublicKey | string)[], network_type: NetworkType, ecdsa?: boolean | null, account_kind?: AccountKind | null): Address;
+export function encryptXChaCha20Poly1305(
+  plainText: string,
+  password: string,
+): string;
 /**
  * WASM32 binding for `SHA256` hash function.
  * @param data - The data to hash ({@link HexString} or Uint8Array).
  * @category Encryption
  */
 export function sha256FromBinary(data: HexString | Uint8Array): HexString;
-/**
- * WASM32 binding for `encryptXChaCha20Poly1305` function.
- * @returns The encrypted text as a base64 string.
- * @category Encryption
- */
-export function encryptXChaCha20Poly1305(plainText: string, password: string): string;
 /**
  * WASM32 binding for `SHA256d` hash function.
  * @param {string} text - The text string to hash.
@@ -174,30 +146,10 @@ export function sha256dFromText(text: string): HexString;
  * @param data - The data to hash ({@link HexString} or Uint8Array).
  * @category Encryption
  */
-export function argon2sha256ivFromBinary(data: HexString | Uint8Array, hashLength: number): HexString;
-/**
- * WASM32 binding for `argon2sha256iv` hash function.
- * @param text - The text string to hash.
- * @category Encryption
- */
-export function argon2sha256ivFromText(text: string, byteLength: number): HexString;
-/**
- * WASM32 binding for `decryptXChaCha20Poly1305` function.
- * @category Encryption
- */
-export function decryptXChaCha20Poly1305(base64string: string, password: string): string;
-/**
- * WASM32 binding for `SHA256` hash function.
- * @param {string} text - The text string to hash.
- * @category Encryption
- */
-export function sha256FromText(text: string): HexString;
-/**
- * WASM32 binding for `SHA256d` hash function.
- * @param data - The data to hash ({@link HexString} or Uint8Array).
- * @category Encryption
- */
-export function sha256dFromBinary(data: HexString | Uint8Array): HexString;
+export function argon2sha256ivFromBinary(
+  data: HexString | Uint8Array,
+  hashLength: number,
+): HexString;
 /**
  * Signs a message with the given private key
  * @category Message Signing
@@ -209,59 +161,36 @@ export function signMessage(value: ISignMessage): HexString;
  */
 export function verifyMessage(value: IVerifyMessage): boolean;
 /**
- *
- * Convert Sompi to a string representation of the amount in Kaspa.
+ * Helper function that creates an estimate using the transaction {@link Generator}
+ * by producing only the {@link GeneratorSummary} containing the estimate.
+ * @see {@link IGeneratorSettingsObject}, {@link Generator}, {@link createTransactions}
+ * @category Wallet SDK
+ */
+export function estimateTransactions(
+  settings: IGeneratorSettingsObject,
+): Promise<GeneratorSummary>;
+/**
+ * Create a transaction manually without any mass limit checks.
+ * Optionally, you can pass compute commit and transaction version (useful for covenants)
  *
  * @category Wallet SDK
  */
-export function sompiToKaspaString(sompi: bigint | number | HexString): string;
+export function createTransaction(
+  utxo_entry_source: IUtxoEntry[],
+  outputs: IPaymentOutput[],
+  priority_fee: bigint,
+  payload?: HexString | Uint8Array | null,
+  compute_commit?: IComputeCommit | ComputeCommit | null,
+  version?: number | null,
+): Transaction;
 /**
- * Convert a Kaspa string to Sompi represented by bigint.
- * This function provides correct precision handling and
- * can be used to parse user input.
+ * Helper function that creates a set of transactions using the transaction {@link Generator}.
+ * @see {@link IGeneratorSettingsObject}, {@link Generator}, {@link estimateTransactions}
  * @category Wallet SDK
  */
-export function kaspaToSompi(kaspa: string): bigint | undefined;
-export function getNetworkParams(networkId: NetworkId | string): INetworkParams;
-export function getTransactionMaturityProgress(blockDaaScore: bigint, currentDaaScore: bigint, networkId: NetworkId | string, isCoinbase: boolean): string;
-/**
- *
- * Format a Sompi amount to a string representation of the amount in Kaspa with a suffix
- * based on the network type (e.g. `KAS` for mainnet, `TKAS` for testnet,
- * `SKAS` for simnet, `DKAS` for devnet).
- *
- * @category Wallet SDK
- */
-export function sompiToKaspaStringWithSuffix(sompi: bigint | number | HexString, network: NetworkType | NetworkId | string): string;
-/**
- * `createInputSignature()` is a helper function to sign a transaction input with a specific SigHash type using a private key.
- * @category Wallet SDK
- */
-export function createInputSignature(tx: Transaction, input_index: number, private_key: PrivateKey, sighash_type?: SighashType | null): HexString;
-/**
- * @category Wallet SDK
- */
-export function signScriptHash(script_hash: any, privkey: PrivateKey): string;
-/**
- * `signTransaction()` is a helper function to sign a transaction using a private key array or a signer array.
- * @category Wallet SDK
- */
-export function signTransaction(tx: Transaction, signer: (PrivateKey | HexString | Uint8Array)[], verify_sig: boolean): Transaction;
-/**
- * Set the name of the default wallet file name
- * or the `localStorage` key.  If `Wallet::open`
- * is called without a wallet file name, this name
- * will be used.  Please note that this name
- * will be suffixed with `.wallet` suffix.
- *
- * This function should be called before using any
- * other wallet SDK functions.
- *
- * @param {String} folder - the name to the wallet file or key.
- *
- * @category Wallet API
- */
-export function setDefaultWalletFile(folder: string): void;
+export function createTransactions(
+  settings: IGeneratorSettingsObject,
+): Promise<ICreateTransactions>;
 /**
  * Set a custom storage folder for the wallet SDK
  * subsystem.  Encrypted wallet files and transaction
@@ -282,6 +211,175 @@ export function setDefaultWalletFile(folder: string): void;
  */
 export function setDefaultStorageFolder(folder: string): void;
 /**
+ * Set the name of the default wallet file name
+ * or the `localStorage` key.  If `Wallet::open`
+ * is called without a wallet file name, this name
+ * will be used.  Please note that this name
+ * will be suffixed with `.wallet` suffix.
+ *
+ * This function should be called before using any
+ * other wallet SDK functions.
+ *
+ * @param {String} folder - the name to the wallet file or key.
+ *
+ * @category Wallet API
+ */
+export function setDefaultWalletFile(folder: string): void;
+/**
+ *
+ * Convert Sompi to a string representation of the amount in Kaspa.
+ *
+ * @category Wallet SDK
+ */
+export function sompiToKaspaString(sompi: bigint | number | HexString): string;
+export function getTransactionMaturityProgress(
+  blockDaaScore: bigint,
+  currentDaaScore: bigint,
+  networkId: NetworkId | string,
+  isCoinbase: boolean,
+): string;
+export function getNetworkParams(networkId: NetworkId | string): INetworkParams;
+/**
+ * Convert a Kaspa string to Sompi represented by bigint.
+ * This function provides correct precision handling and
+ * can be used to parse user input.
+ * @category Wallet SDK
+ */
+export function kaspaToSompi(kaspa: string): bigint | undefined;
+/**
+ *
+ * Format a Sompi amount to a string representation of the amount in Kaspa with a suffix
+ * based on the network type (e.g. `KAS` for mainnet, `TKAS` for testnet,
+ * `SKAS` for simnet, `DKAS` for devnet).
+ *
+ * @category Wallet SDK
+ */
+export function sompiToKaspaStringWithSuffix(
+  sompi: bigint | number | HexString,
+  network: NetworkType | NetworkId | string,
+): string;
+/**
+ * `signTransaction()` is a helper function to sign a transaction using a private key array or a signer array.
+ * @category Wallet SDK
+ */
+export function signTransaction(
+  tx: Transaction,
+  signer: (PrivateKey | HexString | Uint8Array)[],
+  verify_sig: boolean,
+): Transaction;
+/**
+ * `createInputSignature()` is a helper function to sign a transaction input with a specific SigHash type using a private key.
+ * @category Wallet SDK
+ */
+export function createInputSignature(
+  tx: Transaction,
+  input_index: number,
+  private_key: PrivateKey,
+  sighash_type?: SighashType | null,
+): HexString;
+/**
+ * @category Wallet SDK
+ */
+export function signScriptHash(script_hash: any, privkey: PrivateKey): string;
+/**
+ * @category Wallet SDK
+ */
+export function createMultisigAddress(
+  minimum_signatures: number,
+  keys: (PublicKey | string)[],
+  network_type: NetworkType,
+  ecdsa?: boolean | null,
+  account_kind?: AccountKind | null,
+): Address;
+/**
+ * @category Wallet SDK
+ */
+export function createAddress(
+  key: PublicKey | string,
+  network: NetworkType | NetworkId | string,
+  ecdsa?: boolean | null,
+  account_kind?: AccountKind | null,
+): Address;
+/**
+ * `calculateStorageMass()` is a helper function to compute the storage mass of inputs and outputs.
+ * This function can be use to calculate the storage mass of transaction inputs and outputs.
+ * Note that the storage mass is only a component of the total transaction mass. You are not
+ * meant to use this function by itself and should use `calculateTransactionMass()` instead.
+ * This function purely exists for diagnostic purposes and to help with complex algorithms that
+ * may require a manual UTXO selection for identifying UTXOs and outputs needed for low storage mass.
+ *
+ * @category Wallet SDK
+ * @see {@link maximumStandardTransactionMass}
+ * @see {@link calculateTransactionMass}
+ */
+export function calculateStorageMass(
+  network_id: NetworkId | string,
+  input_values: Array<number>,
+  output_values: Array<number>,
+): bigint | undefined;
+/**
+ * `maximumStandardTransactionMass()` returns the maximum transaction
+ * size allowed by the network.
+ *
+ * @category Wallet SDK
+ * @see {@link calculateTransactionMass}
+ * @see {@link updateTransactionMass}
+ * @see {@link calculateTransactionFee}
+ */
+export function maximumStandardTransactionMass(): bigint;
+/**
+ * `calculateTransactionMass()` returns the mass of the passed transaction.
+ * If the transaction is invalid, or the mass can not be calculated
+ * the function throws an error.
+ *
+ * The mass value must not exceed the maximum standard transaction mass
+ * that can be obtained using `maximumStandardTransactionMass()`.
+ *
+ * @category Wallet SDK
+ * @see {@link maximumStandardTransactionMass}
+ */
+export function calculateTransactionMass(
+  network_id: NetworkId | string,
+  tx: ITransaction | Transaction,
+  minimum_signatures?: number | null,
+): bigint;
+/**
+ * `updateTransactionMass()` updates the storage mass property of the passed transaction.
+ * If the transaction is invalid, the function throws an error.
+ *
+ * The function returns `true` if the mass is within the maximum standard transaction mass and
+ * the transaction mass is updated. Otherwise, the function returns `false`.
+ *
+ * This is similar to `calculateTransactionMass()` but modifies the supplied
+ * `Transaction` object.
+ *
+ * @category Wallet SDK
+ * @see {@link maximumStandardTransactionMass}
+ * @see {@link calculateTransactionMass}
+ * @see {@link calculateTransactionFee}
+ */
+export function updateTransactionMass(
+  network_id: NetworkId | string,
+  tx: Transaction,
+  minimum_signatures?: number | null,
+): boolean;
+/**
+ * `calculateTransactionFee()` returns minimum fees needed for the transaction to be
+ * accepted by the network. If the transaction is invalid or the mass can not be calculated,
+ * the function throws an error. If the mass exceeds the maximum standard transaction mass,
+ * the function returns `undefined`.
+ *
+ * @category Wallet SDK
+ * @see {@link maximumStandardTransactionMass}
+ * @see {@link calculateTransactionMass}
+ * @see {@link updateTransactionMass}
+ */
+export function calculateTransactionFee(
+  network_id: NetworkId | string,
+  tx: ITransaction | Transaction,
+  minimum_signatures?: number | null,
+): bigint | undefined;
+/**
  * Returns the version of the Rusty Kaspa framework.
  * @category General
  */
@@ -291,7 +389,9 @@ export function version(): string;
  * Available variants are: 'off', 'error', 'warn', 'info', 'debug', 'trace'
  * @category General
  */
-export function setLogLevel(level: "off" | "error" | "warn" | "info" | "debug" | "trace"): void;
+export function setLogLevel(
+  level: 'off' | 'error' | 'warn' | 'info' | 'debug' | 'trace',
+): void;
 /**
  * Configuration for the WASM32 bindings runtime interface.
  * @see {@link IWASM32BindingsConfig}
@@ -311,14 +411,6 @@ export function initWASM32Bindings(config: IWASM32BindingsConfig): void;
  */
 export function initBrowserPanicHook(): void;
 /**
- * Initialize Rust panic handler in console mode.
- *
- * This will output additional debug information during a panic to the console.
- * This function should be called right after loading WASM libraries.
- * @category General
- */
-export function initConsolePanicHook(): void;
-/**
  * Present panic logs to the user in the browser.
  *
  * This function should be called after a panic has occurred and the
@@ -328,6 +420,14 @@ export function initConsolePanicHook(): void;
  * @category General
  */
 export function presentPanicHookLogs(): void;
+/**
+ * Initialize Rust panic handler in console mode.
+ *
+ * This will output additional debug information during a panic to the console.
+ * This function should be called right after loading WASM libraries.
+ * @category General
+ */
+export function initConsolePanicHook(): void;
 /**
  * r" Deferred promise - an object that has `resolve()` and `reject()`
  * r" functions that can be called outside of the promise body.
@@ -743,11 +843,11 @@ export enum SighashType {
  * @category Consensus
  */
 export interface ITransactionOutput {
-    value: bigint;
-    scriptPublicKey: IScriptPublicKey | HexString;
+  value: bigint;
+  scriptPublicKey: IScriptPublicKey | HexString;
 
-    /** Optional verbose data provided by RPC */
-    verboseData?: ITransactionOutputVerboseData;
+  /** Optional verbose data provided by RPC */
+  verboseData?: ITransactionOutputVerboseData;
 }
 
 /**
@@ -756,178 +856,9 @@ export interface ITransactionOutput {
  * @category Node RPC
  */
 export interface ITransactionOutputVerboseData {
-    scriptPublicKeyType : string;
-    scriptPublicKeyAddress : string;
+  scriptPublicKeyType: string;
+  scriptPublicKeyAddress: string;
 }
-
-
-
-/**
- * Interface defines the structure of a transaction input.
- *
- * @category Consensus
- */
-export interface ITransactionInput {
-    previousOutpoint: ITransactionOutpoint;
-    signatureScript?: HexString;
-    sequence: bigint;
-    sigOpCount: number;
-    computeBudget?: number;
-    utxo?: UtxoEntryReference;
-
-    /** Optional verbose data provided by RPC */
-    verboseData?: ITransactionInputVerboseData;
-}
-
-/**
- * Option transaction input verbose data.
- *
- * @category Node RPC
- */
-export interface ITransactionInputVerboseData { }
-
-
-
-
-/**
- * Represents a block header where all fields are optional.
- *
- * @category Consensus
- */
-export interface IOptionalHeader {
-    hash?: HexString;
-    version?: number;
-    parentsByLevel?: CompressedParents;
-    hashMerkleRoot?: HexString;
-    acceptedIdMerkleRoot?: HexString;
-    utxoCommitment?: HexString;
-    timestamp?: bigint;
-    bits?: number;
-    nonce?: bigint;
-    daaScore?: bigint;
-    blueWork?: bigint | HexString;
-    blueScore?: bigint;
-    pruningPoint?: HexString;
-}
-
-
-
-/**
- * An output authorized by the genesis outpoint for covenant ID derivation.
- *
- * @category Consensus
- */
-export interface ICovenantAuthorizedOutput {
-    index: number;
-    output: ITransactionOutput | TransactionOutput;
-}
-
-
-
-/**
- * Interface defines the structure of a transaction outpoint (used by transaction input).
- *
- * @category Consensus
- */
-export interface ITransactionOutpoint {
-    transactionId: HexString;
-    index: number;
-}
-
-
-
-/**
- * Interface defining the structure of a block header.
- *
- * @category Consensus
- */
-export interface IHeader {
-    hash: HexString;
-    version: number;
-    parentsByLevel: Array<Array<HexString>>;
-    hashMerkleRoot: HexString;
-    acceptedIdMerkleRoot: HexString;
-    utxoCommitment: HexString;
-    timestamp: bigint;
-    bits: number;
-    nonce: bigint;
-    daaScore: bigint;
-    blueWork: bigint | HexString;
-    blueScore: bigint;
-    pruningPoint: HexString;
-}
-
-/**
- * Interface defining the structure of a raw block header.
- *
- * This interface is explicitly used by GetBlockTemplate and SubmitBlock RPCs
- * and unlike `IHeader`, does not include a hash.
- *
- * @category Consensus
- */
-export interface IRawHeader {
-    version: number;
-    parentsByLevel: Array<Array<HexString>>;
-    hashMerkleRoot: HexString;
-    acceptedIdMerkleRoot: HexString;
-    utxoCommitment: HexString;
-    timestamp: bigint;
-    bits: number;
-    nonce: bigint;
-    daaScore: bigint;
-    blueWork: bigint | HexString;
-    blueScore: bigint;
-    pruningPoint: HexString;
-}
-
-
-
-/**
- * A genesis covenant group for bulk covenant binding population.
- *
- * @category Consensus
- */
-export interface IGenesisCovenantGroup {
-    authorizingInput: number;
-    outputs: number[];
-}
-
-
-
-/**
- * A covenant binding binds a transaction output to the covenant and input authorizing its creation.
- *
- * @category Consensus
- */
-export interface ICovenantBinding {
-    authorizingInput: number;
-    covenantId: HexString;
-}
-
-
-
-/**
- * Interface defines the structure of a UTXO entry.
- *
- * @category Consensus
- */
-export interface IUtxoEntry {
-    /** @readonly */
-    address?: Address;
-    /** @readonly */
-    outpoint: ITransactionOutpoint;
-    /** @readonly */
-    amount : bigint;
-    /** @readonly */
-    scriptPublicKey : IScriptPublicKey;
-    /** @readonly */
-    blockDaaScore: bigint;
-    /** @readonly */
-    isCoinbase: boolean;
-}
-
-
-
 
 /**
  * Interface defining the structure of a transaction.
@@ -935,24 +866,24 @@ export interface IUtxoEntry {
  * @category Consensus
  */
 export interface ITransaction {
-    version: number;
-    inputs: ITransactionInput[];
-    outputs: ITransactionOutput[];
-    lockTime: bigint;
-    subnetworkId: HexString;
-    gas: bigint;
-    payload: HexString;
+  version: number;
+  inputs: ITransactionInput[];
+  outputs: ITransactionOutput[];
+  lockTime: bigint;
+  subnetworkId: HexString;
+  gas: bigint;
+  payload: HexString;
 
-    /**
-     * @deprecated since version 1.3.0, use `storageMass`
-    */
-    mass?: bigint;
+  /**
+   * @deprecated since version 1.3.0, use `storageMass`
+   */
+  mass?: bigint;
 
-    /** The mass of the transaction (the mass is undefined or zero unless explicitly set or obtained from the node) */
-    storageMass?: bigint;
+  /** The mass of the transaction (the mass is undefined or zero unless explicitly set or obtained from the node) */
+  storageMass?: bigint;
 
-    /** Optional verbose data provided by RPC */
-    verboseData?: ITransactionVerboseData;
+  /** Optional verbose data provided by RPC */
+  verboseData?: ITransactionVerboseData;
 }
 
 /**
@@ -961,15 +892,29 @@ export interface ITransaction {
  * @category Node RPC
  */
 export interface ITransactionVerboseData {
-    transactionId : HexString;
-    hash : HexString;
-    computeMass : bigint;
-    blockHash : HexString;
-    blockTime : bigint;
+  transactionId: HexString;
+  hash: HexString;
+  computeMass: bigint;
+  blockHash: HexString;
+  blockTime: bigint;
 }
 
+/**
+ * A compute commit encodes the input script execution budget committed by a transaction.
+ *
+ * Version 0 transactions use `sigOpCount`; version >= 1 transactions use `computeBudget`.
+ *
+ * @category Consensus
+ */
+export type ComputeCommitType = 'sigOpCount' | 'computeBudget';
 
-
+/**
+ * @category Consensus
+ */
+export interface IComputeCommit {
+  type: ComputeCommitType;
+  value: number;
+}
 
 /**
  * Interface defines the structure of a serializable UTXO entry.
@@ -978,11 +923,11 @@ export interface ITransactionVerboseData {
  * @category Wallet SDK
  */
 export interface ISerializableUtxoEntry {
-    address?: Address;
-    amount: bigint;
-    scriptPublicKey: ScriptPublicKey;
-    blockDaaScore: bigint;
-    isCoinbase: boolean;
+  address?: Address;
+  amount: bigint;
+  scriptPublicKey: ScriptPublicKey;
+  blockDaaScore: bigint;
+  isCoinbase: boolean;
 }
 
 /**
@@ -992,12 +937,13 @@ export interface ISerializableUtxoEntry {
  * @category Wallet SDK
  */
 export interface ISerializableTransactionInput {
-    transactionId : HexString;
-    index: number;
-    sequence: bigint;
-    sigOpCount: number;
-    signatureScript?: HexString;
-    utxo: ISerializableUtxoEntry;
+  transactionId: HexString;
+  index: number;
+  sequence: bigint;
+  sigOpCount: number;
+  computeBudget?: number;
+  signatureScript?: HexString;
+  utxo: ISerializableUtxoEntry;
 }
 
 /**
@@ -1007,8 +953,8 @@ export interface ISerializableTransactionInput {
  * @category Wallet SDK
  */
 export interface ISerializableTransactionOutput {
-    value: bigint;
-    scriptPublicKey: IScriptPublicKey;
+  value: bigint;
+  scriptPublicKey: IScriptPublicKey;
 }
 
 /**
@@ -1032,27 +978,173 @@ export interface ISerializableTransactionOutput {
  * @category Wallet SDK
  */
 export interface ISerializableTransaction {
-    id? : HexString;
-    version: number;
-    inputs: ISerializableTransactionInput[];
-    outputs: ISerializableTransactionOutput[];
-    lockTime: bigint;
-    subnetworkId: HexString;
-    gas: bigint;
-    payload: HexString;
+  id?: HexString;
+  version: number;
+  inputs: ISerializableTransactionInput[];
+  outputs: ISerializableTransactionOutput[];
+  lockTime: bigint;
+  subnetworkId: HexString;
+  gas: bigint;
+  payload: HexString;
 }
 
+/**
+ * Interface defining the structure of a block header.
+ *
+ * @category Consensus
+ */
+export interface IHeader {
+  hash: HexString;
+  version: number;
+  parentsByLevel: Array<Array<HexString>>;
+  hashMerkleRoot: HexString;
+  acceptedIdMerkleRoot: HexString;
+  utxoCommitment: HexString;
+  timestamp: bigint;
+  bits: number;
+  nonce: bigint;
+  daaScore: bigint;
+  blueWork: bigint | HexString;
+  blueScore: bigint;
+  pruningPoint: HexString;
+}
 
+/**
+ * Interface defining the structure of a raw block header.
+ *
+ * This interface is explicitly used by GetBlockTemplate and SubmitBlock RPCs
+ * and unlike `IHeader`, does not include a hash.
+ *
+ * @category Consensus
+ */
+export interface IRawHeader {
+  version: number;
+  parentsByLevel: Array<Array<HexString>>;
+  hashMerkleRoot: HexString;
+  acceptedIdMerkleRoot: HexString;
+  utxoCommitment: HexString;
+  timestamp: bigint;
+  bits: number;
+  nonce: bigint;
+  daaScore: bigint;
+  blueWork: bigint | HexString;
+  blueScore: bigint;
+  pruningPoint: HexString;
+}
 
+/**
+ * A genesis covenant group for bulk covenant binding population.
+ *
+ * @category Consensus
+ */
+export interface IGenesisCovenantGroup {
+  authorizingInput: number;
+  outputs: number[];
+}
+
+/**
+ * A covenant binding binds a transaction output to the covenant and input authorizing its creation.
+ *
+ * @category Consensus
+ */
+export interface ICovenantBinding {
+  authorizingInput: number;
+  covenantId: HexString;
+}
+
+/**
+ * Represents a block header where all fields are optional.
+ *
+ * @category Consensus
+ */
+export interface IOptionalHeader {
+  hash?: HexString;
+  version?: number;
+  parentsByLevel?: CompressedParents;
+  hashMerkleRoot?: HexString;
+  acceptedIdMerkleRoot?: HexString;
+  utxoCommitment?: HexString;
+  timestamp?: bigint;
+  bits?: number;
+  nonce?: bigint;
+  daaScore?: bigint;
+  blueWork?: bigint | HexString;
+  blueScore?: bigint;
+  pruningPoint?: HexString;
+}
+
+/**
+ * An output authorized by the genesis outpoint for covenant ID derivation.
+ *
+ * @category Consensus
+ */
+export interface ICovenantAuthorizedOutput {
+  index: number;
+  output: ITransactionOutput | TransactionOutput;
+}
+
+/**
+ * Interface defines the structure of a transaction outpoint (used by transaction input).
+ *
+ * @category Consensus
+ */
+export interface ITransactionOutpoint {
+  transactionId: HexString;
+  index: number;
+}
+
+/**
+ * Interface defines the structure of a transaction input.
+ *
+ * @category Consensus
+ */
+export interface ITransactionInput {
+  previousOutpoint: ITransactionOutpoint;
+  signatureScript?: HexString;
+  sequence: bigint;
+  sigOpCount: number;
+  computeBudget?: number;
+  utxo?: UtxoEntryReference;
+
+  /** Optional verbose data provided by RPC */
+  verboseData?: ITransactionInputVerboseData;
+}
+
+/**
+ * Option transaction input verbose data.
+ *
+ * @category Node RPC
+ */
+export interface ITransactionInputVerboseData {}
+
+/**
+ * Interface defines the structure of a UTXO entry.
+ *
+ * @category Consensus
+ */
+export interface IUtxoEntry {
+  /** @readonly */
+  address?: Address;
+  /** @readonly */
+  outpoint: ITransactionOutpoint;
+  /** @readonly */
+  amount: bigint;
+  /** @readonly */
+  scriptPublicKey: IScriptPublicKey;
+  /** @readonly */
+  blockDaaScore: bigint;
+  /** @readonly */
+  isCoinbase: boolean;
+  /** @readonly */
+  covenantId?: HexString;
+}
 
 /**
  * Block Color
  *
  * @category Consensus
  */
- export type BlockColor = "blue" | "red" | "unknown";
-
-
+export type BlockColor = 'blue' | 'red' | 'unknown';
 
 /**
  * Interface defines the structure of a Script Public Key.
@@ -1060,1184 +1152,995 @@ export interface ISerializableTransaction {
  * @category Consensus
  */
 export interface IScriptPublicKey {
-    version : number;
-    script: HexString;
+  version: number;
+  script: HexString;
 }
 
-
-
-        /**
-         * Interface defining the structure of a block.
-         *
-         * @category Consensus
-         */
-        export interface IBlock {
-            header: IHeader;
-            transactions: ITransaction[];
-            verboseData?: IBlockVerboseData;
-        }
-
-        /**
-         * Interface defining the structure of a block verbose data.
-         *
-         * @category Node RPC
-         */
-        export interface IBlockVerboseData {
-            hash: HexString;
-            difficulty: number;
-            selectedParentHash: HexString;
-            transactionIds: HexString[];
-            isHeaderOnly: boolean;
-            blueScore: number;
-            childrenHashes: HexString[];
-            mergeSetBluesHashes: HexString[];
-            mergeSetRedsHashes: HexString[];
-            isChainBlock: boolean;
-        }
-
-        /**
-         * Interface defining the structure of a raw block.
-         *
-         * Raw block is a structure used by GetBlockTemplate and SubmitBlock RPCs
-         * and differs from `IBlock` in that it does not include verbose data and carries
-         * `IRawHeader` that does not include a cached block hash.
-         *
-         * @category Consensus
-         */
-        export interface IRawBlock {
-            header: IRawHeader;
-            transactions: ITransaction[];
-        }
-
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getServerInfo} RPC method.
-* @category Node RPC
-*/
-    export interface IGetServerInfoRequest { }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.ping} RPC method.
-* @category Node RPC
-*/
-    export interface IPingRequest {
-        message?: string;
-    }
-
-
-
-    /**
-     *
-     *
-     * @category Node RPC
-     */
-    export interface IFeerateBucket {
-        /**
-         * The fee/mass ratio estimated to be required for inclusion time <= estimated_seconds
-         */
-        feerate : number;
-        /**
-         * The estimated inclusion time for a transaction with fee/mass = feerate
-         */
-        estimatedSeconds : number;
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.ban} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IBanRequest {
-/**
-* IPv4 or IPv6 address to ban.
-*/
-        ip : string;
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getBlock} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetBlockRequest {
-        hash : HexString;
-        includeTransactions : boolean;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getCurrentNetwork} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetCurrentNetworkResponse {
-        network : string;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getFeeEstimate} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetFeeEstimateResponse {
-        estimate : IFeeEstimate;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getMetrics} RPC method.
-* @category Node RPC
-*/
-    export interface IGetMetricsResponse {
-        [key: string]: any
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getBlockDagInfo} RPC method.
-* @category Node RPC
-*/
-    export interface IGetBlockDagInfoResponse {
-        network: string;
-        blockCount: bigint;
-        headerCount: bigint;
-        tipHashes: HexString[];
-        difficulty: number;
-        pastMedianTime: bigint;
-        virtualParentHashes: HexString[];
-        pruningPointHash: HexString;
-        virtualDaaScore: bigint;
-        sink: HexString;
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.submitBlock} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface ISubmitBlockRequest {
-        block : IRawBlock;
-        allowNonDAABlocks: boolean;
-    }
-
-
-
-    /**
-     *
-     *
-     * @category Node RPC
-     */
-    export interface IFeeEstimateVerboseExperimentalData {
-        mempoolReadyTransactionsCount : bigint;
-        mempoolReadyTransactionsTotalMass : bigint;
-        networkMassPerSecond : bigint;
-        nextBlockTemplateFeerateMin : number;
-        nextBlockTemplateFeerateMedian : number;
-        nextBlockTemplateFeerateMax : number;
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getCurrentNetwork} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetCurrentNetworkRequest { }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getBalanceByAddress} RPC method.
-* @category Node RPC
-*/
-    export interface IGetBalanceByAddressRequest {
-        address : Address | string;
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.estimateNetworkHashesPerSecond} RPC method.
-* @category Node RPC
-*/
-    export interface IEstimateNetworkHashesPerSecondRequest {
-        windowSize : number;
-        startHash? : HexString;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getBlocks} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetBlocksResponse {
-        blockHashes : HexString[];
-        blocks : IBlock[];
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.estimateNetworkHashesPerSecond} RPC method.
-* @category Node RPC
-*/
-    export interface IEstimateNetworkHashesPerSecondResponse {
-        networkHashesPerSecond : bigint;
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getFeeEstimateExperimental} RPC method.
-* Get fee estimate from the node.
-*
-* @category Node RPC
-*/
-    export interface IGetFeeEstimateExperimentalRequest { }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.resolveFinalityConflict} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IResolveFinalityConflictRequest {
-        finalityBlockHash: HexString;
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getBlockRewardInfo} RPC method.
-* @category Node RPC
-*/
-    export interface IGetBlockRewardInfoRequest {
-        hash: HexString;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getCoinSupply} RPC method.
-* @category Node RPC
-*/
-    export interface IGetCoinSupplyResponse {
-        maxSompi: bigint;
-        circulatingSompi: bigint;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getMempoolEntry} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetMempoolEntryResponse {
-        mempoolEntry : IMempoolEntry;
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getVirtualChainFromBlock} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetVirtualChainFromBlockRequest {
-        startHash : HexString;
-        includeAcceptedTransactionIds: boolean;
-/**
-* If passed, this request will only return blocks that have at least minConfirmationCount number of confirmations. Confirmation is counted through the distance from virtual chain tip.
-* If not passed, it will be interpreted as 0.
-*/
-        minConfirmationCount?: number;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getSubnetwork} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetSubnetworkResponse {
-        gasLimit : bigint;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.unban} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IUnbanResponse { }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getVirtualChainFromBlockV2} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetVirtualChainFromBlockV2Response {
-        removedChainBlockHashes : HexString[];
-        addedChainBlockHashes : HexString[];
-        chainBlockAcceptedTransactions : IChainBlockAddedTransactions[];
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.ban} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IBanResponse { }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getSyncStatus} RPC method.
-* @category Node RPC
-*/
-    export interface IGetSyncStatusResponse {
-        isSynced : boolean;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getBalancesByAddresses} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IBalancesByAddressesEntry {
-        address : Address;
-        balance : bigint;
-    }
-/**
-*
-*
-* @category Node RPC
-*/
-    export interface IGetBalancesByAddressesResponse {
-        entries : IBalancesByAddressesEntry[];
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getSink} RPC method.
-* @category Node RPC
-*/
-    export interface IGetSinkRequest { }
-
-
-
-/**
-* Return interface for the {@link RpcClient.resolveFinalityConflict} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IResolveFinalityConflictResponse { }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getUtxosByAddresses} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetUtxosByAddressesRequest {
-        addresses : Address[] | string[]
-    }
-
-
-
-    /**
-     *
-     *
-     * @category Node RPC
-     */
-    export interface IFeeEstimate {
-        /**
-         * *Top-priority* feerate bucket. Provides an estimation of the feerate required for sub-second DAG inclusion.
-         *
-         * Note: for all buckets, feerate values represent fee/mass of a transaction in `sompi/gram` units.
-         * Given a feerate value recommendation, calculate the required fee by
-         * taking the transaction mass and multiplying it by feerate: `fee = feerate * mass(tx)`
-         */
-
-        priorityBucket : IFeerateBucket;
-        /**
-         * A vector of *normal* priority feerate values. The first value of this vector is guaranteed to exist and
-         * provide an estimation for sub-*minute* DAG inclusion. All other values will have shorter estimation
-         * times than all `low_bucket` values. Therefor by chaining `[priority] | normal | low` and interpolating
-         * between them, one can compose a complete feerate function on the client side. The API makes an effort
-         * to sample enough "interesting" points on the feerate-to-time curve, so that the interpolation is meaningful.
-         */
-
-        normalBuckets : IFeerateBucket[];
-        /**
-        * An array of *low* priority feerate values. The first value of this vector is guaranteed to
-        * exist and provide an estimation for sub-*hour* DAG inclusion.
-        */
-        lowBuckets : IFeerateBucket[];
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getHeaders} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetHeadersResponse {
-        headers : IHeader[];
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.ping} RPC method.
-* @category Node RPC
-*/
-    export interface IPingResponse {
-        message?: string;
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getMempoolEntries} RPC method.
-* @category Node RPC
-*/
-    export interface IGetMempoolEntriesRequest {
-/** Whether or not to include the orphan pool (transactions which inputs are not known at this time) */
-        includeOrphanPool: boolean;
-/** Whether or not to filter out the transaction pool */
-        filterTransactionPool: boolean;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getPeerAddresses} RPC method.
-* @category Node RPC
-*/
-    export interface IGetPeerAddressesResponse {
-        [key: string]: any
-    }
-
-
-
-    /**
-     * Accepted Acceptance Data
-     *
-     * @category Node RPC
-     */
-    export interface IChainBlockAddedTransactions {
-        chainBlockHeader: IOptionalHeader;
-        // small hack because wasm doesn't define OptionalTransaction utility
-        acceptedTransactions: Partial<ITransaction>[];
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getSubnetwork} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetSubnetworkRequest {
-        subnetworkId : HexString;
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getBlocks} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetBlocksRequest {
-        lowHash? : HexString;
-        includeBlocks : boolean;
-        includeTransactions : boolean;
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getConnections} RPC method.
-* @category Node RPC
-*/
-    export interface IGetConnectionsRequest { }
-
-
-
-/**
-* Return interface for the {@link RpcClient.addPeer} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IAddPeerResponse { }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getBalancesByAddresses} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetBalancesByAddressesRequest {
-        addresses : Address[] | string[];
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getSinkBlueScore} RPC method.
-* @category Node RPC
-*/
-    export interface IGetSinkBlueScoreResponse {
-        blueScore : bigint;
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getSyncStatus} RPC method.
-* @category Node RPC
-*/
-    export interface IGetSyncStatusRequest { }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.addPeer} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IAddPeerRequest {
-        peerAddress : INetworkAddress;
-        isPermanent : boolean;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getBlockCount} RPC method.
-* @category Node RPC
-*/
-    export interface IGetBlockCountResponse {
-        headerCount : bigint;
-        blockCount : bigint;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getBlockRewardInfo} RPC method.
-* @category Node RPC
-*/
-    export interface IGetBlockRewardInfoResponse {
-        header: IHeader;
-        blockColor: BlockColor;
-        confirmationCount?: bigint;
-        mergingChainBlockHash?: HexString;
-        rewardAmount?: bigint;
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getMempoolEntry} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetMempoolEntryRequest {
-        transactionId : HexString;
-        includeOrphanPool? : boolean;
-        filterTransactionPool? : boolean;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.submitBlock} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface ISubmitBlockResponse {
-        report : ISubmitBlockReport;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getMempoolEntriesByAddresses} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetMempoolEntriesByAddressesResponse {
-        entries : IMempoolEntry[];
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getConnectedPeerInfo} RPC method.
-* @category Node RPC
-*/
-    export interface IGetConnectedPeerInfoResponse {
-        [key: string]: any
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getCurrentBlockColor} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetCurrentBlockColorResponse {
-        blue: boolean;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getBlock} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetBlockResponse {
-        block : IBlock;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getBlockTemplate} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetBlockTemplateResponse {
-        block : IRawBlock;
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.unban} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IUnbanRequest {
-/**
-* IPv4 or IPv6 address to unban.
-*/
-        ip : string;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getInfo} RPC method.
-* @category Node RPC
-*/
-    export interface IGetInfoResponse {
-        p2pId : string;
-        mempoolSize : bigint;
-        serverVersion : string;
-        isUtxoIndexed : boolean;
-        isSynced : boolean;
-/** GRPC ONLY */
-        hasNotifyCommand : boolean;
-/** GRPC ONLY */
-        hasMessageId : boolean;
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getSinkBlueScore} RPC method.
-* @category Node RPC
-*/
-    export interface IGetSinkBlueScoreRequest { }
-
-
-
-    /**
-     * Data Verbosity level
-     *
-     * @category Node RPC
-     */
-    export type DataVerbosityLevel = "None" | "Low" | "High" | "Full";
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getMetrics} RPC method.
-* @category Node RPC
-*/
-    export interface IGetMetricsRequest { }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.shutdown} RPC method.
-* @category Node RPC
-*/
-    export interface IShutdownRequest { }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getBlockTemplate} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetBlockTemplateRequest {
-        payAddress : Address | string;
-/**
-* `extraData` can contain a user-supplied plain text or a byte array represented by `Uint8array`.
-*/
-        extraData? : string | Uint8Array;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getMempoolEntries} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetMempoolEntriesResponse {
-        mempoolEntries : IMempoolEntry[];
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getBlockCount} RPC method.
-* @category Node RPC
-*/
-    export interface IGetBlockCountRequest { }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getBlockDagInfo} RPC method.
-* @category Node RPC
-*/
-    export interface IGetBlockDagInfoRequest { }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getFeeEstimateExperimental} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetFeeEstimateExperimentalResponse {
-        estimate : IFeeEstimate;
-        verbose? : IFeeEstimateVerboseExperimentalData
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getHeaders} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetHeadersRequest {
-        startHash : HexString;
-        limit : bigint;
-        isAscending : boolean;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getConnections} RPC method.
-* @category Node RPC
-*/
-    export interface IGetConnectionsResponse {
-        [key: string]: any
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.submitTransaction} RPC method.
-* Submit transaction to the node.
-*
-* @category Node RPC
-*/
-    export interface ISubmitTransactionRequest {
-        transaction : Transaction,
-        allowOrphan? : boolean
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.submitTransactionReplacement} RPC method.
-* Submit transaction replacement to the node.
-*
-* @category Node RPC
-*/
-    export interface ISubmitTransactionReplacementRequest {
-        transaction : Transaction,
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getConnectedPeerInfo} RPC method.
-* @category Node RPC
-*/
-    export interface IGetConnectedPeerInfoRequest { }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getUtxoReturnAddress} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetUtxoReturnAddressRequest {
-        txid: HexString;
-        acceptingBlockDaaScore: bigint;
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getCurrentBlockColor} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetCurrentBlockColorRequest {
-        hash: HexString;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.shutdown} RPC method.
-* @category Node RPC
-*/
-    export interface IShutdownResponse { }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getBalanceByAddress} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetBalanceByAddressResponse {
-        balance : bigint;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getSink} RPC method.
-* @category Node RPC
-*/
-    export interface IGetSinkResponse {
-        sink : HexString;
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getMempoolEntriesByAddresses} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetMempoolEntriesByAddressesRequest {
-        addresses : Address[] | string[];
-/** Whether or not to include the orphan pool (transactions which inputs are not known at this time) */
-        includeOrphanPool: boolean;
-/** Whether or not to filter out the transaction pool */
-        filterTransactionPool: boolean;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getVirtualChainFromBlock} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetVirtualChainFromBlockResponse {
-        removedChainBlockHashes : HexString[];
-        addedChainBlockHashes : HexString[];
-        acceptedTransactionIds : IAcceptedTransactionIds[];
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getVirtualChainFromBlockV2} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetVirtualChainFromBlockV2Request {
-        startHash : HexString;
-        dataVerbosityLevel?: DataVerbosityLevel;
-/**
-* If passed, this request will only return blocks that have at least minConfirmationCount number of confirmations. Confirmation is counted through the distance from virtual chain tip.
-* If not passed, it will be interpreted as 0.
-*/
-        minConfirmationCount?: number;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getDaaScoreTimestampEstimate} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetDaaScoreTimestampEstimateResponse {
-        timestamps : bigint[];
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getUtxoReturnAddress} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetUtxoReturnAddressResponse {
-        returnAddress: Address;
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getInfo} RPC method.
-* @category Node RPC
-*/
-    export interface IGetInfoRequest { }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getUtxosByAddresses} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetUtxosByAddressesResponse {
-        entries : UtxoEntryReference[];
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getDaaScoreTimestampEstimate} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface IGetDaaScoreTimestampEstimateRequest {
-        daaScores : bigint[];
-    }
-
-
-
-    /**
-     *
-     * @category Node RPC
-     */
-    export enum SubmitBlockRejectReason {
-        /**
-         * The block is invalid.
-         */
-        BlockInvalid = "BlockInvalid",
-        /**
-         * The node is not synced.
-         */
-        IsInIBD = "IsInIBD",
-        /**
-         * Route is full.
-         */
-        RouteIsFull = "RouteIsFull",
-    }
-
-    /**
-     *
-     * @category Node RPC
-     */
-    export interface ISubmitBlockReport {
-        type : "success" | "reject";
-        reason? : SubmitBlockRejectReason;
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getFeeEstimate} RPC method.
-* Get fee estimate from the node.
-*
-* @category Node RPC
-*/
-    export interface IGetFeeEstimateRequest { }
-
-
-
 /**
-* Argument interface for the {@link RpcClient.getPeerAddresses} RPC method.
-* @category Node RPC
-*/
-    export interface IGetPeerAddressesRequest { }
-
-
-
-/**
-* Return interface for the {@link RpcClient.submitTransaction} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface ISubmitTransactionResponse {
-        transactionId : HexString;
-    }
-
-
-
-/**
-* Return interface for the {@link RpcClient.submitTransactionReplacement} RPC method.
-*
-*
-* @category Node RPC
-*/
-    export interface ISubmitTransactionReplacementResponse {
-        transactionId : HexString;
-        replacedTransaction: Transaction;
-    }
-
-
-
-/**
-* Argument interface for the {@link RpcClient.getCoinSupply} RPC method.
-* @category Node RPC
-*/
-    export interface IGetCoinSupplyRequest { }
-
-
-
-/**
-* Return interface for the {@link RpcClient.getServerInfo} RPC method.
-* @category Node RPC
-*/
-    export interface IGetServerInfoResponse {
-        rpcApiVersion : number[];
-        serverVersion : string;
-        networkId : string;
-        hasUtxoIndex : boolean;
-        isSynced : boolean;
-        virtualDaaScore : bigint;
-    }
-
-
-
-    /**
-     * Accepted transaction IDs.
-     *
-     * @category Node RPC
-     */
-    export interface IAcceptedTransactionIds {
-        acceptingBlockHash : HexString;
-        acceptedTransactionIds : HexString[];
-    }
-
-
-
-            /**
-             * Mempool entry.
-             *
-             * @category Node RPC
-             */
-            export interface IMempoolEntry {
-                fee : bigint;
-                transaction : ITransaction;
-                isOrphan : boolean;
-            }
-
-
+ * Argument interface for the {@link RpcClient.resolveFinalityConflict} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IResolveFinalityConflictRequest {
+  finalityBlockHash: HexString;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getBlockTemplate} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetBlockTemplateResponse {
+  block: IRawBlock;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getSubnetwork} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetSubnetworkResponse {
+  gasLimit: bigint;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getSink} RPC method.
+ * @category Node RPC
+ */
+export interface IGetSinkResponse {
+  sink: HexString;
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getBlock} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetBlockRequest {
+  hash: HexString;
+  includeTransactions: boolean;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getBlock} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetBlockResponse {
+  block: IBlock;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getCurrentBlockColor} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetCurrentBlockColorResponse {
+  blue: boolean;
+}
+
+/**
+ * Return interface for the {@link RpcClient.resolveFinalityConflict} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IResolveFinalityConflictResponse {}
+
+/**
+ * Return interface for the {@link RpcClient.addPeer} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IAddPeerResponse {}
+
+/**
+ * Argument interface for the {@link RpcClient.getBlockCount} RPC method.
+ * @category Node RPC
+ */
+export interface IGetBlockCountRequest {}
+
+/**
+ * Argument interface for the {@link RpcClient.getMempoolEntries} RPC method.
+ * @category Node RPC
+ */
+export interface IGetMempoolEntriesRequest {
+  /** Whether or not to include the orphan pool (transactions which inputs are not known at this time) */
+  includeOrphanPool: boolean;
+  /** Whether or not to filter out the transaction pool */
+  filterTransactionPool: boolean;
+}
+
+/**
+ * Return interface for the {@link RpcClient.submitBlock} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface ISubmitBlockResponse {
+  report: ISubmitBlockReport;
+}
+
+/**
+ *
+ *
+ * @category Node RPC
+ */
+export interface IFeeEstimate {
+  /**
+   * *Top-priority* feerate bucket. Provides an estimation of the feerate required for sub-second DAG inclusion.
+   *
+   * Note: for all buckets, feerate values represent fee/mass of a transaction in `sompi/gram` units.
+   * Given a feerate value recommendation, calculate the required fee by
+   * taking the transaction mass and multiplying it by feerate: `fee = feerate * mass(tx)`
+   */
+
+  priorityBucket: IFeerateBucket;
+  /**
+   * A vector of *normal* priority feerate values. The first value of this vector is guaranteed to exist and
+   * provide an estimation for sub-*minute* DAG inclusion. All other values will have shorter estimation
+   * times than all `low_bucket` values. Therefor by chaining `[priority] | normal | low` and interpolating
+   * between them, one can compose a complete feerate function on the client side. The API makes an effort
+   * to sample enough "interesting" points on the feerate-to-time curve, so that the interpolation is meaningful.
+   */
+
+  normalBuckets: IFeerateBucket[];
+  /**
+   * An array of *low* priority feerate values. The first value of this vector is guaranteed to
+   * exist and provide an estimation for sub-*hour* DAG inclusion.
+   */
+  lowBuckets: IFeerateBucket[];
+}
+
+/**
+ * Return interface for the {@link RpcClient.getSinkBlueScore} RPC method.
+ * @category Node RPC
+ */
+export interface IGetSinkBlueScoreResponse {
+  blueScore: bigint;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getFeeEstimate} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetFeeEstimateResponse {
+  estimate: IFeeEstimate;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getFeeEstimateExperimental} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetFeeEstimateExperimentalResponse {
+  estimate: IFeeEstimate;
+  verbose?: IFeeEstimateVerboseExperimentalData;
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getSinkBlueScore} RPC method.
+ * @category Node RPC
+ */
+export interface IGetSinkBlueScoreRequest {}
+
+/**
+ * Return interface for the {@link RpcClient.getConnections} RPC method.
+ * @category Node RPC
+ */
+export interface IGetConnectionsResponse {
+  [key: string]: any;
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getHeaders} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetHeadersRequest {
+  startHash: HexString;
+  limit: bigint;
+  isAscending: boolean;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getBlockRewardInfo} RPC method.
+ * @category Node RPC
+ */
+export interface IGetBlockRewardInfoResponse {
+  header: IHeader;
+  blockColor: BlockColor;
+  confirmationCount?: bigint;
+  mergingChainBlockHash?: HexString;
+  rewardAmount?: bigint;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getMetrics} RPC method.
+ * @category Node RPC
+ */
+export interface IGetMetricsResponse {
+  [key: string]: any;
+}
+
+/**
+ *
+ * @category Node RPC
+ */
+export enum SubmitBlockRejectReason {
+  /**
+   * The block is invalid.
+   */
+  BlockInvalid = 'BlockInvalid',
+  /**
+   * The node is not synced.
+   */
+  IsInIBD = 'IsInIBD',
+  /**
+   * Route is full.
+   */
+  RouteIsFull = 'RouteIsFull',
+}
+
+/**
+ *
+ * @category Node RPC
+ */
+export interface ISubmitBlockReport {
+  type: 'success' | 'reject';
+  reason?: SubmitBlockRejectReason;
+}
+
+/**
+ *
+ *
+ * @category Node RPC
+ */
+export interface IFeeEstimateVerboseExperimentalData {
+  mempoolReadyTransactionsCount: bigint;
+  mempoolReadyTransactionsTotalMass: bigint;
+  networkMassPerSecond: bigint;
+  nextBlockTemplateFeerateMin: number;
+  nextBlockTemplateFeerateMedian: number;
+  nextBlockTemplateFeerateMax: number;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getUtxoReturnAddress} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetUtxoReturnAddressResponse {
+  returnAddress: Address;
+}
+
+/**
+ * Accepted Acceptance Data
+ *
+ * @category Node RPC
+ */
+export interface IChainBlockAddedTransactions {
+  chainBlockHeader: IOptionalHeader;
+  // small hack because wasm doesn't define OptionalTransaction utility
+  acceptedTransactions: Partial<ITransaction>[];
+}
+
+/**
+ * Argument interface for the {@link RpcClient.shutdown} RPC method.
+ * @category Node RPC
+ */
+export interface IShutdownRequest {}
+
+/**
+ * Argument interface for the {@link RpcClient.getConnections} RPC method.
+ * @category Node RPC
+ */
+export interface IGetConnectionsRequest {}
+
+/**
+ * Return interface for the {@link RpcClient.getCurrentNetwork} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetCurrentNetworkResponse {
+  network: string;
+}
+
+/**
+ * Return interface for the {@link RpcClient.ban} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IBanResponse {}
+
+/**
+ * Return interface for the {@link RpcClient.estimateNetworkHashesPerSecond} RPC method.
+ * @category Node RPC
+ */
+export interface IEstimateNetworkHashesPerSecondResponse {
+  networkHashesPerSecond: bigint;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getMempoolEntriesByAddresses} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetMempoolEntriesByAddressesResponse {
+  entries: IMempoolEntry[];
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getInfo} RPC method.
+ * @category Node RPC
+ */
+export interface IGetInfoRequest {}
+
+/**
+ * Return interface for the {@link RpcClient.getPeerAddresses} RPC method.
+ * @category Node RPC
+ */
+export interface IGetPeerAddressesResponse {
+  [key: string]: any;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getMempoolEntry} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetMempoolEntryResponse {
+  mempoolEntry: IMempoolEntry;
+}
+
+/**
+ * Return interface for the {@link RpcClient.submitTransaction} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface ISubmitTransactionResponse {
+  transactionId: HexString;
+}
+
+/**
+ * Argument interface for the {@link RpcClient.ping} RPC method.
+ * @category Node RPC
+ */
+export interface IPingRequest {
+  message?: string;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getUtxosByAddresses} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetUtxosByAddressesResponse {
+  entries: UtxoEntryReference[];
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getCoinSupply} RPC method.
+ * @category Node RPC
+ */
+export interface IGetCoinSupplyRequest {}
+
+/**
+ * Return interface for the {@link RpcClient.getMempoolEntries} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetMempoolEntriesResponse {
+  mempoolEntries: IMempoolEntry[];
+}
+
+/**
+ * Accepted transaction IDs.
+ *
+ * @category Node RPC
+ */
+export interface IAcceptedTransactionIds {
+  acceptingBlockHash: HexString;
+  acceptedTransactionIds: HexString[];
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getPeerAddresses} RPC method.
+ * @category Node RPC
+ */
+export interface IGetPeerAddressesRequest {}
+
+/**
+ * Return interface for the {@link RpcClient.getHeaders} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetHeadersResponse {
+  headers: IHeader[];
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getBlocks} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetBlocksRequest {
+  lowHash?: HexString;
+  includeBlocks: boolean;
+  includeTransactions: boolean;
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getBlockRewardInfo} RPC method.
+ * @category Node RPC
+ */
+export interface IGetBlockRewardInfoRequest {
+  hash: HexString;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getDaaScoreTimestampEstimate} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetDaaScoreTimestampEstimateResponse {
+  timestamps: bigint[];
+}
+
+/**
+ * Return interface for the {@link RpcClient.getBlockCount} RPC method.
+ * @category Node RPC
+ */
+export interface IGetBlockCountResponse {
+  headerCount: bigint;
+  blockCount: bigint;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getBalancesByAddresses} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IBalancesByAddressesEntry {
+  address: Address;
+  balance: bigint;
+}
+/**
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetBalancesByAddressesResponse {
+  entries: IBalancesByAddressesEntry[];
+}
+
+/**
+ * Argument interface for the {@link RpcClient.submitTransactionReplacement} RPC method.
+ * Submit transaction replacement to the node.
+ *
+ * @category Node RPC
+ */
+export interface ISubmitTransactionReplacementRequest {
+  transaction: Transaction;
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getMempoolEntry} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetMempoolEntryRequest {
+  transactionId: HexString;
+  includeOrphanPool?: boolean;
+  filterTransactionPool?: boolean;
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getUtxosByAddresses} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetUtxosByAddressesRequest {
+  addresses: Address[] | string[];
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getServerInfo} RPC method.
+ * @category Node RPC
+ */
+export interface IGetServerInfoRequest {}
+
+/**
+ * Argument interface for the {@link RpcClient.unban} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IUnbanRequest {
+  /**
+   * IPv4 or IPv6 address to unban.
+   */
+  ip: string;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getServerInfo} RPC method.
+ * @category Node RPC
+ */
+export interface IGetServerInfoResponse {
+  rpcApiVersion: number[];
+  serverVersion: string;
+  networkId: string;
+  hasUtxoIndex: boolean;
+  isSynced: boolean;
+  virtualDaaScore: bigint;
+}
+
+/**
+ * Data Verbosity level
+ *
+ * @category Node RPC
+ */
+export type DataVerbosityLevel = 'None' | 'Low' | 'High' | 'Full';
+
+/**
+ * Return interface for the {@link RpcClient.getInfo} RPC method.
+ * @category Node RPC
+ */
+export interface IGetInfoResponse {
+  p2pId: string;
+  mempoolSize: bigint;
+  serverVersion: string;
+  isUtxoIndexed: boolean;
+  isSynced: boolean;
+  /** GRPC ONLY */
+  hasNotifyCommand: boolean;
+  /** GRPC ONLY */
+  hasMessageId: boolean;
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getDaaScoreTimestampEstimate} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetDaaScoreTimestampEstimateRequest {
+  daaScores: bigint[];
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getCurrentNetwork} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetCurrentNetworkRequest {}
+
+/**
+ * Argument interface for the {@link RpcClient.getSyncStatus} RPC method.
+ * @category Node RPC
+ */
+export interface IGetSyncStatusRequest {}
+
+/**
+ * Return interface for the {@link RpcClient.getVirtualChainFromBlockV2} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetVirtualChainFromBlockV2Response {
+  removedChainBlockHashes: HexString[];
+  addedChainBlockHashes: HexString[];
+  chainBlockAcceptedTransactions: IChainBlockAddedTransactions[];
+}
+
+/**
+ * Return interface for the {@link RpcClient.getVirtualChainFromBlock} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetVirtualChainFromBlockResponse {
+  removedChainBlockHashes: HexString[];
+  addedChainBlockHashes: HexString[];
+  acceptedTransactionIds: IAcceptedTransactionIds[];
+}
+
+/**
+ * Argument interface for the {@link RpcClient.addPeer} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IAddPeerRequest {
+  peerAddress: INetworkAddress;
+  isPermanent: boolean;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getSyncStatus} RPC method.
+ * @category Node RPC
+ */
+export interface IGetSyncStatusResponse {
+  isSynced: boolean;
+}
+
+/**
+ * Return interface for the {@link RpcClient.submitTransactionReplacement} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface ISubmitTransactionReplacementResponse {
+  transactionId: HexString;
+  replacedTransaction: Transaction;
+}
+
+/**
+ * Return interface for the {@link RpcClient.unban} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IUnbanResponse {}
+
+/**
+ * Argument interface for the {@link RpcClient.getSubnetwork} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetSubnetworkRequest {
+  subnetworkId: HexString;
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getUtxoReturnAddress} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetUtxoReturnAddressRequest {
+  txid: HexString;
+  acceptingBlockDaaScore: bigint;
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getFeeEstimate} RPC method.
+ * Get fee estimate from the node.
+ *
+ * @category Node RPC
+ */
+export interface IGetFeeEstimateRequest {}
+
+/**
+ * Argument interface for the {@link RpcClient.getMetrics} RPC method.
+ * @category Node RPC
+ */
+export interface IGetMetricsRequest {}
+
+/**
+ * Argument interface for the {@link RpcClient.getMempoolEntriesByAddresses} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetMempoolEntriesByAddressesRequest {
+  addresses: Address[] | string[];
+  /** Whether or not to include the orphan pool (transactions which inputs are not known at this time) */
+  includeOrphanPool: boolean;
+  /** Whether or not to filter out the transaction pool */
+  filterTransactionPool: boolean;
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getSink} RPC method.
+ * @category Node RPC
+ */
+export interface IGetSinkRequest {}
+
+/**
+ * Argument interface for the {@link RpcClient.estimateNetworkHashesPerSecond} RPC method.
+ * @category Node RPC
+ */
+export interface IEstimateNetworkHashesPerSecondRequest {
+  windowSize: number;
+  startHash?: HexString;
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getBalanceByAddress} RPC method.
+ * @category Node RPC
+ */
+export interface IGetBalanceByAddressRequest {
+  address: Address | string;
+}
+
+/**
+ * Return interface for the {@link RpcClient.ping} RPC method.
+ * @category Node RPC
+ */
+export interface IPingResponse {
+  message?: string;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getConnectedPeerInfo} RPC method.
+ * @category Node RPC
+ */
+export interface IGetConnectedPeerInfoResponse {
+  [key: string]: any;
+}
+
+/**
+ * Argument interface for the {@link RpcClient.ban} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IBanRequest {
+  /**
+   * IPv4 or IPv6 address to ban.
+   */
+  ip: string;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getBalanceByAddress} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetBalanceByAddressResponse {
+  balance: bigint;
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getConnectedPeerInfo} RPC method.
+ * @category Node RPC
+ */
+export interface IGetConnectedPeerInfoRequest {}
+
+/**
+ * Argument interface for the {@link RpcClient.getFeeEstimateExperimental} RPC method.
+ * Get fee estimate from the node.
+ *
+ * @category Node RPC
+ */
+export interface IGetFeeEstimateExperimentalRequest {}
+
+/**
+ * Return interface for the {@link RpcClient.shutdown} RPC method.
+ * @category Node RPC
+ */
+export interface IShutdownResponse {}
+
+/**
+ * Return interface for the {@link RpcClient.getCoinSupply} RPC method.
+ * @category Node RPC
+ */
+export interface IGetCoinSupplyResponse {
+  maxSompi: bigint;
+  circulatingSompi: bigint;
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getVirtualChainFromBlockV2} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetVirtualChainFromBlockV2Request {
+  startHash: HexString;
+  dataVerbosityLevel?: DataVerbosityLevel;
+  /**
+   * If passed, this request will only return blocks that have at least minConfirmationCount number of confirmations. Confirmation is counted through the distance from virtual chain tip.
+   * If not passed, it will be interpreted as 0.
+   */
+  minConfirmationCount?: number;
+}
+
+/**
+ * Argument interface for the {@link RpcClient.submitBlock} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface ISubmitBlockRequest {
+  block: IRawBlock;
+  allowNonDAABlocks: boolean;
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getCurrentBlockColor} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetCurrentBlockColorRequest {
+  hash: HexString;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getBlocks} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetBlocksResponse {
+  blockHashes: HexString[];
+  blocks: IBlock[];
+}
+
+/**
+ *
+ *
+ * @category Node RPC
+ */
+export interface IFeerateBucket {
+  /**
+   * The fee/mass ratio estimated to be required for inclusion time <= estimated_seconds
+   */
+  feerate: number;
+  /**
+   * The estimated inclusion time for a transaction with fee/mass = feerate
+   */
+  estimatedSeconds: number;
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getBalancesByAddresses} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetBalancesByAddressesRequest {
+  addresses: Address[] | string[];
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getBlockDagInfo} RPC method.
+ * @category Node RPC
+ */
+export interface IGetBlockDagInfoRequest {}
+
+/**
+ * Argument interface for the {@link RpcClient.getBlockTemplate} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetBlockTemplateRequest {
+  payAddress: Address | string;
+  /**
+   * `extraData` can contain a user-supplied plain text or a byte array represented by `Uint8array`.
+   */
+  extraData?: string | Uint8Array;
+}
+
+/**
+ * Argument interface for the {@link RpcClient.submitTransaction} RPC method.
+ * Submit transaction to the node.
+ *
+ * @category Node RPC
+ */
+export interface ISubmitTransactionRequest {
+  transaction: Transaction;
+  allowOrphan?: boolean;
+}
+
+/**
+ * Argument interface for the {@link RpcClient.getVirtualChainFromBlock} RPC method.
+ *
+ *
+ * @category Node RPC
+ */
+export interface IGetVirtualChainFromBlockRequest {
+  startHash: HexString;
+  includeAcceptedTransactionIds: boolean;
+  /**
+   * If passed, this request will only return blocks that have at least minConfirmationCount number of confirmations. Confirmation is counted through the distance from virtual chain tip.
+   * If not passed, it will be interpreted as 0.
+   */
+  minConfirmationCount?: number;
+}
+
+/**
+ * Return interface for the {@link RpcClient.getBlockDagInfo} RPC method.
+ * @category Node RPC
+ */
+export interface IGetBlockDagInfoResponse {
+  network: string;
+  blockCount: bigint;
+  headerCount: bigint;
+  tipHashes: HexString[];
+  difficulty: number;
+  pastMedianTime: bigint;
+  virtualParentHashes: HexString[];
+  pruningPointHash: HexString;
+  virtualDaaScore: bigint;
+  sink: HexString;
+}
+
+/**
+ * Mempool entry.
+ *
+ * @category Node RPC
+ */
+export interface IMempoolEntry {
+  fee: bigint;
+  transaction: ITransaction;
+  isOrphan: boolean;
+}
+
+/**
+ * Interface defining the structure of a block.
+ *
+ * @category Consensus
+ */
+export interface IBlock {
+  header: IHeader;
+  transactions: ITransaction[];
+  verboseData?: IBlockVerboseData;
+}
+
+/**
+ * Interface defining the structure of a block verbose data.
+ *
+ * @category Node RPC
+ */
+export interface IBlockVerboseData {
+  hash: HexString;
+  difficulty: number;
+  selectedParentHash: HexString;
+  transactionIds: HexString[];
+  isHeaderOnly: boolean;
+  blueScore: number;
+  childrenHashes: HexString[];
+  mergeSetBluesHashes: HexString[];
+  mergeSetRedsHashes: HexString[];
+  isChainBlock: boolean;
+}
+
+/**
+ * Interface defining the structure of a raw block.
+ *
+ * Raw block is a structure used by GetBlockTemplate and SubmitBlock RPCs
+ * and differs from `IBlock` in that it does not include verbose data and carries
+ * `IRawHeader` that does not include a cached block hash.
+ *
+ * @category Consensus
+ */
+export interface IRawBlock {
+  header: IRawHeader;
+  transactions: ITransaction[];
+}
 
 /**
  * Script builder engine flags.
@@ -2245,10 +2148,10 @@ export interface IScriptPublicKey {
  * @category TxScript
  */
 export interface ScriptBuilderFlags {
-    /** Whether or not covenant opcodes and post-Toccata script limits are enabled. */
-    covenantsEnabled?: boolean;
-    /** Script units charged for each signature operation. Defaults to the native engine default. */
-    sigopScriptUnits?: bigint | number;
+  /** Whether or not covenant opcodes and post-Toccata script limits are enabled. */
+  covenantsEnabled?: boolean;
+  /** Script units charged for each signature operation. Defaults to the native engine default. */
+  sigopScriptUnits?: bigint | number;
 }
 
 /**
@@ -2257,1906 +2160,25 @@ export interface ScriptBuilderFlags {
  * @category TxScript
  */
 export interface ScriptBuilderOptions {
-    /** Engine flags used by the underlying native ScriptBuilder. */
-    flags?: ScriptBuilderFlags;
+  /** Engine flags used by the underlying native ScriptBuilder. */
+  flags?: ScriptBuilderFlags;
 }
 
-
-
-    /**
-     * Generic network address representation.
-     *
-     * @category General
-     */
-    export interface INetworkAddress {
-        /**
-         * IPv4 or IPv6 address.
-         */
-        ip: string;
-        /**
-         * Optional port number.
-         */
-        port?: number;
-    }
-
-
-
 /**
+ * Generic network address representation.
  *
- *
- * @category Wallet SDK
- *
+ * @category General
  */
-export enum TransactionKind {
-    Reorg = "reorg",
-    Stasis = "stasis",
-    Batch = "batch",
-    Change = "change",
-    Incoming = "incoming",
-    Outgoing = "outgoing",
-    External = "external",
-    TransferIncoming = "transfer-incoming",
-    TransferOutgoing = "transfer-outgoing",
+export interface INetworkAddress {
+  /**
+   * IPv4 or IPv6 address.
+   */
+  ip: string;
+  /**
+   * Optional port number.
+   */
+  port?: number;
 }
-
-
-
-
-/**
- * Type of a binding record.
- * @see {@link IBinding}, {@link ITransactionDataVariant}, {@link ITransactionRecord}
- * @category Wallet SDK
- */
-export enum BindingType {
-    /**
-     * The data structure is associated with a user-supplied id.
-     * @see {@link IBinding}
-     */
-    Custom = "custom",
-    /**
-     * The data structure is associated with a wallet account.
-     * @see {@link IBinding}, {@link Account}
-     */
-    Account = "account",
-}
-
-/**
- * Internal transaction data contained within the transaction record.
- * @see {@link ITransactionRecord}
- * @category Wallet SDK
- */
-export interface IBinding {
-    type : BindingType;
-    id : HexString;
-}
-
-
-
-/**
- * {@link UtxoContext} (wallet account) balance.
- * @category Wallet SDK
- */
-export interface IBalance {
-    /**
-     * Total amount of Kaspa (in SOMPI) available for
-     * spending.
-     */
-    mature: bigint;
-    /**
-     * Total amount of Kaspa (in SOMPI) that has been
-     * received and is pending confirmation.
-     */
-    pending: bigint;
-    /**
-     * Total amount of Kaspa (in SOMPI) currently
-     * being sent as a part of the outgoing transaction
-     * but has not yet been accepted by the network.
-     */
-    outgoing: bigint;
-    /**
-     * Number of UTXOs available for spending.
-     */
-    matureUtxoCount: number;
-    /**
-     * Number of UTXOs that have been received and
-     * are pending confirmation.
-     */
-    pendingUtxoCount: number;
-    /**
-     * Number of UTXOs currently in stasis (coinbase
-     * transactions received as a result of mining).
-     * Unlike regular user transactions, coinbase
-     * transactions go through `stasis->pending->mature`
-     * stages. Client applications should ignore `stasis`
-     * stages and should process transactions only when
-     * they have reached the `pending` stage. However,
-     * `stasis` information can be used for informative
-     * purposes to indicate that coinbase transactions
-     * have arrived.
-     */
-    stasisUtxoCount: number;
-}
-
-
-
-
-/**
- *
- * @category Wallet SDK
- */
-export interface IUtxoRecord {
-    address?: Address;
-    index: number;
-    amount: bigint;
-    scriptPublicKey: HexString;
-    isCoinbase: boolean;
-}
-
-/**
- * Type of transaction data record.
- * @see {@link ITransactionData}, {@link ITransactionDataVariant}, {@link ITransactionRecord}
- * @category Wallet SDK
- */
-export enum TransactionDataType {
-    /**
-     * Transaction has been invalidated due to a BlockDAG reorganization.
-     * Such transaction is no longer valid and its UTXO entries are removed.
-     * @see {@link ITransactionDataReorg}
-     */
-    Reorg = "reorg",
-    /**
-     * Transaction has been received and its UTXO entries are added to the
-     * pending or mature UTXO set.
-     * @see {@link ITransactionDataIncoming}
-     */
-    Incoming = "incoming",
-    /**
-     * Transaction is in stasis and its UTXO entries are not yet added to the UTXO set.
-     * This event is generated for **Coinbase** transactions only.
-     * @see {@link ITransactionDataStasis}
-     */
-    Stasis = "stasis",
-    /**
-     * Observed transaction is not performed by the wallet subsystem but is executed
-     * against the address set managed by the wallet subsystem.
-     * @see {@link ITransactionDataExternal}
-     */
-    External = "external",
-    /**
-     * Transaction is outgoing and its UTXO entries are removed from the UTXO set.
-     * @see {@link ITransactionDataOutgoing}
-     */
-    Outgoing = "outgoing",
-    /**
-     * Transaction is a batch transaction (compounding UTXOs to an internal change address).
-     * @see {@link ITransactionDataBatch}
-     */
-    Batch = "batch",
-    /**
-     * Transaction is an incoming transfer from another {@link UtxoContext} managed by the {@link UtxoProcessor}.
-     * When operating under the integrated wallet, these are transfers between different wallet accounts.
-     * @see {@link ITransactionDataTransferIncoming}
-     */
-    TransferIncoming = "transfer-incoming",
-    /**
-     * Transaction is an outgoing transfer to another {@link UtxoContext} managed by the {@link UtxoProcessor}.
-     * When operating under the integrated wallet, these are transfers between different wallet accounts.
-     * @see {@link ITransactionDataTransferOutgoing}
-     */
-    TransferOutgoing = "transfer-outgoing",
-    /**
-     * Transaction is a change transaction and its UTXO entries are added to the UTXO set.
-     * @see {@link ITransactionDataChange}
-     */
-    Change = "change",
-}
-
-/**
- * Contains UTXO entries and value for a transaction
- * that has been invalidated due to a BlockDAG reorganization.
- * @category Wallet SDK
- */
-export interface ITransactionDataReorg {
-    utxoEntries: IUtxoRecord[];
-    value: bigint;
-}
-
-/**
- * Contains UTXO entries and value for an incoming transaction.
- * @category Wallet SDK
- */
-export interface ITransactionDataIncoming {
-    utxoEntries: IUtxoRecord[];
-    value: bigint;
-}
-
-/**
- * Contains UTXO entries and value for a stasis transaction.
- * @category Wallet SDK
- */
-export interface ITransactionDataStasis {
-    utxoEntries: IUtxoRecord[];
-    value: bigint;
-}
-
-/**
- * Contains UTXO entries and value for an external transaction.
- * An external transaction is a transaction that was not issued
- * by this instance of the wallet but belongs to this address set.
- * @category Wallet SDK
- */
-export interface ITransactionDataExternal {
-    utxoEntries: IUtxoRecord[];
-    value: bigint;
-}
-
-/**
- * Batch transaction data (created by the {@link Generator} as a
- * result of UTXO compounding process).
- * @category Wallet SDK
- */
-export interface ITransactionDataBatch {
-    fees: bigint;
-    inputValue: bigint;
-    outputValue: bigint;
-    transaction: ITransaction;
-    paymentValue: bigint;
-    changeValue: bigint;
-    acceptedDaaScore?: bigint;
-    utxoEntries: IUtxoRecord[];
-}
-
-/**
- * Outgoing transaction data.
- * @category Wallet SDK
- */
-export interface ITransactionDataOutgoing {
-    fees: bigint;
-    inputValue: bigint;
-    outputValue: bigint;
-    transaction: ITransaction;
-    paymentValue: bigint;
-    changeValue: bigint;
-    acceptedDaaScore?: bigint;
-    utxoEntries: IUtxoRecord[];
-}
-
-/**
- * Incoming transfer transaction data.
- * Transfer occurs when a transaction is issued between
- * two {@link UtxoContext} (wallet account) instances.
- * @category Wallet SDK
- */
-export interface ITransactionDataTransferIncoming {
-    fees: bigint;
-    inputValue: bigint;
-    outputValue: bigint;
-    transaction: ITransaction;
-    paymentValue: bigint;
-    changeValue: bigint;
-    acceptedDaaScore?: bigint;
-    utxoEntries: IUtxoRecord[];
-}
-
-/**
- * Outgoing transfer transaction data.
- * Transfer occurs when a transaction is issued between
- * two {@link UtxoContext} (wallet account) instances.
- * @category Wallet SDK
- */
-export interface ITransactionDataTransferOutgoing {
-    fees: bigint;
-    inputValue: bigint;
-    outputValue: bigint;
-    transaction: ITransaction;
-    paymentValue: bigint;
-    changeValue: bigint;
-    acceptedDaaScore?: bigint;
-    utxoEntries: IUtxoRecord[];
-}
-
-/**
- * Change transaction data.
- * @category Wallet SDK
- */
-export interface ITransactionDataChange {
-    inputValue: bigint;
-    outputValue: bigint;
-    transaction: ITransaction;
-    paymentValue: bigint;
-    changeValue: bigint;
-    acceptedDaaScore?: bigint;
-    utxoEntries: IUtxoRecord[];
-}
-
-/**
- * Transaction record data variants.
- * @category Wallet SDK
- */
-export type ITransactionDataVariant =
-    ITransactionDataReorg
-    | ITransactionDataIncoming
-    | ITransactionDataStasis
-    | ITransactionDataExternal
-    | ITransactionDataOutgoing
-    | ITransactionDataBatch
-    | ITransactionDataTransferIncoming
-    | ITransactionDataTransferOutgoing
-    | ITransactionDataChange;
-
-/**
- * Internal transaction data contained within the transaction record.
- * @see {@link ITransactionRecord}
- * @category Wallet SDK
- */
-export interface ITransactionData {
-    type : TransactionDataType;
-    data : ITransactionDataVariant;
-}
-
-/**
- * Transaction record generated by the Kaspa Wallet SDK.
- * This data structure is delivered within {@link UtxoProcessor} and `Wallet` notification events.
- * @see {@link ITransactionData}, {@link TransactionDataType}, {@link ITransactionDataVariant}
- * @category Wallet SDK
- */
-export interface ITransactionRecord {
-    /**
-     * Transaction id.
-     */
-    id: string;
-    /**
-     * Transaction UNIX time in milliseconds.
-     */
-    unixtimeMsec?: bigint;
-    /**
-     * Transaction value in SOMPI.
-     */
-    value: bigint;
-    /**
-     * Transaction binding (id of UtxoContext or Wallet Account).
-     */
-    binding: HexString;
-    /**
-     * Block DAA score.
-     */
-    blockDaaScore: bigint;
-    /**
-     * Network id on which this transaction has occurred.
-     */
-    network: NetworkId;
-    /**
-     * Transaction data.
-     */
-    data: ITransactionData;
-    /**
-     * Optional transaction note as a human-readable string.
-     */
-    note?: string;
-    /**
-     * Optional transaction metadata.
-     *
-     * If present, this must contain a JSON-serialized string.
-     * A client application updating the metadata must deserialize
-     * the string into JSON, add a key with it's own identifier
-     * and store its own metadata into the value of this key.
-     */
-    metadata?: string;
-
-    /**
-     * Transaction data type.
-     */
-    type: string;
-}
-
-
-
-/**
- * Wallet storage information.
- *
- * @category Wallet API
- */
-export interface IWalletDescriptor {
-    title?: string;
-    filename: string;
-}
-
-
-
-/**
- * Wallet storage information.
- */
-export interface IStorageDescriptor {
-    kind: string;
-    data: string;
-}
-
-
-
-/**
-* Return interface for the {@link Wallet.accountsPskbSend} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsPskbSendResponse {
-        transactionIds : HexString[];
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.walletImport} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IWalletImportResponse { }
-
-
-
-/**
-* Argument interface for the {@link Wallet.transactionsReplaceMetadata} method.
-* Metadata is a wallet-specific string that can be used to store arbitrary data.
-* It should contain a serialized JSON string with `key` containing the custom
-* data stored by the wallet.  When interacting with metadata, the wallet should
-* always deserialize the JSON string and then serialize it again after making
-* changes, preserving any foreign keys that it might encounter.
-*
-* To preserve foreign metadata, the pattern of access should be:
-* `Get -> Modify -> Replace`
-*
-* @category Wallet API
-*/
-    export interface ITransactionsReplaceMetadataRequest {
-/**
-* The id of account the transaction belongs to.
-*/
-        accountId: HexString,
-/**
-* The network id of the transaction.
-*/
-        networkId: NetworkId | string,
-/**
-* The id of the transaction.
-*/
-        transactionId: HexString,
-/**
-* Optional metadata string to replace the existing metadata.
-* If not supplied, the metadata will be removed.
-*/
-        metadata?: string,
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.prvKeyDataGet} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IPrvKeyDataGetRequest {
-        walletSecret: string;
-        prvKeyDataId: HexString;
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.accountsGet} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsGetRequest {
-        accountId: string;
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.disconnect} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IDisconnectRequest { }
-
-
-
-/**
-* Argument interface for the {@link Wallet.accountsActivate} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsActivateRequest {
-        accountIds?: HexString[],
-    }
-
-
-
-    export interface IFeeRatePollerDisableRequest { }
-
-
-
-/**
-* Argument interface for the {@link Wallet.accountsDeactivate} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsDeactivateRequest {
-        accountIds?: string[];
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.prvKeyDataCreate} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IPrvKeyDataCreateResponse {
-        prvKeyDataId: HexString;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.accountsPskbSign} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsPskbSignResponse {
-/**
-* signed PSKB.
-*/
-        pskb: string;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.accountsTransfer} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsTransferResponse {
-        generatorSummary : GeneratorSummary;
-        transactionIds : HexString[];
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.flush} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IFlushResponse { }
-
-
-
-/**
-* Return interface for the {@link Wallet.walletClose} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IWalletCloseResponse { }
-
-
-
-/**
-* Argument interface for the {@link Wallet.walletCreate} method.
-*
-* If filename is not supplied, the filename will be derived from the wallet title.
-* If both wallet title and filename are not supplied, the wallet will be create
-* with the default filename `kaspa`.
-*
-* @category Wallet API
-*/
-    export interface IWalletCreateRequest {
-/** Wallet encryption secret */
-        walletSecret: string;
-/** Optional wallet title */
-        title?: string;
-/** Optional wallet filename */
-        filename?: string;
-/** Optional user hint */
-        userHint?: string;
-/**
-* Overwrite wallet data if the wallet with the same filename already exists.
-* (Use with caution!)
-*/
-        overwriteWalletStorage?: boolean;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.accountsGet} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsGetResponse {
-        accountDescriptor: IAccountDescriptor;
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.getStatus} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IGetStatusRequest {
-/**
-* Optional context creation name.
-* @see {@link IRetainContextRequest}
-*/
-        name? : string;
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.connect} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IConnectRequest {
-        // destination wRPC node URL (if omitted, the resolver is used)
-        url? : string;
-        // network identifier
-        networkId : NetworkId | string;
-        // retry on error
-        retryOnError? : boolean;
-        // block async connect (method will not return until the connection is established)
-        block? : boolean;
-        // require node to be synced (fail otherwise)
-        requireSync? : boolean;
-    }
-
-
-
-    export interface IFeeRatePollerEnableResponse { }
-
-
-
-/**
-* Return interface for the {@link Wallet.accountsGetUtxos} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsGetUtxosResponse {
-        utxos : UtxoEntry[];
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.walletExport} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IWalletExportRequest {
-        walletSecret: string;
-        includeTransactions: boolean;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.accountsEnsureDefault} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsEnsureDefaultResponse {
-        accountDescriptor : IAccountDescriptor;
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.walletChangeSecret} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IWalletChangeSecretRequest {
-        oldWalletSecret: string;
-        newWalletSecret: string;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.getStatus} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IGetStatusResponse {
-        isConnected : boolean;
-        isSynced : boolean;
-        isOpen : boolean;
-        url? : string;
-        networkId? : NetworkId;
-        context? : HexString;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.walletEnumerate} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IWalletEnumerateResponse {
-        walletDescriptors: WalletDescriptor[];
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.transactionsDataGet} method.
-*
-*
-* @category Wallet API
-*/
-    export interface ITransactionsDataGetRequest {
-        accountId : HexString;
-        networkId : NetworkId | string;
-        filter? : TransactionKind[];
-        start : bigint;
-        end : bigint;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.accountsCreateNewAddress} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsCreateNewAddressResponse {
-        address: Address;
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.accountsEnsureDefault} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsEnsureDefaultRequest {
-        walletSecret: string;
-        paymentSecret?: string;
-        type : AccountKind | string;
-        mnemonic? : string;
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.accountsTransfer} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsTransferRequest {
-        sourceAccountId : HexString;
-        destinationAccountId : HexString;
-        walletSecret : string;
-        paymentSecret? : string;
-        feeRate? : number;
-        priorityFeeSompi? : IFees | bigint;
-        transferAmountSompi : bigint;
-    }
-
-
-
-    export interface IFeeRateEstimateBucket {
-        feeRate : number;
-        seconds : number;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.prvKeyDataGet} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IPrvKeyDataGetResponse {
-        // prvKeyData: PrvKeyData,
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.accountsCommitReveal} method.
-*
-* Atomic commit reveal operation using parameterized account address to
-* dynamically generate the commit P2SH address.
-*
-* The account address is selected through addressType and addressIndex
-* and will be used to complete the script signature.
-*
-* A placeholder of format {{pubkey}} is to be provided inside ScriptSig
-* in order to be superseded by the selected address' payload.
-*
-* The selected address will also be used to spend reveal transaction to.
-*
-* The default revealFeeSompi is 100_000 sompi.
-*
-* @category Wallet API
-*/
-    export interface IAccountsCommitRevealRequest {
-        accountId : HexString;
-        addressType : CommitRevealAddressKind;
-        addressIndex : number;
-        scriptSig : Uint8Array | HexString;
-        walletSecret : string;
-        commitAmountSompi : bigint;
-        paymentSecret? : string;
-        feeRate? : number;
-        revealFeeSompi : bigint;
-        payload? : Uint8Array | HexString;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.accountsSend} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsSendResponse {
-/**
-* Summary produced by the transaction generator.
-*/
-        generatorSummary : GeneratorSummary;
-/**
-* Hex identifiers of successfully submitted transactions.
-*/
-        transactionIds : HexString[];
-    }
-
-
-
-    /**
-     *
-     *
-     * @category Wallet API
-     */
-    export interface INetworkParams {
-        coinbaseTransactionMaturityPeriodDaa : number;
-        coinbaseTransactionStasisPeriodDaa : number;
-        userTransactionMaturityPeriodDaa : number;
-        additionalCompoundTransactionMass : number;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.walletReload} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IWalletReloadResponse { }
-
-
-
-/**
-* Argument interface for the {@link Wallet.accountsCreateNewAddress} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsCreateNewAddressRequest {
-        accountId: string;
-        addressKind?: NewAddressKind | string,
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.prvKeyDataEnumerate} method.
-*
-* Response returning a list of private key ids, their optional names and properties.
-*
-* @see {@link IPrvKeyDataInfo}
-* @category Wallet API
-*/
-    export interface IPrvKeyDataEnumerateResponse {
-        prvKeyDataList: IPrvKeyDataInfo[],
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.accountsEstimate} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsEstimateRequest {
-        accountId : HexString;
-        destination : IPaymentOutput[];
-        feeRate? : number;
-        priorityFeeSompi : IFees | bigint;
-        payload? : Uint8Array | string;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.transactionsReplaceNote} method.
-*
-*
-* @category Wallet API
-*/
-    export interface ITransactionsReplaceNoteResponse { }
-
-
-
-/**
-* Argument interface for the {@link Wallet.accountsPskbSend} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsPskbSendRequest {
-/**
-* Hex identifier of the account.
-*/
-        accountId : HexString;
-/**
-* Wallet encryption secret.
-*/
-        walletSecret : string;
-/**
-* Optional key encryption secret or BIP39 passphrase.
-*/
-        paymentSecret? : string;
-
-/**
-* PSKB to sign.
-*/
-        pskb : string;
-
-/**
-* Address to sign for.
-*/
-        signForAddress? : Address | string;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.accountsDiscovery} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsDiscoveryResponse {
-        lastAccountIndexFound : number;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.addressBookEnumerate} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAddressBookEnumerateResponse {
-        // TODO
-    }
-
-
-
-/**
- * @categoryDescription Wallet API
- * Wallet API for interfacing with Rusty Kaspa Wallet implementation.
- */
-
-
-
-/**
-* Argument interface for the {@link Wallet.accountsImport} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsImportRequest {
-        walletSecret: string;
-        // TODO
-    }
-
-
-
-    export interface IFeeRatePollerEnableRequest {
-        intervalSeconds : number;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.accountsImport} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsImportResponse {
-        // TODO
-    }
-
-
-
-    export interface IFeeRatePollerDisableResponse { }
-
-
-
-/**
-* Return interface for the {@link Wallet.accountsCommitReveal} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsCommitRevealResponse {
-        transactionIds : HexString[];
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.prvKeyDataRemove} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IPrvKeyDataRemoveResponse { }
-
-
-
-/**
-* Argument interface for the {@link Wallet.walletReload} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IWalletReloadRequest {
-/**
-* Reactivate accounts that are active before the reload.
-*/
-        reactivate: boolean;
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.accountsCommitRevealManual} method.
-*
-* Atomic commit reveal operation using given payment outputs.
-*
-* The startDestination stands for the commit transaction and the endDestination
-* for the reveal transaction.
-*
-* The scriptSig will be used to spend the UTXO of the first transaction and
-* must therefore match the startDestination output P2SH.
-*
-* Set revealFeeSompi or reflect the reveal fee transaction on endDestination
-* output amount.
-*
-* The default revealFeeSompi is 100_000 sompi.
-*
-* @category Wallet API
-*/
-    export interface IAccountsCommitRevealManualRequest {
-        accountId : HexString;
-        scriptSig : Uint8Array | HexString;
-        startDestination: IPaymentOutput;
-        endDestination: IPaymentOutput;
-        walletSecret : string;
-        paymentSecret? : string;
-        feeRate? : number;
-        revealFeeSompi : bigint;
-        payload? : Uint8Array | HexString;
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.flush} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IFlushRequest {
-        walletSecret : string;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.accountsCommitRevealManual} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsCommitRevealManualResponse {
-        transactionIds : HexString[];
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.accountsPskbSign} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsPskbSignRequest {
-/**
-* Hex identifier of the account.
-*/
-        accountId : HexString;
-/**
-* Wallet encryption secret.
-*/
-        walletSecret : string;
-/**
-* Optional key encryption secret or BIP39 passphrase.
-*/
-        paymentSecret? : string;
-
-/**
-* PSKB to sign.
-*/
-        pskb : string;
-
-/**
-* Address to sign for.
-*/
-        signForAddress? : Address | string;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.accountsRename} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsRenameResponse { }
-
-
-
-/**
-* Return interface for the {@link Wallet.accountsActivate} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsActivateResponse { }
-
-
-
-/**
-* Return interface for the {@link Wallet.walletCreate} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IWalletCreateResponse {
-        walletDescriptor: IWalletDescriptor;
-        storageDescriptor: IStorageDescriptor;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.disconnect} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IDisconnectResponse { }
-
-
-
-/**
-* Argument interface for the {@link Wallet.addressBookEnumerate} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAddressBookEnumerateRequest { }
-
-
-
-/**
-* Return interface for the {@link Wallet.accountsEstimate} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsEstimateResponse {
-        generatorSummary : GeneratorSummary;
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.prvKeyDataCreate} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IPrvKeyDataCreateRequest {
-/** Wallet encryption secret */
-        walletSecret: string;
-/** Optional name of the private key */
-        name? : string;
-/**
-* Optional key secret (BIP39 passphrase).
-*
-* If supplied, all operations requiring access
-* to the key will require the `paymentSecret`
-* to be provided.
-*/
-        paymentSecret? : string;
-/** BIP39 mnemonic phrase (12 or 24 words) if kind is mnemonic */
-        mnemonic? : string;
-/** Secret key if kind is secretKey */
-        secretKey? : string;
-/** Kind of the private key data */
-        kind : "mnemonic" | "secretKey";
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.batch} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IBatchResponse { }
-
-
-
-/**
-* Argument interface for the {@link Wallet.accountsSend} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsSendRequest {
-/**
-* Hex identifier of the account.
-*/
-        accountId : HexString;
-/**
-* Wallet encryption secret.
-*/
-        walletSecret : string;
-/**
-* Optional key encryption secret or BIP39 passphrase.
-*/
-        paymentSecret? : string;
-/**
-* Fee rate in sompi per 1 gram of mass.
-*/
-        feeRate? : number;
-/**
-* Priority fee.
-*/
-        priorityFeeSompi? : IFees | bigint;
-/**
-*
-*/
-        payload? : Uint8Array | HexString;
-/**
-* If not supplied, the destination will be the change address resulting in a UTXO compound transaction.
-*/
-        destination? : IPaymentOutput[];
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.prvKeyDataEnumerate} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IPrvKeyDataEnumerateRequest { }
-
-
-
-/**
-* Argument interface for the {@link Wallet.accountsEnumerate} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsEnumerateRequest { }
-
-
-
-/**
-* Argument interface for the {@link Wallet.accountsDiscovery} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsDiscoveryRequest {
-        discoveryKind: AccountsDiscoveryKind,
-        accountScanExtent: number,
-        addressScanExtent: number,
-        bip39_passphrase?: string,
-        bip39_mnemonic: string,
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.accountsDeactivate} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsDeactivateResponse { }
-
-
-
-/**
-* Return interface for the {@link Wallet.walletExport} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IWalletExportResponse {
-        walletData: HexString;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.connect} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IConnectResponse { }
-
-
-
-/**
-* Argument interface for the {@link Wallet.prvKeyDataRemove} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IPrvKeyDataRemoveRequest {
-        walletSecret: string;
-        prvKeyDataId: HexString;
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.walletOpen} method.
-*
-* @category Wallet API
-*/
-    export interface IWalletOpenRequest {
-        walletSecret: string;
-        filename?: string;
-        accountDescriptors: boolean;
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.accountsCreate} method.
-*
-*
-* @category Wallet API
-*/
-    export type IAccountsCreateRequest = {
-        walletSecret: string;
-        type: "bip32";
-        accountName:string;
-        accountIndex?:number;
-        prvKeyDataId:string;
-        paymentSecret?:string;
-    } | {
-        walletSecret: string;
-        type: "kaspa-keypair-standard";
-        accountName:string;
-        prvKeyDataId:string;
-        paymentSecret?:string;
-        ecdsa?:boolean;
-    };
-
-    //   |{
-    //     walletSecret: string;
-    //     type: "bip32-readonly";
-    //     accountName:string;
-    //     accountIndex?:number;
-    //     pubkey:HexString;
-    //     paymentSecret?:string;
-    //  }
-
-
-
-/**
-* Argument interface for the {@link Wallet.batch} method.
-* Suspend storage operations until invocation of flush().
-*
-* @category Wallet API
-*/
-    export interface IBatchRequest { }
-
-
-
-/**
-* Return interface for the {@link Wallet.walletChangeSecret} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IWalletChangeSecretResponse { }
-
-
-
-/**
-* Return interface for the {@link Wallet.retainContext} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IRetainContextResponse {
-    }
-
-
-
-    export interface IFeeRateEstimateResponse {
-        priority : IFeeRateEstimateBucket,
-        normal : IFeeRateEstimateBucket,
-        low : IFeeRateEstimateBucket,
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.transactionsReplaceNote} method.
-*
-*
-* @category Wallet API
-*/
-    export interface ITransactionsReplaceNoteRequest {
-/**
-* The id of account the transaction belongs to.
-*/
-        accountId: HexString,
-/**
-* The network id of the transaction.
-*/
-        networkId: NetworkId | string,
-/**
-* The id of the transaction.
-*/
-        transactionId: HexString,
-/**
-* Optional note string to replace the existing note.
-* If not supplied, the note will be removed.
-*/
-        note?: string,
-    }
-
-
-
-    export interface IFeeRateEstimateRequest { }
-
-
-
-/**
-* Argument interface for the {@link Wallet.accountsPskbBroadcast} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsPskbBroadcastRequest {
-        accountId : HexString;
-        pskb : string;
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.accountsGetUtxos} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsGetUtxosRequest {
-        accountId : HexString;
-        addresses : Address[] | string[];
-        minAmountSompi? : bigint;
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.walletEnumerate} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IWalletEnumerateRequest { }
-
-
-
-/**
-* Return interface for the {@link Wallet.accountsEnumerate} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsEnumerateResponse {
-        accountDescriptors: IAccountDescriptor[];
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.walletClose} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IWalletCloseRequest { }
-
-
-
-/**
-* Return interface for the {@link Wallet.accountsPskbBroadcast} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsPskbBroadcastResponse {
-        transactionIds : HexString[];
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.accountsCreate} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsCreateResponse {
-        accountDescriptor : IAccountDescriptor;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.transactionsDataGet} method.
-*
-*
-* @category Wallet API
-*/
-    export interface ITransactionsDataGetResponse {
-        accountId : HexString;
-        transactions : ITransactionRecord[];
-        start : bigint;
-        total : bigint;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.walletOpen} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IWalletOpenResponse {
-        accountDescriptors: IAccountDescriptor[];
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.retainContext} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IRetainContextRequest {
-/**
-* Optional context creation name.
-*/
-        name : string;
-/**
-* Optional context data to retain.
-*/
-        data? : string;
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.accountsRename} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IAccountsRenameRequest {
-        accountId: string;
-        name?: string;
-        walletSecret: string;
-    }
-
-
-
-/**
-* Argument interface for the {@link Wallet.walletImport} method.
-*
-*
-* @category Wallet API
-*/
-    export interface IWalletImportRequest {
-        walletSecret: string;
-        walletData: HexString | Uint8Array;
-    }
-
-
-
-/**
-* Return interface for the {@link Wallet.transactionsReplaceMetadata} method.
-*
-*
-* @category Wallet API
-*/
-    export interface ITransactionsReplaceMetadataResponse { }
-
-
-
-
-export interface IPrvKeyDataArgs {
-    prvKeyDataId: HexString;
-    paymentSecret?: string;
-}
-
-export interface IAccountCreateArgsBip32 {
-    accountName?: string;
-    accountIndex?: number;
-}
-
-/**
- * @category Wallet API
- */
-export interface IAccountCreateArgs {
-    type : "bip32";
-    args : IAccountCreateArgsBip32;
-    prvKeyDataArgs? : IPrvKeyDataArgs;
-}
-
-
-
-    /**
-     *
-     *
-     * @category Wallet API
-     */
-    export interface IAccountDescriptor {
-        kind : AccountKind,
-        accountId : HexString,
-        accountName? : string,
-        receiveAddress? : Address,
-        changeAddress? : Address,
-        addresses? : Address[],
-        prvKeyDataIds : HexString[],
-        // balance? : Balance,
-        [key: string]: any
-    }
-
-
-
-    /**
-     * Private key data information.
-     * @category Wallet API
-     */
-    export interface IPrvKeyDataInfo {
-        /** Deterministic wallet id of the private key */
-        id: HexString;
-        /** Optional name of the private key */
-        name?: string;
-        /**
-         * Indicates if the key requires additional payment or a recovery secret
-         * to perform wallet operations that require access to it.
-         * For BIP39 keys this indicates that the key was created with a BIP39 passphrase.
-         */
-        isEncrypted: boolean;
-    }
-
-
-
-    /**
-     *
-     * @category Wallet SDK
-     */
-    export interface IFees {
-        amount: bigint;
-        source?: FeeSource;
-    }
-
-
-
-    /**
-     * Interface defining response from the {@link createTransactions} function.
-     *
-     * @category Wallet SDK
-     */
-    export interface ICreateTransactions {
-        /**
-         * Array of pending unsigned transactions.
-         */
-        transactions : PendingTransaction[];
-        /**
-         * Summary of the transaction generation process.
-         */
-        summary : GeneratorSummary;
-    }
-
-
-
-
-
-
-/**
- *
- * Defines a single payment output.
- *
- * @see {@link IGeneratorSettingsObject}, {@link Generator}
- * @category Wallet SDK
- */
-export interface IPaymentOutput {
-    /**
-     * Destination address. The address prefix must match the network
-     * you are transacting on (e.g. `kaspa:` for mainnet, `kaspatest:` for testnet, etc).
-     */
-    address: Address | string;
-    /**
-     * Output amount in SOMPI.
-     */
-    amount: bigint;
-}
-
-
-
-/**
- * Interface declaration for {@link signMessage} function arguments.
- *
- * @category Message Signing
- */
-export interface ISignMessage {
-    message: string;
-    privateKey: PrivateKey | string;
-    noAuxRand?: boolean;
-}
-
-
-
-/**
- * Interface declaration for {@link verifyMessage} function arguments.
- *
- * @category Message Signing
- */
-export interface IVerifyMessage {
-    message: string;
-    signature: HexString;
-    publicKey: PublicKey | string;
-}
-
-
-
-        interface UtxoProcessor {
-            /**
-            * @param {UtxoProcessorNotificationCallback} callback
-            */
-            addEventListener(callback: UtxoProcessorNotificationCallback): void;
-            /**
-            * @param {UtxoProcessorEventType} event
-            * @param {UtxoProcessorNotificationCallback} [callback]
-            */
-            addEventListener<E extends keyof UtxoProcessorEventMap>(
-                event: E,
-                callback: UtxoProcessorNotificationCallback<E>
-            )
-        }
-
-
-    /**
-     * UtxoProcessor constructor arguments.
-     *
-     * @see {@link UtxoProcessor}, {@link UtxoContext}, {@link RpcClient}, {@link NetworkId}
-     * @category Wallet SDK
-     */
-    export interface IUtxoProcessorArgs {
-        /**
-         * The RPC client to use for network communication.
-         */
-        rpc : RpcClient;
-        networkId : NetworkId | string;
-    }
-
-
-
-    /**
-     *
-     *
-     * @category  Wallet API
-     */
-    export interface IWalletConfig {
-        /**
-         * `resident` is a boolean indicating if the wallet should not be stored on the permanent medium.
-         */
-        resident?: boolean;
-        networkId?: NetworkId | string;
-        encoding?: Encoding | string;
-        url?: string;
-        resolver?: Resolver;
-    }
-
-
-
-        interface Wallet {
-            /**
-            * @param {WalletNotificationCallback} callback
-            */
-            addEventListener(callback:WalletNotificationCallback): void;
-            /**
-            * @param {WalletEventType} event
-            * @param {WalletNotificationCallback} [callback]
-            */
-            addEventListener<M extends keyof WalletEventMap>(
-                event: M,
-                callback: (eventData: WalletEventMap[M]) => void
-            )
-        }
-
 
 /**
  * Configuration for the transaction {@link Generator}. This interface
@@ -4180,669 +2202,2284 @@ export interface IVerifyMessage {
  * @category Wallet SDK
  */
 interface IGeneratorSettingsObject {
-    /**
-     * Final transaction outputs (do not supply change transaction).
-     *
-     * Typical usage: { address: "kaspa:...", amount: 1000n }
-     */
-    outputs: PaymentOutput | IPaymentOutput[];
-    /**
-     * Address to be used for change, if any.
-     */
-    changeAddress: Address | string;
-    /**
-     * Fee rate in SOMPI per 1 gram of mass.
-     *
-     * Fee rate is applied to all transactions generated by the {@link Generator}.
-     * This includes batch and final transactions. If not set, the fee rate is
-     * not applied.
-     */
-    feeRate?: number;
-    /**
-     * Priority fee in SOMPI.
-     *
-     * If supplying `bigint` value, it will be interpreted as a sender-pays fee.
-     * Alternatively you can supply an object with `amount` and `source` properties
-     * where `source` contains the {@link FeeSource} enum.
-     *
-     * **IMPORTANT:* When sending an outbound transaction (transaction that
-     * contains outputs), the `priorityFee` must be set, even if it is zero.
-     * However, if the transaction is missing outputs (and thus you are
-     * creating a compound transaction against your change address),
-     * `priorityFee` should not be set (i.e. it should be `undefined`).
-     *
-     * @see {@link IFees}, {@link FeeSource}
-     */
-    priorityFee?: IFees | bigint;
-    /**
-     * UTXO entries to be used for the transaction. This can be an
-     * array of UtxoEntry instances, objects matching {@link IUtxoEntry}
-     * interface, or a {@link UtxoContext} instance.
-     */
-    entries: IUtxoEntry[] | UtxoEntryReference[] | UtxoContext;
-    /**
-     * Optional UTXO entries that will be consumed before those available in `entries`.
-     * You can use this property to apply custom input selection logic.
-     * Please note that these inputs are consumed first, then `entries` are consumed
-     * to generate a desirable transaction output amount.  If transaction mass
-     * overflows, these inputs will be consumed into a batch/sweep transaction
-     * where the destination if the `changeAddress`.
-     */
-    priorityEntries?: IUtxoEntry[] | UtxoEntryReference[],
-    /**
-     * Optional number of signature operations in the transaction.
-     */
-    sigOpCount?: number;
-    /**
-     * Optional minimum number of signatures required for the transaction.
-     */
-    minimumSignatures?: number;
-    /**
-     * Optional data payload to be included in the transaction.
-     */
-    payload?: Uint8Array | HexString;
+  /**
+   * Final transaction outputs (do not supply change transaction).
+   *
+   * Typical usage: { address: "kaspa:...", amount: 1000n }
+   */
+  outputs: PaymentOutput | IPaymentOutput[];
 
-    /**
-     * Optional NetworkId or network id as string (i.e. `mainnet` or `testnet-11`). Required when {@link IGeneratorSettingsObject.entries} is array
-     */
-    networkId?: NetworkId | string
+  /**
+   * Address to be used for change, if any.
+   */
+  changeAddress: Address | string;
+
+  /**
+   * Fee rate in SOMPI per 1 gram of mass.
+   *
+   * Fee rate is applied to all transactions generated by the {@link Generator}.
+   * This includes batch and final transactions. If not set, the fee rate is
+   * not applied.
+   */
+  feeRate?: number;
+
+  /**
+   * Priority fee in SOMPI.
+   *
+   * If supplying `bigint` value, it will be interpreted as a sender-pays fee.
+   * Alternatively you can supply an object with `amount` and `source` properties
+   * where `source` contains the {@link FeeSource} enum.
+   *
+   * **IMPORTANT:* When sending an outbound transaction (transaction that
+   * contains outputs), the `priorityFee` must be set, even if it is zero.
+   * However, if the transaction is missing outputs (and thus you are
+   * creating a compound transaction against your change address),
+   * `priorityFee` should not be set (i.e. it should be `undefined`).
+   *
+   * @see {@link IFees}, {@link FeeSource}
+   */
+  priorityFee?: IFees | bigint;
+
+  /**
+   * UTXO entries to be used for the transaction. This can be an
+   * array of UtxoEntry instances, objects matching {@link IUtxoEntry}
+   * interface, or a {@link UtxoContext} instance.
+   */
+  entries: IUtxoEntry[] | UtxoEntryReference[] | UtxoContext;
+
+  /**
+   * Optional UTXO entries that will be consumed before those available in `entries`.
+   * You can use this property to apply custom input selection logic.
+   * Please note that these inputs are consumed first, then `entries` are consumed
+   * to generate a desirable transaction output amount.  If transaction mass
+   * overflows, these inputs will be consumed into a batch/sweep transaction
+   * where the destination if the `changeAddress`.
+   */
+  priorityEntries?: IUtxoEntry[] | UtxoEntryReference[];
+
+  /**
+   * Optional number of signature operations in the transaction.
+   */
+  sigOpCount?: number;
+
+  /**
+   * Optional minimum number of signatures required for the transaction.
+   */
+  minimumSignatures?: number;
+
+  /**
+   * Optional data payload to be included in the transaction.
+   */
+  payload?: Uint8Array | HexString;
+
+  /**
+   * Optional NetworkId or network id as string (i.e. `mainnet` or `testnet-11`). Required when {@link IGeneratorSettingsObject.entries} is array
+   */
+  networkId?: NetworkId | string;
 }
 
+/**
+ *
+ *
+ * @category Wallet SDK
+ *
+ */
+export enum TransactionKind {
+  Reorg = 'reorg',
+  Stasis = 'stasis',
+  Batch = 'batch',
+  Change = 'change',
+  Incoming = 'incoming',
+  Outgoing = 'outgoing',
+  External = 'external',
+  TransferIncoming = 'transfer-incoming',
+  TransferOutgoing = 'transfer-outgoing',
+}
 
+/**
+ * Private key data information.
+ * @category Wallet API
+ */
+export interface IPrvKeyDataInfo {
+  /** Deterministic wallet id of the private key */
+  id: HexString;
+  /** Optional name of the private key */
+  name?: string;
+  /**
+   * Indicates if the key requires additional payment or a recovery secret
+   * to perform wallet operations that require access to it.
+   * For BIP39 keys this indicates that the key was created with a BIP39 passphrase.
+   */
+  isEncrypted: boolean;
+}
 
-    /**
-     * UtxoContext constructor arguments.
-     *
-     * @see {@link UtxoProcessor}, {@link UtxoContext}, {@link RpcClient}
-     * @category Wallet SDK
-     */
-    export interface IUtxoContextArgs {
-        /**
-         * Associated UtxoProcessor.
-         */
-        processor: UtxoProcessor;
-        /**
-         * Optional id for the UtxoContext.
-         * **The id must be a valid 32-byte hex string.**
-         * You can use {@link sha256FromBinary} or {@link sha256FromText} to generate a valid id.
-         *
-         * If not provided, a random id will be generated.
-         * The IDs are deterministic, based on the order UtxoContexts are created.
-         */
-        id?: HexString;
+/**
+ *
+ *
+ * @category  Wallet API
+ */
+export interface IWalletConfig {
+  /**
+   * `resident` is a boolean indicating if the wallet should not be stored on the permanent medium.
+   */
+  resident?: boolean;
+  networkId?: NetworkId | string;
+  encoding?: Encoding | string;
+  url?: string;
+  resolver?: Resolver;
+}
+
+interface Wallet {
+  /**
+   * @param {WalletNotificationCallback} callback
+   */
+  addEventListener(callback: WalletNotificationCallback): void;
+  /**
+   * @param {WalletEventType} event
+   * @param {WalletNotificationCallback} [callback]
+   */
+  addEventListener<M extends keyof WalletEventMap>(
+    event: M,
+    callback: (eventData: WalletEventMap[M]) => void,
+  );
+}
+
+/**
+ * Emitted by {@link UtxoProcessor} when it negotiates a successful RPC connection.
+ *
+ * @category Wallet Events
+ */
+export interface IConnectEvent {
+  networkId: string;
+  url?: string;
+}
+
+/**
+ * Emitted by {@link UtxoProcessor} on DAA score change.
+ *
+ * @category Wallet Events
+ */
+export interface IDaaScoreChangeEvent {
+  currentDaaScore: number;
+}
+
+/**
+ * Emitted by {@link UtxoProcessor} indicating a non-recoverable internal error.
+ * If such event is emitted, the application should stop the UtxoProcessor
+ * and restart all related subsystem. This event is emitted when the UtxoProcessor
+ * encounters a critical condition such as "out of memory".
+ *
+ * @category Wallet Events
+ */
+export interface IUtxoProcErrorEvent {
+  message: string;
+}
+
+/**
+ * Emitted by {@link UtxoContext} when detecting a pending transaction.
+ * This notification will be followed by the "balance" event.
+ *
+ * @category Wallet Events
+ */
+export type IPendingEvent = TransactionRecord;
+
+/**
+ * Emitted by {@link UtxoContext} when transaction is considered to be confirmed.
+ * This notification will be followed by the "balance" event.
+ *
+ * @category Wallet Events
+ */
+export type IMaturityEvent = TransactionRecord;
+
+/**
+ * Emitted by {@link Wallet} when the fee rate changes.
+ *
+ * @category Wallet Events
+ */
+export interface IFeeRateEvent {
+  priority: {
+    feerate: bigint;
+    seconds: bigint;
+  };
+  normal: {
+    feerate: bigint;
+    seconds: bigint;
+  };
+  low: {
+    feerate: bigint;
+    seconds: bigint;
+  };
+}
+
+/**
+ * Emitted by {@link Wallet} when an account has been deactivated.
+ *
+ * @category Wallet Events
+ */
+export interface IAccountDeactivationEvent {
+  ids: HexString[];
+}
+
+/**
+ * Emitted by {@link UtxoProcessor} when it detects that connected node does not have UTXO index enabled.
+ *
+ * @category Wallet Events
+ */
+export interface IUtxoIndexNotEnabledEvent {
+  url?: string;
+}
+
+/**
+ * Emitted by {@link UtxoProcessor} when node is syncing headers as a part of the IBD (Initial Block Download) process.
+ *
+ * @category Wallet Events
+ */
+export interface ISyncHeadersEvent {
+  headers: number;
+  progress: number;
+}
+
+/**
+ * Emitted by {@link UtxoProcessor} when node is syncing the UTXO set as a part of the IBD (Initial Block Download) process.
+ *
+ * @category Wallet Events
+ */
+export interface ISyncUtxoSyncEvent {
+  chunks: number;
+  total: number;
+}
+
+/**
+ * Emitted by {@link Wallet} when an account data has been updated.
+ * This event signifies a chance in the internal account state that
+ * includes new address generation.
+ *
+ * @category Wallet Events
+ */
+export interface IAccountUpdateEvent {
+  accountDescriptor: IAccountDescriptor;
+}
+
+/**
+ * Emitted by {@link Wallet} when the wallet is successfully reloaded.
+ *
+ * @category Wallet Events
+ */
+export interface IWalletReloadEvent {
+  walletDescriptor: IWalletDescriptor;
+  accountDescriptors: IAccountDescriptor[];
+}
+
+/**
+ * Emitted by {@link UtxoContext} when detecting a new coinbase transaction.
+ * Transactions are kept in "stasis" for the half of the coinbase maturity DAA period.
+ * A wallet should ignore these transactions until they are re-broadcasted
+ * via the "pending" event.
+ *
+ * @category Wallet Events
+ */
+export type IStasisEvent = TransactionRecord;
+
+/**
+ * Emitted by {@link UtxoProcessor} when node is syncing cryptographic trust data as a part of the IBD (Initial Block Download) process.
+ *
+ * @category Wallet Events
+ */
+export interface ISyncTrustSyncEvent {
+  processed: number;
+  total: number;
+}
+
+/**
+ * Emitted by {@link UtxoContext} when detecting a balance change.
+ * This notification is produced during the UTXO scan, when UtxoContext
+ * detects incoming or outgoing transactions or when transactions
+ * change their state (e.g. from pending to confirmed).
+ *
+ * @category Wallet Events
+ */
+export interface IBalanceEvent {
+  id: HexString;
+  balance?: IBalance;
+}
+
+/**
+ * Emitted by {@link UtxoContext} when detecting a new transaction during
+ * the initialization phase. Discovery transactions indicate that UTXOs
+ * have been discovered during the initial UTXO scan.
+ *
+ * When receiving such notifications, the application should check its
+ * internal storage to see if the transaction already exists. If it doesn't,
+ * it should create a correspond in record and notify the user of a new
+ * transaction.
+ *
+ * This event is emitted when an address has existing UTXO entries that
+ * may have been received during previous sessions or while the wallet
+ * was offline.
+ *
+ * @category Wallet Events
+ */
+export type IDiscoveryEvent = TransactionRecord;
+
+/**
+ * Emitted when detecting a general error condition.
+ *
+ * @category Wallet Events
+ */
+export interface IErrorEvent {
+  message: string;
+}
+
+/**
+ * Events emitted by the {@link Wallet}.
+ * @category Wallet API
+ */
+export enum WalletEventType {
+  Connect = 'connect',
+  Disconnect = 'disconnect',
+  UtxoIndexNotEnabled = 'utxo-index-not-enabled',
+  SyncState = 'sync-state',
+  WalletHint = 'wallet-hint',
+  WalletOpen = 'wallet-open',
+  WalletCreate = 'wallet-create',
+  WalletReload = 'wallet-reload',
+  WalletError = 'wallet-error',
+  WalletClose = 'wallet-close',
+  PrvKeyDataCreate = 'prv-key-data-create',
+  AccountActivation = 'account-activation',
+  AccountDeactivation = 'account-deactivation',
+  AccountSelection = 'account-selection',
+  AccountCreate = 'account-create',
+  AccountUpdate = 'account-update',
+  ServerStatus = 'server-status',
+  UtxoProcStart = 'utxo-proc-start',
+  UtxoProcStop = 'utxo-proc-stop',
+  UtxoProcError = 'utxo-proc-error',
+  DaaScoreChange = 'daa-score-change',
+  Pending = 'pending',
+  Reorg = 'reorg',
+  Stasis = 'stasis',
+  Maturity = 'maturity',
+  Discovery = 'discovery',
+  Balance = 'balance',
+  Error = 'error',
+  FeeRate = 'fee-rate',
+}
+
+/**
+ * Wallet notification event data map.
+ * @see {@link Wallet.addEventListener}
+ * @category Wallet API
+ */
+export type WalletEventMap = {
+  connect: IConnectEvent;
+  disconnect: IDisconnectEvent;
+  'utxo-index-not-enabled': IUtxoIndexNotEnabledEvent;
+  'sync-state': ISyncStateEvent;
+  'wallet-hint': IWalletHintEvent;
+  'wallet-open': IWalletOpenEvent;
+  'wallet-create': IWalletCreateEvent;
+  'wallet-reload': IWalletReloadEvent;
+  'wallet-error': IWalletErrorEvent;
+  'wallet-close': undefined;
+  'prv-key-data-create': IPrvKeyDataCreateEvent;
+  'account-activation': IAccountActivationEvent;
+  'account-deactivation': IAccountDeactivationEvent;
+  'account-selection': IAccountSelectionEvent;
+  'account-create': IAccountCreateEvent;
+  'account-update': IAccountUpdateEvent;
+  'server-status': IServerStatusEvent;
+  'utxo-proc-start': undefined;
+  'utxo-proc-stop': undefined;
+  'utxo-proc-error': IUtxoProcErrorEvent;
+  'daa-score-change': IDaaScoreChangeEvent;
+  pending: IPendingEvent;
+  reorg: IReorgEvent;
+  stasis: IStasisEvent;
+  maturity: IMaturityEvent;
+  discovery: IDiscoveryEvent;
+  balance: IBalanceEvent;
+  error: IErrorEvent;
+  'fee-rate': IFeeRateEvent;
+};
+
+/**
+ * {@link Wallet} notification event interface.
+ * @category Wallet API
+ */
+export type IWalletEvent<T extends keyof WalletEventMap> = {
+  [K in T]: {
+    type: K;
+    data: WalletEventMap[K];
+  };
+}[T];
+
+/**
+ * Wallet notification callback type.
+ *
+ * This type declares the callback function that is called when notification is emitted
+ * from the Wallet (and the underlying UtxoProcessor or UtxoContext subsystems).
+ *
+ * @see {@link Wallet}
+ *
+ * @category Wallet API
+ */
+export type WalletNotificationCallback<
+  E extends keyof WalletEventMap = keyof WalletEventMap,
+> = (event: IWalletEvent<E>) => void;
+
+/**
+ * Emitted by {@link Wallet} when an account has been selected.
+ * This event is used internally in Rust SDK to track currently
+ * selected account in the Rust CLI wallet.
+ *
+ * @category Wallet Events
+ */
+export interface IAccountSelectionEvent {
+  id?: HexString;
+}
+
+/**
+ * Emitted by {@link Wallet} when the wallet is successfully opened.
+ *
+ * @category Wallet Events
+ */
+export interface IWalletOpenEvent {
+  walletDescriptor: IWalletDescriptor;
+  accountDescriptors: IAccountDescriptor[];
+}
+
+/**
+ * Emitted by {@link UtxoProcessor} when node is importing the pruning point SMT state as a part of the IBD (Initial Block Download) process.
+ *
+ * @category Wallet Events
+ */
+export interface ISyncSmtSyncEvent {
+  processed: number;
+  total: number;
+}
+
+/**
+ * Emitted by {@link UtxoContext} when detecting a reorg transaction condition.
+ * A transaction is considered reorg if it has been removed from the UTXO set
+ * as a part of the network reorg process. Transactions notified with this event
+ * should be considered as invalid and should be removed from the application state.
+ * Associated UTXOs will be automatically removed from the UtxoContext state.
+ *
+ * @category Wallet Events
+ */
+export type IReorgEvent = TransactionRecord;
+
+/**
+ * Events emitted by the {@link UtxoProcessor}.
+ * @category Wallet SDK
+ */
+export enum UtxoProcessorEventType {
+  Connect = 'connect',
+  Disconnect = 'disconnect',
+  UtxoIndexNotEnabled = 'utxo-index-not-enabled',
+  SyncState = 'sync-state',
+  UtxoProcStart = 'utxo-proc-start',
+  UtxoProcStop = 'utxo-proc-stop',
+  UtxoProcError = 'utxo-proc-error',
+  DaaScoreChange = 'daa-score-change',
+  Pending = 'pending',
+  Reorg = 'reorg',
+  Stasis = 'stasis',
+  Maturity = 'maturity',
+  Discovery = 'discovery',
+  Balance = 'balance',
+  Error = 'error',
+}
+
+/**
+ * {@link UtxoProcessor} notification event data map.
+ *
+ * @category Wallet API
+ */
+export type UtxoProcessorEventMap = {
+  connect: IConnectEvent;
+  disconnect: IDisconnectEvent;
+  'utxo-index-not-enabled': IUtxoIndexNotEnabledEvent;
+  'sync-state': ISyncStateEvent;
+  'server-status': IServerStatusEvent;
+  'utxo-proc-start': undefined;
+  'utxo-proc-stop': undefined;
+  'utxo-proc-error': IUtxoProcErrorEvent;
+  'daa-score-change': IDaaScoreChangeEvent;
+  pending: IPendingEvent;
+  reorg: IReorgEvent;
+  stasis: IStasisEvent;
+  maturity: IMaturityEvent;
+  discovery: IDiscoveryEvent;
+  balance: IBalanceEvent;
+  error: IErrorEvent;
+};
+
+/**
+ *
+ * @category Wallet API
+ */
+
+export type UtxoProcessorEvent<T extends keyof UtxoProcessorEventMap> = {
+  [K in T]: {
+    type: K;
+    data: UtxoProcessorEventMap[K];
+  };
+}[T];
+
+/**
+ * {@link UtxoProcessor} notification callback type.
+ *
+ * This type declares the callback function that is called when notification is emitted
+ * from the UtxoProcessor or UtxoContext subsystems.
+ *
+ * @see {@link UtxoProcessor}, {@link UtxoContext},
+ *
+ * @category Wallet SDK
+ */
+
+export type UtxoProcessorNotificationCallback<
+  E extends keyof UtxoProcessorEventMap = keyof UtxoProcessorEventMap,
+> = (event: UtxoProcessorEvent<E>) => void;
+
+/**
+ * Emitted by {@link Wallet} when an error occurs (for example, the wallet has failed to open).
+ *
+ * @category Wallet Events
+ */
+export interface IWalletErrorEvent {
+  message: string;
+}
+
+/**
+ * Emitted by {@link Wallet} when the wallet has created a private key.
+ *
+ * @category Wallet Events
+ */
+export interface IPrvKeyDataCreateEvent {
+  prvKeyDataInfo: IPrvKeyDataInfo;
+}
+
+/**
+ * Emitted by {@link Wallet} when the wallet data storage has been successfully created.
+ *
+ * @category Wallet Events
+ */
+export interface IWalletCreateEvent {
+  walletDescriptor: IWalletDescriptor;
+  storageDescriptor: IStorageDescriptor;
+}
+
+/**
+ * Emitted by {@link Wallet} when an account has been created.
+ *
+ * @category Wallet Events
+ */
+export interface IAccountCreateEvent {
+  accountDescriptor: IAccountDescriptor;
+}
+
+/**
+ * Emitted by {@link Wallet} when it opens and contains an optional anti-phishing 'hint' set by the user.
+ *
+ * @category Wallet Events
+ */
+export interface IWalletHintEvent {
+  hint?: string;
+}
+
+/**
+ * Emitted by {@link UtxoProcessor} after successfully opening an RPC
+ * connection to the Kaspa node. This event contains general information
+ * about the Kaspa node.
+ *
+ * @category Wallet Events
+ */
+export interface IServerStatusEvent {
+  networkId: string;
+  serverVersion: string;
+  isSynced: boolean;
+  url?: string;
+}
+
+/**
+ * Emitted by {@link UtxoProcessor} when node is syncing blocks as a part of the IBD (Initial Block Download) process.
+ *
+ * @category Wallet Events
+ */
+export interface ISyncBlocksEvent {
+  blocks: number;
+  progress: number;
+}
+
+/**
+ * Emitted by {@link Wallet} when an account has been activated.
+ *
+ * @category Wallet Events
+ */
+export interface IAccountActivationEvent {
+  ids: HexString[];
+}
+
+/**
+ * Emitted by {@link UtxoProcessor} when node is syncing and processing cryptographic proofs.
+ *
+ * @category Wallet Events
+ */
+export interface ISyncProofEvent {
+  level: number;
+}
+
+/**
+ *
+ * @category Wallet Events
+ */
+export interface ISyncState {
+  event: string;
+  data?:
+    | ISyncProofEvent
+    | ISyncHeadersEvent
+    | ISyncBlocksEvent
+    | ISyncUtxoSyncEvent
+    | ISyncTrustSyncEvent
+    | ISyncSmtSyncEvent;
+}
+
+/**
+ *
+ * @category Wallet Events
+ */
+export interface ISyncStateEvent {
+  syncState: ISyncState;
+}
+
+/**
+ * Emitted by {@link UtxoProcessor} when it disconnects from RPC.
+ *
+ * @category Wallet Events
+ */
+export interface IDisconnectEvent {
+  networkId: string;
+  url?: string;
+}
+
+/**
+ * Interface declaration for {@link verifyMessage} function arguments.
+ *
+ * @category Message Signing
+ */
+export interface IVerifyMessage {
+  message: string;
+  signature: HexString;
+  publicKey: PublicKey | string;
+}
+
+/**
+ * Interface declaration for {@link signMessage} function arguments.
+ *
+ * @category Message Signing
+ */
+export interface ISignMessage {
+  message: string;
+  privateKey: PrivateKey | string;
+  noAuxRand?: boolean;
+}
+
+/**
+ * {@link UtxoContext} (wallet account) balance.
+ * @category Wallet SDK
+ */
+export interface IBalance {
+  /**
+   * Total amount of Kaspa (in SOMPI) available for
+   * spending.
+   */
+  mature: bigint;
+  /**
+   * Total amount of Kaspa (in SOMPI) that has been
+   * received and is pending confirmation.
+   */
+  pending: bigint;
+  /**
+   * Total amount of Kaspa (in SOMPI) currently
+   * being sent as a part of the outgoing transaction
+   * but has not yet been accepted by the network.
+   */
+  outgoing: bigint;
+  /**
+   * Number of UTXOs available for spending.
+   */
+  matureUtxoCount: number;
+  /**
+   * Number of UTXOs that have been received and
+   * are pending confirmation.
+   */
+  pendingUtxoCount: number;
+  /**
+   * Number of UTXOs currently in stasis (coinbase
+   * transactions received as a result of mining).
+   * Unlike regular user transactions, coinbase
+   * transactions go through `stasis->pending->mature`
+   * stages. Client applications should ignore `stasis`
+   * stages and should process transactions only when
+   * they have reached the `pending` stage. However,
+   * `stasis` information can be used for informative
+   * purposes to indicate that coinbase transactions
+   * have arrived.
+   */
+  stasisUtxoCount: number;
+}
+
+/**
+ * Interface defining response from the {@link createTransactions} function.
+ *
+ * @category Wallet SDK
+ */
+export interface ICreateTransactions {
+  /**
+   * Array of pending unsigned transactions.
+   */
+  transactions: PendingTransaction[];
+  /**
+   * Summary of the transaction generation process.
+   */
+  summary: GeneratorSummary;
+}
+
+/**
+ * UtxoContext constructor arguments.
+ *
+ * @see {@link UtxoProcessor}, {@link UtxoContext}, {@link RpcClient}
+ * @category Wallet SDK
+ */
+export interface IUtxoContextArgs {
+  /**
+   * Associated UtxoProcessor.
+   */
+  processor: UtxoProcessor;
+  /**
+   * Optional id for the UtxoContext.
+   * **The id must be a valid 32-byte hex string.**
+   * You can use {@link sha256FromBinary} or {@link sha256FromText} to generate a valid id.
+   *
+   * If not provided, a random id will be generated.
+   * The IDs are deterministic, based on the order UtxoContexts are created.
+   */
+  id?: HexString;
+}
+
+/**
+ *
+ * @category Wallet SDK
+ */
+export interface IFees {
+  amount: bigint;
+  source?: FeeSource;
+}
+
+/**
+ * Argument interface for the {@link Wallet.accountsDiscovery} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsDiscoveryRequest {
+  discoveryKind: AccountsDiscoveryKind;
+  accountScanExtent: number;
+  addressScanExtent: number;
+  bip39_passphrase?: string;
+  bip39_mnemonic: string;
+}
+
+/**
+ * Return interface for the {@link Wallet.walletImport} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IWalletImportResponse {}
+
+/**
+ * Argument interface for the {@link Wallet.accountsPskbSend} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsPskbSendRequest {
+  /**
+   * Hex identifier of the account.
+   */
+  accountId: HexString;
+  /**
+   * Wallet encryption secret.
+   */
+  walletSecret: string;
+  /**
+   * Optional key encryption secret or BIP39 passphrase.
+   */
+  paymentSecret?: string;
+
+  /**
+   * PSKB to sign.
+   */
+  pskb: string;
+
+  /**
+   * Address to sign for.
+   */
+  signForAddress?: Address | string;
+}
+
+/**
+ * Argument interface for the {@link Wallet.flush} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IFlushRequest {
+  walletSecret: string;
+}
+
+/**
+ * Argument interface for the {@link Wallet.transactionsReplaceNote} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface ITransactionsReplaceNoteRequest {
+  /**
+   * The id of account the transaction belongs to.
+   */
+  accountId: HexString;
+  /**
+   * The network id of the transaction.
+   */
+  networkId: NetworkId | string;
+  /**
+   * The id of the transaction.
+   */
+  transactionId: HexString;
+  /**
+   * Optional note string to replace the existing note.
+   * If not supplied, the note will be removed.
+   */
+  note?: string;
+}
+
+/**
+ * Argument interface for the {@link Wallet.retainContext} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IRetainContextRequest {
+  /**
+   * Optional context creation name.
+   */
+  name: string;
+  /**
+   * Optional context data to retain.
+   */
+  data?: string;
+}
+
+/**
+ * Return interface for the {@link Wallet.retainContext} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IRetainContextResponse {}
+
+/**
+ * Argument interface for the {@link Wallet.walletImport} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IWalletImportRequest {
+  walletSecret: string;
+  walletData: HexString | Uint8Array;
+}
+
+/**
+ * Argument interface for the {@link Wallet.transactionsDataGet} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface ITransactionsDataGetRequest {
+  accountId: HexString;
+  networkId: NetworkId | string;
+  filter?: TransactionKind[];
+  start: bigint;
+  end: bigint;
+}
+
+export interface IFeeRatePollerEnableRequest {
+  intervalSeconds: number;
+}
+
+/**
+ * Return interface for the {@link Wallet.accountsDeactivate} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsDeactivateResponse {}
+
+/**
+ * Argument interface for the {@link Wallet.accountsGetUtxos} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsGetUtxosRequest {
+  accountId: HexString;
+  addresses: Address[] | string[];
+  minAmountSompi?: bigint;
+}
+
+/**
+ * Argument interface for the {@link Wallet.accountsDeactivate} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsDeactivateRequest {
+  accountIds?: string[];
+}
+
+/**
+ * Return interface for the {@link Wallet.walletCreate} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IWalletCreateResponse {
+  walletDescriptor: IWalletDescriptor;
+  storageDescriptor: IStorageDescriptor;
+}
+
+/**
+ * Return interface for the {@link Wallet.disconnect} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IDisconnectResponse {}
+
+/**
+ * Argument interface for the {@link Wallet.accountsEnsureDefault} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsEnsureDefaultRequest {
+  walletSecret: string;
+  paymentSecret?: string;
+  type: AccountKind | string;
+  mnemonic?: string;
+}
+
+/**
+ * Argument interface for the {@link Wallet.connect} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IConnectRequest {
+  // destination wRPC node URL (if omitted, the resolver is used)
+  url?: string;
+  // network identifier
+  networkId: NetworkId | string;
+  // retry on error
+  retryOnError?: boolean;
+  // block async connect (method will not return until the connection is established)
+  block?: boolean;
+  // require node to be synced (fail otherwise)
+  requireSync?: boolean;
+}
+
+/**
+ * Return interface for the {@link Wallet.walletReload} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IWalletReloadResponse {}
+
+/**
+ * Argument interface for the {@link Wallet.accountsTransfer} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsTransferRequest {
+  sourceAccountId: HexString;
+  destinationAccountId: HexString;
+  walletSecret: string;
+  paymentSecret?: string;
+  feeRate?: number;
+  priorityFeeSompi?: IFees | bigint;
+  transferAmountSompi: bigint;
+}
+
+/**
+ * Argument interface for the {@link Wallet.accountsEnumerate} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsEnumerateRequest {}
+
+/**
+ * Return interface for the {@link Wallet.walletChangeSecret} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IWalletChangeSecretResponse {}
+
+/**
+ * Argument interface for the {@link Wallet.accountsCreate} method.
+ *
+ *
+ * @category Wallet API
+ */
+export type IAccountsCreateRequest =
+  | {
+      walletSecret: string;
+      type: 'bip32';
+      accountName: string;
+      accountIndex?: number;
+      prvKeyDataId: string;
+      paymentSecret?: string;
     }
-
-
-
-    /**
-     * Emitted by {@link Wallet} when it opens and contains an optional anti-phishing 'hint' set by the user.
-     *
-     * @category Wallet Events
-     */
-    export interface IWalletHintEvent {
-        hint? : string;
-    }
-
-
-
-    /**
-     * Emitted by {@link UtxoContext} when detecting a reorg transaction condition.
-     * A transaction is considered reorg if it has been removed from the UTXO set
-     * as a part of the network reorg process. Transactions notified with this event
-     * should be considered as invalid and should be removed from the application state.
-     * Associated UTXOs will be automatically removed from the UtxoContext state.
-     *
-     * @category Wallet Events
-     */
-    export type IReorgEvent = TransactionRecord;
-
-
-
-    /**
-     * Emitted by {@link UtxoProcessor} when node is syncing blocks as a part of the IBD (Initial Block Download) process.
-     *
-     * @category Wallet Events
-     */
-    export interface ISyncBlocksEvent {
-        blocks : number;
-        progress : number;
-    }
-
-
-
-    /**
-     * Emitted by {@link Wallet} when an account data has been updated.
-     * This event signifies a chance in the internal account state that
-     * includes new address generation.
-     *
-     * @category Wallet Events
-     */
-    export interface IAccountUpdateEvent {
-        accountDescriptor : IAccountDescriptor;
-    }
-
-
-
-
-        /**
-         * Events emitted by the {@link UtxoProcessor}.
-         * @category Wallet SDK
-         */
-        export enum UtxoProcessorEventType {
-            Connect = "connect",
-            Disconnect = "disconnect",
-            UtxoIndexNotEnabled = "utxo-index-not-enabled",
-            SyncState = "sync-state",
-            UtxoProcStart = "utxo-proc-start",
-            UtxoProcStop = "utxo-proc-stop",
-            UtxoProcError = "utxo-proc-error",
-            DaaScoreChange = "daa-score-change",
-            Pending = "pending",
-            Reorg = "reorg",
-            Stasis = "stasis",
-            Maturity = "maturity",
-            Discovery = "discovery",
-            Balance = "balance",
-            Error = "error",
-        }
-
-        /**
-         * {@link UtxoProcessor} notification event data map.
-         *
-         * @category Wallet API
-         */
-        export type UtxoProcessorEventMap = {
-            "connect": IConnectEvent,
-            "disconnect": IDisconnectEvent,
-            "utxo-index-not-enabled": IUtxoIndexNotEnabledEvent,
-            "sync-state": ISyncStateEvent,
-            "server-status": IServerStatusEvent,
-            "utxo-proc-start": undefined,
-            "utxo-proc-stop": undefined,
-            "utxo-proc-error": IUtxoProcErrorEvent,
-            "daa-score-change": IDaaScoreChangeEvent,
-            "pending": IPendingEvent,
-            "reorg": IReorgEvent,
-            "stasis": IStasisEvent,
-            "maturity": IMaturityEvent,
-            "discovery": IDiscoveryEvent,
-            "balance": IBalanceEvent,
-            "error": IErrorEvent
-        }
-
-        /**
-         *
-         * @category Wallet API
-         */
-
-        export type UtxoProcessorEvent<T extends keyof UtxoProcessorEventMap> = {
-          [K in T]: {
-            type: K,
-            data: UtxoProcessorEventMap[K]
-          }
-        }[T];
-
-        /**
-         * {@link UtxoProcessor} notification callback type.
-         *
-         * This type declares the callback function that is called when notification is emitted
-         * from the UtxoProcessor or UtxoContext subsystems.
-         *
-         * @see {@link UtxoProcessor}, {@link UtxoContext},
-         *
-         * @category Wallet SDK
-         */
-
-        export type UtxoProcessorNotificationCallback<E extends keyof UtxoProcessorEventMap = keyof UtxoProcessorEventMap> = (event: UtxoProcessorEvent<E>) => void;
-
-
-
-    /**
-     * Emitted by {@link Wallet} when the wallet is successfully reloaded.
-     *
-     * @category Wallet Events
-     */
-    export interface IWalletReloadEvent {
-        walletDescriptor : IWalletDescriptor;
-        accountDescriptors : IAccountDescriptor[];
-    }
-
-
-
-    /**
-     * Emitted by {@link UtxoContext} when transaction is considered to be confirmed.
-     * This notification will be followed by the "balance" event.
-     *
-     * @category Wallet Events
-     */
-    export type IMaturityEvent = TransactionRecord;
-
-
-
-    /**
-     * Emitted by {@link UtxoProcessor} when it detects that connected node does not have UTXO index enabled.
-     *
-     * @category Wallet Events
-     */
-    export interface IUtxoIndexNotEnabledEvent {
-        url? : string;
-    }
-
-
-
-    /**
-     * Emitted by {@link Wallet} when an account has been created.
-     *
-     * @category Wallet Events
-     */
-    export interface IAccountCreateEvent {
-        accountDescriptor : IAccountDescriptor;
-    }
-
-
-
-    /**
-     * Emitted by {@link Wallet} when an account has been activated.
-     *
-     * @category Wallet Events
-     */
-    export interface IAccountActivationEvent {
-        ids : HexString[];
-    }
-
-
-
-    /**
-     * Emitted by {@link Wallet} when the wallet has created a private key.
-     *
-     * @category Wallet Events
-     */
-    export interface IPrvKeyDataCreateEvent {
-        prvKeyDataInfo : IPrvKeyDataInfo;
-    }
-
-
-
-    /**
-     * Emitted by {@link UtxoProcessor} when it negotiates a successful RPC connection.
-     *
-     * @category Wallet Events
-     */
-    export interface IConnectEvent {
-        networkId : string;
-        url? : string;
-    }
-
-
-
-    /**
-     * Emitted by {@link UtxoProcessor} when node is syncing and processing cryptographic proofs.
-     *
-     * @category Wallet Events
-     */
-    export interface ISyncProofEvent {
-        level : number;
-    }
-
-
-
-    /**
-     * Emitted by {@link Wallet} when the fee rate changes.
-     *
-     * @category Wallet Events
-     */
-    export interface IFeeRateEvent {
-        priority: {
-            feerate: bigint,
-            seconds: bigint,
-        },
-        normal: {
-            feerate: bigint,
-            seconds: bigint,
-        },
-        low: {
-            feerate: bigint,
-            seconds: bigint,
-        },
-    }
-
-
-
-    /**
-     * Emitted by {@link Wallet} when the wallet data storage has been successfully created.
-     *
-     * @category Wallet Events
-     */
-    export interface IWalletCreateEvent {
-        walletDescriptor : IWalletDescriptor;
-        storageDescriptor : IStorageDescriptor;
-    }
-
-
-
-    /**
-     * Emitted by {@link Wallet} when an account has been deactivated.
-     *
-     * @category Wallet Events
-     */
-    export interface IAccountDeactivationEvent {
-        ids : HexString[];
-    }
-
-
-
-    /**
-     * Emitted by {@link UtxoContext} when detecting a balance change.
-     * This notification is produced during the UTXO scan, when UtxoContext
-     * detects incoming or outgoing transactions or when transactions
-     * change their state (e.g. from pending to confirmed).
-     *
-     * @category Wallet Events
-     */
-    export interface IBalanceEvent {
-        id : HexString;
-        balance? : IBalance;
-    }
-
-
-
-    /**
-     * Emitted when detecting a general error condition.
-     *
-     * @category Wallet Events
-     */
-    export interface IErrorEvent {
-        message : string;
-    }
-
-
-
-    /**
-     * Emitted by {@link UtxoProcessor} after successfully opening an RPC
-     * connection to the Kaspa node. This event contains general information
-     * about the Kaspa node.
-     *
-     * @category Wallet Events
-     */
-    export interface IServerStatusEvent {
-        networkId : string;
-        serverVersion : string;
-        isSynced : boolean;
-        url? : string;
-    }
-
-
-
-    /**
-     * Emitted by {@link UtxoProcessor} when node is syncing the UTXO set as a part of the IBD (Initial Block Download) process.
-     *
-     * @category Wallet Events
-     */
-    export interface ISyncUtxoSyncEvent {
-        chunks : number;
-        total : number;
-    }
-
-
-
-    /**
-     * Emitted by {@link UtxoProcessor} when node is syncing cryptographic trust data as a part of the IBD (Initial Block Download) process.
-     *
-     * @category Wallet Events
-     */
-    export interface ISyncTrustSyncEvent {
-        processed : number;
-        total : number;
-    }
-
-
-
-    /**
-     * Emitted by {@link UtxoProcessor} when it disconnects from RPC.
-     *
-     * @category Wallet Events
-     */
-    export interface IDisconnectEvent {
-        networkId : string;
-        url? : string;
-    }
-
-
-
-    /**
-     * Emitted by {@link Wallet} when the wallet is successfully opened.
-     *
-     * @category Wallet Events
-     */
-    export interface IWalletOpenEvent {
-        walletDescriptor : IWalletDescriptor;
-        accountDescriptors : IAccountDescriptor[];
-    }
-
-
-
-    /**
-     * Emitted by {@link Wallet} when an error occurs (for example, the wallet has failed to open).
-     *
-     * @category Wallet Events
-     */
-    export interface IWalletErrorEvent {
-        message : string;
-    }
-
-
-
-    /**
-     * Emitted by {@link UtxoProcessor} when node is syncing headers as a part of the IBD (Initial Block Download) process.
-     *
-     * @category Wallet Events
-     */
-    export interface ISyncHeadersEvent {
-        headers : number;
-        progress : number;
-    }
-
-
-
-
-        /**
-         * Events emitted by the {@link Wallet}.
-         * @category Wallet API
-         */
-        export enum WalletEventType {
-            Connect = "connect",
-            Disconnect = "disconnect",
-            UtxoIndexNotEnabled = "utxo-index-not-enabled",
-            SyncState = "sync-state",
-            WalletHint = "wallet-hint",
-            WalletOpen = "wallet-open",
-            WalletCreate = "wallet-create",
-            WalletReload = "wallet-reload",
-            WalletError = "wallet-error",
-            WalletClose = "wallet-close",
-            PrvKeyDataCreate = "prv-key-data-create",
-            AccountActivation = "account-activation",
-            AccountDeactivation = "account-deactivation",
-            AccountSelection = "account-selection",
-            AccountCreate = "account-create",
-            AccountUpdate = "account-update",
-            ServerStatus = "server-status",
-            UtxoProcStart = "utxo-proc-start",
-            UtxoProcStop = "utxo-proc-stop",
-            UtxoProcError = "utxo-proc-error",
-            DaaScoreChange = "daa-score-change",
-            Pending = "pending",
-            Reorg = "reorg",
-            Stasis = "stasis",
-            Maturity = "maturity",
-            Discovery = "discovery",
-            Balance = "balance",
-            Error = "error",
-            FeeRate = "fee-rate",
-        }
-
-        /**
-         * Wallet notification event data map.
-         * @see {@link Wallet.addEventListener}
-         * @category Wallet API
-         */
-        export type WalletEventMap = {
-            "connect": IConnectEvent,
-            "disconnect": IDisconnectEvent,
-            "utxo-index-not-enabled": IUtxoIndexNotEnabledEvent,
-            "sync-state": ISyncStateEvent,
-            "wallet-hint": IWalletHintEvent,
-            "wallet-open": IWalletOpenEvent,
-            "wallet-create": IWalletCreateEvent,
-            "wallet-reload": IWalletReloadEvent,
-            "wallet-error": IWalletErrorEvent,
-            "wallet-close": undefined,
-            "prv-key-data-create": IPrvKeyDataCreateEvent,
-            "account-activation": IAccountActivationEvent,
-            "account-deactivation": IAccountDeactivationEvent,
-            "account-selection": IAccountSelectionEvent,
-            "account-create": IAccountCreateEvent,
-            "account-update": IAccountUpdateEvent,
-            "server-status": IServerStatusEvent,
-            "utxo-proc-start": undefined,
-            "utxo-proc-stop": undefined,
-            "utxo-proc-error": IUtxoProcErrorEvent,
-            "daa-score-change": IDaaScoreChangeEvent,
-            "pending": IPendingEvent,
-            "reorg": IReorgEvent,
-            "stasis": IStasisEvent,
-            "maturity": IMaturityEvent,
-            "discovery": IDiscoveryEvent,
-            "balance": IBalanceEvent,
-            "error": IErrorEvent,
-            "fee-rate": IFeeRateEvent,
-        }
-
-        /**
-         * {@link Wallet} notification event interface.
-         * @category Wallet API
-         */
-        export type IWalletEvent<T extends keyof WalletEventMap> = {
-            [K in T]: {
-                type: K,
-                data: WalletEventMap[K]
-            }
-        }[T];
-
-
-        /**
-         * Wallet notification callback type.
-         *
-         * This type declares the callback function that is called when notification is emitted
-         * from the Wallet (and the underlying UtxoProcessor or UtxoContext subsystems).
-         *
-         * @see {@link Wallet}
-         *
-         * @category Wallet API
-         */
-        export type WalletNotificationCallback<E extends keyof WalletEventMap = keyof WalletEventMap> = (event: IWalletEvent<E>) => void;
-
-
-
-    /**
-     * Emitted by {@link Wallet} when an account has been selected.
-     * This event is used internally in Rust SDK to track currently
-     * selected account in the Rust CLI wallet.
-     *
-     * @category Wallet Events
-     */
-    export interface IAccountSelectionEvent {
-        id? : HexString;
-    }
-
-
-
-    /**
-     * Emitted by {@link UtxoProcessor} indicating a non-recoverable internal error.
-     * If such event is emitted, the application should stop the UtxoProcessor
-     * and restart all related subsystem. This event is emitted when the UtxoProcessor
-     * encounters a critical condition such as "out of memory".
-     *
-     * @category Wallet Events
-     */
-    export interface IUtxoProcErrorEvent {
-        message : string;
-    }
-
-
-
-    /**
-     * Emitted by {@link UtxoContext} when detecting a pending transaction.
-     * This notification will be followed by the "balance" event.
-     *
-     * @category Wallet Events
-     */
-    export type IPendingEvent = TransactionRecord;
-
-
-
-    /**
-     * Emitted by {@link UtxoContext} when detecting a new transaction during
-     * the initialization phase. Discovery transactions indicate that UTXOs
-     * have been discovered during the initial UTXO scan.
-     *
-     * When receiving such notifications, the application should check its
-     * internal storage to see if the transaction already exists. If it doesn't,
-     * it should create a correspond in record and notify the user of a new
-     * transaction.
-     *
-     * This event is emitted when an address has existing UTXO entries that
-     * may have been received during previous sessions or while the wallet
-     * was offline.
-     *
-     * @category Wallet Events
-     */
-    export type IDiscoveryEvent = TransactionRecord;
-
-
-
-    /**
-     * Emitted by {@link UtxoContext} when detecting a new coinbase transaction.
-     * Transactions are kept in "stasis" for the half of the coinbase maturity DAA period.
-     * A wallet should ignore these transactions until they are re-broadcasted
-     * via the "pending" event.
-     *
-     * @category Wallet Events
-     */
-    export type IStasisEvent = TransactionRecord;
-
-
-
-
-    /**
-     *
-     * @category Wallet Events
-     */
-    export interface ISyncState {
-        event : string;
-        data? : ISyncProofEvent | ISyncHeadersEvent | ISyncBlocksEvent | ISyncUtxoSyncEvent | ISyncTrustSyncEvent;
-    }
-
-    /**
-     *
-     * @category Wallet Events
-     */
-    export interface ISyncStateEvent {
-        syncState : ISyncState;
-    }
-
-
-
-    /**
-     * Emitted by {@link UtxoProcessor} on DAA score change.
-     *
-     * @category Wallet Events
-     */
-    export interface IDaaScoreChangeEvent {
-        currentDaaScore : number;
-    }
-
-
+  | {
+      walletSecret: string;
+      type: 'kaspa-keypair-standard';
+      accountName: string;
+      prvKeyDataId: string;
+      paymentSecret?: string;
+      ecdsa?: boolean;
+    };
+
+//   |{
+//     walletSecret: string;
+//     type: "bip32-readonly";
+//     accountName:string;
+//     accountIndex?:number;
+//     pubkey:HexString;
+//     paymentSecret?:string;
+//  }
+
+/**
+ * Return interface for the {@link Wallet.accountsEnsureDefault} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsEnsureDefaultResponse {
+  accountDescriptor: IAccountDescriptor;
+}
+
+/**
+ * Argument interface for the {@link Wallet.accountsRename} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsRenameRequest {
+  accountId: string;
+  name?: string;
+  walletSecret: string;
+}
+
+/**
+ * Return interface for the {@link Wallet.accountsGet} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsGetResponse {
+  accountDescriptor: IAccountDescriptor;
+}
+
+/**
+ * Return interface for the {@link Wallet.accountsEstimate} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsEstimateResponse {
+  generatorSummary: GeneratorSummary;
+}
+
+/**
+ * Argument interface for the {@link Wallet.walletEnumerate} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IWalletEnumerateRequest {}
+
+/**
+ * Argument interface for the {@link Wallet.accountsCommitRevealManual} method.
+ *
+ * Atomic commit reveal operation using given payment outputs.
+ *
+ * The startDestination stands for the commit transaction and the endDestination
+ * for the reveal transaction.
+ *
+ * The scriptSig will be used to spend the UTXO of the first transaction and
+ * must therefore match the startDestination output P2SH.
+ *
+ * Set revealFeeSompi or reflect the reveal fee transaction on endDestination
+ * output amount.
+ *
+ * The default revealFeeSompi is 100_000 sompi.
+ *
+ * @category Wallet API
+ */
+export interface IAccountsCommitRevealManualRequest {
+  accountId: HexString;
+  scriptSig: Uint8Array | HexString;
+  startDestination: IPaymentOutput;
+  endDestination: IPaymentOutput;
+  walletSecret: string;
+  paymentSecret?: string;
+  feeRate?: number;
+  revealFeeSompi: bigint;
+  payload?: Uint8Array | HexString;
+}
+
+/**
+ * Return interface for the {@link Wallet.accountsCreateNewAddress} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsCreateNewAddressResponse {
+  address: Address;
+}
+
+/**
+ * Return interface for the {@link Wallet.accountsEnumerate} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsEnumerateResponse {
+  accountDescriptors: IAccountDescriptor[];
+}
+
+/**
+ * Return interface for the {@link Wallet.accountsPskbSign} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsPskbSignResponse {
+  /**
+   * signed PSKB.
+   */
+  pskb: string;
+}
+
+/**
+ * Return interface for the {@link Wallet.accountsRename} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsRenameResponse {}
+
+/**
+ * Return interface for the {@link Wallet.prvKeyDataCreate} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IPrvKeyDataCreateResponse {
+  prvKeyDataId: HexString;
+}
+
+/**
+ * Argument interface for the {@link Wallet.accountsPskbBroadcast} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsPskbBroadcastRequest {
+  accountId: HexString;
+  pskb: string;
+}
+
+/**
+ * Return interface for the {@link Wallet.accountsCommitRevealManual} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsCommitRevealManualResponse {
+  transactionIds: HexString[];
+}
+
+/**
+ * Argument interface for the {@link Wallet.walletOpen} method.
+ *
+ * @category Wallet API
+ */
+export interface IWalletOpenRequest {
+  walletSecret: string;
+  filename?: string;
+  accountDescriptors: boolean;
+}
+
+/**
+ * Argument interface for the {@link Wallet.prvKeyDataEnumerate} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IPrvKeyDataEnumerateRequest {}
+
+/**
+ * Return interface for the {@link Wallet.accountsCreate} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsCreateResponse {
+  accountDescriptor: IAccountDescriptor;
+}
+
+/**
+ * @categoryDescription Wallet API
+ * Wallet API for interfacing with Rusty Kaspa Wallet implementation.
+ */
+
+/**
+ * Argument interface for the {@link Wallet.transactionsReplaceMetadata} method.
+ * Metadata is a wallet-specific string that can be used to store arbitrary data.
+ * It should contain a serialized JSON string with `key` containing the custom
+ * data stored by the wallet.  When interacting with metadata, the wallet should
+ * always deserialize the JSON string and then serialize it again after making
+ * changes, preserving any foreign keys that it might encounter.
+ *
+ * To preserve foreign metadata, the pattern of access should be:
+ * `Get -> Modify -> Replace`
+ *
+ * @category Wallet API
+ */
+export interface ITransactionsReplaceMetadataRequest {
+  /**
+   * The id of account the transaction belongs to.
+   */
+  accountId: HexString;
+  /**
+   * The network id of the transaction.
+   */
+  networkId: NetworkId | string;
+  /**
+   * The id of the transaction.
+   */
+  transactionId: HexString;
+  /**
+   * Optional metadata string to replace the existing metadata.
+   * If not supplied, the metadata will be removed.
+   */
+  metadata?: string;
+}
+
+/**
+ * Return interface for the {@link Wallet.accountsSend} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsSendResponse {
+  /**
+   * Summary produced by the transaction generator.
+   */
+  generatorSummary: GeneratorSummary;
+  /**
+   * Hex identifiers of successfully submitted transactions.
+   */
+  transactionIds: HexString[];
+}
+
+/**
+ * Return interface for the {@link Wallet.transactionsReplaceNote} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface ITransactionsReplaceNoteResponse {}
+
+/**
+ * Argument interface for the {@link Wallet.accountsCreateNewAddress} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsCreateNewAddressRequest {
+  accountId: string;
+  addressKind?: NewAddressKind | string;
+}
+
+/**
+ * Return interface for the {@link Wallet.walletClose} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IWalletCloseResponse {}
+
+export interface IFeeRatePollerDisableRequest {}
+
+/**
+ * Return interface for the {@link Wallet.connect} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IConnectResponse {}
+
+/**
+ * Argument interface for the {@link Wallet.accountsCommitReveal} method.
+ *
+ * Atomic commit reveal operation using parameterized account address to
+ * dynamically generate the commit P2SH address.
+ *
+ * The account address is selected through addressType and addressIndex
+ * and will be used to complete the script signature.
+ *
+ * A placeholder of format {{pubkey}} is to be provided inside ScriptSig
+ * in order to be superseded by the selected address' payload.
+ *
+ * The selected address will also be used to spend reveal transaction to.
+ *
+ * The default revealFeeSompi is 100_000 sompi.
+ *
+ * @category Wallet API
+ */
+export interface IAccountsCommitRevealRequest {
+  accountId: HexString;
+  addressType: CommitRevealAddressKind;
+  addressIndex: number;
+  scriptSig: Uint8Array | HexString;
+  walletSecret: string;
+  commitAmountSompi: bigint;
+  paymentSecret?: string;
+  feeRate?: number;
+  revealFeeSompi: bigint;
+  payload?: Uint8Array | HexString;
+}
+
+/**
+ * Return interface for the {@link Wallet.getStatus} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IGetStatusResponse {
+  isConnected: boolean;
+  isSynced: boolean;
+  isOpen: boolean;
+  url?: string;
+  networkId?: NetworkId;
+  context?: HexString;
+}
+
+/**
+ * Return interface for the {@link Wallet.walletEnumerate} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IWalletEnumerateResponse {
+  walletDescriptors: WalletDescriptor[];
+}
+
+/**
+ * Argument interface for the {@link Wallet.prvKeyDataRemove} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IPrvKeyDataRemoveRequest {
+  walletSecret: string;
+  prvKeyDataId: HexString;
+}
+
+/**
+ * Argument interface for the {@link Wallet.prvKeyDataCreate} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IPrvKeyDataCreateRequest {
+  /** Wallet encryption secret */
+  walletSecret: string;
+  /** Optional name of the private key */
+  name?: string;
+  /**
+   * Optional key secret (BIP39 passphrase).
+   *
+   * If supplied, all operations requiring access
+   * to the key will require the `paymentSecret`
+   * to be provided.
+   */
+  paymentSecret?: string;
+  /** BIP39 mnemonic phrase (12 or 24 words) if kind is mnemonic */
+  mnemonic?: string;
+  /** Secret key if kind is secretKey */
+  secretKey?: string;
+  /** Kind of the private key data */
+  kind: 'mnemonic' | 'secretKey';
+}
+
+/**
+ * Return interface for the {@link Wallet.accountsActivate} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsActivateResponse {}
+
+/**
+ * Argument interface for the {@link Wallet.walletClose} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IWalletCloseRequest {}
+
+/**
+ * Argument interface for the {@link Wallet.accountsEstimate} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsEstimateRequest {
+  accountId: HexString;
+  destination: IPaymentOutput[];
+  feeRate?: number;
+  priorityFeeSompi: IFees | bigint;
+  payload?: Uint8Array | string;
+}
+
+export interface IFeeRatePollerEnableResponse {}
+
+/**
+ * Argument interface for the {@link Wallet.accountsSend} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsSendRequest {
+  /**
+   * Hex identifier of the account.
+   */
+  accountId: HexString;
+  /**
+   * Wallet encryption secret.
+   */
+  walletSecret: string;
+  /**
+   * Optional key encryption secret or BIP39 passphrase.
+   */
+  paymentSecret?: string;
+  /**
+   * Fee rate in sompi per 1 gram of mass.
+   */
+  feeRate?: number;
+  /**
+   * Priority fee.
+   */
+  priorityFeeSompi?: IFees | bigint;
+  /**
+   *
+   */
+  payload?: Uint8Array | HexString;
+  /**
+   * If not supplied, the destination will be the change address resulting in a UTXO compound transaction.
+   */
+  destination?: IPaymentOutput[];
+}
+
+/**
+ * Return interface for the {@link Wallet.accountsGetUtxos} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsGetUtxosResponse {
+  utxos: UtxoEntry[];
+}
+
+/**
+ * Return interface for the {@link Wallet.accountsPskbSend} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsPskbSendResponse {
+  transactionIds: HexString[];
+}
+
+/**
+ * Return interface for the {@link Wallet.accountsImport} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsImportResponse {
+  // TODO
+}
+
+/**
+ * Return interface for the {@link Wallet.walletOpen} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IWalletOpenResponse {
+  accountDescriptors: IAccountDescriptor[];
+}
+
+/**
+ * Argument interface for the {@link Wallet.addressBookEnumerate} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAddressBookEnumerateRequest {}
+
+/**
+ * Return interface for the {@link Wallet.walletExport} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IWalletExportResponse {
+  walletData: HexString;
+}
+
+/**
+ * Argument interface for the {@link Wallet.accountsGet} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsGetRequest {
+  accountId: string;
+}
+
+/**
+ * Return interface for the {@link Wallet.prvKeyDataGet} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IPrvKeyDataGetResponse {
+  // prvKeyData: PrvKeyData,
+}
+
+/**
+ * Return interface for the {@link Wallet.batch} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IBatchResponse {}
+
+/**
+ * Return interface for the {@link Wallet.prvKeyDataRemove} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IPrvKeyDataRemoveResponse {}
+
+/**
+ * Return interface for the {@link Wallet.prvKeyDataEnumerate} method.
+ *
+ * Response returning a list of private key ids, their optional names and properties.
+ *
+ * @see {@link IPrvKeyDataInfo}
+ * @category Wallet API
+ */
+export interface IPrvKeyDataEnumerateResponse {
+  prvKeyDataList: IPrvKeyDataInfo[];
+}
+
+/**
+ * Argument interface for the {@link Wallet.walletExport} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IWalletExportRequest {
+  walletSecret: string;
+  includeTransactions: boolean;
+}
+
+/**
+ * Return interface for the {@link Wallet.transactionsReplaceMetadata} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface ITransactionsReplaceMetadataResponse {}
+
+/**
+ * Argument interface for the {@link Wallet.walletReload} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IWalletReloadRequest {
+  /**
+   * Reactivate accounts that are active before the reload.
+   */
+  reactivate: boolean;
+}
+
+export interface IFeeRateEstimateRequest {}
+
+/**
+ * Return interface for the {@link Wallet.flush} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IFlushResponse {}
+
+/**
+ * Argument interface for the {@link Wallet.batch} method.
+ * Suspend storage operations until invocation of flush().
+ *
+ * @category Wallet API
+ */
+export interface IBatchRequest {}
+
+/**
+ * Argument interface for the {@link Wallet.accountsPskbSign} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsPskbSignRequest {
+  /**
+   * Hex identifier of the account.
+   */
+  accountId: HexString;
+  /**
+   * Wallet encryption secret.
+   */
+  walletSecret: string;
+  /**
+   * Optional key encryption secret or BIP39 passphrase.
+   */
+  paymentSecret?: string;
+
+  /**
+   * PSKB to sign.
+   */
+  pskb: string;
+
+  /**
+   * Address to sign for.
+   */
+  signForAddress?: Address | string;
+}
+
+export interface IFeeRateEstimateBucket {
+  feeRate: number;
+  seconds: number;
+}
+
+/**
+ * Argument interface for the {@link Wallet.prvKeyDataGet} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IPrvKeyDataGetRequest {
+  walletSecret: string;
+  prvKeyDataId: HexString;
+}
+
+export interface IFeeRateEstimateResponse {
+  priority: IFeeRateEstimateBucket;
+  normal: IFeeRateEstimateBucket;
+  low: IFeeRateEstimateBucket;
+}
+
+/**
+ * Argument interface for the {@link Wallet.walletChangeSecret} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IWalletChangeSecretRequest {
+  oldWalletSecret: string;
+  newWalletSecret: string;
+}
+
+/**
+ * Return interface for the {@link Wallet.accountsCommitReveal} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsCommitRevealResponse {
+  transactionIds: HexString[];
+}
+
+/**
+ * Return interface for the {@link Wallet.addressBookEnumerate} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAddressBookEnumerateResponse {
+  // TODO
+}
+
+/**
+ * Return interface for the {@link Wallet.accountsDiscovery} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsDiscoveryResponse {
+  lastAccountIndexFound: number;
+}
+
+/**
+ * Argument interface for the {@link Wallet.accountsImport} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsImportRequest {
+  walletSecret: string;
+  // TODO
+}
+
+/**
+ *
+ *
+ * @category Wallet API
+ */
+export interface INetworkParams {
+  coinbaseTransactionMaturityPeriodDaa: number;
+  coinbaseTransactionStasisPeriodDaa: number;
+  userTransactionMaturityPeriodDaa: number;
+  additionalCompoundTransactionMass: number;
+}
+
+/**
+ * Argument interface for the {@link Wallet.disconnect} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IDisconnectRequest {}
+
+/**
+ * Return interface for the {@link Wallet.transactionsDataGet} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface ITransactionsDataGetResponse {
+  accountId: HexString;
+  transactions: ITransactionRecord[];
+  start: bigint;
+  total: bigint;
+}
+
+/**
+ * Argument interface for the {@link Wallet.getStatus} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IGetStatusRequest {
+  /**
+   * Optional context creation name.
+   * @see {@link IRetainContextRequest}
+   */
+  name?: string;
+}
+
+/**
+ * Return interface for the {@link Wallet.accountsPskbBroadcast} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsPskbBroadcastResponse {
+  transactionIds: HexString[];
+}
+
+export interface IFeeRatePollerDisableResponse {}
+
+/**
+ * Argument interface for the {@link Wallet.accountsActivate} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsActivateRequest {
+  accountIds?: HexString[];
+}
+
+/**
+ * Return interface for the {@link Wallet.accountsTransfer} method.
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountsTransferResponse {
+  generatorSummary: GeneratorSummary;
+  transactionIds: HexString[];
+}
+
+/**
+ * Argument interface for the {@link Wallet.walletCreate} method.
+ *
+ * If filename is not supplied, the filename will be derived from the wallet title.
+ * If both wallet title and filename are not supplied, the wallet will be create
+ * with the default filename `kaspa`.
+ *
+ * @category Wallet API
+ */
+export interface IWalletCreateRequest {
+  /** Wallet encryption secret */
+  walletSecret: string;
+  /** Optional wallet title */
+  title?: string;
+  /** Optional wallet filename */
+  filename?: string;
+  /** Optional user hint */
+  userHint?: string;
+  /**
+   * Overwrite wallet data if the wallet with the same filename already exists.
+   * (Use with caution!)
+   */
+  overwriteWalletStorage?: boolean;
+}
+
+export interface IPrvKeyDataArgs {
+  prvKeyDataId: HexString;
+  paymentSecret?: string;
+}
+
+export interface IAccountCreateArgsBip32 {
+  accountName?: string;
+  accountIndex?: number;
+}
+
+/**
+ * @category Wallet API
+ */
+export interface IAccountCreateArgs {
+  type: 'bip32';
+  args: IAccountCreateArgsBip32;
+  prvKeyDataArgs?: IPrvKeyDataArgs;
+}
+
+/**
+ *
+ *
+ * @category Wallet API
+ */
+export interface IAccountDescriptor {
+  kind: AccountKind;
+  accountId: HexString;
+  accountName?: string;
+  receiveAddress?: Address;
+  changeAddress?: Address;
+  addresses?: Address[];
+  prvKeyDataIds: HexString[];
+  // balance? : Balance,
+  [key: string]: any;
+}
+
+/**
+ * UtxoProcessor constructor arguments.
+ *
+ * @see {@link UtxoProcessor}, {@link UtxoContext}, {@link RpcClient}, {@link NetworkId}
+ * @category Wallet SDK
+ */
+export interface IUtxoProcessorArgs {
+  /**
+   * The RPC client to use for network communication.
+   */
+  rpc: RpcClient;
+  networkId: NetworkId | string;
+}
+
+interface UtxoProcessor {
+  /**
+   * @param {UtxoProcessorNotificationCallback} callback
+   */
+  addEventListener(callback: UtxoProcessorNotificationCallback): void;
+  /**
+   * @param {UtxoProcessorEventType} event
+   * @param {UtxoProcessorNotificationCallback} [callback]
+   */
+  addEventListener<E extends keyof UtxoProcessorEventMap>(
+    event: E,
+    callback: UtxoProcessorNotificationCallback<E>,
+  );
+}
+
+/**
+ *
+ * @category Wallet SDK
+ */
+export interface IUtxoRecord {
+  address?: Address;
+  index: number;
+  amount: bigint;
+  scriptPublicKey: HexString;
+  isCoinbase: boolean;
+}
+
+/**
+ * Type of transaction data record.
+ * @see {@link ITransactionData}, {@link ITransactionDataVariant}, {@link ITransactionRecord}
+ * @category Wallet SDK
+ */
+export enum TransactionDataType {
+  /**
+   * Transaction has been invalidated due to a BlockDAG reorganization.
+   * Such transaction is no longer valid and its UTXO entries are removed.
+   * @see {@link ITransactionDataReorg}
+   */
+  Reorg = 'reorg',
+  /**
+   * Transaction has been received and its UTXO entries are added to the
+   * pending or mature UTXO set.
+   * @see {@link ITransactionDataIncoming}
+   */
+  Incoming = 'incoming',
+  /**
+   * Transaction is in stasis and its UTXO entries are not yet added to the UTXO set.
+   * This event is generated for **Coinbase** transactions only.
+   * @see {@link ITransactionDataStasis}
+   */
+  Stasis = 'stasis',
+  /**
+   * Observed transaction is not performed by the wallet subsystem but is executed
+   * against the address set managed by the wallet subsystem.
+   * @see {@link ITransactionDataExternal}
+   */
+  External = 'external',
+  /**
+   * Transaction is outgoing and its UTXO entries are removed from the UTXO set.
+   * @see {@link ITransactionDataOutgoing}
+   */
+  Outgoing = 'outgoing',
+  /**
+   * Transaction is a batch transaction (compounding UTXOs to an internal change address).
+   * @see {@link ITransactionDataBatch}
+   */
+  Batch = 'batch',
+  /**
+   * Transaction is an incoming transfer from another {@link UtxoContext} managed by the {@link UtxoProcessor}.
+   * When operating under the integrated wallet, these are transfers between different wallet accounts.
+   * @see {@link ITransactionDataTransferIncoming}
+   */
+  TransferIncoming = 'transfer-incoming',
+  /**
+   * Transaction is an outgoing transfer to another {@link UtxoContext} managed by the {@link UtxoProcessor}.
+   * When operating under the integrated wallet, these are transfers between different wallet accounts.
+   * @see {@link ITransactionDataTransferOutgoing}
+   */
+  TransferOutgoing = 'transfer-outgoing',
+  /**
+   * Transaction is a change transaction and its UTXO entries are added to the UTXO set.
+   * @see {@link ITransactionDataChange}
+   */
+  Change = 'change',
+}
+
+/**
+ * Contains UTXO entries and value for a transaction
+ * that has been invalidated due to a BlockDAG reorganization.
+ * @category Wallet SDK
+ */
+export interface ITransactionDataReorg {
+  utxoEntries: IUtxoRecord[];
+  value: bigint;
+}
+
+/**
+ * Contains UTXO entries and value for an incoming transaction.
+ * @category Wallet SDK
+ */
+export interface ITransactionDataIncoming {
+  utxoEntries: IUtxoRecord[];
+  value: bigint;
+}
+
+/**
+ * Contains UTXO entries and value for a stasis transaction.
+ * @category Wallet SDK
+ */
+export interface ITransactionDataStasis {
+  utxoEntries: IUtxoRecord[];
+  value: bigint;
+}
+
+/**
+ * Contains UTXO entries and value for an external transaction.
+ * An external transaction is a transaction that was not issued
+ * by this instance of the wallet but belongs to this address set.
+ * @category Wallet SDK
+ */
+export interface ITransactionDataExternal {
+  utxoEntries: IUtxoRecord[];
+  value: bigint;
+}
+
+/**
+ * Batch transaction data (created by the {@link Generator} as a
+ * result of UTXO compounding process).
+ * @category Wallet SDK
+ */
+export interface ITransactionDataBatch {
+  fees: bigint;
+  inputValue: bigint;
+  outputValue: bigint;
+  transaction: ITransaction;
+  paymentValue: bigint;
+  changeValue: bigint;
+  acceptedDaaScore?: bigint;
+  utxoEntries: IUtxoRecord[];
+}
+
+/**
+ * Outgoing transaction data.
+ * @category Wallet SDK
+ */
+export interface ITransactionDataOutgoing {
+  fees: bigint;
+  inputValue: bigint;
+  outputValue: bigint;
+  transaction: ITransaction;
+  paymentValue: bigint;
+  changeValue: bigint;
+  acceptedDaaScore?: bigint;
+  utxoEntries: IUtxoRecord[];
+}
+
+/**
+ * Incoming transfer transaction data.
+ * Transfer occurs when a transaction is issued between
+ * two {@link UtxoContext} (wallet account) instances.
+ * @category Wallet SDK
+ */
+export interface ITransactionDataTransferIncoming {
+  fees: bigint;
+  inputValue: bigint;
+  outputValue: bigint;
+  transaction: ITransaction;
+  paymentValue: bigint;
+  changeValue: bigint;
+  acceptedDaaScore?: bigint;
+  utxoEntries: IUtxoRecord[];
+}
+
+/**
+ * Outgoing transfer transaction data.
+ * Transfer occurs when a transaction is issued between
+ * two {@link UtxoContext} (wallet account) instances.
+ * @category Wallet SDK
+ */
+export interface ITransactionDataTransferOutgoing {
+  fees: bigint;
+  inputValue: bigint;
+  outputValue: bigint;
+  transaction: ITransaction;
+  paymentValue: bigint;
+  changeValue: bigint;
+  acceptedDaaScore?: bigint;
+  utxoEntries: IUtxoRecord[];
+}
+
+/**
+ * Change transaction data.
+ * @category Wallet SDK
+ */
+export interface ITransactionDataChange {
+  inputValue: bigint;
+  outputValue: bigint;
+  transaction: ITransaction;
+  paymentValue: bigint;
+  changeValue: bigint;
+  acceptedDaaScore?: bigint;
+  utxoEntries: IUtxoRecord[];
+}
+
+/**
+ * Transaction record data variants.
+ * @category Wallet SDK
+ */
+export type ITransactionDataVariant =
+  | ITransactionDataReorg
+  | ITransactionDataIncoming
+  | ITransactionDataStasis
+  | ITransactionDataExternal
+  | ITransactionDataOutgoing
+  | ITransactionDataBatch
+  | ITransactionDataTransferIncoming
+  | ITransactionDataTransferOutgoing
+  | ITransactionDataChange;
+
+/**
+ * Internal transaction data contained within the transaction record.
+ * @see {@link ITransactionRecord}
+ * @category Wallet SDK
+ */
+export interface ITransactionData {
+  type: TransactionDataType;
+  data: ITransactionDataVariant;
+}
+
+/**
+ * Transaction record generated by the Kaspa Wallet SDK.
+ * This data structure is delivered within {@link UtxoProcessor} and `Wallet` notification events.
+ * @see {@link ITransactionData}, {@link TransactionDataType}, {@link ITransactionDataVariant}
+ * @category Wallet SDK
+ */
+export interface ITransactionRecord {
+  /**
+   * Transaction id.
+   */
+  id: string;
+  /**
+   * Transaction UNIX time in milliseconds.
+   */
+  unixtimeMsec?: bigint;
+  /**
+   * Transaction value in SOMPI.
+   */
+  value: bigint;
+  /**
+   * Transaction binding (id of UtxoContext or Wallet Account).
+   */
+  binding: HexString;
+  /**
+   * Block DAA score.
+   */
+  blockDaaScore: bigint;
+  /**
+   * Network id on which this transaction has occurred.
+   */
+  network: NetworkId;
+  /**
+   * Transaction data.
+   */
+  data: ITransactionData;
+  /**
+   * Optional transaction note as a human-readable string.
+   */
+  note?: string;
+  /**
+   * Optional transaction metadata.
+   *
+   * If present, this must contain a JSON-serialized string.
+   * A client application updating the metadata must deserialize
+   * the string into JSON, add a key with it's own identifier
+   * and store its own metadata into the value of this key.
+   */
+  metadata?: string;
+
+  /**
+   * Transaction data type.
+   */
+  type: string;
+}
+
+/**
+ * Wallet storage information.
+ */
+export interface IStorageDescriptor {
+  kind: string;
+  data: string;
+}
+
+/**
+ * Wallet storage information.
+ *
+ * @category Wallet API
+ */
+export interface IWalletDescriptor {
+  title?: string;
+  filename: string;
+}
+
+/**
+ * Type of a binding record.
+ * @see {@link IBinding}, {@link ITransactionDataVariant}, {@link ITransactionRecord}
+ * @category Wallet SDK
+ */
+export enum BindingType {
+  /**
+   * The data structure is associated with a user-supplied id.
+   * @see {@link IBinding}
+   */
+  Custom = 'custom',
+  /**
+   * The data structure is associated with a wallet account.
+   * @see {@link IBinding}, {@link Account}
+   */
+  Account = 'account',
+}
+
+/**
+ * Internal transaction data contained within the transaction record.
+ * @see {@link ITransactionRecord}
+ * @category Wallet SDK
+ */
+export interface IBinding {
+  type: BindingType;
+  id: HexString;
+}
+
+/**
+ *
+ * Defines a single payment output.
+ *
+ * @see {@link IGeneratorSettingsObject}, {@link Generator}
+ * @category Wallet SDK
+ */
+export interface IPaymentOutput {
+  /**
+   * Destination address. The address prefix must match the network
+   * you are transacting on (e.g. `kaspa:` for mainnet, `kaspatest:` for testnet, etc).
+   */
+  address: Address | string;
+  /**
+   * Output amount in SOMPI.
+   */
+  amount: bigint;
+  /**
+   * Optional covenant binding for the output. Requires transaction version >= 1.
+   * Warning: isn't supported by the transaction generator, instead use createTransaction()
+   */
+  covenant?: ICovenantBinding | CovenantBinding;
+}
 
 /**
  * Color range configuration for Hex View.
@@ -4850,10 +4487,10 @@ interface IGeneratorSettingsObject {
  * @category General
  */
 export interface IHexViewColor {
-    start: number;
-    end: number;
-    color?: string;
-    background?: string;
+  start: number;
+  end: number;
+  color?: string;
+  background?: string;
 }
 
 /**
@@ -4862,13 +4499,11 @@ export interface IHexViewColor {
  * @category General
  */
 export interface IHexViewConfig {
-    offset? : number;
-    replacementCharacter? : string;
-    width? : number;
-    colors? : IHexViewColor[];
+  offset?: number;
+  replacementCharacter?: string;
+  width?: number;
+  colors?: IHexViewColor[];
 }
-
-
 
 /**
  * A string containing a hexadecimal representation of the data (typically representing for IDs or Hashes).
@@ -4877,138 +4512,55 @@ export interface IHexViewConfig {
  */
 export type HexString = string;
 
+/**
+ * Block added notification event is produced when a new
+ * block is added to the Kaspa BlockDAG.
+ *
+ * @category Node RPC
+ */
+export interface IBlockAdded {
+  [key: string]: any;
+}
 
+/**
+ * Pruning point UTXO set override notification event is produced when the
+ * UTXO set override for the pruning point changes in the Kaspa BlockDAG.
+ *
+ * @category Node RPC
+ */
+export interface IPruningPointUtxoSetOverride {
+  [key: string]: any;
+}
 
-        interface RpcClient {
-            /**
-            * @param {RpcEventCallback} callback
-            */
-            addEventListener(callback:RpcEventCallback): void;
-            /**
-            * @param {RpcEventType} event
-            * @param {RpcEventCallback} [callback]
-            */
-            addEventListener<M extends keyof RpcEventMap>(
-                event: M,
-                callback: (eventData: RpcEventMap[M]) => void
-            )
-        }
+/**
+ * Virtual DAA score changed notification event is produced when the virtual
+ * Difficulty Adjustment Algorithm (DAA) score changes in the Kaspa BlockDAG.
+ *
+ * @category Node RPC
+ */
+export interface IVirtualDaaScoreChanged {
+  [key: string]: any;
+}
 
+/**
+ * Finality conflict notification event is produced when a finality
+ * conflict occurs in the Kaspa BlockDAG.
+ *
+ * @category Node RPC
+ */
+export interface IFinalityConflict {
+  [key: string]: any;
+}
 
-    /**
-     * RPC client configuration options
-     *
-     * @category Node RPC
-     */
-    export interface IRpcConfig {
-        /**
-         * An instance of the {@link Resolver} class to use for an automatic public node lookup.
-         * If supplying a resolver, the `url` property is ignored.
-         */
-        resolver? : Resolver,
-        /**
-         * URL for wRPC node endpoint
-         */
-        url?: string;
-        /**
-         * RPC encoding: `borsh` or `json` (default is `borsh`)
-         */
-        encoding?: Encoding;
-        /**
-         * Network identifier: `mainnet`, `testnet-10` etc.
-         * `networkId` is required when using a resolver.
-         */
-        networkId?: NetworkId | string;
-    }
-
-
-
-    /**
-     * Virtual chain changed notification event is produced when the virtual
-     * chain changes in the Kaspa BlockDAG.
-     *
-     * @category Node RPC
-     */
-    export interface IVirtualChainChanged {
-        [key: string]: any;
-    }
-
-
-
-    /**
-     * Sink blue score changed notification event is produced when the blue
-     * score of the sink block changes in the Kaspa BlockDAG.
-     *
-     * @category Node RPC
-     */
-    export interface ISinkBlueScoreChanged {
-        [key: string]: any;
-    }
-
-
-
-    /**
-     * Virtual DAA score changed notification event is produced when the virtual
-     * Difficulty Adjustment Algorithm (DAA) score changes in the Kaspa BlockDAG.
-     *
-     * @category Node RPC
-     */
-    export interface IVirtualDaaScoreChanged {
-        [key: string]: any;
-    }
-
-
-
-    /**
-     * New block template notification event is produced when a new block
-     * template is generated for mining in the Kaspa BlockDAG.
-     *
-     * @category Node RPC
-     */
-    export interface INewBlockTemplate {
-        [key: string]: any;
-    }
-
-
-
-    /**
-     * UTXOs changed notification event is produced when the set
-     * of unspent transaction outputs (UTXOs) changes in the
-     * Kaspa BlockDAG. The event notification is scoped to the
-     * monitored list of addresses specified during the subscription.
-     *
-     * @category Node RPC
-     */
-    export interface IUtxosChanged {
-        [key: string]: any;
-    }
-
-
-
-    /**
-     * Finality conflict resolved notification event is produced when a finality
-     * conflict in the Kaspa BlockDAG is resolved.
-     *
-     * @category Node RPC
-     */
-    export interface IFinalityConflictResolved {
-        [key: string]: any;
-    }
-
-
-
-    /**
-     * Pruning point UTXO set override notification event is produced when the
-     * UTXO set override for the pruning point changes in the Kaspa BlockDAG.
-     *
-     * @category Node RPC
-     */
-    export interface IPruningPointUtxoSetOverride {
-        [key: string]: any;
-    }
-
-
-
+/**
+ * New block template notification event is produced when a new block
+ * template is generated for mining in the Kaspa BlockDAG.
+ *
+ * @category Node RPC
+ */
+export interface INewBlockTemplate {
+  [key: string]: any;
+}
 
 /**
  * RPC notification events.
@@ -5016,17 +4568,17 @@ export type HexString = string;
  * @see {RpcClient.addEventListener}, {RpcClient.removeEventListener}
  */
 export enum RpcEventType {
-    Connect = "connect",
-    Disconnect = "disconnect",
-    BlockAdded = "block-added",
-    VirtualChainChanged = "virtual-chain-changed",
-    FinalityConflict = "finality-conflict",
-    FinalityConflictResolved = "finality-conflict-resolved",
-    UtxosChanged = "utxos-changed",
-    SinkBlueScoreChanged = "sink-blue-score-changed",
-    VirtualDaaScoreChanged = "virtual-daa-score-changed",
-    PruningPointUtxoSetOverride = "pruning-point-utxo-set-override",
-    NewBlockTemplate = "new-block-template",
+  Connect = 'connect',
+  Disconnect = 'disconnect',
+  BlockAdded = 'block-added',
+  VirtualChainChanged = 'virtual-chain-changed',
+  FinalityConflict = 'finality-conflict',
+  FinalityConflictResolved = 'finality-conflict-resolved',
+  UtxosChanged = 'utxos-changed',
+  SinkBlueScoreChanged = 'sink-blue-score-changed',
+  VirtualDaaScoreChanged = 'virtual-daa-score-changed',
+  PruningPointUtxoSetOverride = 'pruning-point-utxo-set-override',
+  NewBlockTemplate = 'new-block-template',
 }
 
 /**
@@ -5034,15 +4586,16 @@ export enum RpcEventType {
  *
  * @category Node RPC
  */
-export type RpcEventData = IBlockAdded
-    | IVirtualChainChanged
-    | IFinalityConflict
-    | IFinalityConflictResolved
-    | IUtxosChanged
-    | ISinkBlueScoreChanged
-    | IVirtualDaaScoreChanged
-    | IPruningPointUtxoSetOverride
-    | INewBlockTemplate;
+export type RpcEventData =
+  | IBlockAdded
+  | IVirtualChainChanged
+  | IFinalityConflict
+  | IFinalityConflictResolved
+  | IUtxosChanged
+  | ISinkBlueScoreChanged
+  | IVirtualDaaScoreChanged
+  | IPruningPointUtxoSetOverride
+  | INewBlockTemplate;
 
 /**
  * RPC notification event data map.
@@ -5050,18 +4603,18 @@ export type RpcEventData = IBlockAdded
  * @category Node RPC
  */
 export type RpcEventMap = {
-    "connect" : undefined,
-    "disconnect" : undefined,
-    "block-added" : IBlockAdded,
-    "virtual-chain-changed" : IVirtualChainChanged,
-    "finality-conflict" : IFinalityConflict,
-    "finality-conflict-resolved" : IFinalityConflictResolved,
-    "utxos-changed" : IUtxosChanged,
-    "sink-blue-score-changed" : ISinkBlueScoreChanged,
-    "virtual-daa-score-changed" : IVirtualDaaScoreChanged,
-    "pruning-point-utxo-set-override" : IPruningPointUtxoSetOverride,
-    "new-block-template" : INewBlockTemplate,
-}
+  connect: undefined;
+  disconnect: undefined;
+  'block-added': IBlockAdded;
+  'virtual-chain-changed': IVirtualChainChanged;
+  'finality-conflict': IFinalityConflict;
+  'finality-conflict-resolved': IFinalityConflictResolved;
+  'utxos-changed': IUtxosChanged;
+  'sink-blue-score-changed': ISinkBlueScoreChanged;
+  'virtual-daa-score-changed': IVirtualDaaScoreChanged;
+  'pruning-point-utxo-set-override': IPruningPointUtxoSetOverride;
+  'new-block-template': INewBlockTemplate;
+};
 
 /**
  * RPC notification event.
@@ -5069,7 +4622,7 @@ export type RpcEventMap = {
  * @category Node RPC
  */
 export type RpcEvent = {
-    [K in keyof RpcEventMap]: { event: K, data: RpcEventMap[K] }
+  [K in keyof RpcEventMap]: { event: K; data: RpcEventMap[K] };
 }[keyof RpcEventMap];
 
 /**
@@ -5091,78 +4644,130 @@ export type RpcEvent = {
  */
 export type RpcEventCallback = (event: RpcEvent) => void;
 
+/**
+ * Virtual chain changed notification event is produced when the virtual
+ * chain changes in the Kaspa BlockDAG.
+ *
+ * @category Node RPC
+ */
+export interface IVirtualChainChanged {
+  [key: string]: any;
+}
 
+/**
+ * Finality conflict resolved notification event is produced when a finality
+ * conflict in the Kaspa BlockDAG is resolved.
+ *
+ * @category Node RPC
+ */
+export interface IFinalityConflictResolved {
+  [key: string]: any;
+}
 
+/**
+ * Sink blue score changed notification event is produced when the blue
+ * score of the sink block changes in the Kaspa BlockDAG.
+ *
+ * @category Node RPC
+ */
+export interface ISinkBlueScoreChanged {
+  [key: string]: any;
+}
 
-    /**
-     * Block added notification event is produced when a new
-     * block is added to the Kaspa BlockDAG.
-     *
-     * @category Node RPC
-     */
-    export interface IBlockAdded {
-        [key: string]: any;
-    }
+/**
+ * UTXOs changed notification event is produced when the set
+ * of unspent transaction outputs (UTXOs) changes in the
+ * Kaspa BlockDAG. The event notification is scoped to the
+ * monitored list of addresses specified during the subscription.
+ *
+ * @category Node RPC
+ */
+export interface IUtxosChanged {
+  [key: string]: any;
+}
 
+/**
+ * RPC Resolver connection options
+ *
+ * @category Node RPC
+ */
+export interface IResolverConnect {
+  /**
+   * RPC encoding: `borsh` (default) or `json`
+   */
+  encoding?: Encoding | string;
+  /**
+   * Network identifier: `mainnet` or `testnet-11` etc.
+   */
+  networkId?: NetworkId | string;
+}
 
+/**
+ * RPC Resolver configuration options
+ *
+ * @category Node RPC
+ */
+export interface IResolverConfig {
+  /**
+   * Optional URLs for one or multiple resolvers.
+   */
+  urls?: string[];
+  /**
+   * Use strict TLS for RPC connections.
+   * If not set or `false` (default), the resolver will
+   * provide the best available connection regardless of
+   * whether this connection supports TLS or not.
+   * If set to `true`, the resolver will only provide
+   * TLS-enabled connections.
+   *
+   * This setting is ignored in the browser environment
+   * when the browser navigator location is `https`.
+   * In which case the resolver will always use TLS-enabled
+   * connections.
+   */
+  tls?: boolean;
+}
 
-    /**
-     * Finality conflict notification event is produced when a finality
-     * conflict occurs in the Kaspa BlockDAG.
-     *
-     * @category Node RPC
-     */
-    export interface IFinalityConflict {
-        [key: string]: any;
-    }
+/**
+ * RPC client configuration options
+ *
+ * @category Node RPC
+ */
+export interface IRpcConfig {
+  /**
+   * An instance of the {@link Resolver} class to use for an automatic public node lookup.
+   * If supplying a resolver, the `url` property is ignored.
+   */
+  resolver?: Resolver;
+  /**
+   * URL for wRPC node endpoint
+   */
+  url?: string;
+  /**
+   * RPC encoding: `borsh` or `json` (default is `borsh`)
+   */
+  encoding?: Encoding;
+  /**
+   * Network identifier: `mainnet`, `testnet-10` etc.
+   * `networkId` is required when using a resolver.
+   */
+  networkId?: NetworkId | string;
+}
 
-
-
-    /**
-     * RPC Resolver configuration options
-     *
-     * @category Node RPC
-     */
-    export interface IResolverConfig {
-        /**
-         * Optional URLs for one or multiple resolvers.
-         */
-        urls?: string[];
-        /**
-         * Use strict TLS for RPC connections.
-         * If not set or `false` (default), the resolver will
-         * provide the best available connection regardless of
-         * whether this connection supports TLS or not.
-         * If set to `true`, the resolver will only provide
-         * TLS-enabled connections.
-         *
-         * This setting is ignored in the browser environment
-         * when the browser navigator location is `https`.
-         * In which case the resolver will always use TLS-enabled
-         * connections.
-         */
-        tls?: boolean;
-    }
-
-
-
-    /**
-     * RPC Resolver connection options
-     *
-     * @category Node RPC
-     */
-    export interface IResolverConnect {
-        /**
-         * RPC encoding: `borsh` (default) or `json`
-         */
-        encoding?: Encoding | string;
-        /**
-         * Network identifier: `mainnet` or `testnet-11` etc.
-         */
-        networkId?: NetworkId | string;
-    }
-
-
+interface RpcClient {
+  /**
+   * @param {RpcEventCallback} callback
+   */
+  addEventListener(callback: RpcEventCallback): void;
+  /**
+   * @param {RpcEventType} event
+   * @param {RpcEventCallback} [callback]
+   */
+  addEventListener<M extends keyof RpcEventMap>(
+    event: M,
+    callback: (eventData: RpcEventMap[M]) => void,
+  );
+}
 
 /**
  * Interface for configuring workflow-rs WASM32 bindings.
@@ -5170,68 +4775,61 @@ export type RpcEventCallback = (event: RpcEvent) => void;
  * @category General
  */
 export interface IWASM32BindingsConfig {
-    /**
-     * This option can be used to disable the validation of class names
-     * for instances of classes exported by Rust WASM32 when passing
-     * these classes to WASM32 functions.
-     *
-     * This can be useful to programmatically disable checks when using
-     * a bundler that mangles class symbol names.
-     */
-    validateClassNames : boolean;
+  /**
+   * This option can be used to disable the validation of class names
+   * for instances of classes exported by Rust WASM32 when passing
+   * these classes to WASM32 functions.
+   *
+   * This can be useful to programmatically disable checks when using
+   * a bundler that mangles class symbol names.
+   */
+  validateClassNames: boolean;
 }
 
+/**
+ * `WebSocketConfig` is used to configure the `WebSocket`.
+ *
+ * @category WebSocket
+ */
+export interface IWebSocketConfig {
+  /** Maximum size of the WebSocket message. */
+  maxMessageSize: number;
+  /** Maximum size of the WebSocket frame. */
+  maxFrameSize: number;
+}
 
-
-
-        /**
-         * `WebSocketConfig` is used to configure the `WebSocket`.
-         *
-         * @category WebSocket
-         */
-        export interface IWebSocketConfig {
-            /** Maximum size of the WebSocket message. */
-            maxMessageSize: number,
-            /** Maximum size of the WebSocket frame. */
-            maxFrameSize: number,
-        }
-
-
-
-
-        /**
-         * `ConnectOptions` is used to configure the `WebSocket` connectivity behavior.
-         *
-         * @category WebSocket
-         */
-        export interface IConnectOptions {
-            /**
-             * Indicates if the `async fn connect()` method should return immediately
-             * or wait for connection to occur or fail before returning.
-             * (default is `true`)
-             */
-            blockAsyncConnect? : boolean,
-            /**
-             * ConnectStrategy used to configure the retry or fallback behavior.
-             * In retry mode, the WebSocket will continuously attempt to connect to the server.
-             * (default is {link ConnectStrategy.Retry}).
-             */
-            strategy?: ConnectStrategy | string,
-            /**
-             * A custom URL that will change the current URL of the WebSocket.
-             * If supplied, the URL will override the use of resolver.
-             */
-            url?: string,
-            /**
-             * A custom connection timeout in milliseconds.
-             */
-            timeoutDuration?: number,
-            /**
-             * A custom retry interval in milliseconds.
-             */
-            retryInterval?: number,
-        }
-
+/**
+ * `ConnectOptions` is used to configure the `WebSocket` connectivity behavior.
+ *
+ * @category WebSocket
+ */
+export interface IConnectOptions {
+  /**
+   * Indicates if the `async fn connect()` method should return immediately
+   * or wait for connection to occur or fail before returning.
+   * (default is `true`)
+   */
+  blockAsyncConnect?: boolean;
+  /**
+   * ConnectStrategy used to configure the retry or fallback behavior.
+   * In retry mode, the WebSocket will continuously attempt to connect to the server.
+   * (default is {link ConnectStrategy.Retry}).
+   */
+  strategy?: ConnectStrategy | string;
+  /**
+   * A custom URL that will change the current URL of the WebSocket.
+   * If supplied, the URL will override the use of resolver.
+   */
+  url?: string;
+  /**
+   * A custom connection timeout in milliseconds.
+   */
+  timeoutDuration?: number;
+  /**
+   * A custom retry interval in milliseconds.
+   */
+  retryInterval?: number;
+}
 
 /**
  *
@@ -5282,13 +4880,13 @@ export class AccountKind {
  * @category Address
  */
 export class Address {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   constructor(address: string);
@@ -5313,7 +4911,11 @@ export class AgentConstructorOptions {
 }
 export class AppendFileOptions {
   free(): void;
-  constructor(encoding?: string | null, mode?: number | null, flag?: string | null);
+  constructor(
+    encoding?: string | null,
+    mode?: number | null,
+    flag?: string | null,
+  );
   static new(): AppendFileOptions;
   get encoding(): string | undefined;
   set encoding(value: string | null | undefined);
@@ -5324,7 +4926,12 @@ export class AppendFileOptions {
 }
 export class AssertionErrorOptions {
   free(): void;
-  constructor(message: string | null | undefined, actual: any, expected: any, operator: string);
+  constructor(
+    message: string | null | undefined,
+    actual: any,
+    expected: any,
+    operator: string,
+  );
   /**
    * The actual property on the error instance.
    */
@@ -5354,7 +4961,9 @@ export class AssertionErrorOptions {
 export class Balance {
   private constructor();
   free(): void;
-  toBalanceStrings(network_type: NetworkType | NetworkId | string): BalanceStrings;
+  toBalanceStrings(
+    network_type: NetworkType | NetworkId | string,
+  ): BalanceStrings;
   /**
    * Confirmed amount of funds available for spending.
    */
@@ -5387,13 +4996,13 @@ export class BalanceStrings {
  * @category Consensus
  */
 export class CompressedParents {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   /**
@@ -5411,9 +5020,37 @@ export class CompressedParents {
   get(index: number): any;
   constructor(js_value: any);
 }
+/**
+ * Encodes the compute mass commitment for a transaction input.
+ * @category Consensus
+ */
+export class ComputeCommit {
+  /**
+   ** Return copy of self without private attributes.
+   */
+  toJSON(): Object;
+  /**
+   * Return stringified version of self.
+   */
+  toString(): string;
+  free(): void;
+  constructor(value: IComputeCommit | ComputeCommit);
+  toString(): string;
+  toJSON(): object;
+  static fromSigOpCount(sig_op_count: number): ComputeCommit;
+  static fromComputeBudget(compute_budget: number): ComputeCommit;
+  type: string;
+  value: number;
+}
 export class ConsoleConstructorOptions {
   free(): void;
-  constructor(stdout: any, stderr: any, ignore_errors: boolean | null | undefined, color_mod: any, inspect_options?: object | null);
+  constructor(
+    stdout: any,
+    stderr: any,
+    ignore_errors: boolean | null | undefined,
+    color_mod: any,
+    inspect_options?: object | null,
+  );
   static new(stdout: any, stderr: any): ConsoleConstructorOptions;
   stderr: any;
   stdout: any;
@@ -5424,13 +5061,13 @@ export class ConsoleConstructorOptions {
   set inspect_options(value: object | null | undefined);
 }
 export class CovenantBinding {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   toJSON(): object;
@@ -5440,7 +5077,13 @@ export class CovenantBinding {
 }
 export class CreateHookCallbacks {
   free(): void;
-  constructor(init: Function, before: Function, after: Function, destroy: Function, promise_resolve: Function);
+  constructor(
+    init: Function,
+    before: Function,
+    after: Function,
+    destroy: Function,
+    promise_resolve: Function,
+  );
   before: Function;
   destroy: Function;
   promise_resolve: Function;
@@ -5449,7 +5092,17 @@ export class CreateHookCallbacks {
 }
 export class CreateReadStreamOptions {
   free(): void;
-  constructor(auto_close?: boolean | null, emit_close?: boolean | null, encoding?: string | null, end?: number | null, fd?: number | null, flags?: string | null, high_water_mark?: number | null, mode?: number | null, start?: number | null);
+  constructor(
+    auto_close?: boolean | null,
+    emit_close?: boolean | null,
+    encoding?: string | null,
+    end?: number | null,
+    fd?: number | null,
+    flags?: string | null,
+    high_water_mark?: number | null,
+    mode?: number | null,
+    start?: number | null,
+  );
   get auto_close(): boolean | undefined;
   set auto_close(value: boolean | null | undefined);
   get emit_close(): boolean | undefined;
@@ -5471,7 +5124,15 @@ export class CreateReadStreamOptions {
 }
 export class CreateWriteStreamOptions {
   free(): void;
-  constructor(auto_close?: boolean | null, emit_close?: boolean | null, encoding?: string | null, fd?: number | null, flags?: string | null, mode?: number | null, start?: number | null);
+  constructor(
+    auto_close?: boolean | null,
+    emit_close?: boolean | null,
+    encoding?: string | null,
+    fd?: number | null,
+    flags?: string | null,
+    mode?: number | null,
+    start?: number | null,
+  );
   get auto_close(): boolean | undefined;
   set auto_close(value: boolean | null | undefined);
   get emit_close(): boolean | undefined;
@@ -5496,16 +5157,19 @@ export class CreateWriteStreamOptions {
  *  @category Wallet SDK
  */
 export class CryptoBox {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
-  constructor(secretKey: CryptoBoxPrivateKey | HexString | Uint8Array, peerPublicKey: CryptoBoxPublicKey | HexString | Uint8Array);
+  constructor(
+    secretKey: CryptoBoxPrivateKey | HexString | Uint8Array,
+    peerPublicKey: CryptoBoxPublicKey | HexString | Uint8Array,
+  );
   decrypt(base64string: string): string;
   encrypt(plaintext: string): string;
   readonly publicKey: string;
@@ -5555,9 +5219,36 @@ export class DerivationPath {
    */
   isEmpty(): boolean;
 }
+/**
+ * Result of finalizing an ZkScriptBuilder.
+ *
+ * `sigScript` is the spending script — set this on the transaction input.
+ * `redeemScript` is the inner commit script — hash this with
+ * `pay_to_script_hash_script` to derive the P2SH script-public-key.
+ */
+export class FinalizedR0Script {
+  private constructor();
+  /**
+   ** Return copy of self without private attributes.
+   */
+  toJSON(): Object;
+  /**
+   * Return stringified version of self.
+   */
+  toString(): string;
+  free(): void;
+  readonly sigScript: HexString;
+  readonly redeemScript: HexString;
+}
 export class FormatInputPathObject {
   free(): void;
-  constructor(base?: string | null, dir?: string | null, ext?: string | null, name?: string | null, root?: string | null);
+  constructor(
+    base?: string | null,
+    dir?: string | null,
+    ext?: string | null,
+    name?: string | null,
+    root?: string | null,
+  );
   static new(): FormatInputPathObject;
   get dir(): string | undefined;
   set dir(value: string | null | undefined);
@@ -5636,13 +5327,13 @@ export class Generator {
  */
 export class GeneratorSummary {
   private constructor();
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   readonly networkType: NetworkType;
@@ -5661,13 +5352,13 @@ export class GeneratorSummary {
  * @category Consensus
  */
 export class GenesisCovenantGroup {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   toString(): string;
@@ -5679,7 +5370,12 @@ export class GenesisCovenantGroup {
 export class GetNameOptions {
   private constructor();
   free(): void;
-  static new(family: number | null | undefined, host: string, local_address: string, port: number): GetNameOptions;
+  static new(
+    family: number | null | undefined,
+    host: string,
+    local_address: string,
+    port: number,
+  ): GetNameOptions;
   get family(): number | undefined;
   set family(value: number | null | undefined);
   local_address: string;
@@ -5700,13 +5396,13 @@ export class Hash {
  * @category Consensus
  */
 export class Header {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   constructor(js_value: Header | IHeader | IRawHeader);
@@ -5747,13 +5443,13 @@ export class Header {
  */
 export class Keypair {
   private constructor();
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   /**
@@ -5805,13 +5501,13 @@ export class MkdtempSyncOptions {
  * @category Wallet SDK
  */
 export class Mnemonic {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   constructor(phrase: string, language?: Language | null);
@@ -5840,13 +5536,13 @@ export class NetServerOptions {
  * @category Consensus
  */
 export class NetworkId {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   toString(): string;
@@ -5866,13 +5562,13 @@ export class NetworkId {
  */
 export class NodeDescriptor {
   private constructor();
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   /**
@@ -5885,13 +5581,13 @@ export class NodeDescriptor {
   url: string;
 }
 export class OptionalHeader {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   constructor(js_value: OptionalHeader | IOptionalHeader);
@@ -5920,13 +5616,13 @@ export class PSKB {
   readonly length: number;
 }
 export class PSKT {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   /**
@@ -5938,7 +5634,10 @@ export class PSKT {
   calculateMass(data: any): bigint;
   noMoreInputs(): PSKT;
   noMoreOutputs(): PSKT;
-  inputAndRedeemScript(input: ITransactionInput | TransactionInput, data: any): PSKT;
+  inputAndRedeemScript(
+    input: ITransactionInput | TransactionInput,
+    data: any,
+  ): PSKT;
   inputsModifiable(): PSKT;
   fallbackLockTime(lock_time: bigint): PSKT;
   outputsModifiable(): PSKT;
@@ -5981,19 +5680,23 @@ export class PSKT {
  * @category Wallet SDK
  */
 export class PaymentOutput {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   /**
    * Factory method for covenant variant
    */
-  static withCovenant(address: Address, amount: bigint, covenant: CovenantBinding): PaymentOutput;
+  static withCovenant(
+    address: Address,
+    amount: bigint,
+    covenant: CovenantBinding,
+  ): PaymentOutput;
   /**
    * Main constructor (no covenant)
    */
@@ -6015,24 +5718,31 @@ export class PaymentOutputs {
  */
 export class PendingTransaction {
   private constructor();
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   /**
    * Sets a signature to the input at the specified index.
    */
-  fillInput(input_index: number, signature_script: HexString | Uint8Array): void;
+  fillInput(
+    input_index: number,
+    signature_script: HexString | Uint8Array,
+  ): void;
   /**
    * Signs the input at the specified index with the supplied private key
    * and an optional SighashType.
    */
-  signInput(input_index: number, private_key: PrivateKey, sighash_type?: SighashType | null): void;
+  signInput(
+    input_index: number,
+    private_key: PrivateKey,
+    sighash_type?: SighashType | null,
+  ): void;
   /**
    * Provides a list of UTXO entries used by the transaction.
    */
@@ -6054,7 +5764,11 @@ export class PendingTransaction {
   /**
    * Creates and returns a signature for the input at the specified index.
    */
-  createInputSignature(input_index: number, private_key: PrivateKey, sighash_type?: SighashType | null): HexString;
+  createInputSignature(
+    input_index: number,
+    private_key: PrivateKey,
+    sighash_type?: SighashType | null,
+  ): HexString;
   /**
    * Serializes the transaction to a "Safe" JSON schema where it converts all `bigint` values to `string` to avoid potential client-side precision loss.
    * Once serialized, the transaction can be deserialized using {@link Transaction.deserializeFromSafeJSON}.
@@ -6065,7 +5779,10 @@ export class PendingTransaction {
    * Signs transaction with supplied [`Array`] or [`PrivateKey`] or an array of
    * raw private key bytes (encoded as `Uint8Array` or as hex strings)
    */
-  sign(js_value: (PrivateKey | HexString | Uint8Array)[], check_fully_signed?: boolean | null): void;
+  sign(
+    js_value: (PrivateKey | HexString | Uint8Array)[],
+    check_fully_signed?: boolean | null,
+  ): void;
   /**
    * Submit transaction to the supplied [`RpcClient`]
    * **IMPORTANT:** This method will remove UTXOs from the associated
@@ -6142,13 +5859,13 @@ export class PipeOptions {
  * @category Mining
  */
 export class PoW {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   /**
@@ -6160,7 +5877,11 @@ export class PoW {
   /**
    * Can be used for parsing Stratum templates.
    */
-  static fromRaw(pre_pow_hash: string, timestamp: bigint, target_bits?: number | null): PoW;
+  static fromRaw(
+    pre_pow_hash: string,
+    timestamp: bigint,
+    target_bits?: number | null,
+  ): PoW;
   /**
    * Hash of the header without timestamp and nonce.
    */
@@ -6220,7 +5941,12 @@ export class PrivateKeyGenerator {
   free(): void;
   changeKey(index: number): PrivateKey;
   receiveKey(index: number): PrivateKey;
-  constructor(xprv: XPrv | string, is_multisig: boolean, account_index: bigint, cosigner_index?: number | null);
+  constructor(
+    xprv: XPrv | string,
+    is_multisig: boolean,
+    account_index: bigint,
+    cosigner_index?: number | null,
+  );
 }
 export class ProcessSendOptions {
   free(): void;
@@ -6290,7 +6016,10 @@ export class PublicKeyGenerator {
   /**
    * Generate a single Change Address derivation at a given index.
    */
-  changeAddress(networkType: NetworkType | NetworkId | string, index: number): Address;
+  changeAddress(
+    networkType: NetworkType | NetworkId | string,
+    index: number,
+  ): Address;
   /**
    * Generate Change Public Key derivations for a given range.
    */
@@ -6302,7 +6031,10 @@ export class PublicKeyGenerator {
   /**
    * Generate a single Receive Address derivation at a given index.
    */
-  receiveAddress(networkType: NetworkType | NetworkId | string, index: number): Address;
+  receiveAddress(
+    networkType: NetworkType | NetworkId | string,
+    index: number,
+  ): Address;
   /**
    * Generate Receive Public Key derivations for a given range.
    */
@@ -6310,12 +6042,25 @@ export class PublicKeyGenerator {
   /**
    * Generate Change Address derivations for a given range.
    */
-  changeAddresses(networkType: NetworkType | NetworkId | string, start: number, end: number): Address[];
-  static fromMasterXPrv(xprv: XPrv | string, is_multisig: boolean, account_index: bigint, cosigner_index?: number | null): PublicKeyGenerator;
+  changeAddresses(
+    networkType: NetworkType | NetworkId | string,
+    start: number,
+    end: number,
+  ): Address[];
+  static fromMasterXPrv(
+    xprv: XPrv | string,
+    is_multisig: boolean,
+    account_index: bigint,
+    cosigner_index?: number | null,
+  ): PublicKeyGenerator;
   /**
    * Generate Receive Address derivations for a given range.
    */
-  receiveAddresses(networkType: NetworkType | NetworkId | string, start: number, end: number): Address[];
+  receiveAddresses(
+    networkType: NetworkType | NetworkId | string,
+    start: number,
+    end: number,
+  ): Address[];
   /**
    * Generate a single Change Public Key derivation at a given index and return it as a string.
    */
@@ -6323,7 +6068,10 @@ export class PublicKeyGenerator {
   /**
    * Generate a single Change Address derivation at a given index and return it as a string.
    */
-  changeAddressAsString(networkType: NetworkType | NetworkId | string, index: number): string;
+  changeAddressAsString(
+    networkType: NetworkType | NetworkId | string,
+    index: number,
+  ): string;
   /**
    * Generate a single Receive Public Key derivation at a given index and return it as a string.
    */
@@ -6335,7 +6083,10 @@ export class PublicKeyGenerator {
   /**
    * Generate a single Receive Address derivation at a given index and return it as a string.
    */
-  receiveAddressAsString(networkType: NetworkType | NetworkId | string, index: number): string;
+  receiveAddressAsString(
+    networkType: NetworkType | NetworkId | string,
+    index: number,
+  ): string;
   /**
    * Generate a range of Receive Public Key derivations and return them as strings.
    */
@@ -6343,13 +6094,44 @@ export class PublicKeyGenerator {
   /**
    * Generate a range of Change Address derivations and return them as strings.
    */
-  changeAddressAsStrings(networkType: NetworkType | NetworkId | string, start: number, end: number): Array<string>;
+  changeAddressAsStrings(
+    networkType: NetworkType | NetworkId | string,
+    start: number,
+    end: number,
+  ): Array<string>;
   /**
    * Generate a range of Receive Address derivations and return them as strings.
    */
-  receiveAddressAsStrings(networkType: NetworkType | NetworkId | string, start: number, end: number): Array<string>;
-  static fromXPub(kpub: XPub | string, cosigner_index?: number | null): PublicKeyGenerator;
+  receiveAddressAsStrings(
+    networkType: NetworkType | NetworkId | string,
+    start: number,
+    end: number,
+  ): Array<string>;
+  static fromXPub(
+    kpub: XPub | string,
+    cosigner_index?: number | null,
+  ): PublicKeyGenerator;
   toString(): string;
+}
+/**
+ * The receipt-derived succinct witness items, hex-encoded, in the order the
+ * verifier consumes them (the journal is caller-owned and excluded).
+ */
+export class R0SuccinctWitnessParts {
+  private constructor();
+  /**
+   ** Return copy of self without private attributes.
+   */
+  toJSON(): Object;
+  /**
+   * Return stringified version of self.
+   */
+  toString(): string;
+  free(): void;
+  readonly controlIndex: HexString;
+  readonly controlDigests: HexString;
+  readonly seal: HexString;
+  readonly claim: HexString;
 }
 /**
  *
@@ -6380,13 +6162,13 @@ export class PublicKeyGenerator {
  * @category Node RPC
  */
 export class Resolver {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   /**
@@ -6412,7 +6194,10 @@ export class Resolver {
    * Fetches a public Kaspa wRPC endpoint for the given encoding and network identifier.
    * @see {@link Encoding}, {@link NetworkId}, {@link Node}
    */
-  getNode(encoding: Encoding, network_id: NetworkId | string): Promise<NodeDescriptor>;
+  getNode(
+    encoding: Encoding,
+    network_id: NetworkId | string,
+  ): Promise<NodeDescriptor>;
   /**
    * List of public Kaspa Resolver URLs.
    */
@@ -6505,13 +6290,13 @@ export class Resolver {
  * @category Node RPC
  */
 export class RpcClient {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   /**
@@ -6540,7 +6325,10 @@ export class RpcClient {
    * @throws `string` on an RPC error or a server-side error.
    */
   getMetrics(request?: IGetMetricsRequest | null): Promise<IGetMetricsResponse>;
-  static defaultPort(encoding: Encoding, network: NetworkType | NetworkId | string): number;
+  static defaultPort(
+    encoding: Encoding,
+    network: NetworkType | NetworkId | string,
+  ): number;
   /**
    * Set the resolver for the RPC client.
    * This setting will take effect on the next connection.
@@ -6566,7 +6354,9 @@ export class RpcClient {
    * @see {@link IGetSubnetworkRequest}, {@link IGetSubnetworkResponse}
    * @throws `string` on an RPC error, a server-side error or when supplying incorrect arguments.
    */
-  getSubnetwork(request: IGetSubnetworkRequest): Promise<IGetSubnetworkResponse>;
+  getSubnetwork(
+    request: IGetSubnetworkRequest,
+  ): Promise<IGetSubnetworkResponse>;
   /**
    * Set the network id for the RPC client.
    * This setting will take effect on the next connection.
@@ -6580,20 +6370,26 @@ export class RpcClient {
    * @see {@link IGetBlockCountRequest}, {@link IGetBlockCountResponse}
    * @throws `string` on an RPC error or a server-side error.
    */
-  getBlockCount(request?: IGetBlockCountRequest | null): Promise<IGetBlockCountResponse>;
+  getBlockCount(
+    request?: IGetBlockCountRequest | null,
+  ): Promise<IGetBlockCountResponse>;
   /**
    * Returns the total current coin supply of Kaspa network.
    * Returned information: Total coin supply.
    * @see {@link IGetCoinSupplyRequest}, {@link IGetCoinSupplyResponse}
    * @throws `string` on an RPC error or a server-side error.
    */
-  getCoinSupply(request?: IGetCoinSupplyRequest | null): Promise<IGetCoinSupplyResponse>;
+  getCoinSupply(
+    request?: IGetCoinSupplyRequest | null,
+  ): Promise<IGetCoinSupplyResponse>;
   /**
    * Retrieves current number of network connections
    * @see {@link IGetConnectionsRequest}, {@link IGetConnectionsResponse}
    * @throws `string` on an RPC error or a server-side error.
    */
-  getConnections(request?: IGetConnectionsRequest | null): Promise<IGetConnectionsResponse>;
+  getConnections(
+    request?: IGetConnectionsRequest | null,
+  ): Promise<IGetConnectionsResponse>;
   /**
    * Retrieves information about the Kaspa server.
    * Returned information: Version of the Kaspa server, protocol
@@ -6601,27 +6397,35 @@ export class RpcClient {
    * @see {@link IGetServerInfoRequest}, {@link IGetServerInfoResponse}
    * @throws `string` on an RPC error or a server-side error.
    */
-  getServerInfo(request?: IGetServerInfoRequest | null): Promise<IGetServerInfoResponse>;
+  getServerInfo(
+    request?: IGetServerInfoRequest | null,
+  ): Promise<IGetServerInfoResponse>;
   /**
    * Obtains basic information about the synchronization status of the Kaspa node.
    * Returned information: Syncing status.
    * @see {@link IGetSyncStatusRequest}, {@link IGetSyncStatusResponse}
    * @throws `string` on an RPC error or a server-side error.
    */
-  getSyncStatus(request?: IGetSyncStatusRequest | null): Promise<IGetSyncStatusResponse>;
+  getSyncStatus(
+    request?: IGetSyncStatusRequest | null,
+  ): Promise<IGetSyncStatusResponse>;
   /**
    * Feerate estimates
    * @see {@link IGetFeeEstimateRequest}, {@link IGetFeeEstimateResponse}
    * @throws `string` on an RPC error or a server-side error.
    */
-  getFeeEstimate(request?: IGetFeeEstimateRequest | null): Promise<IGetFeeEstimateResponse>;
+  getFeeEstimate(
+    request?: IGetFeeEstimateRequest | null,
+  ): Promise<IGetFeeEstimateResponse>;
   /**
    * Retrieves a specific mempool entry by transaction ID.
    * Returned information: Mempool entry information.
    * @see {@link IGetMempoolEntryRequest}, {@link IGetMempoolEntryResponse}
    * @throws `string` on an RPC error, a server-side error or when supplying incorrect arguments.
    */
-  getMempoolEntry(request: IGetMempoolEntryRequest): Promise<IGetMempoolEntryResponse>;
+  getMempoolEntry(
+    request: IGetMempoolEntryRequest,
+  ): Promise<IGetMempoolEntryResponse>;
   /**
    * Provides information about the Directed Acyclic Graph (DAG)
    * structure of the Kaspa BlockDAG.
@@ -6632,14 +6436,18 @@ export class RpcClient {
    * @see {@link IGetBlockDagInfoRequest}, {@link IGetBlockDagInfoResponse}
    * @throws `string` on an RPC error or a server-side error.
    */
-  getBlockDagInfo(request?: IGetBlockDagInfoRequest | null): Promise<IGetBlockDagInfoResponse>;
+  getBlockDagInfo(
+    request?: IGetBlockDagInfoRequest | null,
+  ): Promise<IGetBlockDagInfoResponse>;
   /**
    * Generates a new block template for mining.
    * Returned information: Block template information.
    * @see {@link IGetBlockTemplateRequest}, {@link IGetBlockTemplateResponse}
    * @throws `string` on an RPC error, a server-side error or when supplying incorrect arguments.
    */
-  getBlockTemplate(request: IGetBlockTemplateRequest): Promise<IGetBlockTemplateResponse>;
+  getBlockTemplate(
+    request: IGetBlockTemplateRequest,
+  ): Promise<IGetBlockTemplateResponse>;
   /**
    * Provides a list of addresses of known peers in the Kaspa
    * network that the node can potentially connect to.
@@ -6647,28 +6455,36 @@ export class RpcClient {
    * @see {@link IGetPeerAddressesRequest}, {@link IGetPeerAddressesResponse}
    * @throws `string` on an RPC error or a server-side error.
    */
-  getPeerAddresses(request?: IGetPeerAddressesRequest | null): Promise<IGetPeerAddressesResponse>;
+  getPeerAddresses(
+    request?: IGetPeerAddressesRequest | null,
+  ): Promise<IGetPeerAddressesResponse>;
   /**
    * Submits a transaction to the Kaspa network.
    * Returned information: Submitted Transaction Id.
    * @see {@link ISubmitTransactionRequest}, {@link ISubmitTransactionResponse}
    * @throws `string` on an RPC error, a server-side error or when supplying incorrect arguments.
    */
-  submitTransaction(request: ISubmitTransactionRequest): Promise<ISubmitTransactionResponse>;
+  submitTransaction(
+    request: ISubmitTransactionRequest,
+  ): Promise<ISubmitTransactionResponse>;
   /**
    * Retrieves the current network configuration.
    * Returned information: Current network configuration.
    * @see {@link IGetCurrentNetworkRequest}, {@link IGetCurrentNetworkResponse}
    * @throws `string` on an RPC error or a server-side error.
    */
-  getCurrentNetwork(request?: IGetCurrentNetworkRequest | null): Promise<IGetCurrentNetworkResponse>;
+  getCurrentNetwork(
+    request?: IGetCurrentNetworkRequest | null,
+  ): Promise<IGetCurrentNetworkResponse>;
   /**
    * Retrieves mempool entries from the Kaspa node's mempool.
    * Returned information: List of mempool entries.
    * @see {@link IGetMempoolEntriesRequest}, {@link IGetMempoolEntriesResponse}
    * @throws `string` on an RPC error, a server-side error or when supplying incorrect arguments.
    */
-  getMempoolEntries(request: IGetMempoolEntriesRequest): Promise<IGetMempoolEntriesResponse>;
+  getMempoolEntries(
+    request: IGetMempoolEntriesRequest,
+  ): Promise<IGetMempoolEntriesResponse>;
   /**
    * Returns the blue score of the current sink block, indicating
    * the total amount of work that has been done on the main chain
@@ -6677,7 +6493,9 @@ export class RpcClient {
    * @see {@link IGetSinkBlueScoreRequest}, {@link IGetSinkBlueScoreResponse}
    * @throws `string` on an RPC error or a server-side error.
    */
-  getSinkBlueScore(request?: IGetSinkBlueScoreRequest | null): Promise<IGetSinkBlueScoreResponse>;
+  getSinkBlueScore(
+    request?: IGetSinkBlueScoreRequest | null,
+  ): Promise<IGetSinkBlueScoreResponse>;
   /**
    * Manage subscription for a virtual DAA score changed notification event.
    * Virtual DAA score changed notification event is produced when the virtual
@@ -6697,7 +6515,9 @@ export class RpcClient {
    * @see {@link IGetBlockRewardInfoRequest}, {@link IGetBlockRewardInfoResponse}
    * @throws `string` on an RPC error, a server-side error or when supplying incorrect arguments.
    */
-  getBlockRewardInfo(request: IGetBlockRewardInfoRequest): Promise<IGetBlockRewardInfoResponse>;
+  getBlockRewardInfo(
+    request: IGetBlockRewardInfoRequest,
+  ): Promise<IGetBlockRewardInfoResponse>;
   /**
    *
    * Unregister an event listener.
@@ -6707,7 +6527,10 @@ export class RpcClient {
    *
    * @see {@link RpcClient.addEventListener}
    */
-  removeEventListener(event: RpcEventType | string, callback?: RpcEventCallback | null): void;
+  removeEventListener(
+    event: RpcEventType | string,
+    callback?: RpcEventCallback | null,
+  ): void;
   /**
    * Manage subscription for a block added notification event.
    * Block added notification event is produced when a new
@@ -6726,7 +6549,9 @@ export class RpcClient {
    * @see {@link IGetBalanceByAddressRequest}, {@link IGetBalanceByAddressResponse}
    * @throws `string` on an RPC error, a server-side error or when supplying incorrect arguments.
    */
-  getBalanceByAddress(request: IGetBalanceByAddressRequest): Promise<IGetBalanceByAddressResponse>;
+  getBalanceByAddress(
+    request: IGetBalanceByAddressRequest,
+  ): Promise<IGetBalanceByAddressResponse>;
   /**
    * Retrieves unspent transaction outputs (UTXOs) associated with
    * specific addresses.
@@ -6734,7 +6559,9 @@ export class RpcClient {
    * @see {@link IGetUtxosByAddressesRequest}, {@link IGetUtxosByAddressesResponse}
    * @throws `string` on an RPC error, a server-side error or when supplying incorrect arguments.
    */
-  getUtxosByAddresses(request: IGetUtxosByAddressesRequest | Address[] | string[]): Promise<IGetUtxosByAddressesResponse>;
+  getUtxosByAddresses(
+    request: IGetUtxosByAddressesRequest | Address[] | string[],
+  ): Promise<IGetUtxosByAddressesResponse>;
   /**
    * Retrieves information about the peers connected to the Kaspa node.
    * Returned information: Peer ID, IP address and port, connection
@@ -6742,20 +6569,26 @@ export class RpcClient {
    * @see {@link IGetConnectedPeerInfoRequest}, {@link IGetConnectedPeerInfoResponse}
    * @throws `string` on an RPC error or a server-side error.
    */
-  getConnectedPeerInfo(request?: IGetConnectedPeerInfoRequest | null): Promise<IGetConnectedPeerInfoResponse>;
+  getConnectedPeerInfo(
+    request?: IGetConnectedPeerInfoRequest | null,
+  ): Promise<IGetConnectedPeerInfoResponse>;
   /**
    * Checks if block is blue or not.
    * Returned information: Block blueness.
    * @see {@link IGetCurrentBlockColorRequest}, {@link IGetCurrentBlockColorResponse}
    * @throws `string` on an RPC error, a server-side error or when supplying incorrect arguments.
    */
-  getCurrentBlockColor(request: IGetCurrentBlockColorRequest): Promise<IGetCurrentBlockColorResponse>;
+  getCurrentBlockColor(
+    request: IGetCurrentBlockColorRequest,
+  ): Promise<IGetCurrentBlockColorResponse>;
   /**
    * Get UTXO Return Addresses.
    * @see {@link IGetUtxoReturnAddressRequest}, {@link IGetUtxoReturnAddressResponse}
    * @throws `string` on an RPC error, a server-side error or when supplying incorrect arguments.
    */
-  getUtxoReturnAddress(request: IGetUtxoReturnAddressRequest): Promise<IGetUtxoReturnAddressResponse>;
+  getUtxoReturnAddress(
+    request: IGetUtxoReturnAddressRequest,
+  ): Promise<IGetUtxoReturnAddressResponse>;
   /**
    * Subscribe for a UTXOs changed notification event.
    * UTXOs changed notification event is produced when the set
@@ -6771,14 +6604,18 @@ export class RpcClient {
    * @see {@link IGetBalancesByAddressesRequest}, {@link IGetBalancesByAddressesResponse}
    * @throws `string` on an RPC error, a server-side error or when supplying incorrect arguments.
    */
-  getBalancesByAddresses(request: IGetBalancesByAddressesRequest | Address[] | string[]): Promise<IGetBalancesByAddressesResponse>;
+  getBalancesByAddresses(
+    request: IGetBalancesByAddressesRequest | Address[] | string[],
+  ): Promise<IGetBalancesByAddressesResponse>;
   /**
    * Resolves a finality conflict in the Kaspa BlockDAG.
    * Returned information: None.
    * @see {@link IResolveFinalityConflictRequest}, {@link IResolveFinalityConflictResponse}
    * @throws `string` on an RPC error, a server-side error or when supplying incorrect arguments.
    */
-  resolveFinalityConflict(request: IResolveFinalityConflictRequest): Promise<IResolveFinalityConflictResponse>;
+  resolveFinalityConflict(
+    request: IResolveFinalityConflictRequest,
+  ): Promise<IResolveFinalityConflictResponse>;
   /**
    * Unsubscribe from UTXOs changed notification event
    * for a specific set of addresses.
@@ -6801,7 +6638,9 @@ export class RpcClient {
    * @see {@link IGetVirtualChainFromBlockRequest}, {@link IGetVirtualChainFromBlockResponse}
    * @throws `string` on an RPC error, a server-side error or when supplying incorrect arguments.
    */
-  getVirtualChainFromBlock(request: IGetVirtualChainFromBlockRequest): Promise<IGetVirtualChainFromBlockResponse>;
+  getVirtualChainFromBlock(
+    request: IGetVirtualChainFromBlockRequest,
+  ): Promise<IGetVirtualChainFromBlockResponse>;
   /**
    * Manage subscription for a new block template notification event.
    * New block template notification event is produced when a new block
@@ -6813,7 +6652,9 @@ export class RpcClient {
    * @see {@link IGetFeeEstimateExperimentalRequest}, {@link IGetFeeEstimateExperimentalResponse}
    * @throws `string` on an RPC error, a server-side error or when supplying incorrect arguments.
    */
-  getFeeEstimateExperimental(request: IGetFeeEstimateExperimentalRequest): Promise<IGetFeeEstimateExperimentalResponse>;
+  getFeeEstimateExperimental(
+    request: IGetFeeEstimateExperimentalRequest,
+  ): Promise<IGetFeeEstimateExperimentalResponse>;
   unsubscribeFinalityConflict(): Promise<void>;
   /**
    * Submits an RBF transaction to the Kaspa network.
@@ -6821,7 +6662,9 @@ export class RpcClient {
    * @see {@link ISubmitTransactionReplacementRequest}, {@link ISubmitTransactionReplacementResponse}
    * @throws `string` on an RPC error, a server-side error or when supplying incorrect arguments.
    */
-  submitTransactionReplacement(request: ISubmitTransactionReplacementRequest): Promise<ISubmitTransactionReplacementResponse>;
+  submitTransactionReplacement(
+    request: ISubmitTransactionReplacementRequest,
+  ): Promise<ISubmitTransactionReplacementResponse>;
   unsubscribeNewBlockTemplate(): Promise<void>;
   /**
    * Retrieves the virtual chain corresponding to a specified block hash.
@@ -6830,13 +6673,17 @@ export class RpcClient {
    * @see {@link IGetVirtualChainFromBlockV2Request}, {@link IGetVirtualChainFromBlockV2Response}
    * @throws `string` on an RPC error, a server-side error or when supplying incorrect arguments.
    */
-  getVirtualChainFromBlockV2(request: IGetVirtualChainFromBlockV2Request): Promise<IGetVirtualChainFromBlockV2Response>;
+  getVirtualChainFromBlockV2(
+    request: IGetVirtualChainFromBlockV2Request,
+  ): Promise<IGetVirtualChainFromBlockV2Response>;
   /**
    * Manage subscription for a virtual chain changed notification event.
    * Virtual chain changed notification event is produced when the virtual
    * chain changes in the Kaspa BlockDAG.
    */
-  subscribeVirtualChainChanged(include_accepted_transaction_ids: boolean): Promise<void>;
+  subscribeVirtualChainChanged(
+    include_accepted_transaction_ids: boolean,
+  ): Promise<void>;
   /**
    * Retrieves the estimated DAA (Difficulty Adjustment Algorithm)
    * score timestamp estimate.
@@ -6844,14 +6691,18 @@ export class RpcClient {
    * @see {@link IGetDaaScoreTimestampEstimateRequest}, {@link IGetDaaScoreTimestampEstimateResponse}
    * @throws `string` on an RPC error, a server-side error or when supplying incorrect arguments.
    */
-  getDaaScoreTimestampEstimate(request: IGetDaaScoreTimestampEstimateRequest): Promise<IGetDaaScoreTimestampEstimateResponse>;
+  getDaaScoreTimestampEstimate(
+    request: IGetDaaScoreTimestampEstimateRequest,
+  ): Promise<IGetDaaScoreTimestampEstimateResponse>;
   /**
    * Retrieves mempool entries associated with specific addresses.
    * Returned information: List of mempool entries.
    * @see {@link IGetMempoolEntriesByAddressesRequest}, {@link IGetMempoolEntriesByAddressesResponse}
    * @throws `string` on an RPC error, a server-side error or when supplying incorrect arguments.
    */
-  getMempoolEntriesByAddresses(request: IGetMempoolEntriesByAddressesRequest): Promise<IGetMempoolEntriesByAddressesResponse>;
+  getMempoolEntriesByAddresses(
+    request: IGetMempoolEntriesByAddressesRequest,
+  ): Promise<IGetMempoolEntriesByAddressesResponse>;
   /**
    * Manage subscription for a sink blue score changed notification event.
    * Sink blue score changed notification event is produced when the blue
@@ -6863,14 +6714,18 @@ export class RpcClient {
    * Virtual chain changed notification event is produced when the virtual
    * chain changes in the Kaspa BlockDAG.
    */
-  unsubscribeVirtualChainChanged(include_accepted_transaction_ids: boolean): Promise<void>;
+  unsubscribeVirtualChainChanged(
+    include_accepted_transaction_ids: boolean,
+  ): Promise<void>;
   /**
    * Estimates the network's current hash rate in hashes per second.
    * Returned information: Estimated network hashes per second.
    * @see {@link IEstimateNetworkHashesPerSecondRequest}, {@link IEstimateNetworkHashesPerSecondResponse}
    * @throws `string` on an RPC error, a server-side error or when supplying incorrect arguments.
    */
-  estimateNetworkHashesPerSecond(request: IEstimateNetworkHashesPerSecondRequest): Promise<IEstimateNetworkHashesPerSecondResponse>;
+  estimateNetworkHashesPerSecond(
+    request: IEstimateNetworkHashesPerSecondRequest,
+  ): Promise<IEstimateNetworkHashesPerSecondResponse>;
   unsubscribeSinkBlueScoreChanged(): Promise<void>;
   /**
    * Manage subscription for a finality conflict resolved notification event.
@@ -7016,20 +6871,23 @@ export class RpcClient {
  * @category Consensus
  */
 export class ScriptBuilder {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   /**
    * Creates a new ScriptBuilder over an existing script.
    * Supplied script can be represented as an `Uint8Array` or a `HexString`.
    */
-  static fromScript(script: HexString | Uint8Array, options?: ScriptBuilderOptions | null): ScriptBuilder;
+  static fromScript(
+    script: HexString | Uint8Array,
+    options?: ScriptBuilderOptions | null,
+  ): ScriptBuilder;
   addSequence(sequence: bigint): ScriptBuilder;
   /**
    * Get script bytes represented by a hex string.
@@ -7046,7 +6904,9 @@ export class ScriptBuilder {
   /**
    * Generates a signature script that fits a pay-to-script-hash script.
    */
-  encodePayToScriptHashSignatureScript(signature: HexString | Uint8Array): HexString;
+  encodePayToScriptHashSignatureScript(
+    signature: HexString | Uint8Array,
+  ): HexString;
   constructor(options?: ScriptBuilderOptions | null);
   /**
    * Drains (empties) the script builder, returning the
@@ -7084,13 +6944,13 @@ export class ScriptBuilder {
  * @category Consensus
  */
 export class ScriptPublicKey {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   constructor(version: number, script: any);
@@ -7115,13 +6975,13 @@ export class SigHashType {
  */
 export class Storage {
   private constructor();
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   readonly filename: string;
@@ -7140,13 +7000,13 @@ export class StreamTransformOptions {
  * @category Consensus
  */
 export class Transaction {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   constructor(js_value: ITransaction | Transaction);
@@ -7184,7 +7044,9 @@ export class Transaction {
    * Deserialize the {@link Transaction} Object from a "Safe" JSON schema where all `bigint` values are represented as `string`.
    */
   static deserializeFromSafeJSON(json: string): Transaction;
-  populateGenesisCovenants(groups: (IGenesisCovenantGroup | GenesisCovenantGroup)[]): void;
+  populateGenesisCovenants(
+    groups: (IGenesisCovenantGroup | GenesisCovenantGroup)[],
+  ): void;
   /**
    * Recompute and finalize the tx id based on updated tx fields
    */
@@ -7221,13 +7083,13 @@ export class Transaction {
  * @category Consensus
  */
 export class TransactionInput {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   constructor(value: ITransactionInput | TransactionInput);
@@ -7248,13 +7110,13 @@ export class TransactionInput {
  * @category Consensus
  */
 export class TransactionOutpoint {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   constructor(transaction_id: Hash, index: number);
@@ -7267,19 +7129,23 @@ export class TransactionOutpoint {
  * @category Consensus
  */
 export class TransactionOutput {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   /**
    * TransactionOutput constructor
    */
-  constructor(value: bigint, script_public_key: ScriptPublicKey, covenant?: CovenantBinding | null);
+  constructor(
+    value: bigint,
+    script_public_key: ScriptPublicKey,
+    covenant?: CovenantBinding | null,
+  );
   get covenant(): CovenantBinding | undefined;
   set covenant(value: CovenantBinding);
   scriptPublicKey: ScriptPublicKey;
@@ -7290,13 +7156,13 @@ export class TransactionOutput {
  */
 export class TransactionRecord {
   private constructor();
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   /**
@@ -7330,13 +7196,13 @@ export class TransactionRecord {
 }
 export class TransactionRecordNotification {
   private constructor();
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   type: string;
@@ -7369,13 +7235,13 @@ export class TransactionSigningHashECDSA {
  */
 export class TransactionUtxoEntry {
   private constructor();
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   amount: bigint;
@@ -7449,13 +7315,13 @@ export class UserInfoOptions {
  * @category Wallet SDK
  */
 export class UtxoContext {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   /**
@@ -7477,7 +7343,10 @@ export class UtxoContext {
   /**
    * Performs a scan of the given addresses and registers them in the context for event notifications.
    */
-  trackAddresses(addresses: (Address | string)[], optional_current_daa_score?: bigint | null): Promise<void>;
+  trackAddresses(
+    addresses: (Address | string)[],
+    optional_current_daa_score?: bigint | null,
+  ): Promise<void>;
   /**
    * Unregister a list of addresses from the context. This will stop tracking of these addresses.
    */
@@ -7518,13 +7387,13 @@ export class UtxoContext {
  * @category Wallet SDK
  */
 export class UtxoEntries {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   /**
@@ -7547,13 +7416,13 @@ export class UtxoEntries {
  */
 export class UtxoEntry {
   private constructor();
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   toString(): string;
@@ -7574,13 +7443,13 @@ export class UtxoEntry {
  */
 export class UtxoEntryReference {
   private constructor();
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   toString(): string;
@@ -7607,17 +7476,24 @@ export class UtxoEntryReference {
  * @category Wallet SDK
  */
 export class UtxoProcessor {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   setNetworkId(network_id: NetworkId | string): void;
-  removeEventListener(event: UtxoProcessorEventType | UtxoProcessorEventType[] | string | string[], callback?: UtxoProcessorNotificationCallback | null): void;
+  removeEventListener(
+    event:
+      | UtxoProcessorEventType
+      | UtxoProcessorEventType[]
+      | string
+      | string[],
+    callback?: UtxoProcessorNotificationCallback | null,
+  ): void;
   /**
    *
    * Set the user transaction maturity period DAA score for a given network.
@@ -7629,7 +7505,10 @@ export class UtxoProcessor {
    *
    * @category Wallet SDK
    */
-  static setUserTransactionMaturityDAA(network_id: NetworkId | string, value: bigint): void;
+  static setUserTransactionMaturityDAA(
+    network_id: NetworkId | string,
+    value: bigint,
+  ): void;
   /**
    *
    * Set the coinbase transaction maturity period DAA score for a given network.
@@ -7641,7 +7520,10 @@ export class UtxoProcessor {
    *
    * @category Wallet SDK
    */
-  static setCoinbaseTransactionMaturityDAA(network_id: NetworkId | string, value: bigint): void;
+  static setCoinbaseTransactionMaturityDAA(
+    network_id: NetworkId | string,
+    value: bigint,
+  ): void;
   /**
    * UtxoProcessor constructor.
    *
@@ -7698,15 +7580,29 @@ export class UtxoProcessor {
  * @category Wallet API
  */
 export class Wallet {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
+  disconnect(): Promise<void>;
+  constructor(config: IWalletConfig);
+  setNetworkId(network_id: NetworkId | string): void;
+  removeEventListener(
+    event: WalletEventType | WalletEventType[] | string | string[],
+    callback?: WalletNotificationCallback | null,
+  ): void;
+  stop(): Promise<void>;
+  start(): Promise<void>;
+  /**
+   * Check if a wallet with a given name exists.
+   */
+  exists(name?: string | null): Promise<boolean>;
+  connect(args?: IConnectOptions | undefined | null): Promise<void>;
   /**
    * @see {@link IGetStatusRequest} {@link IGetStatusResponse}
    * @throws `string` in case of an error.
@@ -7756,157 +7652,219 @@ export class Wallet {
    * @see {@link IRetainContextRequest} {@link IRetainContextResponse}
    * @throws `string` in case of an error.
    */
-  retainContext(request: IRetainContextRequest): Promise<IRetainContextResponse>;
+  retainContext(
+    request: IRetainContextRequest,
+  ): Promise<IRetainContextResponse>;
   /**
    * @see {@link IAccountsCreateRequest} {@link IAccountsCreateResponse}
    * @throws `string` in case of an error.
    */
-  accountsCreate(request: IAccountsCreateRequest): Promise<IAccountsCreateResponse>;
+  accountsCreate(
+    request: IAccountsCreateRequest,
+  ): Promise<IAccountsCreateResponse>;
   /**
    * @see {@link IAccountsImportRequest} {@link IAccountsImportResponse}
    * @throws `string` in case of an error.
    */
-  accountsImport(request: IAccountsImportRequest): Promise<IAccountsImportResponse>;
+  accountsImport(
+    request: IAccountsImportRequest,
+  ): Promise<IAccountsImportResponse>;
   /**
    * @see {@link IAccountsRenameRequest} {@link IAccountsRenameResponse}
    * @throws `string` in case of an error.
    */
-  accountsRename(request: IAccountsRenameRequest): Promise<IAccountsRenameResponse>;
+  accountsRename(
+    request: IAccountsRenameRequest,
+  ): Promise<IAccountsRenameResponse>;
   /**
    * @see {@link IPrvKeyDataGetRequest} {@link IPrvKeyDataGetResponse}
    * @throws `string` in case of an error.
    */
-  prvKeyDataGet(request: IPrvKeyDataGetRequest): Promise<IPrvKeyDataGetResponse>;
+  prvKeyDataGet(
+    request: IPrvKeyDataGetRequest,
+  ): Promise<IPrvKeyDataGetResponse>;
   /**
    * @see {@link IWalletEnumerateRequest} {@link IWalletEnumerateResponse}
    * @throws `string` in case of an error.
    */
-  walletEnumerate(request: IWalletEnumerateRequest): Promise<IWalletEnumerateResponse>;
+  walletEnumerate(
+    request: IWalletEnumerateRequest,
+  ): Promise<IWalletEnumerateResponse>;
   /**
    * @see {@link IAccountsActivateRequest} {@link IAccountsActivateResponse}
    * @throws `string` in case of an error.
    */
-  accountsActivate(request: IAccountsActivateRequest): Promise<IAccountsActivateResponse>;
+  accountsActivate(
+    request: IAccountsActivateRequest,
+  ): Promise<IAccountsActivateResponse>;
   /**
    * @see {@link IAccountsEstimateRequest} {@link IAccountsEstimateResponse}
    * @throws `string` in case of an error.
    */
-  accountsEstimate(request: IAccountsEstimateRequest): Promise<IAccountsEstimateResponse>;
+  accountsEstimate(
+    request: IAccountsEstimateRequest,
+  ): Promise<IAccountsEstimateResponse>;
   /**
    * @see {@link IAccountsTransferRequest} {@link IAccountsTransferResponse}
    * @throws `string` in case of an error.
    */
-  accountsTransfer(request: IAccountsTransferRequest): Promise<IAccountsTransferResponse>;
+  accountsTransfer(
+    request: IAccountsTransferRequest,
+  ): Promise<IAccountsTransferResponse>;
   /**
    * @see {@link IFeeRateEstimateRequest} {@link IFeeRateEstimateResponse}
    * @throws `string` in case of an error.
    */
-  feeRateEstimate(request: IFeeRateEstimateRequest): Promise<IFeeRateEstimateResponse>;
+  feeRateEstimate(
+    request: IFeeRateEstimateRequest,
+  ): Promise<IFeeRateEstimateResponse>;
   /**
    * @see {@link IAccountsDiscoveryRequest} {@link IAccountsDiscoveryResponse}
    * @throws `string` in case of an error.
    */
-  accountsDiscovery(request: IAccountsDiscoveryRequest): Promise<IAccountsDiscoveryResponse>;
+  accountsDiscovery(
+    request: IAccountsDiscoveryRequest,
+  ): Promise<IAccountsDiscoveryResponse>;
   /**
    * @see {@link IAccountsEnumerateRequest} {@link IAccountsEnumerateResponse}
    * @throws `string` in case of an error.
    */
-  accountsEnumerate(request: IAccountsEnumerateRequest): Promise<IAccountsEnumerateResponse>;
+  accountsEnumerate(
+    request: IAccountsEnumerateRequest,
+  ): Promise<IAccountsEnumerateResponse>;
   /**
    * @see {@link IAccountsGetUtxosRequest} {@link IAccountsGetUtxosResponse}
    * @throws `string` in case of an error.
    */
-  accountsGetUtxos(request: IAccountsGetUtxosRequest): Promise<IAccountsGetUtxosResponse>;
+  accountsGetUtxos(
+    request: IAccountsGetUtxosRequest,
+  ): Promise<IAccountsGetUtxosResponse>;
   /**
    * @see {@link IAccountsPskbSendRequest} {@link IAccountsPskbSendResponse}
    * @throws `string` in case of an error.
    */
-  accountsPskbSend(request: IAccountsPskbSendRequest): Promise<IAccountsPskbSendResponse>;
+  accountsPskbSend(
+    request: IAccountsPskbSendRequest,
+  ): Promise<IAccountsPskbSendResponse>;
   /**
    * @see {@link IAccountsPskbSignRequest} {@link IAccountsPskbSignResponse}
    * @throws `string` in case of an error.
    */
-  accountsPskbSign(request: IAccountsPskbSignRequest): Promise<IAccountsPskbSignResponse>;
+  accountsPskbSign(
+    request: IAccountsPskbSignRequest,
+  ): Promise<IAccountsPskbSignResponse>;
   /**
    * @see {@link IAccountsDeactivateRequest} {@link IAccountsDeactivateResponse}
    * @throws `string` in case of an error.
    */
-  accountsDeactivate(request: IAccountsDeactivateRequest): Promise<IAccountsDeactivateResponse>;
+  accountsDeactivate(
+    request: IAccountsDeactivateRequest,
+  ): Promise<IAccountsDeactivateResponse>;
   /**
    * @see {@link IPrvKeyDataCreateRequest} {@link IPrvKeyDataCreateResponse}
    * @throws `string` in case of an error.
    */
-  prvKeyDataCreate(request: IPrvKeyDataCreateRequest): Promise<IPrvKeyDataCreateResponse>;
+  prvKeyDataCreate(
+    request: IPrvKeyDataCreateRequest,
+  ): Promise<IPrvKeyDataCreateResponse>;
   /**
    * @see {@link IPrvKeyDataRemoveRequest} {@link IPrvKeyDataRemoveResponse}
    * @throws `string` in case of an error.
    */
-  prvKeyDataRemove(request: IPrvKeyDataRemoveRequest): Promise<IPrvKeyDataRemoveResponse>;
+  prvKeyDataRemove(
+    request: IPrvKeyDataRemoveRequest,
+  ): Promise<IPrvKeyDataRemoveResponse>;
   /**
    * @see {@link IWalletChangeSecretRequest} {@link IWalletChangeSecretResponse}
    * @throws `string` in case of an error.
    */
-  walletChangeSecret(request: IWalletChangeSecretRequest): Promise<IWalletChangeSecretResponse>;
+  walletChangeSecret(
+    request: IWalletChangeSecretRequest,
+  ): Promise<IWalletChangeSecretResponse>;
   /**
    * @see {@link ITransactionsDataGetRequest} {@link ITransactionsDataGetResponse}
    * @throws `string` in case of an error.
    */
-  transactionsDataGet(request: ITransactionsDataGetRequest): Promise<ITransactionsDataGetResponse>;
+  transactionsDataGet(
+    request: ITransactionsDataGetRequest,
+  ): Promise<ITransactionsDataGetResponse>;
   /**
    * @see {@link IAccountsCommitRevealRequest} {@link IAccountsCommitRevealResponse}
    * @throws `string` in case of an error.
    */
-  accountsCommitReveal(request: IAccountsCommitRevealRequest): Promise<IAccountsCommitRevealResponse>;
+  accountsCommitReveal(
+    request: IAccountsCommitRevealRequest,
+  ): Promise<IAccountsCommitRevealResponse>;
   /**
    * @see {@link IAddressBookEnumerateRequest} {@link IAddressBookEnumerateResponse}
    * @throws `string` in case of an error.
    */
-  addressBookEnumerate(request: IAddressBookEnumerateRequest): Promise<IAddressBookEnumerateResponse>;
+  addressBookEnumerate(
+    request: IAddressBookEnumerateRequest,
+  ): Promise<IAddressBookEnumerateResponse>;
   /**
    * @see {@link IFeeRatePollerEnableRequest} {@link IFeeRatePollerEnableResponse}
    * @throws `string` in case of an error.
    */
-  feeRatePollerEnable(request: IFeeRatePollerEnableRequest): Promise<IFeeRatePollerEnableResponse>;
+  feeRatePollerEnable(
+    request: IFeeRatePollerEnableRequest,
+  ): Promise<IFeeRatePollerEnableResponse>;
   /**
    * @see {@link IPrvKeyDataEnumerateRequest} {@link IPrvKeyDataEnumerateResponse}
    * @throws `string` in case of an error.
    */
-  prvKeyDataEnumerate(request: IPrvKeyDataEnumerateRequest): Promise<IPrvKeyDataEnumerateResponse>;
+  prvKeyDataEnumerate(
+    request: IPrvKeyDataEnumerateRequest,
+  ): Promise<IPrvKeyDataEnumerateResponse>;
   /**
    * @see {@link IAccountsEnsureDefaultRequest} {@link IAccountsEnsureDefaultResponse}
    * @throws `string` in case of an error.
    */
-  accountsEnsureDefault(request: IAccountsEnsureDefaultRequest): Promise<IAccountsEnsureDefaultResponse>;
+  accountsEnsureDefault(
+    request: IAccountsEnsureDefaultRequest,
+  ): Promise<IAccountsEnsureDefaultResponse>;
   /**
    * @see {@link IAccountsPskbBroadcastRequest} {@link IAccountsPskbBroadcastResponse}
    * @throws `string` in case of an error.
    */
-  accountsPskbBroadcast(request: IAccountsPskbBroadcastRequest): Promise<IAccountsPskbBroadcastResponse>;
+  accountsPskbBroadcast(
+    request: IAccountsPskbBroadcastRequest,
+  ): Promise<IAccountsPskbBroadcastResponse>;
   /**
    * @see {@link IFeeRatePollerDisableRequest} {@link IFeeRatePollerDisableResponse}
    * @throws `string` in case of an error.
    */
-  feeRatePollerDisable(request: IFeeRatePollerDisableRequest): Promise<IFeeRatePollerDisableResponse>;
+  feeRatePollerDisable(
+    request: IFeeRatePollerDisableRequest,
+  ): Promise<IFeeRatePollerDisableResponse>;
   /**
    * @see {@link ITransactionsReplaceNoteRequest} {@link ITransactionsReplaceNoteResponse}
    * @throws `string` in case of an error.
    */
-  transactionsReplaceNote(request: ITransactionsReplaceNoteRequest): Promise<ITransactionsReplaceNoteResponse>;
+  transactionsReplaceNote(
+    request: ITransactionsReplaceNoteRequest,
+  ): Promise<ITransactionsReplaceNoteResponse>;
   /**
    * @see {@link IAccountsCreateNewAddressRequest} {@link IAccountsCreateNewAddressResponse}
    * @throws `string` in case of an error.
    */
-  accountsCreateNewAddress(request: IAccountsCreateNewAddressRequest): Promise<IAccountsCreateNewAddressResponse>;
+  accountsCreateNewAddress(
+    request: IAccountsCreateNewAddressRequest,
+  ): Promise<IAccountsCreateNewAddressResponse>;
   /**
    * @see {@link IAccountsCommitRevealManualRequest} {@link IAccountsCommitRevealManualResponse}
    * @throws `string` in case of an error.
    */
-  accountsCommitRevealManual(request: IAccountsCommitRevealManualRequest): Promise<IAccountsCommitRevealManualResponse>;
+  accountsCommitRevealManual(
+    request: IAccountsCommitRevealManualRequest,
+  ): Promise<IAccountsCommitRevealManualResponse>;
   /**
    * @see {@link ITransactionsReplaceMetadataRequest} {@link ITransactionsReplaceMetadataResponse}
    * @throws `string` in case of an error.
    */
-  transactionsReplaceMetadata(request: ITransactionsReplaceMetadataRequest): Promise<ITransactionsReplaceMetadataResponse>;
+  transactionsReplaceMetadata(
+    request: ITransactionsReplaceMetadataRequest,
+  ): Promise<ITransactionsReplaceMetadataResponse>;
   /**
    * Ping backend
    * @see {@link IBatchRequest} {@link IBatchResponse}
@@ -7918,17 +7876,6 @@ export class Wallet {
    * @throws `string` in case of an error.
    */
   flush(request: IFlushRequest): Promise<IFlushResponse>;
-  disconnect(): Promise<void>;
-  constructor(config: IWalletConfig);
-  setNetworkId(network_id: NetworkId | string): void;
-  removeEventListener(event: WalletEventType | WalletEventType[] | string | string[], callback?: WalletNotificationCallback | null): void;
-  stop(): Promise<void>;
-  start(): Promise<void>;
-  /**
-   * Check if a wallet with a given name exists.
-   */
-  exists(name?: string | null): Promise<boolean>;
-  connect(args?: IConnectOptions | undefined | null): Promise<void>;
   readonly descriptor: WalletDescriptor | undefined;
   readonly rpc: RpcClient;
   /**
@@ -7947,13 +7894,13 @@ export class Wallet {
  */
 export class WalletDescriptor {
   private constructor();
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   get title(): string | undefined;
@@ -7962,7 +7909,11 @@ export class WalletDescriptor {
 }
 export class WasiOptions {
   free(): void;
-  constructor(args: any[] | null | undefined, env: object | null | undefined, preopens: object);
+  constructor(
+    args: any[] | null | undefined,
+    env: object | null | undefined,
+    preopens: object,
+  );
   static new(preopens: object): WasiOptions;
   preopens: object;
   get env(): object | undefined;
@@ -7972,7 +7923,11 @@ export class WasiOptions {
 }
 export class WriteFileSyncOptions {
   free(): void;
-  constructor(encoding?: string | null, flag?: string | null, mode?: number | null);
+  constructor(
+    encoding?: string | null,
+    flag?: string | null,
+    mode?: number | null,
+  );
   get encoding(): string | undefined;
   set encoding(value: string | null | undefined);
   get flag(): string | undefined;
@@ -8020,13 +7975,13 @@ export class XOnlyPublicKey {
  * @category Wallet SDK
  */
 export class XPrv {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   derivePath(path: any): XPrv;
@@ -8060,13 +8015,13 @@ export class XPrv {
  * @category Wallet SDK
  */
 export class XPub {
-/**
-** Return copy of self without private attributes.
-*/
+  /**
+   ** Return copy of self without private attributes.
+   */
   toJSON(): Object;
-/**
-* Return stringified version of self.
-*/
+  /**
+   * Return stringified version of self.
+   */
   toString(): string;
   free(): void;
   toPublicKey(): PublicKey;
@@ -8080,8 +8035,147 @@ export class XPub {
   readonly xpub: string;
   readonly depth: number;
 }
+/**
+ * ZkScriptBuilder provides a staged builder for RISC0 zk-to-script locking
+ * scripts. It enforces its state machine at runtime, since WASM cannot
+ * express the native compile-time type-state transitions.
+ *
+ * Flow:
+ *   1. `newR0()` — unbounded.
+ *   2. `commitToGroth16(imageId)` *or* `commitToSuccinct(imageId, controlId, hashFnId?)` — bounded.
+ *   3. `finalizeWithGroth16Proof(receipt, journalHash)` *or* `finalizeWithSuccinctProof(receipt, journal)` — finalized hex bytes.
+ *
+ * Calling a method in the wrong state returns an error.
+ */
+export class ZkScriptBuilder {
+  private constructor();
+  /**
+   ** Return copy of self without private attributes.
+   */
+  toJSON(): Object;
+  /**
+   * Return stringified version of self.
+   */
+  toString(): string;
+  free(): void;
+  /**
+   * Drains (empties) the builder and returns the script bytes as a hex
+   * string.
+   */
+  drain(): HexString;
+  /**
+   * Constructs a new `ZkScriptBuilder` for the RISC Zero proving flow.
+   * Accepts an optional `ScriptBuilderOptions` object whose `flags` are
+   * forwarded to the underlying native builder. Exposed as a static factory
+   * (`ZkScriptBuilder.newR0(...)`) — not a `new` constructor — so future
+   * non-R0 backends can add their own factories without a breaking change.
+   */
+  static newR0(options?: ScriptBuilderOptions | null): ZkScriptBuilder;
+  /**
+   * Returns the current script bytes as a hex string.
+   */
+  script(): HexString;
+  /**
+   * Finalizes a Groth16-bounded script with a borsh-encoded
+   * `Groth16Receipt<ReceiptClaim>` and a 32-byte journal hash. Returns the
+   * spending script and the inner redeem script. If this is a preparation
+   * in order to unlock a ZK-locked UTXO the script is now ready.
+   */
+  finalizeWithGroth16Proof(
+    receipt: HexString | Uint8Array,
+    journal_hash: HexString | Uint8Array,
+  ): FinalizedR0Script;
+  /**
+   * Finalizes a succinct-bounded script with a borsh-encoded
+   * `SuccinctReceipt<ReceiptClaim>` and a 32-byte journal digest. If this is a preparation
+   * in order to unlock a ZK-locked UTXO the script is now ready.
+   */
+  finalizeWithSuccinctProof(
+    receipt: HexString | Uint8Array,
+    journal: HexString | Uint8Array,
+  ): FinalizedR0Script;
+  /**
+   * Commits the script to unlocking only on a valid Groth16 proof for the
+   * given 32-byte image id. Transitions an unbounded builder into the
+   * Groth16-bounded state.
+   */
+  commitToGroth16(image_id: HexString | Uint8Array): void;
+  /**
+   * Converts an R0 Groth16 receipt into the compressed proof bytes expected
+   * by the Kaspa Groth16 verifier and pushes them. Typically called while
+   * building a signature script; the script that invokes
+   * `appendR0Groth16Verifier` is responsible for placing `journalHash` under
+   * this proof before the verifier runs (so it sees
+   * `[..., journalHash, compressed_proof]`).
+   */
+  pushR0Groth16Proof(receipt: HexString | Uint8Array): void;
+  /**
+   * Pushes the r0 succinct witness material (claim, control index, control
+   * digests, seal). The caller-owned `journal` is pushed
+   * afterwards (on top) to form the verifier's pre-stack.
+   */
+  pushR0SuccinctWitness(receipt: HexString | Uint8Array): void;
+  /**
+   * Appends the r0-over-groth16 verifier fragment for the given 32-byte image
+   * id. Expects `[..., journal_hash, compressed_proof]` on the stack.
+   */
+  appendR0Groth16Verifier(image_id: HexString | Uint8Array): void;
+  /**
+   * Appends the r0 succinct verifier fragment for the given image id, control
+   * id and hash function. `hashFnId` currently only accepts "poseidon2"
+   * (also the default when omitted); other hash functions are not yet
+   * supported. Expects `[..., claim, control_index, control_digests, seal, journal]`.
+   */
+  appendR0SuccinctVerifier(
+    image_id: HexString | Uint8Array,
+    control_id: HexString | Uint8Array,
+    hash_fn_id?: string | null,
+  ): void;
+  /**
+   * Appends a fixed-journal r0-over-groth16 verifier fragment, binding
+   * verification to `journalHash` baked into the script. Expects only
+   * `[..., compressed_proof]` on the stack.
+   */
+  appendR0Groth16VerifierWithFixedJournal(
+    image_id: HexString | Uint8Array,
+    journal_hash: HexString | Uint8Array,
+  ): void;
+  /**
+   * Appends a fixed-journal r0 succinct verifier fragment, binding
+   * verification to `journal` baked into the script. Expects only
+   * `[..., claim, control_index, control_digests, seal]`.
+   */
+  appendR0SuccinctVerifierWithFixedJournal(
+    image_id: HexString | Uint8Array,
+    control_id: HexString | Uint8Array,
+    hash_fn_id: string | null | undefined,
+    journal: HexString | Uint8Array,
+  ): void;
+  /**
+   * Pushes data onto the builder (canonical encoding). Use this to push the
+   * caller-owned journal / journal_hash or the redeem script when composing a
+   * script from fragments.
+   */
+  addData(data: HexString | Uint8Array): void;
+  /**
+   * Commits the script to unlocking only on a valid succinct proof for the
+   * given image id and control id. `hashFnId` currently only accepts
+   * "poseidon2" (also the default when omitted); other hash functions are not
+   * yet supported. Transitions an unbounded builder into the succinct-bounded state.
+   */
+  commitToSuccinct(
+    image_id: HexString | Uint8Array,
+    control_id: HexString | Uint8Array,
+    hash_fn_id?: string | null,
+  ): void;
+}
 
-export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
+export type InitInput =
+  | RequestInfo
+  | URL
+  | Response
+  | BufferSource
+  | WebAssembly.Module;
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
@@ -8094,39 +8188,202 @@ export interface InitOutput {
   readonly address_validate: (a: number, b: number) => number;
   readonly address_version: (a: number, b: number) => void;
   readonly __wbg_mnemonic_free: (a: number, b: number) => void;
-  readonly mnemonic_constructor: (a: number, b: number, c: number, d: number) => void;
+  readonly mnemonic_constructor: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
   readonly mnemonic_entropy: (a: number, b: number) => void;
   readonly mnemonic_phrase: (a: number, b: number) => void;
   readonly mnemonic_random: (a: number, b: number) => void;
   readonly mnemonic_set_entropy: (a: number, b: number, c: number) => void;
   readonly mnemonic_set_phrase: (a: number, b: number, c: number) => void;
-  readonly mnemonic_toSeed: (a: number, b: number, c: number, d: number) => void;
+  readonly mnemonic_toSeed: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
   readonly mnemonic_validate: (a: number, b: number, c: number) => number;
   readonly __wbg_transactionoutput_free: (a: number, b: number) => void;
   readonly transactionoutput_covenant: (a: number) => number;
   readonly transactionoutput_ctor: (a: bigint, b: number, c: number) => number;
   readonly transactionoutput_scriptPublicKey: (a: number) => number;
   readonly transactionoutput_set_covenant: (a: number, b: number) => void;
-  readonly transactionoutput_set_scriptPublicKey: (a: number, b: number) => void;
+  readonly transactionoutput_set_scriptPublicKey: (
+    a: number,
+    b: number,
+  ) => void;
   readonly transactionoutput_set_value: (a: number, b: bigint) => void;
   readonly transactionoutput_value: (a: number) => bigint;
-  readonly __wbg_transactioninput_free: (a: number, b: number) => void;
-  readonly transactioninput_constructor: (a: number, b: number) => void;
-  readonly transactioninput_get_compute_budget: (a: number) => number;
-  readonly transactioninput_get_previous_outpoint: (a: number) => number;
-  readonly transactioninput_get_sequence: (a: number) => bigint;
-  readonly transactioninput_get_sig_op_count: (a: number) => number;
-  readonly transactioninput_get_signature_script_as_hex: (a: number, b: number) => void;
-  readonly transactioninput_get_utxo: (a: number) => number;
-  readonly transactioninput_set_compute_budget: (a: number, b: number) => void;
-  readonly transactioninput_set_previous_outpoint: (a: number, b: number, c: number) => void;
-  readonly transactioninput_set_sequence: (a: number, b: bigint) => void;
-  readonly transactioninput_set_sig_op_count: (a: number, b: number) => void;
-  readonly transactioninput_set_signature_script_from_js_value: (a: number, b: number, c: number) => void;
+  readonly addressFromScriptPublicKey: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly isScriptPayToPubkey: (a: number, b: number) => void;
+  readonly isScriptPayToPubkeyECDSA: (a: number, b: number) => void;
+  readonly isScriptPayToScriptHash: (a: number, b: number) => void;
+  readonly payToAddressScript: (a: number, b: number) => void;
+  readonly payToScriptHashScript: (a: number, b: number) => void;
+  readonly payToScriptHashSignatureScript: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly __wbg_computecommit_free: (a: number, b: number) => void;
+  readonly __wbg_transaction_free: (a: number, b: number) => void;
+  readonly computecommit_constructor: (a: number, b: number) => void;
+  readonly computecommit_fromComputeBudget: (a: number) => number;
+  readonly computecommit_fromSigOpCount: (a: number) => number;
+  readonly computecommit_get_type: (a: number, b: number) => void;
+  readonly computecommit_get_value: (a: number) => number;
+  readonly computecommit_set_type: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly computecommit_set_value: (a: number, b: number, c: number) => void;
+  readonly computecommit_toJSON: (a: number, b: number) => void;
+  readonly computecommit_toString: (a: number, b: number) => void;
+  readonly transaction_addresses: (a: number, b: number, c: number) => void;
+  readonly transaction_constructor: (a: number, b: number) => void;
+  readonly transaction_deserializeFromJSON: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly transaction_deserializeFromObject: (a: number, b: number) => void;
+  readonly transaction_deserializeFromSafeJSON: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly transaction_finalize: (a: number, b: number) => void;
+  readonly transaction_gas: (a: number) => bigint;
+  readonly transaction_get_inputs_as_js_array: (a: number) => number;
+  readonly transaction_get_mass: (a: number) => bigint;
+  readonly transaction_get_outputs_as_js_array: (a: number) => number;
+  readonly transaction_get_payload_as_hex_string: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly transaction_get_subnetwork_id_as_hex: (a: number, b: number) => void;
+  readonly transaction_id: (a: number, b: number) => void;
+  readonly transaction_is_coinbase: (a: number) => number;
+  readonly transaction_lockTime: (a: number) => bigint;
+  readonly transaction_populateGenesisCovenants: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly transaction_serializeToJSON: (a: number, b: number) => void;
+  readonly transaction_serializeToObject: (a: number, b: number) => void;
+  readonly transaction_serializeToSafeJSON: (a: number, b: number) => void;
+  readonly transaction_set_gas: (a: number, b: bigint) => void;
+  readonly transaction_set_inputs_from_js_array: (a: number, b: number) => void;
+  readonly transaction_set_lockTime: (a: number, b: bigint) => void;
+  readonly transaction_set_mass: (a: number, b: bigint) => void;
+  readonly transaction_set_outputs_from_js_array: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly transaction_set_payload_from_js_value: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly transaction_set_subnetwork_id_from_js_value: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly transaction_set_version: (a: number, b: number) => void;
+  readonly transaction_version: (a: number) => number;
+  readonly transaction_get_storage_mass: (a: number) => bigint;
+  readonly transaction_set_storage_mass: (a: number, b: bigint) => void;
+  readonly __wbg_covenantbinding_free: (a: number, b: number) => void;
+  readonly __wbg_genesiscovenantgroup_free: (a: number, b: number) => void;
+  readonly __wbg_header_free: (a: number, b: number) => void;
+  readonly covenantbinding_authorizingInput: (a: number) => number;
+  readonly covenantbinding_covenantId: (a: number) => number;
+  readonly covenantbinding_new: (a: number, b: number) => number;
+  readonly covenantbinding_set_authorizingInput: (a: number, b: number) => void;
+  readonly covenantbinding_set_covenantId: (a: number, b: number) => void;
+  readonly covenantbinding_toJSON: (a: number, b: number) => void;
+  readonly genesiscovenantgroup_authorizingInput: (a: number) => number;
+  readonly genesiscovenantgroup_ctor: (a: number, b: number, c: number) => void;
+  readonly genesiscovenantgroup_outputs: (a: number) => number;
+  readonly genesiscovenantgroup_set_authorizingInput: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly genesiscovenantgroup_set_outputs: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly genesiscovenantgroup_toJSON: (a: number, b: number) => void;
+  readonly genesiscovenantgroup_toString: (a: number, b: number) => void;
+  readonly header_asJSON: (a: number, b: number) => void;
+  readonly header_bits: (a: number) => number;
+  readonly header_blue_score: (a: number) => bigint;
+  readonly header_blue_work: (a: number) => number;
+  readonly header_constructor: (a: number, b: number) => void;
+  readonly header_daa_score: (a: number) => bigint;
+  readonly header_finalize: (a: number, b: number) => void;
+  readonly header_getBlueWorkAsHex: (a: number, b: number) => void;
+  readonly header_get_accepted_id_merkle_root_as_hex: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly header_get_hash_as_hex: (a: number, b: number) => void;
+  readonly header_get_hash_merkle_root_as_hex: (a: number, b: number) => void;
+  readonly header_get_parents_by_level_as_js_value: (a: number) => number;
+  readonly header_get_pruning_point_as_hex: (a: number, b: number) => void;
+  readonly header_get_timestamp: (a: number) => bigint;
+  readonly header_get_utxo_commitment_as_hex: (a: number, b: number) => void;
+  readonly header_get_version: (a: number) => number;
+  readonly header_nonce: (a: number) => bigint;
+  readonly header_set_accepted_id_merkle_root_from_js_value: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly header_set_bits: (a: number, b: number) => void;
+  readonly header_set_blue_score: (a: number, b: bigint) => void;
+  readonly header_set_blue_work_from_js_value: (a: number, b: number) => void;
+  readonly header_set_daa_score: (a: number, b: bigint) => void;
+  readonly header_set_hash_merkle_root_from_js_value: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly header_set_nonce: (a: number, b: bigint) => void;
+  readonly header_set_parents_by_level_from_js_value: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly header_set_pruning_point_from_js_value: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly header_set_timestamp: (a: number, b: bigint) => void;
+  readonly header_set_utxo_commitment_from_js_value: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly header_set_version: (a: number, b: number) => void;
+  readonly __wbg_compressedparents_free: (a: number, b: number) => void;
+  readonly compressedparents_expandedLen: (a: number) => number;
+  readonly compressedparents_get: (a: number, b: number, c: number) => void;
+  readonly compressedparents_new: (a: number, b: number) => void;
+  readonly compressedparents_toExpanded: (a: number, b: number) => void;
   readonly __wbg_optionalheader_free: (a: number, b: number) => void;
   readonly __wbg_transactionoutpoint_free: (a: number, b: number) => void;
   readonly __wbg_transactionsigninghash_free: (a: number, b: number) => void;
-  readonly __wbg_transactionsigninghashecdsa_free: (a: number, b: number) => void;
+  readonly __wbg_transactionsigninghashecdsa_free: (
+    a: number,
+    b: number,
+  ) => void;
   readonly covenantId: (a: number, b: number, c: number) => void;
   readonly optionalheader_acceptedIdMerkleRoot: (a: number, b: number) => void;
   readonly optionalheader_bits: (a: number) => number;
@@ -8148,60 +8405,42 @@ export interface InitOutput {
   readonly transactionoutpoint_transactionId: (a: number, b: number) => void;
   readonly transactionsigninghash_finalize: (a: number, b: number) => void;
   readonly transactionsigninghash_new: () => number;
-  readonly transactionsigninghash_update: (a: number, b: number, c: number) => void;
+  readonly transactionsigninghash_update: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
   readonly transactionsigninghashecdsa_finalize: (a: number, b: number) => void;
   readonly transactionsigninghashecdsa_new: () => number;
-  readonly transactionsigninghashecdsa_update: (a: number, b: number, c: number) => void;
-  readonly __wbg_compressedparents_free: (a: number, b: number) => void;
-  readonly __wbg_covenantbinding_free: (a: number, b: number) => void;
-  readonly __wbg_genesiscovenantgroup_free: (a: number, b: number) => void;
-  readonly __wbg_header_free: (a: number, b: number) => void;
-  readonly compressedparents_expandedLen: (a: number) => number;
-  readonly compressedparents_get: (a: number, b: number, c: number) => void;
-  readonly compressedparents_new: (a: number, b: number) => void;
-  readonly compressedparents_toExpanded: (a: number, b: number) => void;
-  readonly covenantbinding_authorizingInput: (a: number) => number;
-  readonly covenantbinding_covenantId: (a: number) => number;
-  readonly covenantbinding_new: (a: number, b: number) => number;
-  readonly covenantbinding_set_authorizingInput: (a: number, b: number) => void;
-  readonly covenantbinding_set_covenantId: (a: number, b: number) => void;
-  readonly covenantbinding_toJSON: (a: number, b: number) => void;
-  readonly genesiscovenantgroup_authorizingInput: (a: number) => number;
-  readonly genesiscovenantgroup_ctor: (a: number, b: number, c: number) => void;
-  readonly genesiscovenantgroup_outputs: (a: number) => number;
-  readonly genesiscovenantgroup_set_authorizingInput: (a: number, b: number) => void;
-  readonly genesiscovenantgroup_set_outputs: (a: number, b: number, c: number) => void;
-  readonly genesiscovenantgroup_toJSON: (a: number, b: number) => void;
-  readonly genesiscovenantgroup_toString: (a: number, b: number) => void;
-  readonly header_asJSON: (a: number, b: number) => void;
-  readonly header_bits: (a: number) => number;
-  readonly header_blue_score: (a: number) => bigint;
-  readonly header_blue_work: (a: number) => number;
-  readonly header_constructor: (a: number, b: number) => void;
-  readonly header_daa_score: (a: number) => bigint;
-  readonly header_finalize: (a: number, b: number) => void;
-  readonly header_getBlueWorkAsHex: (a: number, b: number) => void;
-  readonly header_get_accepted_id_merkle_root_as_hex: (a: number, b: number) => void;
-  readonly header_get_hash_as_hex: (a: number, b: number) => void;
-  readonly header_get_hash_merkle_root_as_hex: (a: number, b: number) => void;
-  readonly header_get_parents_by_level_as_js_value: (a: number) => number;
-  readonly header_get_pruning_point_as_hex: (a: number, b: number) => void;
-  readonly header_get_timestamp: (a: number) => bigint;
-  readonly header_get_utxo_commitment_as_hex: (a: number, b: number) => void;
-  readonly header_get_version: (a: number) => number;
-  readonly header_nonce: (a: number) => bigint;
-  readonly header_set_accepted_id_merkle_root_from_js_value: (a: number, b: number) => void;
-  readonly header_set_bits: (a: number, b: number) => void;
-  readonly header_set_blue_score: (a: number, b: bigint) => void;
-  readonly header_set_blue_work_from_js_value: (a: number, b: number) => void;
-  readonly header_set_daa_score: (a: number, b: bigint) => void;
-  readonly header_set_hash_merkle_root_from_js_value: (a: number, b: number) => void;
-  readonly header_set_nonce: (a: number, b: bigint) => void;
-  readonly header_set_parents_by_level_from_js_value: (a: number, b: number) => void;
-  readonly header_set_pruning_point_from_js_value: (a: number, b: number) => void;
-  readonly header_set_timestamp: (a: number, b: bigint) => void;
-  readonly header_set_utxo_commitment_from_js_value: (a: number, b: number) => void;
-  readonly header_set_version: (a: number, b: number) => void;
+  readonly transactionsigninghashecdsa_update: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly __wbg_transactioninput_free: (a: number, b: number) => void;
+  readonly transactioninput_constructor: (a: number, b: number) => void;
+  readonly transactioninput_get_compute_budget: (a: number) => number;
+  readonly transactioninput_get_previous_outpoint: (a: number) => number;
+  readonly transactioninput_get_sequence: (a: number) => bigint;
+  readonly transactioninput_get_sig_op_count: (a: number) => number;
+  readonly transactioninput_get_signature_script_as_hex: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly transactioninput_get_utxo: (a: number) => number;
+  readonly transactioninput_set_compute_budget: (a: number, b: number) => void;
+  readonly transactioninput_set_previous_outpoint: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly transactioninput_set_sequence: (a: number, b: bigint) => void;
+  readonly transactioninput_set_sig_op_count: (a: number, b: number) => void;
+  readonly transactioninput_set_signature_script_from_js_value: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
   readonly __wbg_get_utxoentry_address: (a: number) => number;
   readonly __wbg_get_utxoentry_amount: (a: number) => bigint;
   readonly __wbg_get_utxoentry_blockDaaScore: (a: number) => bigint;
@@ -8233,44 +8472,6 @@ export interface InitOutput {
   readonly utxoentryreference_outpoint: (a: number) => number;
   readonly utxoentryreference_scriptPublicKey: (a: number) => number;
   readonly utxoentryreference_toString: (a: number, b: number) => void;
-  readonly addressFromScriptPublicKey: (a: number, b: number, c: number) => void;
-  readonly isScriptPayToPubkey: (a: number, b: number) => void;
-  readonly isScriptPayToPubkeyECDSA: (a: number, b: number) => void;
-  readonly isScriptPayToScriptHash: (a: number, b: number) => void;
-  readonly payToAddressScript: (a: number, b: number) => void;
-  readonly payToScriptHashScript: (a: number, b: number) => void;
-  readonly payToScriptHashSignatureScript: (a: number, b: number, c: number) => void;
-  readonly __wbg_transaction_free: (a: number, b: number) => void;
-  readonly transaction_addresses: (a: number, b: number, c: number) => void;
-  readonly transaction_constructor: (a: number, b: number) => void;
-  readonly transaction_deserializeFromJSON: (a: number, b: number, c: number) => void;
-  readonly transaction_deserializeFromObject: (a: number, b: number) => void;
-  readonly transaction_deserializeFromSafeJSON: (a: number, b: number, c: number) => void;
-  readonly transaction_finalize: (a: number, b: number) => void;
-  readonly transaction_gas: (a: number) => bigint;
-  readonly transaction_get_inputs_as_js_array: (a: number) => number;
-  readonly transaction_get_mass: (a: number) => bigint;
-  readonly transaction_get_outputs_as_js_array: (a: number) => number;
-  readonly transaction_get_payload_as_hex_string: (a: number, b: number) => void;
-  readonly transaction_get_subnetwork_id_as_hex: (a: number, b: number) => void;
-  readonly transaction_id: (a: number, b: number) => void;
-  readonly transaction_is_coinbase: (a: number) => number;
-  readonly transaction_lockTime: (a: number) => bigint;
-  readonly transaction_populateGenesisCovenants: (a: number, b: number, c: number) => void;
-  readonly transaction_serializeToJSON: (a: number, b: number) => void;
-  readonly transaction_serializeToObject: (a: number, b: number) => void;
-  readonly transaction_serializeToSafeJSON: (a: number, b: number) => void;
-  readonly transaction_set_gas: (a: number, b: bigint) => void;
-  readonly transaction_set_inputs_from_js_array: (a: number, b: number) => void;
-  readonly transaction_set_lockTime: (a: number, b: bigint) => void;
-  readonly transaction_set_mass: (a: number, b: bigint) => void;
-  readonly transaction_set_outputs_from_js_array: (a: number, b: number) => void;
-  readonly transaction_set_payload_from_js_value: (a: number, b: number) => void;
-  readonly transaction_set_subnetwork_id_from_js_value: (a: number, b: number) => void;
-  readonly transaction_set_version: (a: number, b: number) => void;
-  readonly transaction_version: (a: number) => number;
-  readonly transaction_get_storage_mass: (a: number) => bigint;
-  readonly transaction_set_storage_mass: (a: number, b: bigint) => void;
   readonly __wbg_get_networkid_suffix: (a: number) => number;
   readonly __wbg_get_networkid_type: (a: number) => number;
   readonly __wbg_networkid_free: (a: number, b: number) => void;
@@ -8286,16 +8487,37 @@ export interface InitOutput {
   readonly __wbg_get_transactionutxoentry_blockDaaScore: (a: number) => bigint;
   readonly __wbg_get_transactionutxoentry_covenantId: (a: number) => number;
   readonly __wbg_get_transactionutxoentry_isCoinbase: (a: number) => number;
-  readonly __wbg_get_transactionutxoentry_scriptPublicKey: (a: number) => number;
+  readonly __wbg_get_transactionutxoentry_scriptPublicKey: (
+    a: number,
+  ) => number;
   readonly __wbg_scriptpublickey_free: (a: number, b: number) => void;
   readonly __wbg_set_scriptpublickey_version: (a: number, b: number) => void;
-  readonly __wbg_set_transactionutxoentry_amount: (a: number, b: bigint) => void;
-  readonly __wbg_set_transactionutxoentry_blockDaaScore: (a: number, b: bigint) => void;
-  readonly __wbg_set_transactionutxoentry_covenantId: (a: number, b: number) => void;
-  readonly __wbg_set_transactionutxoentry_isCoinbase: (a: number, b: number) => void;
-  readonly __wbg_set_transactionutxoentry_scriptPublicKey: (a: number, b: number) => void;
+  readonly __wbg_set_transactionutxoentry_amount: (
+    a: number,
+    b: bigint,
+  ) => void;
+  readonly __wbg_set_transactionutxoentry_blockDaaScore: (
+    a: number,
+    b: bigint,
+  ) => void;
+  readonly __wbg_set_transactionutxoentry_covenantId: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly __wbg_set_transactionutxoentry_isCoinbase: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly __wbg_set_transactionutxoentry_scriptPublicKey: (
+    a: number,
+    b: number,
+  ) => void;
   readonly __wbg_transactionutxoentry_free: (a: number, b: number) => void;
-  readonly scriptpublickey_constructor: (a: number, b: number, c: number) => void;
+  readonly scriptpublickey_constructor: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
   readonly scriptpublickey_script_as_hex: (a: number, b: number) => void;
   readonly __wbg_hash_free: (a: number, b: number) => void;
   readonly hash_constructor: (a: number, b: number) => number;
@@ -8303,7 +8525,13 @@ export interface InitOutput {
   readonly __wbg_pow_free: (a: number, b: number) => void;
   readonly calculateTarget: (a: number, b: number) => void;
   readonly pow_checkWork: (a: number, b: number, c: bigint) => void;
-  readonly pow_fromRaw: (a: number, b: number, c: number, d: bigint, e: number) => void;
+  readonly pow_fromRaw: (
+    a: number,
+    b: number,
+    c: number,
+    d: bigint,
+    e: number,
+  ) => void;
   readonly pow_get_pre_pow_hash: (a: number, b: number) => void;
   readonly pow_new: (a: number, b: number, c: number, d: bigint) => void;
   readonly pow_target: (a: number, b: number) => void;
@@ -8316,79 +8544,193 @@ export interface InitOutput {
   readonly scriptbuilder_canonicalDataSize: (a: number, b: number) => void;
   readonly scriptbuilder_createPayToScriptHashScript: (a: number) => number;
   readonly scriptbuilder_drain: (a: number) => number;
-  readonly scriptbuilder_encodePayToScriptHashSignatureScript: (a: number, b: number, c: number) => void;
+  readonly scriptbuilder_encodePayToScriptHashSignatureScript: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
   readonly scriptbuilder_fromScript: (a: number, b: number, c: number) => void;
   readonly scriptbuilder_hexView: (a: number, b: number, c: number) => void;
   readonly scriptbuilder_new: (a: number, b: number) => void;
   readonly scriptbuilder_toString: (a: number) => number;
   readonly scriptbuilder_addSequence: (a: number, b: number, c: bigint) => void;
-  readonly __wbg_accountkind_free: (a: number, b: number) => void;
-  readonly accountkind_ctor: (a: number, b: number, c: number) => void;
-  readonly accountkind_toString: (a: number, b: number) => void;
-  readonly __wbg_get_transactionrecord_id: (a: number) => number;
-  readonly __wbg_get_transactionrecord_metadata: (a: number, b: number) => void;
-  readonly __wbg_get_transactionrecord_network: (a: number) => number;
-  readonly __wbg_get_transactionrecord_note: (a: number, b: number) => void;
-  readonly __wbg_get_transactionrecord_unixtimeMsec: (a: number, b: number) => void;
-  readonly __wbg_get_transactionrecordnotification_data: (a: number) => number;
-  readonly __wbg_get_transactionrecordnotification_type: (a: number, b: number) => void;
-  readonly __wbg_get_walletdescriptor_filename: (a: number, b: number) => void;
-  readonly __wbg_get_walletdescriptor_title: (a: number, b: number) => void;
-  readonly __wbg_set_transactionrecord_id: (a: number, b: number) => void;
-  readonly __wbg_set_transactionrecord_metadata: (a: number, b: number, c: number) => void;
-  readonly __wbg_set_transactionrecord_network: (a: number, b: number) => void;
-  readonly __wbg_set_transactionrecord_note: (a: number, b: number, c: number) => void;
-  readonly __wbg_set_transactionrecord_unixtimeMsec: (a: number, b: number, c: bigint) => void;
-  readonly __wbg_set_transactionrecordnotification_data: (a: number, b: number) => void;
-  readonly __wbg_set_transactionrecordnotification_type: (a: number, b: number, c: number) => void;
-  readonly __wbg_set_walletdescriptor_filename: (a: number, b: number, c: number) => void;
-  readonly __wbg_set_walletdescriptor_title: (a: number, b: number, c: number) => void;
-  readonly __wbg_transactionrecord_free: (a: number, b: number) => void;
-  readonly __wbg_transactionrecordnotification_free: (a: number, b: number) => void;
-  readonly __wbg_walletdescriptor_free: (a: number, b: number) => void;
-  readonly transactionrecord_binding: (a: number) => number;
-  readonly transactionrecord_blockDaaScore: (a: number) => number;
-  readonly transactionrecord_data: (a: number) => number;
-  readonly transactionrecord_hasAddress: (a: number, b: number) => number;
-  readonly transactionrecord_maturityProgress: (a: number, b: number, c: number) => void;
-  readonly transactionrecord_serialize: (a: number) => number;
-  readonly transactionrecord_type: (a: number, b: number) => void;
-  readonly transactionrecord_value: (a: number) => number;
-  readonly createTransaction: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
-  readonly createTransactions: (a: number) => number;
-  readonly estimateTransactions: (a: number) => number;
-  readonly __wbg_get_paymentoutput_address: (a: number) => number;
-  readonly __wbg_get_paymentoutput_amount: (a: number) => bigint;
-  readonly __wbg_get_paymentoutput_covenant: (a: number) => number;
-  readonly __wbg_paymentoutput_free: (a: number, b: number) => void;
-  readonly __wbg_paymentoutputs_free: (a: number, b: number) => void;
-  readonly __wbg_prvkeydatainfo_free: (a: number, b: number) => void;
-  readonly __wbg_set_paymentoutput_address: (a: number, b: number) => void;
-  readonly __wbg_set_paymentoutput_amount: (a: number, b: bigint) => void;
-  readonly __wbg_set_paymentoutput_covenant: (a: number, b: number) => void;
-  readonly calculateStorageMass: (a: number, b: number, c: number, d: number) => void;
-  readonly calculateTransactionFee: (a: number, b: number, c: number, d: number) => void;
-  readonly calculateTransactionMass: (a: number, b: number, c: number, d: number) => void;
-  readonly maximumStandardTransactionMass: () => bigint;
-  readonly paymentoutput_new: (a: number, b: bigint) => number;
-  readonly paymentoutput_withCovenant: (a: number, b: bigint, c: number) => number;
-  readonly paymentoutputs_constructor: (a: number, b: number) => void;
-  readonly prvkeydatainfo_id: (a: number, b: number) => void;
-  readonly prvkeydatainfo_isEncrypted: (a: number) => number;
-  readonly prvkeydatainfo_name: (a: number) => number;
-  readonly prvkeydatainfo_setName: (a: number, b: number, c: number, d: number) => void;
-  readonly updateTransactionMass: (a: number, b: number, c: number, d: number) => void;
-  readonly createAddress: (a: number, b: number, c: number, d: number, e: number) => void;
-  readonly createMultisigAddress: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
+  readonly __wbg_zkscriptbuilder_free: (a: number, b: number) => void;
+  readonly zkscriptbuilder_drain: (a: number) => number;
+  readonly zkscriptbuilder_newR0: (a: number, b: number) => void;
+  readonly zkscriptbuilder_script: (a: number) => number;
+  readonly __wbg_r0succinctwitnessparts_free: (a: number, b: number) => void;
+  readonly prepareR0Groth16Proof: (a: number, b: number) => void;
+  readonly prepareR0SuccinctWitness: (a: number, b: number) => void;
+  readonly r0succinctwitnessparts_claim: (a: number) => number;
+  readonly r0succinctwitnessparts_controlDigests: (a: number) => number;
+  readonly r0succinctwitnessparts_controlIndex: (a: number) => number;
+  readonly r0succinctwitnessparts_seal: (a: number) => number;
+  readonly zkscriptbuilder_addData: (a: number, b: number, c: number) => void;
+  readonly zkscriptbuilder_appendR0Groth16Verifier: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly zkscriptbuilder_appendR0Groth16VerifierWithFixedJournal: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly zkscriptbuilder_appendR0SuccinctVerifier: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+  ) => void;
+  readonly zkscriptbuilder_appendR0SuccinctVerifierWithFixedJournal: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+    g: number,
+  ) => void;
+  readonly zkscriptbuilder_commitToGroth16: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly zkscriptbuilder_finalizeWithGroth16Proof: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly zkscriptbuilder_finalizeWithSuccinctProof: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly zkscriptbuilder_pushR0Groth16Proof: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly zkscriptbuilder_pushR0SuccinctWitness: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly __wbg_finalizedr0script_free: (a: number, b: number) => void;
+  readonly finalizedr0script_redeemScript: (a: number) => number;
+  readonly finalizedr0script_sigScript: (a: number) => number;
+  readonly zkscriptbuilder_commitToSuccinct: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+  ) => void;
+  readonly __wbg_generator_free: (a: number, b: number) => void;
+  readonly generator_ctor: (a: number, b: number) => void;
+  readonly generator_estimate: (a: number) => number;
+  readonly generator_next: (a: number) => number;
+  readonly generator_summary: (a: number) => number;
+  readonly __wbg_cryptobox_free: (a: number, b: number) => void;
+  readonly __wbg_cryptoboxprivatekey_free: (a: number, b: number) => void;
+  readonly __wbg_cryptoboxpublickey_free: (a: number, b: number) => void;
+  readonly __wbg_wallet_free: (a: number, b: number) => void;
+  readonly cryptobox_ctor: (a: number, b: number, c: number) => void;
+  readonly cryptobox_decrypt: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly cryptobox_encrypt: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly cryptobox_publicKey: (a: number, b: number) => void;
+  readonly cryptoboxprivatekey_ctor: (a: number, b: number) => void;
+  readonly cryptoboxprivatekey_to_public_key: (a: number) => number;
+  readonly cryptoboxpublickey_ctor: (a: number, b: number) => void;
+  readonly cryptoboxpublickey_toString: (a: number, b: number) => void;
+  readonly wallet_addEventListener: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly wallet_connect: (a: number, b: number) => number;
+  readonly wallet_constructor: (a: number, b: number) => void;
+  readonly wallet_descriptor: (a: number) => number;
+  readonly wallet_disconnect: (a: number) => number;
+  readonly wallet_exists: (a: number, b: number, c: number) => number;
+  readonly wallet_isOpen: (a: number) => number;
+  readonly wallet_isSynced: (a: number) => number;
+  readonly wallet_removeEventListener: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly wallet_rpc: (a: number) => number;
+  readonly wallet_setNetworkId: (a: number, b: number, c: number) => void;
+  readonly wallet_start: (a: number) => number;
+  readonly wallet_stop: (a: number) => number;
   readonly argon2sha256ivFromBinary: (a: number, b: number, c: number) => void;
-  readonly argon2sha256ivFromText: (a: number, b: number, c: number, d: number) => void;
-  readonly decryptXChaCha20Poly1305: (a: number, b: number, c: number, d: number, e: number) => void;
-  readonly encryptXChaCha20Poly1305: (a: number, b: number, c: number, d: number, e: number) => void;
+  readonly argon2sha256ivFromText: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly decryptXChaCha20Poly1305: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+  ) => void;
+  readonly encryptXChaCha20Poly1305: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+  ) => void;
   readonly sha256FromBinary: (a: number, b: number) => void;
   readonly sha256FromText: (a: number, b: number, c: number) => void;
   readonly sha256dFromBinary: (a: number, b: number) => void;
   readonly sha256dFromText: (a: number, b: number, c: number) => void;
+  readonly signMessage: (a: number, b: number) => void;
+  readonly verifyMessage: (a: number, b: number) => void;
+  readonly __wbg_balance_free: (a: number, b: number) => void;
+  readonly __wbg_balancestrings_free: (a: number, b: number) => void;
   readonly __wbg_generatorsummary_free: (a: number, b: number) => void;
+  readonly __wbg_pendingtransaction_free: (a: number, b: number) => void;
+  readonly __wbg_utxocontext_free: (a: number, b: number) => void;
+  readonly balance_mature: (a: number) => number;
+  readonly balance_outgoing: (a: number) => number;
+  readonly balance_pending: (a: number) => number;
+  readonly balance_toBalanceStrings: (a: number, b: number, c: number) => void;
+  readonly balancestrings_mature: (a: number, b: number) => void;
+  readonly balancestrings_pending: (a: number, b: number) => void;
+  readonly createTransaction: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+    g: number,
+  ) => void;
+  readonly createTransactions: (a: number) => number;
+  readonly estimateTransactions: (a: number) => number;
   readonly generatorsummary_fees: (a: number) => number;
   readonly generatorsummary_finalAmount: (a: number) => number;
   readonly generatorsummary_finalTransactionId: (a: number, b: number) => void;
@@ -8396,33 +8738,24 @@ export interface InitOutput {
   readonly generatorsummary_networkType: (a: number) => number;
   readonly generatorsummary_transactions: (a: number) => number;
   readonly generatorsummary_utxos: (a: number) => number;
-  readonly signMessage: (a: number, b: number) => void;
-  readonly verifyMessage: (a: number, b: number) => void;
-  readonly __wbg_cryptobox_free: (a: number, b: number) => void;
-  readonly __wbg_cryptoboxprivatekey_free: (a: number, b: number) => void;
-  readonly __wbg_cryptoboxpublickey_free: (a: number, b: number) => void;
-  readonly __wbg_pendingtransaction_free: (a: number, b: number) => void;
-  readonly __wbg_storage_free: (a: number, b: number) => void;
-  readonly __wbg_utxoprocessor_free: (a: number, b: number) => void;
-  readonly createInputSignature: (a: number, b: number, c: number, d: number, e: number) => void;
-  readonly cryptobox_ctor: (a: number, b: number, c: number) => void;
-  readonly cryptobox_decrypt: (a: number, b: number, c: number, d: number) => void;
-  readonly cryptobox_encrypt: (a: number, b: number, c: number, d: number) => void;
-  readonly cryptobox_publicKey: (a: number, b: number) => void;
-  readonly cryptoboxprivatekey_ctor: (a: number, b: number) => void;
-  readonly cryptoboxprivatekey_to_public_key: (a: number) => number;
-  readonly cryptoboxpublickey_ctor: (a: number, b: number) => void;
-  readonly cryptoboxpublickey_toString: (a: number, b: number) => void;
-  readonly getNetworkParams: (a: number, b: number) => void;
-  readonly getTransactionMaturityProgress: (a: number, b: number, c: number, d: number, e: number) => void;
-  readonly kaspaToSompi: (a: number, b: number) => number;
   readonly pendingtransaction_addresses: (a: number) => number;
   readonly pendingtransaction_aggregateInputAmount: (a: number) => number;
   readonly pendingtransaction_aggregateOutputAmount: (a: number) => number;
   readonly pendingtransaction_changeAmount: (a: number) => number;
-  readonly pendingtransaction_createInputSignature: (a: number, b: number, c: number, d: number, e: number) => void;
+  readonly pendingtransaction_createInputSignature: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+  ) => void;
   readonly pendingtransaction_feeAmount: (a: number) => number;
-  readonly pendingtransaction_fillInput: (a: number, b: number, c: number, d: number) => void;
+  readonly pendingtransaction_fillInput: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
   readonly pendingtransaction_getUtxoEntries: (a: number) => number;
   readonly pendingtransaction_id: (a: number, b: number) => void;
   readonly pendingtransaction_mass: (a: number) => number;
@@ -8430,28 +8763,209 @@ export interface InitOutput {
   readonly pendingtransaction_paymentAmount: (a: number) => number;
   readonly pendingtransaction_serializeToJSON: (a: number, b: number) => void;
   readonly pendingtransaction_serializeToObject: (a: number, b: number) => void;
-  readonly pendingtransaction_serializeToSafeJSON: (a: number, b: number) => void;
-  readonly pendingtransaction_sign: (a: number, b: number, c: number, d: number) => void;
-  readonly pendingtransaction_signInput: (a: number, b: number, c: number, d: number, e: number) => void;
+  readonly pendingtransaction_serializeToSafeJSON: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly pendingtransaction_sign: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly pendingtransaction_signInput: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+  ) => void;
   readonly pendingtransaction_submit: (a: number, b: number) => number;
   readonly pendingtransaction_transaction: (a: number, b: number) => void;
   readonly pendingtransaction_type: (a: number, b: number) => void;
+  readonly setDefaultStorageFolder: (a: number, b: number, c: number) => void;
+  readonly setDefaultWalletFile: (a: number, b: number, c: number) => void;
+  readonly utxocontext_balance: (a: number) => number;
+  readonly utxocontext_balanceStrings: (a: number, b: number) => void;
+  readonly utxocontext_clear: (a: number) => number;
+  readonly utxocontext_ctor: (a: number, b: number) => void;
+  readonly utxocontext_getMatureRange: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly utxocontext_getPending: (a: number, b: number) => void;
+  readonly utxocontext_isActive: (a: number) => number;
+  readonly utxocontext_matureLength: (a: number) => number;
+  readonly utxocontext_trackAddresses: (
+    a: number,
+    b: number,
+    c: number,
+  ) => number;
+  readonly utxocontext_unregisterAddresses: (a: number, b: number) => number;
+  readonly __wbg_accountkind_free: (a: number, b: number) => void;
+  readonly __wbg_prvkeydatainfo_free: (a: number, b: number) => void;
+  readonly __wbg_storage_free: (a: number, b: number) => void;
+  readonly __wbg_utxoprocessor_free: (a: number, b: number) => void;
+  readonly accountkind_ctor: (a: number, b: number, c: number) => void;
+  readonly accountkind_toString: (a: number, b: number) => void;
+  readonly createInputSignature: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+  ) => void;
+  readonly getNetworkParams: (a: number, b: number) => void;
+  readonly getTransactionMaturityProgress: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+  ) => void;
+  readonly kaspaToSompi: (a: number, b: number) => number;
+  readonly prvkeydatainfo_id: (a: number, b: number) => void;
+  readonly prvkeydatainfo_isEncrypted: (a: number) => number;
+  readonly prvkeydatainfo_name: (a: number) => number;
+  readonly prvkeydatainfo_setName: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
   readonly signScriptHash: (a: number, b: number, c: number) => void;
-  readonly signTransaction: (a: number, b: number, c: number, d: number) => void;
+  readonly signTransaction: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
   readonly sompiToKaspaString: (a: number, b: number) => void;
-  readonly sompiToKaspaStringWithSuffix: (a: number, b: number, c: number) => void;
+  readonly sompiToKaspaStringWithSuffix: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
   readonly storage_filename: (a: number, b: number) => void;
-  readonly utxoprocessor_addEventListener: (a: number, b: number, c: number, d: number) => void;
+  readonly utxoprocessor_addEventListener: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
   readonly utxoprocessor_ctor: (a: number, b: number) => void;
   readonly utxoprocessor_isActive: (a: number) => number;
   readonly utxoprocessor_networkId: (a: number, b: number) => void;
-  readonly utxoprocessor_removeEventListener: (a: number, b: number, c: number, d: number) => void;
+  readonly utxoprocessor_removeEventListener: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
   readonly utxoprocessor_rpc: (a: number) => number;
-  readonly utxoprocessor_setCoinbaseTransactionMaturityDAA: (a: number, b: number, c: bigint) => void;
-  readonly utxoprocessor_setNetworkId: (a: number, b: number, c: number) => void;
-  readonly utxoprocessor_setUserTransactionMaturityDAA: (a: number, b: number, c: bigint) => void;
+  readonly utxoprocessor_setCoinbaseTransactionMaturityDAA: (
+    a: number,
+    b: number,
+    c: bigint,
+  ) => void;
+  readonly utxoprocessor_setNetworkId: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly utxoprocessor_setUserTransactionMaturityDAA: (
+    a: number,
+    b: number,
+    c: bigint,
+  ) => void;
   readonly utxoprocessor_start: (a: number) => number;
   readonly utxoprocessor_stop: (a: number) => number;
+  readonly __wbg_get_transactionrecord_id: (a: number) => number;
+  readonly __wbg_get_transactionrecord_metadata: (a: number, b: number) => void;
+  readonly __wbg_get_transactionrecord_network: (a: number) => number;
+  readonly __wbg_get_transactionrecord_note: (a: number, b: number) => void;
+  readonly __wbg_get_transactionrecord_unixtimeMsec: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly __wbg_get_transactionrecordnotification_data: (a: number) => number;
+  readonly __wbg_get_transactionrecordnotification_type: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly __wbg_get_walletdescriptor_filename: (a: number, b: number) => void;
+  readonly __wbg_get_walletdescriptor_title: (a: number, b: number) => void;
+  readonly __wbg_set_transactionrecord_id: (a: number, b: number) => void;
+  readonly __wbg_set_transactionrecord_metadata: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly __wbg_set_transactionrecord_network: (a: number, b: number) => void;
+  readonly __wbg_set_transactionrecord_note: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly __wbg_set_transactionrecord_unixtimeMsec: (
+    a: number,
+    b: number,
+    c: bigint,
+  ) => void;
+  readonly __wbg_set_transactionrecordnotification_data: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly __wbg_set_transactionrecordnotification_type: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly __wbg_set_walletdescriptor_filename: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly __wbg_set_walletdescriptor_title: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly __wbg_transactionrecord_free: (a: number, b: number) => void;
+  readonly __wbg_transactionrecordnotification_free: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly __wbg_walletdescriptor_free: (a: number, b: number) => void;
+  readonly transactionrecord_binding: (a: number) => number;
+  readonly transactionrecord_blockDaaScore: (a: number) => number;
+  readonly transactionrecord_data: (a: number) => number;
+  readonly transactionrecord_hasAddress: (a: number, b: number) => number;
+  readonly transactionrecord_maturityProgress: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly transactionrecord_serialize: (a: number) => number;
+  readonly transactionrecord_type: (a: number, b: number) => void;
+  readonly transactionrecord_value: (a: number) => number;
+  readonly createAddress: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+  ) => void;
+  readonly createMultisigAddress: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+  ) => void;
   readonly wallet_accountsActivate: (a: number, b: number) => number;
   readonly wallet_accountsCommitReveal: (a: number, b: number) => number;
   readonly wallet_accountsCommitRevealManual: (a: number, b: number) => number;
@@ -8494,46 +9008,46 @@ export interface InitOutput {
   readonly wallet_walletImport: (a: number, b: number) => number;
   readonly wallet_walletOpen: (a: number, b: number) => number;
   readonly wallet_walletReload: (a: number, b: number) => number;
-  readonly __wbg_balance_free: (a: number, b: number) => void;
-  readonly __wbg_balancestrings_free: (a: number, b: number) => void;
-  readonly __wbg_wallet_free: (a: number, b: number) => void;
-  readonly balance_mature: (a: number) => number;
-  readonly balance_outgoing: (a: number) => number;
-  readonly balance_pending: (a: number) => number;
-  readonly balance_toBalanceStrings: (a: number, b: number, c: number) => void;
-  readonly balancestrings_mature: (a: number, b: number) => void;
-  readonly balancestrings_pending: (a: number, b: number) => void;
-  readonly setDefaultStorageFolder: (a: number, b: number, c: number) => void;
-  readonly setDefaultWalletFile: (a: number, b: number, c: number) => void;
-  readonly wallet_addEventListener: (a: number, b: number, c: number, d: number) => void;
-  readonly wallet_connect: (a: number, b: number) => number;
-  readonly wallet_constructor: (a: number, b: number) => void;
-  readonly wallet_descriptor: (a: number) => number;
-  readonly wallet_disconnect: (a: number) => number;
-  readonly wallet_exists: (a: number, b: number, c: number) => number;
-  readonly wallet_isOpen: (a: number) => number;
-  readonly wallet_isSynced: (a: number) => number;
-  readonly wallet_removeEventListener: (a: number, b: number, c: number, d: number) => void;
-  readonly wallet_rpc: (a: number) => number;
-  readonly wallet_setNetworkId: (a: number, b: number, c: number) => void;
-  readonly wallet_start: (a: number) => number;
-  readonly wallet_stop: (a: number) => number;
-  readonly __wbg_generator_free: (a: number, b: number) => void;
-  readonly __wbg_utxocontext_free: (a: number, b: number) => void;
-  readonly generator_ctor: (a: number, b: number) => void;
-  readonly generator_estimate: (a: number) => number;
-  readonly generator_next: (a: number) => number;
-  readonly generator_summary: (a: number) => number;
-  readonly utxocontext_balance: (a: number) => number;
-  readonly utxocontext_balanceStrings: (a: number, b: number) => void;
-  readonly utxocontext_clear: (a: number) => number;
-  readonly utxocontext_ctor: (a: number, b: number) => void;
-  readonly utxocontext_getMatureRange: (a: number, b: number, c: number, d: number) => void;
-  readonly utxocontext_getPending: (a: number, b: number) => void;
-  readonly utxocontext_isActive: (a: number) => number;
-  readonly utxocontext_matureLength: (a: number) => number;
-  readonly utxocontext_trackAddresses: (a: number, b: number, c: number) => number;
-  readonly utxocontext_unregisterAddresses: (a: number, b: number) => number;
+  readonly __wbg_get_paymentoutput_address: (a: number) => number;
+  readonly __wbg_get_paymentoutput_amount: (a: number) => bigint;
+  readonly __wbg_get_paymentoutput_covenant: (a: number) => number;
+  readonly __wbg_paymentoutput_free: (a: number, b: number) => void;
+  readonly __wbg_paymentoutputs_free: (a: number, b: number) => void;
+  readonly __wbg_set_paymentoutput_address: (a: number, b: number) => void;
+  readonly __wbg_set_paymentoutput_amount: (a: number, b: bigint) => void;
+  readonly __wbg_set_paymentoutput_covenant: (a: number, b: number) => void;
+  readonly calculateStorageMass: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly calculateTransactionFee: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly calculateTransactionMass: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly maximumStandardTransactionMass: () => bigint;
+  readonly paymentoutput_new: (a: number, b: bigint) => number;
+  readonly paymentoutput_withCovenant: (
+    a: number,
+    b: bigint,
+    c: number,
+  ) => number;
+  readonly paymentoutputs_constructor: (a: number, b: number) => void;
+  readonly updateTransactionMass: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
   readonly __wbg_publickey_free: (a: number, b: number) => void;
   readonly __wbg_xonlypublickey_free: (a: number, b: number) => void;
   readonly publickey_fingerprint: (a: number) => number;
@@ -8544,7 +9058,11 @@ export interface InitOutput {
   readonly publickey_try_new: (a: number, b: number, c: number) => void;
   readonly xonlypublickey_fromAddress: (a: number, b: number) => void;
   readonly xonlypublickey_toAddress: (a: number, b: number, c: number) => void;
-  readonly xonlypublickey_toAddressECDSA: (a: number, b: number, c: number) => void;
+  readonly xonlypublickey_toAddressECDSA: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
   readonly xonlypublickey_toString: (a: number, b: number) => void;
   readonly xonlypublickey_try_new: (a: number, b: number, c: number) => void;
   readonly __wbg_derivationpath_free: (a: number, b: number) => void;
@@ -8553,37 +9071,142 @@ export interface InitOutput {
   readonly derivationpath_length: (a: number) => number;
   readonly derivationpath_new: (a: number, b: number, c: number) => void;
   readonly derivationpath_parent: (a: number) => number;
-  readonly derivationpath_push: (a: number, b: number, c: number, d: number) => void;
+  readonly derivationpath_push: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
   readonly derivationpath_toString: (a: number, b: number) => void;
   readonly xpub_chainCode: (a: number, b: number) => void;
   readonly xpub_childNumber: (a: number) => number;
   readonly xpub_depth: (a: number) => number;
-  readonly xpub_deriveChild: (a: number, b: number, c: number, d: number) => void;
+  readonly xpub_deriveChild: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
   readonly xpub_derivePath: (a: number, b: number, c: number) => void;
-  readonly xpub_intoString: (a: number, b: number, c: number, d: number) => void;
+  readonly xpub_intoString: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
   readonly xpub_parentFingerprint: (a: number, b: number) => void;
   readonly xpub_toPublicKey: (a: number) => number;
   readonly xpub_try_new: (a: number, b: number, c: number) => void;
   readonly xpub_xpub: (a: number, b: number) => void;
   readonly __wbg_publickeygenerator_free: (a: number, b: number) => void;
-  readonly publickeygenerator_changeAddress: (a: number, b: number, c: number, d: number) => void;
-  readonly publickeygenerator_changeAddressAsString: (a: number, b: number, c: number, d: number) => void;
-  readonly publickeygenerator_changeAddressAsStrings: (a: number, b: number, c: number, d: number, e: number) => void;
-  readonly publickeygenerator_changeAddresses: (a: number, b: number, c: number, d: number, e: number) => void;
-  readonly publickeygenerator_changePubkey: (a: number, b: number, c: number) => void;
-  readonly publickeygenerator_changePubkeyAsString: (a: number, b: number, c: number) => void;
-  readonly publickeygenerator_changePubkeys: (a: number, b: number, c: number, d: number) => void;
-  readonly publickeygenerator_changePubkeysAsStrings: (a: number, b: number, c: number, d: number) => void;
-  readonly publickeygenerator_fromMasterXPrv: (a: number, b: number, c: number, d: bigint, e: number) => void;
-  readonly publickeygenerator_fromXPub: (a: number, b: number, c: number) => void;
-  readonly publickeygenerator_receiveAddress: (a: number, b: number, c: number, d: number) => void;
-  readonly publickeygenerator_receiveAddressAsString: (a: number, b: number, c: number, d: number) => void;
-  readonly publickeygenerator_receiveAddressAsStrings: (a: number, b: number, c: number, d: number, e: number) => void;
-  readonly publickeygenerator_receiveAddresses: (a: number, b: number, c: number, d: number, e: number) => void;
-  readonly publickeygenerator_receivePubkey: (a: number, b: number, c: number) => void;
-  readonly publickeygenerator_receivePubkeyAsString: (a: number, b: number, c: number) => void;
-  readonly publickeygenerator_receivePubkeys: (a: number, b: number, c: number, d: number) => void;
-  readonly publickeygenerator_receivePubkeysAsStrings: (a: number, b: number, c: number, d: number) => void;
+  readonly publickeygenerator_changeAddress: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly publickeygenerator_changeAddressAsString: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly publickeygenerator_changeAddressAsStrings: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+  ) => void;
+  readonly publickeygenerator_changeAddresses: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+  ) => void;
+  readonly publickeygenerator_changePubkey: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly publickeygenerator_changePubkeyAsString: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly publickeygenerator_changePubkeys: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly publickeygenerator_changePubkeysAsStrings: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly publickeygenerator_fromMasterXPrv: (
+    a: number,
+    b: number,
+    c: number,
+    d: bigint,
+    e: number,
+  ) => void;
+  readonly publickeygenerator_fromXPub: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly publickeygenerator_receiveAddress: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly publickeygenerator_receiveAddressAsString: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly publickeygenerator_receiveAddressAsStrings: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+  ) => void;
+  readonly publickeygenerator_receiveAddresses: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+  ) => void;
+  readonly publickeygenerator_receivePubkey: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly publickeygenerator_receivePubkeyAsString: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly publickeygenerator_receivePubkeys: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly publickeygenerator_receivePubkeysAsStrings: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
   readonly publickeygenerator_toString: (a: number, b: number) => void;
   readonly __wbg_privatekey_free: (a: number, b: number) => void;
   readonly privatekey_toAddress: (a: number, b: number, c: number) => void;
@@ -8594,16 +9217,40 @@ export interface InitOutput {
   readonly privatekey_try_new: (a: number, b: number, c: number) => void;
   readonly __wbg_privatekeygenerator_free: (a: number, b: number) => void;
   readonly __wbg_xprv_free: (a: number, b: number) => void;
-  readonly privatekeygenerator_changeKey: (a: number, b: number, c: number) => void;
-  readonly privatekeygenerator_new: (a: number, b: number, c: number, d: bigint, e: number) => void;
-  readonly privatekeygenerator_receiveKey: (a: number, b: number, c: number) => void;
+  readonly privatekeygenerator_changeKey: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly privatekeygenerator_new: (
+    a: number,
+    b: number,
+    c: number,
+    d: bigint,
+    e: number,
+  ) => void;
+  readonly privatekeygenerator_receiveKey: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
   readonly xprv_chainCode: (a: number, b: number) => void;
   readonly xprv_childNumber: (a: number) => number;
   readonly xprv_depth: (a: number) => number;
-  readonly xprv_deriveChild: (a: number, b: number, c: number, d: number) => void;
+  readonly xprv_deriveChild: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
   readonly xprv_derivePath: (a: number, b: number, c: number) => void;
   readonly xprv_fromXPrv: (a: number, b: number, c: number) => void;
-  readonly xprv_intoString: (a: number, b: number, c: number, d: number) => void;
+  readonly xprv_intoString: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
   readonly xprv_parentFingerprint: (a: number, b: number) => void;
   readonly xprv_privateKey: (a: number, b: number) => void;
   readonly xprv_toPrivateKey: (a: number, b: number) => void;
@@ -8619,21 +9266,18 @@ export interface InitOutput {
   readonly keypair_random: (a: number) => void;
   readonly keypair_toAddress: (a: number, b: number, c: number) => void;
   readonly keypair_toAddressECDSA: (a: number, b: number, c: number) => void;
-  readonly __wbg_pskb_free: (a: number, b: number) => void;
-  readonly pskb_add: (a: number, b: number, c: number) => void;
-  readonly pskb_deserialize: (a: number, b: number, c: number) => void;
-  readonly pskb_displayFormat: (a: number, b: number, c: number) => void;
-  readonly pskb_length: (a: number) => number;
-  readonly pskb_merge: (a: number, b: number) => void;
-  readonly pskb_new: (a: number) => void;
-  readonly pskb_serialize: (a: number, b: number) => void;
   readonly __wbg_pskt_free: (a: number, b: number) => void;
   readonly pskt_calculateId: (a: number, b: number) => void;
   readonly pskt_calculateMass: (a: number, b: number, c: number) => void;
   readonly pskt_creator: (a: number, b: number) => void;
   readonly pskt_fallbackLockTime: (a: number, b: number, c: bigint) => void;
   readonly pskt_input: (a: number, b: number, c: number) => void;
-  readonly pskt_inputAndRedeemScript: (a: number, b: number, c: number, d: number) => void;
+  readonly pskt_inputAndRedeemScript: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
   readonly pskt_inputsModifiable: (a: number, b: number) => void;
   readonly pskt_new: (a: number, b: number) => void;
   readonly pskt_noMoreInputs: (a: number, b: number) => void;
@@ -8643,30 +9287,69 @@ export interface InitOutput {
   readonly pskt_payload: (a: number) => number;
   readonly pskt_role: (a: number, b: number) => void;
   readonly pskt_serialize: (a: number, b: number) => void;
-  readonly pskt_setSequence: (a: number, b: number, c: bigint, d: number) => void;
+  readonly pskt_setSequence: (
+    a: number,
+    b: number,
+    c: bigint,
+    d: number,
+  ) => void;
   readonly pskt_toCombiner: (a: number, b: number) => void;
   readonly pskt_toConstructor: (a: number, b: number) => void;
   readonly pskt_toExtractor: (a: number, b: number) => void;
   readonly pskt_toFinalizer: (a: number, b: number) => void;
   readonly pskt_toSigner: (a: number, b: number) => void;
   readonly pskt_toUpdater: (a: number, b: number) => void;
+  readonly __wbg_pskb_free: (a: number, b: number) => void;
+  readonly pskb_add: (a: number, b: number, c: number) => void;
+  readonly pskb_deserialize: (a: number, b: number, c: number) => void;
+  readonly pskb_displayFormat: (a: number, b: number, c: number) => void;
+  readonly pskb_length: (a: number) => number;
+  readonly pskb_merge: (a: number, b: number) => void;
+  readonly pskb_new: (a: number) => void;
+  readonly pskb_serialize: (a: number, b: number) => void;
   readonly version: (a: number) => void;
   readonly __wbg_get_nodedescriptor_uid: (a: number, b: number) => void;
   readonly __wbg_get_nodedescriptor_url: (a: number, b: number) => void;
   readonly __wbg_nodedescriptor_free: (a: number, b: number) => void;
-  readonly __wbg_set_nodedescriptor_uid: (a: number, b: number, c: number) => void;
-  readonly __wbg_set_nodedescriptor_url: (a: number, b: number, c: number) => void;
+  readonly __wbg_set_nodedescriptor_uid: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly __wbg_set_nodedescriptor_url: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
+  readonly __wbg_resolver_free: (a: number, b: number) => void;
+  readonly resolver_connect: (a: number, b: number) => number;
+  readonly resolver_ctor: (a: number, b: number) => void;
+  readonly resolver_getNode: (a: number, b: number, c: number) => number;
+  readonly resolver_getUrl: (a: number, b: number, c: number) => number;
+  readonly resolver_urls: (a: number) => number;
   readonly __wbg_rpcclient_free: (a: number, b: number) => void;
-  readonly rpcclient_addEventListener: (a: number, b: number, c: number, d: number) => void;
+  readonly rpcclient_addEventListener: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
   readonly rpcclient_addPeer: (a: number, b: number) => number;
   readonly rpcclient_ban: (a: number, b: number) => number;
-  readonly rpcclient_clearEventListener: (a: number, b: number, c: number) => void;
+  readonly rpcclient_clearEventListener: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
   readonly rpcclient_connect: (a: number, b: number) => number;
   readonly rpcclient_ctor: (a: number, b: number) => void;
   readonly rpcclient_defaultPort: (a: number, b: number, c: number) => void;
   readonly rpcclient_disconnect: (a: number) => number;
   readonly rpcclient_encoding: (a: number, b: number) => void;
-  readonly rpcclient_estimateNetworkHashesPerSecond: (a: number, b: number) => number;
+  readonly rpcclient_estimateNetworkHashesPerSecond: (
+    a: number,
+    b: number,
+  ) => number;
   readonly rpcclient_getBalanceByAddress: (a: number, b: number) => number;
   readonly rpcclient_getBalancesByAddresses: (a: number, b: number) => number;
   readonly rpcclient_getBlock: (a: number, b: number) => number;
@@ -8680,13 +9363,22 @@ export interface InitOutput {
   readonly rpcclient_getConnections: (a: number, b: number) => number;
   readonly rpcclient_getCurrentBlockColor: (a: number, b: number) => number;
   readonly rpcclient_getCurrentNetwork: (a: number, b: number) => number;
-  readonly rpcclient_getDaaScoreTimestampEstimate: (a: number, b: number) => number;
+  readonly rpcclient_getDaaScoreTimestampEstimate: (
+    a: number,
+    b: number,
+  ) => number;
   readonly rpcclient_getFeeEstimate: (a: number, b: number) => number;
-  readonly rpcclient_getFeeEstimateExperimental: (a: number, b: number) => number;
+  readonly rpcclient_getFeeEstimateExperimental: (
+    a: number,
+    b: number,
+  ) => number;
   readonly rpcclient_getHeaders: (a: number, b: number) => number;
   readonly rpcclient_getInfo: (a: number, b: number) => number;
   readonly rpcclient_getMempoolEntries: (a: number, b: number) => number;
-  readonly rpcclient_getMempoolEntriesByAddresses: (a: number, b: number) => number;
+  readonly rpcclient_getMempoolEntriesByAddresses: (
+    a: number,
+    b: number,
+  ) => number;
   readonly rpcclient_getMempoolEntry: (a: number, b: number) => number;
   readonly rpcclient_getMetrics: (a: number, b: number) => number;
   readonly rpcclient_getPeerAddresses: (a: number, b: number) => number;
@@ -8698,14 +9390,28 @@ export interface InitOutput {
   readonly rpcclient_getUtxoReturnAddress: (a: number, b: number) => number;
   readonly rpcclient_getUtxosByAddresses: (a: number, b: number) => number;
   readonly rpcclient_getVirtualChainFromBlock: (a: number, b: number) => number;
-  readonly rpcclient_getVirtualChainFromBlockV2: (a: number, b: number) => number;
+  readonly rpcclient_getVirtualChainFromBlockV2: (
+    a: number,
+    b: number,
+  ) => number;
   readonly rpcclient_isConnected: (a: number) => number;
   readonly rpcclient_networkId: (a: number) => number;
   readonly rpcclient_nodeId: (a: number, b: number) => void;
-  readonly rpcclient_parseUrl: (a: number, b: number, c: number, d: number, e: number) => void;
+  readonly rpcclient_parseUrl: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+  ) => void;
   readonly rpcclient_ping: (a: number, b: number) => number;
   readonly rpcclient_removeAllEventListeners: (a: number, b: number) => void;
-  readonly rpcclient_removeEventListener: (a: number, b: number, c: number, d: number) => void;
+  readonly rpcclient_removeEventListener: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
   readonly rpcclient_resolveFinalityConflict: (a: number, b: number) => number;
   readonly rpcclient_resolver: (a: number) => number;
   readonly rpcclient_setNetworkId: (a: number, b: number, c: number) => void;
@@ -8715,15 +9421,23 @@ export interface InitOutput {
   readonly rpcclient_stop: (a: number) => number;
   readonly rpcclient_submitBlock: (a: number, b: number) => number;
   readonly rpcclient_submitTransaction: (a: number, b: number) => number;
-  readonly rpcclient_submitTransactionReplacement: (a: number, b: number) => number;
+  readonly rpcclient_submitTransactionReplacement: (
+    a: number,
+    b: number,
+  ) => number;
   readonly rpcclient_subscribeBlockAdded: (a: number) => number;
   readonly rpcclient_subscribeFinalityConflict: (a: number) => number;
   readonly rpcclient_subscribeFinalityConflictResolved: (a: number) => number;
   readonly rpcclient_subscribeNewBlockTemplate: (a: number) => number;
-  readonly rpcclient_subscribePruningPointUtxoSetOverride: (a: number) => number;
+  readonly rpcclient_subscribePruningPointUtxoSetOverride: (
+    a: number,
+  ) => number;
   readonly rpcclient_subscribeSinkBlueScoreChanged: (a: number) => number;
   readonly rpcclient_subscribeUtxosChanged: (a: number, b: number) => number;
-  readonly rpcclient_subscribeVirtualChainChanged: (a: number, b: number) => number;
+  readonly rpcclient_subscribeVirtualChainChanged: (
+    a: number,
+    b: number,
+  ) => number;
   readonly rpcclient_subscribeVirtualDaaScoreChanged: (a: number) => number;
   readonly rpcclient_triggerAbort: (a: number) => void;
   readonly rpcclient_unban: (a: number, b: number) => number;
@@ -8731,18 +9445,17 @@ export interface InitOutput {
   readonly rpcclient_unsubscribeFinalityConflict: (a: number) => number;
   readonly rpcclient_unsubscribeFinalityConflictResolved: (a: number) => number;
   readonly rpcclient_unsubscribeNewBlockTemplate: (a: number) => number;
-  readonly rpcclient_unsubscribePruningPointUtxoSetOverride: (a: number) => number;
+  readonly rpcclient_unsubscribePruningPointUtxoSetOverride: (
+    a: number,
+  ) => number;
   readonly rpcclient_unsubscribeSinkBlueScoreChanged: (a: number) => number;
   readonly rpcclient_unsubscribeUtxosChanged: (a: number, b: number) => number;
-  readonly rpcclient_unsubscribeVirtualChainChanged: (a: number, b: number) => number;
+  readonly rpcclient_unsubscribeVirtualChainChanged: (
+    a: number,
+    b: number,
+  ) => number;
   readonly rpcclient_unsubscribeVirtualDaaScoreChanged: (a: number) => number;
   readonly rpcclient_url: (a: number, b: number) => void;
-  readonly __wbg_resolver_free: (a: number, b: number) => void;
-  readonly resolver_connect: (a: number, b: number) => number;
-  readonly resolver_ctor: (a: number, b: number) => void;
-  readonly resolver_getNode: (a: number, b: number, c: number) => number;
-  readonly resolver_getUrl: (a: number, b: number, c: number) => number;
-  readonly resolver_urls: (a: number) => number;
   readonly __wbg_createwritestreamoptions_free: (a: number, b: number) => void;
   readonly __wbg_formatinputpathobject_free: (a: number, b: number) => void;
   readonly __wbg_mkdtempsyncoptions_free: (a: number, b: number) => void;
@@ -8753,21 +9466,49 @@ export interface InitOutput {
   readonly createwritestreamoptions_fd: (a: number) => number;
   readonly createwritestreamoptions_flags: (a: number) => number;
   readonly createwritestreamoptions_mode: (a: number) => number;
-  readonly createwritestreamoptions_new_with_values: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => number;
-  readonly createwritestreamoptions_set_auto_close: (a: number, b: number) => void;
-  readonly createwritestreamoptions_set_emit_close: (a: number, b: number) => void;
-  readonly createwritestreamoptions_set_encoding: (a: number, b: number) => void;
+  readonly createwritestreamoptions_new_with_values: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+    g: number,
+    h: number,
+  ) => number;
+  readonly createwritestreamoptions_set_auto_close: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly createwritestreamoptions_set_emit_close: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly createwritestreamoptions_set_encoding: (
+    a: number,
+    b: number,
+  ) => void;
   readonly createwritestreamoptions_set_fd: (a: number, b: number) => void;
   readonly createwritestreamoptions_set_flags: (a: number, b: number) => void;
   readonly createwritestreamoptions_set_mode: (a: number, b: number) => void;
-  readonly createwritestreamoptions_set_start: (a: number, b: number, c: number) => void;
+  readonly createwritestreamoptions_set_start: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
   readonly createwritestreamoptions_start: (a: number, b: number) => void;
   readonly formatinputpathobject_base: (a: number) => number;
   readonly formatinputpathobject_dir: (a: number) => number;
   readonly formatinputpathobject_ext: (a: number) => number;
   readonly formatinputpathobject_name: (a: number) => number;
   readonly formatinputpathobject_new: () => number;
-  readonly formatinputpathobject_new_with_values: (a: number, b: number, c: number, d: number, e: number) => number;
+  readonly formatinputpathobject_new_with_values: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+  ) => number;
   readonly formatinputpathobject_root: (a: number) => number;
   readonly formatinputpathobject_set_base: (a: number, b: number) => void;
   readonly formatinputpathobject_set_dir: (a: number, b: number) => void;
@@ -8788,14 +9529,23 @@ export interface InitOutput {
   readonly appendfileoptions_flag: (a: number) => number;
   readonly appendfileoptions_mode: (a: number) => number;
   readonly appendfileoptions_new: () => number;
-  readonly appendfileoptions_new_with_values: (a: number, b: number, c: number) => number;
+  readonly appendfileoptions_new_with_values: (
+    a: number,
+    b: number,
+    c: number,
+  ) => number;
   readonly appendfileoptions_set_encoding: (a: number, b: number) => void;
   readonly appendfileoptions_set_flag: (a: number, b: number) => void;
   readonly appendfileoptions_set_mode: (a: number, b: number) => void;
   readonly assertionerroroptions_actual: (a: number) => number;
   readonly assertionerroroptions_expected: (a: number) => number;
   readonly assertionerroroptions_message: (a: number) => number;
-  readonly assertionerroroptions_new: (a: number, b: number, c: number, d: number) => number;
+  readonly assertionerroroptions_new: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => number;
   readonly assertionerroroptions_operator: (a: number) => number;
   readonly assertionerroroptions_set_actual: (a: number, b: number) => void;
   readonly assertionerroroptions_set_expected: (a: number, b: number) => void;
@@ -8807,48 +9557,110 @@ export interface InitOutput {
   readonly createreadstreamoptions_end: (a: number, b: number) => void;
   readonly createreadstreamoptions_fd: (a: number) => number;
   readonly createreadstreamoptions_flags: (a: number) => number;
-  readonly createreadstreamoptions_high_water_mark: (a: number, b: number) => void;
+  readonly createreadstreamoptions_high_water_mark: (
+    a: number,
+    b: number,
+  ) => void;
   readonly createreadstreamoptions_mode: (a: number) => number;
-  readonly createreadstreamoptions_new_with_values: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number) => number;
-  readonly createreadstreamoptions_set_auto_close: (a: number, b: number) => void;
-  readonly createreadstreamoptions_set_emit_close: (a: number, b: number) => void;
+  readonly createreadstreamoptions_new_with_values: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+    g: number,
+    h: number,
+    i: number,
+    j: number,
+    k: number,
+    l: number,
+  ) => number;
+  readonly createreadstreamoptions_set_auto_close: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly createreadstreamoptions_set_emit_close: (
+    a: number,
+    b: number,
+  ) => void;
   readonly createreadstreamoptions_set_encoding: (a: number, b: number) => void;
-  readonly createreadstreamoptions_set_end: (a: number, b: number, c: number) => void;
+  readonly createreadstreamoptions_set_end: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
   readonly createreadstreamoptions_set_fd: (a: number, b: number) => void;
   readonly createreadstreamoptions_set_flags: (a: number, b: number) => void;
-  readonly createreadstreamoptions_set_high_water_mark: (a: number, b: number, c: number) => void;
+  readonly createreadstreamoptions_set_high_water_mark: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
   readonly createreadstreamoptions_set_mode: (a: number, b: number) => void;
-  readonly createreadstreamoptions_set_start: (a: number, b: number, c: number) => void;
+  readonly createreadstreamoptions_set_start: (
+    a: number,
+    b: number,
+    c: number,
+  ) => void;
   readonly createreadstreamoptions_start: (a: number, b: number) => void;
   readonly __wbg_getnameoptions_free: (a: number, b: number) => void;
   readonly getnameoptions_family: (a: number) => number;
   readonly getnameoptions_host: (a: number) => number;
   readonly getnameoptions_local_address: (a: number) => number;
-  readonly getnameoptions_new: (a: number, b: number, c: number, d: number) => number;
+  readonly getnameoptions_new: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => number;
   readonly getnameoptions_port: (a: number) => number;
   readonly getnameoptions_set_family: (a: number, b: number) => void;
   readonly getnameoptions_set_host: (a: number, b: number) => void;
   readonly getnameoptions_set_local_address: (a: number, b: number) => void;
   readonly getnameoptions_set_port: (a: number, b: number) => void;
-  readonly writestream_add_listener_with_close: (a: number, b: number) => number;
+  readonly writestream_add_listener_with_close: (
+    a: number,
+    b: number,
+  ) => number;
   readonly writestream_add_listener_with_open: (a: number, b: number) => number;
   readonly writestream_on_with_close: (a: number, b: number) => number;
   readonly writestream_on_with_open: (a: number, b: number) => number;
   readonly writestream_once_with_close: (a: number, b: number) => number;
   readonly writestream_once_with_open: (a: number, b: number) => number;
-  readonly writestream_prepend_listener_with_close: (a: number, b: number) => number;
-  readonly writestream_prepend_listener_with_open: (a: number, b: number) => number;
-  readonly writestream_prepend_once_listener_with_close: (a: number, b: number) => number;
-  readonly writestream_prepend_once_listener_with_open: (a: number, b: number) => number;
+  readonly writestream_prepend_listener_with_close: (
+    a: number,
+    b: number,
+  ) => number;
+  readonly writestream_prepend_listener_with_open: (
+    a: number,
+    b: number,
+  ) => number;
+  readonly writestream_prepend_once_listener_with_close: (
+    a: number,
+    b: number,
+  ) => number;
+  readonly writestream_prepend_once_listener_with_open: (
+    a: number,
+    b: number,
+  ) => number;
   readonly __wbg_processsendoptions_free: (a: number, b: number) => void;
   readonly __wbg_wasioptions_free: (a: number, b: number) => void;
   readonly processsendoptions_new: (a: number) => number;
-  readonly processsendoptions_set_swallow_errors: (a: number, b: number) => void;
+  readonly processsendoptions_set_swallow_errors: (
+    a: number,
+    b: number,
+  ) => void;
   readonly processsendoptions_swallow_errors: (a: number) => number;
   readonly wasioptions_args: (a: number, b: number) => void;
   readonly wasioptions_env: (a: number) => number;
   readonly wasioptions_new: (a: number) => number;
-  readonly wasioptions_new_with_values: (a: number, b: number, c: number, d: number) => number;
+  readonly wasioptions_new_with_values: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => number;
   readonly wasioptions_preopens: (a: number) => number;
   readonly wasioptions_set_args: (a: number, b: number, c: number) => void;
   readonly wasioptions_set_env: (a: number, b: number) => void;
@@ -8857,7 +9669,10 @@ export interface InitOutput {
   readonly netserveroptions_allow_half_open: (a: number) => number;
   readonly netserveroptions_pause_on_connect: (a: number) => number;
   readonly netserveroptions_set_allow_half_open: (a: number, b: number) => void;
-  readonly netserveroptions_set_pause_on_connect: (a: number, b: number) => void;
+  readonly netserveroptions_set_pause_on_connect: (
+    a: number,
+    b: number,
+  ) => void;
   readonly __wbg_userinfooptions_free: (a: number, b: number) => void;
   readonly userinfooptions_encoding: (a: number) => number;
   readonly userinfooptions_new: () => number;
@@ -8871,23 +9686,44 @@ export interface InitOutput {
   readonly agentconstructoroptions_keep_alive_msecs: (a: number) => number;
   readonly agentconstructoroptions_max_free_sockets: (a: number) => number;
   readonly agentconstructoroptions_max_sockets: (a: number) => number;
-  readonly agentconstructoroptions_set_keep_alive: (a: number, b: number) => void;
-  readonly agentconstructoroptions_set_keep_alive_msecs: (a: number, b: number) => void;
-  readonly agentconstructoroptions_set_max_free_sockets: (a: number, b: number) => void;
-  readonly agentconstructoroptions_set_max_sockets: (a: number, b: number) => void;
+  readonly agentconstructoroptions_set_keep_alive: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly agentconstructoroptions_set_keep_alive_msecs: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly agentconstructoroptions_set_max_free_sockets: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly agentconstructoroptions_set_max_sockets: (
+    a: number,
+    b: number,
+  ) => void;
   readonly agentconstructoroptions_set_timeout: (a: number, b: number) => void;
   readonly agentconstructoroptions_timeout: (a: number) => number;
   readonly createhookcallbacks_after: (a: number) => number;
   readonly createhookcallbacks_before: (a: number) => number;
   readonly createhookcallbacks_destroy: (a: number) => number;
   readonly createhookcallbacks_init: (a: number) => number;
-  readonly createhookcallbacks_new: (a: number, b: number, c: number, d: number, e: number) => number;
+  readonly createhookcallbacks_new: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+  ) => number;
   readonly createhookcallbacks_promise_resolve: (a: number) => number;
   readonly createhookcallbacks_set_after: (a: number, b: number) => void;
   readonly createhookcallbacks_set_before: (a: number, b: number) => void;
   readonly createhookcallbacks_set_destroy: (a: number, b: number) => void;
   readonly createhookcallbacks_set_init: (a: number, b: number) => void;
-  readonly createhookcallbacks_set_promise_resolve: (a: number, b: number) => void;
+  readonly createhookcallbacks_set_promise_resolve: (
+    a: number,
+    b: number,
+  ) => void;
   readonly setaadoptions_flush: (a: number) => number;
   readonly setaadoptions_new: (a: number, b: number, c: number) => number;
   readonly setaadoptions_set_flush: (a: number, b: number) => void;
@@ -8904,7 +9740,11 @@ export interface InitOutput {
   readonly writefilesyncoptions_encoding: (a: number) => number;
   readonly writefilesyncoptions_flag: (a: number) => number;
   readonly writefilesyncoptions_mode: (a: number) => number;
-  readonly writefilesyncoptions_new: (a: number, b: number, c: number) => number;
+  readonly writefilesyncoptions_new: (
+    a: number,
+    b: number,
+    c: number,
+  ) => number;
   readonly writefilesyncoptions_set_encoding: (a: number, b: number) => void;
   readonly writefilesyncoptions_set_flag: (a: number, b: number) => void;
   readonly writefilesyncoptions_set_mode: (a: number, b: number) => void;
@@ -8914,27 +9754,227 @@ export interface InitOutput {
   readonly readstream_on_with_open: (a: number, b: number) => number;
   readonly readstream_once_with_close: (a: number, b: number) => number;
   readonly readstream_once_with_open: (a: number, b: number) => number;
-  readonly readstream_prepend_listener_with_close: (a: number, b: number) => number;
-  readonly readstream_prepend_listener_with_open: (a: number, b: number) => number;
-  readonly readstream_prepend_once_listener_with_close: (a: number, b: number) => number;
-  readonly readstream_prepend_once_listener_with_open: (a: number, b: number) => number;
+  readonly readstream_prepend_listener_with_close: (
+    a: number,
+    b: number,
+  ) => number;
+  readonly readstream_prepend_listener_with_open: (
+    a: number,
+    b: number,
+  ) => number;
+  readonly readstream_prepend_once_listener_with_close: (
+    a: number,
+    b: number,
+  ) => number;
+  readonly readstream_prepend_once_listener_with_open: (
+    a: number,
+    b: number,
+  ) => number;
   readonly __wbg_consoleconstructoroptions_free: (a: number, b: number) => void;
   readonly consoleconstructoroptions_color_mod: (a: number) => number;
   readonly consoleconstructoroptions_ignore_errors: (a: number) => number;
   readonly consoleconstructoroptions_inspect_options: (a: number) => number;
   readonly consoleconstructoroptions_new: (a: number, b: number) => number;
-  readonly consoleconstructoroptions_new_with_values: (a: number, b: number, c: number, d: number, e: number) => number;
-  readonly consoleconstructoroptions_set_color_mod: (a: number, b: number) => void;
-  readonly consoleconstructoroptions_set_ignore_errors: (a: number, b: number) => void;
-  readonly consoleconstructoroptions_set_inspect_options: (a: number, b: number) => void;
+  readonly consoleconstructoroptions_new_with_values: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+  ) => number;
+  readonly consoleconstructoroptions_set_color_mod: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly consoleconstructoroptions_set_ignore_errors: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly consoleconstructoroptions_set_inspect_options: (
+    a: number,
+    b: number,
+  ) => void;
   readonly consoleconstructoroptions_set_stderr: (a: number, b: number) => void;
   readonly consoleconstructoroptions_set_stdout: (a: number, b: number) => void;
   readonly consoleconstructoroptions_stderr: (a: number) => number;
   readonly consoleconstructoroptions_stdout: (a: number) => number;
+  readonly sys_alloc_aligned: (a: number, b: number) => number;
+  readonly sys_alloc_words: (a: number) => number;
+  readonly sys_argc: () => number;
+  readonly sys_log: (a: number, b: number) => void;
+  readonly sys_argv: (a: number, b: number, c: number) => number;
+  readonly sys_bigint: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+  ) => void;
+  readonly sys_bigint2_1: (a: number, b: number) => void;
+  readonly sys_bigint2_2: (a: number, b: number, c: number) => void;
+  readonly sys_bigint2_3: (a: number, b: number, c: number, d: number) => void;
+  readonly sys_bigint2_4: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+  ) => void;
+  readonly sys_bigint2_5: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+  ) => void;
+  readonly sys_bigint2_6: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+    g: number,
+  ) => void;
+  readonly sys_cycle_count: () => bigint;
+  readonly sys_exit: (a: number) => void;
+  readonly sys_fork: () => number;
+  readonly sys_getenv: (a: number, b: number, c: number, d: number) => number;
+  readonly sys_halt: (a: number, b: number) => void;
+  readonly sys_input: (a: number) => number;
+  readonly sys_keccak: (a: number, b: number) => number;
+  readonly sys_pause: (a: number, b: number) => void;
+  readonly sys_pipe: (a: number) => number;
+  readonly sys_poseidon2: (a: number, b: number, c: number, d: number) => void;
+  readonly sys_prove_keccak: (a: number, b: number) => void;
+  readonly sys_rand: (a: number, b: number) => void;
+  readonly sys_read: (a: number, b: number, c: number) => number;
+  readonly sys_read_words: (a: number, b: number, c: number) => number;
+  readonly sys_sha_buffer: (a: number, b: number, c: number, d: number) => void;
+  readonly sys_sha_compress: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
+  readonly sys_verify_integrity: (a: number, b: number) => void;
+  readonly sys_write: (a: number, b: number, c: number) => void;
+  readonly syscall_0: (a: number, b: number, c: number, d: number) => void;
+  readonly syscall_0_nr: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+  ) => void;
+  readonly syscall_1: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+  ) => void;
+  readonly syscall_1_nr: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+  ) => void;
+  readonly syscall_2: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+  ) => void;
+  readonly syscall_2_nr: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+    g: number,
+  ) => void;
+  readonly syscall_3: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+    g: number,
+  ) => void;
+  readonly syscall_3_nr: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+    g: number,
+    h: number,
+  ) => void;
+  readonly syscall_4: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+    g: number,
+    h: number,
+  ) => void;
+  readonly syscall_4_nr: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+    g: number,
+    h: number,
+    i: number,
+  ) => void;
+  readonly syscall_5: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+    g: number,
+    h: number,
+    i: number,
+  ) => void;
+  readonly syscall_5_nr: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+    g: number,
+    h: number,
+    i: number,
+    j: number,
+  ) => void;
+  readonly sys_panic: (a: number, b: number) => void;
+  readonly sys_verify_integrity2: (a: number, b: number) => void;
   readonly rustsecp256k1_v0_10_0_context_create: (a: number) => number;
   readonly rustsecp256k1_v0_10_0_context_destroy: (a: number) => void;
-  readonly rustsecp256k1_v0_10_0_default_error_callback_fn: (a: number, b: number) => void;
-  readonly rustsecp256k1_v0_10_0_default_illegal_callback_fn: (a: number, b: number) => void;
+  readonly rustsecp256k1_v0_10_0_default_error_callback_fn: (
+    a: number,
+    b: number,
+  ) => void;
+  readonly rustsecp256k1_v0_10_0_default_illegal_callback_fn: (
+    a: number,
+    b: number,
+  ) => void;
   readonly __wbg_abortable_free: (a: number, b: number) => void;
   readonly __wbg_aborted_free: (a: number, b: number) => void;
   readonly abortable_abort: (a: number) => void;
@@ -8950,38 +9990,65 @@ export interface InitOutput {
   readonly defer: () => number;
   readonly __wbindgen_export_0: (a: number) => void;
   readonly __wbindgen_export_1: (a: number, b: number) => number;
-  readonly __wbindgen_export_2: (a: number, b: number, c: number, d: number) => number;
+  readonly __wbindgen_export_2: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => number;
   readonly __wbindgen_export_3: (a: number, b: number, c: number) => void;
   readonly __wbindgen_export_4: WebAssembly.Table;
   readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
   readonly __wbindgen_export_5: (a: number, b: number) => void;
-  readonly __wbindgen_export_6: (a: number, b: number, c: number) => void;
-  readonly __wbindgen_export_7: (a: number, b: number) => void;
-  readonly __wbindgen_export_8: (a: number, b: number, c: number, d: number) => void;
+  readonly __wbindgen_export_6: (a: number, b: number) => void;
+  readonly __wbindgen_export_7: (a: number, b: number, c: number) => void;
+  readonly __wbindgen_export_8: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
   readonly __wbindgen_export_9: (a: number, b: number, c: number) => void;
   readonly __wbindgen_export_10: (a: number, b: number, c: number) => void;
-  readonly __wbindgen_export_11: (a: number, b: number, c: number, d: number) => number;
+  readonly __wbindgen_export_11: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => number;
   readonly __wbindgen_export_12: (a: number, b: number, c: number) => void;
-  readonly __wbindgen_export_13: (a: number, b: number, c: number, d: number) => void;
+  readonly __wbindgen_export_13: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+  ) => void;
 }
 
 export type SyncInitInput = BufferSource | WebAssembly.Module;
 /**
-* Instantiates the given `module`, which can either be bytes or
-* a precompiled `WebAssembly.Module`.
-*
-* @param {{ module: SyncInitInput }} module - Passing `SyncInitInput` directly is deprecated.
-*
-* @returns {InitOutput}
-*/
-export function initSync(module: { module: SyncInitInput } | SyncInitInput): InitOutput;
+ * Instantiates the given `module`, which can either be bytes or
+ * a precompiled `WebAssembly.Module`.
+ *
+ * @param {{ module: SyncInitInput }} module - Passing `SyncInitInput` directly is deprecated.
+ *
+ * @returns {InitOutput}
+ */
+export function initSync(
+  module: { module: SyncInitInput } | SyncInitInput,
+): InitOutput;
 
 /**
-* If `module_or_path` is {RequestInfo} or {URL}, makes a request and
-* for everything else, calls `WebAssembly.instantiate` directly.
-*
-* @param {{ module_or_path: InitInput | Promise<InitInput> }} module_or_path - Passing `InitInput` directly is deprecated.
-*
-* @returns {Promise<InitOutput>}
-*/
-export default function __wbg_init (module_or_path?: { module_or_path: InitInput | Promise<InitInput> } | InitInput | Promise<InitInput>): Promise<InitOutput>;
+ * If `module_or_path` is {RequestInfo} or {URL}, makes a request and
+ * for everything else, calls `WebAssembly.instantiate` directly.
+ *
+ * @param {{ module_or_path: InitInput | Promise<InitInput> }} module_or_path - Passing `InitInput` directly is deprecated.
+ *
+ * @returns {Promise<InitOutput>}
+ */
+export default function __wbg_init(
+  module_or_path?:
+    | { module_or_path: InitInput | Promise<InitInput> }
+    | InitInput
+    | Promise<InitInput>,
+): Promise<InitOutput>;

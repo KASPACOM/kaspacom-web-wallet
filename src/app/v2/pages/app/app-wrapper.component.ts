@@ -27,7 +27,9 @@ import { IframeAccountSelectionService } from '../../services/iframe-account-sel
 import {
   DesktopViewService,
   MOBILE_BREAKPOINT,
+  WIDE_BREAKPOINT,
 } from '../../services/desktop-view.service';
+import { WideWorkspaceService } from '../../services/wide-workspace.service';
 
 import { KcSpinnerComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import { WalletService } from '../../../services/wallet.service';
@@ -66,6 +68,7 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
   protected assetsManager = inject(AssetsManagerService);
   iframeAccountSelectionService = inject(IframeAccountSelectionService);
   desktopViewService = inject(DesktopViewService);
+  wideWorkspaceService = inject(WideWorkspaceService);
   shouldEnforceAccountSelection = signal(
     this.iframeAccountSelectionService.shouldEnforceAccountSelection(),
   );
@@ -85,6 +88,20 @@ export class AppWrapperComponent implements OnInit, AfterViewInit, OnDestroy {
       !this.desktopViewService.isIframe &&
       this.desktopViewService.isExpandedView() &&
       this.windowWidth() >= MOBILE_BREAKPOINT,
+  );
+
+  /**
+   * True when the Contracts wide-workspace layout should take over the wrapper.
+   * Also true while a page is layered on top of Contracts in the flow-page
+   * stack (e.g. an action approval) — the single flow-page outlet unmounts
+   * ContractsPageComponent (and its wideWorkspaceService.activate() call)
+   * the instant that happens, but the layout shouldn't flip mid-transaction.
+   */
+  readonly isContractsWide = computed(
+    () =>
+      (this.wideWorkspaceService.isActive() ||
+        this.flowPagesService.isPageInStack('contracts')) &&
+      this.windowWidth() >= WIDE_BREAKPOINT,
   );
 
   // Computed signal to determine if account selection overlay should be shown

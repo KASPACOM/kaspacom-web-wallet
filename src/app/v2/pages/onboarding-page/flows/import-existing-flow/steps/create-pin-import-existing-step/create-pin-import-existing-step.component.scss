@@ -1,4 +1,4 @@
-::host {
+:host {
   width: 100%;
 }
 
@@ -17,10 +17,9 @@
   margin: 0;
   font-size: 0.85rem;
   line-height: 1.4;
-  color: var(--warning-color, #FFB800);
+  color: var(--warning-color, #ffb800);
 }
 
 .password-notice__label {
   font-weight: 600;
 }
-

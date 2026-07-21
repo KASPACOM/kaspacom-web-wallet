@@ -37,9 +37,17 @@ import {
   TransferKasAction,
   WalletAction,
   WalletActionType,
+  CovenantDeployAction,
+  CovenantSpendAction,
+  CovenantCompletePartialAction,
 } from '../../types/wallet-action';
 import { AppWallet } from '../../classes/AppWallet';
-import { CompoundUtxosActionResult } from '../../types/wallet-action-result';
+import {
+  CompoundUtxosActionResult,
+  CovenantCompletePartialActionResult,
+  CovenantDeployActionResult,
+  CovenantSpendActionResult,
+} from '../../types/wallet-action-result';
 import { UnfinishedCommitRevealAction } from '../../types/kaspa-network/unfinished-commit-reveal-action.interface';
 import { PsktTransaction } from '../../types/kaspa-network/pskt-transaction.interface';
 import { UtilsHelper } from '../utils.service';
@@ -47,8 +55,11 @@ import { MempoolTransactionManager } from '../../classes/MempoolTransactionManag
 import { TransactionRequest } from 'ethers';
 import { createEIP1193Response } from '../etherium-services/create-eip-1193-response';
 import { KaspaWalletMnemonicActionsService } from './kaspa-wallet-mnemonic-actions.service';
+import { CovenantService } from '../covenant/covenant.service';
 
 const MINIMAL_TRANSACTION_MASS = 10000n;
+const COVENANT_ESTIMATED_TRANSACTION_MASS = 25000n;
+const MINIMUM_FEE_PER_MASS = 100n;
 export const MINIMAL_AMOUNT_TO_SEND = 20000000n;
 export const MAX_TRANSACTION_FEE = 20000n;
 export const REVEAL_PSKT_AMOUNT = 105000000n;
@@ -65,6 +76,7 @@ export class KaspaNetworkActionsService {
   private readonly kaspaWalletMnemonicActions = inject(
     KaspaWalletMnemonicActionsService,
   );
+  private readonly covenantService = inject(CovenantService);
 
   async connectAndDo<T>(
     fn: () => Promise<T>,
@@ -231,6 +243,23 @@ export class KaspaNetworkActionsService {
       ];
     }
 
+    if (
+      action.type === WalletActionType.COVENANT_DEPLOY ||
+      action.type === WalletActionType.COVENANT_SPEND ||
+      action.type === WalletActionType.COVENANT_COMPLETE_PARTIAL
+    ) {
+      try {
+        return [
+          this.feeToPriorityFeeComponentMass(
+            await this.estimateCovenantActionFee(action, wallet),
+          ),
+        ];
+      } catch (error) {
+        console.warn('[Covenant] Fee estimation failed:', error);
+        return [COVENANT_ESTIMATED_TRANSACTION_MASS];
+      }
+    }
+
     throw new Error('No such action type');
   }
 
@@ -394,6 +423,90 @@ export class KaspaNetworkActionsService {
       };
     }
 
+    if (action.type === WalletActionType.COVENANT_DEPLOY) {
+      const actionData = action.data as CovenantDeployAction;
+      const compiled = this.covenantService.parseCompiledContract(
+        actionData.compiledContractJson,
+      );
+      const result = await this.covenantService.deploy(
+        compiled,
+        actionData.amountSompi,
+        wallet.getPrivateKey().toString(),
+        action.priorityFee || 0n,
+      );
+      await notifyUpdate(result.txid);
+
+      const actionResult: CovenantDeployActionResult = {
+        type: 'deploy-covenant' as WalletActionResultType,
+        performedByWallet: wallet.getAddress(),
+        txid: result.txid,
+        contractAddress: result.contractAddress,
+        outpoint: result.outpoint,
+        covenantId: result.covenantId,
+      };
+
+      return {
+        success: true,
+        result: actionResult,
+      };
+    }
+
+    if (action.type === WalletActionType.COVENANT_SPEND) {
+      const actionData = action.data as CovenantSpendAction;
+      const compiled = this.covenantService.parseCompiledContract(
+        actionData.compiledContractJson,
+      );
+      const result = await this.covenantService.spend(
+        compiled,
+        actionData.outpoint,
+        actionData.inputAmountSompi,
+        actionData.functionName,
+        actionData.outputs,
+        wallet.getPrivateKey().toString(),
+        actionData.extraArgs,
+        actionData.covenantId,
+        action.priorityFee || 0n,
+        actionData.useSenderFee,
+        actionData.transactionPayloadHex,
+      );
+      await notifyUpdate(result.txid);
+
+      const actionResult: CovenantSpendActionResult = {
+        type: 'spend-covenant' as WalletActionResultType,
+        performedByWallet: wallet.getAddress(),
+        txid: result.txid,
+        functionName: result.functionName,
+        covenantId: result.covenantId,
+      };
+
+      return {
+        success: true,
+        result: actionResult,
+      };
+    }
+
+    if (action.type === WalletActionType.COVENANT_COMPLETE_PARTIAL) {
+      const actionData = action.data as CovenantCompletePartialAction;
+      const partialSpend = JSON.parse(actionData.partialSpendJson);
+      const result = await this.covenantService.completePartial(
+        partialSpend,
+        wallet.getPrivateKey().toString(),
+      );
+      await notifyUpdate(result.txid);
+
+      const actionResult: CovenantCompletePartialActionResult = {
+        type: 'complete-covenant-partial' as WalletActionResultType,
+        performedByWallet: wallet.getAddress(),
+        txid: result.txid,
+        functionName: result.functionName,
+      };
+
+      return {
+        success: true,
+        result: actionResult,
+      };
+    }
+
     if (action.type === WalletActionType.COMMIT_REVEAL) {
       const actionData: CommitRevealAction = action.data as CommitRevealAction;
       const revealPriorityFee = actionData.options?.revealPriorityFee || 0n;
@@ -484,6 +597,7 @@ export class KaspaNetworkActionsService {
 
   async getMinimalRequiredAmountForAction(
     action: WalletAction,
+    wallet?: AppWallet,
   ): Promise<bigint> {
     if (action.type === WalletActionType.EIP1193_PROVIDER_REQUEST) {
       return 0n;
@@ -533,6 +647,36 @@ export class KaspaNetworkActionsService {
       );
     }
 
+    if (action.type === WalletActionType.COVENANT_DEPLOY) {
+      return (
+        action.data.amountSompi +
+        (await this.estimateCovenantActionFee(action, wallet))
+      );
+    }
+
+    if (action.type === WalletActionType.COVENANT_SPEND) {
+      const outputsSum = action.data.outputs.reduce(
+        (sum, output) => sum + output.amount,
+        0n,
+      );
+      const walletAddedAmount =
+        outputsSum > action.data.inputAmountSompi
+          ? outputsSum - action.data.inputAmountSompi
+          : 0n;
+      const senderFeeBuffer = action.data.useSenderFee
+        ? MINIMAL_AMOUNT_TO_SEND
+        : 0n;
+      return (
+        walletAddedAmount +
+        senderFeeBuffer +
+        (await this.estimateCovenantActionFee(action, wallet))
+      );
+    }
+
+    if (action.type === WalletActionType.COVENANT_COMPLETE_PARTIAL) {
+      return await this.estimateCovenantActionFee(action, wallet);
+    }
+
     throw new Error('Invalid action type');
   }
 
@@ -546,6 +690,64 @@ export class KaspaNetworkActionsService {
 
   async getEstimateFeeRates(): Promise<IFeeEstimate> {
     return await this.transactionsManager.getEstimateFeeRates();
+  }
+
+  async estimateCovenantActionFee(
+    action: WalletAction,
+    wallet?: AppWallet,
+  ): Promise<bigint> {
+    const privateKeyHex = wallet?.getPrivateKey().toString();
+
+    if (!privateKeyHex) {
+      return COVENANT_ESTIMATED_TRANSACTION_MASS * MINIMUM_FEE_PER_MASS;
+    }
+
+    if (action.type === WalletActionType.COVENANT_DEPLOY) {
+      const actionData = action.data as CovenantDeployAction;
+      const compiled = this.covenantService.parseCompiledContract(
+        actionData.compiledContractJson,
+      );
+      return await this.covenantService.estimateDeployFee(
+        compiled,
+        actionData.amountSompi,
+        privateKeyHex,
+        action.priorityFee || 0n,
+      );
+    }
+
+    if (action.type === WalletActionType.COVENANT_SPEND) {
+      const actionData = action.data as CovenantSpendAction;
+      const compiled = this.covenantService.parseCompiledContract(
+        actionData.compiledContractJson,
+      );
+      return await this.covenantService.estimateSpendFee(
+        compiled,
+        actionData.outpoint,
+        actionData.inputAmountSompi,
+        actionData.functionName,
+        actionData.outputs,
+        privateKeyHex,
+        actionData.extraArgs,
+        actionData.covenantId,
+        action.priorityFee || 0n,
+        actionData.useSenderFee,
+        actionData.transactionPayloadHex,
+      );
+    }
+
+    if (action.type === WalletActionType.COVENANT_COMPLETE_PARTIAL) {
+      const actionData = action.data as CovenantCompletePartialAction;
+      return await this.covenantService.estimateCompletePartialFee(
+        JSON.parse(actionData.partialSpendJson),
+        privateKeyHex,
+      );
+    }
+
+    throw new Error('Action is not a covenant action');
+  }
+
+  private feeToPriorityFeeComponentMass(fee: bigint): bigint {
+    return (fee + MINIMUM_FEE_PER_MASS - 1n) / MINIMUM_FEE_PER_MASS;
   }
 
   async updateUnfinishedCommitRevealActionOnLocalStorage(

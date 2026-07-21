@@ -1,0 +1,33 @@
+<kc-dialog>
+  <ng-template #contentTemplate>
+    <div class="partial-spend-content">
+      <span class="text-gray-75 typo-text-2">
+        Your signature has been added. Copy the JSON below and send it to the
+        co-signer to complete the transaction.
+      </span>
+      <textarea
+        class="contract-input"
+        rows="8"
+        readonly
+        [value]="data.json"
+      ></textarea>
+      <kc-button
+        [text]="'Copy partial spend JSON'"
+        [isFullWidth]="true"
+        (buttonClick)="copyJson()"
+      ></kc-button>
+      <kc-button
+        [text]="'Download JSON file'"
+        [variant]="'secondary'"
+        [isFullWidth]="true"
+        (buttonClick)="downloadJson()"
+      ></kc-button>
+      <kc-button
+        [text]="'Done'"
+        [variant]="'secondary'"
+        [isFullWidth]="true"
+        (buttonClick)="onDone()"
+      ></kc-button>
+    </div>
+  </ng-template>
+</kc-dialog>

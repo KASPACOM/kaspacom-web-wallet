@@ -163,6 +163,13 @@
   animation: fadeInUp 0.6s ease-out 0.4s both;
 }
 
+.pending-confirmation-message {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  text-align: center;
+  color: var(--text-secondary, #a0a0a0);
+}
+
 // Animations
 @keyframes fadeInUp {
   from {

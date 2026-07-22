@@ -2418,6 +2418,16 @@
                       ></app-copy-button>
                     </div>
                   </div>
+                  @if (interactIndexerState()) {
+                    <div class="flex column gap-4">
+                      <span class="text-gray-60 typo-text-1"
+                        >Indexer status</span
+                      >
+                      <span class="text-white typo-text-2">{{
+                        interactIndexerState()!.message
+                      }}</span>
+                    </div>
+                  }
                 </div>
               }
             </div>
@@ -2451,6 +2461,14 @@
                 ></app-copy-button>
               </div>
             </div>
+            @if (interactIndexerState()) {
+              <div class="flex column gap-4">
+                <span class="text-gray-60 typo-text-1">Indexer status</span>
+                <span class="text-white typo-text-2">{{
+                  interactIndexerState()!.message
+                }}</span>
+              </div>
+            }
           </div>
         }
 

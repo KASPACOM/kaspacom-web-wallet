@@ -78,7 +78,10 @@ import {
 } from '../../../../../types/wallet-action-result';
 import { FlowPagesService } from '../../../../services/flow-pages.service';
 import { WideWorkspaceService } from '../../../../services/wide-workspace.service';
-import { ApprovalFlowService } from '../../../../services/approval-flow.service';
+import {
+  ApprovalFlowService,
+  PendingActionConfirmation,
+} from '../../../../services/approval-flow.service';
 import { AddressSmartInputComponent } from '../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { CovenantDateTimeInputComponent } from './covenant-date-time-input.component';
 import { WalletProfileOrbComponent } from '../../../../shared/ui/wallet-profile-orb/wallet-profile-orb.component';
@@ -180,6 +183,12 @@ type DeployIndexerState = {
   covenantId?: string;
 };
 
+type ActionIndexerState = {
+  txid: string;
+  status: 'checking' | 'indexed' | 'not-indexed' | 'unavailable';
+  message: string;
+};
+
 @Component({
   selector: 'app-contracts-page',
   imports: [
@@ -273,6 +282,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   } | null>(null);
   deployIndexerState = signal<DeployIndexerState | null>(null);
   deployError = signal<string | null>(null);
+  interactIndexerState = signal<ActionIndexerState | null>(null);
   isDeploying = signal(false);
 
   // Computed parsed contract from deploy JSON
@@ -2441,6 +2451,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.selectedFunction = '';
     this.interactError.set(null);
     this.interactResult.set(null);
+    this.interactIndexerState.set(null);
     this.partialSpendJson.set(null);
     this.partialCompleteError.set(null);
     this.partialCompleteResult.set(null);
@@ -3525,6 +3536,148 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Poll the indexer for a non-deploy covenant action (TopUp, withdraw,
+   * keepAlive, changeHeir, partial-spend completion, etc.) and only settle
+   * "My Contracts" once the merged dashboard entry's amount/status agrees
+   * with what we already applied to the local registry.
+   *
+   * getTransactionSettlementStatus() alone isn't enough: it can report
+   * `indexed: true` (the tx was seen) while the separate listCovenants()
+   * listing that mergeDashboardEntries() trusts as the source of truth for
+   * status/amount still lags behind — calling loadContracts() at that point
+   * re-overwrites our optimistic registry update with the listing's stale
+   * (pre-tx) values, the exact staleness this method exists to avoid. We
+   * can't compare txids to detect that lag: mergeDashboardEntries() takes
+   * `latestTxid` from the indexer entry, and indexerSummaryToDashboard()
+   * always sets that to the covenant's genesis/deploy txid (there's no
+   * "latest action txid" in the indexer's summary payload), so it would
+   * never match a post-deploy action's txid even once the listing is fresh.
+   * Comparing amount/status against the local entry sidesteps that.
+   */
+  private async trackActionIndexing(
+    txid: string,
+    registryEntryId?: string,
+  ): Promise<void> {
+    this.setActionIndexerState({
+      txid,
+      status: 'checking',
+      message: 'Waiting for the indexer to see this transaction...',
+    });
+
+    let seenSettled = false;
+
+    for (let attempt = 1; attempt <= 8; attempt++) {
+      try {
+        if (!seenSettled) {
+          const status =
+            await this.covenantIndexerService.getTransactionSettlementStatus(
+              txid,
+            );
+          seenSettled = status.indexed;
+        }
+
+        if (seenSettled) {
+          await this.loadContracts();
+          if (this.dashboardCaughtUpWithLocal(registryEntryId)) {
+            this.setActionIndexerState({
+              txid,
+              status: 'indexed',
+              message: 'Indexed. My Contracts now reflects this change.',
+            });
+            return;
+          }
+          this.setActionIndexerState({
+            txid,
+            status: 'checking',
+            message: `Transaction confirmed — waiting for the contract list to catch up (${attempt}/8)...`,
+          });
+        } else {
+          this.setActionIndexerState({
+            txid,
+            status: 'checking',
+            message: `Waiting for indexer confirmation (${attempt}/8)...`,
+          });
+        }
+      } catch (error: any) {
+        console.warn('[Contracts] Action indexing check failed:', error);
+        this.setActionIndexerState({
+          txid,
+          status: 'unavailable',
+          message:
+            error?.message ||
+            'Indexer status is unavailable. The transaction was still broadcast.',
+        });
+        return;
+      }
+
+      await this.delay(2500);
+    }
+
+    this.setActionIndexerState({
+      txid,
+      status: 'not-indexed',
+      message:
+        'Broadcast, but My Contracts may not reflect this change yet. Refresh in a moment.',
+    });
+  }
+
+  /**
+   * Updates the contracts page's own indexer-status display and mirrors it
+   * into ApprovalFlowService.pendingConfirmation — the approval success
+   * page's "Done" button reads that to stay disabled until the indexer has
+   * actually caught up, instead of letting the user dismiss the success
+   * screen and navigate to "My Contracts" while it's still stale.
+   */
+  private setActionIndexerState(state: ActionIndexerState) {
+    this.interactIndexerState.set(state);
+
+    const statusMap: Record<
+      ActionIndexerState['status'],
+      PendingActionConfirmation['status']
+    > = {
+      checking: 'checking',
+      indexed: 'confirmed',
+      unavailable: 'unavailable',
+      'not-indexed': 'timed-out',
+    };
+    this.approvalFlowService.setPendingConfirmation({
+      status: statusMap[state.status],
+      message: state.message,
+    });
+  }
+
+  /**
+   * Has the merged dashboard entry caught up with the optimistic update we
+   * already applied to the local registry entry? Without a registry entry to
+   * compare against (e.g. an import flow with no local id) there's nothing
+   * more to wait for, so we treat that as already caught up.
+   */
+  private dashboardCaughtUpWithLocal(registryEntryId?: string): boolean {
+    if (!registryEntryId) return true;
+
+    const localEntry = this.registryService
+      .getAllContracts()
+      .find((contract) => contract.id === registryEntryId);
+    if (!localEntry) return true;
+
+    const target = this.dashboardContracts().find(
+      (candidate) => candidate.registryEntry?.id === registryEntryId,
+    );
+    if (!target) return false;
+
+    if (localEntry.status === 'spent') return target.status === 'spent';
+
+    try {
+      return (
+        BigInt(target.amountSompi || '0') ===
+        BigInt(localEntry.amountSompi || '0')
+      );
+    } catch {
+      return target.amountSompi === localEntry.amountSompi;
+    }
+  }
+
   onInteractContractSelect(value: any) {
     this.selectedContractId.set(value || '');
     this.selectContractFromRegistry();
@@ -3554,6 +3707,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   async interactContract() {
     this.interactError.set(null);
     this.interactResult.set(null);
+    this.interactIndexerState.set(null);
 
     const wallet = this.currentWallet();
     if (!wallet) {
@@ -3701,7 +3855,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
               spendTxid: result.txid,
               lastChecked: Date.now(),
             });
-            this.loadContracts();
+            void this.trackActionIndexing(
+              result.txid,
+              this.selectedContractId(),
+            );
           }
           return;
         }
@@ -3966,7 +4123,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           this.interactOutpointTxid = result.txid;
           this.interactOutpointVout = '0';
         }
-        this.loadContracts();
+        void this.trackActionIndexing(result.txid, this.selectedContractId());
       }
     } catch (error: any) {
       this.interactError.set(error?.message || 'Failed to execute contract');
@@ -4136,7 +4293,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.interactInputAmount = inputAmount.toString();
     this.dmsNewExpiry = '';
 
-    this.loadContracts();
+    void this.trackActionIndexing(result.txid, this.selectedContractId());
   }
 
   private async executeDmsChangeHeir(
@@ -4239,7 +4396,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.interactOutputAddress = '';
     this.interactResolvedOutputAddress = null;
 
-    this.loadContracts();
+    void this.trackActionIndexing(result.txid, this.selectedContractId());
   }
 
   private async compileDmsContinuation(values: {
@@ -4847,6 +5004,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     // Clear stale interaction state
     this.interactError.set(null);
     this.interactResult.set(null);
+    this.interactIndexerState.set(null);
     this.partialSpendJson.set(null);
     this.extraArgValues = {};
     this.dmsNewExpiry = '';
@@ -5136,6 +5294,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   async completePartialSpend() {
     this.partialCompleteError.set(null);
     this.partialCompleteResult.set(null);
+    this.interactIndexerState.set(null);
 
     const wallet = this.currentWallet();
     if (!wallet) {
@@ -5199,7 +5358,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             lastChecked: Date.now(),
           });
         }
-        this.loadContracts();
+        void this.trackActionIndexing(result.txid, this.selectedContractId());
       }
     } catch (error: any) {
       this.partialCompleteError.set(

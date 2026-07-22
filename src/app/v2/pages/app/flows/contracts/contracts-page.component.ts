@@ -129,7 +129,11 @@ type IndexerImportPreview = {
 
 type ContractDashboardSource = 'indexer' | 'local' | 'both';
 type ContractDashboardFilter =
-  'all' | 'deadman' | 'timelock' | 'multisig' | 'escrow';
+  | 'all'
+  | 'deadman'
+  | 'timelock'
+  | 'multisig'
+  | 'escrow';
 // Status dimension, composed on top of the template-type filter above.
 type ContractStatusFilter = 'all' | 'active' | 'history';
 
@@ -2194,8 +2198,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       // scrollIntoView to leave room for it, without us having to guess
       // which ancestor is the actual scroll container.
       const headerHeight =
-        document.querySelector<HTMLElement>('.wrapper__header')
-          ?.offsetHeight ?? 0;
+        document.querySelector<HTMLElement>('.wrapper__header')?.offsetHeight ??
+        0;
       panel.style.scrollMarginTop = `${headerHeight + 12}px`;
       panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -3825,7 +3829,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         // reject it here with a clear message instead of letting it panic.
         if (amountToSellerSompi >= inputAmount) {
           this.interactError.set(
-            'Amount to seller must be less than the full contract balance. Arbitrate always pays out both sides, so the buyer\'s output can\'t be zero.',
+            "Amount to seller must be less than the full contract balance. Arbitrate always pays out both sides, so the buyer's output can't be zero.",
           );
           return;
         }
@@ -3970,10 +3974,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           return;
         }
         const withdrawalAmount = BigInt(Math.floor(outputAmountKas * 1e8));
-        if (
-          functionName === 'transfer' &&
-          compiled.contract_name === 'KCC20'
-        ) {
+        if (functionName === 'transfer' && compiled.contract_name === 'KCC20') {
           try {
             extraArgsOverride = {
               recipient: Uint8Array.from(

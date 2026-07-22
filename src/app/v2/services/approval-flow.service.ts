@@ -93,8 +93,9 @@ export class ApprovalFlowService {
   // depends on (the covenant indexer) hasn't caught up yet, so the success
   // page can hold the user on it instead of letting them navigate away
   // believing the change is already reflected everywhere.
-  private pendingConfirmationSignal =
-    signal<PendingActionConfirmation | null>(null);
+  private pendingConfirmationSignal = signal<PendingActionConfirmation | null>(
+    null,
+  );
   pendingConfirmation = computed(() => this.pendingConfirmationSignal());
 
   setPendingConfirmation(state: PendingActionConfirmation | null) {

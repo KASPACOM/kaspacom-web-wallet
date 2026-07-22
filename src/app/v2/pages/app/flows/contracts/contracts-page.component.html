@@ -353,7 +353,9 @@
                     <div class="flex column gap-4">
                       <kc-input
                         [label]="field.label"
-                        [placeholder]="'Paste address, public key, or 32-byte hash'"
+                        [placeholder]="
+                          'Paste address, public key, or 32-byte hash'
+                        "
                         [type]="'text'"
                         [isValid]="isTemplateFieldValid(field)"
                         [isDisabled]="isDeploying()"
@@ -1027,7 +1029,7 @@
                       }}</span>
                       @if (
                         contract.covenantId &&
-                        getCovenantExplorerLink(contract.covenantId);
+                          getCovenantExplorerLink(contract.covenantId);
                         as covenantLink
                       ) {
                         <a
@@ -1041,7 +1043,9 @@
                       } @else {
                         <span
                           class="card-id-value"
-                          [title]="contract.covenantId || contract.currentAddress"
+                          [title]="
+                            contract.covenantId || contract.currentAddress
+                          "
                           >{{
                             truncate(
                               contract.covenantId ||
@@ -1334,7 +1338,10 @@
                   <div class="identifier">
                     <span class="identifier-label">Covenant ID</span>
                     <div class="identifier-value-row">
-                      @if (getCovenantExplorerLink(covenantId); as covenantLink) {
+                      @if (
+                        getCovenantExplorerLink(covenantId);
+                        as covenantLink
+                      ) {
                         <a
                           class="identifier-value"
                           [href]="covenantLink"
@@ -1428,9 +1435,7 @@
                                 [size]="'sm'"
                               ></kc-icon>
                               <span class="ai-text">
-                                <span class="ai-title">{{
-                                  action.label
-                                }}</span>
+                                <span class="ai-title">{{ action.label }}</span>
                                 <span class="ai-hint">{{
                                   action.enabled
                                     ? action.description
@@ -1465,8 +1470,7 @@
                               />
                             </svg>
                             <span class="ai-text"
-                              ><span class="ai-title"
-                                >Manual interaction</span
+                              ><span class="ai-title">Manual interaction</span
                               ><span class="ai-hint"
                                 >This contract type has no curated actions —
                                 choose a function and sign manually</span
@@ -1489,17 +1493,16 @@
                   >
                     <h4
                       class="text-yellow"
-                      style="
-                        margin: 0 0 8px;
-                        font-size: 14px;
-                        font-weight: 600;
-                      "
+                      style="margin: 0 0 8px; font-size: 14px; font-weight: 600"
                     >
                       Pending signature
                     </h4>
-                    <p class="text-gray-75 typo-text-2" style="margin: 0 0 12px">
-                      Your signature has been added. Copy this JSON and send
-                      it to the co-signer to complete the transaction.
+                    <p
+                      class="text-gray-75 typo-text-2"
+                      style="margin: 0 0 12px"
+                    >
+                      Your signature has been added. Copy this JSON and send it
+                      to the co-signer to complete the transaction.
                     </p>
                     <textarea
                       class="contract-input"
@@ -1771,9 +1774,7 @@
                       target="_blank"
                       rel="noopener noreferrer"
                       class="text-blue typo-text-2 text-mono"
-                      >{{
-                        truncate(indexerImportPreview()!.covenantId, 28)
-                      }}</a
+                      >{{ truncate(indexerImportPreview()!.covenantId, 28) }}</a
                     >
                   } @else {
                     <span class="text-white typo-text-2 text-mono">{{
@@ -2282,8 +2283,8 @@
                 "
               >
                 <span class="text-gray-75 typo-text-2"
-                  >Claiming sends the entire contract balance to this address
-                  — Dead Man's Switch claims can't be partial.</span
+                  >Claiming sends the entire contract balance to this address —
+                  Dead Man's Switch claims can't be partial.</span
                 >
               </div>
             } @else {

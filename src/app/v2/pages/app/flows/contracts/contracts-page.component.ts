@@ -1362,7 +1362,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   /**
    * Load contracts from registry and check on-chain status
    */
-  async loadContracts() {
+  async loadContracts(options: { skipOnChainStatusRefresh?: boolean } = {}) {
     this.dashboardLoading.set(true);
     this.dashboardError.set(null);
     if (this.activeTab() !== 'detail') {
@@ -1373,8 +1373,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const filtered = this.getCurrentWalletLocalContracts();
     this.registryContracts.set(filtered);
 
-    // Check on-chain status for each contract
-    await this.refreshContractStatuses(filtered);
+    // Check on-chain status for each contract. Skipped during action-indexing
+    // polling (trackActionIndexing()): the acted-on contract's status/amount
+    // is already applied optimistically to the local registry by the action
+    // itself, so repeating an RPC UTXO lookup across every local contract on
+    // each poll tick is redundant traffic, not new information.
+    if (!options.skipOnChainStatusRefresh) {
+      await this.refreshContractStatuses(filtered);
+    }
 
     const updatedLocal = this.getCurrentWalletLocalContracts();
     this.registryContracts.set(updatedLocal);
@@ -3602,7 +3608,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         }
 
         if (seenSettled) {
-          await this.loadContracts();
+          await this.loadContracts({ skipOnChainStatusRefresh: true });
           if (this.dashboardCaughtUpWithLocal(registryEntryId)) {
             this.setActionIndexerState({
               txid,

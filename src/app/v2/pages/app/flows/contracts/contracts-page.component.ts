@@ -2217,7 +2217,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     silent = false,
   ): Promise<boolean> {
     if (entry.registryEntry) {
-      const registryEntry = this.syncRegistryEntryForDashboardAction(entry);
+      const registryEntry =
+        await this.syncRegistryEntryForDashboardAction(entry);
+      if (requestToken !== this.detailRequestToken) return false;
       this.selectedContractId.set(registryEntry.id);
       this.selectContractFromRegistry();
       this.selectDefaultFunctionForContract(
@@ -2291,17 +2293,56 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return false;
   }
 
-  private syncRegistryEntryForDashboardAction(
+  /**
+   * detail.utxos comes from the indexer's getCovenantUtxos(), which can lag
+   * behind a very recent local action the same way listCovenants() does (see
+   * trackActionIndexing()). Trusting it blindly to move the registry's
+   * outpoint can clobber a correct, fresher local outpoint with a stale,
+   * already-spent one — the next spend then fails at broadcast time with
+   * "Covenant outpoint ... was not found". Check live via RPC whether the
+   * currently stored outpoint is still on-chain first; if it is, prefer it
+   * (and its live amount) over the indexer's possibly-stale UTXO.
+   */
+  private async findLiveContractUtxo(
+    registryEntry: ContractRegistryEntry,
+  ): Promise<{ amountSompi: string } | undefined> {
+    const rpc = this.rpcService.getRpc();
+    if (!rpc) return undefined;
+    try {
+      const response = await rpc.getUtxosByAddresses([
+        registryEntry.contractAddress,
+      ]);
+      const utxos = response.entries || [];
+      const found = utxos.find(
+        (u: any) =>
+          u.outpoint?.transactionId === registryEntry.outpoint.txid &&
+          Number(u.outpoint?.index ?? -1) === registryEntry.outpoint.vout,
+      );
+      return found ? { amountSompi: found.amount.toString() } : undefined;
+    } catch (err) {
+      console.warn('[Contracts] Live outpoint check failed:', err);
+      return undefined;
+    }
+  }
+
+  private async syncRegistryEntryForDashboardAction(
     entry: ContractDashboardEntry,
-  ): ContractRegistryEntry {
+  ): Promise<ContractRegistryEntry> {
     const registryEntry = entry.registryEntry!;
+    const liveUtxo = await this.findLiveContractUtxo(registryEntry);
+
     const detail = this.selectedDetail();
-    const activeUtxo = detail?.utxos.length === 1 ? detail.utxos[0] : undefined;
+    const indexerUtxo =
+      !liveUtxo && detail?.utxos.length === 1 ? detail.utxos[0] : undefined;
+
     const amountSompi = String(
-      activeUtxo?.amountSompi ?? entry.amountSompi ?? registryEntry.amountSompi,
+      liveUtxo?.amountSompi ??
+        indexerUtxo?.amountSompi ??
+        entry.amountSompi ??
+        registryEntry.amountSompi,
     );
     const contractAddress =
-      activeUtxo?.address ||
+      indexerUtxo?.address ||
       entry.currentAddress ||
       registryEntry.contractAddress;
 
@@ -2319,10 +2360,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           : registryEntry.status,
     };
 
-    if (activeUtxo?.txidHex && activeUtxo.vout !== undefined) {
+    if (indexerUtxo?.txidHex && indexerUtxo.vout !== undefined) {
       updates.outpoint = {
-        txid: activeUtxo.txidHex,
-        vout: Number(activeUtxo.vout),
+        txid: indexerUtxo.txidHex,
+        vout: Number(indexerUtxo.vout),
       };
     }
 

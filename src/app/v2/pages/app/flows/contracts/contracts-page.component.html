@@ -2273,26 +2273,43 @@
                 (qrClick)="onInteractOutputQrClick()"
               ></app-address-smart-input>
             </div>
-            <div class="form-group flex column gap-8">
-              <kc-number-input
-                [label]="'Withdraw amount (KAS)'"
-                [placeholder]="'0'"
-                [min]="'0'"
-                [isDisabled]="isInteracting()"
-                [ngModel]="interactOutputAmount"
-                (valueChange)="onInteractOutputAmountChange($event)"
+            @if (isDmsClaim()) {
+              <div
+                class="p-12 rounded-lg"
+                style="
+                  background: rgba(111, 199, 186, 0.08);
+                  border: 1px solid rgba(111, 199, 186, 0.2);
+                "
               >
-                <div
-                  (click)="!isInteracting() && fillMaxOutputAmount()"
-                  [class]="
-                    isInteracting() ? 'max-text disabled' : 'max-text clickable'
-                  "
-                  rightSideSlot
+                <span class="text-gray-75 typo-text-2"
+                  >Claiming sends the entire contract balance to this address
+                  — Dead Man's Switch claims can't be partial.</span
                 >
-                  <span>Max</span>
-                </div>
-              </kc-number-input>
-            </div>
+              </div>
+            } @else {
+              <div class="form-group flex column gap-8">
+                <kc-number-input
+                  [label]="'Withdraw amount (KAS)'"
+                  [placeholder]="'0'"
+                  [min]="'0'"
+                  [isDisabled]="isInteracting()"
+                  [ngModel]="interactOutputAmount"
+                  (valueChange)="onInteractOutputAmountChange($event)"
+                >
+                  <div
+                    (click)="!isInteracting() && fillMaxOutputAmount()"
+                    [class]="
+                      isInteracting()
+                        ? 'max-text disabled'
+                        : 'max-text clickable'
+                    "
+                    rightSideSlot
+                  >
+                    <span>Max</span>
+                  </div>
+                </kc-number-input>
+              </div>
+            }
           }
 
           @if (
@@ -2364,7 +2381,7 @@
           }
         }
 
-        @if (parsedInteractContract()) {
+        @if (parsedInteractContract() && contractHasMultiSigFunction()) {
           <details class="advanced-section">
             <summary>Complete co-signer transaction</summary>
             <div class="adv-body">

@@ -2210,7 +2210,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       const registryEntry = this.syncRegistryEntryForDashboardAction(entry);
       this.selectedContractId.set(registryEntry.id);
       this.selectContractFromRegistry();
-      this.selectDefaultFunctionForContract(entry.contractName);
+      this.selectDefaultFunctionForContract(
+        entry.contractName,
+        entry.participants,
+      );
       return true;
     }
 
@@ -2255,7 +2258,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       if (imported) {
         this.selectedContractId.set(imported.id);
         this.selectContractFromRegistry();
-        this.selectDefaultFunctionForContract(entry.contractName);
+        this.selectDefaultFunctionForContract(
+          entry.contractName,
+          entry.participants,
+        );
         if (!silent) {
           this.activeTab.set('detail');
           this.detailPanelTab.set('action');
@@ -2660,7 +2666,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return null;
   }
 
-  private selectDefaultFunctionForContract(contractName: string) {
+  private selectDefaultFunctionForContract(
+    contractName: string,
+    participants: Array<{ label: string; value: string }> = [],
+  ) {
     const normalized = this.normalizeContractName(contractName);
     const preferred: Record<string, string[]> = {
       DeadManSwitch: ['keepAlive', 'changeHeir', 'topUp', 'claim'],
@@ -2668,11 +2677,22 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       MultiSigVault: ['spend12', 'spend13', 'spend23'],
       EscrowWithArbiter: ['release', 'refund', 'arbitrate'],
     };
+    let order = preferred[normalized] || [];
+    if (normalized === 'DeadManSwitch') {
+      // keepAlive/changeHeir/topUp are owner-only, but availableFunctions()
+      // isn't role-filtered, so they're always "available" here too — the
+      // heir clicking the dashboard's "Claim" action would otherwise silently
+      // land on "Keep alive" (first in the list above) instead of "Claim" —
+      // mirror getNextActionLabel()'s owner-vs-heir split so the selected
+      // function actually matches what the card told the user to expect.
+      if (!this.currentWalletRoles(participants).includes('Owner')) {
+        order = ['claim', ...order.filter((name) => name !== 'claim')];
+      }
+    }
     const available = this.availableFunctions();
     const target =
-      (preferred[normalized] || []).find((name) =>
-        available.some((fn) => fn.name === name),
-      ) || available[0]?.name;
+      order.find((name) => available.some((fn) => fn.name === name)) ||
+      available[0]?.name;
     if (target) this.selectFunction(target);
   }
 
@@ -3910,6 +3930,22 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           outputAddress,
         );
         return;
+      } else if (this.isDmsClaim()) {
+        // DMS claim always transfers the entire balance to the heir — there's
+        // no continuation output for a remainder to go to, since the
+        // Dead Man's Switch relationship ends once claimed. Ignore whatever
+        // amount the user may have typed and use the full input amount
+        // instead of routing through buildWithdrawalOutputs's partial path.
+        if (!outputAddress) {
+          this.interactError.set('Output address is required');
+          return;
+        }
+        outputs = [
+          {
+            address: outputAddress,
+            amount: inputAmount,
+          },
+        ];
       } else if (this.functionRequiresOutput(functionName)) {
         if (
           compiled.contract_name === 'DeadManSwitch' &&
@@ -4970,6 +5006,20 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Returns true when the current function is DMS claim. Claim always
+   * transfers the full balance to the heir — there's no continuation output,
+   * so unlike a regular withdrawal it can't be partial.
+   */
+  isDmsClaim(): boolean {
+    const contract = this.parsedInteractContract();
+    if (!contract || this.selectedFunction !== 'claim') return false;
+    return (contract.contract_name || '')
+      .toLowerCase()
+      .replace(/[\s_-]/g, '')
+      .includes('deadman');
+  }
+
+  /**
    * Check if the selected function requires multiple signers (two-phase signing)
    */
   isMultiSigFunction(fnName: string): boolean {
@@ -4978,6 +5028,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const abiEntry = contract.abi.find((e) => e.name === fnName);
     if (!abiEntry) return false;
     return abiEntry.inputs.filter((i) => i.type_name === 'sig').length > 1;
+  }
+
+  /**
+   * Whether this contract has *any* multi-sig entrypoint — gates the
+   * "Complete co-signer transaction" section, which is only relevant for
+   * contracts that can produce a partial spend in the first place (e.g. a
+   * plain Dead Man's Switch or single-sig Escrow release has nothing for a
+   * co-signer to complete).
+   */
+  contractHasMultiSigFunction(): boolean {
+    return this.availableFunctions().some((fn) =>
+      this.isMultiSigFunction(fn.name),
+    );
   }
 
   /**

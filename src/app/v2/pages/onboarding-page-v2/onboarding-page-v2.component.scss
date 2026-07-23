@@ -123,6 +123,12 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
+    // .onboarding-v2__device (the row-flex parent) defaults to
+    // align-items: stretch, which — combined with its mobile `height: 100%`
+    // — forces this frame to that definite height regardless of its own
+    // min-height, so overflowing content clips/scrolls right here instead
+    // of growing the frame and reaching .onboarding-v2's scroll. Opt out.
+    align-self: flex-start;
     gap: 24px;
     width: min(440px, 100%);
     padding: 24px 20px;
@@ -136,7 +142,11 @@
     box-shadow: 0 40px 60px rgba(0, 0, 0, 0.55);
     // x-only: a definite vertical clip here would re-cut any step content
     // that grows past the frame before it can reach .onboarding-v2's scroll.
+    // overflow-y must stay explicit: leaving it unset while overflow-x is
+    // non-visible makes it compute to `auto` per spec, creating a second,
+    // competing scroll container instead of passing overflow up.
     overflow-x: hidden;
+    overflow-y: visible;
     backdrop-filter: blur(6px);
   }
 
@@ -286,13 +296,19 @@
     // overshoot (see slide.animation.ts's translateX steps), not to bound
     // vertical height — clipping the y-axis here cuts off tall step content
     // (e.g. the 12/24-word recovery grid) with no scrollbar to recover it.
+    // overflow-y must stay explicit: leaving it unset while overflow-x is
+    // non-visible makes it compute to `auto` per spec, creating extra
+    // competing scroll containers instead of passing overflow up to
+    // .onboarding-v2.
     overflow-x: hidden;
+    overflow-y: visible;
 
     ::ng-deep > div {
       display: flex;
       flex-direction: column;
       width: 100%;
       overflow-x: hidden;
+      overflow-y: visible;
 
       app-step-indicator {
         flex-shrink: 0;
@@ -305,6 +321,7 @@
         flex-direction: column;
         width: 100%;
         overflow-x: hidden;
+        overflow-y: visible;
 
         > * {
           display: flex;

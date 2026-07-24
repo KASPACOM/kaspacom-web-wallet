@@ -136,11 +136,7 @@ type IndexerImportPreview = {
 
 type ContractDashboardSource = 'indexer' | 'local' | 'both';
 type ContractDashboardFilter =
-  | 'all'
-  | 'deadman'
-  | 'timelock'
-  | 'multisig'
-  | 'escrow';
+  'all' | 'deadman' | 'timelock' | 'multisig' | 'escrow';
 // Status dimension, composed on top of the template-type filter above.
 type ContractStatusFilter = 'all' | 'active' | 'history';
 
@@ -4975,7 +4971,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   shareableContractOptions = computed<DropdownOption[]>(() =>
     this.shareableContracts().map((contract) => ({
       value: contract.id,
-      label: `${contract.displayName}-${contract.covenantId}`,
+      label: `${contract.displayName} - ${contract.covenantId}`,
     })),
   );
 

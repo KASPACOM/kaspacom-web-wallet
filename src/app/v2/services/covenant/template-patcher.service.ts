@@ -2,7 +2,8 @@ import { Injectable } from '@angular/core';
 import { Address, XOnlyPublicKey } from '../../../../../public/kaspa/kaspa';
 
 export type CtorArg =
-  | { kind: 'array'; data: { kind: 'byte'; data: number }[] }
+  | { kind: 'array'; data: CtorArg[] }
+  | { kind: 'byte'; data: number }
   | { kind: 'int'; data: number };
 
 export interface TemplateParam {
@@ -73,41 +74,57 @@ export class TemplatePatcherService {
     return bytes;
   }
 
-  extractPatchDescriptor(compiled: any, templateArgs: CtorArg[]): TemplatePatch {
+  extractPatchDescriptor(
+    compiled: any,
+    templateArgs: CtorArg[],
+  ): TemplatePatch {
     const script = this.assertNumberArray(compiled?.script, 'compiled.script');
-    const params = Array.isArray(compiled?.ast?.params) ? compiled.ast.params : [];
-    const fieldInitParams = this.getFieldInitParams(compiled?.ast?.fields, params);
+    const params = Array.isArray(compiled?.ast?.params)
+      ? compiled.ast.params
+      : [];
+    const fieldInitParams = this.getFieldInitParams(
+      compiled?.ast?.fields,
+      params,
+    );
 
     if (params.length !== templateArgs.length) {
-      throw new Error(`Template args mismatch: expected ${params.length}, received ${templateArgs.length}`);
+      throw new Error(
+        `Template args mismatch: expected ${params.length}, received ${templateArgs.length}`,
+      );
     }
 
-    const descriptorParams: TemplateParam[] = params.map((param: any, index: number) => {
-      const arg = templateArgs[index];
-      const isFieldInit = fieldInitParams.has(param.name);
-      const placeholderBytes = this.argToBytes(arg, isFieldInit);
-      const positions = this.findAllOccurrences(script, placeholderBytes).map((offset) => ({
-        offset,
-        length: placeholderBytes.length,
-      }));
+    const descriptorParams: TemplateParam[] = params.map(
+      (param: any, index: number) => {
+        const arg = templateArgs[index];
+        const isFieldInit = fieldInitParams.has(param.name);
+        const placeholderBytes = this.argToBytes(arg, isFieldInit);
+        const positions = this.findAllOccurrences(script, placeholderBytes).map(
+          (offset) => ({
+            offset,
+            length: placeholderBytes.length,
+          }),
+        );
 
-      if (positions.length === 0) {
-        if (arg.kind === 'int' && placeholderBytes.length === 0) {
+        if (positions.length === 0) {
+          if (arg.kind === 'int' && placeholderBytes.length === 0) {
+            throw new Error(
+              `Param "${param.name}" uses a special opcode placeholder (${arg.data}) and cannot be patched in-place`,
+            );
+          }
+
           throw new Error(
-            `Param "${param.name}" uses a special opcode placeholder (${arg.data}) and cannot be patched in-place`,
+            `Could not find bytes for param "${param.name}" in contract script`,
           );
         }
 
-        throw new Error(`Could not find bytes for param "${param.name}" in contract script`);
-      }
-
-      return {
-        name: param.name,
-        paramType: this.getParamType(param, arg, isFieldInit),
-        positions,
-        placeholderBytes,
-      };
-    });
+        return {
+          name: param.name,
+          paramType: this.getParamType(param, arg, isFieldInit),
+          positions,
+          placeholderBytes,
+        };
+      },
+    );
 
     return {
       contractName: compiled?.contract_name || 'Unnamed Contract',
@@ -115,21 +132,37 @@ export class TemplatePatcherService {
     };
   }
 
-  applyPatch(template: any, descriptor: TemplatePatch, newArgs: CtorArg[]): any {
-    const params = Array.isArray(template?.ast?.params) ? template.ast.params : [];
-    const script = this.assertNumberArray(template?.script, 'template.script').slice();
+  applyPatch(
+    template: any,
+    descriptor: TemplatePatch,
+    newArgs: CtorArg[],
+  ): any {
+    const params = Array.isArray(template?.ast?.params)
+      ? template.ast.params
+      : [];
+    const script = this.assertNumberArray(
+      template?.script,
+      'template.script',
+    ).slice();
 
     if (params.length !== newArgs.length) {
-      throw new Error(`Replacement args mismatch: expected ${params.length}, received ${newArgs.length}`);
+      throw new Error(
+        `Replacement args mismatch: expected ${params.length}, received ${newArgs.length}`,
+      );
     }
 
     for (const patch of descriptor.params) {
-      const paramIndex = params.findIndex((param: any) => param.name === patch.name);
+      const paramIndex = params.findIndex(
+        (param: any) => param.name === patch.name,
+      );
       if (paramIndex === -1) {
         throw new Error(`Unknown template param "${patch.name}"`);
       }
 
-      const replacementBytes = this.argToBytes(newArgs[paramIndex], patch.paramType === 'int_field');
+      const replacementBytes = this.argToBytes(
+        newArgs[paramIndex],
+        patch.paramType === 'int_field',
+      );
       if (replacementBytes.length !== patch.placeholderBytes.length) {
         throw new Error(
           `Size mismatch for "${patch.name}": placeholder=${patch.placeholderBytes.length}B, replacement=${replacementBytes.length}B`,
@@ -138,8 +171,12 @@ export class TemplatePatcherService {
 
       for (const position of patch.positions) {
         for (let offset = 0; offset < position.length; offset += 1) {
-          if (script[position.offset + offset] !== patch.placeholderBytes[offset]) {
-            throw new Error(`Script corruption detected while patching "${patch.name}" at ${position.offset + offset}`);
+          if (
+            script[position.offset + offset] !== patch.placeholderBytes[offset]
+          ) {
+            throw new Error(
+              `Script corruption detected while patching "${patch.name}" at ${position.offset + offset}`,
+            );
           }
           script[position.offset + offset] = replacementBytes[offset];
         }
@@ -158,18 +195,27 @@ export class TemplatePatcherService {
     const bytes = this.hexToBytes(xOnly);
 
     if (bytes.length !== 32) {
-      throw new Error(`Expected x-only pubkey address payload to be 32 bytes, received ${bytes.length}`);
+      throw new Error(
+        `Expected x-only pubkey address payload to be 32 bytes, received ${bytes.length}`,
+      );
     }
 
     return bytes;
   }
 
-  private getFieldInitParams(fields: any[] | undefined, params: any[]): Set<string> {
+  private getFieldInitParams(
+    fields: any[] | undefined,
+    params: any[],
+  ): Set<string> {
     const fieldInitParams = new Set<string>();
 
     for (const field of Array.isArray(fields) ? fields : []) {
-      const identifier = field?.expr?.kind === 'identifier' ? field.expr.data : null;
-      if (identifier && params.some((param: any) => param.name === identifier)) {
+      const identifier =
+        field?.expr?.kind === 'identifier' ? field.expr.data : null;
+      if (
+        identifier &&
+        params.some((param: any) => param.name === identifier)
+      ) {
         fieldInitParams.add(identifier);
       }
     }
@@ -177,7 +223,11 @@ export class TemplatePatcherService {
     return fieldInitParams;
   }
 
-  private getParamType(param: any, arg: CtorArg, isFieldInit: boolean): TemplateParam['paramType'] {
+  private getParamType(
+    param: any,
+    arg: CtorArg,
+    isFieldInit: boolean,
+  ): TemplateParam['paramType'] {
     if (arg.kind === 'int') {
       return isFieldInit ? 'int_field' : 'int';
     }
@@ -186,20 +236,36 @@ export class TemplatePatcherService {
       return 'pubkey';
     }
 
+    if (
+      arg.kind === 'array' &&
+      param?.type_ref?.base === 'pubkey' &&
+      param?.type_ref?.array_dims?.[0]?.kind === 'dynamic'
+    ) {
+      return 'pubkey';
+    }
+
     const fixedArraySize = param?.type_ref?.array_dims?.[0]?.value;
     if (param?.type_ref?.base === 'byte' && fixedArraySize === 32) {
       return 'byte[32]';
     }
 
-    throw new Error(`Unsupported array template param "${param?.name || 'unknown'}"`);
+    throw new Error(
+      `Unsupported array template param "${param?.name || 'unknown'}"`,
+    );
   }
 
   private argToBytes(arg: CtorArg, isFieldInit: boolean): number[] {
-    if (arg.kind === 'array') {
-      return arg.data.map((entry) => entry.data);
+    if (arg.kind === 'byte') {
+      return [arg.data];
     }
 
-    return isFieldInit ? this.encodeFixedInt(arg.data, 8) : this.encodeScriptInt(arg.data);
+    if (arg.kind === 'array') {
+      return arg.data.flatMap((entry) => this.argToBytes(entry, false));
+    }
+
+    return isFieldInit
+      ? this.encodeFixedInt(arg.data, 8)
+      : this.encodeScriptInt(arg.data);
   }
 
   private findAllOccurrences(haystack: number[], needle: number[]): number[] {
@@ -225,7 +291,11 @@ export class TemplatePatcherService {
 
   private hexToBytes(hex: string): number[] {
     const normalized = hex.trim().replace(/^0x/i, '').toLowerCase();
-    if (normalized.length === 0 || normalized.length % 2 !== 0 || /[^0-9a-f]/.test(normalized)) {
+    if (
+      normalized.length === 0 ||
+      normalized.length % 2 !== 0 ||
+      /[^0-9a-f]/.test(normalized)
+    ) {
       throw new Error('Invalid hex string');
     }
 
@@ -237,7 +307,10 @@ export class TemplatePatcherService {
   }
 
   private assertNumberArray(value: unknown, label: string): number[] {
-    if (!Array.isArray(value) || value.some((entry) => !Number.isInteger(entry))) {
+    if (
+      !Array.isArray(value) ||
+      value.some((entry) => !Number.isInteger(entry))
+    ) {
       throw new Error(`Invalid ${label}`);
     }
     return value as number[];

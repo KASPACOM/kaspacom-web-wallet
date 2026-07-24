@@ -13,9 +13,19 @@ export interface ContractTemplate {
 export interface TemplateField {
   paramName: string;
   label: string;
-  type: 'address' | 'int_days' | 'int_timestamp' | 'int_count' | 'hash32';
+  type:
+    | 'address'
+    | 'address_list'
+    | 'int_days'
+    | 'int_hours'
+    | 'int_timestamp'
+    | 'int_count'
+    | 'int_hidden'
+    | 'whitelist_count'
+    | 'hash32';
   placeholder: string;
   description: string;
+  hidden?: boolean;
   helpUrl?: string;
 }
 
@@ -29,7 +39,100 @@ const intArg = (value: number): CtorArg => ({
   data: value,
 });
 
+const pubkeyArrayArg = (pubkeys: number[][]): CtorArg => ({
+  kind: 'array',
+  data: pubkeys.map((bytes) => byteArrayArg(bytes)),
+});
+
 export const CONTRACT_TEMPLATES: ContractTemplate[] = [
+  {
+    id: 'self-custody-vault',
+    name: 'Self-Custody Vault',
+    description:
+      'Protect funds with a hot key, cold key, delayed unvaulting, and an optional destination whitelist.',
+    icon: 'SCV',
+    assetPath: 'assets/covenant-templates/self-custody-vault.json',
+    fields: [
+      {
+        paramName: 'hotKey',
+        label: 'Hot wallet',
+        type: 'address',
+        placeholder: 'kaspatest:q...',
+        description:
+          'Your selected wallet. It can start unvaulting and finalize after the delay.',
+      },
+      {
+        paramName: 'coldKey',
+        label: 'Cold wallet',
+        type: 'address',
+        placeholder: 'kaspatest:q...',
+        description:
+          'Recovery wallet that can sweep immediately in an emergency.',
+      },
+      {
+        paramName: 'whitelistedDestinations',
+        label: 'Destination whitelist',
+        type: 'address_list',
+        placeholder: 'kaspatest:q...',
+        description:
+          'Optional list of recipient wallets. Choose send anywhere or restrict withdrawals to this list.',
+      },
+      {
+        paramName: 'initWhitelistCount',
+        label: 'Whitelist count',
+        type: 'whitelist_count',
+        placeholder: '',
+        description: 'Internal whitelist count.',
+        hidden: true,
+      },
+      {
+        paramName: 'unvaultDelaySeconds',
+        label: 'Unvault delay (hours)',
+        type: 'int_hours',
+        placeholder: '24',
+        description:
+          'How many hours the hot wallet must wait after unvaulting before finalizing.',
+      },
+      {
+        paramName: 'initPhase',
+        label: 'Initial phase',
+        type: 'int_hidden',
+        placeholder: '',
+        description: 'Internal initial locked phase.',
+        hidden: true,
+      },
+    ],
+    placeholderArgs: [
+      byteArrayArg([
+        16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
+        34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
+      ]),
+      byteArrayArg([
+        80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97,
+        98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
+      ]),
+      pubkeyArrayArg([
+        [
+          128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141,
+          142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155,
+          156, 157, 158, 159,
+        ],
+        [
+          160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173,
+          174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187,
+          188, 189, 190, 191,
+        ],
+        [
+          192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205,
+          206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219,
+          220, 221, 222, 223,
+        ],
+      ]),
+      intArg(3),
+      intArg(86400),
+      intArg(0),
+    ],
+  },
   {
     id: 'time-lock-vault',
     name: 'Time-Lock Vault',

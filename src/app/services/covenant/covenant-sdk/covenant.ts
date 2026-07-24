@@ -11,6 +11,7 @@ import {
   PrivateKey,
   RpcClient,
   ScriptBuilder,
+  type ScriptBuilderOptions,
   SighashType,
   signTransaction,
   Transaction,
@@ -32,6 +33,9 @@ import {
 
 const SUBNETWORK_ID_NATIVE = '0000000000000000000000000000000000000000';
 const DUMMY_SIGNATURE_BYTES = new Uint8Array(65);
+const COVENANT_SCRIPT_BUILDER_OPTIONS: ScriptBuilderOptions = {
+  flags: { covenantsEnabled: true },
+};
 
 export type CovenantFunctionArg = Uint8Array | bigint;
 type SupportedSigArg = CovenantFunctionArg;
@@ -60,6 +64,16 @@ function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
+}
+
+function encodeCovenantP2shSignatureScript(
+  compiled: CompiledContract,
+  signaturePrefix: string | Uint8Array,
+): string {
+  return ScriptBuilder.fromScript(
+    toScriptBytes(compiled),
+    COVENANT_SCRIPT_BUILDER_OPTIONS,
+  ).encodePayToScriptHashSignatureScript(signaturePrefix);
 }
 
 function requireAddress(value: Address | undefined, context: string): Address {
@@ -310,9 +324,10 @@ function applyEstimatedSignatureScripts(
   );
   const sigPrefix = buildSigScript(compiled, functionName, functionArgs);
 
-  tx.inputs[0].signatureScript = ScriptBuilder.fromScript(
-    toScriptBytes(compiled),
-  ).encodePayToScriptHashSignatureScript(sigPrefix);
+  tx.inputs[0].signatureScript = encodeCovenantP2shSignatureScript(
+    compiled,
+    sigPrefix,
+  );
 
   for (let i = 1; i < tx.inputs.length; i += 1) {
     tx.inputs[i].signatureScript = new ScriptBuilder()
@@ -454,7 +469,7 @@ export async function deployContract(
     throw new Error(`No spendable UTXOs found for ${senderAddress}`);
   }
 
-  let payload;
+  let payload: Uint8Array | undefined;
 
   // Attach TN10 deployment-claim metadata to the final transaction.
   const deploymentClaim = compiled.tn10;
@@ -911,9 +926,10 @@ export async function spendContract(
   );
   const sigPrefix = buildSigScript(compiled, functionName, functionArgs);
 
-  unsignedTx.inputs[0].signatureScript = ScriptBuilder.fromScript(
-    toScriptBytes(compiled),
-  ).encodePayToScriptHashSignatureScript(sigPrefix);
+  unsignedTx.inputs[0].signatureScript = encodeCovenantP2shSignatureScript(
+    compiled,
+    sigPrefix,
+  );
 
   // Sign extra inputs (gas) if any
   for (let i = 1; i < unsignedTx.inputs.length; i++) {
@@ -1122,11 +1138,11 @@ export async function buildPartialSpend(
       sigOpCount,
       extraArgs: extraArgs
         ? Object.fromEntries(
-            Object.entries(extraArgs).map(([key, value]) => [
-              key,
-              value.toString(),
-            ]),
-          )
+          Object.entries(extraArgs).map(([key, value]) => [
+            key,
+            value.toString(),
+          ]),
+        )
         : undefined,
       fee: totalFees.toString(),
     };
@@ -1162,11 +1178,11 @@ export async function buildPartialSpend(
     );
     const myKeyMatchesThisParam = pubkeyParamName
       ? scriptContainsPubkeyForParam(
-          compiled,
-          pubkeyParamName,
-          myPubkeyBytes,
-          scriptBytes,
-        )
+        compiled,
+        pubkeyParamName,
+        myPubkeyBytes,
+        scriptBytes,
+      )
       : false;
 
     if (myKeyMatchesThisParam) {
@@ -1199,11 +1215,11 @@ export async function buildPartialSpend(
     sigOpCount,
     extraArgs: extraArgs
       ? Object.fromEntries(
-          Object.entries(extraArgs).map(([key, value]) => [
-            key,
-            value.toString(),
-          ]),
-        )
+        Object.entries(extraArgs).map(([key, value]) => [
+          key,
+          value.toString(),
+        ]),
+      )
       : undefined,
     fee: totalFees.toString(),
   };
@@ -1287,11 +1303,11 @@ export async function completePartialSpend(
     );
     const myKeyMatchesThisParam = pubkeyParamName
       ? scriptContainsPubkeyForParam(
-          compiled,
-          pubkeyParamName,
-          myPubkeyBytes,
-          scriptBytes,
-        )
+        compiled,
+        pubkeyParamName,
+        myPubkeyBytes,
+        scriptBytes,
+      )
       : false;
 
     if (myKeyMatchesThisParam) {
@@ -1338,9 +1354,10 @@ export async function completePartialSpend(
     partialSpend.functionName,
     functionArgs,
   );
-  unsignedTx.inputs[0].signatureScript = ScriptBuilder.fromScript(
-    toScriptBytes(compiled),
-  ).encodePayToScriptHashSignatureScript(sigPrefix);
+  unsignedTx.inputs[0].signatureScript = encodeCovenantP2shSignatureScript(
+    compiled,
+    sigPrefix,
+  );
 
   const fee =
     BigInt(partialSpend.inputAmountSompi) -

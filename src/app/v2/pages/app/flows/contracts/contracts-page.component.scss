@@ -316,6 +316,13 @@ $tpl-accents: (
   color: var(--gray-45);
 }
 
+.field .btn.secondary.active {
+  background: var(--kaspa-20);
+  border-color: var(--kaspa-20);
+  color: #071f1c;
+  box-shadow: 0 0 0 1px rgba(111, 199, 186, 0.22);
+}
+
 // ── detail view ─────────────────────────────────────────────────────────
 .detail-header {
   display: flex;

@@ -358,6 +358,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     'TimeLockVault',
     'MultiSigVault',
     'EscrowWithArbiter',
+    'SelfCustodyVault',
   ];
 
   /**
@@ -381,6 +382,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         return 'multisig';
       case 'escrow-with-arbiter':
         return 'escrow';
+      case 'self-custody-vault':
+        return 'default';
     }
     switch (
       this.normalizeContractName(input?.contractName ?? input?.name ?? '')
@@ -420,6 +423,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   templateResolvedAddresses: { [paramName: string]: string } = {};
   generatedContractJson = signal<string | null>(null);
   templateError = signal<string | null>(null);
+  readonly selfCustodyWhitelistCapacity = 3;
 
   // Interact form - plain properties for ngModel
   selectedContractId = signal('');
@@ -837,6 +841,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.templateError.set(null);
 
     this.syncWalletOwnedTemplateFields();
+    this.applyTemplateDefaults(template);
 
     // Clear any localStorage-cached template form values to prevent stale auto-fill
     try {
@@ -858,6 +863,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         this.templateFormValues[field.paramName] = address;
       }
     }
+  }
+
+  private applyTemplateDefaults(template: ContractTemplate) {
+    if (template.id !== 'self-custody-vault') return;
+    this.templateFormValues['whitelistedDestinations_mode'] = 'anywhere';
+    this.templateFormValues['unvaultDelaySeconds'] = '24';
   }
 
   selectCustomContract() {
@@ -905,8 +916,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.generatedContractJson.set(null);
 
     try {
+      const fieldValues = this.getCurrentTemplateFieldValues(template);
       const newArgs = template.fields.map((field) =>
-        this.fieldToCtorArg(field, this.getTemplateFieldValue(field)),
+        this.fieldToCtorArgFromValues(field, fieldValues),
       );
       const compiled = await firstValueFrom(
         this.http.get<any>(template.assetPath),
@@ -1020,6 +1032,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             ),
           },
         ];
+      } else if (template.id === 'self-custody-vault') {
+        tmplName = 'SelfCustodyVault';
+        argsPayload = this.buildSelfCustodyArgsPayload(fieldValues);
       }
 
       if (argsPayload.length > 0) {
@@ -1087,7 +1102,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   isWalletOwnedField(field: TemplateField): boolean {
     return (
       field.type === 'address' &&
-      ['owner', 'buyer', 'key1'].includes(field.paramName)
+      ['owner', 'buyer', 'key1', 'hotKey'].includes(field.paramName)
     );
   }
 
@@ -1106,6 +1121,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       heir: 'The beneficiary who can claim the funds if the owner misses the deadline.',
       arbiterHash:
         'Paste the arbiter address or public key. The wallet stores the required blake2b-256 hash in the covenant.',
+      coldKey:
+        'Keep this wallet separate from the hot wallet. It can sweep funds immediately in an emergency.',
+      whitelistedDestinations:
+        'Choose send anywhere for no destination restriction, or allow only listed wallets for withdrawals.',
+      unvaultDelaySeconds:
+        'The hot wallet must wait this many hours after unvaulting before it can finalize a withdrawal.',
       timeout:
         'The earliest date when the recovery wallet can use the backup withdrawal path.',
       expiry:
@@ -1135,6 +1156,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.templateFormValues[paramName] ||
       ''
     );
+  }
+
+  private getCurrentTemplateFieldValues(
+    template: ContractTemplate,
+  ): Record<string, string> {
+    const values: Record<string, string> = { ...this.templateFormValues };
+    for (const field of template.fields) {
+      values[field.paramName] = this.getTemplateFieldValue(field);
+    }
+    return values;
   }
 
   onDeployAmountChange(value: any) {
@@ -1221,6 +1252,85 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.templateError.set(null);
   }
 
+  getWhitelistMode(paramName: string): 'anywhere' | 'whitelist' {
+    return this.templateFormValues[paramName + '_mode'] === 'whitelist'
+      ? 'whitelist'
+      : 'anywhere';
+  }
+
+  setWhitelistMode(field: TemplateField, mode: 'anywhere' | 'whitelist') {
+    this.templateFormValues[field.paramName + '_mode'] = mode;
+    if (mode === 'anywhere') {
+      this.templateFormValues[field.paramName] = '';
+    } else if (!this.templateFormValues[field.paramName]) {
+      this.templateFormValues[field.paramName] = JSON.stringify(['']);
+    }
+    this.templateFieldTouched[field.paramName] = true;
+    this.validateTemplateField(field);
+    this.templateError.set(null);
+  }
+
+  getTemplateAddressList(paramName: string): string[] {
+    const raw = String(this.templateFormValues[paramName] ?? '').trim();
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((value) => String(value ?? '').trim())
+          .filter(Boolean);
+      }
+    } catch {
+      return raw
+        .split(/\r?\n|,/)
+        .map((value) => value.trim())
+        .filter(Boolean);
+    }
+    return [];
+  }
+
+  getTemplateAddressListRows(paramName: string): string[] {
+    const raw = String(this.templateFormValues[paramName] ?? '').trim();
+    if (!raw) return [''];
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.map((value) => String(value ?? ''));
+      }
+    } catch {
+      return raw.split(/\r?\n|,/).map((value) => value.trim());
+    }
+    return [''];
+  }
+
+  onWhitelistAddressChange(field: TemplateField, index: number, value: string) {
+    const rows = this.getTemplateAddressListRows(field.paramName);
+    rows[index] = value || '';
+    this.templateFormValues[field.paramName] = JSON.stringify(rows);
+    this.templateFieldTouched[field.paramName] = true;
+    this.validateTemplateField(field);
+    this.templateError.set(null);
+  }
+
+  addWhitelistAddress(field: TemplateField) {
+    const rows = this.getTemplateAddressListRows(field.paramName);
+    if (rows.length >= this.selfCustodyWhitelistCapacity) return;
+    rows.push('');
+    this.templateFormValues[field.paramName] = JSON.stringify(rows);
+    this.templateFieldTouched[field.paramName] = true;
+    this.validateTemplateField(field);
+  }
+
+  removeWhitelistAddress(field: TemplateField, index: number) {
+    const rows = this.getTemplateAddressListRows(field.paramName);
+    rows.splice(index, 1);
+    this.templateFormValues[field.paramName] = JSON.stringify(
+      rows.length > 0 ? rows : [''],
+    );
+    this.templateFieldTouched[field.paramName] = true;
+    this.validateTemplateField(field);
+  }
+
   onTemplateAddressResolved(field: TemplateField, result: any) {
     if (result?.effectiveAddress) {
       this.templateResolvedAddresses[field.paramName] = result.effectiveAddress;
@@ -1260,6 +1370,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   validateTemplateField(field: TemplateField): boolean {
+    if (field.hidden) {
+      this.templateFieldErrors[field.paramName] = '';
+      return true;
+    }
+
     if (this.isWalletOwnedField(field)) {
       this.syncWalletOwnedTemplateFields();
     }
@@ -1268,11 +1383,33 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     let error = '';
 
     if (!value) {
-      error = `${field.label} is required`;
+      if (
+        field.type === 'address_list' &&
+        this.getWhitelistMode(field.paramName) === 'anywhere'
+      ) {
+        error = '';
+      } else {
+        error = `${field.label} is required`;
+      }
     } else if (field.type === 'address') {
       const resolvedAddress = this.templateResolvedAddresses[field.paramName];
       if (!this.utilsHelper.isValidWalletAddress(value) && !resolvedAddress) {
         error = 'Invalid wallet address';
+      }
+    } else if (field.type === 'address_list') {
+      const addresses = this.getTemplateAddressList(field.paramName);
+      if (this.getWhitelistMode(field.paramName) === 'whitelist') {
+        if (addresses.length === 0) {
+          error = 'Add at least one whitelist address';
+        } else if (addresses.length > this.selfCustodyWhitelistCapacity) {
+          error = `Maximum ${this.selfCustodyWhitelistCapacity} whitelist addresses`;
+        } else if (
+          addresses.some(
+            (address) => !this.utilsHelper.isValidWalletAddress(address),
+          )
+        ) {
+          error = 'Every whitelist entry must be a valid wallet address';
+        }
       }
     } else if (field.type === 'hash32') {
       const normalized = value.replace(/^0x/i, '');
@@ -1283,9 +1420,18 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       if (!Number.isFinite(new Date(value).getTime())) {
         error = 'Select a valid date and time';
       }
-    } else if (field.type === 'int_days' || field.type === 'int_count') {
+    } else if (
+      field.type === 'int_days' ||
+      field.type === 'int_hours' ||
+      field.type === 'int_count'
+    ) {
       const numeric = Number(value);
-      if (!Number.isInteger(numeric) || numeric < 0) {
+      if (!Number.isFinite(numeric) || numeric < 0) {
+        error = 'Enter a non-negative number';
+      } else if (
+        (field.type === 'int_days' || field.type === 'int_count') &&
+        !Number.isInteger(numeric)
+      ) {
         error = 'Enter a non-negative whole number';
       }
     }
@@ -1316,6 +1462,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (!template) return true;
 
     return template.fields.some((field) => {
+      if (field.hidden) return false;
+      if (
+        field.type === 'address_list' &&
+        this.getWhitelistMode(field.paramName) === 'anywhere'
+      ) {
+        return !!this.templateFieldErrors[field.paramName];
+      }
       const value = String(
         this.templateFormValues[field.paramName] ?? '',
       ).trim();
@@ -1729,6 +1882,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       TimeLockVault: 'TimeLockVault',
       MultiSigVault: 'MultiSigVault',
       Escrow: 'EscrowWithArbiter',
+      SelfCustody: 'SelfCustodyVault',
     };
     return aliases[normalized] || normalized;
   }
@@ -1739,6 +1893,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       TimeLockVault: 'Time Lock',
       MultiSigVault: 'MultiSig',
       EscrowWithArbiter: 'Escrow',
+      SelfCustodyVault: 'Self-Custody Vault',
     };
     return labels[this.normalizeContractName(name)] || name || 'Covenant';
   }
@@ -1756,6 +1911,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private localParticipants(
     contract: ContractRegistryEntry,
   ): Array<{ label: string; value: string }> {
+    const selfCustodyParticipants = this.localSelfCustodyParticipants(contract);
+    if (selfCustodyParticipants.length > 0) {
+      return selfCustodyParticipants;
+    }
+
     const participants = [
       {
         label: 'Owner',
@@ -1777,12 +1937,49 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return participants;
   }
 
+  private localSelfCustodyParticipants(
+    contract: ContractRegistryEntry,
+  ): Array<{ label: string; value: string }> {
+    if (
+      this.normalizeContractName(contract.contractName) !== 'SelfCustodyVault'
+    ) {
+      return [];
+    }
+
+    try {
+      const compiled = this.covenantService.parseCompiledContract(
+        contract.compiledJson,
+      );
+      const args = this.argsArrayToRecord(compiled.tn10?.args || []);
+      const hotKey = args['hotKey'];
+      const coldKey = args['coldKey'];
+      const participants: Array<{ label: string; value: string }> = [];
+      if (hotKey) {
+        participants.push({
+          label: 'Hot wallet',
+          value: hotKey,
+        });
+      }
+      if (coldKey) {
+        participants.push({
+          label: 'Cold wallet',
+          value: coldKey,
+        });
+      }
+      return participants;
+    } catch {
+      return [];
+    }
+  }
+
   private indexerParticipants(
     summary: IndexerCovenantDetails,
   ): Array<{ label: string; value: string }> {
     const source = {
       ...(summary.constructor || {}),
-      ...this.argsArrayToRecord(summary.claimedArgs?.args || []),
+      ...this.argsArrayToRecord(
+        this.normalizeIndexerArgs(summary.claimedArgs?.args),
+      ),
     };
     const roles = [
       'owner',
@@ -1800,6 +1997,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       'seller',
       'arbiter',
       'arbiterHash',
+      'hotKey',
+      'coldKey',
+      'whitelistedDestinations',
     ];
     return roles
       .filter(
@@ -1823,6 +2023,129 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }, {});
   }
 
+  private normalizeIndexerArgs(rawArgs: unknown): IndexerCovenantArg[] {
+    const aliases: Record<string, { name: string; type: string }> = {
+      h: { name: 'hotKey', type: 'address' },
+      c: { name: 'coldKey', type: 'address' },
+      m: { name: 'whitelistMode', type: 'string' },
+      w: { name: 'whitelistedDestinations', type: 'address[]' },
+      n: { name: 'initWhitelistCount', type: 'int' },
+      d: { name: 'unvaultDelaySeconds', type: 'blueScore' },
+      p: { name: 'initPhase', type: 'int' },
+    };
+    const expand = (key: string, value: unknown, type = '') => {
+      const alias = aliases[key];
+      return {
+        name: alias?.name || key,
+        type: alias?.type || type || 'string',
+        value:
+          key === 'm'
+            ? value === 'w'
+              ? 'whitelist'
+              : 'anywhere'
+            : String(value ?? ''),
+      };
+    };
+
+    if (Array.isArray(rawArgs)) {
+      return rawArgs.map((arg: any) =>
+        expand(
+          String(arg?.name ?? arg?.n ?? ''),
+          arg?.value ?? arg?.v ?? '',
+          String(arg?.type ?? arg?.t ?? ''),
+        ),
+      );
+    }
+
+    if (rawArgs && typeof rawArgs === 'object') {
+      return Object.entries(rawArgs).map(([key, value]) => expand(key, value));
+    }
+
+    return [];
+  }
+
+  private buildSelfCustodyArgsPayload(
+    values: Record<string, string>,
+  ): IndexerCovenantArg[] {
+    const whitelistMode = this.getWhitelistModeFromValues(
+      'whitelistedDestinations',
+      values,
+    );
+    const whitelistedDestinations =
+      whitelistMode === 'whitelist'
+        ? this.getAddressListFromRaw(values['whitelistedDestinations']).join(
+            ',',
+          )
+        : '';
+    const delayHours = this.parsePositiveDecimal(
+      String(values['unvaultDelaySeconds'] ?? '24').trim() || '24',
+      'Unvault Delay',
+    );
+    const initPhase = values['initPhase']
+      ? this.parseWholeNumber(
+          String(values['initPhase']).trim(),
+          'Initial Phase',
+        )
+      : 0;
+
+    return [
+      {
+        name: 'hotKey',
+        type: 'address',
+        value: String(values['hotKey'] ?? ''),
+      },
+      {
+        name: 'coldKey',
+        type: 'address',
+        value: String(values['coldKey'] ?? ''),
+      },
+      {
+        name: 'whitelistMode',
+        type: 'string',
+        value: whitelistMode,
+      },
+      {
+        name: 'whitelistedDestinations',
+        type: 'address[]',
+        value: whitelistedDestinations,
+      },
+      {
+        name: 'initWhitelistCount',
+        type: 'int',
+        value: String(this.getWhitelistCountFromValues(values)),
+      },
+      {
+        name: 'unvaultDelaySeconds',
+        type: 'blueScore',
+        value: String(this.hoursToSeconds(delayHours)),
+      },
+      {
+        name: 'initPhase',
+        type: 'int',
+        value: String(initPhase),
+      },
+    ];
+  }
+
+  private buildSelfCustodyCompactClaim(values: Record<string, string>) {
+    const args = this.argsArrayToRecord(
+      this.buildSelfCustodyArgsPayload(values),
+    );
+    return {
+      v: 1,
+      tmpl: 'SelfCustodyVault',
+      args: {
+        h: args['hotKey'] || '',
+        c: args['coldKey'] || '',
+        m: args['whitelistMode'] === 'whitelist' ? 'w' : 'a',
+        w: args['whitelistedDestinations'] || '',
+        n: args['initWhitelistCount'] || '0',
+        d: args['unvaultDelaySeconds'] || '86400',
+        p: args['initPhase'] || '0',
+      },
+    };
+  }
+
   private roleLabel(role: string): string {
     const labels: Record<string, string> = {
       owner: 'Owner',
@@ -1840,6 +2163,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       seller: 'Seller',
       arbiter: 'Arbiter',
       arbiterHash: 'Arbiter',
+      hotKey: 'Hot wallet',
+      coldKey: 'Cold wallet',
+      whitelistedDestinations: 'Whitelist',
     };
     return labels[role] || role;
   }
@@ -1862,13 +2188,20 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       });
     };
 
-    for (const arg of covenant?.claimedArgs?.args || []) {
+    for (const arg of this.normalizeIndexerArgs(covenant?.claimedArgs?.args)) {
       addParam(arg.name, arg.value, arg.type);
     }
 
     const constructorArgs = covenant?.constructor || {};
     for (const [name, value] of Object.entries(constructorArgs)) {
       addParam(name, value);
+    }
+
+    if (params.length === 0) {
+      const localArgs = this.localTemplateArgs(detail.entry.registryEntry);
+      for (const arg of localArgs) {
+        addParam(arg.name, arg.value, arg.type);
+      }
     }
 
     if (params.length > 0) {
@@ -1879,6 +2212,20 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       label: participant.label,
       value: participant.value,
     }));
+  }
+
+  private localTemplateArgs(
+    contract: ContractRegistryEntry | undefined,
+  ): IndexerCovenantArg[] {
+    if (!contract?.compiledJson) return [];
+    try {
+      const compiled = this.covenantService.parseCompiledContract(
+        contract.compiledJson,
+      );
+      return Array.isArray(compiled.tn10?.args) ? compiled.tn10.args : [];
+    } catch {
+      return [];
+    }
   }
 
   private getNextActionLabel(
@@ -1901,6 +2248,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       if (currentRoles.includes('Arbiter')) return 'Arbitrate';
       if (currentRoles.includes('Buyer')) return 'Release / Refund';
       if (currentRoles.includes('Seller')) return 'Release';
+    }
+    if (normalized === 'SelfCustodyVault') {
+      if (currentRoles.includes('Cold wallet')) return 'Emergency Sweep';
+      if (currentRoles.includes('Hot wallet')) return 'Unvault / Finalize';
     }
     return 'Open Actions';
   }
@@ -2156,13 +2507,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   selectDetailAction(fnName?: string) {
     this.detailPanelTab.set('action');
     if (fnName) {
-      if (this.availableFunctions().some((fn) => fn.name === fnName)) {
-        this.selectFunction(fnName);
-      } else if (!this.dashboardError()) {
-        this.dashboardError.set(
-          `Could not load the "${fnName}" action for this contract. The indexer may not have this covenant's current state yet.`,
-        );
-      }
+      this.dashboardError.set(null);
+      this.selectFunction(fnName);
     }
     this.scrollToActionPanel();
   }
@@ -2184,8 +2530,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       // scrollIntoView to leave room for it, without us having to guess
       // which ancestor is the actual scroll container.
       const headerHeight =
-        document.querySelector<HTMLElement>('.wrapper__header')
-          ?.offsetHeight ?? 0;
+        document.querySelector<HTMLElement>('.wrapper__header')?.offsetHeight ??
+        0;
       panel.style.scrollMarginTop = `${headerHeight + 12}px`;
       panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -2577,6 +2923,35 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         requiredRole: 'Arbiter',
       },
     },
+    SelfCustodyVault: {
+      topUp: {
+        label: 'Top Up',
+        description:
+          'Add more KAS to the locked vault without changing its phase.',
+        iconClass: 'icon-add',
+      },
+      unvault: {
+        label: 'Start Unvault',
+        description:
+          'Use the hot wallet to move the vault into the delayed unvaulting phase.',
+        iconClass: 'icon-refresh-ccw-04',
+        requiredRole: 'Hot wallet',
+      },
+      emergencySweep: {
+        label: 'Emergency Sweep',
+        description:
+          'Use the cold wallet to sweep funds without waiting for the unvault delay.',
+        iconClass: 'icon-shield',
+        requiredRole: 'Cold wallet',
+      },
+      finalize: {
+        label: 'Finalize',
+        description:
+          'Use the hot wallet to withdraw after the unvault delay has passed.',
+        iconClass: 'icon-coins-02',
+        requiredRole: 'Hot wallet',
+      },
+    },
   };
 
   /**
@@ -2656,6 +3031,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       TimeLockVault: ['spend', 'recover'],
       MultiSigVault: ['spend12', 'spend13', 'spend23'],
       EscrowWithArbiter: ['release', 'refund', 'arbitrate'],
+      SelfCustodyVault: ['unvault', 'finalize', 'emergencySweep', 'topUp'],
     };
     const available = this.availableFunctions();
     const target =
@@ -2964,7 +3340,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     );
     const templateName =
       covenant?.claimedTemplate || covenant?.claimedArgs?.tmpl;
-    const args = covenant?.claimedArgs?.args || [];
+    const args = this.normalizeIndexerArgs(covenant?.claimedArgs?.args);
 
     if (!covenantId || !deployTxid || !contractAddress || !amountSompi) {
       throw new Error(
@@ -2986,11 +3362,24 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       );
     }
 
-    const fieldValues = this.indexerArgsToTemplateValues(template, args);
+    const fieldValues = this.indexerArgsToTemplateValues(
+      template,
+      args,
+      activeAction,
+    );
     const compiled = await this.compileTemplateWithFieldValues(
       template,
       fieldValues,
     );
+    const normalizedTemplateName = this.normalizeContractName(templateName);
+    compiled.tn10 = {
+      v: 1,
+      tmpl: normalizedTemplateName,
+      args:
+        template.id === 'self-custody-vault'
+          ? this.buildSelfCustodyArgsPayload(fieldValues)
+          : args,
+    };
     const computedAddress = this.covenantService.getContractAddress(compiled);
     const isLatestContinuation =
       !!activeAction.outputs?.address &&
@@ -3063,6 +3452,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (normalized.includes('escrow')) {
       return this.templateById('escrow-with-arbiter');
     }
+    if (normalized.includes('selfcustody')) {
+      return this.templateById('self-custody-vault');
+    }
 
     const aliases: Record<string, string> = {
       timelockvault: 'time-lock-vault',
@@ -3073,6 +3465,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       deadmansswitch: 'dead-mans-switch',
       deadmans: 'dead-mans-switch',
       deadman: 'dead-mans-switch',
+      selfcustodyvault: 'self-custody-vault',
+      selfcustody: 'self-custody-vault',
     };
     const templateId = aliases[normalized];
     return CONTRACT_TEMPLATES.find(
@@ -3107,6 +3501,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (names.has('buyer') && names.has('seller') && names.has('arbiter')) {
       return this.templateById('escrow-with-arbiter');
     }
+    if (names.has('hotKey') && names.has('coldKey')) {
+      return this.templateById('self-custody-vault');
+    }
     return undefined;
   }
 
@@ -3123,6 +3520,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private indexerArgsToTemplateValues(
     template: ContractTemplate,
     args: IndexerCovenantArg[],
+    activeAction?: IndexerCovenantAction,
   ): Record<string, string> {
     const byName = new Map(args.map((arg) => [arg.name, String(arg.value)]));
     const requireArg = (name: string): string => {
@@ -3166,6 +3564,31 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             byName.get('inactivityPeriod') ??
             requireArg('checkInDeadline'),
         };
+      case 'self-custody-vault':
+        const state = activeAction?.outputs?.state || {};
+        const delaySeconds = Number(
+          state['vaultUnvaultDelaySeconds'] ??
+            byName.get('unvaultDelaySeconds') ??
+            requireArg('unvaultDelaySeconds'),
+        );
+        return {
+          hotKey: requireArg('hotKey'),
+          coldKey: requireArg('coldKey'),
+          whitelistedDestinations: byName.get('whitelistedDestinations') ?? '',
+          whitelistedDestinations_mode:
+            byName.get('whitelistMode') === 'whitelist'
+              ? 'whitelist'
+              : byName.get('whitelistedDestinations')
+                ? 'whitelist'
+                : 'anywhere',
+          initWhitelistCount: String(
+            state['whitelistCount'] ?? byName.get('initWhitelistCount') ?? '0',
+          ),
+          unvaultDelaySeconds: String(
+            Number.isFinite(delaySeconds) ? delaySeconds / 3600 : 24,
+          ),
+          initPhase: String(state['phase'] ?? byName.get('initPhase') ?? '0'),
+        };
       default:
         throw new Error(`Unsupported covenant template "${template.name}".`);
     }
@@ -3176,7 +3599,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     fieldValues: Record<string, string>,
   ): Promise<CompiledContract> {
     const newArgs = template.fields.map((field) =>
-      this.fieldToCtorArg(field, fieldValues[field.paramName]),
+      this.fieldToCtorArgFromValues(field, fieldValues),
     );
     const compiled = await firstValueFrom(
       this.http.get<any>(template.assetPath),
@@ -3603,6 +4026,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       let outputs: SpendOutput[];
       let extraArgsOverride: Record<string, CovenantFunctionArg> | undefined;
       let useSenderFeeOverride: boolean | undefined;
+      let covenantIdOverride: string | undefined;
 
       if (this.isTopUpFunction(functionName)) {
         if (isNaN(topUpAmountKas) || topUpAmountKas <= 0) {
@@ -3611,6 +4035,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         }
 
         const covenantId = this.selectedContract()?.covenantId;
+        covenantIdOverride = covenantId;
         if (!covenantId) {
           this.interactError.set(
             'Cannot top up this contract until its covenant ID is known. Refresh/import it from the indexer first.',
@@ -3651,7 +4076,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         // reject it here with a clear message instead of letting it panic.
         if (amountToSellerSompi >= inputAmount) {
           this.interactError.set(
-            'Amount to seller must be less than the full contract balance. Arbitrate always pays out both sides, so the buyer\'s output can\'t be zero.',
+            "Amount to seller must be less than the full contract balance. Arbitrate always pays out both sides, so the buyer's output can't be zero.",
           );
           return;
         }
@@ -3753,6 +4178,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           outputAddress,
         );
         return;
+      } else if (this.isSelfCustodyUnvault()) {
+        await this.executeSelfCustodyUnvault(
+          compiled,
+          contractJson,
+          outpoint,
+          inputAmount,
+        );
+        return;
       } else if (this.functionRequiresOutput(functionName)) {
         if (
           compiled.contract_name === 'DeadManSwitch' &&
@@ -3778,28 +4211,42 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         }
         const withdrawalAmount = BigInt(Math.floor(outputAmountKas * 1e8));
         if (
-          functionName === 'transfer' &&
-          compiled.contract_name === 'KCC20'
+          compiled.contract_name === 'SelfCustodyVault' &&
+          ['emergencySweep', 'finalize'].includes(functionName)
         ) {
-          try {
-            extraArgsOverride = {
-              recipient: Uint8Array.from(
-                this.templatePatcher.kaspaAddressToPubkeyBytes(outputAddress),
-              ),
-            };
-          } catch {
-            this.interactError.set('Enter a valid recipient Kaspa address');
+          if (withdrawalAmount !== inputAmount) {
+            this.interactError.set(
+              'Self-Custody Vault sweep actions must withdraw the full vault balance. Use Max.',
+            );
             return;
           }
+          outputs = [{ address: outputAddress, amount: inputAmount }];
+          extraArgsOverride = this.collectExtraArgs(compiled, functionName);
+        } else {
+          if (
+            functionName === 'transfer' &&
+            compiled.contract_name === 'KCC20'
+          ) {
+            try {
+              extraArgsOverride = {
+                recipient: Uint8Array.from(
+                  this.templatePatcher.kaspaAddressToPubkeyBytes(outputAddress),
+                ),
+              };
+            } catch {
+              this.interactError.set('Enter a valid recipient Kaspa address');
+              return;
+            }
+          }
+          const withdrawalOutputs = this.buildWithdrawalOutputs(
+            compiled,
+            inputAmount,
+            outputAddress,
+            withdrawalAmount,
+          );
+          if (!withdrawalOutputs) return;
+          outputs = withdrawalOutputs;
         }
-        const withdrawalOutputs = this.buildWithdrawalOutputs(
-          compiled,
-          inputAmount,
-          outputAddress,
-          withdrawalAmount,
-        );
-        if (!withdrawalOutputs) return;
-        outputs = withdrawalOutputs;
       } else if (this.isDmsKeepAlive()) {
         // DMS keepAlive — delegate to the dedicated method which handles new-contract generation
         await this.executeDmsKeepAlive(
@@ -3907,7 +4354,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         functionName,
         outputs,
         Object.keys(extraArgs).length > 0 ? extraArgs : undefined,
-        undefined,
+        covenantIdOverride,
         useSenderFeeOverride ?? this.useSenderFee,
       );
       if (!result) return;
@@ -4016,6 +4463,65 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return outputs;
   }
 
+  private async executeSelfCustodyUnvault(
+    compiled: CompiledContract,
+    contractJson: string,
+    outpoint: CovenantOutpoint,
+    inputAmount: bigint,
+  ): Promise<void> {
+    const covenantId = this.selectedContract()?.covenantId;
+    if (!covenantId) {
+      this.interactError.set(
+        'Cannot unvault until this contract covenant ID is known. Refresh/import it from the indexer first.',
+      );
+      return;
+    }
+
+    const nextCompiled = await this.compileSelfCustodyContinuation(compiled, 1);
+    const nextContractJson = JSON.stringify(nextCompiled, null, 2);
+    const nextContractAddress =
+      this.covenantService.getContractAddress(nextCompiled);
+
+    const result = await this.runCovenantSpendAction(
+      compiled,
+      contractJson,
+      outpoint,
+      inputAmount,
+      'unvault',
+      [
+        {
+          address: nextContractAddress,
+          amount: inputAmount,
+          covenantId,
+        },
+      ],
+      undefined,
+      covenantId,
+      true,
+    );
+    if (!result) return;
+
+    this.interactResult.set({ txid: result.txid, functionName: 'unvault' });
+
+    if (this.selectedContractId()) {
+      this.registryService.updateContract(this.selectedContractId(), {
+        status: 'active',
+        compiledJson: nextContractJson,
+        contractAddress: nextContractAddress,
+        accessRoles: this.parseAccessRoles(nextCompiled),
+        outpoint: { txid: result.txid, vout: 0 },
+        amountSompi: inputAmount.toString(),
+        lastChecked: Date.now(),
+      });
+    }
+
+    this.interactContractJson.set(nextContractJson);
+    this.interactOutpointTxid = result.txid;
+    this.interactOutpointVout = '0';
+    this.interactInputAmount = inputAmount.toString();
+    this.loadContracts();
+  }
+
   /**
    * Execute a Dead Man's Switch keepAlive:
    *   1. Validates the new expiry input.
@@ -4063,12 +4569,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       'dead-mans-switch',
       'initDeadline',
     );
-    if (currentDeadline !== undefined && newDeadline <= currentDeadline) {
-      this.interactError.set(
-        `New check-in deadline must be later than the current deadline (${this.formatTimestamp(Number(currentDeadline))}).`,
-      );
-      return;
-    }
     const owner = await this.extractDmsPubkeyHex(compiled, 'owner');
     const heir = await this.extractDmsPubkeyHex(compiled, 'heir');
     const ownerAddress = owner ? this.pubkeyToAddress(owner) : '';
@@ -4268,6 +4768,85 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       ),
       this.intArg(Number(values.deadlineMs)),
     ]) as CompiledContract;
+  }
+
+  private async compileSelfCustodyContinuation(
+    currentCompiled: CompiledContract,
+    phase: number,
+  ): Promise<CompiledContract> {
+    const template = this.templateById('self-custody-vault');
+    if (!template) {
+      throw new Error('Self-Custody Vault template is unavailable');
+    }
+
+    const baseCompiled = await firstValueFrom(
+      this.http.get<any>(template.assetPath),
+    );
+    const descriptor = this.templatePatcher.extractPatchDescriptor(
+      baseCompiled,
+      template.placeholderArgs,
+    );
+
+    const bytesArgFor = (name: string): CtorArg => {
+      const param = descriptor.params.find((entry) => entry.name === name);
+      const position = param?.positions[0];
+      if (!param || !position) {
+        throw new Error(`Self-Custody Vault template is missing ${name}`);
+      }
+
+      return this.bytesArg(
+        currentCompiled.script.slice(
+          position.offset,
+          position.offset + position.length,
+        ),
+      );
+    };
+
+    const whitelistCount = await this.extractTemplateIntField(
+      currentCompiled,
+      'self-custody-vault',
+      'initWhitelistCount',
+    );
+    const delaySeconds = await this.extractTemplateIntField(
+      currentCompiled,
+      'self-custody-vault',
+      'unvaultDelaySeconds',
+    );
+
+    if (whitelistCount === undefined || delaySeconds === undefined) {
+      throw new Error('Could not read Self-Custody Vault state from template');
+    }
+
+    const patched = this.templatePatcher.applyPatch(baseCompiled, descriptor, [
+      bytesArgFor('hotKey'),
+      bytesArgFor('coldKey'),
+      bytesArgFor('whitelistedDestinations'),
+      this.intArg(Number(whitelistCount)),
+      this.intArg(Number(delaySeconds)),
+      this.intArg(phase),
+    ]) as CompiledContract;
+
+    const currentArgs = this.argsArrayToRecord(
+      currentCompiled.tn10?.args || [],
+    );
+    patched.tn10 = {
+      v: 1,
+      tmpl: 'SelfCustodyVault',
+      args: this.buildSelfCustodyArgsPayload({
+        hotKey: currentArgs['hotKey'] || '',
+        coldKey: currentArgs['coldKey'] || '',
+        whitelistedDestinations: currentArgs['whitelistedDestinations'] || '',
+        whitelistedDestinations_mode:
+          currentArgs['whitelistMode'] === 'whitelist'
+            ? 'whitelist'
+            : 'anywhere',
+        initWhitelistCount: String(whitelistCount),
+        unvaultDelaySeconds: String(Number(delaySeconds) / 3600),
+        initPhase: String(phase),
+      }),
+    };
+
+    return patched;
   }
 
   private async extractDmsPubkeyHex(
@@ -4568,6 +5147,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       arbitrate: 'Arbitrate',
       recover: 'Recover',
       withdraw: 'Withdraw',
+      unvault: 'Start Unvault',
+      emergencySweep: 'Emergency Sweep',
+      finalize: 'Finalize',
     };
     return labels[action] || action;
   }
@@ -4670,8 +5252,23 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     field: TemplateField,
     rawValue: string | number | undefined,
   ): CtorArg {
+    return this.fieldToCtorArgFromValues(field, {
+      [field.paramName]: String(rawValue ?? ''),
+    });
+  }
+
+  private fieldToCtorArgFromValues(
+    field: TemplateField,
+    values: Record<string, string>,
+  ): CtorArg {
+    const rawValue = values[field.paramName];
     const value = String(rawValue ?? '').trim();
-    if (!value) {
+    if (
+      !value &&
+      field.type !== 'address_list' &&
+      field.type !== 'whitelist_count' &&
+      field.type !== 'int_hidden'
+    ) {
       throw new Error(`${field.label} is required`);
     }
 
@@ -4680,6 +5277,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         return this.bytesArg(
           this.templatePatcher.kaspaAddressToPubkeyBytes(value),
         );
+      case 'address_list':
+        return this.pubkeyListArg(field.paramName, values);
       case 'hash32':
         return this.bytesArg(this.parseHash32(value, field.label));
       case 'int_days': {
@@ -4694,8 +5293,23 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         }
         return this.intArg(days * 86400);
       }
+      case 'int_hours': {
+        const hours = this.parsePositiveDecimal(value, field.label);
+        if (hours > 4660) {
+          throw new Error(
+            `${field.label}: maximum is 4660 hours (template encoding limit)`,
+          );
+        }
+        return this.intArg(this.hoursToSeconds(hours));
+      }
       case 'int_count':
         return this.intArg(this.parseWholeNumber(value, field.label));
+      case 'whitelist_count':
+        return this.intArg(this.getWhitelistCountFromValues(values));
+      case 'int_hidden':
+        return this.intArg(
+          value ? this.parseWholeNumber(value, field.label) : 0,
+        );
       case 'int_timestamp':
         return this.intArg(this.parseDateToUnixMs(value, field.label));
       default:
@@ -4724,6 +5338,18 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       throw new Error(`${label} must be a non-negative whole number`);
     }
     return parsed;
+  }
+
+  private parsePositiveDecimal(value: string, label: string): number {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      throw new Error(`${label} must be a non-negative number`);
+    }
+    return parsed;
+  }
+
+  private hoursToSeconds(hours: number): number {
+    return Math.max(0, Math.round(hours * 3600));
   }
 
   private parseDateToUnixMs(value: string, label: string): number {
@@ -4758,6 +5384,73 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     };
   }
 
+  private pubkeyListArg(
+    paramName: string,
+    values: Record<string, string>,
+  ): CtorArg {
+    const addresses =
+      this.getWhitelistModeFromValues(paramName, values) === 'whitelist'
+        ? this.getAddressListFromRaw(values[paramName])
+        : [];
+    const padded = addresses.slice(0, this.selfCustodyWhitelistCapacity);
+    const paddingAddress = String(values['hotKey'] ?? '').trim();
+
+    while (padded.length < this.selfCustodyWhitelistCapacity) {
+      padded.push(paddingAddress);
+    }
+
+    return {
+      kind: 'array',
+      data: padded.map((address) =>
+        this.bytesArg(
+          address
+            ? this.templatePatcher.kaspaAddressToPubkeyBytes(address)
+            : new Array<number>(32).fill(0),
+        ),
+      ),
+    };
+  }
+
+  private getWhitelistModeFromValues(
+    paramName: string,
+    values: Record<string, string>,
+  ): 'anywhere' | 'whitelist' {
+    const mode = values[paramName + '_mode'];
+    if (mode === 'whitelist') return 'whitelist';
+    if (mode === 'anywhere') return 'anywhere';
+    return this.getAddressListFromRaw(values[paramName]).length > 0
+      ? 'whitelist'
+      : 'anywhere';
+  }
+
+  private getWhitelistCountFromValues(values: Record<string, string>): number {
+    return this.getWhitelistModeFromValues(
+      'whitelistedDestinations',
+      values,
+    ) === 'whitelist'
+      ? this.getAddressListFromRaw(values['whitelistedDestinations']).length
+      : 0;
+  }
+
+  private getAddressListFromRaw(rawValue: string | undefined): string[] {
+    const raw = String(rawValue ?? '').trim();
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((value) => String(value ?? '').trim())
+          .filter(Boolean);
+      }
+    } catch {
+      return raw
+        .split(/\r?\n|,/)
+        .map((value) => value.trim())
+        .filter(Boolean);
+    }
+    return [];
+  }
+
   private intArg(value: number): CtorArg {
     return {
       kind: 'int',
@@ -4783,7 +5476,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   // ─── Function categorization ──────────────────────────────────────
   /** Functions that do NOT produce an external withdrawal output */
-  private readonly REDEPLOY_FUNCTIONS = new Set(['keepAlive', 'increment']);
+  private readonly REDEPLOY_FUNCTIONS = new Set([
+    'keepAlive',
+    'increment',
+    'unvault',
+  ]);
 
   isTopUpFunction(fnName: string): boolean {
     return fnName === 'topUp';
@@ -4810,6 +5507,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       .toLowerCase()
       .replace(/[\s_-]/g, '')
       .includes('deadman');
+  }
+
+  isSelfCustodyUnvault(): boolean {
+    const contract = this.parsedInteractContract();
+    return (
+      this.selectedFunction === 'unvault' &&
+      contract?.contract_name === 'SelfCustodyVault'
+    );
   }
 
   /**
@@ -4851,6 +5556,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.extraArgValues = {};
     this.dmsNewExpiry = '';
     this.topUpAmount = '';
+    if (
+      ['emergencySweep', 'finalize'].includes(name) &&
+      this.parsedInteractContract()?.contract_name === 'SelfCustodyVault'
+    ) {
+      this.extraArgValues['destinationIndex'] = '0';
+    }
 
     if (this.isTopUpFunction(name) || this.isDmsChangeHeir()) {
       this.interactOutputAddress = '';
@@ -4858,6 +5569,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     } else if (this.functionRequiresOutput(name)) {
       // Withdrawal function: default output to user's wallet, clear amount
       this.interactOutputAddress = this.currentWallet()?.getAddress() || '';
+      this.interactOutputAmount = '';
+    } else if (this.isSelfCustodyUnvault()) {
+      this.interactOutputAddress = '';
       this.interactOutputAmount = '';
     } else if (this.isDmsKeepAlive()) {
       // DMS keepAlive — output address will be the new DMS contract, computed later
@@ -4904,6 +5618,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       execute: 'Execute',
       topUp: 'Top Up',
       changeHeir: 'Change Heir',
+      unvault: 'Start Unvault',
+      emergencySweep: 'Emergency Sweep',
+      finalize: 'Finalize',
     };
     return labels[name] || name;
   }
@@ -4952,6 +5669,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         transfer:
           'Transfer KCC20 tokens to another user. Enter the recipient Kaspa address and the token amount to send. Both UTXOs remain locked in the covenant.',
       },
+      selfcustodyvault: {
+        topUp: 'Add KAS to the locked vault without changing its phase.',
+        unvault:
+          'Start the delayed withdrawal phase using the hot wallet. Funds stay in the vault.',
+        emergencySweep:
+          'Sweep funds with the cold wallet. If a whitelist is active, the destination index must match the recipient.',
+        finalize:
+          'Complete a hot-wallet withdrawal after the unvault delay. If a whitelist is active, the destination index must match the recipient.',
+      },
     };
 
     // Try contract-specific description first
@@ -4978,6 +5704,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       execute: "Execute this contract's logic.",
       topUp:
         'Add KAS to this covenant by spending the current covenant UTXO and recreating it with the same covenant ID.',
+      unvault:
+        'Move the vault into its delayed withdrawal phase without sending funds externally.',
+      emergencySweep: 'Withdraw with the cold wallet.',
+      finalize: 'Finalize a delayed withdrawal.',
     };
 
     return fallback[name] || `Call the "${name}" function on this contract.`;
@@ -5293,7 +6023,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     // bytes gets misread as a second push opcode, splicing in a bogus
     // "pubkey" ahead of the real next one and shifting the buyer/seller
     // indices this function's callers rely on.
-    for (let i = 0; i <= scriptBytes.length - 33 && found.length < 2; ) {
+    for (let i = 0; i <= scriptBytes.length - 33 && found.length < 2;) {
       if (scriptBytes[i] === 0x20) {
         const pkHex = Array.from(scriptBytes.slice(i + 1, i + 33))
           .map((b) => b.toString(16).padStart(2, '0'))

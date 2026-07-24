@@ -4975,7 +4975,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   shareableContractOptions = computed<DropdownOption[]>(() =>
     this.shareableContracts().map((contract) => ({
       value: contract.id,
-      label: contract.displayName,
+      label: `${contract.displayName}-${contract.covenantId}`,
     })),
   );
 

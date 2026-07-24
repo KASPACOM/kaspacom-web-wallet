@@ -423,7 +423,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   templateResolvedAddresses: { [paramName: string]: string } = {};
   generatedContractJson = signal<string | null>(null);
   templateError = signal<string | null>(null);
-  readonly selfCustodyWhitelistCapacity = 3;
+  readonly selfCustodyWhitelistCapacity = 1;
 
   // Interact form - plain properties for ngModel
   selectedContractId = signal('');
@@ -2082,7 +2082,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       c: { name: 'coldKey', type: 'address' },
       m: { name: 'whitelistMode', type: 'string' },
       w: { name: 'whitelistedDestinations', type: 'address[]' },
-      n: { name: 'initWhitelistCount', type: 'int' },
       d: { name: 'unvaultDelaySeconds', type: 'blueScore' },
       p: { name: 'initPhase', type: 'int' },
     };
@@ -2163,11 +2162,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         value: whitelistedDestinations,
       },
       {
-        name: 'initWhitelistCount',
-        type: 'int',
-        value: String(this.getWhitelistCountFromValues(values)),
-      },
-      {
         name: 'unvaultDelaySeconds',
         type: 'blueScore',
         value: String(this.hoursToSeconds(delayHours)),
@@ -2208,7 +2202,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         c: args['coldKey'] || '',
         m: args['whitelistMode'] === 'whitelist' ? 'w' : 'a',
         w: args['whitelistedDestinations'] || '',
-        n: args['initWhitelistCount'] || '0',
         d: args['unvaultDelaySeconds'] || '86400',
         p: args['initPhase'] || '0',
       },
@@ -3926,11 +3919,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       '0',
       '1',
     ]);
-    const countCandidates = this.uniqueStrings([
-      state['initWhitelistCount'],
-      state['whitelistCount'],
-      baseFieldValues['initWhitelistCount'],
-    ]);
     const delayCandidates = this.uniqueStrings([
       this.stateSecondsToHours(state['vaultUnvaultDelaySeconds']),
       this.stateSecondsToHours(state['unvaultDelaySeconds']),
@@ -3940,31 +3928,28 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     ]);
 
     for (const initPhase of phaseCandidates) {
-      for (const initWhitelistCount of countCandidates) {
-        for (const unvaultDelaySeconds of delayCandidates) {
-          const fieldValues = {
-            ...baseFieldValues,
-            initPhase,
-            initWhitelistCount,
-            unvaultDelaySeconds,
-          };
-          try {
-            const compiled = await this.compileTemplateWithFieldValues(
-              template,
+      for (const unvaultDelaySeconds of delayCandidates) {
+        const fieldValues = {
+          ...baseFieldValues,
+          initPhase,
+          unvaultDelaySeconds,
+        };
+        try {
+          const compiled = await this.compileTemplateWithFieldValues(
+            template,
+            fieldValues,
+          );
+          const address = this.covenantService.getContractAddress(compiled);
+          if (address === contractAddress) {
+            this.logSelfCustodyContractParams('indexer variant matched', {
               fieldValues,
-            );
-            const address = this.covenantService.getContractAddress(compiled);
-            if (address === contractAddress) {
-              this.logSelfCustodyContractParams('indexer variant matched', {
-                fieldValues,
-                activeState: state,
-                address,
-              });
-              return { fieldValues, compiled, address };
-            }
-          } catch {
-            /* Try the next candidate combination. */
+              activeState: state,
+              address,
+            });
+            return { fieldValues, compiled, address };
           }
+        } catch {
+          /* Try the next candidate combination. */
         }
       }
     }
@@ -4173,9 +4158,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
               : byName.get('whitelistedDestinations')
                 ? 'whitelist'
                 : 'anywhere',
-          initWhitelistCount: String(
-            state['whitelistCount'] ?? byName.get('initWhitelistCount') ?? '0',
-          ),
           unvaultDelaySeconds: String(
             Number.isFinite(delaySeconds) ? delaySeconds / 3600 : 24,
           ),
@@ -5443,18 +5425,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       );
     };
 
-    const whitelistCount = await this.extractTemplateIntField(
-      currentCompiled,
-      'self-custody-vault',
-      'initWhitelistCount',
-    );
     const delaySeconds = await this.extractTemplateIntField(
       currentCompiled,
       'self-custody-vault',
       'unvaultDelaySeconds',
     );
 
-    if (whitelistCount === undefined || delaySeconds === undefined) {
+    if (delaySeconds === undefined) {
       throw new Error('Could not read Self-Custody Vault state from template');
     }
 
@@ -5462,7 +5439,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       bytesArgFor('hotKey'),
       bytesArgFor('coldKey'),
       bytesArgFor('whitelistedDestinations'),
-      this.intArg(Number(whitelistCount)),
       this.intArg(Number(delaySeconds)),
       this.intArg(phase),
     ]) as CompiledContract;
@@ -5481,7 +5457,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           currentArgs['whitelistMode'] === 'whitelist'
             ? 'whitelist'
             : 'anywhere',
-        initWhitelistCount: String(whitelistCount),
         unvaultDelaySeconds: String(Number(delaySeconds) / 3600),
         initPhase: String(phase),
       }),
@@ -5490,13 +5465,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       phase,
       currentTn10: currentCompiled.tn10,
       nextTn10: patched.tn10,
-      whitelistCount,
       delaySeconds,
       constructorArgs: [
         bytesArgFor('hotKey'),
         bytesArgFor('coldKey'),
         bytesArgFor('whitelistedDestinations'),
-        this.intArg(Number(whitelistCount)),
         this.intArg(Number(delaySeconds)),
         this.intArg(phase),
       ],

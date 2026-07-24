@@ -82,6 +82,11 @@ import { ApprovalFlowService } from '../../../../services/approval-flow.service'
 import { AddressSmartInputComponent } from '../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { CovenantDateTimeInputComponent } from './covenant-date-time-input.component';
 import { WalletProfileOrbComponent } from '../../../../shared/ui/wallet-profile-orb/wallet-profile-orb.component';
+import {
+  ActionFieldConfigEntry,
+  CONTRACT_ACTION_FIELDS,
+} from './contract-action-fields.config';
+import { ContractActionFieldsComponent } from './components/contract-action-fields/contract-action-fields.component';
 
 type TabName =
   | 'deploy'
@@ -94,6 +99,8 @@ type ContractDetailTab = 'details' | 'action';
 type CreateMode = 'template' | 'custom';
 type ContractsTransientState = {
   activeTab?: TabName;
+  detailPanelTab?: ContractDetailTab;
+  actionPageView?: 'list' | 'form';
   selectedFunction?: string;
   interactContractJson?: string;
   interactOutpointTxid?: string;
@@ -196,6 +203,7 @@ type DeployIndexerState = {
     AddressSmartInputComponent,
     CovenantDateTimeInputComponent,
     WalletProfileOrbComponent,
+    ContractActionFieldsComponent,
   ],
   templateUrl: './contracts-page.component.html',
   styleUrl: './contracts-page.component.scss',
@@ -348,8 +356,28 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * ready as each one's writes land out of order.
    */
   private detailRequestToken = 0;
+  /**
+   * Tracks which non-silent openContractDetail()/prepareDashboardAction()
+   * call is allowed to clear selectedDetailLoading. detailRequestToken is
+   * bumped by EVERY call including silent background refreshes (e.g. the
+   * loadContracts() polling loop), so gating the loading-flag reset on
+   * `requestToken === this.detailRequestToken` let a silent call that
+   * started after a non-silent one strand the flag at true forever — the
+   * non-silent call's own reset would never fire since its token no longer
+   * matched, and the silent call never touches the flag at all. This
+   * separate token is only ever written by non-silent calls, so it isn't
+   * disturbed by concurrent silent ones.
+   */
+  private loadingRequestToken = 0;
   selectedDetailError = signal<string | null>(null);
   detailPanelTab = signal<ContractDetailTab>('details');
+  /**
+   * Whether the "action" panel shows the curated action list or one
+   * selected action's full-page form — mutually exclusive with the list
+   * once an action is picked, unlike detailPanelTab which just toggles
+   * whether this whole panel appears below the always-visible details.
+   */
+  actionPageView = signal<'list' | 'form'>('list');
   detailRouteId = signal<string | null>(null);
   detailRouteNotFound = signal(false);
   pendingUrlImport = signal<string | null>(null);
@@ -665,6 +693,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (!state) return;
 
     if (state.activeTab) this.activeTab.set(state.activeTab);
+    if (state.detailPanelTab) this.detailPanelTab.set(state.detailPanelTab);
+    if (state.actionPageView) this.actionPageView.set(state.actionPageView);
     if (state.selectedFunction !== undefined)
       this.selectedFunction = state.selectedFunction;
     if (state.interactContractJson !== undefined)
@@ -1996,6 +2026,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const isCurrentRequest = () => requestToken === this.detailRequestToken;
 
     if (!silent) {
+      this.loadingRequestToken = requestToken;
       this.selectedDetailLoading.set(true);
       this.selectedDetail.set({ entry, actions: [], utxos: [] });
       if (this.detailRouteId() || this.activeTab() === 'detail') {
@@ -2101,7 +2132,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         );
       }
     } finally {
-      if (isCurrentRequest() && !silent) {
+      if (requestToken === this.loadingRequestToken && !silent) {
         this.selectedDetailLoading.set(false);
         if (!skipScrollToTop) this.scrollContractsContentToTop();
       }
@@ -2139,6 +2170,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   async openDashboardAction(entry: ContractDashboardEntry) {
     this.detailPanelTab.set('action');
+    this.actionPageView.set('form');
     this.activeTab.set('detail');
     await this.openContractDetail(entry, { skipScrollToTop: true });
     this.scrollToActionPanel();
@@ -2155,6 +2187,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    */
   selectDetailAction(fnName?: string) {
     this.detailPanelTab.set('action');
+    this.actionPageView.set('form');
     if (fnName) {
       if (this.availableFunctions().some((fn) => fn.name === fnName)) {
         this.selectFunction(fnName);
@@ -2184,8 +2217,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       // scrollIntoView to leave room for it, without us having to guess
       // which ancestor is the actual scroll container.
       const headerHeight =
-        document.querySelector<HTMLElement>('.wrapper__header')
-          ?.offsetHeight ?? 0;
+        document.querySelector<HTMLElement>('.wrapper__header')?.offsetHeight ??
+        0;
       panel.style.scrollMarginTop = `${headerHeight + 12}px`;
       panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -2200,7 +2233,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       const registryEntry = this.syncRegistryEntryForDashboardAction(entry);
       this.selectedContractId.set(registryEntry.id);
       this.selectContractFromRegistry();
-      this.selectDefaultFunctionForContract(entry.contractName);
+      const hasEnabledDefault = this.selectDefaultFunctionForContract(entry);
+      if (!silent && !hasEnabledDefault) {
+        // openDashboardAction() optimistically opens straight to the action
+        // form before this resolves. Nothing the current role/state can
+        // actually submit was found, so land on the guarded action list
+        // instead of a form for a function that isn't really available.
+        this.detailPanelTab.set('action');
+        this.actionPageView.set('list');
+      }
       return true;
     }
 
@@ -2211,6 +2252,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         'Actions are disabled because the indexer reports multiple active UTXOs for this covenant. Open details and choose a specific UTXO once the wallet supports UTXO selection.',
       );
       this.detailPanelTab.set('details');
+      this.actionPageView.set('list');
       return false;
     }
 
@@ -2223,7 +2265,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
 
     try {
-      if (!silent) this.selectedDetailLoading.set(true);
+      if (!silent) {
+        this.loadingRequestToken = requestToken;
+        this.selectedDetailLoading.set(true);
+      }
       const response = await this.fetchIndexerCovenant(identifier);
       const preview = await this.buildIndexerImportPreview(response);
       if (requestToken !== this.detailRequestToken) return false;
@@ -2245,10 +2290,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       if (imported) {
         this.selectedContractId.set(imported.id);
         this.selectContractFromRegistry();
-        this.selectDefaultFunctionForContract(entry.contractName);
+        const hasEnabledDefault = this.selectDefaultFunctionForContract(entry);
         if (!silent) {
           this.activeTab.set('detail');
           this.detailPanelTab.set('action');
+          this.actionPageView.set(hasEnabledDefault ? 'form' : 'list');
         }
         return true;
       }
@@ -2258,7 +2304,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         error?.message || 'Import this contract before using wallet actions.',
       );
     } finally {
-      if (requestToken === this.detailRequestToken && !silent) {
+      if (requestToken === this.loadingRequestToken && !silent) {
         this.selectedDetailLoading.set(false);
       }
     }
@@ -2341,15 +2387,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   navigateToContractDetail(entry: ContractDashboardEntry) {
     this.detailPanelTab.set('details');
+    this.actionPageView.set('list');
     this.activeTab.set('detail');
     void this.openContractDetail(entry);
-  }
-
-  setContractDetailTab(tab: ContractDetailTab) {
-    if (tab === 'action' && this.selectedDetail()?.entry.status === 'spent')
-      return;
-    this.detailPanelTab.set(tab);
-    this.scrollContractsContentToTop();
   }
 
   backToContractsList() {
@@ -2636,6 +2676,42 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Field-layout config for a curated action's full-page form, keyed the same way as actionMetaTable. */
+  getActionFieldConfig(
+    contractName: string,
+    fnName: string,
+  ): ActionFieldConfigEntry | null {
+    const normalized = this.normalizeContractName(contractName);
+    return CONTRACT_ACTION_FIELDS[normalized]?.[fnName] ?? null;
+  }
+
+  /** The curated label/description for the currently selected action, for the full-page form's header. */
+  getSelectedActionMeta(
+    detail: ContractDetailState,
+  ): AvailableAction | undefined {
+    return this.getAvailableActions(detail).find(
+      (action) => action.fnName === this.selectedFunction,
+    );
+  }
+
+  /**
+   * Field config for whatever function is currently selected. Null for
+   * generic/custom contracts with no curated actionMetaTable entry — those
+   * keep rendering the old manual/ABI-driven chain instead of this form.
+   *
+   * Plain method (not computed()) for the same reason as extraArgsForFunction():
+   * selectedFunction is a plain string, not a signal, so a computed() would
+   * not re-evaluate when it changes.
+   */
+  getSelectedActionFieldConfig(): ActionFieldConfigEntry | null {
+    const contract = this.parsedInteractContract();
+    if (!contract || !this.selectedFunction) return null;
+    return this.getActionFieldConfig(
+      contract.contract_name,
+      this.selectedFunction,
+    );
+  }
+
   /** Disables a MultiSig spend action unless the current wallet is one of its required signer pair. */
   private requireOneOfSigners(
     detail: ContractDetailState,
@@ -2649,20 +2725,48 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return null;
   }
 
-  private selectDefaultFunctionForContract(contractName: string) {
-    const normalized = this.normalizeContractName(contractName);
-    const preferred: Record<string, string[]> = {
-      DeadManSwitch: ['keepAlive', 'changeHeir', 'topUp', 'claim'],
-      TimeLockVault: ['spend', 'recover'],
-      MultiSigVault: ['spend12', 'spend13', 'spend23'],
-      EscrowWithArbiter: ['release', 'refund', 'arbitrate'],
+  /**
+   * Picks which entrypoint the action form defaults to. Ordering alone isn't
+   * enough — the old version just took the first ABI-preferred function that
+   * existed on-chain, with no regard for who's actually allowed to call it,
+   * so e.g. a DMS heir could be dropped straight onto keepAlive (Owner-only)
+   * or a multisig signer 3 onto spend12 (needs signer 1 or 2). Instead this
+   * reorders the preferred list per current role, then only picks among
+   * entries getAvailableActions() reports as actually enabled for this
+   * wallet/state — the same guard the "Available actions" list itself uses.
+   * Returns false when nothing is enabled, so callers can fall back to
+   * showing that guarded list instead of a form for an action that isn't
+   * really available.
+   */
+  private selectDefaultFunctionForContract(
+    entry: ContractDashboardEntry,
+  ): boolean {
+    const normalized = this.normalizeContractName(entry.contractName);
+    const currentRoles = this.currentWalletRoles(entry.participants);
+    const preferredOrders: Record<string, string[]> = {
+      DeadManSwitch: currentRoles.includes('Owner')
+        ? ['keepAlive', 'changeHeir', 'topUp', 'claim']
+        : ['claim', 'keepAlive', 'changeHeir', 'topUp'],
+      TimeLockVault: currentRoles.includes('Recovery')
+        ? ['recover', 'spend', 'topUp']
+        : ['spend', 'recover', 'topUp'],
+      MultiSigVault: ['spend12', 'spend13', 'spend23', 'topUp'],
+      EscrowWithArbiter: currentRoles.includes('Arbiter')
+        ? ['arbitrate', 'release', 'refund', 'topUp']
+        : ['release', 'refund', 'arbitrate', 'topUp'],
     };
-    const available = this.availableFunctions();
+
+    const actions = this.getAvailableActions({ entry, actions: [], utxos: [] });
+    const enabledNames = new Set(
+      actions.filter((action) => action.enabled).map((action) => action.fnName),
+    );
+    const order = preferredOrders[normalized] || [];
     const target =
-      (preferred[normalized] || []).find((name) =>
-        available.some((fn) => fn.name === name),
-      ) || available[0]?.name;
-    if (target) this.selectFunction(target);
+      order.find((name) => enabledNames.has(name)) ||
+      actions.find((action) => action.enabled)?.fnName;
+    if (!target) return false;
+    this.selectFunction(target);
+    return true;
   }
 
   onIndexerImportQueryChange(value: any) {
@@ -3651,7 +3755,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         // reject it here with a clear message instead of letting it panic.
         if (amountToSellerSompi >= inputAmount) {
           this.interactError.set(
-            'Amount to seller must be less than the full contract balance. Arbitrate always pays out both sides, so the buyer\'s output can\'t be zero.',
+            "Amount to seller must be less than the full contract balance. Arbitrate always pays out both sides, so the buyer's output can't be zero.",
           );
           return;
         }
@@ -3777,10 +3881,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           return;
         }
         const withdrawalAmount = BigInt(Math.floor(outputAmountKas * 1e8));
-        if (
-          functionName === 'transfer' &&
-          compiled.contract_name === 'KCC20'
-        ) {
+        if (functionName === 'transfer' && compiled.contract_name === 'KCC20') {
           try {
             extraArgsOverride = {
               recipient: Uint8Array.from(
@@ -3871,7 +3972,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         const partialJson = JSON.stringify(partial, null, 2);
         this.partialSpendJson.set(partialJson);
         this.flowPagesService.saveTransientState('contracts', {
-          activeTab: 'interact',
+          activeTab: this.activeTab(),
+          detailPanelTab: this.detailPanelTab(),
+          actionPageView: this.actionPageView(),
           selectedFunction: functionName,
           interactContractJson: contractJson,
           interactOutpointTxid: this.interactOutpointTxid,
@@ -4859,6 +4962,17 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       // Withdrawal function: default output to user's wallet, clear amount
       this.interactOutputAddress = this.currentWallet()?.getAddress() || '';
       this.interactOutputAmount = '';
+      // Curated actions whose field config omits an amount field (e.g. DMS
+      // claim) always withdraw the full balance — there's no input for the
+      // user to fill in, so fill it in for them instead of leaving it empty.
+      // (getSelectedActionFieldConfig() already reflects `name` — it was
+      // just assigned to selectedFunction above.)
+      const config = this.getSelectedActionFieldConfig();
+      const hasAmountField =
+        config?.fields.some((f) => f.type === 'amount') ?? true;
+      if (!hasAmountField) {
+        this.fillMaxOutputAmount();
+      }
     } else if (this.isDmsKeepAlive()) {
       // DMS keepAlive — output address will be the new DMS contract, computed later
       this.interactOutputAddress = '';
@@ -4883,6 +4997,23 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         }
       }
     }
+  }
+
+  /**
+   * Return from a curated action's full-page form back to the action list —
+   * resets the per-action transient fields (mirroring the reset block in
+   * selectFunction()) plus the function selection itself. Leaves the loaded
+   * contract JSON/outpoint untouched since it's the same contract.
+   */
+  goBackToActionList() {
+    this.actionPageView.set('list');
+    this.selectedFunction = '';
+    this.interactError.set(null);
+    this.interactResult.set(null);
+    this.partialSpendJson.set(null);
+    this.extraArgValues = {};
+    this.dmsNewExpiry = '';
+    this.topUpAmount = '';
   }
 
   /**
@@ -5032,6 +5163,43 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.interactOutputAmount =
       value === null || value === undefined ? '' : String(value);
     this.interactError.set(null);
+  }
+
+  // ─── Generic action-page field delegators ──────────────────────────────
+  // ContractActionFieldsComponent doesn't know which contract/action is
+  // active — it just forwards raw value changes here, and these route to
+  // the same state/handlers the fields already used inline.
+
+  onGenericAddressChange(value: string) {
+    this.onInteractOutputAddressChange(value);
+  }
+
+  onGenericAddressResolved(result: any) {
+    this.onInteractOutputAddressResolved(result);
+  }
+
+  onGenericAddressQrClick() {
+    this.onInteractOutputQrClick();
+  }
+
+  onGenericAmountChange(value: string) {
+    if (this.isTopUpFunction(this.selectedFunction)) {
+      this.onTopUpAmountChange(value);
+    } else {
+      this.onInteractOutputAmountChange(value);
+    }
+  }
+
+  onGenericAmountMaxClick() {
+    this.fillMaxOutputAmount();
+  }
+
+  onGenericTimestampChange(value: string) {
+    this.dmsNewExpiry = value || '';
+  }
+
+  onGenericExtraArgChange(event: { name: string; value: string }) {
+    this.onExtraArgValueChange(event.name, event.value);
   }
 
   /**
@@ -5293,7 +5461,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     // bytes gets misread as a second push opcode, splicing in a bogus
     // "pubkey" ahead of the real next one and shifting the buyer/seller
     // indices this function's callers rely on.
-    for (let i = 0; i <= scriptBytes.length - 33 && found.length < 2; ) {
+    for (let i = 0; i <= scriptBytes.length - 33 && found.length < 2;) {
       if (scriptBytes[i] === 0x20) {
         const pkHex = Array.from(scriptBytes.slice(i + 1, i + 33))
           .map((b) => b.toString(16).padStart(2, '0'))

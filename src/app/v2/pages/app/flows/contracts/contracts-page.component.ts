@@ -423,7 +423,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   templateResolvedAddresses: { [paramName: string]: string } = {};
   generatedContractJson = signal<string | null>(null);
   templateError = signal<string | null>(null);
-  readonly selfCustodyWhitelistCapacity = 1;
+  readonly selfCustodyWhitelistCapacity = 10;
 
   // Interact form - plain properties for ngModel
   selectedContractId = signal('');
@@ -2585,7 +2585,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   ): Promise<boolean> {
     const entry = detail.entry;
     if (entry.registryEntry) {
-      const registryEntry = await this.syncRegistryEntryForDashboardAction(entry);
+      const registryEntry =
+        await this.syncRegistryEntryForDashboardAction(entry);
       this.selectedContractId.set(registryEntry.id);
       this.selectContractFromRegistry();
       return true;
@@ -2593,12 +2594,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
     if (detail.response) {
       try {
-        const actions = detail.actions.length > 0
-          ? detail.actions
-          : detail.response.actions || [];
+        const actions =
+          detail.actions.length > 0
+            ? detail.actions
+            : detail.response.actions || [];
         const action = actions[0];
         if (!action) {
-          throw new Error('No indexed covenant action is available for this contract.');
+          throw new Error(
+            'No indexed covenant action is available for this contract.',
+          );
         }
         const preview = await this.buildIndexerImportPreview({
           action,
@@ -2656,7 +2660,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     silent = false,
   ): Promise<boolean> {
     if (entry.registryEntry) {
-      const registryEntry = await this.syncRegistryEntryForDashboardAction(entry);
+      const registryEntry =
+        await this.syncRegistryEntryForDashboardAction(entry);
       this.selectedContractId.set(registryEntry.id);
       this.selectContractFromRegistry();
       if (!silent || !this.selectedFunctionExists()) {
@@ -2768,10 +2773,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       };
     }
 
-    if (detail?.response && this.normalizeContractName(entry.contractName) === 'SelfCustodyVault') {
-      const actions = detail.actions.length > 0
-        ? detail.actions
-        : detail.response.actions || [];
+    if (
+      detail?.response &&
+      this.normalizeContractName(entry.contractName) === 'SelfCustodyVault'
+    ) {
+      const actions =
+        detail.actions.length > 0
+          ? detail.actions
+          : detail.response.actions || [];
       const action = actions[0];
       if (action) {
         try {
@@ -3242,12 +3251,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const compiledJson = detail.entry.registryEntry?.compiledJson;
     if (compiledJson) {
       try {
-        const compiled = this.covenantService.parseCompiledContract(
-          compiledJson,
-        );
+        const compiled =
+          this.covenantService.parseCompiledContract(compiledJson);
         Object.assign(
           args,
-          this.argsArrayToRecord(this.normalizeIndexerArgs(compiled.tn10?.args)),
+          this.argsArrayToRecord(
+            this.normalizeIndexerArgs(compiled.tn10?.args),
+          ),
         );
       } catch {
         /* keep indexer-derived args */
@@ -3296,7 +3306,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.interactOutputAddress = address || '';
     this.interactResolvedOutputAddress = null;
     this.extraArgValues['destinationIndex'] = String(
-      Math.max(0, this.getSelfCustodyInteractWhitelistWallets().indexOf(address)),
+      Math.max(
+        0,
+        this.getSelfCustodyInteractWhitelistWallets().indexOf(address),
+      ),
     );
     this.interactError.set(null);
   }
@@ -3310,7 +3323,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   private getSelfCustodyPhase(detail: ContractDetailState): number | undefined {
-    if (this.normalizeContractName(detail.entry.contractName) !== 'SelfCustodyVault') {
+    if (
+      this.normalizeContractName(detail.entry.contractName) !==
+      'SelfCustodyVault'
+    ) {
       return undefined;
     }
 
@@ -3390,7 +3406,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   private selectedFunctionExists(): boolean {
     if (!this.selectedFunction) return false;
-    return this.availableFunctions().some((fn) => fn.name === this.selectedFunction);
+    return this.availableFunctions().some(
+      (fn) => fn.name === this.selectedFunction,
+    );
   }
 
   onIndexerImportQueryChange(value: any) {
@@ -3677,7 +3695,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const latestContinuationAction = this.getLatestContinuationAction(actions);
     const activeActionBase =
       latestContinuationAction ||
-      this.getLatestCovenantOutputAction(actions) || action;
+      this.getLatestCovenantOutputAction(actions) ||
+      action;
     const latestContinuationAddress =
       latestContinuationAction?.outputs?.address ||
       latestContinuationAction?.address;
@@ -3720,7 +3739,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         '',
     );
     const vout = Number(
-      activeUtxo?.vout ?? activeAction.outputs?.vout ?? action.outputs?.vout ?? 0,
+      activeUtxo?.vout ??
+        activeAction.outputs?.vout ??
+        action.outputs?.vout ??
+        0,
     );
     const latestContinuationClaim =
       latestContinuationAction?.decodedArgs &&
@@ -3903,14 +3925,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     baseFieldValues: Record<string, string>,
     activeAction: IndexerCovenantAction,
     contractAddress: string,
-  ): Promise<
-    | {
-        fieldValues: Record<string, string>;
-        compiled: CompiledContract;
-        address: string;
-      }
-    | null
-  > {
+  ): Promise<{
+    fieldValues: Record<string, string>;
+    compiled: CompiledContract;
+    address: string;
+  } | null> {
     const state = activeAction.outputs?.state || {};
     const phaseCandidates = this.uniqueStrings([
       state['initPhase'],
@@ -4162,7 +4181,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             Number.isFinite(delaySeconds) ? delaySeconds / 3600 : 24,
           ),
           initPhase: String(
-            state['initPhase'] ?? state['phase'] ?? byName.get('initPhase') ?? '0',
+            state['initPhase'] ??
+              state['phase'] ??
+              byName.get('initPhase') ??
+              '0',
           ),
         };
       default:
@@ -4809,6 +4831,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           ['emergencySweep', 'finalize'].includes(functionName)
         ) {
           const whitelist = this.getSelfCustodyInteractWhitelistWallets();
+          if (whitelist.length > this.selfCustodyWhitelistCapacity) {
+            this.interactError.set(
+              `This Self-Custody Vault has ${whitelist.length} whitelist addresses, but the current contract artifact supports ${this.selfCustodyWhitelistCapacity}. Recreate the vault with a supported whitelist before sweeping or finalizing.`,
+            );
+            return;
+          }
           if (whitelist.length > 0) {
             const destinationIndex = whitelist.findIndex(
               (address) => address === outputAddress,
@@ -5410,6 +5438,23 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       template.placeholderArgs,
     );
 
+    const pushDataPayload = (bytes: number[], name: string): number[] => {
+      const opcode = bytes[0];
+      let headerLength = 1;
+      let payloadLength = opcode;
+      if (opcode === 76) {
+        headerLength = 2;
+        payloadLength = bytes[1];
+      } else if (opcode === 77) {
+        headerLength = 3;
+        payloadLength = bytes[1] | (bytes[2] << 8);
+      } else if (opcode > 75) {
+        throw new Error(`Unsupported pushdata opcode for ${name}`);
+      }
+
+      return bytes.slice(headerLength, headerLength + payloadLength);
+    };
+
     const bytesArgFor = (name: string): CtorArg => {
       const param = descriptor.params.find((entry) => entry.name === name);
       const position = param?.positions[0];
@@ -5417,62 +5462,78 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         throw new Error(`Self-Custody Vault template is missing ${name}`);
       }
 
+      const bytes = currentCompiled.script.slice(
+        position.offset,
+        position.offset + position.length,
+      );
       return this.bytesArg(
-        currentCompiled.script.slice(
-          position.offset,
-          position.offset + position.length,
-        ),
+        param.paramType === 'pubkey[]' ? pushDataPayload(bytes, name) : bytes,
       );
     };
 
-    const delaySeconds = await this.extractTemplateIntField(
-      currentCompiled,
-      'self-custody-vault',
-      'unvaultDelaySeconds',
+    const currentArgs = this.argsArrayToRecord(
+      currentCompiled.tn10?.args || [],
     );
+    const currentDelaySeconds = Number(currentArgs['unvaultDelaySeconds']);
+    const delaySeconds = Number.isFinite(currentDelaySeconds)
+      ? BigInt(currentDelaySeconds)
+      : await this.extractTemplateIntField(
+          currentCompiled,
+          'self-custody-vault',
+          'unvaultDelaySeconds',
+        );
 
     if (delaySeconds === undefined) {
       throw new Error('Could not read Self-Custody Vault state from template');
     }
 
-    const patched = this.templatePatcher.applyPatch(baseCompiled, descriptor, [
-      bytesArgFor('hotKey'),
-      bytesArgFor('coldKey'),
-      bytesArgFor('whitelistedDestinations'),
+    const hasSavedSelfCustodyArgs = Boolean(
+      currentArgs['hotKey'] || currentArgs['coldKey'],
+    );
+    const currentValues = {
+      hotKey: currentArgs['hotKey'] || '',
+      coldKey: currentArgs['coldKey'] || '',
+      whitelistedDestinations: currentArgs['whitelistedDestinations'] || '',
+      whitelistedDestinations_mode:
+        currentArgs['whitelistMode'] === 'whitelist' ? 'whitelist' : 'anywhere',
+      unvaultDelaySeconds: String(Number(delaySeconds) / 3600),
+      initPhase: String(phase),
+    };
+    const constructorArgs = [
+      hasSavedSelfCustodyArgs
+        ? this.bytesArg(
+            this.templatePatcher.kaspaAddressToPubkeyBytes(
+              currentValues.hotKey,
+            ),
+          )
+        : bytesArgFor('hotKey'),
+      hasSavedSelfCustodyArgs
+        ? this.bytesArg(
+            this.templatePatcher.kaspaAddressToPubkeyBytes(
+              currentValues.coldKey,
+            ),
+          )
+        : bytesArgFor('coldKey'),
+      hasSavedSelfCustodyArgs
+        ? this.pubkeyListArg('whitelistedDestinations', currentValues)
+        : bytesArgFor('whitelistedDestinations'),
       this.intArg(Number(delaySeconds)),
       this.intArg(phase),
+    ];
+    const patched = this.templatePatcher.applyPatch(baseCompiled, descriptor, [
+      ...constructorArgs,
     ]) as CompiledContract;
-
-    const currentArgs = this.argsArrayToRecord(
-      currentCompiled.tn10?.args || [],
-    );
     patched.tn10 = {
       v: 1,
       tmpl: 'SelfCustodyVault',
-      args: this.buildSelfCustodyArgsPayload({
-        hotKey: currentArgs['hotKey'] || '',
-        coldKey: currentArgs['coldKey'] || '',
-        whitelistedDestinations: currentArgs['whitelistedDestinations'] || '',
-        whitelistedDestinations_mode:
-          currentArgs['whitelistMode'] === 'whitelist'
-            ? 'whitelist'
-            : 'anywhere',
-        unvaultDelaySeconds: String(Number(delaySeconds) / 3600),
-        initPhase: String(phase),
-      }),
+      args: this.buildSelfCustodyArgsPayload(currentValues),
     };
     this.logSelfCustodyContractParams('compiled continuation', {
       phase,
       currentTn10: currentCompiled.tn10,
       nextTn10: patched.tn10,
       delaySeconds,
-      constructorArgs: [
-        bytesArgFor('hotKey'),
-        bytesArgFor('coldKey'),
-        bytesArgFor('whitelistedDestinations'),
-        this.intArg(Number(delaySeconds)),
-        this.intArg(phase),
-      ],
+      constructorArgs,
       currentAddress: this.covenantService.getContractAddress(currentCompiled),
       nextAddress: this.covenantService.getContractAddress(patched),
       scriptLength: patched.script?.length,
@@ -5536,12 +5597,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     initPhaseOverride?: number,
   ): string {
     if (!compiled.tn10) {
-      throw new Error('Self-Custody Vault continuation is missing TN10 metadata');
+      throw new Error(
+        'Self-Custody Vault continuation is missing TN10 metadata',
+      );
     }
     const tn10 = JSON.parse(JSON.stringify(compiled.tn10));
     if (initPhaseOverride !== undefined) {
       if (Array.isArray(tn10.args)) {
-        const phaseArg = tn10.args.find((arg: any) => arg?.name === 'initPhase');
+        const phaseArg = tn10.args.find(
+          (arg: any) => arg?.name === 'initPhase',
+        );
         if (phaseArg) {
           phaseArg.value = String(initPhaseOverride);
         } else {
@@ -6072,16 +6137,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.getWhitelistModeFromValues(paramName, values) === 'whitelist'
         ? this.getAddressListFromRaw(values[paramName])
         : [];
-    const padded = addresses.slice(0, this.selfCustodyWhitelistCapacity);
-    const paddingAddress = String(values['hotKey'] ?? '').trim();
-
-    while (padded.length < this.selfCustodyWhitelistCapacity) {
-      padded.push(paddingAddress);
-    }
+    const selectedAddresses = addresses.slice(
+      0,
+      this.selfCustodyWhitelistCapacity,
+    );
 
     return {
       kind: 'array',
-      data: padded.map((address) =>
+      data: selectedAddresses.map((address) =>
         this.bytesArg(
           address
             ? this.templatePatcher.kaspaAddressToPubkeyBytes(address)
@@ -6221,7 +6284,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     );
   }
 
-  isSelfCustodySweepAction(fnName: string | undefined = this.selectedFunction): boolean {
+  isSelfCustodySweepAction(
+    fnName: string | undefined = this.selectedFunction,
+  ): boolean {
     return (
       !!fnName &&
       ['emergencySweep', 'finalize'].includes(fnName) &&

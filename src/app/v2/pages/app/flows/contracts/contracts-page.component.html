@@ -425,6 +425,9 @@
                           >
                             Add address
                           </button>
+                          <span class="text-gray-60 typo-text-2">
+                            Maximum {{ selfCustodyWhitelistCapacity }} addresses
+                          </span>
                           @if (!isTemplateFieldValid(field)) {
                             <span class="kc-input-error-text">{{
                               getTemplateFieldError(field)
@@ -2386,10 +2389,7 @@
             </div>
           }
 
-          @if (
-            selectedFunction &&
-            isSelfCustodySweepAction(selectedFunction)
-          ) {
+          @if (selectedFunction && isSelfCustodySweepAction(selectedFunction)) {
             @if (getSelfCustodyInteractWhitelistWallets().length > 0) {
               <div class="form-group flex column gap-8">
                 <label class="form-label">Send funds to</label>
@@ -2404,9 +2404,7 @@
                     track address;
                     let i = $index
                   ) {
-                    <option [value]="address">
-                      {{ i }} - {{ address }}
-                    </option>
+                    <option [value]="address">{{ i }} - {{ address }}</option>
                   }
                 </select>
                 <span class="text-gray-60 typo-text-2">
@@ -2878,6 +2876,9 @@
                         >
                           Add address
                         </button>
+                        <span class="text-gray-60 typo-text-2">
+                          Maximum {{ selfCustodyWhitelistCapacity }} addresses
+                        </span>
                       }
                     </div>
                   }

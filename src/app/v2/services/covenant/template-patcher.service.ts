@@ -8,7 +8,7 @@ export type CtorArg =
 
 export interface TemplateParam {
   name: string;
-  paramType: 'pubkey' | 'byte[32]' | 'int' | 'int_field';
+  paramType: 'pubkey' | 'pubkey[]' | 'byte[32]' | 'int' | 'int_field';
   positions: { offset: number; length: number }[];
   placeholderBytes: number[];
 }
@@ -97,7 +97,12 @@ export class TemplatePatcherService {
       (param: any, index: number) => {
         const arg = templateArgs[index];
         const isFieldInit = fieldInitParams.has(param.name);
-        const placeholderBytes = this.argToBytes(arg, isFieldInit);
+        const paramType = this.getParamType(param, arg, isFieldInit);
+        const rawPlaceholderBytes = this.argToBytes(arg, isFieldInit);
+        const placeholderBytes =
+          paramType === 'pubkey[]'
+            ? this.encodePushData(rawPlaceholderBytes)
+            : rawPlaceholderBytes;
         const positions = this.findAllOccurrences(script, placeholderBytes).map(
           (offset) => ({
             offset,
@@ -119,7 +124,7 @@ export class TemplatePatcherService {
 
         return {
           name: param.name,
-          paramType: this.getParamType(param, arg, isFieldInit),
+          paramType,
           positions,
           placeholderBytes,
         };
@@ -151,6 +156,12 @@ export class TemplatePatcherService {
       );
     }
 
+    const replacements: {
+      patch: TemplateParam;
+      position: { offset: number; length: number };
+      bytes: number[];
+    }[] = [];
+
     for (const patch of descriptor.params) {
       const paramIndex = params.findIndex(
         (param: any) => param.name === patch.name,
@@ -159,28 +170,57 @@ export class TemplatePatcherService {
         throw new Error(`Unknown template param "${patch.name}"`);
       }
 
-      const replacementBytes = this.argToBytes(
+      const rawReplacementBytes = this.argToBytes(
         newArgs[paramIndex],
         patch.paramType === 'int_field',
       );
-      if (replacementBytes.length !== patch.placeholderBytes.length) {
+      if (
+        patch.paramType === 'pubkey[]' &&
+        rawReplacementBytes.length % 32 !== 0
+      ) {
+        throw new Error(
+          `Size mismatch for "${patch.name}": dynamic pubkey array replacement must be a multiple of 32 bytes, received ${rawReplacementBytes.length}B`,
+        );
+      }
+      const replacementBytes =
+        patch.paramType === 'pubkey[]'
+          ? this.encodePushData(rawReplacementBytes)
+          : rawReplacementBytes;
+      if (
+        patch.paramType !== 'pubkey[]' &&
+        replacementBytes.length !== patch.placeholderBytes.length
+      ) {
         throw new Error(
           `Size mismatch for "${patch.name}": placeholder=${patch.placeholderBytes.length}B, replacement=${replacementBytes.length}B`,
         );
       }
 
       for (const position of patch.positions) {
-        for (let offset = 0; offset < position.length; offset += 1) {
-          if (
-            script[position.offset + offset] !== patch.placeholderBytes[offset]
-          ) {
-            throw new Error(
-              `Script corruption detected while patching "${patch.name}" at ${position.offset + offset}`,
-            );
-          }
-          script[position.offset + offset] = replacementBytes[offset];
+        replacements.push({
+          patch,
+          position,
+          bytes: replacementBytes,
+        });
+      }
+    }
+
+    replacements.sort(
+      (left, right) => right.position.offset - left.position.offset,
+    );
+
+    for (const replacement of replacements) {
+      const { patch, position, bytes } = replacement;
+      for (let offset = 0; offset < position.length; offset += 1) {
+        if (
+          script[position.offset + offset] !== patch.placeholderBytes[offset]
+        ) {
+          throw new Error(
+            `Script corruption detected while patching "${patch.name}" at ${position.offset + offset}`,
+          );
         }
       }
+
+      script.splice(position.offset, position.length, ...bytes);
     }
 
     return {
@@ -232,6 +272,14 @@ export class TemplatePatcherService {
       return isFieldInit ? 'int_field' : 'int';
     }
 
+    if (
+      arg.kind === 'array' &&
+      param?.type_ref?.base === 'pubkey' &&
+      param?.type_ref?.array_dims?.[0]?.kind === 'dynamic'
+    ) {
+      return 'pubkey[]';
+    }
+
     if (param?.type_ref?.base === 'pubkey') {
       return 'pubkey';
     }
@@ -266,6 +314,22 @@ export class TemplatePatcherService {
     return isFieldInit
       ? this.encodeFixedInt(arg.data, 8)
       : this.encodeScriptInt(arg.data);
+  }
+
+  private encodePushData(bytes: number[]): number[] {
+    if (bytes.length <= 75) {
+      return [bytes.length, ...bytes];
+    }
+
+    if (bytes.length <= 0xff) {
+      return [76, bytes.length, ...bytes];
+    }
+
+    if (bytes.length <= 0xffff) {
+      return [77, bytes.length & 0xff, (bytes.length >> 8) & 0xff, ...bytes];
+    }
+
+    throw new Error(`Pushdata payload is too large: ${bytes.length} bytes`);
   }
 
   private findAllOccurrences(haystack: number[], needle: number[]): number[] {

@@ -444,6 +444,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   interactOutputAddress = '';
   interactResolvedOutputAddress: string | null = null;
 
+  // Set in ngOnDestroy() so trackActionIndexing()'s poll loop can bail out
+  // instead of updating signals/services and scheduling more RPC/indexer
+  // traffic after the component is gone.
+  private destroyed = false;
+
   // Lookup form
   lookupContractJson = '';
   interactOutputAmount = '';
@@ -667,6 +672,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.destroyed = true;
     this.wideWorkspaceService.deactivate();
     this.routeSubscription?.unsubscribe();
   }
@@ -2331,9 +2337,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const registryEntry = entry.registryEntry!;
     const liveUtxo = await this.findLiveContractUtxo(registryEntry);
 
+    // findLiveContractUtxo() awaits an RPC call, during which the user could
+    // navigate to a different contract's detail view — re-check identity
+    // before trusting selectedDetail().utxos, or a different contract's UTXO
+    // could get applied to this registry entry.
     const detail = this.selectedDetail();
     const indexerUtxo =
-      !liveUtxo && detail?.utxos.length === 1 ? detail.utxos[0] : undefined;
+      !liveUtxo && detail?.entry.id === entry.id && detail.utxos.length === 1
+        ? detail.utxos[0]
+        : undefined;
 
     const amountSompi = String(
       liveUtxo?.amountSompi ??
@@ -3639,17 +3651,20 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     let seenSettled = false;
 
     for (let attempt = 1; attempt <= 8; attempt++) {
+      if (this.destroyed) return;
       try {
         if (!seenSettled) {
           const status =
             await this.covenantIndexerService.getTransactionSettlementStatus(
               txid,
             );
+          if (this.destroyed) return;
           seenSettled = status.indexed;
         }
 
         if (seenSettled) {
           await this.loadContracts({ skipOnChainStatusRefresh: true });
+          if (this.destroyed) return;
           if (this.dashboardCaughtUpWithLocal(registryEntryId)) {
             this.setActionIndexerState({
               txid,
@@ -3683,6 +3698,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       }
 
       await this.delay(2500);
+      if (this.destroyed) return;
     }
 
     this.setActionIndexerState({

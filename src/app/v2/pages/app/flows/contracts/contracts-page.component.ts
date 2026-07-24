@@ -576,11 +576,54 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.selectedFunction === 'keepAlive'
     )
       return [];
+    if (
+      contract.contract_name === 'SelfCustodyVault' &&
+      ['emergencySweep', 'finalize'].includes(this.selectedFunction)
+    ) {
+      return abiEntry.inputs.filter(
+        (i) =>
+          (i.type_name === 'int' || i.type_name === 'bool') &&
+          i.name !== 'destinationIndex',
+      );
+    }
     // Only render extra-arg inputs the interact flow can actually collect/pass
     // (collectExtraArgs + completePartialSpend handle int/bool only).
     return abiEntry.inputs.filter(
       (i) => i.type_name === 'int' || i.type_name === 'bool',
     );
+  }
+
+  getExtraArgLabel(arg: { name: string; type_name: string }): string {
+    const contract = this.parsedInteractContract();
+    if (
+      contract?.contract_name === 'SelfCustodyVault' &&
+      arg.name === 'destinationIndex'
+    ) {
+      return 'Whitelist destination index';
+    }
+    return `${arg.name} (${arg.type_name})`;
+  }
+
+  getExtraArgPlaceholder(arg: { name: string; type_name: string }): string {
+    const contract = this.parsedInteractContract();
+    if (
+      contract?.contract_name === 'SelfCustodyVault' &&
+      arg.name === 'destinationIndex'
+    ) {
+      return '0 for first whitelisted address';
+    }
+    return `Enter ${arg.name} value`;
+  }
+
+  getExtraArgHelp(arg: { name: string; type_name: string }): string {
+    const contract = this.parsedInteractContract();
+    if (
+      contract?.contract_name === 'SelfCustodyVault' &&
+      arg.name === 'destinationIndex'
+    ) {
+      return 'Finalize and Emergency Sweep create the hot/cold signature automatically. This number selects which whitelisted destination must match the withdrawal address; leave 0 when there is no whitelist or to use the first whitelist entry.';
+    }
+    return `${arg.type_name} argument passed to the selected contract function.`;
   }
 
   onExtraArgValueChange(name: string, value: any) {
@@ -1043,6 +1086,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           tmpl: tmplName,
           args: argsPayload,
         };
+      }
+
+      if (template.id === 'self-custody-vault') {
+        this.logSelfCustodyContractParams('template creation', {
+          fieldValues,
+          constructorArgs: newArgs,
+          tn10: patched.tn10,
+          scriptLength: patched.script?.length,
+          address: this.covenantService.getContractAddress(patched),
+        });
       }
 
       this.generatedContractJson.set(JSON.stringify(patched, null, 2));
@@ -1875,7 +1928,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   private normalizeContractName(name: string): string {
-    const normalized = String(name || '').replace(/\s+/g, '');
+    const normalized = String(name || '').replace(/[^a-zA-Z0-9]/g, '');
     const aliases: Record<string, string> = {
       DeadMansSwitch: 'DeadManSwitch',
       "DeadMan'sSwitch": 'DeadManSwitch',
@@ -1883,6 +1936,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       MultiSigVault: 'MultiSigVault',
       Escrow: 'EscrowWithArbiter',
       SelfCustody: 'SelfCustodyVault',
+      SelfCustodyVault: 'SelfCustodyVault',
     };
     return aliases[normalized] || normalized;
   }
@@ -1999,7 +2053,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       'arbiterHash',
       'hotKey',
       'coldKey',
-      'whitelistedDestinations',
     ];
     return roles
       .filter(
@@ -2125,6 +2178,22 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         value: String(initPhase),
       },
     ];
+  }
+
+  private logSelfCustodyContractParams(
+    context: string,
+    details: Record<string, unknown>,
+  ): void {
+    console.log(
+      `[SelfCustodyVault] ${context}`,
+      JSON.parse(
+        JSON.stringify(details, (_key, value) => {
+          if (typeof value === 'bigint') return value.toString();
+          if (value instanceof Uint8Array) return Array.from(value);
+          return value;
+        }),
+      ),
+    );
   }
 
   private buildSelfCustodyCompactClaim(values: Record<string, string>) {
@@ -2504,13 +2573,64 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * (selectedDetailLoading briefly true) and delayed the scroll behind a
    * full network round trip for data we already had.
    */
-  selectDetailAction(fnName?: string) {
+  async selectDetailAction(fnName?: string) {
     this.detailPanelTab.set('action');
+    const detail = this.selectedDetail();
+    if (detail) {
+      const prepared = await this.prepareDetailInteractState(detail);
+      if (!prepared) return;
+    }
     if (fnName) {
       this.dashboardError.set(null);
       this.selectFunction(fnName);
     }
     this.scrollToActionPanel();
+  }
+
+  private async prepareDetailInteractState(
+    detail: ContractDetailState,
+  ): Promise<boolean> {
+    const entry = detail.entry;
+    if (entry.registryEntry) {
+      const registryEntry = await this.syncRegistryEntryForDashboardAction(entry);
+      this.selectedContractId.set(registryEntry.id);
+      this.selectContractFromRegistry();
+      return true;
+    }
+
+    if (detail.response) {
+      try {
+        const actions = detail.actions.length > 0
+          ? detail.actions
+          : detail.response.actions || [];
+        const action = actions[0];
+        if (!action) {
+          throw new Error('No indexed covenant action is available for this contract.');
+        }
+        const preview = await this.buildIndexerImportPreview({
+          action,
+          actions,
+          covenant: detail.response.covenant,
+          activeUtxo: detail.utxos.length === 1 ? detail.utxos[0] : null,
+          currentAddress: detail.entry.currentAddress,
+        });
+        this.selectedContractId.set('');
+        this.interactContractJson.set(preview.compiledJson);
+        this.interactOutpointTxid = preview.outpoint.txid;
+        this.interactOutpointVout = String(preview.outpoint.vout);
+        this.interactInputAmount = preview.amountSompi;
+        this.interactOutputAddress = this.currentWallet()?.getAddress() || '';
+        this.interactResolvedOutputAddress = null;
+        return true;
+      } catch (error: any) {
+        this.dashboardError.set(
+          error?.message || 'Failed to prepare this contract action.',
+        );
+        return false;
+      }
+    }
+
+    return !!this.parsedInteractContract();
   }
 
   /**
@@ -2543,10 +2663,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     silent = false,
   ): Promise<boolean> {
     if (entry.registryEntry) {
-      const registryEntry = this.syncRegistryEntryForDashboardAction(entry);
+      const registryEntry = await this.syncRegistryEntryForDashboardAction(entry);
       this.selectedContractId.set(registryEntry.id);
       this.selectContractFromRegistry();
-      this.selectDefaultFunctionForContract(entry.contractName);
+      if (!silent || !this.selectedFunctionExists()) {
+        this.selectDefaultFunctionForContract(entry.contractName);
+      }
       return true;
     }
 
@@ -2571,7 +2693,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     try {
       if (!silent) this.selectedDetailLoading.set(true);
       const response = await this.fetchIndexerCovenant(identifier);
-      const preview = await this.buildIndexerImportPreview(response);
+      const detail = this.selectedDetail();
+      const preview = await this.buildIndexerImportPreview({
+        ...response,
+        activeUtxo: detail?.utxos.length === 1 ? detail.utxos[0] : null,
+        currentAddress: entry.currentAddress,
+      });
       if (requestToken !== this.detailRequestToken) return false;
       this.indexerImportPreview.set(preview);
       this.importIndexerPreview({ stayOnCurrentTab: true });
@@ -2591,7 +2718,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       if (imported) {
         this.selectedContractId.set(imported.id);
         this.selectContractFromRegistry();
-        this.selectDefaultFunctionForContract(entry.contractName);
+        if (!silent || !this.selectedFunctionExists()) {
+          this.selectDefaultFunctionForContract(entry.contractName);
+        }
         if (!silent) {
           this.activeTab.set('detail');
           this.detailPanelTab.set('action');
@@ -2611,9 +2740,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return false;
   }
 
-  private syncRegistryEntryForDashboardAction(
+  private async syncRegistryEntryForDashboardAction(
     entry: ContractDashboardEntry,
-  ): ContractRegistryEntry {
+  ): Promise<ContractRegistryEntry> {
     const registryEntry = entry.registryEntry!;
     const detail = this.selectedDetail();
     const activeUtxo = detail?.utxos.length === 1 ? detail.utxos[0] : undefined;
@@ -2644,6 +2773,34 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         txid: activeUtxo.txidHex,
         vout: Number(activeUtxo.vout),
       };
+    }
+
+    if (detail?.response && this.normalizeContractName(entry.contractName) === 'SelfCustodyVault') {
+      const actions = detail.actions.length > 0
+        ? detail.actions
+        : detail.response.actions || [];
+      const action = actions[0];
+      if (action) {
+        try {
+          const preview = await this.buildIndexerImportPreview({
+            action,
+            actions,
+            covenant: detail.response.covenant,
+            activeUtxo: activeUtxo || null,
+            currentAddress: entry.currentAddress,
+          });
+          updates.compiledJson = preview.compiledJson;
+          updates.contractAddress = preview.contractAddress;
+          updates.outpoint = preview.outpoint;
+          updates.amountSompi = preview.amountSompi;
+          updates.covenantId = preview.covenantId;
+        } catch (error) {
+          console.warn(
+            '[SelfCustodyVault] Failed to sync latest continuation JSON:',
+            error,
+          );
+        }
+      }
     }
 
     this.registryService.updateContract(registryEntry.id, updates);
@@ -2942,7 +3099,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         description:
           'Use the cold wallet to sweep funds without waiting for the unvault delay.',
         iconClass: 'icon-shield',
-        requiredRole: 'Cold wallet',
+        extraGuard: (detail) =>
+          this.requireSelfCustodyRole(detail, 'Cold wallet'),
       },
       finalize: {
         label: 'Finalize',
@@ -2980,13 +3138,21 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (!table) return [];
 
     const available = this.availableFunctions();
-    const currentRoles = this.currentWalletRoles(detail.entry.participants);
+    const availableNames =
+      normalized === 'SelfCustodyVault'
+        ? new Set(Object.keys(table))
+        : new Set(available.map((fn) => fn.name));
+    const currentRoles = this.currentWalletRolesForDetail(detail);
+    const selfCustodyPhase = this.getSelfCustodyPhase(detail);
+    const testMode = this.isTestModeEnabled();
 
     return Object.entries(table).map(([fnName, meta]) => {
-      const existsOnChain = available.some((fn) => fn.name === fnName);
+      const existsOnChain = availableNames.has(fnName);
 
       let disabledReason: string | null = null;
-      if (!existsOnChain) {
+      if (testMode) {
+        disabledReason = null;
+      } else if (!existsOnChain) {
         disabledReason =
           available.length === 0
             ? 'Loading contract functions…'
@@ -2997,7 +3163,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       ) {
         disabledReason = `Only the ${meta.requiredRole.toLowerCase()} can do this.`;
       } else {
-        disabledReason = meta.extraGuard?.(detail) ?? null;
+        disabledReason = this.getSelfCustodyPhaseDisabledReason(
+          fnName,
+          selfCustodyPhase,
+        );
+        if (!disabledReason) {
+          disabledReason = meta.extraGuard?.(detail) ?? null;
+        }
       }
 
       return {
@@ -3011,6 +3183,177 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     });
   }
 
+  private isTestModeEnabled(): boolean {
+    if (!this.isBrowser) return false;
+    try {
+      return localStorage.getItem('testMode') === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  private currentWalletRolesForDetail(detail: ContractDetailState): string[] {
+    const roles = new Set(this.currentWalletRoles(detail.entry.participants));
+    if (
+      this.normalizeContractName(detail.entry.contractName) !==
+      'SelfCustodyVault'
+    ) {
+      return Array.from(roles);
+    }
+
+    try {
+      const args = this.selfCustodyArgsForDetail(detail);
+      const wallet = this.currentWallet();
+      const candidates = [
+        wallet?.getAddress(),
+        this.currentWalletPubkey(),
+        this.currentWalletPubkeyHash(),
+      ]
+        .filter((value): value is string => !!value)
+        .map((value) => value.toLowerCase());
+
+      if (args['hotKey'] && candidates.includes(args['hotKey'].toLowerCase())) {
+        roles.add('Hot wallet');
+      }
+      if (
+        args['coldKey'] &&
+        candidates.includes(args['coldKey'].toLowerCase())
+      ) {
+        roles.add('Cold wallet');
+      }
+    } catch (error) {
+      console.warn('[SelfCustodyVault] Failed to derive wallet role:', error);
+    }
+
+    return Array.from(roles);
+  }
+
+  private selfCustodyArgsForDetail(
+    detail: ContractDetailState,
+  ): Record<string, string> {
+    const covenant = detail.response?.covenant || detail.entry.indexerSummary;
+    const args: Record<string, string> = {
+      ...this.argsArrayToRecord(
+        this.normalizeIndexerArgs(covenant?.claimedArgs?.args),
+      ),
+      ...(covenant?.constructor
+        ? Object.fromEntries(
+            Object.entries(covenant.constructor).map(([key, value]) => [
+              key,
+              String(value),
+            ]),
+          )
+        : {}),
+    };
+
+    const compiledJson = detail.entry.registryEntry?.compiledJson;
+    if (compiledJson) {
+      try {
+        const compiled = this.covenantService.parseCompiledContract(
+          compiledJson,
+        );
+        Object.assign(
+          args,
+          this.argsArrayToRecord(this.normalizeIndexerArgs(compiled.tn10?.args)),
+        );
+      } catch {
+        /* keep indexer-derived args */
+      }
+    }
+
+    return args;
+  }
+
+  getSelfCustodyWhitelistWallets(detail: ContractDetailState): string[] {
+    if (
+      this.normalizeContractName(detail.entry.contractName) !==
+      'SelfCustodyVault'
+    ) {
+      return [];
+    }
+
+    const args = this.selfCustodyArgsForDetail(detail);
+    const mode = String(args['whitelistMode'] || '').toLowerCase();
+    const raw = args['whitelistedDestinations'];
+    if (mode && mode !== 'whitelist') return [];
+    if (!raw) return [];
+
+    return raw
+      .split(',')
+      .map((address) => address.trim())
+      .filter(Boolean);
+  }
+
+  getSelfCustodyInteractWhitelistWallets(): string[] {
+    const contract = this.parsedInteractContract();
+    if (contract?.contract_name !== 'SelfCustodyVault') return [];
+
+    const args = this.argsArrayToRecord(
+      this.normalizeIndexerArgs(contract.tn10?.args),
+    );
+    const mode = String(args['whitelistMode'] || '').toLowerCase();
+    const raw = args['whitelistedDestinations'];
+    if (mode && mode !== 'whitelist') return [];
+    if (!raw) return [];
+
+    return this.getAddressListFromRaw(raw);
+  }
+
+  onSelfCustodySweepDestinationChange(address: string) {
+    this.interactOutputAddress = address || '';
+    this.interactResolvedOutputAddress = null;
+    this.extraArgValues['destinationIndex'] = String(
+      Math.max(0, this.getSelfCustodyInteractWhitelistWallets().indexOf(address)),
+    );
+    this.interactError.set(null);
+  }
+
+  getSelfCustodyPhaseInfo(detail: ContractDetailState): string | null {
+    const phase = this.getSelfCustodyPhase(detail);
+    if (phase === undefined) return null;
+    if (phase === 0) return '0 - locked';
+    if (phase === 1) return '1 - unvaulting';
+    return `${phase} - unknown`;
+  }
+
+  private getSelfCustodyPhase(detail: ContractDetailState): number | undefined {
+    if (this.normalizeContractName(detail.entry.contractName) !== 'SelfCustodyVault') {
+      return undefined;
+    }
+
+    const activeAction = this.getLatestCovenantOutputAction(detail.actions);
+    const activeUtxo = detail.utxos.length === 1 ? detail.utxos[0] : undefined;
+    const statePhase =
+      activeUtxo?.state?.['initPhase'] ??
+      activeUtxo?.state?.['phase'] ??
+      activeAction?.outputs?.state?.['initPhase'] ??
+      activeAction?.outputs?.state?.['phase'];
+    const statePhaseNumber = Number(statePhase);
+    if (Number.isFinite(statePhaseNumber)) return statePhaseNumber;
+
+    const localArgs = this.localTemplateArgs(detail.entry.registryEntry);
+    const localPhase = localArgs.find((arg) => arg.name === 'initPhase')?.value;
+    const localPhaseNumber = Number(localPhase);
+    return Number.isFinite(localPhaseNumber) ? localPhaseNumber : undefined;
+  }
+
+  private getSelfCustodyPhaseDisabledReason(
+    fnName: string,
+    phase: number | undefined,
+  ): string | null {
+    if (phase === undefined) return null;
+    if (fnName === 'unvault' && phase !== 0) {
+      return 'Only available while initPhase is 0 (locked).';
+    }
+    if (fnName === 'finalize' && phase !== 1) {
+      return 'Only available while initPhase is 1 (unvaulting).';
+    }
+    if (fnName === 'topUp' && phase !== 0) {
+      return 'Top up is only available while initPhase is 0 (locked).';
+    }
+    return null;
+  }
+
   /** Disables a MultiSig spend action unless the current wallet is one of its required signer pair. */
   private requireOneOfSigners(
     detail: ContractDetailState,
@@ -3020,6 +3363,17 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const roles = this.currentWalletRoles(detail.entry.participants);
     if (!roles.includes(signerA) && !roles.includes(signerB)) {
       return `Only ${signerA} or ${signerB} can do this.`;
+    }
+    return null;
+  }
+
+  private requireSelfCustodyRole(
+    detail: ContractDetailState,
+    role: 'Hot wallet' | 'Cold wallet',
+  ): string | null {
+    const roles = this.currentWalletRolesForDetail(detail);
+    if (!roles.includes(role)) {
+      return `Only the ${role.toLowerCase()} can do this.`;
     }
     return null;
   }
@@ -3039,6 +3393,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         available.some((fn) => fn.name === name),
       ) || available[0]?.name;
     if (target) this.selectFunction(target);
+  }
+
+  private selectedFunctionExists(): boolean {
+    if (!this.selectedFunction) return false;
+    return this.availableFunctions().some((fn) => fn.name === this.selectedFunction);
   }
 
   onIndexerImportQueryChange(value: any) {
@@ -3317,30 +3676,71 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     action: IndexerCovenantAction;
     actions: IndexerCovenantAction[];
     covenant?: IndexerCovenantDetails;
+    activeUtxo?: IndexerCovenantUtxo | null;
+    currentAddress?: string | null;
   }): Promise<IndexerImportPreview> {
     const { action, actions, covenant } = response;
-    const activeAction = this.getLatestCovenantOutputAction(actions) || action;
+    let activeUtxo = response.activeUtxo || null;
+    const latestContinuationAction = this.getLatestContinuationAction(actions);
+    const activeActionBase =
+      latestContinuationAction ||
+      this.getLatestCovenantOutputAction(actions) || action;
+    const latestContinuationAddress =
+      latestContinuationAction?.outputs?.address ||
+      latestContinuationAction?.address;
     const covenantId = covenant?.covenantIdHex || action.covenantIdHex;
+
+    if (!activeUtxo) {
+      activeUtxo = await this.fetchSingleActiveIndexerUtxo([
+        covenantId,
+        activeActionBase.covenantIdHex,
+        this.extractScriptHashFromScriptPubKey(
+          activeActionBase.outputs?.scriptPubKeyHex,
+        ),
+        activeActionBase.scriptHashHex,
+      ]);
+    }
+
+    const activeAction = this.mergeActiveUtxoIntoAction(
+      activeActionBase,
+      activeUtxo,
+    );
     const deployTxid =
-      activeAction.txidHex || covenant?.genesisTxidHex || action.txidHex;
+      activeUtxo?.txidHex ||
+      activeAction.txidHex ||
+      covenant?.genesisTxidHex ||
+      action.txidHex;
     const contractAddress =
-      activeAction.outputs?.address ||
-      activeAction.address ||
+      latestContinuationAddress ||
+      activeUtxo?.address ||
+      response.currentAddress ||
       covenant?.address ||
       action.address ||
-      action.outputs?.address;
+      action.outputs?.address ||
+      activeAction.outputs?.address ||
+      activeAction.address;
     const amountSompi = String(
-      activeAction.outputs?.amountSompi ??
+      activeUtxo?.amountSompi ??
+        activeAction.outputs?.amountSompi ??
         covenant?.totalAmountSompi ??
         action.outputs?.amountSompi ??
         '',
     );
     const vout = Number(
-      activeAction.outputs?.vout ?? action.outputs?.vout ?? 0,
+      activeUtxo?.vout ?? activeAction.outputs?.vout ?? action.outputs?.vout ?? 0,
     );
+    const latestContinuationClaim =
+      latestContinuationAction?.decodedArgs &&
+      typeof latestContinuationAction.decodedArgs === 'object'
+        ? latestContinuationAction.decodedArgs
+        : undefined;
     const templateName =
-      covenant?.claimedTemplate || covenant?.claimedArgs?.tmpl;
-    const args = this.normalizeIndexerArgs(covenant?.claimedArgs?.args);
+      latestContinuationClaim?.['tmpl'] ||
+      covenant?.claimedTemplate ||
+      covenant?.claimedArgs?.tmpl;
+    const args = this.normalizeIndexerArgs(
+      latestContinuationClaim?.['args'] || covenant?.claimedArgs?.args,
+    );
 
     if (!covenantId || !deployTxid || !contractAddress || !amountSompi) {
       throw new Error(
@@ -3362,12 +3762,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       );
     }
 
-    const fieldValues = this.indexerArgsToTemplateValues(
+    let fieldValues = this.indexerArgsToTemplateValues(
       template,
       args,
       activeAction,
     );
-    const compiled = await this.compileTemplateWithFieldValues(
+    let compiled = await this.compileTemplateWithFieldValues(
       template,
       fieldValues,
     );
@@ -3380,11 +3780,52 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           ? this.buildSelfCustodyArgsPayload(fieldValues)
           : args,
     };
-    const computedAddress = this.covenantService.getContractAddress(compiled);
+    if (template.id === 'self-custody-vault') {
+      this.logSelfCustodyContractParams('indexer import compile', {
+        fieldValues,
+        tn10: compiled.tn10,
+        activeState: activeAction?.outputs?.state,
+        activeUtxoState: activeUtxo?.state,
+        scriptLength: compiled.script?.length,
+        address: this.covenantService.getContractAddress(compiled),
+      });
+    }
+    let computedAddress = this.covenantService.getContractAddress(compiled);
+    if (
+      template.id === 'self-custody-vault' &&
+      contractAddress &&
+      computedAddress !== contractAddress
+    ) {
+      const matched = await this.trySelfCustodyIndexerVariants(
+        template,
+        fieldValues,
+        activeAction,
+        contractAddress,
+      );
+      if (matched) {
+        fieldValues = matched.fieldValues;
+        compiled = matched.compiled;
+        compiled.tn10 = {
+          v: 1,
+          tmpl: normalizedTemplateName,
+          args: this.buildSelfCustodyArgsPayload(fieldValues),
+        };
+        computedAddress = matched.address;
+      }
+    }
     const isLatestContinuation =
       !!activeAction.outputs?.address &&
       activeAction.outputs.address !== computedAddress;
     if (computedAddress !== contractAddress) {
+      if (template.id === 'self-custody-vault') {
+        console.warn('[SelfCustodyVault] indexer import address mismatch', {
+          computedAddress,
+          contractAddress,
+          activeUtxo,
+          activeAction,
+          fieldValues,
+        });
+      }
       throw new Error(
         "This covenant's constructor args (e.g. a check-in deadline updated by a later keepAlive) do not match its current on-chain address — the indexer only decoded an earlier state and has no way to know the latest one. " +
           'If you know the current values (ask whoever last kept this contract alive), use "Advanced: paste contract JSON" in the Interact tab to build and sign the transaction manually.',
@@ -3423,6 +3864,157 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           (action.action === 'continuation' || action.action === 'deploy'),
       )
       .sort((a, b) => (b.blockTimeMs || 0) - (a.blockTimeMs || 0))[0];
+  }
+
+  private getLatestContinuationAction(
+    actions: IndexerCovenantAction[],
+  ): IndexerCovenantAction | undefined {
+    return actions
+      .filter(
+        (action) =>
+          action.action === 'continuation' &&
+          !!action.outputs?.address &&
+          !!action.decodedArgs,
+      )
+      .sort((a, b) => (b.blockTimeMs || 0) - (a.blockTimeMs || 0))[0];
+  }
+
+  private mergeActiveUtxoIntoAction(
+    action: IndexerCovenantAction,
+    activeUtxo?: IndexerCovenantUtxo | null,
+  ): IndexerCovenantAction {
+    if (!activeUtxo) return action;
+    const preferActionAddress = action.action === 'continuation';
+    return {
+      ...action,
+      address: preferActionAddress
+        ? action.address || activeUtxo.address
+        : activeUtxo.address || action.address,
+      covenantIdHex: activeUtxo.covenantIdHex || action.covenantIdHex,
+      scriptHashHex: activeUtxo.scriptHashHex || action.scriptHashHex,
+      txidHex: activeUtxo.txidHex || action.txidHex,
+      outputs: {
+        ...(action.outputs || {}),
+        address: preferActionAddress
+          ? action.outputs?.address || activeUtxo.address
+          : activeUtxo.address || action.outputs?.address,
+        amountSompi: activeUtxo.amountSompi ?? action.outputs?.amountSompi,
+        state: activeUtxo.state ?? action.outputs?.state,
+        vout: activeUtxo.vout ?? action.outputs?.vout,
+      },
+    };
+  }
+
+  private async trySelfCustodyIndexerVariants(
+    template: ContractTemplate,
+    baseFieldValues: Record<string, string>,
+    activeAction: IndexerCovenantAction,
+    contractAddress: string,
+  ): Promise<
+    | {
+        fieldValues: Record<string, string>;
+        compiled: CompiledContract;
+        address: string;
+      }
+    | null
+  > {
+    const state = activeAction.outputs?.state || {};
+    const phaseCandidates = this.uniqueStrings([
+      state['initPhase'],
+      state['phase'],
+      baseFieldValues['initPhase'],
+      '0',
+      '1',
+    ]);
+    const countCandidates = this.uniqueStrings([
+      state['initWhitelistCount'],
+      state['whitelistCount'],
+      baseFieldValues['initWhitelistCount'],
+    ]);
+    const delayCandidates = this.uniqueStrings([
+      this.stateSecondsToHours(state['vaultUnvaultDelaySeconds']),
+      this.stateSecondsToHours(state['unvaultDelaySeconds']),
+      baseFieldValues['unvaultDelaySeconds'],
+      String(state['vaultUnvaultDelaySeconds'] ?? ''),
+      String(state['unvaultDelaySeconds'] ?? ''),
+    ]);
+
+    for (const initPhase of phaseCandidates) {
+      for (const initWhitelistCount of countCandidates) {
+        for (const unvaultDelaySeconds of delayCandidates) {
+          const fieldValues = {
+            ...baseFieldValues,
+            initPhase,
+            initWhitelistCount,
+            unvaultDelaySeconds,
+          };
+          try {
+            const compiled = await this.compileTemplateWithFieldValues(
+              template,
+              fieldValues,
+            );
+            const address = this.covenantService.getContractAddress(compiled);
+            if (address === contractAddress) {
+              this.logSelfCustodyContractParams('indexer variant matched', {
+                fieldValues,
+                activeState: state,
+                address,
+              });
+              return { fieldValues, compiled, address };
+            }
+          } catch {
+            /* Try the next candidate combination. */
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  private uniqueStrings(values: unknown[]): string[] {
+    return Array.from(
+      new Set(
+        values
+          .map((value) => String(value ?? '').trim())
+          .filter((value) => value !== ''),
+      ),
+    );
+  }
+
+  private stateSecondsToHours(value: unknown): string {
+    const seconds = Number(value);
+    if (!Number.isFinite(seconds)) return '';
+    return String(seconds / 3600);
+  }
+
+  private async fetchSingleActiveIndexerUtxo(
+    identifiers: Array<string | undefined | null>,
+  ): Promise<IndexerCovenantUtxo | null> {
+    const uniqueIdentifiers = Array.from(
+      new Set(
+        identifiers
+          .map((identifier) => identifier?.trim())
+          .filter((identifier): identifier is string => !!identifier),
+      ),
+    );
+
+    for (const identifier of uniqueIdentifiers) {
+      try {
+        const utxos =
+          await this.covenantIndexerService.getCovenantUtxos(identifier);
+        const activeUtxos = utxos.filter((utxo) => utxo.status !== 'spent');
+        const candidates = activeUtxos.length > 0 ? activeUtxos : utxos;
+        if (candidates.length === 1) return candidates[0];
+      } catch (error) {
+        console.warn('[Contracts] Failed to fetch covenant UTXO:', {
+          identifier,
+          error,
+        });
+      }
+    }
+
+    return null;
   }
 
   private extractScriptHashFromScriptPubKey(
@@ -3587,7 +4179,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           unvaultDelaySeconds: String(
             Number.isFinite(delaySeconds) ? delaySeconds / 3600 : 24,
           ),
-          initPhase: String(state['phase'] ?? byName.get('initPhase') ?? '0'),
+          initPhase: String(
+            state['initPhase'] ?? state['phase'] ?? byName.get('initPhase') ?? '0',
+          ),
         };
       default:
         throw new Error(`Unsupported covenant template "${template.name}".`);
@@ -3608,11 +4202,20 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       compiled,
       template.placeholderArgs,
     );
-    return this.templatePatcher.applyPatch(
+    const patched = this.templatePatcher.applyPatch(
       compiled,
       descriptor,
       newArgs,
     ) as CompiledContract;
+    if (template.id === 'self-custody-vault') {
+      this.logSelfCustodyContractParams('template compile', {
+        fieldValues,
+        constructorArgs: newArgs,
+        scriptLength: patched.script?.length,
+        address: this.covenantService.getContractAddress(patched),
+      });
+    }
+    return patched;
   }
 
   private async extractTemplateIntField(
@@ -4027,6 +4630,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       let extraArgsOverride: Record<string, CovenantFunctionArg> | undefined;
       let useSenderFeeOverride: boolean | undefined;
       let covenantIdOverride: string | undefined;
+      let transactionPayloadHex: string | undefined;
 
       if (this.isTopUpFunction(functionName)) {
         if (isNaN(topUpAmountKas) || topUpAmountKas <= 0) {
@@ -4034,7 +4638,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           return;
         }
 
-        const covenantId = this.selectedContract()?.covenantId;
+        const covenantId =
+          this.selectedContract()?.covenantId ||
+          this.selectedDetail()?.entry.covenantId;
         covenantIdOverride = covenantId;
         if (!covenantId) {
           this.interactError.set(
@@ -4058,6 +4664,17 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             covenantId,
           },
         ];
+        if (compiled.contract_name === 'SelfCustodyVault') {
+          transactionPayloadHex = this.buildSelfCustodyPayloadHex(compiled, 0);
+          this.logSelfCustodyContractParams('topUp continuation output', {
+            inputAmountSompi: inputAmount,
+            topUpAmountSompi: topUpAmount,
+            outputs,
+            covenantId,
+            currentTn10: compiled.tn10,
+            currentAddress: this.covenantService.getContractAddress(compiled),
+          });
+        }
       } else if (
         functionName === 'arbitrate' &&
         compiled.contract_name === 'Escrow'
@@ -4205,24 +4822,34 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           this.interactError.set('Output address is required');
           return;
         }
-        if (isNaN(outputAmountKas) || outputAmountKas <= 0) {
-          this.interactError.set('Output amount must be greater than 0');
-          return;
-        }
-        const withdrawalAmount = BigInt(Math.floor(outputAmountKas * 1e8));
         if (
           compiled.contract_name === 'SelfCustodyVault' &&
           ['emergencySweep', 'finalize'].includes(functionName)
         ) {
-          if (withdrawalAmount !== inputAmount) {
-            this.interactError.set(
-              'Self-Custody Vault sweep actions must withdraw the full vault balance. Use Max.',
+          const whitelist = this.getSelfCustodyInteractWhitelistWallets();
+          if (whitelist.length > 0) {
+            const destinationIndex = whitelist.findIndex(
+              (address) => address === outputAddress,
             );
-            return;
+            if (destinationIndex < 0) {
+              this.interactError.set(
+                'Select one of the whitelisted destination wallets.',
+              );
+              return;
+            }
+            this.extraArgValues['destinationIndex'] = String(destinationIndex);
+            outputAddress = whitelist[destinationIndex];
+          } else {
+            this.extraArgValues['destinationIndex'] = '0';
           }
           outputs = [{ address: outputAddress, amount: inputAmount }];
           extraArgsOverride = this.collectExtraArgs(compiled, functionName);
         } else {
+          if (isNaN(outputAmountKas) || outputAmountKas <= 0) {
+            this.interactError.set('Output amount must be greater than 0');
+            return;
+          }
+          const withdrawalAmount = BigInt(Math.floor(outputAmountKas * 1e8));
           if (
             functionName === 'transfer' &&
             compiled.contract_name === 'KCC20'
@@ -4356,6 +4983,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         Object.keys(extraArgs).length > 0 ? extraArgs : undefined,
         covenantIdOverride,
         useSenderFeeOverride ?? this.useSenderFee,
+        transactionPayloadHex,
       );
       if (!result) return;
 
@@ -4469,7 +5097,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     outpoint: CovenantOutpoint,
     inputAmount: bigint,
   ): Promise<void> {
-    const covenantId = this.selectedContract()?.covenantId;
+    const covenantId =
+      this.selectedContract()?.covenantId ||
+      this.selectedDetail()?.entry.covenantId;
     if (!covenantId) {
       this.interactError.set(
         'Cannot unvault until this contract covenant ID is known. Refresh/import it from the indexer first.',
@@ -4481,6 +5111,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const nextContractJson = JSON.stringify(nextCompiled, null, 2);
     const nextContractAddress =
       this.covenantService.getContractAddress(nextCompiled);
+    this.logSelfCustodyContractParams('unvault continuation target', {
+      inputAmountSompi: inputAmount,
+      covenantId,
+      currentTn10: compiled.tn10,
+      nextTn10: nextCompiled.tn10,
+      currentAddress: this.covenantService.getContractAddress(compiled),
+      nextAddress: nextContractAddress,
+      nextScriptLength: nextCompiled.script?.length,
+    });
+    const payloadHex = this.buildSelfCustodyPayloadHex(nextCompiled, 1);
 
     const result = await this.runCovenantSpendAction(
       compiled,
@@ -4498,6 +5138,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       undefined,
       covenantId,
       true,
+      payloadHex,
     );
     if (!result) return;
 
@@ -4845,6 +5486,24 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         initPhase: String(phase),
       }),
     };
+    this.logSelfCustodyContractParams('compiled continuation', {
+      phase,
+      currentTn10: currentCompiled.tn10,
+      nextTn10: patched.tn10,
+      whitelistCount,
+      delaySeconds,
+      constructorArgs: [
+        bytesArgFor('hotKey'),
+        bytesArgFor('coldKey'),
+        bytesArgFor('whitelistedDestinations'),
+        this.intArg(Number(whitelistCount)),
+        this.intArg(Number(delaySeconds)),
+        this.intArg(phase),
+      ],
+      currentAddress: this.covenantService.getContractAddress(currentCompiled),
+      nextAddress: this.covenantService.getContractAddress(patched),
+      scriptLength: patched.script?.length,
+    });
 
     return patched;
   }
@@ -4899,6 +5558,39 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     );
   }
 
+  private buildSelfCustodyPayloadHex(
+    compiled: CompiledContract,
+    initPhaseOverride?: number,
+  ): string {
+    if (!compiled.tn10) {
+      throw new Error('Self-Custody Vault continuation is missing TN10 metadata');
+    }
+    const tn10 = JSON.parse(JSON.stringify(compiled.tn10));
+    if (initPhaseOverride !== undefined) {
+      if (Array.isArray(tn10.args)) {
+        const phaseArg = tn10.args.find((arg: any) => arg?.name === 'initPhase');
+        if (phaseArg) {
+          phaseArg.value = String(initPhaseOverride);
+        } else {
+          tn10.args.push({
+            name: 'initPhase',
+            type: 'int',
+            value: String(initPhaseOverride),
+          });
+        }
+      } else if (tn10.args && typeof tn10.args === 'object') {
+        tn10.args.p = String(initPhaseOverride);
+      }
+    }
+    const payloadJson = JSON.stringify({ tn10 });
+    console.log('[SelfCustodyVault] transaction payload', {
+      initPhaseOverride,
+      payloadJson,
+      payloadHex: this.stringToHex(payloadJson),
+    });
+    return this.stringToHex(payloadJson);
+  }
+
   private stringToHex(value: string): string {
     return Array.from(new TextEncoder().encode(value))
       .map((byte) => byte.toString(16).padStart(2, '0'))
@@ -4927,6 +5619,21 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     useSenderFee = false,
     transactionPayloadHex?: string,
   ): Promise<CovenantSpendActionResult | undefined> {
+    if (compiled.contract_name === 'SelfCustodyVault') {
+      this.logSelfCustodyContractParams('spend action parameters', {
+        functionName,
+        outpoint,
+        inputAmountSompi,
+        outputs,
+        extraArgs,
+        covenantId,
+        useSenderFee,
+        transactionPayloadHex,
+        contractAddress: this.covenantService.getContractAddress(compiled),
+        tn10: compiled.tn10,
+      });
+    }
+
     const actionResult =
       await this.walletActionService.validateAndDoActionAfterApproval({
         type: WalletActionType.COVENANT_SPEND,
@@ -5541,6 +6248,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     );
   }
 
+  isSelfCustodySweepAction(fnName: string | undefined = this.selectedFunction): boolean {
+    return (
+      !!fnName &&
+      ['emergencySweep', 'finalize'].includes(fnName) &&
+      this.parsedInteractContract()?.contract_name === 'SelfCustodyVault'
+    );
+  }
+
   /**
    * Select an entrypoint function — clears stale state and auto-fills
    * output fields based on the function type.
@@ -5560,7 +6275,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       ['emergencySweep', 'finalize'].includes(name) &&
       this.parsedInteractContract()?.contract_name === 'SelfCustodyVault'
     ) {
+      const whitelist = this.getSelfCustodyInteractWhitelistWallets();
       this.extraArgValues['destinationIndex'] = '0';
+      if (whitelist.length > 0) {
+        this.interactOutputAddress = whitelist[0];
+        this.interactResolvedOutputAddress = null;
+      }
     }
 
     if (this.isTopUpFunction(name) || this.isDmsChangeHeir()) {
@@ -5569,7 +6289,28 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     } else if (this.functionRequiresOutput(name)) {
       // Withdrawal function: default output to user's wallet, clear amount
       this.interactOutputAddress = this.currentWallet()?.getAddress() || '';
-      this.interactOutputAmount = '';
+      if (this.isSelfCustodySweepAction(name)) {
+        const whitelist = this.getSelfCustodyInteractWhitelistWallets();
+        if (whitelist.length > 0) {
+          this.interactOutputAddress = whitelist[0];
+          this.interactResolvedOutputAddress = null;
+          this.extraArgValues['destinationIndex'] = '0';
+        }
+        const inputSompi = this.interactInputAmount;
+        if (inputSompi) {
+          try {
+            this.interactOutputAmount = (Number(BigInt(inputSompi)) / 1e8)
+              .toFixed(8)
+              .replace(/\.?0+$/, '');
+          } catch {
+            this.interactOutputAmount = '';
+          }
+        } else {
+          this.interactOutputAmount = '';
+        }
+      } else {
+        this.interactOutputAmount = '';
+      }
     } else if (this.isSelfCustodyUnvault()) {
       this.interactOutputAddress = '';
       this.interactOutputAmount = '';

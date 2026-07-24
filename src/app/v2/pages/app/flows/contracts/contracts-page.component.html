@@ -1402,6 +1402,12 @@
                     getStatusLabel(selectedDetail()!.entry)
                   }}</span>
                 </div>
+                @if (getSelfCustodyPhaseInfo(selectedDetail()!); as phaseInfo) {
+                  <div class="state-cell">
+                    <span class="cell-label">initPhase</span
+                    ><span class="cell-value">{{ phaseInfo }}</span>
+                  </div>
+                }
                 @if (selectedDetail()!.entry.deadlineMs) {
                   <div class="state-cell">
                     <span class="cell-label">Check-in deadline</span
@@ -1646,6 +1652,47 @@
                       }
                     </div>
                   </div>
+                }
+
+                @if (
+                  getSelfCustodyWhitelistWallets(selectedDetail()!);
+                  as whitelistWallets
+                ) {
+                  @if (whitelistWallets.length > 0) {
+                    <div class="panel">
+                      <h4
+                        class="text-white"
+                        style="
+                          margin: 0 0 12px;
+                          font-size: 14px;
+                          font-weight: 600;
+                        "
+                      >
+                        Whitelist
+                      </h4>
+                      <div class="participant-list">
+                        @for (wallet of whitelistWallets; track wallet) {
+                          <div class="participant">
+                            <app-wallet-profile-orb
+                              class="p-avatar"
+                              [address]="wallet"
+                              [sizePx]="26"
+                            ></app-wallet-profile-orb>
+                            <div class="p-body">
+                              <span class="p-role">Allowed destination</span
+                              ><span class="p-val" [title]="wallet">{{
+                                truncate(wallet, 28)
+                              }}</span>
+                            </div>
+                            <app-copy-button
+                              [value]="wallet"
+                              [size]="'sm'"
+                            ></app-copy-button>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
                 }
               </div>
 
@@ -2341,7 +2388,57 @@
 
           @if (
             selectedFunction &&
+            isSelfCustodySweepAction(selectedFunction)
+          ) {
+            @if (getSelfCustodyInteractWhitelistWallets().length > 0) {
+              <div class="form-group flex column gap-8">
+                <label class="form-label">Send funds to</label>
+                <select
+                  class="contract-input"
+                  [disabled]="isInteracting()"
+                  [ngModel]="interactOutputAddress"
+                  (ngModelChange)="onSelfCustodySweepDestinationChange($event)"
+                >
+                  @for (
+                    address of getSelfCustodyInteractWhitelistWallets();
+                    track address;
+                    let i = $index
+                  ) {
+                    <option [value]="address">
+                      {{ i }} - {{ address }}
+                    </option>
+                  }
+                </select>
+                <span class="text-gray-60 typo-text-2">
+                  The full vault balance will be sent to the selected
+                  whitelisted wallet.
+                </span>
+              </div>
+            } @else {
+              <div class="form-group flex column gap-8">
+                <app-address-smart-input
+                  [label]="'Send funds to'"
+                  [placeholder]="'Enter recipient wallet address or KNS domain'"
+                  [isFullWidth]="true"
+                  [isValid]="true"
+                  [invalidReason]="''"
+                  [isDisabled]="isInteracting()"
+                  [value]="interactOutputAddress"
+                  (valueChange)="onInteractOutputAddressChange($event)"
+                  (resolved)="onInteractOutputAddressResolved($event)"
+                  (qrClick)="onInteractOutputQrClick()"
+                ></app-address-smart-input>
+                <span class="text-gray-60 typo-text-2">
+                  The full vault balance will be sent to this wallet.
+                </span>
+              </div>
+            }
+          }
+
+          @if (
+            selectedFunction &&
             functionRequiresOutput(selectedFunction) &&
+            !isSelfCustodySweepAction(selectedFunction) &&
             !isDmsKeepAlive() &&
             !isDmsChangeHeir()
           ) {
@@ -2405,12 +2502,15 @@
           @for (arg of extraArgsForFunction(); track arg.name) {
             <div class="form-group flex column gap-8">
               <kc-number-input
-                [label]="arg.name + ' (' + arg.type_name + ')'"
-                [placeholder]="'Enter ' + arg.name + ' value'"
+                [label]="getExtraArgLabel(arg)"
+                [placeholder]="getExtraArgPlaceholder(arg)"
                 [isDisabled]="isInteracting()"
                 [ngModel]="extraArgValues[arg.name] || ''"
                 (valueChange)="onExtraArgValueChange(arg.name, $event)"
               ></kc-number-input>
+              <span class="text-gray-60 typo-text-2">
+                {{ getExtraArgHelp(arg) }}
+              </span>
             </div>
           }
 

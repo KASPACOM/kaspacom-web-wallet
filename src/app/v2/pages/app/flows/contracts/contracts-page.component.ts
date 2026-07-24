@@ -2217,8 +2217,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       // scrollIntoView to leave room for it, without us having to guess
       // which ancestor is the actual scroll container.
       const headerHeight =
-        document.querySelector<HTMLElement>('.wrapper__header')
-          ?.offsetHeight ?? 0;
+        document.querySelector<HTMLElement>('.wrapper__header')?.offsetHeight ??
+        0;
       panel.style.scrollMarginTop = `${headerHeight + 12}px`;
       panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -2233,7 +2233,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       const registryEntry = this.syncRegistryEntryForDashboardAction(entry);
       this.selectedContractId.set(registryEntry.id);
       this.selectContractFromRegistry();
-      this.selectDefaultFunctionForContract(entry.contractName);
+      const hasEnabledDefault = this.selectDefaultFunctionForContract(entry);
+      if (!silent && !hasEnabledDefault) {
+        // openDashboardAction() optimistically opens straight to the action
+        // form before this resolves. Nothing the current role/state can
+        // actually submit was found, so land on the guarded action list
+        // instead of a form for a function that isn't really available.
+        this.detailPanelTab.set('action');
+        this.actionPageView.set('list');
+      }
       return true;
     }
 
@@ -2282,11 +2290,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       if (imported) {
         this.selectedContractId.set(imported.id);
         this.selectContractFromRegistry();
-        this.selectDefaultFunctionForContract(entry.contractName);
+        const hasEnabledDefault = this.selectDefaultFunctionForContract(entry);
         if (!silent) {
           this.activeTab.set('detail');
           this.detailPanelTab.set('action');
-          this.actionPageView.set('form');
+          this.actionPageView.set(hasEnabledDefault ? 'form' : 'list');
         }
         return true;
       }
@@ -2678,7 +2686,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   /** The curated label/description for the currently selected action, for the full-page form's header. */
-  getSelectedActionMeta(detail: ContractDetailState): AvailableAction | undefined {
+  getSelectedActionMeta(
+    detail: ContractDetailState,
+  ): AvailableAction | undefined {
     return this.getAvailableActions(detail).find(
       (action) => action.fnName === this.selectedFunction,
     );
@@ -2715,20 +2725,48 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return null;
   }
 
-  private selectDefaultFunctionForContract(contractName: string) {
-    const normalized = this.normalizeContractName(contractName);
-    const preferred: Record<string, string[]> = {
-      DeadManSwitch: ['keepAlive', 'changeHeir', 'topUp', 'claim'],
-      TimeLockVault: ['spend', 'recover'],
-      MultiSigVault: ['spend12', 'spend13', 'spend23'],
-      EscrowWithArbiter: ['release', 'refund', 'arbitrate'],
+  /**
+   * Picks which entrypoint the action form defaults to. Ordering alone isn't
+   * enough — the old version just took the first ABI-preferred function that
+   * existed on-chain, with no regard for who's actually allowed to call it,
+   * so e.g. a DMS heir could be dropped straight onto keepAlive (Owner-only)
+   * or a multisig signer 3 onto spend12 (needs signer 1 or 2). Instead this
+   * reorders the preferred list per current role, then only picks among
+   * entries getAvailableActions() reports as actually enabled for this
+   * wallet/state — the same guard the "Available actions" list itself uses.
+   * Returns false when nothing is enabled, so callers can fall back to
+   * showing that guarded list instead of a form for an action that isn't
+   * really available.
+   */
+  private selectDefaultFunctionForContract(
+    entry: ContractDashboardEntry,
+  ): boolean {
+    const normalized = this.normalizeContractName(entry.contractName);
+    const currentRoles = this.currentWalletRoles(entry.participants);
+    const preferredOrders: Record<string, string[]> = {
+      DeadManSwitch: currentRoles.includes('Owner')
+        ? ['keepAlive', 'changeHeir', 'topUp', 'claim']
+        : ['claim', 'keepAlive', 'changeHeir', 'topUp'],
+      TimeLockVault: currentRoles.includes('Recovery')
+        ? ['recover', 'spend', 'topUp']
+        : ['spend', 'recover', 'topUp'],
+      MultiSigVault: ['spend12', 'spend13', 'spend23', 'topUp'],
+      EscrowWithArbiter: currentRoles.includes('Arbiter')
+        ? ['arbitrate', 'release', 'refund', 'topUp']
+        : ['release', 'refund', 'arbitrate', 'topUp'],
     };
-    const available = this.availableFunctions();
+
+    const actions = this.getAvailableActions({ entry, actions: [], utxos: [] });
+    const enabledNames = new Set(
+      actions.filter((action) => action.enabled).map((action) => action.fnName),
+    );
+    const order = preferredOrders[normalized] || [];
     const target =
-      (preferred[normalized] || []).find((name) =>
-        available.some((fn) => fn.name === name),
-      ) || available[0]?.name;
-    if (target) this.selectFunction(target);
+      order.find((name) => enabledNames.has(name)) ||
+      actions.find((action) => action.enabled)?.fnName;
+    if (!target) return false;
+    this.selectFunction(target);
+    return true;
   }
 
   onIndexerImportQueryChange(value: any) {
@@ -3717,7 +3755,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         // reject it here with a clear message instead of letting it panic.
         if (amountToSellerSompi >= inputAmount) {
           this.interactError.set(
-            'Amount to seller must be less than the full contract balance. Arbitrate always pays out both sides, so the buyer\'s output can\'t be zero.',
+            "Amount to seller must be less than the full contract balance. Arbitrate always pays out both sides, so the buyer's output can't be zero.",
           );
           return;
         }
@@ -3843,10 +3881,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           return;
         }
         const withdrawalAmount = BigInt(Math.floor(outputAmountKas * 1e8));
-        if (
-          functionName === 'transfer' &&
-          compiled.contract_name === 'KCC20'
-        ) {
+        if (functionName === 'transfer' && compiled.contract_name === 'KCC20') {
           try {
             extraArgsOverride = {
               recipient: Uint8Array.from(
@@ -5426,7 +5461,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     // bytes gets misread as a second push opcode, splicing in a bogus
     // "pubkey" ahead of the real next one and shifting the buyer/seller
     // indices this function's callers rely on.
-    for (let i = 0; i <= scriptBytes.length - 33 && found.length < 2; ) {
+    for (let i = 0; i <= scriptBytes.length - 33 && found.length < 2;) {
       if (scriptBytes[i] === 0x20) {
         const pkHex = Array.from(scriptBytes.slice(i + 1, i + 33))
           .map((b) => b.toString(16).padStart(2, '0'))

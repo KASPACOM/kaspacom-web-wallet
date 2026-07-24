@@ -1029,7 +1029,7 @@
                       }}</span>
                       @if (
                         contract.covenantId &&
-                        getCovenantExplorerLink(contract.covenantId);
+                          getCovenantExplorerLink(contract.covenantId);
                         as covenantLink
                       ) {
                         <a
@@ -1043,7 +1043,9 @@
                       } @else {
                         <span
                           class="card-id-value"
-                          [title]="contract.covenantId || contract.currentAddress"
+                          [title]="
+                            contract.covenantId || contract.currentAddress
+                          "
                           >{{
                             truncate(
                               contract.covenantId ||
@@ -1339,7 +1341,10 @@
                   <div class="identifier">
                     <span class="identifier-label">Covenant ID</span>
                     <div class="identifier-value-row">
-                      @if (getCovenantExplorerLink(covenantId); as covenantLink) {
+                      @if (
+                        getCovenantExplorerLink(covenantId);
+                        as covenantLink
+                      ) {
                         <a
                           class="identifier-value"
                           [href]="covenantLink"
@@ -1405,9 +1410,9 @@
                       class="text-gray-60 typo-text-2"
                       style="margin: 0 0 14px"
                     >
-                      The wallet enables only the action available for your
-                      role and the contract's current state. Manual JSON
-                      interaction lives in Advanced.
+                      The wallet enables only the action available for your role
+                      and the contract's current state. Manual JSON interaction
+                      lives in Advanced.
                     </p>
                     <div class="action-list">
                       @if (selectedDetail()!.entry.status !== "spent") {
@@ -1476,8 +1481,7 @@
                                 />
                               </svg>
                               <span class="ai-text"
-                                ><span class="ai-title"
-                                  >Manual interaction</span
+                                ><span class="ai-title">Manual interaction</span
                                 ><span class="ai-hint"
                                   >This contract type has no curated actions —
                                   choose a function and sign manually</span
@@ -1501,17 +1505,16 @@
                   >
                     <h4
                       class="text-yellow"
-                      style="
-                        margin: 0 0 8px;
-                        font-size: 14px;
-                        font-weight: 600;
-                      "
+                      style="margin: 0 0 8px; font-size: 14px; font-weight: 600"
                     >
                       Pending signature
                     </h4>
-                    <p class="text-gray-75 typo-text-2" style="margin: 0 0 12px">
-                      Your signature has been added. Copy this JSON and send
-                      it to the co-signer to complete the transaction.
+                    <p
+                      class="text-gray-75 typo-text-2"
+                      style="margin: 0 0 12px"
+                    >
+                      Your signature has been added. Copy this JSON and send it
+                      to the co-signer to complete the transaction.
                     </p>
                     <textarea
                       class="contract-input"
@@ -1783,9 +1786,7 @@
                       target="_blank"
                       rel="noopener noreferrer"
                       class="text-blue typo-text-2 text-mono"
-                      >{{
-                        truncate(indexerImportPreview()!.covenantId, 28)
-                      }}</a
+                      >{{ truncate(indexerImportPreview()!.covenantId, 28) }}</a
                     >
                   } @else {
                     <span class="text-white typo-text-2 text-mono">{{
@@ -2031,12 +2032,12 @@
     <!-- ═══════════════ CURATED ACTION — FULL-PAGE FORM ═══════════════ -->
     @if (
       activeTab() === "detail" &&
-      detailPanelTab() === "action" &&
-      actionPageView() === "form" &&
-      selectedDetail() &&
-      selectedDetail()!.entry.status === "active" &&
-      interactContractJson() &&
-      getSelectedActionFieldConfig();
+        detailPanelTab() === "action" &&
+        actionPageView() === "form" &&
+        selectedDetail() &&
+        selectedDetail()!.entry.status === "active" &&
+        interactContractJson() &&
+        getSelectedActionFieldConfig();
       as selectedActionFields
     ) {
       <div class="panel flex column gap-20" id="contract-action-panel">
@@ -2114,8 +2115,8 @@
               >
                 <span class="text-yellow typo-text-2"
                   >Two-phase signing: clicking the button will sign your part
-                  and generate a partial spend JSON. Send it to the co-signer
-                  to complete.</span
+                  and generate a partial spend JSON. Send it to the co-signer to
+                  complete.</span
                 >
               </div>
             }
@@ -2167,8 +2168,8 @@
                 >Partial spend created</span
               >
               <span class="text-gray-75 typo-text-2"
-                >Your signature has been added. Copy the JSON below and send
-                it to the co-signer to complete the transaction.</span
+                >Your signature has been added. Copy the JSON below and send it
+                to the co-signer to complete the transaction.</span
               >
               <textarea
                 class="contract-input"
@@ -2233,7 +2234,9 @@
                       <span class="text-gray-60 typo-text-1">Transaction</span>
                       <div class="flex align-items-center gap-8">
                         <a
-                          [href]="getExplorerLink(partialCompleteResult()!.txid)"
+                          [href]="
+                            getExplorerLink(partialCompleteResult()!.txid)
+                          "
                           target="_blank"
                           rel="noopener noreferrer"
                           class="text-blue typo-text-2 text-truncate"
@@ -2325,9 +2328,9 @@
               "
             >
               <span class="text-yellow typo-text-2"
-                >Multi-sig transactions must pay fees from the contract
-                funds. Wallet-paid fees add inputs and would invalidate the
-                partial signatures.</span
+                >Multi-sig transactions must pay fees from the contract funds.
+                Wallet-paid fees add inputs and would invalidate the partial
+                signatures.</span
               >
             </div>
           }
@@ -2349,10 +2352,14 @@
 
           <kc-button
             [text]="
-              isInteracting() ? 'Processing...' : getFunctionLabel(selectedFunction)
+              isInteracting()
+                ? 'Processing...'
+                : getFunctionLabel(selectedFunction)
             "
             [isDisabled]="
-              isInteracting() || !interactContractJson() || !interactOutpointTxid
+              isInteracting() ||
+              !interactContractJson() ||
+              !interactOutpointTxid
             "
             [isFullWidth]="true"
             (buttonClick)="interactContract()"

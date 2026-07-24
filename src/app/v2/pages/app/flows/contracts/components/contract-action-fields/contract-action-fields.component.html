@@ -1,10 +1,12 @@
 @for (field of fields(); track fieldTrackBy($index, field)) {
   @switch (field.type) {
-    @case ('address') {
+    @case ("address") {
       <div class="form-group flex column gap-8">
         <app-address-smart-input
           [label]="field.label"
-          [placeholder]="field.placeholder || 'Enter wallet address or KNS domain'"
+          [placeholder]="
+            field.placeholder || 'Enter wallet address or KNS domain'
+          "
           [isFullWidth]="true"
           [isValid]="true"
           [invalidReason]="''"
@@ -19,7 +21,7 @@
         }
       </div>
     }
-    @case ('amount') {
+    @case ("amount") {
       <div class="form-group flex column gap-8">
         <kc-number-input
           [label]="field.label"
@@ -32,7 +34,9 @@
           @if (field.allowMax) {
             <div
               (click)="!isDisabled() && amountMaxClick.emit()"
-              [class]="isDisabled() ? 'max-text disabled' : 'max-text clickable'"
+              [class]="
+                isDisabled() ? 'max-text disabled' : 'max-text clickable'
+              "
               rightSideSlot
             >
               <span>Max</span>
@@ -44,7 +48,7 @@
         }
       </div>
     }
-    @case ('timestamp') {
+    @case ("timestamp") {
       <div class="form-group flex column gap-8">
         <app-covenant-date-time-input
           [label]="field.label"
@@ -58,35 +62,39 @@
         }
       </div>
     }
-    @case ('extra-int') {
+    @case ("extra-int") {
       <div class="form-group flex column gap-8">
         <kc-number-input
           [label]="field.label"
           [placeholder]="'Enter ' + field.paramName + ' value'"
           [isDisabled]="isDisabled()"
           [ngModel]="extraArgValues()[field.paramName] || ''"
-          (valueChange)="extraArgChange.emit({ name: field.paramName, value: $event })"
+          (valueChange)="
+            extraArgChange.emit({ name: field.paramName, value: $event })
+          "
         ></kc-number-input>
         @if (field.description) {
           <span class="text-gray-60 typo-text-2">{{ field.description }}</span>
         }
       </div>
     }
-    @case ('extra-bool') {
+    @case ("extra-bool") {
       <div class="form-group flex column gap-8">
         <kc-number-input
           [label]="field.label"
           [placeholder]="'Enter ' + field.paramName + ' value (0 or 1)'"
           [isDisabled]="isDisabled()"
           [ngModel]="extraArgValues()[field.paramName] || ''"
-          (valueChange)="extraArgChange.emit({ name: field.paramName, value: $event })"
+          (valueChange)="
+            extraArgChange.emit({ name: field.paramName, value: $event })
+          "
         ></kc-number-input>
         @if (field.description) {
           <span class="text-gray-60 typo-text-2">{{ field.description }}</span>
         }
       </div>
     }
-    @case ('banner') {
+    @case ("banner") {
       <div
         class="p-12 rounded-lg"
         [style]="
@@ -96,7 +104,11 @@
         "
       >
         <span
-          [class]="field.tone === 'warning' ? 'text-yellow typo-text-2' : 'text-gray-75 typo-text-2'"
+          [class]="
+            field.tone === 'warning'
+              ? 'text-yellow typo-text-2'
+              : 'text-gray-75 typo-text-2'
+          "
           >{{ field.text }}</span
         >
       </div>

@@ -84,11 +84,17 @@ import { WalletActionService } from '../../../../../../../services/wallet-action
 
       <!-- Action Button -->
       <div class="action-button">
+        @if (pendingConfirmationMessage()) {
+          <p class="pending-confirmation-message">
+            {{ pendingConfirmationMessage() }}
+          </p>
+        }
         <kc-button
-          [text]="'Done'"
+          [text]="isAwaitingConfirmation() ? 'Confirming...' : 'Done'"
           variant="primary"
           size="m"
           [isFullWidth]="true"
+          [isDisabled]="isAwaitingConfirmation()"
           (buttonClick)="onDone()"
           class="done-button"
         />
@@ -149,6 +155,25 @@ export class ApprovalSuccessPageComponent {
   actionDisplay = computed(() =>
     this.completedActionOverviewService.getActionDisplay(this.actionResult()),
   );
+
+  /**
+   * Covenant actions (TopUp, withdraw, keepAlive, etc.) resolve as "success"
+   * here well before the covenant indexer's own listing catches up — closing
+   * this page immediately let the user land on "My Contracts" while it still
+   * showed the pre-action amount. The contracts page mirrors its indexer poll
+   * into ApprovalFlowService.pendingConfirmation; only gate on it for
+   * covenant actions, since every other action type never sets it.
+   */
+  isAwaitingConfirmation = computed(
+    () =>
+      this.isCovenantActionResult(this.actionResult()) &&
+      this.approvalFlowService.pendingConfirmation()?.status === 'checking',
+  );
+
+  pendingConfirmationMessage = computed(() => {
+    if (!this.isCovenantActionResult(this.actionResult())) return null;
+    return this.approvalFlowService.pendingConfirmation()?.message ?? null;
+  });
 
   toggleDetails() {
     this.showDetails = !this.showDetails;

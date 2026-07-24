@@ -78,7 +78,10 @@ import {
 } from '../../../../../types/wallet-action-result';
 import { FlowPagesService } from '../../../../services/flow-pages.service';
 import { WideWorkspaceService } from '../../../../services/wide-workspace.service';
-import { ApprovalFlowService } from '../../../../services/approval-flow.service';
+import {
+  ApprovalFlowService,
+  PendingActionConfirmation,
+} from '../../../../services/approval-flow.service';
 import { AddressSmartInputComponent } from '../../../../shared/ui/input/address-smart-input/address-smart-input.component';
 import { CovenantDateTimeInputComponent } from './covenant-date-time-input.component';
 import { WalletProfileOrbComponent } from '../../../../shared/ui/wallet-profile-orb/wallet-profile-orb.component';
@@ -187,6 +190,12 @@ type DeployIndexerState = {
   covenantId?: string;
 };
 
+type ActionIndexerState = {
+  txid: string;
+  status: 'checking' | 'indexed' | 'not-indexed' | 'unavailable';
+  message: string;
+};
+
 @Component({
   selector: 'app-contracts-page',
   imports: [
@@ -281,6 +290,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   } | null>(null);
   deployIndexerState = signal<DeployIndexerState | null>(null);
   deployError = signal<string | null>(null);
+  interactIndexerState = signal<ActionIndexerState | null>(null);
   isDeploying = signal(false);
 
   // Computed parsed contract from deploy JSON
@@ -457,6 +467,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   interactInputAmount = '';
   interactOutputAddress = '';
   interactResolvedOutputAddress: string | null = null;
+
+  // Set in ngOnDestroy() so trackActionIndexing()'s poll loop can bail out
+  // instead of updating signals/services and scheduling more RPC/indexer
+  // traffic after the component is gone.
+  private destroyed = false;
 
   // Lookup form
   lookupContractJson = '';
@@ -681,6 +696,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.destroyed = true;
     this.wideWorkspaceService.deactivate();
     this.routeSubscription?.unsubscribe();
   }
@@ -1378,7 +1394,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   /**
    * Load contracts from registry and check on-chain status
    */
-  async loadContracts() {
+  async loadContracts(options: { skipOnChainStatusRefresh?: boolean } = {}) {
     this.dashboardLoading.set(true);
     this.dashboardError.set(null);
     if (this.activeTab() !== 'detail') {
@@ -1389,8 +1405,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const filtered = this.getCurrentWalletLocalContracts();
     this.registryContracts.set(filtered);
 
-    // Check on-chain status for each contract
-    await this.refreshContractStatuses(filtered);
+    // Check on-chain status for each contract. Skipped during action-indexing
+    // polling (trackActionIndexing()): the acted-on contract's status/amount
+    // is already applied optimistically to the local registry by the action
+    // itself, so repeating an RPC UTXO lookup across every local contract on
+    // each poll tick is redundant traffic, not new information.
+    if (!options.skipOnChainStatusRefresh) {
+      await this.refreshContractStatuses(filtered);
+    }
 
     const updatedLocal = this.getCurrentWalletLocalContracts();
     this.registryContracts.set(updatedLocal);
@@ -2230,7 +2252,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     silent = false,
   ): Promise<boolean> {
     if (entry.registryEntry) {
-      const registryEntry = this.syncRegistryEntryForDashboardAction(entry);
+      const registryEntry =
+        await this.syncRegistryEntryForDashboardAction(entry);
+      if (requestToken !== this.detailRequestToken) return false;
       this.selectedContractId.set(registryEntry.id);
       this.selectContractFromRegistry();
       const hasEnabledDefault = this.selectDefaultFunctionForContract(entry);
@@ -2311,17 +2335,62 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return false;
   }
 
-  private syncRegistryEntryForDashboardAction(
+  /**
+   * detail.utxos comes from the indexer's getCovenantUtxos(), which can lag
+   * behind a very recent local action the same way listCovenants() does (see
+   * trackActionIndexing()). Trusting it blindly to move the registry's
+   * outpoint can clobber a correct, fresher local outpoint with a stale,
+   * already-spent one — the next spend then fails at broadcast time with
+   * "Covenant outpoint ... was not found". Check live via RPC whether the
+   * currently stored outpoint is still on-chain first; if it is, prefer it
+   * (and its live amount) over the indexer's possibly-stale UTXO.
+   */
+  private async findLiveContractUtxo(
+    registryEntry: ContractRegistryEntry,
+  ): Promise<{ amountSompi: string } | undefined> {
+    const rpc = this.rpcService.getRpc();
+    if (!rpc) return undefined;
+    try {
+      const response = await rpc.getUtxosByAddresses([
+        registryEntry.contractAddress,
+      ]);
+      const utxos = response.entries || [];
+      const found = utxos.find(
+        (u: any) =>
+          u.outpoint?.transactionId === registryEntry.outpoint.txid &&
+          Number(u.outpoint?.index ?? -1) === registryEntry.outpoint.vout,
+      );
+      return found ? { amountSompi: found.amount.toString() } : undefined;
+    } catch (err) {
+      console.warn('[Contracts] Live outpoint check failed:', err);
+      return undefined;
+    }
+  }
+
+  private async syncRegistryEntryForDashboardAction(
     entry: ContractDashboardEntry,
-  ): ContractRegistryEntry {
+  ): Promise<ContractRegistryEntry> {
     const registryEntry = entry.registryEntry!;
+    const liveUtxo = await this.findLiveContractUtxo(registryEntry);
+
+    // findLiveContractUtxo() awaits an RPC call, during which the user could
+    // navigate to a different contract's detail view — re-check identity
+    // before trusting selectedDetail().utxos, or a different contract's UTXO
+    // could get applied to this registry entry.
     const detail = this.selectedDetail();
-    const activeUtxo = detail?.utxos.length === 1 ? detail.utxos[0] : undefined;
+    const indexerUtxo =
+      !liveUtxo && detail?.entry.id === entry.id && detail.utxos.length === 1
+        ? detail.utxos[0]
+        : undefined;
+
     const amountSompi = String(
-      activeUtxo?.amountSompi ?? entry.amountSompi ?? registryEntry.amountSompi,
+      liveUtxo?.amountSompi ??
+        indexerUtxo?.amountSompi ??
+        entry.amountSompi ??
+        registryEntry.amountSompi,
     );
     const contractAddress =
-      activeUtxo?.address ||
+      indexerUtxo?.address ||
       entry.currentAddress ||
       registryEntry.contractAddress;
 
@@ -2339,10 +2408,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           : registryEntry.status,
     };
 
-    if (activeUtxo?.txidHex && activeUtxo.vout !== undefined) {
+    if (indexerUtxo?.txidHex && indexerUtxo.vout !== undefined) {
       updates.outpoint = {
-        txid: activeUtxo.txidHex,
-        vout: Number(activeUtxo.vout),
+        txid: indexerUtxo.txidHex,
+        vout: Number(indexerUtxo.vout),
       };
     }
 
@@ -2481,6 +2550,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.selectedFunction = '';
     this.interactError.set(null);
     this.interactResult.set(null);
+    this.interactIndexerState.set(null);
     this.partialSpendJson.set(null);
     this.partialCompleteError.set(null);
     this.partialCompleteResult.set(null);
@@ -3629,6 +3699,152 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Poll the indexer for a non-deploy covenant action (TopUp, withdraw,
+   * keepAlive, changeHeir, partial-spend completion, etc.) and only settle
+   * "My Contracts" once the merged dashboard entry's amount/status agrees
+   * with what we already applied to the local registry.
+   *
+   * getTransactionSettlementStatus() alone isn't enough: it can report
+   * `indexed: true` (the tx was seen) while the separate listCovenants()
+   * listing that mergeDashboardEntries() trusts as the source of truth for
+   * status/amount still lags behind — calling loadContracts() at that point
+   * re-overwrites our optimistic registry update with the listing's stale
+   * (pre-tx) values, the exact staleness this method exists to avoid. We
+   * can't compare txids to detect that lag: mergeDashboardEntries() takes
+   * `latestTxid` from the indexer entry, and indexerSummaryToDashboard()
+   * always sets that to the covenant's genesis/deploy txid (there's no
+   * "latest action txid" in the indexer's summary payload), so it would
+   * never match a post-deploy action's txid even once the listing is fresh.
+   * Comparing amount/status against the local entry sidesteps that.
+   */
+  private async trackActionIndexing(
+    txid: string,
+    registryEntryId?: string,
+  ): Promise<void> {
+    this.setActionIndexerState({
+      txid,
+      status: 'checking',
+      message: 'Waiting for the indexer to see this transaction...',
+    });
+
+    let seenSettled = false;
+
+    for (let attempt = 1; attempt <= 8; attempt++) {
+      if (this.destroyed) return;
+      try {
+        if (!seenSettled) {
+          const status =
+            await this.covenantIndexerService.getTransactionSettlementStatus(
+              txid,
+            );
+          if (this.destroyed) return;
+          seenSettled = status.indexed;
+        }
+
+        if (seenSettled) {
+          await this.loadContracts({ skipOnChainStatusRefresh: true });
+          if (this.destroyed) return;
+          if (this.dashboardCaughtUpWithLocal(registryEntryId)) {
+            this.setActionIndexerState({
+              txid,
+              status: 'indexed',
+              message: 'Indexed. My Contracts now reflects this change.',
+            });
+            return;
+          }
+          this.setActionIndexerState({
+            txid,
+            status: 'checking',
+            message: `Transaction confirmed — waiting for the contract list to catch up (${attempt}/8)...`,
+          });
+        } else {
+          this.setActionIndexerState({
+            txid,
+            status: 'checking',
+            message: `Waiting for indexer confirmation (${attempt}/8)...`,
+          });
+        }
+      } catch (error: any) {
+        console.warn('[Contracts] Action indexing check failed:', error);
+        this.setActionIndexerState({
+          txid,
+          status: 'unavailable',
+          message:
+            error?.message ||
+            'Indexer status is unavailable. The transaction was still broadcast.',
+        });
+        return;
+      }
+
+      await this.delay(2500);
+      if (this.destroyed) return;
+    }
+
+    this.setActionIndexerState({
+      txid,
+      status: 'not-indexed',
+      message:
+        'Broadcast, but My Contracts may not reflect this change yet. Refresh in a moment.',
+    });
+  }
+
+  /**
+   * Updates the contracts page's own indexer-status display and mirrors it
+   * into ApprovalFlowService.pendingConfirmation — the approval success
+   * page's "Done" button reads that to stay disabled until the indexer has
+   * actually caught up, instead of letting the user dismiss the success
+   * screen and navigate to "My Contracts" while it's still stale.
+   */
+  private setActionIndexerState(state: ActionIndexerState) {
+    this.interactIndexerState.set(state);
+
+    const statusMap: Record<
+      ActionIndexerState['status'],
+      PendingActionConfirmation['status']
+    > = {
+      checking: 'checking',
+      indexed: 'confirmed',
+      unavailable: 'unavailable',
+      'not-indexed': 'timed-out',
+    };
+    this.approvalFlowService.setPendingConfirmation({
+      status: statusMap[state.status],
+      message: state.message,
+    });
+  }
+
+  /**
+   * Has the merged dashboard entry caught up with the optimistic update we
+   * already applied to the local registry entry? Without a registry entry to
+   * compare against (e.g. an import flow with no local id) there's nothing
+   * more to wait for, so we treat that as already caught up.
+   */
+  private dashboardCaughtUpWithLocal(registryEntryId?: string): boolean {
+    if (!registryEntryId) return true;
+
+    const localEntry = this.registryService
+      .getAllContracts()
+      .find((contract) => contract.id === registryEntryId);
+    if (!localEntry) return true;
+
+    const target = this.dashboardContracts().find(
+      (candidate) => candidate.registryEntry?.id === registryEntryId,
+    );
+    if (!target) return false;
+
+    if (localEntry.status === 'spent') return target.status === 'spent';
+
+    try {
+      return (
+        BigInt(target.amountSompi || '0') ===
+        BigInt(localEntry.amountSompi || '0')
+      );
+    } catch {
+      return target.amountSompi === localEntry.amountSompi;
+    }
+  }
+
   onInteractContractSelect(value: any) {
     this.selectedContractId.set(value || '');
     this.selectContractFromRegistry();
@@ -3658,6 +3874,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   async interactContract() {
     this.interactError.set(null);
     this.interactResult.set(null);
+    this.interactIndexerState.set(null);
 
     const wallet = this.currentWallet();
     if (!wallet) {
@@ -3805,7 +4022,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
               spendTxid: result.txid,
               lastChecked: Date.now(),
             });
-            this.loadContracts();
+            void this.trackActionIndexing(
+              result.txid,
+              this.selectedContractId(),
+            );
           }
           return;
         }
@@ -3857,6 +4077,22 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           outputAddress,
         );
         return;
+      } else if (this.isDmsClaim()) {
+        // DMS claim always transfers the entire balance to the heir — there's
+        // no continuation output for a remainder to go to, since the
+        // Dead Man's Switch relationship ends once claimed. Ignore whatever
+        // amount the user may have typed and use the full input amount
+        // instead of routing through buildWithdrawalOutputs's partial path.
+        if (!outputAddress) {
+          this.interactError.set('Output address is required');
+          return;
+        }
+        outputs = [
+          {
+            address: outputAddress,
+            amount: inputAmount,
+          },
+        ];
       } else if (this.functionRequiresOutput(functionName)) {
         if (
           compiled.contract_name === 'DeadManSwitch' &&
@@ -4069,7 +4305,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           this.interactOutpointTxid = result.txid;
           this.interactOutpointVout = '0';
         }
-        this.loadContracts();
+        void this.trackActionIndexing(result.txid, this.selectedContractId());
       }
     } catch (error: any) {
       this.interactError.set(error?.message || 'Failed to execute contract');
@@ -4239,7 +4475,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.interactInputAmount = inputAmount.toString();
     this.dmsNewExpiry = '';
 
-    this.loadContracts();
+    void this.trackActionIndexing(result.txid, this.selectedContractId());
   }
 
   private async executeDmsChangeHeir(
@@ -4342,7 +4578,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.interactOutputAddress = '';
     this.interactResolvedOutputAddress = null;
 
-    this.loadContracts();
+    void this.trackActionIndexing(result.txid, this.selectedContractId());
   }
 
   private async compileDmsContinuation(values: {
@@ -4735,7 +4971,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   shareableContractOptions = computed<DropdownOption[]>(() =>
     this.shareableContracts().map((contract) => ({
       value: contract.id,
-      label: contract.displayName,
+      label: `${contract.displayName} - ${contract.covenantId}`,
     })),
   );
 
@@ -4916,6 +5152,20 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Returns true when the current function is DMS claim. Claim always
+   * transfers the full balance to the heir — there's no continuation output,
+   * so unlike a regular withdrawal it can't be partial.
+   */
+  isDmsClaim(): boolean {
+    const contract = this.parsedInteractContract();
+    if (!contract || this.selectedFunction !== 'claim') return false;
+    return (contract.contract_name || '')
+      .toLowerCase()
+      .replace(/[\s_-]/g, '')
+      .includes('deadman');
+  }
+
+  /**
    * Check if the selected function requires multiple signers (two-phase signing)
    */
   isMultiSigFunction(fnName: string): boolean {
@@ -4924,6 +5174,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const abiEntry = contract.abi.find((e) => e.name === fnName);
     if (!abiEntry) return false;
     return abiEntry.inputs.filter((i) => i.type_name === 'sig').length > 1;
+  }
+
+  /**
+   * Whether this contract has *any* multi-sig entrypoint — gates the
+   * "Complete co-signer transaction" section, which is only relevant for
+   * contracts that can produce a partial spend in the first place (e.g. a
+   * plain Dead Man's Switch or single-sig Escrow release has nothing for a
+   * co-signer to complete).
+   */
+  contractHasMultiSigFunction(): boolean {
+    return this.availableFunctions().some((fn) =>
+      this.isMultiSigFunction(fn.name),
+    );
   }
 
   /**
@@ -4950,6 +5213,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     // Clear stale interaction state
     this.interactError.set(null);
     this.interactResult.set(null);
+    this.interactIndexerState.set(null);
     this.partialSpendJson.set(null);
     this.extraArgValues = {};
     this.dmsNewExpiry = '';
@@ -5304,6 +5568,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   async completePartialSpend() {
     this.partialCompleteError.set(null);
     this.partialCompleteResult.set(null);
+    this.interactIndexerState.set(null);
 
     const wallet = this.currentWallet();
     if (!wallet) {
@@ -5367,7 +5632,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             lastChecked: Date.now(),
           });
         }
-        this.loadContracts();
+        void this.trackActionIndexing(result.txid, this.selectedContractId());
       }
     } catch (error: any) {
       this.partialCompleteError.set(

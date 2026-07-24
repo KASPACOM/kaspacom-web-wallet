@@ -353,7 +353,9 @@
                     <div class="flex column gap-4">
                       <kc-input
                         [label]="field.label"
-                        [placeholder]="'Paste address, public key, or 32-byte hash'"
+                        [placeholder]="
+                          'Paste address, public key, or 32-byte hash'
+                        "
                         [type]="'text'"
                         [isValid]="isTemplateFieldValid(field)"
                         [isDisabled]="isDeploying()"
@@ -2638,26 +2640,43 @@
                 (qrClick)="onInteractOutputQrClick()"
               ></app-address-smart-input>
             </div>
-            <div class="form-group flex column gap-8">
-              <kc-number-input
-                [label]="'Withdraw amount (KAS)'"
-                [placeholder]="'0'"
-                [min]="'0'"
-                [isDisabled]="isInteracting()"
-                [ngModel]="interactOutputAmount"
-                (valueChange)="onInteractOutputAmountChange($event)"
+            @if (isDmsClaim()) {
+              <div
+                class="p-12 rounded-lg"
+                style="
+                  background: rgba(111, 199, 186, 0.08);
+                  border: 1px solid rgba(111, 199, 186, 0.2);
+                "
               >
-                <div
-                  (click)="!isInteracting() && fillMaxOutputAmount()"
-                  [class]="
-                    isInteracting() ? 'max-text disabled' : 'max-text clickable'
-                  "
-                  rightSideSlot
+                <span class="text-gray-75 typo-text-2"
+                  >Claiming sends the entire contract balance to this address —
+                  Dead Man's Switch claims can't be partial.</span
                 >
-                  <span>Max</span>
-                </div>
-              </kc-number-input>
-            </div>
+              </div>
+            } @else {
+              <div class="form-group flex column gap-8">
+                <kc-number-input
+                  [label]="'Withdraw amount (KAS)'"
+                  [placeholder]="'0'"
+                  [min]="'0'"
+                  [isDisabled]="isInteracting()"
+                  [ngModel]="interactOutputAmount"
+                  (valueChange)="onInteractOutputAmountChange($event)"
+                >
+                  <div
+                    (click)="!isInteracting() && fillMaxOutputAmount()"
+                    [class]="
+                      isInteracting()
+                        ? 'max-text disabled'
+                        : 'max-text clickable'
+                    "
+                    rightSideSlot
+                  >
+                    <span>Max</span>
+                  </div>
+                </kc-number-input>
+              </div>
+            }
           }
 
           @if (
@@ -2729,7 +2748,7 @@
           }
         }
 
-        @if (parsedInteractContract()) {
+        @if (parsedInteractContract() && contractHasMultiSigFunction()) {
           <details class="advanced-section">
             <summary>Complete co-signer transaction</summary>
             <div class="adv-body">
@@ -2783,6 +2802,16 @@
                       ></app-copy-button>
                     </div>
                   </div>
+                  @if (interactIndexerState()) {
+                    <div class="flex column gap-4">
+                      <span class="text-gray-60 typo-text-1"
+                        >Indexer status</span
+                      >
+                      <span class="text-white typo-text-2">{{
+                        interactIndexerState()!.message
+                      }}</span>
+                    </div>
+                  }
                 </div>
               }
             </div>
@@ -2816,6 +2845,14 @@
                 ></app-copy-button>
               </div>
             </div>
+            @if (interactIndexerState()) {
+              <div class="flex column gap-4">
+                <span class="text-gray-60 typo-text-1">Indexer status</span>
+                <span class="text-white typo-text-2">{{
+                  interactIndexerState()!.message
+                }}</span>
+              </div>
+            }
           </div>
         }
 

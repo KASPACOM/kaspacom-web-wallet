@@ -246,6 +246,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private notificationService = inject(NotificationService);
   private isBrowser = isPlatformBrowser(this.platformId);
   private routeSubscription?: Subscription;
+  private registryMigrationPromise?: Promise<void>;
 
   // Current active tab
   activeTab = signal<TabName>('my-contracts');
@@ -672,6 +673,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.wideWorkspaceService.activate();
+    void this.ensureContractRegistryMigrated();
     this.restoreTransientState();
     this.routeSubscription = this.route.paramMap.subscribe((params) => {
       const contractId = params.get('contractId');
@@ -773,6 +775,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.activeTab.set('lookup-import');
     this.indexerImportQuery = contractId;
     await this.lookupIndexerImport();
+  }
+
+  private ensureContractRegistryMigrated(): Promise<void> {
+    if (!this.isBrowser) return Promise.resolve();
+    this.registryMigrationPromise ??=
+      this.registryService.migrateContractsRegistryFromLocalStorage();
+    return this.registryMigrationPromise;
   }
 
   private findDashboardEntryForPreview(
@@ -1395,6 +1404,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * Load contracts from registry and check on-chain status
    */
   async loadContracts(options: { skipOnChainStatusRefresh?: boolean } = {}) {
+    await this.ensureContractRegistryMigrated();
     this.dashboardLoading.set(true);
     this.dashboardError.set(null);
     if (this.activeTab() !== 'detail') {
@@ -1402,7 +1412,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.selectedDetailError.set(null);
     }
 
-    const filtered = this.getCurrentWalletLocalContracts();
+    const filtered = await this.getCurrentWalletLocalContracts();
     this.registryContracts.set(filtered);
 
     // Check on-chain status for each contract. Skipped during action-indexing
@@ -1414,7 +1424,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       await this.refreshContractStatuses(filtered);
     }
 
-    const updatedLocal = this.getCurrentWalletLocalContracts();
+    const updatedLocal = await this.getCurrentWalletLocalContracts();
     this.registryContracts.set(updatedLocal);
 
     const localDashboardEntries = await Promise.all(
@@ -1492,7 +1502,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
           const newStatus: ContractStatus = found ? 'active' : 'spent';
           if (entry.status !== newStatus) {
-            this.registryService.updateContract(entry.id, {
+            await this.updateRegistryContract(entry.id, {
               status: newStatus,
               lastChecked: Date.now(),
               amountSompi: found ? found.amount.toString() : entry.amountSompi,
@@ -1505,15 +1515,29 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
 
     // Reload with updated statuses
-    const updated = this.getCurrentWalletLocalContracts();
+    const updated = await this.getCurrentWalletLocalContracts();
     this.registryContracts.set(updated);
   }
 
-  private getCurrentWalletLocalContracts(): ContractRegistryEntry[] {
-    return this.registryService.getAllContracts().filter((contract) => {
+  private async getCurrentWalletLocalContracts(): Promise<
+    ContractRegistryEntry[]
+  > {
+    return (await this.registryService.getAllContracts()).filter((contract) => {
       if (contract.network !== this.network()) return false;
       return this.isCurrentWalletRegistryEntry(contract);
     });
+  }
+
+  private async updateRegistryContract(
+    id: string,
+    updates: Partial<ContractRegistryEntry>,
+  ): Promise<void> {
+    await this.registryService.updateContract(id, updates);
+    this.registryContracts.set(
+      this.registryContracts().map((contract) =>
+        contract.id === id ? { ...contract, ...updates } : contract,
+      ),
+    );
   }
 
   private isCurrentWalletRegistryEntry(
@@ -1815,7 +1839,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       },
     ];
     const predecessor = contract.predecessorId
-      ? this.registryService.getContract(contract.predecessorId)
+      ? this.registryContracts().find(
+          (entry) => entry.id === contract.predecessorId,
+        )
       : undefined;
     if (
       predecessor?.deployedBy?.address &&
@@ -2297,20 +2323,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       const preview = await this.buildIndexerImportPreview(response);
       if (requestToken !== this.detailRequestToken) return false;
       this.indexerImportPreview.set(preview);
-      this.importIndexerPreview({ stayOnCurrentTab: true });
-      const imported = this.registryService
-        .getAllContracts()
-        .find(
-          (contract) =>
-            contract.network === this.network() &&
-            this.isCurrentWalletRegistryEntry(contract) &&
-            (this.sameIdentity(contract.covenantId, preview.covenantId) ||
-              (this.sameIdentity(
-                contract.outpoint.txid,
-                preview.outpoint.txid,
-              ) &&
-                contract.outpoint.vout === preview.outpoint.vout)),
-        );
+      await this.importIndexerPreview({ stayOnCurrentTab: true });
+      const imported = this.registryContracts().find(
+        (contract) =>
+          contract.network === this.network() &&
+          this.isCurrentWalletRegistryEntry(contract) &&
+          (this.sameIdentity(contract.covenantId, preview.covenantId) ||
+            (this.sameIdentity(contract.outpoint.txid, preview.outpoint.txid) &&
+              contract.outpoint.vout === preview.outpoint.vout)),
+      );
       if (imported) {
         this.selectedContractId.set(imported.id);
         this.selectContractFromRegistry();
@@ -2415,13 +2436,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       };
     }
 
-    this.registryService.updateContract(registryEntry.id, updates);
+    await this.updateRegistryContract(registryEntry.id, updates);
     const updatedEntry = { ...registryEntry, ...updates };
-    this.registryContracts.set(
-      this.registryContracts().map((contract) =>
-        contract.id === updatedEntry.id ? updatedEntry : contract,
-      ),
-    );
     return updatedEntry;
   }
 
@@ -2870,14 +2886,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  importIndexerPreview(options: { stayOnCurrentTab?: boolean } = {}) {
+  async importIndexerPreview(options: { stayOnCurrentTab?: boolean } = {}) {
     const preview = this.indexerImportPreview();
     if (!preview) {
       this.indexerImportError.set('Look up a covenant before importing it.');
       return;
     }
 
-    const existing = this.registryService.getAllContracts().find((entry) => {
+    const existing = this.registryContracts().find((entry) => {
       if (entry.network !== this.network()) return false;
       if (!this.isCurrentWalletRegistryEntry(entry)) return false;
       const sameOutpoint =
@@ -2925,13 +2941,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       covenantId: preview.covenantId,
     };
 
-    this.registryService.addContract(entry);
+    await this.registryService.addContract(entry);
+    this.registryContracts.set([...this.registryContracts(), entry]);
     this.indexerImportQuery = '';
     this.indexerImportPreview.set(null);
     if (!options.stayOnCurrentTab) {
       this.activeTab.set('my-contracts');
     }
-    this.loadContracts();
+    await this.loadContracts();
   }
 
   private indexerPreviewToDashboard(
@@ -3436,9 +3453,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   /**
    * Delete a contract from registry
    */
-  deleteContract(id: string) {
-    this.registryService.deleteContract(id);
-    this.loadContracts();
+  async deleteContract(id: string) {
+    await this.registryService.deleteContract(id);
+    await this.loadContracts();
   }
 
   /**
@@ -3601,7 +3618,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       });
 
       try {
-        this.registryService.addContract(entry);
+        await this.registryService.addContract(entry);
+        this.registryContracts.set([...this.registryContracts(), entry]);
         void this.trackDeployIndexing(result.txid, entry.id, result.covenantId);
       } catch (e) {
         console.error(
@@ -3650,7 +3668,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
         if (status.indexed) {
           if (registryEntryId && indexedCovenantId) {
-            this.registryService.updateContract(registryEntryId, {
+            await this.updateRegistryContract(registryEntryId, {
               covenantId: indexedCovenantId,
             });
           }
@@ -3823,9 +3841,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private dashboardCaughtUpWithLocal(registryEntryId?: string): boolean {
     if (!registryEntryId) return true;
 
-    const localEntry = this.registryService
-      .getAllContracts()
-      .find((contract) => contract.id === registryEntryId);
+    const localEntry = this.registryContracts().find(
+      (contract) => contract.id === registryEntryId,
+    );
     if (!localEntry) return true;
 
     const target = this.dashboardContracts().find(
@@ -4017,7 +4035,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             functionName: result.functionName,
           });
           if (this.selectedContractId()) {
-            this.registryService.updateContract(this.selectedContractId(), {
+            await this.updateRegistryContract(this.selectedContractId(), {
               status: 'spent',
               spendTxid: result.txid,
               lastChecked: Date.now(),
@@ -4259,7 +4277,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       // Update registry based on function type
       if (this.selectedContractId()) {
         if (this.isTopUpFunction(functionName)) {
-          this.registryService.updateContract(this.selectedContractId(), {
+          await this.updateRegistryContract(this.selectedContractId(), {
             lastChecked: Date.now(),
             outpoint: { txid: result.txid, vout: 0 },
             amountSompi: outputs[0].amount.toString(),
@@ -4278,7 +4296,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           );
           if (continuationOutputIndex >= 0) {
             const continuationAmount = outputs[continuationOutputIndex].amount;
-            this.registryService.updateContract(this.selectedContractId(), {
+            await this.updateRegistryContract(this.selectedContractId(), {
               lastChecked: Date.now(),
               outpoint: { txid: result.txid, vout: continuationOutputIndex },
               amountSompi: continuationAmount.toString(),
@@ -4288,7 +4306,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             this.interactInputAmount = continuationAmount.toString();
           } else {
             // Full withdrawal: funds left the covenant
-            this.registryService.updateContract(this.selectedContractId(), {
+            await this.updateRegistryContract(this.selectedContractId(), {
               status: 'spent',
               spendTxid: result.txid,
               lastChecked: Date.now(),
@@ -4296,7 +4314,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           }
         } else {
           // Redeploy (keepAlive/increment): update the outpoint to the new UTXO
-          this.registryService.updateContract(this.selectedContractId(), {
+          await this.updateRegistryContract(this.selectedContractId(), {
             lastChecked: Date.now(),
             outpoint: { txid: result.txid, vout: 0 },
             amountSompi: inputAmount.toString(), // The registry doesn't accurately know the post-fee amount until refreshed, but setting inputAmount is close enough
@@ -4459,7 +4477,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.interactResult.set({ txid: result.txid, functionName: 'keepAlive' });
 
     if (this.selectedContractId()) {
-      this.registryService.updateContract(this.selectedContractId(), {
+      await this.updateRegistryContract(this.selectedContractId(), {
         status: 'active',
         compiledJson: nextContractJson,
         contractAddress: nextContractAddress,
@@ -4561,7 +4579,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.interactResult.set({ txid: result.txid, functionName: 'changeHeir' });
 
     if (this.selectedContractId()) {
-      this.registryService.updateContract(this.selectedContractId(), {
+      await this.updateRegistryContract(this.selectedContractId(), {
         status: 'active',
         compiledJson: nextContractJson,
         contractAddress: nextContractAddress,
@@ -5620,13 +5638,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           (output) => output.address === covenantAddress,
         );
         if (continuationOutputIndex >= 0) {
-          this.registryService.updateContract(this.selectedContractId(), {
+          await this.updateRegistryContract(this.selectedContractId(), {
             lastChecked: Date.now(),
             outpoint: { txid: result.txid, vout: continuationOutputIndex },
             amountSompi: partial.outputs[continuationOutputIndex].amountSompi,
           });
         } else {
-          this.registryService.updateContract(this.selectedContractId(), {
+          await this.updateRegistryContract(this.selectedContractId(), {
             status: 'spent',
             spendTxid: result.txid,
             lastChecked: Date.now(),

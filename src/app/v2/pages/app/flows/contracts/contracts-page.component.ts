@@ -66,6 +66,7 @@ import {
 } from '../../../../services/covenant/contract-templates';
 import {
   CtorArg,
+  TemplatePatch,
   TemplatePatcherService,
 } from '../../../../services/covenant/template-patcher.service';
 import { PublicKey } from '../../../../../../../public/kaspa/kaspa';
@@ -139,12 +140,21 @@ type ContractDashboardFilter =
   'all' | 'deadman' | 'timelock' | 'multisig' | 'escrow';
 // Status dimension, composed on top of the template-type filter above.
 type ContractStatusFilter = 'all' | 'active' | 'history';
+type ContractParticipant = {
+  label: string;
+  value: string;
+  matchValues?: string[];
+  hidden?: boolean;
+};
 
 type ContractDashboardEntry = {
   id: string;
   source: ContractDashboardSource;
   contractName: string;
   displayName: string;
+  contractTypeLabel: string;
+  aliasName?: string;
+  aliases?: Record<string, string>;
   status: 'active' | 'spent' | 'unknown' | 'tracking-incomplete';
   amountSompi: string;
   currentAddress?: string;
@@ -154,7 +164,7 @@ type ContractDashboardEntry = {
   latestTxid?: string;
   latestAction?: string;
   deadlineMs?: number;
-  participants: Array<{ label: string; value: string }>;
+  participants: ContractParticipant[];
   nextActionLabel: string;
   actionHint: string;
   registryEntry?: ContractRegistryEntry;
@@ -247,6 +257,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private isBrowser = isPlatformBrowser(this.platformId);
   private routeSubscription?: Subscription;
   private registryMigrationPromise?: Promise<void>;
+  private contractsLoadRequestToken = 0;
+  private readonly templatePatchContextCache = new Map<
+    string,
+    Promise<{ compiled: CompiledContract; descriptor: TemplatePatch }>
+  >();
+  private readonly localParticipantsCache = new Map<
+    string,
+    Promise<ContractParticipant[]>
+  >();
 
   // Current active tab
   activeTab = signal<TabName>('my-contracts');
@@ -282,6 +301,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   deployContractTouched = false;
   deployContractError = signal('');
   deployAmount = '';
+  deployContractNickname = '';
   deployAmountTouched = false;
   deployAmountError = signal('');
   deployResult = signal<{
@@ -320,10 +340,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   });
 
   // Contract registry (my contracts tab)
+  allRegistryContracts = signal<ContractRegistryEntry[]>([]);
   registryContracts = signal<ContractRegistryEntry[]>([]);
   dashboardContracts = signal<ContractDashboardEntry[]>([]);
   dashboardFilter = signal<ContractDashboardFilter>('all');
-  statusFilter = signal<ContractStatusFilter>('all');
+  statusFilter = signal<ContractStatusFilter>('active');
   dashboardSearch = signal('');
   // Applies the template-type filter, the active/history status filter, and
   // the search query together. Status: 'active' = anything not settled
@@ -348,17 +369,22 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         [
           contract.displayName,
           contract.contractName,
+          contract.contractTypeLabel,
+          contract.aliasName,
           contract.currentAddress,
           contract.covenantId,
         ].some((value) => value?.toLowerCase().includes(search)),
       );
     }
-    return list;
+    return this.sortDashboardEntries(list);
   });
   dashboardLoading = signal(false);
   dashboardError = signal<string | null>(null);
   selectedDetail = signal<ContractDetailState | null>(null);
   selectedDetailLoading = signal(false);
+  editingAliasKey = signal<string | null>(null);
+  aliasNotice = signal<{ key: string; message: string } | null>(null);
+  aliasDraft = '';
   /**
    * Bumped on every openContractDetail() call so a slower, superseded fetch
    * (e.g. a route-driven load racing a direct row click for the same
@@ -530,7 +556,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   registryContractOptions = computed<DropdownOption[]>(() =>
     this.registryContracts().map((contract) => ({
       value: contract.id,
-      label: `${contract.contractName} (${this.getRegistryContractIdentityLabel(contract)})`,
+      label: `${this.getContractDisplayName(contract)} - ${this.getContractTypeLabel(contract)} (${this.getRegistryContractIdentityLabel(contract)})`,
       disabled: contract.status === 'spent',
     })),
   );
@@ -883,7 +909,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   selectTemplate(template: ContractTemplate) {
     this.createMode.set('template');
     this.activeTemplate.set(template);
-    // Clear all form values — prevents stale data from previous template or localStorage
+    // Clear all form values to prevent stale data from previous template.
     this.templateFormValues = {};
     this.templateFieldTouched = {};
     this.templateFieldErrors = {};
@@ -892,13 +918,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.templateError.set(null);
 
     this.syncWalletOwnedTemplateFields();
-
-    // Clear any localStorage-cached template form values to prevent stale auto-fill
-    try {
-      localStorage.removeItem('kaspacom_template_form_' + template.id);
-    } catch {
-      // localStorage may not be available
-    }
   }
 
   private syncWalletOwnedTemplateFields() {
@@ -963,12 +982,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       const newArgs = template.fields.map((field) =>
         this.fieldToCtorArg(field, this.getTemplateFieldValue(field)),
       );
-      const compiled = await firstValueFrom(
-        this.http.get<any>(template.assetPath),
-      );
-      const descriptor = this.templatePatcher.extractPatchDescriptor(
-        compiled,
-        template.placeholderArgs,
+      const { compiled, descriptor } = await this.getTemplatePatchContext(
+        template.id,
       );
       const patched = this.templatePatcher.applyPatch(
         compiled,
@@ -1404,7 +1419,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * Load contracts from registry and check on-chain status
    */
   async loadContracts(options: { skipOnChainStatusRefresh?: boolean } = {}) {
+    const requestToken = ++this.contractsLoadRequestToken;
+    const isCurrentRequest = () =>
+      requestToken === this.contractsLoadRequestToken;
+
     await this.ensureContractRegistryMigrated();
+    if (!isCurrentRequest()) return;
+
     this.dashboardLoading.set(true);
     this.dashboardError.set(null);
     if (this.activeTab() !== 'detail') {
@@ -1412,8 +1433,23 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.selectedDetailError.set(null);
     }
 
-    const filtered = await this.getCurrentWalletLocalContracts();
+    const allContracts = await this.registryService.getAllContracts();
+    if (!isCurrentRequest()) return;
+
+    this.allRegistryContracts.set(allContracts);
+    const filtered = await this.getCurrentWalletLocalContracts(allContracts);
+    if (!isCurrentRequest()) return;
+
     this.registryContracts.set(filtered);
+    let localDashboardEntries = await Promise.all(
+      filtered.map((entry) => this.localEntryToDashboard(entry)),
+    );
+    if (!isCurrentRequest()) return;
+
+    this.dashboardContracts.set(
+      this.sortDashboardEntries(localDashboardEntries),
+    );
+    this.dashboardLoading.set(false);
 
     // Check on-chain status for each contract. Skipped during action-indexing
     // polling (trackActionIndexing()): the acted-on contract's status/amount
@@ -1422,33 +1458,50 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     // each poll tick is redundant traffic, not new information.
     if (!options.skipOnChainStatusRefresh) {
       await this.refreshContractStatuses(filtered);
+      if (!isCurrentRequest()) return;
+
+      const updatedAllContracts = await this.registryService.getAllContracts();
+      if (!isCurrentRequest()) return;
+
+      this.allRegistryContracts.set(updatedAllContracts);
+      const updatedLocal =
+        await this.getCurrentWalletLocalContracts(updatedAllContracts);
+      if (!isCurrentRequest()) return;
+
+      this.registryContracts.set(updatedLocal);
+      localDashboardEntries = await Promise.all(
+        updatedLocal.map((entry) => this.localEntryToDashboard(entry)),
+      );
+      if (!isCurrentRequest()) return;
+
+      this.dashboardContracts.set(
+        this.sortDashboardEntries(localDashboardEntries),
+      );
     }
-
-    const updatedLocal = await this.getCurrentWalletLocalContracts();
-    this.registryContracts.set(updatedLocal);
-
-    const localDashboardEntries = await Promise.all(
-      updatedLocal.map((entry) => this.localEntryToDashboard(entry)),
-    );
 
     try {
       // Indexer-backed tracking is the source of truth for contracts involving
       // the wallet. Local registry entries are merged below so older local-only
       // deployments still remain visible while the indexer catches up.
       const indexerEntries = await this.loadIndexerDashboardEntries();
+      if (!isCurrentRequest()) return;
+
       this.dashboardContracts.set(
         this.mergeDashboardEntries(indexerEntries, localDashboardEntries),
       );
     } catch (error: any) {
+      if (!isCurrentRequest()) return;
       console.warn('[Contracts] Indexer dashboard load failed:', error);
       this.dashboardError.set(
         error?.message ||
           'Indexer tracking is unavailable. Showing locally saved contracts only.',
       );
-      this.dashboardContracts.set(localDashboardEntries);
-    } finally {
-      this.dashboardLoading.set(false);
+      this.dashboardContracts.set(
+        this.sortDashboardEntries(localDashboardEntries),
+      );
     }
+
+    if (!isCurrentRequest()) return;
 
     const routeId = this.detailRouteId();
     if (routeId) {
@@ -1515,17 +1568,42 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
 
     // Reload with updated statuses
-    const updated = await this.getCurrentWalletLocalContracts();
+    const updatedAllContracts = await this.registryService.getAllContracts();
+    this.allRegistryContracts.set(updatedAllContracts);
+    const updated =
+      await this.getCurrentWalletLocalContracts(updatedAllContracts);
     this.registryContracts.set(updated);
   }
 
-  private async getCurrentWalletLocalContracts(): Promise<
-    ContractRegistryEntry[]
-  > {
-    return (await this.registryService.getAllContracts()).filter((contract) => {
-      if (contract.network !== this.network()) return false;
-      return this.isCurrentWalletRegistryEntry(contract);
-    });
+  private async getCurrentWalletLocalContracts(
+    contracts: ContractRegistryEntry[],
+  ): Promise<ContractRegistryEntry[]> {
+    const result: ContractRegistryEntry[] = [];
+    for (const contract of contracts) {
+      if (contract.network !== this.network()) continue;
+      if (this.isCurrentWalletRegistryEntry(contract)) {
+        result.push(contract);
+        continue;
+      }
+      if (await this.isCurrentWalletLocalParticipant(contract)) {
+        const updated = await this.addCurrentWalletToRegistryContract(contract);
+        result.push(updated || contract);
+      }
+    }
+    return result;
+  }
+
+  private async isCurrentWalletLocalParticipant(
+    contract: ContractRegistryEntry,
+  ): Promise<boolean> {
+    try {
+      return (
+        this.currentWalletRoles(await this.localParticipants(contract)).length >
+        0
+      );
+    } catch {
+      return false;
+    }
   }
 
   private async updateRegistryContract(
@@ -1533,16 +1611,59 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     updates: Partial<ContractRegistryEntry>,
   ): Promise<void> {
     await this.registryService.updateContract(id, updates);
+    if (updates.compiledJson) {
+      this.localParticipantsCache.clear();
+    }
+    let updatedRegistryEntry: ContractRegistryEntry | undefined;
+    this.allRegistryContracts.set(
+      this.allRegistryContracts().map((contract) => {
+        if (contract.id !== id) return contract;
+        updatedRegistryEntry = { ...contract, ...updates };
+        return updatedRegistryEntry;
+      }),
+    );
     this.registryContracts.set(
       this.registryContracts().map((contract) =>
         contract.id === id ? { ...contract, ...updates } : contract,
       ),
+    );
+    this.dashboardContracts.set(
+      this.dashboardContracts().map((entry) =>
+        entry.registryEntry?.id === id
+          ? this.withDashboardName({
+              ...entry,
+              aliases: updatedRegistryEntry?.aliases,
+              registryEntry: updatedRegistryEntry || {
+                ...entry.registryEntry,
+                ...updates,
+              },
+            })
+          : entry,
+      ),
+    );
+    this.selectedDetail.update((detail) =>
+      detail?.entry.registryEntry?.id === id
+        ? {
+            ...detail,
+            entry: this.withDashboardName({
+              ...detail.entry,
+              aliases: updatedRegistryEntry?.aliases,
+              registryEntry: updatedRegistryEntry || {
+                ...detail.entry.registryEntry,
+                ...updates,
+              },
+            }),
+          }
+        : detail,
     );
   }
 
   private isCurrentWalletRegistryEntry(
     contract: ContractRegistryEntry,
   ): boolean {
+    const walletKey = this.currentWalletAliasKey();
+    if (walletKey && contract.wallets?.[walletKey]) return true;
+
     const wallet = this.currentWallet();
     const address = wallet?.getAddress()?.toLowerCase();
     const pubkey = wallet
@@ -1556,6 +1677,34 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return (
       (!!address && deployedAddress === address) ||
       (!!pubkey && deployedPubkey === pubkey)
+    );
+  }
+
+  private async addCurrentWalletToRegistryContract(
+    contract: ContractRegistryEntry,
+  ): Promise<ContractRegistryEntry | undefined> {
+    const walletKey = this.currentWalletAliasKey();
+    if (!walletKey) return undefined;
+    const wallets = { ...(contract.wallets || {}), [walletKey]: true };
+    await this.updateRegistryContract(contract.id, { wallets });
+    return { ...contract, wallets };
+  }
+
+  private findSavedRegistryEntryForIdentity(input: {
+    covenantId?: string;
+    deployTxid?: string;
+    outpoint?: { txid: string; vout: number };
+  }): ContractRegistryEntry | undefined {
+    return this.allRegistryContracts().find(
+      (entry) =>
+        entry.network === this.network() &&
+        ((input.covenantId &&
+          this.sameIdentity(entry.covenantId, input.covenantId)) ||
+          (input.deployTxid &&
+            this.sameIdentity(entry.deployTxid, input.deployTxid)) ||
+          (input.outpoint &&
+            this.sameIdentity(entry.outpoint?.txid, input.outpoint.txid) &&
+            entry.outpoint?.vout === input.outpoint.vout)),
     );
   }
 
@@ -1574,6 +1723,152 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       : undefined;
   }
 
+  private currentWalletAliasKey(): string | undefined {
+    return this.currentWallet()?.getIdWithAccount();
+  }
+
+  getContractAlias(contract: {
+    aliases?: Record<string, string>;
+  }): string | undefined {
+    const ownerKey = this.getContractAliasOwnerKey(contract);
+    return ownerKey ? contract.aliases?.[ownerKey] : undefined;
+  }
+
+  private getContractAliasOwnerKey(contract: {
+    aliases?: Record<string, string>;
+  }): string | undefined {
+    const currentWalletKey = this.currentWalletAliasKey();
+    if (currentWalletKey && contract.aliases?.[currentWalletKey]) {
+      return currentWalletKey;
+    }
+    return Object.entries(contract.aliases || {}).find(([, alias]) =>
+      Boolean(alias),
+    )?.[0];
+  }
+
+  getContractTypeLabel(contract: { contractName?: string }): string {
+    const name = this.normalizeContractName(contract.contractName || '');
+    return this.getTemplateDisplayName(name);
+  }
+
+  getContractDisplayName(contract: {
+    contractName?: string;
+    aliases?: Record<string, string>;
+  }): string {
+    return (
+      this.getContractAlias(contract) || this.getContractTypeLabel(contract)
+    );
+  }
+
+  getAliasEditKey(contract: ContractDashboardEntry): string {
+    return contract.registryEntry?.id || contract.id;
+  }
+
+  beginAliasEdit(contract: ContractDashboardEntry) {
+    this.editingAliasKey.set(this.getAliasEditKey(contract));
+    this.aliasNotice.set(null);
+    const currentWalletKey = this.currentWalletAliasKey();
+    this.aliasDraft =
+      (currentWalletKey ? contract.aliases?.[currentWalletKey] : '') ||
+      contract.aliasName ||
+      '';
+  }
+
+  cancelAliasEdit() {
+    this.editingAliasKey.set(null);
+    this.aliasNotice.set(null);
+    this.aliasDraft = '';
+  }
+
+  onDeployContractNicknameChange(value: unknown) {
+    this.deployContractNickname =
+      value === null || value === undefined ? '' : String(value);
+  }
+
+  async saveAlias(contract: ContractDashboardEntry) {
+    const walletKey = this.currentWalletAliasKey();
+    const registryEntry = contract.registryEntry;
+    if (!walletKey || !registryEntry) return;
+
+    const alias = this.aliasDraft.trim();
+    const aliases = { ...(registryEntry.aliases || {}) };
+    if (alias) {
+      aliases[walletKey] = alias;
+    } else {
+      delete aliases[walletKey];
+    }
+    await this.updateRegistryContract(registryEntry.id, { aliases });
+    this.refreshDashboardNames();
+    this.aliasNotice.set(null);
+    this.cancelAliasEdit();
+  }
+
+  async removeAlias(contract: ContractDashboardEntry) {
+    const walletKey = this.currentWalletAliasKey();
+    const registryEntry = contract.registryEntry;
+    if (!walletKey || !registryEntry) return;
+
+    const ownerKey = this.getContractAliasOwnerKey(contract);
+    if (ownerKey && ownerKey !== walletKey) {
+      const walletLabel = this.getAliasOwnerWalletLabel(ownerKey);
+      this.aliasNotice.set({
+        key: this.getAliasEditKey(contract),
+        message: `This nickname was given by ${walletLabel}. Please remove it from there.`,
+      });
+      return;
+    }
+
+    const aliases = { ...(registryEntry.aliases || {}) };
+    delete aliases[walletKey];
+    await this.updateRegistryContract(registryEntry.id, { aliases });
+    this.refreshDashboardNames();
+    this.aliasNotice.set(null);
+    this.cancelAliasEdit();
+  }
+
+  private getAliasOwnerWalletLabel(walletKey: string): string {
+    const wallet =
+      this.walletService.getAllWalletsByIdAndAccount()?.[walletKey];
+    if (!wallet) return `wallet ${walletKey}`;
+
+    const walletName = wallet.getName();
+    const accountName = wallet.getAccountName() || 'No account';
+    const address = this.truncate(wallet.getAddress(), 22);
+    return `${walletName}, ${accountName}, ${address}`;
+  }
+
+  private refreshDashboardNames() {
+    this.dashboardContracts.set(
+      this.dashboardContracts().map((entry) => this.withDashboardName(entry)),
+    );
+    this.selectedDetail.update((detail) =>
+      detail
+        ? { ...detail, entry: this.withDashboardName(detail.entry) }
+        : detail,
+    );
+  }
+
+  private withDashboardName(
+    entry: ContractDashboardEntry,
+  ): ContractDashboardEntry {
+    const contractTypeLabel = this.getContractTypeLabel(entry);
+    const aliasName = this.getContractAlias(entry);
+    return {
+      ...entry,
+      aliasName,
+      contractTypeLabel,
+      displayName: aliasName || contractTypeLabel,
+    };
+  }
+
+  private findRegistryEntryForDashboard(input: {
+    covenantId?: string;
+    deployTxid?: string;
+    outpoint?: { txid: string; vout: number };
+  }): ContractRegistryEntry | undefined {
+    return this.findSavedRegistryEntryForIdentity(input);
+  }
+
   private async loadIndexerDashboardEntries(): Promise<
     ContractDashboardEntry[]
   > {
@@ -1586,29 +1881,32 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (identifiers.length === 0) return [];
 
     const byKey = new Map<string, ContractDashboardEntry>();
-    for (const identifier of identifiers) {
-      // `/covenants?wallet=` matches the wallet against covenant address,
-      // common participant args, and decoded constructor args. This is broader
-      // than `/addresses/{address}/covenants`, which only matches P2SH covenant
-      // addresses and would miss participant-owned contracts.
-      const rows = await this.covenantIndexerService.listCovenants({
-        wallet: identifier,
-        sort: 'recent',
-        limit: 100,
-      });
+    // `/covenants?wallet=` matches the wallet against covenant address,
+    // common participant args, and decoded constructor args. This is broader
+    // than `/addresses/{address}/covenants`, which only matches P2SH covenant
+    // addresses and would miss participant-owned contracts.
+    const rowsByIdentifier = await Promise.all(
+      identifiers.map((identifier) =>
+        this.covenantIndexerService.listCovenants({
+          wallet: identifier,
+          sort: 'recent',
+          limit: 100,
+        }),
+      ),
+    );
 
-      // Do not add `classification=covenant` here. Fresh wallet-created
-      // template contracts can be indexed as `unknown/unrevealed` while still
-      // carrying a trusted claimedTemplate/claimedArgs payload, so filtering by
-      // classification hides the exact contracts My Contracts needs to show.
-      const supportedRows = rows.filter((row) =>
-        this.supportedIndexerTemplates.includes(
-          this.getIndexerTemplateName(row),
-        ),
-      );
-      const entries = supportedRows.map((row) =>
-        this.indexerSummaryToDashboard(row),
-      );
+    for (const rows of rowsByIdentifier) {
+      const entries = rows
+        // Do not add `classification=covenant` here. Fresh wallet-created
+        // template contracts can be indexed as `unknown/unrevealed` while still
+        // carrying a trusted claimedTemplate/claimedArgs payload, so filtering by
+        // classification hides the exact contracts My Contracts needs to show.
+        .filter((row) =>
+          this.supportedIndexerTemplates.includes(
+            this.getIndexerTemplateName(row),
+          ),
+        )
+        .map((row) => this.indexerSummaryToDashboard(row));
       for (const entry of entries) {
         byKey.set(this.getDashboardIdentityKey(entry), entry);
       }
@@ -1658,24 +1956,32 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         merged.delete(this.getDashboardIdentityKey(matchedLocal));
       }
 
-      merged.set(local?.id || key, {
-        ...entry,
-        // Keep the local entry's id stable across merges — otherwise a
-        // contract's id flips from `local:...` to `indexer:...` the moment
-        // the indexer catches up, breaking any UI state (e.g. the Share
-        // dropdown's selection) that was keyed on the previous id.
-        id: local?.id || entry.id,
-        source: local ? 'both' : entry.source,
-        status: entry.status,
-        amountSompi: entry.amountSompi,
-        latestTxid: entry.latestTxid,
-        latestAction: entry.latestAction,
-        // The indexer's deadline is a genesis-time snapshot that never
-        // reflects later continuations (e.g. a keepAlive's new deadline) —
-        // prefer the local entry's script-derived value when we have one.
-        deadlineMs: local?.deadlineMs ?? entry.deadlineMs,
-        registryEntry: local?.registryEntry,
-      });
+      merged.set(
+        local?.id || key,
+        this.withDashboardName({
+          ...entry,
+          // Keep the local entry's id stable across merges — otherwise a
+          // contract's id flips from `local:...` to `indexer:...` the moment
+          // the indexer catches up, breaking any UI state (e.g. the Share
+          // dropdown's selection) that was keyed on the previous id.
+          id: local?.id || entry.id,
+          source: local ? 'both' : entry.source,
+          status: entry.status,
+          amountSompi: entry.amountSompi,
+          latestTxid: entry.latestTxid,
+          latestAction: entry.latestAction,
+          participants: this.mergeParticipants(
+            local?.participants,
+            entry.participants,
+          ),
+          // The indexer's deadline is a genesis-time snapshot that never
+          // reflects later continuations (e.g. a keepAlive's new deadline) —
+          // prefer the local entry's script-derived value when we have one.
+          deadlineMs: local?.deadlineMs ?? entry.deadlineMs,
+          aliases: local?.aliases || entry.aliases,
+          registryEntry: local?.registryEntry || entry.registryEntry,
+        }),
+      );
     }
 
     return Array.from(merged.values()).sort(
@@ -1683,16 +1989,38 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     );
   }
 
+  private mergeParticipants(
+    localParticipants: ContractParticipant[] | undefined,
+    indexerParticipants: ContractParticipant[] | undefined,
+  ): ContractParticipant[] {
+    const merged: ContractParticipant[] = [];
+    const seen = new Set<string>();
+    for (const participant of [
+      ...(localParticipants || []),
+      ...(indexerParticipants || []),
+    ]) {
+      const identityValue =
+        participant.value || participant.matchValues?.join('|') || '';
+      const key = `${participant.label}:${identityValue.toLowerCase()}`;
+      if (!identityValue || seen.has(key)) continue;
+      seen.add(key);
+      merged.push(participant);
+    }
+    return merged;
+  }
+
   private async localEntryToDashboard(
     contract: ContractRegistryEntry,
   ): Promise<ContractDashboardEntry> {
     const contractName = this.normalizeContractName(contract.contractName);
-    const participants = this.localParticipants(contract);
-    return {
+    const participants = await this.localParticipants(contract);
+    return this.withDashboardName({
       id: `local:${contract.id}`,
       source: 'local',
       contractName,
       displayName: this.getTemplateDisplayName(contractName),
+      contractTypeLabel: this.getTemplateDisplayName(contractName),
+      aliases: contract.aliases,
       status: contract.status || 'unknown',
       amountSompi: contract.amountSompi,
       currentAddress: contract.contractAddress,
@@ -1710,7 +2038,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       ),
       actionHint: 'Open wallet action flow',
       registryEntry: contract,
-    };
+    });
   }
 
   /**
@@ -1752,11 +2080,17 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const contractName = this.getIndexerTemplateName(summary);
     const participants = this.indexerParticipants(summary);
     const status = this.statusFromActiveUtxoCount(summary.activeUtxos);
-    return {
+    const registryEntry = this.findRegistryEntryForDashboard({
+      covenantId: summary.covenantIdHex,
+      deployTxid: summary.genesisTxidHex,
+    });
+    return this.withDashboardName({
       id: `indexer:${summary.covenantIdHex || summary.scriptHashHex}`,
       source: 'indexer',
       contractName,
       displayName: this.getTemplateDisplayName(contractName),
+      contractTypeLabel: this.getTemplateDisplayName(contractName),
+      aliases: registryEntry?.aliases,
       status,
       amountSompi: String(summary.totalAmountSompi ?? '0'),
       currentAddress: summary.address,
@@ -1776,8 +2110,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         summary.claimVerified === false
           ? 'Template claim is not verified on-chain yet'
           : 'Open current covenant state',
+      registryEntry,
       indexerSummary: summary,
-    };
+    });
   }
 
   private latestAction(
@@ -1829,9 +2164,21 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return this.truncate(primary, 20);
   }
 
-  private localParticipants(
+  private async localParticipants(
     contract: ContractRegistryEntry,
-  ): Array<{ label: string; value: string }> {
+  ): Promise<ContractParticipant[]> {
+    const cacheKey = `${contract.id}:${contract.compiledJson}`;
+    const cached = this.localParticipantsCache.get(cacheKey);
+    if (cached) return cached;
+
+    const promise = this.buildLocalParticipants(contract);
+    this.localParticipantsCache.set(cacheKey, promise);
+    return promise;
+  }
+
+  private async buildLocalParticipants(
+    contract: ContractRegistryEntry,
+  ): Promise<ContractParticipant[]> {
     const participants = [
       {
         label: 'Owner',
@@ -1852,12 +2199,86 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         value: predecessor.deployedBy.address,
       });
     }
+    try {
+      const compiled = this.covenantService.parseCompiledContract(
+        contract.compiledJson,
+      );
+      for (const participant of await this.localTemplateParticipants(
+        compiled,
+      )) {
+        if (
+          participant.value &&
+          !participants.some(
+            (existing) =>
+              existing.label === participant.label &&
+              existing.value === participant.value,
+          )
+        ) {
+          participants.push(participant);
+        }
+      }
+    } catch {
+      // Keep the deployer fallback for older or custom saved contracts.
+    }
+    return participants;
+  }
+
+  private async localTemplateParticipants(
+    compiled: CompiledContract,
+  ): Promise<ContractParticipant[]> {
+    const template = this.templateForIndexerName(compiled.contract_name);
+    if (!template) return [];
+
+    const roleParamsByTemplate: Record<string, string[]> = {
+      'dead-mans-switch': ['owner', 'heir'],
+      'time-lock-vault': ['owner', 'recovery'],
+      'multi-sig-vault': ['key1', 'key2', 'key3'],
+      'escrow-with-arbiter': ['buyer', 'seller', 'arbiterHash'],
+    };
+    const roleParams = roleParamsByTemplate[template.id] || [];
+    const participants: ContractParticipant[] = [];
+
+    for (const paramName of roleParams) {
+      const field = template.fields.find(
+        (item) => item.paramName === paramName,
+      );
+      if (!field) continue;
+      const value =
+        field.type === 'hash32'
+          ? await this.extractTemplateParamHex(
+              compiled,
+              template.id,
+              paramName,
+              'byte[32]',
+            )
+          : await this.extractTemplateParamHex(
+              compiled,
+              template.id,
+              paramName,
+              'pubkey',
+            );
+      if (!value) continue;
+      const label = this.roleLabel(paramName);
+      const address =
+        field.type === 'hash32' ? '' : this.pubkeyToAddress(value);
+      if (address) {
+        participants.push({ label, value: address, matchValues: [value] });
+      } else {
+        participants.push({
+          label,
+          value: '',
+          matchValues: [value],
+          hidden: true,
+        });
+      }
+    }
+
     return participants;
   }
 
   private indexerParticipants(
     summary: IndexerCovenantDetails,
-  ): Array<{ label: string; value: string }> {
+  ): ContractParticipant[] {
     const source = {
       ...(summary.constructor || {}),
       ...this.argsArrayToRecord(summary.claimedArgs?.args || []),
@@ -1886,10 +2307,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           source[role] !== null &&
           source[role] !== '',
       )
-      .map((role) => ({
-        label: this.roleLabel(role),
-        value: String(source[role]),
-      }));
+      .map((role) => {
+        const rawValue = String(source[role]);
+        const display = this.getParticipantDisplayValue(role, rawValue);
+        return {
+          ...display,
+          matchValues: display.value === rawValue ? undefined : [rawValue],
+          hidden: !display.value,
+        };
+      });
   }
 
   private argsArrayToRecord(
@@ -1922,6 +2348,24 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return labels[role] || role;
   }
 
+  private getParticipantDisplayValue(
+    role: string,
+    value: string,
+    type?: string,
+  ): { label: string; value: string } {
+    const label = this.roleLabel(role);
+    const normalizedType = String(type || '').toLowerCase();
+    const isHex32 = /^[0-9a-f]{64}$/i.test(value);
+    if (!isHex32) return { label, value };
+
+    const address = normalizedType.includes('hash')
+      ? ''
+      : this.pubkeyToAddress(value);
+    if (address) return { label, value: address };
+
+    return { label, value: '' };
+  }
+
   getContractDetailParameters(
     detail: ContractDetailState,
   ): ContractDetailParameter[] {
@@ -1930,12 +2374,17 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const seen = new Set<string>();
     const addParam = (name: string, value: unknown, type?: string) => {
       if (value === undefined || value === null || value === '') return;
-      const key = name.toLowerCase();
+      const display = this.getParticipantDisplayValue(
+        name,
+        String(value),
+        type,
+      );
+      const key = display.label.toLowerCase();
       if (seen.has(key)) return;
       seen.add(key);
       params.push({
-        label: this.roleLabel(name),
-        value: String(value),
+        label: display.label,
+        value: display.value,
         type,
       });
     };
@@ -1949,20 +2398,18 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       addParam(name, value);
     }
 
-    if (params.length > 0) {
-      return params;
+    for (const participant of detail.entry.participants) {
+      if (participant.hidden) continue;
+      addParam(participant.label, participant.value);
     }
 
-    return detail.entry.participants.map((participant) => ({
-      label: participant.label,
-      value: participant.value,
-    }));
+    return params;
   }
 
   private getNextActionLabel(
     contractName: string,
     status: ContractDashboardEntry['status'],
-    participants: Array<{ label: string; value: string }>,
+    participants: ContractParticipant[],
   ): string {
     if (status !== 'active') return 'View history';
     const normalized = this.normalizeContractName(contractName);
@@ -1989,9 +2436,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * in a test deploy) — returning just the first match would silently hide
    * actions gated on a role that isn't the first one listed.
    */
-  private currentWalletRoles(
-    participants: Array<{ label: string; value: string }>,
-  ): string[] {
+  private currentWalletRoles(participants: ContractParticipant[]): string[] {
     const wallet = this.currentWallet();
     const candidates = [
       wallet?.getAddress(),
@@ -2003,15 +2448,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
     return participants
       .filter((participant) =>
-        candidates.includes(String(participant.value).toLowerCase()),
+        [participant.value, ...(participant.matchValues || [])]
+          .map((value) => String(value).toLowerCase())
+          .some((value) => candidates.includes(value)),
       )
       .map((participant) => participant.label);
   }
 
   /** Public wrapper for the detail page's "You are <role>" pill. */
-  getCurrentRoleLabel(
-    participants: Array<{ label: string; value: string }>,
-  ): string {
+  getCurrentRoleLabel(participants: ContractParticipant[]): string {
     return this.currentWalletRoles(participants).join(' / ');
   }
 
@@ -2046,7 +2491,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   private getEntryTime(entry: ContractDashboardEntry): number {
     return (
-      entry.indexerSummary?.createdAtMs || entry.registryEntry?.deployedAt || 0
+      entry.registryEntry?.deployedAt || entry.indexerSummary?.createdAtMs || 0
+    );
+  }
+
+  private sortDashboardEntries(
+    entries: ContractDashboardEntry[],
+  ): ContractDashboardEntry[] {
+    return [...entries].sort(
+      (a, b) =>
+        this.getEntryTime(b) - this.getEntryTime(a) || b.id.localeCompare(a.id),
     );
   }
 
@@ -2137,6 +2591,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         deadlineMs: resolved.covenant
           ? this.extractDeadlineMs(resolved.covenant, utxos[0]?.state)
           : entry.deadlineMs,
+        participants: this.mergeParticipants(
+          entry.participants,
+          resolved.covenant
+            ? this.indexerParticipants(resolved.covenant)
+            : undefined,
+        ),
       };
       if (!isCurrentRequest()) return;
       this.selectedDetail.set({
@@ -2684,11 +3144,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         description:
           'Both buyer and seller agree to release funds to the recipient.',
         iconClass: 'icon-send-01',
+        requiredRole: 'Buyer',
       },
       refund: {
         label: 'Refund',
         description: 'Cancel the escrow and return funds to the sender.',
         iconClass: 'icon-coins-02',
+        requiredRole: 'Buyer',
       },
       topUp: {
         label: 'Top Up',
@@ -2804,9 +3266,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     signerA: string,
     signerB: string,
   ): string | null {
+    return this.requireOneOfRoles(detail, [signerA, signerB]);
+  }
+
+  private requireOneOfRoles(
+    detail: ContractDetailState,
+    rolesToAllow: string[],
+  ): string | null {
     const roles = this.currentWalletRoles(detail.entry.participants);
-    if (!roles.includes(signerA) && !roles.includes(signerB)) {
-      return `Only ${signerA} or ${signerB} can do this.`;
+    if (!rolesToAllow.some((role) => roles.includes(role))) {
+      return `Only ${rolesToAllow.join(' or ')} can do this.`;
     }
     return null;
   }
@@ -2893,29 +3362,33 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const existing = this.registryContracts().find((entry) => {
-      if (entry.network !== this.network()) return false;
-      if (!this.isCurrentWalletRegistryEntry(entry)) return false;
-      const sameOutpoint =
-        this.sameIdentity(entry.outpoint.txid, preview.outpoint.txid) &&
-        entry.outpoint.vout === preview.outpoint.vout;
-      if (sameOutpoint) return true;
-
-      return (
-        this.sameIdentity(entry.covenantId, preview.covenantId) ||
-        this.sameIdentity(entry.deployTxid, preview.deployTxid)
-      );
+    const existing = this.findSavedRegistryEntryForIdentity({
+      covenantId: preview.covenantId,
+      deployTxid: preview.deployTxid,
+      outpoint: preview.outpoint,
     });
     if (existing) {
-      this.indexerImportError.set('This covenant is already in My Contracts.');
+      const wasVisibleToCurrentWallet =
+        this.isCurrentWalletRegistryEntry(existing);
+      await this.addCurrentWalletToRegistryContract(existing);
       this.indexerImportPreview.set(null);
+      this.indexerImportQuery = '';
+      if (wasVisibleToCurrentWallet && !options.stayOnCurrentTab) {
+        this.indexerImportError.set(
+          'This covenant is already in My Contracts.',
+        );
+      } else {
+        this.indexerImportError.set(null);
+      }
       if (!options.stayOnCurrentTab) {
         this.activeTab.set('my-contracts');
       }
+      await this.loadContracts();
       return;
     }
 
     const wallet = this.currentWallet();
+    const walletKey = this.currentWalletAliasKey();
     const compiled = this.covenantService.parseCompiledContract(
       preview.compiledJson,
     );
@@ -2939,9 +3412,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       status: 'active',
       accessRoles: this.parseAccessRoles(compiled),
       covenantId: preview.covenantId,
+      wallets: walletKey ? { [walletKey]: true } : undefined,
     };
 
     await this.registryService.addContract(entry);
+    this.allRegistryContracts.set([...this.allRegistryContracts(), entry]);
     this.registryContracts.set([...this.registryContracts(), entry]);
     this.indexerImportQuery = '';
     this.indexerImportPreview.set(null);
@@ -2975,20 +3450,28 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           label: this.roleLabel(arg.name),
           value: String(arg.value),
         }));
+    const scriptHash =
+      response.covenant?.scriptHashHex ||
+      preview.activeAction.scriptHashHex ||
+      response.action.scriptHashHex;
+    const registryEntry = this.findRegistryEntryForDashboard({
+      covenantId: preview.covenantId,
+      deployTxid: preview.deployTxid,
+      outpoint: preview.outpoint,
+    });
 
-    return {
+    return this.withDashboardName({
       id: `indexer:${preview.covenantId}`,
       source: 'indexer',
       contractName,
       displayName: this.getTemplateDisplayName(contractName),
+      contractTypeLabel: this.getTemplateDisplayName(contractName),
+      aliases: registryEntry?.aliases,
       status,
       amountSompi: preview.amountSompi,
       currentAddress: preview.contractAddress,
       covenantId: preview.covenantId,
-      scriptHash:
-        response.covenant?.scriptHashHex ||
-        preview.activeAction.scriptHashHex ||
-        response.action.scriptHashHex,
+      scriptHash,
       deployTxid: preview.deployTxid,
       latestTxid: latestAction?.txidHex || preview.deployTxid,
       latestAction:
@@ -3005,8 +3488,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       actionHint: preview.isLatestContinuation
         ? 'Open latest continuation state'
         : 'Open current covenant state',
+      registryEntry,
       indexerSummary: response.covenant,
-    };
+    });
   }
 
   private statusFromActiveUtxoCount(
@@ -3305,6 +3789,32 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return CONTRACT_TEMPLATES.find((template) => template.id === id);
   }
 
+  private async getTemplatePatchContext(
+    templateId: string,
+  ): Promise<{ compiled: CompiledContract; descriptor: TemplatePatch }> {
+    const cached = this.templatePatchContextCache.get(templateId);
+    if (cached) return cached;
+
+    const promise = (async () => {
+      const template = this.templateById(templateId);
+      if (!template) {
+        throw new Error(`Unknown covenant template "${templateId}".`);
+      }
+      const compiled = (await firstValueFrom(
+        this.http.get<any>(template.assetPath),
+      )) as CompiledContract;
+      return {
+        compiled,
+        descriptor: this.templatePatcher.extractPatchDescriptor(
+          compiled,
+          template.placeholderArgs,
+        ),
+      };
+    })();
+    this.templatePatchContextCache.set(templateId, promise);
+    return promise;
+  }
+
   private normalizeTemplateName(value: string): string {
     return String(value ?? '')
       .toLowerCase()
@@ -3369,12 +3879,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const newArgs = template.fields.map((field) =>
       this.fieldToCtorArg(field, fieldValues[field.paramName]),
     );
-    const compiled = await firstValueFrom(
-      this.http.get<any>(template.assetPath),
-    );
-    const descriptor = this.templatePatcher.extractPatchDescriptor(
-      compiled,
-      template.placeholderArgs,
+    const { compiled, descriptor } = await this.getTemplatePatchContext(
+      template.id,
     );
     return this.templatePatcher.applyPatch(
       compiled,
@@ -3388,17 +3894,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     templateId: string,
     paramName: string,
   ): Promise<bigint | undefined> {
-    const template = this.templateById(templateId);
-    if (!template) return undefined;
-
     try {
-      const baseCompiled = await firstValueFrom(
-        this.http.get<any>(template.assetPath),
-      );
-      const descriptor = this.templatePatcher.extractPatchDescriptor(
-        baseCompiled,
-        template.placeholderArgs,
-      );
+      const { descriptor } = await this.getTemplatePatchContext(templateId);
       const param = descriptor.params.find((entry) => entry.name === paramName);
       const position = param?.positions[0];
       if (!param || param.paramType !== 'int_field' || !position) {
@@ -3424,20 +3921,25 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     templateId: string,
     paramName: string,
   ): Promise<string | undefined> {
-    const template = this.templateById(templateId);
-    if (!template) return undefined;
+    return this.extractTemplateParamHex(
+      compiled,
+      templateId,
+      paramName,
+      'pubkey',
+    );
+  }
 
+  private async extractTemplateParamHex(
+    compiled: CompiledContract,
+    templateId: string,
+    paramName: string,
+    paramType: TemplatePatch['params'][number]['paramType'],
+  ): Promise<string | undefined> {
     try {
-      const baseCompiled = await firstValueFrom(
-        this.http.get<any>(template.assetPath),
-      );
-      const descriptor = this.templatePatcher.extractPatchDescriptor(
-        baseCompiled,
-        template.placeholderArgs,
-      );
+      const { descriptor } = await this.getTemplatePatchContext(templateId);
       const param = descriptor.params.find((entry) => entry.name === paramName);
       const position = param?.positions[0];
-      if (!param || param.paramType !== 'pubkey' || !position) {
+      if (!param || param.paramType !== paramType || !position) {
         return undefined;
       }
 
@@ -3589,6 +4091,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       }
 
       const result = actionResult.result as CovenantDeployActionResult;
+      const walletKey = this.currentWalletAliasKey();
 
       // Save to registry
       const entry: ContractRegistryEntry = {
@@ -3609,6 +4112,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         status: 'active',
         accessRoles: this.parseAccessRoles(compiled),
         covenantId: result.covenantId,
+        wallets: walletKey ? { [walletKey]: true } : undefined,
       };
 
       this.deployResult.set({
@@ -3619,7 +4123,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
       try {
         await this.registryService.addContract(entry);
+        this.allRegistryContracts.set([...this.allRegistryContracts(), entry]);
         this.registryContracts.set([...this.registryContracts(), entry]);
+        await this.saveInitialContractAlias(entry);
         void this.trackDeployIndexing(result.txid, entry.id, result.covenantId);
       } catch (e) {
         console.error(
@@ -3641,6 +4147,21 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     } finally {
       this.isDeploying.set(false);
     }
+  }
+
+  private async saveInitialContractAlias(entry: ContractRegistryEntry) {
+    const alias = this.deployContractNickname.trim();
+    const walletKey = this.currentWalletAliasKey();
+    if (!alias || !walletKey) return;
+
+    await this.updateRegistryContract(entry.id, {
+      aliases: {
+        ...(entry.aliases || {}),
+        [walletKey]: alias,
+      },
+    });
+    this.deployContractNickname = '';
+    this.refreshDashboardNames();
   }
 
   private async trackDeployIndexing(
@@ -4609,12 +5130,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       throw new Error("Dead Man's Switch template is unavailable");
     }
 
-    const compiled = await firstValueFrom(
-      this.http.get<any>(template.assetPath),
-    );
-    const descriptor = this.templatePatcher.extractPatchDescriptor(
-      compiled,
-      template.placeholderArgs,
+    const { compiled, descriptor } = await this.getTemplatePatchContext(
+      template.id,
     );
     return this.templatePatcher.applyPatch(compiled, descriptor, [
       this.bytesArg(
@@ -4989,7 +5506,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   shareableContractOptions = computed<DropdownOption[]>(() =>
     this.shareableContracts().map((contract) => ({
       value: contract.id,
-      label: `${contract.displayName} - ${contract.covenantId}`,
+      label: `${contract.displayName} - ${contract.contractTypeLabel} - ${contract.covenantId}`,
     })),
   );
 
@@ -5766,8 +6283,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       return new PublicKey(pkHex)
         .toAddress(this.rpcService.getNetwork())
         .toString();
-    } catch (e) {
-      console.warn('[Contracts] pubkeyToAddress failed for', pkHex, e);
+    } catch {
       return '';
     }
   }

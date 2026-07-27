@@ -21,6 +21,10 @@ export interface SavedContractRegistryEntry {
     description: string; // human readable like "Owner can spend"
   }>;
   covenantId?: string;
+  /** Wallet+account IDs that should see this contract, keyed by AppWallet.getIdWithAccount(). */
+  wallets?: Record<string, boolean>;
+  /** Per wallet+account nickname map, keyed by AppWallet.getIdWithAccount(). */
+  aliases?: Record<string, string>;
   /** ID of the registry entry that this contract continues (keepAlive chain) */
   predecessorId?: string;
 }

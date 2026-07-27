@@ -782,6 +782,26 @@ $tpl-accents: (
   font-size: 13px;
   word-break: break-word;
 }
+
+.banner.info {
+  border: 1px solid rgba(111, 199, 186, 0.35);
+  background: rgba(111, 199, 186, 0.08);
+
+  svg {
+    color: var(--kaspa-20);
+    animation: indexer-sync-spin 1.1s linear infinite;
+  }
+
+  .banner-title {
+    color: var(--kaspa-20);
+  }
+}
+
+@keyframes indexer-sync-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 // .result-panel, .state-block, .skeleton-grid/.skeleton-card (+ kc-pulse
 // keyframes) and .advanced-section base styles now live in
 // src/styles/shared-ui.scss.

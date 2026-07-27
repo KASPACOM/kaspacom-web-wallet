@@ -379,6 +379,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return this.sortDashboardEntries(list);
   });
   dashboardLoading = signal(false);
+  indexerLoading = signal(false);
   dashboardError = signal<string | null>(null);
   selectedDetail = signal<ContractDetailState | null>(null);
   selectedDetailLoading = signal(false);
@@ -1451,41 +1452,50 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     );
     this.dashboardLoading.set(false);
 
+    const indexerEntriesPromise = this.loadIndexerDashboardEntries();
+    this.indexerLoading.set(true);
+
     // Check on-chain status for each contract. Skipped during action-indexing
     // polling (trackActionIndexing()): the acted-on contract's status/amount
     // is already applied optimistically to the local registry by the action
     // itself, so repeating an RPC UTXO lookup across every local contract on
     // each poll tick is redundant traffic, not new information.
-    if (!options.skipOnChainStatusRefresh) {
-      await this.refreshContractStatuses(filtered);
-      if (!isCurrentRequest()) return;
+    const localRefreshPromise = options.skipOnChainStatusRefresh
+      ? Promise.resolve(localDashboardEntries)
+      : (async () => {
+          await this.refreshContractStatuses(filtered);
+          if (!isCurrentRequest()) return localDashboardEntries;
 
-      const updatedAllContracts = await this.registryService.getAllContracts();
-      if (!isCurrentRequest()) return;
+          const updatedAllContracts =
+            await this.registryService.getAllContracts();
+          if (!isCurrentRequest()) return localDashboardEntries;
 
-      this.allRegistryContracts.set(updatedAllContracts);
-      const updatedLocal =
-        await this.getCurrentWalletLocalContracts(updatedAllContracts);
-      if (!isCurrentRequest()) return;
+          this.allRegistryContracts.set(updatedAllContracts);
+          const updatedLocal =
+            await this.getCurrentWalletLocalContracts(updatedAllContracts);
+          if (!isCurrentRequest()) return localDashboardEntries;
 
-      this.registryContracts.set(updatedLocal);
-      localDashboardEntries = await Promise.all(
-        updatedLocal.map((entry) => this.localEntryToDashboard(entry)),
-      );
-      if (!isCurrentRequest()) return;
+          this.registryContracts.set(updatedLocal);
+          const refreshedLocalDashboardEntries = await Promise.all(
+            updatedLocal.map((entry) => this.localEntryToDashboard(entry)),
+          );
+          if (!isCurrentRequest()) return localDashboardEntries;
 
-      this.dashboardContracts.set(
-        this.sortDashboardEntries(localDashboardEntries),
-      );
-    }
+          this.dashboardContracts.set(
+            this.sortDashboardEntries(refreshedLocalDashboardEntries),
+          );
+          return refreshedLocalDashboardEntries;
+        })();
 
     try {
       // Indexer-backed tracking is the source of truth for contracts involving
       // the wallet. Local registry entries are merged below so older local-only
       // deployments still remain visible while the indexer catches up.
-      const indexerEntries = await this.loadIndexerDashboardEntries();
+      const [indexerEntries, refreshedLocalDashboardEntries] =
+        await Promise.all([indexerEntriesPromise, localRefreshPromise]);
       if (!isCurrentRequest()) return;
 
+      localDashboardEntries = refreshedLocalDashboardEntries;
       this.dashboardContracts.set(
         this.mergeDashboardEntries(indexerEntries, localDashboardEntries),
       );
@@ -1499,6 +1509,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.dashboardContracts.set(
         this.sortDashboardEntries(localDashboardEntries),
       );
+    } finally {
+      if (isCurrentRequest()) {
+        this.indexerLoading.set(false);
+      }
     }
 
     if (!isCurrentRequest()) return;
@@ -1541,29 +1555,53 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       addressMap.set(c.contractAddress, list);
     }
 
-    for (const [address, entries] of addressMap) {
-      try {
-        const utxoResponse = await rpc.getUtxosByAddresses([address]);
-        const utxos = utxoResponse.entries || [];
+    const statusUpdates = (
+      await Promise.all(
+        Array.from(addressMap.entries()).map(async ([address, entries]) => {
+          const updates: Array<{
+            id: string;
+            changes: Partial<ContractRegistryEntry>;
+          }> = [];
 
-        for (const entry of entries) {
-          const found = utxos.find(
-            (u: any) =>
-              u.outpoint?.transactionId === entry.outpoint.txid &&
-              Number(u.outpoint?.index ?? -1) === entry.outpoint.vout,
-          );
+          try {
+            const utxoResponse = await rpc.getUtxosByAddresses([address]);
+            const utxos = utxoResponse.entries || [];
 
-          const newStatus: ContractStatus = found ? 'active' : 'spent';
-          if (entry.status !== newStatus) {
-            await this.updateRegistryContract(entry.id, {
-              status: newStatus,
-              lastChecked: Date.now(),
-              amountSompi: found ? found.amount.toString() : entry.amountSompi,
-            });
+            for (const entry of entries) {
+              const found = utxos.find(
+                (u: any) =>
+                  u.outpoint?.transactionId === entry.outpoint.txid &&
+                  Number(u.outpoint?.index ?? -1) === entry.outpoint.vout,
+              );
+
+              const newStatus: ContractStatus = found ? 'active' : 'spent';
+              if (entry.status !== newStatus) {
+                updates.push({
+                  id: entry.id,
+                  changes: {
+                    status: newStatus,
+                    lastChecked: Date.now(),
+                    amountSompi: found
+                      ? found.amount.toString()
+                      : entry.amountSompi,
+                  },
+                });
+              }
+            }
+          } catch (err) {
+            console.warn('[Contracts] Status check failed for', address, err);
           }
-        }
+
+          return updates;
+        }),
+      )
+    ).flat();
+
+    for (const { id, changes } of statusUpdates) {
+      try {
+        await this.updateRegistryContract(id, changes);
       } catch (err) {
-        console.warn('[Contracts] Status check failed for', address, err);
+        console.warn('[Contracts] Status update failed for', id, err);
       }
     }
 
@@ -1764,7 +1802,26 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return contract.registryEntry?.id || contract.id;
   }
 
+  canEditContractAlias(contract: ContractDashboardEntry): boolean {
+    return !!contract.registryEntry;
+  }
+
+  getAliasUnavailableMessage(): string {
+    return 'Import this contract before adding a nickname.';
+  }
+
+  private showAliasUnavailableNotice(contract: ContractDashboardEntry) {
+    this.aliasNotice.set({
+      key: this.getAliasEditKey(contract),
+      message: this.getAliasUnavailableMessage(),
+    });
+  }
+
   beginAliasEdit(contract: ContractDashboardEntry) {
+    if (!this.canEditContractAlias(contract)) {
+      this.showAliasUnavailableNotice(contract);
+      return;
+    }
     this.editingAliasKey.set(this.getAliasEditKey(contract));
     this.aliasNotice.set(null);
     const currentWalletKey = this.currentWalletAliasKey();
@@ -1788,7 +1845,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   async saveAlias(contract: ContractDashboardEntry) {
     const walletKey = this.currentWalletAliasKey();
     const registryEntry = contract.registryEntry;
-    if (!walletKey || !registryEntry) return;
+    if (!registryEntry) {
+      this.showAliasUnavailableNotice(contract);
+      this.editingAliasKey.set(null);
+      return;
+    }
+    if (!walletKey) return;
 
     const alias = this.aliasDraft.trim();
     const aliases = { ...(registryEntry.aliases || {}) };
@@ -1806,7 +1868,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   async removeAlias(contract: ContractDashboardEntry) {
     const walletKey = this.currentWalletAliasKey();
     const registryEntry = contract.registryEntry;
-    if (!walletKey || !registryEntry) return;
+    if (!registryEntry) {
+      this.showAliasUnavailableNotice(contract);
+      return;
+    }
+    if (!walletKey) return;
 
     const ownerKey = this.getContractAliasOwnerKey(contract);
     if (ownerKey && ownerKey !== walletKey) {

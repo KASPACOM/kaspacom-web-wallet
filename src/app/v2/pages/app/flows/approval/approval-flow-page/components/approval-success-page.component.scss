@@ -170,6 +170,22 @@
   color: var(--text-secondary, #a0a0a0);
 }
 
+.skip-confirmation-link {
+  display: block;
+  margin: 12px auto 0;
+  padding: 4px;
+  background: none;
+  border: none;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #a0a0a0);
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text-primary, #ffffff);
+  }
+}
+
 // Animations
 @keyframes fadeInUp {
   from {

@@ -98,6 +98,11 @@ import { WalletActionService } from '../../../../../../../services/wallet-action
           (buttonClick)="onDone()"
           class="done-button"
         />
+        @if (isAwaitingConfirmation()) {
+          <button type="button" class="skip-confirmation-link" (click)="onDone()">
+            Skip waiting
+          </button>
+        }
       </div>
     </div>
   `,

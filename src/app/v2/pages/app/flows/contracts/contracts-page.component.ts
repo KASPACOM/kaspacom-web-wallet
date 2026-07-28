@@ -468,11 +468,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   interactOutputAddress = '';
   interactResolvedOutputAddress: string | null = null;
 
-  // Set in ngOnDestroy() so trackActionIndexing()'s poll loop can bail out
-  // instead of updating signals/services and scheduling more RPC/indexer
-  // traffic after the component is gone.
-  private destroyed = false;
-
   // Lookup form
   lookupContractJson = '';
   interactOutputAmount = '';
@@ -696,7 +691,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.destroyed = true;
     this.wideWorkspaceService.deactivate();
     this.routeSubscription?.unsubscribe();
   }
@@ -3731,20 +3725,20 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     let seenSettled = false;
 
     for (let attempt = 1; attempt <= 8; attempt++) {
-      if (this.destroyed) return;
+      if (this.bailIfLeftContractsFlow()) return;
       try {
         if (!seenSettled) {
           const status =
             await this.covenantIndexerService.getTransactionSettlementStatus(
               txid,
             );
-          if (this.destroyed) return;
+          if (this.bailIfLeftContractsFlow()) return;
           seenSettled = status.indexed;
         }
 
         if (seenSettled) {
           await this.loadContracts({ skipOnChainStatusRefresh: true });
-          if (this.destroyed) return;
+          if (this.bailIfLeftContractsFlow()) return;
           if (this.dashboardCaughtUpWithLocal(registryEntryId)) {
             this.setActionIndexerState({
               txid,
@@ -3778,7 +3772,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       }
 
       await this.delay(2500);
-      if (this.destroyed) return;
+      if (this.bailIfLeftContractsFlow()) return;
     }
 
     this.setActionIndexerState({
@@ -3787,6 +3781,33 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       message:
         'Broadcast, but My Contracts may not reflect this change yet. Refresh in a moment.',
     });
+  }
+
+  /**
+   * The flow-page outlet actually destroys ContractsPageComponent the
+   * instant the approval success screen is layered on top of it (see
+   * isContractsWide's comment in app-wrapper.component.ts) — it does NOT
+   * stay mounted behind the overlay. Bailing on that destruction, as this
+   * used to do via a component-local `destroyed` flag, made trackActionIndexing()
+   * abandon the poll (and flush pendingConfirmation to 'unavailable')
+   * immediately after every covenant action, before the indexer had any
+   * chance to catch up — the success page's "Done" button was effectively
+   * always enabled and the "Skip waiting" link never appeared.
+   *
+   * 'contracts' stays in the flow-page stack while merely covered by the
+   * overlay (isPageInStack() is true), so use that instead to tell "covered
+   * but coming back" apart from "actually left" (e.g. navigated fully away
+   * via backToContractsList()) — only the latter should flush a terminal
+   * state so pendingConfirmation doesn't get stuck at 'checking' forever.
+   */
+  private bailIfLeftContractsFlow(): boolean {
+    if (this.flowPagesService.isPageInStack('contracts')) return false;
+    this.approvalFlowService.setPendingConfirmation({
+      status: 'unavailable',
+      message:
+        'Left the contracts page before indexing finished. The transaction was still broadcast.',
+    });
+    return true;
   }
 
   /**
@@ -5657,7 +5678,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           json,
         },
       })
-      .closed.subscribe(() => this.backToContractsList());
+      .closed.subscribe(() => {
+        // The transient state saved before opening this dialog has done its
+        // job (surfacing the partial JSON) — clear it before navigating back.
+        // For a contract opened via a direct link, backToContractsList()
+        // below does a full route navigation that destroys and recreates
+        // this component; left uncleared, the recreated instance's
+        // restoreTransientState() would restore the old detail/action-form
+        // view instead of the "My Contracts" list it's resetting to, and
+        // that view has no selectedDetail loaded — leaving the user stuck on
+        // a blank page instead of the list.
+        this.flowPagesService.saveTransientState('contracts', undefined);
+        this.backToContractsList();
+      });
   }
 
   /**

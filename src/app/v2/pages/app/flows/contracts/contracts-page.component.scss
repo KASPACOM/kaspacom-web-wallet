@@ -211,6 +211,78 @@ $tpl-accents: (
   color: var(--gray-60);
 }
 
+.alias-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.alias-link,
+.alias-btn {
+  border: 0;
+  background: transparent;
+  color: var(--kaspa-20);
+  font: inherit;
+  font-size: 12px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.alias-link.muted,
+.alias-btn.ghost {
+  color: var(--gray-60);
+}
+
+.alias-editor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.detail-alias-editor {
+  margin-top: 0;
+}
+
+.alias-notice {
+  margin-top: 6px;
+  color: var(--warning-50, #f8c96a);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.action-contract-name {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border: 1px solid var(--border-secondary);
+  border-radius: 10px;
+  background: var(--gray-10);
+}
+
+.alias-input {
+  min-width: 180px;
+  max-width: 100%;
+  height: 32px;
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+  background: var(--gray-15);
+  color: var(--white);
+  padding: 0 10px;
+  font-size: 13px;
+  outline: none;
+
+  &:focus {
+    border-color: var(--kaspa-20);
+  }
+}
+
 .card-stats {
   display: flex;
   gap: 20px;
@@ -709,6 +781,26 @@ $tpl-accents: (
   padding: 12px;
   font-size: 13px;
   word-break: break-word;
+}
+
+.banner.info {
+  border: 1px solid rgba(111, 199, 186, 0.35);
+  background: rgba(111, 199, 186, 0.08);
+
+  svg {
+    color: var(--kaspa-20);
+    animation: indexer-sync-spin 1.1s linear infinite;
+  }
+
+  .banner-title {
+    color: var(--kaspa-20);
+  }
+}
+
+@keyframes indexer-sync-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 // .result-panel, .state-block, .skeleton-grid/.skeleton-card (+ kc-pulse
 // keyframes) and .advanced-section base styles now live in

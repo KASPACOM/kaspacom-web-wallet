@@ -2,22 +2,31 @@ import { Injectable } from '@angular/core';
 import Dexie, { Table } from 'dexie';
 import { L2TransactionHistory } from './dtos/l2-transaction-history';
 import { SavedERC20Token } from './dtos/saved-erc20-token';
+import { SavedContractRegistryEntry } from './dtos/contract-registry-entry';
 
 @Injectable({
-    providedIn: 'root',
+  providedIn: 'root',
 })
-
 export class WalletDB extends Dexie {
-    transactionHistory!: Table<L2TransactionHistory, number>; // string = primary key type
-    erc20Tokens!: Table<SavedERC20Token, [string, string]>;
+  transactionHistory!: Table<L2TransactionHistory, number>; // string = primary key type
+  erc20Tokens!: Table<SavedERC20Token, [string, string]>;
+  contractRegistry!: Table<SavedContractRegistryEntry, string>;
 
-    constructor() {
-        super('wallet-db'); // Database name
-        this.version(1).stores({
-            transactionHistory: '++id, hash, transactionRequest, receiptInfo, timestamp, [chainId+walletId]', // id = primary key, hash = index
-            erc20Tokens: '[address+chainId], chainId, name, symbol, decimals',
-        });
-    }
+  constructor() {
+    super('wallet-db'); // Database name
+    this.version(1).stores({
+      transactionHistory:
+        '++id, hash, transactionRequest, receiptInfo, timestamp, [chainId+walletId]', // id = primary key, hash = index
+      erc20Tokens: '[address+chainId], chainId, name, symbol, decimals',
+    });
+    this.version(2).stores({
+      transactionHistory:
+        '++id, hash, transactionRequest, receiptInfo, timestamp, [chainId+walletId]',
+      erc20Tokens: '[address+chainId], chainId, name, symbol, decimals',
+      contractRegistry:
+        'id, network, deployTxid, covenantId, [network+covenantId], [network+deployTxid]',
+    });
+  }
 }
 
 export const db = new WalletDB();

@@ -351,11 +351,10 @@
                   }
                   @if (field.type === "hash32") {
                     <div class="flex column gap-4">
+                      <label class="field-label">{{ field.label }}</label>
                       <kc-input
-                        [label]="field.label"
-                        [placeholder]="
-                          'Paste address, public key, or 32-byte hash'
-                        "
+                        [label]="''"
+                        [placeholder]="'Paste address, public key, or 32-byte hash'"
                         [type]="'text'"
                         [isValid]="isTemplateFieldValid(field)"
                         [isDisabled]="isDeploying()"
@@ -508,6 +507,22 @@
               </div>
             }
           }
+
+          <!-- Amount -->
+          <div class="field">
+            <label class="field-label">Contract nickname (optional)</label>
+            <kc-input
+              [label]="''"
+              [placeholder]="'Example: Family inheritance vault'"
+              [type]="'text'"
+              [isDisabled]="isDeploying()"
+              [ngModel]="deployContractNickname"
+              (valueChange)="onDeployContractNicknameChange($event)"
+            ></kc-input>
+            <span class="field-help"
+              >Shown anywhere you select or review this contract.</span
+            >
+          </div>
 
           <!-- Amount -->
           <div class="field">
@@ -807,13 +822,42 @@
             </div>
             <div class="filter-spacer"></div>
             <kc-button
-              [text]="dashboardLoading() ? 'Refreshing...' : 'Refresh'"
-              [isDisabled]="dashboardLoading()"
+              [text]="
+                dashboardLoading()
+                  ? 'Refreshing...'
+                  : indexerLoading()
+                    ? 'Syncing...'
+                    : 'Refresh'
+              "
+              [isDisabled]="dashboardLoading() || indexerLoading()"
               (buttonClick)="loadContracts()"
             ></kc-button>
           </div>
 
           <!-- Indexer unavailable / error banners -->
+          @if (indexerLoading() && !dashboardLoading()) {
+            <div class="banner info">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+                <path d="M21 3v6h-6" />
+              </svg>
+              <div class="banner-body">
+                <div class="banner-title">Syncing indexer contracts</div>
+                Local contracts are shown now. Contracts found only by the
+                indexer will appear when this sync finishes.
+              </div>
+            </div>
+          }
+
           @if (dashboardError()) {
             <div class="banner warn">
               <svg
@@ -862,7 +906,9 @@
 
           <!-- Empty -->
           @if (
-            !dashboardLoading() && filteredDashboardContracts().length === 0
+            !dashboardLoading() &&
+            !indexerLoading() &&
+            filteredDashboardContracts().length === 0
           ) {
             <div class="state-block">
               <span class="sb-icon"
@@ -985,9 +1031,70 @@
                     </span>
                     <div class="card-title-wrap">
                       <h3 class="card-title">{{ contract.displayName }}</h3>
-                      <span class="card-sub">{{
-                        getSourceLabel(contract)
-                      }}</span>
+                      <span class="card-sub"
+                        >{{ contract.contractTypeLabel }} -
+                        {{ getSourceLabel(contract) }}</span
+                      >
+                      @if (canEditContractAlias(contract)) {
+                        @if (editingAliasKey() === getAliasEditKey(contract)) {
+                          <div class="alias-editor">
+                            <input
+                              class="alias-input"
+                              type="text"
+                              placeholder="Contract nickname"
+                              [(ngModel)]="aliasDraft"
+                            />
+                            <button
+                              class="alias-btn"
+                              type="button"
+                              (click)="saveAlias(contract)"
+                            >
+                              Save
+                            </button>
+                            <button
+                              class="alias-btn ghost"
+                              type="button"
+                              (click)="cancelAliasEdit()"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        } @else {
+                          <div class="alias-actions">
+                            <button
+                              class="alias-link"
+                              type="button"
+                              (click)="beginAliasEdit(contract)"
+                            >
+                              {{
+                                contract.aliasName
+                                  ? "Edit nickname"
+                                  : "Add nickname"
+                              }}
+                            </button>
+                            @if (contract.aliasName) {
+                              <button
+                                class="alias-link muted"
+                                type="button"
+                                (click)="removeAlias(contract)"
+                              >
+                                Remove nickname
+                              </button>
+                            }
+                          </div>
+                          @if (
+                            aliasNotice()?.key === getAliasEditKey(contract)
+                          ) {
+                            <div class="alias-notice">
+                              {{ aliasNotice()!.message }}
+                            </div>
+                          }
+                        }
+                      } @else {
+                        <div class="alias-notice">
+                          {{ getAliasUnavailableMessage() }}
+                        </div>
+                      }
                     </div>
                     @if (contract.status === "spent") {
                       <span class="status-badge spent">Spent</span>
@@ -1275,9 +1382,74 @@
                     }}</span>
                   </div>
                   <p class="detail-blurb">
+                    {{ selectedDetail()!.entry.contractTypeLabel }} contract.
                     Current state from covenant detail, active UTXOs, and action
                     timeline.
                   </p>
+                  @if (canEditContractAlias(selectedDetail()!.entry)) {
+                    @if (
+                      editingAliasKey() ===
+                      getAliasEditKey(selectedDetail()!.entry)
+                    ) {
+                      <div class="alias-editor detail-alias-editor">
+                        <input
+                          class="alias-input"
+                          type="text"
+                          placeholder="Contract nickname"
+                          [(ngModel)]="aliasDraft"
+                        />
+                        <button
+                          class="alias-btn"
+                          type="button"
+                          (click)="saveAlias(selectedDetail()!.entry)"
+                        >
+                          Save
+                        </button>
+                        <button
+                          class="alias-btn ghost"
+                          type="button"
+                          (click)="cancelAliasEdit()"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    } @else {
+                      <div class="alias-actions">
+                        <button
+                          class="alias-link"
+                          type="button"
+                          (click)="beginAliasEdit(selectedDetail()!.entry)"
+                        >
+                          {{
+                            selectedDetail()!.entry.aliasName
+                              ? "Edit nickname"
+                              : "Add nickname"
+                          }}
+                        </button>
+                        @if (selectedDetail()!.entry.aliasName) {
+                          <button
+                            class="alias-link muted"
+                            type="button"
+                            (click)="removeAlias(selectedDetail()!.entry)"
+                          >
+                            Remove nickname
+                          </button>
+                        }
+                      </div>
+                      @if (
+                        aliasNotice()?.key ===
+                        getAliasEditKey(selectedDetail()!.entry)
+                      ) {
+                        <div class="alias-notice">
+                          {{ aliasNotice()!.message }}
+                        </div>
+                      }
+                    }
+                  } @else {
+                    <div class="alias-notice">
+                      {{ getAliasUnavailableMessage() }}
+                    </div>
+                  }
                 </div>
                 <div class="detail-title-actions">
                   @if (selectedDetail()!.entry.covenantId) {
@@ -2050,6 +2222,79 @@
           ← Back to actions
         </button>
 
+        <div class="action-contract-name">
+          <div class="flex column gap-2">
+            <span class="text-white typo-text-1 fw-bold">{{
+              selectedDetail()!.entry.displayName
+            }}</span>
+            <span class="text-gray-60 typo-text-2">{{
+              selectedDetail()!.entry.contractTypeLabel
+            }}</span>
+          </div>
+          @if (canEditContractAlias(selectedDetail()!.entry)) {
+            @if (
+              editingAliasKey() === getAliasEditKey(selectedDetail()!.entry)
+            ) {
+              <div class="alias-editor detail-alias-editor">
+                <input
+                  class="alias-input"
+                  type="text"
+                  placeholder="Contract nickname"
+                  [(ngModel)]="aliasDraft"
+                />
+                <button
+                  class="alias-btn"
+                  type="button"
+                  (click)="saveAlias(selectedDetail()!.entry)"
+                >
+                  Save
+                </button>
+                <button
+                  class="alias-btn ghost"
+                  type="button"
+                  (click)="cancelAliasEdit()"
+                >
+                  Cancel
+                </button>
+              </div>
+            } @else {
+              <div class="alias-actions">
+                <button
+                  class="alias-link"
+                  type="button"
+                  (click)="beginAliasEdit(selectedDetail()!.entry)"
+                >
+                  {{
+                    selectedDetail()!.entry.aliasName
+                      ? "Edit nickname"
+                      : "Add nickname"
+                  }}
+                </button>
+                @if (selectedDetail()!.entry.aliasName) {
+                  <button
+                    class="alias-link muted"
+                    type="button"
+                    (click)="removeAlias(selectedDetail()!.entry)"
+                  >
+                    Remove nickname
+                  </button>
+                }
+              </div>
+              @if (
+                aliasNotice()?.key === getAliasEditKey(selectedDetail()!.entry)
+              ) {
+                <div class="alias-notice">
+                  {{ aliasNotice()!.message }}
+                </div>
+              }
+            }
+          } @else {
+            <div class="alias-notice">
+              {{ getAliasUnavailableMessage() }}
+            </div>
+          }
+        </div>
+
         @if (parsedInteractContract()) {
           <div class="contract-summary p-16 flex column gap-12">
             <h3 class="text-white typo-text-1 fw-bold interact-contract-title">
@@ -2392,6 +2637,80 @@
           >
             ← Back to actions
           </button>
+
+          <div class="action-contract-name">
+            <div class="flex column gap-2">
+              <span class="text-white typo-text-1 fw-bold">{{
+                selectedDetail()!.entry.displayName
+              }}</span>
+              <span class="text-gray-60 typo-text-2">{{
+                selectedDetail()!.entry.contractTypeLabel
+              }}</span>
+            </div>
+            @if (canEditContractAlias(selectedDetail()!.entry)) {
+              @if (
+                editingAliasKey() === getAliasEditKey(selectedDetail()!.entry)
+              ) {
+                <div class="alias-editor detail-alias-editor">
+                  <input
+                    class="alias-input"
+                    type="text"
+                    placeholder="Contract nickname"
+                    [(ngModel)]="aliasDraft"
+                  />
+                  <button
+                    class="alias-btn"
+                    type="button"
+                    (click)="saveAlias(selectedDetail()!.entry)"
+                  >
+                    Save
+                  </button>
+                  <button
+                    class="alias-btn ghost"
+                    type="button"
+                    (click)="cancelAliasEdit()"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              } @else {
+                <div class="alias-actions">
+                  <button
+                    class="alias-link"
+                    type="button"
+                    (click)="beginAliasEdit(selectedDetail()!.entry)"
+                  >
+                    {{
+                      selectedDetail()!.entry.aliasName
+                        ? "Edit nickname"
+                        : "Add nickname"
+                    }}
+                  </button>
+                  @if (selectedDetail()!.entry.aliasName) {
+                    <button
+                      class="alias-link muted"
+                      type="button"
+                      (click)="removeAlias(selectedDetail()!.entry)"
+                    >
+                      Remove nickname
+                    </button>
+                  }
+                </div>
+                @if (
+                  aliasNotice()?.key ===
+                  getAliasEditKey(selectedDetail()!.entry)
+                ) {
+                  <div class="alias-notice">
+                    {{ aliasNotice()!.message }}
+                  </div>
+                }
+              }
+            } @else {
+              <div class="alias-notice">
+                {{ getAliasUnavailableMessage() }}
+              </div>
+            }
+          </div>
         }
         @if (activeTab() === "interact") {
           <div class="form-group flex column gap-8">

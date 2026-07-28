@@ -5178,7 +5178,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   /**
    * Whether this contract has *any* multi-sig entrypoint — gates the
-   * "Complete co-signer transaction" section, which is only relevant for
+   * "Received a partial transaction from a co-signer?" section, which is only relevant for
    * contracts that can produce a partial spend in the first place (e.g. a
    * plain Dead Man's Switch or single-sig Escrow release has nothing for a
    * co-signer to complete).

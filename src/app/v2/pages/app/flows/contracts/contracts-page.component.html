@@ -2194,13 +2194,16 @@
           }
 
           @if (isMultiSigFunction(selectedFunction)) {
-            <details class="advanced-section">
-              <summary>Complete co-signer transaction</summary>
+            <details class="advanced-section cosigner-complete-section">
+              <summary
+                >Have a co-signer's partial transaction JSON? Click here to
+                complete it</summary
+              >
               <div class="adv-body">
                 <span class="text-gray-75 typo-text-2"
-                  >Paste the partial spend JSON received from the co-signer, or
-                  import it from a file. Your signature will be added and the
-                  transaction broadcast.</span
+                  >Paste the partial spend JSON received from the co-signer,
+                  or import it from a file. Your signature will be added and
+                  the transaction broadcast.</span
                 >
                 <textarea
                   class="contract-input"
@@ -2749,13 +2752,16 @@
         }
 
         @if (parsedInteractContract() && contractHasMultiSigFunction()) {
-          <details class="advanced-section">
-            <summary>Complete co-signer transaction</summary>
+          <details class="advanced-section cosigner-complete-section">
+            <summary
+              >Have a co-signer's partial transaction JSON? Click here to
+              complete it</summary
+            >
             <div class="adv-body">
               <span class="text-gray-75 typo-text-2"
-                >Paste the partial spend JSON received from the co-signer, or
-                import it from a file. Your signature will be added and the
-                transaction broadcast.</span
+                >Paste the partial spend JSON received from the co-signer,
+                or import it from a file. Your signature will be added and
+                the transaction broadcast.</span
               >
               <textarea
                 class="contract-input"

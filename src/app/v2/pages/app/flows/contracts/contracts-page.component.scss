@@ -714,6 +714,32 @@ $tpl-accents: (
 // keyframes) and .advanced-section base styles now live in
 // src/styles/shared-ui.scss.
 
+// Overrides .advanced-section's neutral, low-attention look for the
+// co-signer completion drawer: this is a primary action for anyone holding
+// a partial spend JSON, not a "power user" option, so it needs to read as a
+// call-to-action at a glance. Uses the same teal/kaspa accent as
+// .contract-summary (the panel's own info box) rather than yellow — the
+// page already has several yellow warning banners nearby (two-phase signing
+// notice, fee warning), so another yellow box here just adds to that noise
+// instead of standing out.
+.cosigner-complete-section {
+  border-color: var(--kaspa-20);
+  background: rgba(111, 199, 186, 0.08);
+  summary {
+    padding: 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--kaspa-20);
+    &:hover {
+      color: var(--kaspa-20);
+      opacity: 0.85;
+    }
+  }
+  &[open] summary {
+    border-bottom-color: var(--kaspa-20);
+  }
+}
+
 // .contract-input/.form-input base styles now live in
 // src/styles/shared-ui.scss; only the textarea-specific sizing stays local.
 .contract-input {

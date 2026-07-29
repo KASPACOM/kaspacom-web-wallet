@@ -139,11 +139,7 @@ type IndexerImportPreview = {
 
 type ContractDashboardSource = 'indexer' | 'local' | 'both';
 type ContractDashboardFilter =
-  | 'all'
-  | 'deadman'
-  | 'timelock'
-  | 'multisig'
-  | 'escrow';
+  'all' | 'deadman' | 'timelock' | 'multisig' | 'escrow';
 // Status dimension, composed on top of the template-type filter above.
 type ContractStatusFilter = 'all' | 'active' | 'history';
 type ContractParticipant = {

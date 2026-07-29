@@ -418,6 +418,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * instead of the contract the user just finished acting on.
    */
   private pendingLandOnContractId?: string;
+  /**
+   * Set in ngOnDestroy(). This component is torn down by the flow-page
+   * outlet whenever it hosts the "contracts" flow page (see
+   * bailIfLeftContractsFlow()'s doc comment) — but it's also directly
+   * routed at /app/contracts and /app/contracts/:contractId (see
+   * logged.routes.ts), and in that hosting mode the approval overlay layers
+   * on top via the flow-page outlet without ever destroying this instance,
+   * so isPageInStack('contracts') is permanently false (this page was never
+   * pushed onto that stack) even though the user never left. Gating the
+   * bail on this flag too means "not in the flow-page stack" only counts as
+   * "left" once this specific instance has actually been destroyed.
+   */
+  private destroyed = false;
   selectedDetailError = signal<string | null>(null);
   detailPanelTab = signal<ContractDetailTab>('details');
   /**
@@ -734,6 +747,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.destroyed = true;
     this.wideWorkspaceService.deactivate();
     this.routeSubscription?.unsubscribe();
   }
@@ -909,10 +923,40 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * Switch tab
    */
   switchTab(tab: TabName) {
+    if (tab === 'deploy' && this.deployResult()) {
+      this.resetDeployWizard();
+    }
     this.activeTab.set(tab);
     if (tab === 'my-contracts') {
       this.loadContracts();
     }
+  }
+
+  /**
+   * A completed deploy leaves activeTemplate/generatedContractJson/
+   * deployResult populated so the success details stay visible on the
+   * "Review & deploy" step — but when this component is router-hosted (see
+   * `destroyed`'s doc comment) the approval overlay never tears this
+   * instance down, so none of that resets on its own. Without this,
+   * deliberately returning to Create lands back on that same last step
+   * instead of the template picker. Called from switchTab() when the user
+   * clicks back into Create with a finished deploy still showing.
+   */
+  private resetDeployWizard(): void {
+    this.createMode.set('template');
+    this.activeTemplate.set(null);
+    this.generatedContractJson.set(null);
+    this.templateError.set(null);
+    this.deployError.set(null);
+    this.deployResult.set(null);
+    this.deployIndexerState.set(null);
+    this.deployContractTouched = false;
+    this.deployContractError.set('');
+    this.deployContractJson.set('');
+    this.templateFormValues = {};
+    this.templateFieldTouched = {};
+    this.templateFieldErrors = {};
+    this.templateResolvedAddresses = {};
   }
 
   /** 'detail' belongs to the My Contracts section for tab-highlighting purposes. */
@@ -3908,9 +3952,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * for what this does and why. `registryEntryId` is the acted-on contract
    * (this.selectedContractId() at the call site) — omit it if there's no
    * local registry entry to land back on.
+   *
+   * Also flips detailPanelTab/actionPageView back to the plain details view
+   * directly on `this`, not just via the transient state the flow-page
+   * hosting mode restores into a fresh instance. When this component is
+   * router-hosted (see `destroyed`'s doc comment) it's never torn down by
+   * the approval overlay, so this same instance is what the user sees
+   * again — without this, it would still be sitting on whatever action
+   * form (e.g. "Claim") they just submitted.
    */
   private markActionCompleteForDetailsLanding(registryEntryId?: string): void {
     this.hideActionsAfterCompletion.set(true);
+    this.detailPanelTab.set('details');
+    this.actionPageView.set('list');
     this.flowPagesService.saveTransientState('contracts', {
       hideActionsAfterCompletion: true,
       landOnContractId: registryEntryId || undefined,
@@ -3933,8 +3987,17 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * but coming back" apart from "actually left" (e.g. navigated fully away
    * via backToContractsList()) — only the latter should flush a terminal
    * state so pendingConfirmation doesn't get stuck at 'checking' forever.
+   *
+   * That alone isn't enough when this component is router-hosted (see
+   * `destroyed`'s doc comment): isPageInStack('contracts') is then always
+   * false, since this page was never pushed onto that stack in the first
+   * place, even though the routed instance stays mounted the whole time.
+   * Require this instance to have actually been destroyed too, so the
+   * routed hosting mode never bails just because it isn't (and never was)
+   * a flow page.
    */
   private bailIfLeftContractsFlow(): boolean {
+    if (!this.destroyed) return false;
     if (this.flowPagesService.isPageInStack('contracts')) return false;
     this.approvalFlowService.setPendingConfirmation({
       status: 'unavailable',

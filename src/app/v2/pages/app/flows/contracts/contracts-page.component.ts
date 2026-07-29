@@ -114,6 +114,7 @@ type ContractsTransientState = {
   topUpAmount?: string;
   partialSpendJson?: string;
   interactResult?: { txid: string; functionName: string };
+  hideActionsAfterCompletion?: boolean;
 };
 
 type IndexerImportPreview = {
@@ -383,6 +384,30 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * disturbed by concurrent silent ones.
    */
   private loadingRequestToken = 0;
+  /**
+   * True right after a covenant action succeeds, until the user explicitly
+   * navigates again (navigateToContractDetail()/openDashboardAction()).
+   * Carried across the destroy/recreate cycle via transient state (see
+   * restoreTransientState()) — the flow-page outlet destroys and recreates
+   * this component the instant the approval overlay covers and uncovers it,
+   * so a plain in-memory flag wouldn't survive from the action to the
+   * "Done" click.
+   *
+   * Two effects while true:
+   *  - the template hides the "Available actions" panel (see
+   *    contracts-page.component.html) so landing back on a contract after
+   *    finishing an action shows plain details, not an immediate prompt to
+   *    take another one — that panel is otherwise shown unconditionally
+   *    whenever actionPageView() is 'list', with no other state to
+   *    distinguish "just finished acting on this" from "opened it fresh".
+   *  - openContractDetail() skips its auto-jump into an available action's
+   *    form (the `!hasEnabledDefault` branch of prepareDashboardAction) —
+   *    without it, the route subscription's own openDetailFromRoute() call
+   *    on the freshly re-created instance (and every subsequent background
+   *    refresh from the indexing poll) could still jump straight into a
+   *    form instead of landing on details.
+   */
+  hideActionsAfterCompletion = signal(false);
   selectedDetailError = signal<string | null>(null);
   detailPanelTab = signal<ContractDetailTab>('details');
   /**
@@ -732,6 +757,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.partialSpendJson.set(state.partialSpendJson);
     if (state.interactResult !== undefined)
       this.interactResult.set(state.interactResult);
+    if (state.hideActionsAfterCompletion)
+      this.hideActionsAfterCompletion.set(true);
 
     this.flowPagesService.saveTransientState('contracts', undefined);
   }
@@ -1412,6 +1439,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.selectedDetailError.set(null);
     }
 
+    // A fresh instance (e.g. re-created after the approval overlay covered
+    // and then uncovered this page — see ApprovalFlowService.waitForActionIndexing)
+    // otherwise has no idea an action-indexing poll from the previous instance
+    // is still in flight, and its own first load races ahead of it, showing
+    // stale data. `skipOnChainStatusRefresh` is only ever passed by that same
+    // poll's own internal calls, so gating on its absence can't deadlock.
+    if (!options.skipOnChainStatusRefresh) {
+      await this.approvalFlowService.waitForActionIndexing();
+    }
+
     const filtered = this.getCurrentWalletLocalContracts();
     this.registryContracts.set(filtered);
 
@@ -2056,6 +2093,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const skipScrollToTop = options?.skipScrollToTop ?? false;
     const requestToken = ++this.detailRequestToken;
     const isCurrentRequest = () => requestToken === this.detailRequestToken;
+    // Stays true across every background/route-driven call in the settling
+    // window after an action (there can be several — the indexing poll keeps
+    // refreshing until it catches up) — only an explicit user navigation
+    // (navigateToContractDetail()/openDashboardAction()) clears it. See the
+    // field's doc comment.
+    const suppressAutoActionOpen = this.hideActionsAfterCompletion();
 
     if (!silent) {
       this.loadingRequestToken = requestToken;
@@ -2131,7 +2174,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       });
       if (
         (this.detailRouteId() || this.activeTab() === 'detail') &&
-        updatedEntry.status === 'active'
+        updatedEntry.status === 'active' &&
+        !suppressAutoActionOpen
       ) {
         await this.prepareDashboardAction(updatedEntry, requestToken, silent);
         if (!isCurrentRequest()) return;
@@ -2154,7 +2198,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         );
         if (
           (this.detailRouteId() || this.activeTab() === 'detail') &&
-          entry.status === 'active'
+          entry.status === 'active' &&
+          !suppressAutoActionOpen
         ) {
           await this.prepareDashboardAction(entry, requestToken, silent);
         }
@@ -2207,6 +2252,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.detailPanelTab.set('action');
     this.actionPageView.set('form');
     this.activeTab.set('detail');
+    // A deliberate request to act — any suppression left over from an
+    // earlier action's settling window no longer applies.
+    this.hideActionsAfterCompletion.set(false);
     await this.openContractDetail(entry, { skipScrollToTop: true });
     this.scrollToActionPanel();
   }
@@ -2475,6 +2523,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.detailPanelTab.set('details');
     this.actionPageView.set('list');
     this.activeTab.set('detail');
+    // A deliberate fresh navigation — any suppression left over from an
+    // earlier action's settling window no longer applies.
+    this.hideActionsAfterCompletion.set(false);
     void this.openContractDetail(entry);
   }
 
@@ -2488,6 +2539,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.detailRouteId.set(null);
     this.detailRouteNotFound.set(false);
     this.activeTab.set('my-contracts');
+    // Leaving the detail view entirely — don't let suppression leak into
+    // whichever contract's detail is opened next.
+    this.hideActionsAfterCompletion.set(false);
   }
 
   private async openDetailFromRoute(routeId: string) {
@@ -3739,6 +3793,22 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     txid: string,
     registryEntryId?: string,
   ): Promise<void> {
+    let resolveCompletion!: () => void;
+    this.approvalFlowService.setActionIndexingCompletion(
+      new Promise<void>((resolve) => (resolveCompletion = resolve)),
+    );
+    try {
+      await this.trackActionIndexingCore(txid, registryEntryId);
+    } finally {
+      resolveCompletion();
+      this.approvalFlowService.setActionIndexingCompletion(null);
+    }
+  }
+
+  private async trackActionIndexingCore(
+    txid: string,
+    registryEntryId?: string,
+  ): Promise<void> {
     this.setActionIndexerState({
       txid,
       status: 'checking',
@@ -3773,13 +3843,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           this.setActionIndexerState({
             txid,
             status: 'checking',
-            message: `Transaction confirmed — waiting for the contract list to catch up (${attempt}/8)...`,
+            message: 'Transaction confirmed — waiting for confirmation...',
           });
         } else {
           this.setActionIndexerState({
             txid,
             status: 'checking',
-            message: `Waiting for indexer confirmation (${attempt}/8)...`,
+            message: 'Waiting for confirmation...',
           });
         }
       } catch (error: any) {
@@ -3804,6 +3874,17 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       message:
         'Broadcast, but My Contracts may not reflect this change yet. Refresh in a moment.',
     });
+  }
+
+  /**
+   * Call right after a covenant action succeeds — see
+   * hideActionsAfterCompletion's doc comment for what this does and why.
+   */
+  private markActionCompleteForDetailsLanding(): void {
+    this.hideActionsAfterCompletion.set(true);
+    this.flowPagesService.saveTransientState('contracts', {
+      hideActionsAfterCompletion: true,
+    } satisfies ContractsTransientState);
   }
 
   /**
@@ -4066,6 +4147,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
               spendTxid: result.txid,
               lastChecked: Date.now(),
             });
+            this.markActionCompleteForDetailsLanding();
             void this.trackActionIndexing(
               result.txid,
               this.selectedContractId(),
@@ -4349,6 +4431,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           this.interactOutpointTxid = result.txid;
           this.interactOutpointVout = '0';
         }
+        this.markActionCompleteForDetailsLanding();
         void this.trackActionIndexing(result.txid, this.selectedContractId());
       }
     } catch (error: any) {
@@ -4519,6 +4602,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.interactInputAmount = inputAmount.toString();
     this.dmsNewExpiry = '';
 
+    this.markActionCompleteForDetailsLanding();
     void this.trackActionIndexing(result.txid, this.selectedContractId());
   }
 
@@ -4622,6 +4706,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.interactOutputAddress = '';
     this.interactResolvedOutputAddress = null;
 
+    this.markActionCompleteForDetailsLanding();
     void this.trackActionIndexing(result.txid, this.selectedContractId());
   }
 
@@ -5676,6 +5761,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             lastChecked: Date.now(),
           });
         }
+        this.markActionCompleteForDetailsLanding();
         void this.trackActionIndexing(result.txid, this.selectedContractId());
       }
     } catch (error: any) {
@@ -5782,7 +5868,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     // bytes gets misread as a second push opcode, splicing in a bogus
     // "pubkey" ahead of the real next one and shifting the buyer/seller
     // indices this function's callers rely on.
-    for (let i = 0; i <= scriptBytes.length - 33 && found.length < 2; ) {
+    for (let i = 0; i <= scriptBytes.length - 33 && found.length < 2;) {
       if (scriptBytes[i] === 0x20) {
         const pkHex = Array.from(scriptBytes.slice(i + 1, i + 33))
           .map((b) => b.toString(16).padStart(2, '0'))

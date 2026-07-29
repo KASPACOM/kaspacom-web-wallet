@@ -1390,7 +1390,9 @@
             <div class="detail-cols">
               <!-- LEFT: actions + participants -->
               <div class="detail-col">
-                @if (actionPageView() === "list") {
+                @if (
+                  actionPageView() === "list" && !hideActionsAfterCompletion()
+                ) {
                   <div class="panel">
                     <div class="action-panel-head">
                       <h4

@@ -102,6 +102,26 @@ export class ApprovalFlowService {
     this.pendingConfirmationSignal.set(state);
   }
 
+  // The flow-page outlet destroys ContractsPageComponent the instant the
+  // approval overlay covers it (see isContractsWide's comment in
+  // app-wrapper.component.ts), so the action-indexing poll that started on
+  // the old instance keeps running detached from any UI once the user
+  // returns to "My Contracts" — a freshly-created instance's own initial
+  // load has no idea that check is still in flight, and races ahead with
+  // its own fetch, which is exactly the staleness the poll exists to avoid.
+  // Tracking the poll's completion here, outside the component, lets that
+  // new instance await it before doing its own first load instead of racing it.
+  private actionIndexingCompletionSignal = signal<Promise<void> | null>(null);
+
+  setActionIndexingCompletion(promise: Promise<void> | null) {
+    this.actionIndexingCompletionSignal.set(promise);
+  }
+
+  /** Resolves immediately if no action-indexing poll is in flight. */
+  async waitForActionIndexing(): Promise<void> {
+    await this.actionIndexingCompletionSignal();
+  }
+
   /**
    * Shows approval dialog using the appropriate display mode
    */

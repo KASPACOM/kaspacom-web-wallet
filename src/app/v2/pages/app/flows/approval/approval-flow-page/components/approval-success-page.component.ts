@@ -90,11 +90,13 @@ import { WalletActionService } from '../../../../../../../services/wallet-action
           </p>
         }
         <kc-button
-          [text]="isAwaitingConfirmation() ? 'Confirming...' : 'Done'"
+          text="Done"
           variant="primary"
           size="m"
           [isFullWidth]="true"
           [isDisabled]="isAwaitingConfirmation()"
+          [isLoading]="isAwaitingConfirmation()"
+          loadingText="Confirming..."
           (buttonClick)="onDone()"
           class="done-button"
         />

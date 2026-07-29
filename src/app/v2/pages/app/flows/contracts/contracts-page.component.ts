@@ -115,6 +115,7 @@ type ContractsTransientState = {
   partialSpendJson?: string;
   interactResult?: { txid: string; functionName: string };
   hideActionsAfterCompletion?: boolean;
+  landOnContractId?: string;
 };
 
 type IndexerImportPreview = {
@@ -408,6 +409,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    *    form instead of landing on details.
    */
   hideActionsAfterCompletion = signal(false);
+  /**
+   * Registry id of the contract to open straight to details for, restored
+   * from transient state by restoreTransientState() and consumed once by
+   * loadContracts()'s tail — see markActionCompleteForDetailsLanding(). A
+   * freshly re-created instance otherwise has no route id and no
+   * selectedDetail, so it would land on the plain "My Contracts" list
+   * instead of the contract the user just finished acting on.
+   */
+  private pendingLandOnContractId?: string;
   selectedDetailError = signal<string | null>(null);
   detailPanelTab = signal<ContractDetailTab>('details');
   /**
@@ -759,6 +769,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.interactResult.set(state.interactResult);
     if (state.hideActionsAfterCompletion)
       this.hideActionsAfterCompletion.set(true);
+    if (state.landOnContractId)
+      this.pendingLandOnContractId = state.landOnContractId;
 
     this.flowPagesService.saveTransientState('contracts', undefined);
   }
@@ -1506,6 +1518,20 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       );
       if (refreshed) {
         await this.openContractDetail(refreshed, { silent: true });
+      }
+    } else if (this.pendingLandOnContractId) {
+      // Land on the contract an action just completed on — see
+      // pendingLandOnContractId's doc comment. One-shot: clear it regardless
+      // of whether a match was found, so it doesn't stick around and hijack
+      // some later, unrelated load.
+      const contractId = this.pendingLandOnContractId;
+      this.pendingLandOnContractId = undefined;
+      const target = this.dashboardContracts().find(
+        (entry) => entry.registryEntry?.id === contractId,
+      );
+      if (target) {
+        this.activeTab.set('detail');
+        await this.openContractDetail(target);
       }
     }
   }
@@ -3878,12 +3904,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   /**
    * Call right after a covenant action succeeds — see
-   * hideActionsAfterCompletion's doc comment for what this does and why.
+   * hideActionsAfterCompletion's and pendingLandOnContractId's doc comments
+   * for what this does and why. `registryEntryId` is the acted-on contract
+   * (this.selectedContractId() at the call site) — omit it if there's no
+   * local registry entry to land back on.
    */
-  private markActionCompleteForDetailsLanding(): void {
+  private markActionCompleteForDetailsLanding(registryEntryId?: string): void {
     this.hideActionsAfterCompletion.set(true);
     this.flowPagesService.saveTransientState('contracts', {
       hideActionsAfterCompletion: true,
+      landOnContractId: registryEntryId || undefined,
     } satisfies ContractsTransientState);
   }
 
@@ -4147,7 +4177,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
               spendTxid: result.txid,
               lastChecked: Date.now(),
             });
-            this.markActionCompleteForDetailsLanding();
+            this.markActionCompleteForDetailsLanding(this.selectedContractId());
             void this.trackActionIndexing(
               result.txid,
               this.selectedContractId(),
@@ -4431,7 +4461,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           this.interactOutpointTxid = result.txid;
           this.interactOutpointVout = '0';
         }
-        this.markActionCompleteForDetailsLanding();
+        this.markActionCompleteForDetailsLanding(this.selectedContractId());
         void this.trackActionIndexing(result.txid, this.selectedContractId());
       }
     } catch (error: any) {
@@ -4602,7 +4632,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.interactInputAmount = inputAmount.toString();
     this.dmsNewExpiry = '';
 
-    this.markActionCompleteForDetailsLanding();
+    this.markActionCompleteForDetailsLanding(this.selectedContractId());
     void this.trackActionIndexing(result.txid, this.selectedContractId());
   }
 
@@ -4706,7 +4736,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.interactOutputAddress = '';
     this.interactResolvedOutputAddress = null;
 
-    this.markActionCompleteForDetailsLanding();
+    this.markActionCompleteForDetailsLanding(this.selectedContractId());
     void this.trackActionIndexing(result.txid, this.selectedContractId());
   }
 
@@ -5761,7 +5791,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             lastChecked: Date.now(),
           });
         }
-        this.markActionCompleteForDetailsLanding();
+        this.markActionCompleteForDetailsLanding(this.selectedContractId());
         void this.trackActionIndexing(result.txid, this.selectedContractId());
       }
     } catch (error: any) {

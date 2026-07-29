@@ -16,7 +16,11 @@ import {
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { KcInputComponent, KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
+import {
+  KcInputComponent,
+  KcButtonComponent,
+  KcIconComponent,
+} from '@kaspacom/ui-kit';
 import { OnboardingStep } from '../onboarding-page/onboarding-step.enum';
 import { ImportExistingFlowComponent } from '../onboarding-page/flows/import-existing-flow/import-existing-flow.component';
 import { NewWalletFlowComponent } from '../onboarding-page/flows/new-wallet-flow/new-wallet-flow.component';

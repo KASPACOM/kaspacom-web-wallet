@@ -1,6 +1,10 @@
 import { NgOptimizedImage } from '@angular/common';
 import { Component, OnInit, computed, inject, output } from '@angular/core';
-import { KcButtonComponent, KcIconComponent, NotificationService } from '@kaspacom/ui-kit';
+import {
+  KcButtonComponent,
+  KcIconComponent,
+  NotificationService,
+} from '@kaspacom/ui-kit';
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 import { WalletService } from '../../../../../../../services/wallet.service';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -9,11 +13,7 @@ import { getSafeReturnUrl } from '../../../../../../shared/utils/return-url.util
 
 @Component({
   selector: 'app-address-new-wallet-step',
-  imports: [
-    KcButtonComponent,
-    NgOptimizedImage,
-    KcIconComponent,
-  ],
+  imports: [KcButtonComponent, NgOptimizedImage, KcIconComponent],
   templateUrl: './address-new-wallet-step.component.html',
   styleUrl: './address-new-wallet-step.component.scss',
 })
@@ -37,7 +37,7 @@ export class AddressNewWalletStepComponent {
 
   displayWalletAddress = computed(() => {
     const address = this.walletAddress();
-    
+
     const len = 15;
     if (address.length < len) {
       return address;

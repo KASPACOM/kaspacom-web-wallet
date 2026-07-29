@@ -136,7 +136,11 @@ type IndexerImportPreview = {
 
 type ContractDashboardSource = 'indexer' | 'local' | 'both';
 type ContractDashboardFilter =
-  'all' | 'deadman' | 'timelock' | 'multisig' | 'escrow';
+  | 'all'
+  | 'deadman'
+  | 'timelock'
+  | 'multisig'
+  | 'escrow';
 // Status dimension, composed on top of the template-type filter above.
 type ContractStatusFilter = 'all' | 'active' | 'history';
 
@@ -5763,7 +5767,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     // bytes gets misread as a second push opcode, splicing in a bogus
     // "pubkey" ahead of the real next one and shifting the buyer/seller
     // indices this function's callers rely on.
-    for (let i = 0; i <= scriptBytes.length - 33 && found.length < 2;) {
+    for (let i = 0; i <= scriptBytes.length - 33 && found.length < 2; ) {
       if (scriptBytes[i] === 0x20) {
         const pkHex = Array.from(scriptBytes.slice(i + 1, i + 33))
           .map((b) => b.toString(16).padStart(2, '0'))

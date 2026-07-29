@@ -220,7 +220,7 @@ async function getAddressUtxos(
   rpc: RpcClient,
   address: string,
 ): Promise<UtxoEntryReference[]> {
-  const utxoPromise = rpc.getUtxosByAddresses([address]);
+  const utxoPromise = rpc.getUtxosByAddresses({ addresses: [address] });
   const timeoutPromise = new Promise<never>((_, reject) =>
     setTimeout(
       () =>

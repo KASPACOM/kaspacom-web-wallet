@@ -3,8 +3,9 @@ import { Component, OnInit, computed, inject, output } from '@angular/core';
 import { KcButtonComponent, KcIconComponent, NotificationService } from '@kaspacom/ui-kit';
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 import { WalletService } from '../../../../../../../services/wallet.service';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FlowPagesService } from '../../../../../../services/flow-pages.service';
+import { getSafeReturnUrl } from '../../../../../../shared/utils/return-url.util';
 
 @Component({
   selector: 'app-address-new-wallet-step',
@@ -27,6 +28,7 @@ export class AddressNewWalletStepComponent {
   private readonly notificationService = inject(NotificationService);
 
   private readonly router = inject(Router);
+  private readonly activatedRoute = inject(ActivatedRoute);
   private readonly flowPagesService = inject(FlowPagesService);
 
   walletAddress = computed(
@@ -82,6 +84,6 @@ export class AddressNewWalletStepComponent {
     }
     // Ensure any flow overlays are closed
     this.flowPagesService.closePage();
-    this.router.navigate(['/app/home']);
+    this.router.navigateByUrl(getSafeReturnUrl(this.activatedRoute));
   }
 }

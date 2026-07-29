@@ -1,9 +1,10 @@
 import { NgOptimizedImage } from '@angular/common';
 import { Component, inject, output } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { KcButtonComponent } from '@kaspacom/ui-kit';
 import { WalletService } from '../../../../../../../services/wallet.service';
 import { FlowPagesService } from '../../../../../../services/flow-pages.service';
+import { getSafeReturnUrl } from '../../../../../../shared/utils/return-url.util';
 
 @Component({
   selector: 'app-success-import-existing-step',
@@ -18,6 +19,7 @@ export class SuccessImportExistingStepComponent {
   private readonly walletService: WalletService = inject(WalletService);
 
   private readonly router = inject(Router);
+  private readonly activatedRoute = inject(ActivatedRoute);
   private readonly flowPagesService = inject(FlowPagesService);
 
   async finish() {
@@ -39,6 +41,6 @@ export class SuccessImportExistingStepComponent {
     }
     // Ensure any flow overlays are closed
     this.flowPagesService.closePage();
-    this.router.navigate(['/app/home']);
+    this.router.navigateByUrl(getSafeReturnUrl(this.activatedRoute));
   }
 }

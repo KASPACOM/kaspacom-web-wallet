@@ -15,7 +15,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { KcInputComponent, KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import { OnboardingStep } from '../onboarding-page/onboarding-step.enum';
 import { ImportExistingFlowComponent } from '../onboarding-page/flows/import-existing-flow/import-existing-flow.component';
@@ -29,6 +29,7 @@ import {
 import { IframeAccountSelectionService } from '../../services/iframe-account-selection.service';
 import { MonitorService } from '../../../services/monitor.service';
 import { IFrameCommunicationApp } from '../../../services/communication-service/communication-app/iframe-communication.service';
+import { getSafeReturnUrl } from '../../shared/utils/return-url.util';
 
 type LoginPasswordType = 'password' | 'text';
 
@@ -62,6 +63,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
   private readonly passwordManagerService = inject(PasswordManagerService);
   private readonly walletService = inject(WalletService);
   private readonly router = inject(Router);
+  private readonly activatedRoute = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
   private readonly iframeAccountSelectionService = inject(
     IframeAccountSelectionService,
@@ -253,7 +255,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
         is_iframe: IFrameCommunicationApp.isIframe(),
       });
 
-      await this.router.navigate(['./app/home']);
+      await this.router.navigateByUrl(getSafeReturnUrl(this.activatedRoute));
     } catch (error) {
       console.error('Login failed', error);
       this.loginForm.get('password')?.setErrors({ invalidCredentials: true });

@@ -1,5 +1,6 @@
 import {
   Component,
+  ElementRef,
   Input,
   inject,
   signal,
@@ -9,7 +10,12 @@ import {
   output,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { KcInputComponent, KcIconComponent, KcSpinnerComponent, KcTooltipDirective } from '@kaspacom/ui-kit';
+import {
+  KcInputComponent,
+  KcIconComponent,
+  KcSpinnerComponent,
+  KcTooltipDirective,
+} from '@kaspacom/ui-kit';
 import { CopyButtonComponent } from '../../copy-button/copy-button.component';
 import {
   AddressResolutionService,
@@ -32,6 +38,7 @@ import {
 })
 export class AddressSmartInputComponent implements OnChanges {
   private readonly resolver = inject(AddressResolutionService);
+  private readonly host = inject(ElementRef<HTMLElement>);
 
   readonly label = input<string>('Wallet Address');
   readonly placeholder = input<string>('Enter wallet address or KNS domain');
@@ -77,7 +84,11 @@ export class AddressSmartInputComponent implements OnChanges {
   }
 
   onInputChange(val: string) {
-    this.value = val || '';
+    const nextValue = val || '';
+    if (nextValue === this.value) return;
+    if (!this.isInputInteractionActive()) return;
+
+    this.value = nextValue;
     this.valueChange.emit(this.value);
 
     const input = (this.value || '').trim();
@@ -183,5 +194,10 @@ export class AddressSmartInputComponent implements OnChanges {
   protected shortenAddress(address: string): string {
     if (!address) return '';
     return `${address.slice(0, 10)}...${address.slice(-8)}`;
+  }
+
+  private isInputInteractionActive(): boolean {
+    const activeElement = this.host.nativeElement.ownerDocument?.activeElement;
+    return !!activeElement && this.host.nativeElement.contains(activeElement);
   }
 }

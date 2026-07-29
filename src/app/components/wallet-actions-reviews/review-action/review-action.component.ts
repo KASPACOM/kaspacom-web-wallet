@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import {
@@ -68,8 +68,12 @@ export class ReviewActionComponent {
   private timeout: NodeJS.Timeout | undefined = undefined;
 
   // Result
-  protected currentPriorityFee: bigint | undefined = undefined;
+  protected currentPriorityFee = signal<bigint | undefined>(undefined);
   protected additionalParams: { [key: string]: any } = {};
+  protected isAvailableForApproval = computed(
+    () =>
+      this.currentPriorityFee() !== undefined || !this.isActionHasPriorityFee,
+  );
 
   requestUserConfirmation(action: WalletAction): Promise<{
     isApproved: boolean;
@@ -91,7 +95,7 @@ export class ReviewActionComponent {
   private resolveActionAndClear(isApproved: boolean) {
     this.walletActionService.resolveCurrentWaitingForApproveAction(
       isApproved,
-      isApproved ? this.currentPriorityFee! : undefined,
+      isApproved ? this.currentPriorityFee() : undefined,
       isApproved ? this.additionalParams : undefined,
     );
     this.clearData();
@@ -102,6 +106,7 @@ export class ReviewActionComponent {
     priorityFee?: bigint;
   }> {
     this.additionalParams = {};
+    this.currentPriorityFee.set(undefined);
     this.timeout = setTimeout(() => {
       this.resolveActionAndClear(false);
     }, TIMEOUT);
@@ -127,7 +132,7 @@ export class ReviewActionComponent {
   }
 
   setCurrentPriorityFee(priorityFee: bigint | undefined) {
-    this.currentPriorityFee = priorityFee;
+    queueMicrotask(() => this.currentPriorityFee.set(priorityFee));
   }
 
   protected get walletAddress(): string {
@@ -136,12 +141,6 @@ export class ReviewActionComponent {
 
   protected get wallet(): AppWallet {
     return this.walletService.getCurrentWallet()!;
-  }
-
-  isAvailableForApproval(): boolean {
-    return (
-      this.currentPriorityFee !== undefined || !this.isActionHasPriorityFee
-    );
   }
 
   protected get isActionHasPriorityFee() {

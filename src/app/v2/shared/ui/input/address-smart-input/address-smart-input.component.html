@@ -9,7 +9,7 @@
         : displayIsValid() && !resolveError()
     "
     [isDisabled]="isDisabled()"
-    [ngModel]="value"
+    [ngModel]="inputValue()"
     (valueChange)="onInputChange($any($event))"
   >
     <!-- Right slot: QR and spinner -->
@@ -42,7 +42,9 @@
     }}</span>
   }
 
-  @if (resolvedAddress() && resolvedDomain() && value && !isResolving()) {
+  @if (
+    resolvedAddress() && resolvedDomain() && inputValue() && !isResolving()
+  ) {
     <div class="resolved-address flex align-items-center gap-8">
       <div class="font-mono">{{ shortenAddress(resolvedAddress()) }}</div>
       <app-copy-button [value]="resolvedAddress()" [size]="'xs'" />
@@ -50,7 +52,7 @@
   }
 
   @if (
-    value &&
+    inputValue() &&
     !isResolving() &&
     (resolvedAddress() || (!resolveError() && displayIsValid()))
   ) {

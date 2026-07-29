@@ -24,19 +24,18 @@ export class UtxoProcessorManager {
     undefined;
   private processorEventListenerTimeout: undefined | NodeJS.Timeout = undefined;
   private processorEventListenerTimoutReached: boolean = false;
+  private disposed = false;
 
   private processorHandlerWithBind: (() => Promise<void>) | undefined =
     undefined;
   private balanceEventHandlerWithBind:
-    | ((event: any) => Promise<void>)
-    | undefined = undefined;
-
+    ((event: any) => Promise<void>) | undefined = undefined;
 
   private walletBalanceStateSignal = signal<BalanceData | undefined>(undefined);
 
-
   private waitForOutgoingUtxoPromise: Promise<unknown> | undefined = undefined;
-  private waitForOutgoingUtxoResolve: undefined | ((v?: any) => void) = undefined;
+  private waitForOutgoingUtxoResolve: undefined | ((v?: any) => void) =
+    undefined;
   private waitForOutgoingUtxoTimeout: undefined | NodeJS.Timeout = undefined;
 
   constructor(
@@ -59,7 +58,11 @@ export class UtxoProcessorManager {
     await this.registerEventHandlers();
   }
 
-  async getMempoolTransactionsByWalletAddress(walletAddress: string, includeOrphanPool: boolean = false, filterTransactionPool: boolean = false): Promise<IMempoolResult> {
+  async getMempoolTransactionsByWalletAddress(
+    walletAddress: string,
+    includeOrphanPool: boolean = false,
+    filterTransactionPool: boolean = false,
+  ): Promise<IMempoolResult> {
     return (await this.rpc!.getMempoolEntriesByAddresses({
       addresses: [walletAddress],
       includeOrphanPool,
@@ -67,20 +70,31 @@ export class UtxoProcessorManager {
     })) as any as IMempoolResult;
   }
 
-
   getContext(): UtxoContext | undefined {
     return this.context;
   }
 
   private async balanceEventHandler(event: BalanceEvent) {
-      this.walletBalanceStateSignal.set(event.data.balance);
+    if (this.disposed) {
+      return;
+    }
 
-      if (this.waitForOutgoingUtxoPromise && event.data.balance?.outgoing && event.data.balance?.outgoing > 0) {
-        this.resolveAndClearWaitForOutgoingUtxoPromise!();
-      }
+    this.walletBalanceStateSignal.set(event.data.balance);
+
+    if (
+      this.waitForOutgoingUtxoPromise &&
+      event.data.balance?.outgoing &&
+      event.data.balance?.outgoing > 0
+    ) {
+      this.resolveAndClearWaitForOutgoingUtxoPromise!();
+    }
   }
 
   private resolveAndClearWaitForOutgoingUtxoPromise() {
+    if (!this.waitForOutgoingUtxoResolve) {
+      return;
+    }
+
     this.waitForOutgoingUtxoResolve!();
 
     clearTimeout(this.waitForOutgoingUtxoTimeout);
@@ -90,6 +104,10 @@ export class UtxoProcessorManager {
   }
 
   private async processorEventListener() {
+    if (this.disposed) {
+      return;
+    }
+
     if (this.processorEventListenerTimoutReached) {
       return;
     }
@@ -110,22 +128,31 @@ export class UtxoProcessorManager {
       throw new Error('This object can be used only once');
     }
 
-
     await this.registerProcessor();
   }
 
   async dispose(): Promise<void> {
+    if (this.disposed) {
+      return;
+    }
+    this.disposed = true;
+
+    clearTimeout(this.processorEventListenerTimeout);
+    if (this.waitForOutgoingUtxoPromise) {
+      this.resolveAndClearWaitForOutgoingUtxoPromise();
+    }
+
     await this.stopAndUnregisterProcessor();
-    this.context!.clear();
+    await this.context!.clear();
   }
 
   private async registerProcessor() {
     this.processorEventListenerTimeout = setTimeout(() => {
       this.processorEventListenerTimoutReached = true;
-      this.processorEventListenerReject!(
-        'Timeout on Transaction completion at registerProcessor()'
+      this.processorEventListenerReject?.(
+        'Timeout on Transaction completion at registerProcessor()',
       );
-      this.dispose();
+      void this.dispose();
     }, WAIT_TIMEOUT);
 
     this.processorEventListenerPromise = new Promise((resolve, reject) => {
@@ -135,15 +162,15 @@ export class UtxoProcessorManager {
 
     this.processor!.addEventListener(
       'utxo-proc-start',
-      this.processorHandlerWithBind!
+      this.processorHandlerWithBind!,
     );
     this.processor!.addEventListener(
       'balance',
-      this.balanceEventHandlerWithBind!
+      this.balanceEventHandlerWithBind!,
     );
     this.processor!.addEventListener(
       'pending',
-      this.balanceEventHandlerWithBind!
+      this.balanceEventHandlerWithBind!,
     );
     await this.processor!.start();
 
@@ -151,22 +178,28 @@ export class UtxoProcessorManager {
   }
 
   private async stopAndUnregisterProcessor() {
-    await this.processor!.stop();
-    this.processor!.removeEventListener(
-      'utxo-proc-start',
-      this.processorHandlerWithBind
-    );
-    this.processor!.removeEventListener('utxo-proc-start');
-    this.processor!.removeEventListener(
-      'balance',
-      this.balanceEventHandlerWithBind
-    );
-    this.processor!.removeEventListener('balance');
-    this.processor!.removeEventListener(
-      'pending',
-      this.balanceEventHandlerWithBind
-    );
-    this.processor!.removeEventListener('pending');
+    if (!this.processor) {
+      return;
+    }
+
+    if (this.processorHandlerWithBind) {
+      this.processor.removeEventListener(
+        'utxo-proc-start',
+        this.processorHandlerWithBind,
+      );
+    }
+    if (this.balanceEventHandlerWithBind) {
+      this.processor.removeEventListener(
+        'balance',
+        this.balanceEventHandlerWithBind,
+      );
+      this.processor.removeEventListener(
+        'pending',
+        this.balanceEventHandlerWithBind,
+      );
+    }
+
+    await this.processor.stop();
   }
 
   getUtxoBalanceStateSignal() {
@@ -176,13 +209,16 @@ export class UtxoProcessorManager {
   async waitForOutgoingUtxo() {
     this.waitForOutgoingUtxoPromise = new Promise((resolve) => {
       this.waitForOutgoingUtxoResolve = resolve;
-    })
+    });
 
     this.waitForOutgoingUtxoTimeout = setTimeout(() => {
       this.resolveAndClearWaitForOutgoingUtxoPromise();
     }, WAIT_TIMEOUT);
 
-    if (this.walletBalanceStateSignal() && this.walletBalanceStateSignal()!.outgoing > 0n) {
+    if (
+      this.walletBalanceStateSignal() &&
+      this.walletBalanceStateSignal()!.outgoing > 0n
+    ) {
       this.resolveAndClearWaitForOutgoingUtxoPromise();
       return;
     }

@@ -684,7 +684,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             return;
           }
         }
-        this.queueInboundIndexerImport(contractId);
+        this.detailRouteId.set(contractId);
+        this.detailPanelTab.set('details');
+        this.actionPageView.set('list');
+        this.activeTab.set('detail');
+        void this.openDetailFromRoute(contractId);
       }
     });
     void this.applyInboundContractLink();

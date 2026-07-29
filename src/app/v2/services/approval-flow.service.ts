@@ -122,6 +122,17 @@ export class ApprovalFlowService {
     await this.actionIndexingCompletionSignal();
   }
 
+  // The success page's "Skip waiting" link dismisses the poll's blocking
+  // effect without cancelling the poll itself (trackActionIndexingCore()
+  // keeps running in the background and still updates the registry/
+  // pendingConfirmation when it eventually settles). Clearing the signal
+  // here just means the *next* waitForActionIndexing() call — from the
+  // freshly re-created Contracts instance — resolves immediately instead of
+  // waiting on a promise the user explicitly opted out of.
+  skipActionIndexing() {
+    this.actionIndexingCompletionSignal.set(null);
+  }
+
   /**
    * Shows approval dialog using the appropriate display mode
    */

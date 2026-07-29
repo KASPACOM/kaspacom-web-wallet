@@ -117,6 +117,19 @@ export class ApprovalFlowService {
     this.actionIndexingCompletionSignal.set(promise);
   }
 
+  // A poll's own cleanup must not blindly null the signal: if the user
+  // skipped/moved on and started a second covenant action before this poll
+  // finished, the signal has since been overwritten with that newer poll's
+  // promise — clearing unconditionally here would wipe that reference out
+  // while the newer poll is still running, making the next
+  // waitForActionIndexing() resolve immediately instead of waiting on it.
+  // Only clear if the signal still holds the exact promise this poll set.
+  clearActionIndexingCompletion(promise: Promise<void>) {
+    if (this.actionIndexingCompletionSignal() === promise) {
+      this.actionIndexingCompletionSignal.set(null);
+    }
+  }
+
   /** Resolves immediately if no action-indexing poll is in flight. */
   async waitForActionIndexing(): Promise<void> {
     await this.actionIndexingCompletionSignal();

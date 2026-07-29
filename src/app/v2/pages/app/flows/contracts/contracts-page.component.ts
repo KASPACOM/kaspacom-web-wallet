@@ -4466,14 +4466,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     registryEntryId?: string,
   ): Promise<void> {
     let resolveCompletion!: () => void;
-    this.approvalFlowService.setActionIndexingCompletion(
-      new Promise<void>((resolve) => (resolveCompletion = resolve)),
+    const completion = new Promise<void>(
+      (resolve) => (resolveCompletion = resolve),
     );
+    this.approvalFlowService.setActionIndexingCompletion(completion);
     try {
       await this.trackActionIndexingCore(txid, registryEntryId);
     } finally {
       resolveCompletion();
-      this.approvalFlowService.setActionIndexingCompletion(null);
+      this.approvalFlowService.clearActionIndexingCompletion(completion);
     }
   }
 

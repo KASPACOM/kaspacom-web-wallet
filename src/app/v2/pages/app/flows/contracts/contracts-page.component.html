@@ -1174,10 +1174,10 @@
                     </div>
                   }
 
-                  @if (contract.participants.length > 0) {
+                  @if ((contract.participants || []).length > 0) {
                     <div class="role-chips">
                       @for (
-                        p of contract.participants.slice(0, 3);
+                        p of (contract.participants || []).slice(0, 3);
                         track p.label + p.value
                       ) {
                         <span
@@ -1505,7 +1505,7 @@
                 <div class="state-cell">
                   <span class="cell-label">Active UTXOs</span
                   ><span class="cell-value">{{
-                    selectedDetail()!.utxos.length
+                    (selectedDetail()!.utxos || []).length
                   }}</span>
                 </div>
               </div>
@@ -1571,13 +1571,15 @@
                       >
                         Available actions
                       </h4>
-                      @if (
-                        getCurrentRoleLabel(
-                          selectedDetail()!.entry.participants
-                        );
-                        as role
-                      ) {
-                        <span class="role-pill">You are {{ role }}</span>
+                      @if (actionsPanelReady()) {
+                        @if (
+                          getCurrentRoleLabel(
+                            selectedDetail()!.entry.participants || []
+                          );
+                          as role
+                        ) {
+                          <span class="role-pill">You are {{ role }}</span>
+                        }
                       }
                     </div>
                     <p
@@ -1710,7 +1712,7 @@
                   </div>
                 }
 
-                @if (selectedDetail()!.entry.participants.length > 0) {
+                @if ((selectedDetail()!.entry.participants || []).length > 0) {
                   <div class="panel">
                     <h4
                       class="text-white"
@@ -1724,7 +1726,7 @@
                     </h4>
                     <div class="participant-list">
                       @for (
-                        p of selectedDetail()!.entry.participants;
+                        p of selectedDetail()!.entry.participants || [];
                         track p.label + p.value
                       ) {
                         <div class="participant">
@@ -1752,7 +1754,7 @@
 
               <!-- RIGHT: timeline + advanced -->
               <div class="detail-col">
-                @if (selectedDetail()!.utxos.length > 0) {
+                @if ((selectedDetail()!.utxos || []).length > 0) {
                   <div class="panel">
                     <h4
                       class="text-white"
@@ -1766,7 +1768,7 @@
                     </h4>
                     <div class="flex column gap-8">
                       @for (
-                        utxo of selectedDetail()!.utxos;
+                        utxo of selectedDetail()!.utxos || [];
                         track (utxo.txidHex || "") + ":" + utxo.vout
                       ) {
                         <div
@@ -2156,10 +2158,10 @@
                     empty.
                   </div>
                 }
-                @if (lookupResult()!.utxos.length > 0) {
+                @if ((lookupResult()!.utxos || []).length > 0) {
                   <div class="flex column gap-8">
                     @for (
-                      utxo of lookupResult()!.utxos;
+                      utxo of lookupResult()!.utxos || [];
                       track utxo.txid + ":" + utxo.vout
                     ) {
                       <div
@@ -2798,7 +2800,8 @@
             </div>
             @if (
               activeTab() === "interact" ||
-              getAvailableActions(selectedDetail()!).length === 0
+              (actionsPanelReady() &&
+                getAvailableActions(selectedDetail()!).length === 0)
             ) {
               <div class="flex gap-8 wrap">
                 @for (fn of availableFunctions(); track fn.name) {

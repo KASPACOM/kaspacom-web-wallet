@@ -909,16 +909,41 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   selectTemplate(template: ContractTemplate) {
     this.createMode.set('template');
-    this.activeTemplate.set(template);
-    // Clear all form values to prevent stale data from previous template.
-    this.templateFormValues = {};
-    this.templateFieldTouched = {};
-    this.templateFieldErrors = {};
-    this.templateResolvedAddresses = {};
+    const form = this.initializeTemplateForm(template);
+    this.templateFormValues = form.values;
+    this.templateFieldTouched = form.touched;
+    this.templateFieldErrors = form.errors;
+    this.templateResolvedAddresses = form.resolved;
     this.generatedContractJson.set(null);
     this.templateError.set(null);
 
-    this.syncWalletOwnedTemplateFields();
+    this.activeTemplate.set(template);
+  }
+
+  private initializeTemplateForm(template: ContractTemplate): {
+    values: Record<string, string>;
+    touched: Record<string, boolean>;
+    errors: Record<string, string>;
+    resolved: Record<string, string>;
+  } {
+    const values: Record<string, string> = {};
+    const touched: Record<string, boolean> = {};
+    const errors: Record<string, string> = {};
+    const resolved: Record<string, string> = {};
+    const walletAddress =
+      this.selectedAccount()?.getAddress() ||
+      this.currentWallet()?.getAddress() ||
+      '';
+
+    for (const field of template.fields) {
+      values[field.paramName] = this.isWalletOwnedField(field)
+        ? walletAddress
+        : '';
+      touched[field.paramName] = false;
+      errors[field.paramName] = '';
+    }
+
+    return { values, touched, errors, resolved };
   }
 
   private syncWalletOwnedTemplateFields() {
@@ -928,10 +953,18 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.currentWallet()?.getAddress();
     if (!template || !address) return;
 
+    let changed = false;
+    const nextValues = { ...this.templateFormValues };
+
     for (const field of template.fields) {
       if (this.isWalletOwnedField(field)) {
-        this.templateFormValues[field.paramName] = address;
+        nextValues[field.paramName] = address;
+        changed = true;
       }
+    }
+
+    if (changed) {
+      this.templateFormValues = nextValues;
     }
   }
 
@@ -1331,10 +1364,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   validateTemplateField(field: TemplateField): boolean {
-    if (this.isWalletOwnedField(field)) {
-      this.syncWalletOwnedTemplateFields();
-    }
-
     const value = String(this.templateFormValues[field.paramName] ?? '').trim();
     let error = '';
 
@@ -1564,7 +1593,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           }> = [];
 
           try {
-            const utxoResponse = await rpc.getUtxosByAddresses([address]);
+            const utxoResponse = await rpc.getUtxosByAddresses({
+              addresses: [address],
+            });
             const utxos = utxoResponse.entries || [];
 
             for (const entry of entries) {
@@ -1921,6 +1952,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const aliasName = this.getContractAlias(entry);
     return {
       ...entry,
+      participants: Array.isArray(entry.participants)
+        ? entry.participants.filter(Boolean)
+        : [],
       aliasName,
       contractTypeLabel,
       displayName: aliasName || contractTypeLabel,
@@ -2065,6 +2099,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       ...(localParticipants || []),
       ...(indexerParticipants || []),
     ]) {
+      if (!participant) continue;
       const identityValue =
         participant.value || participant.matchValues?.join('|') || '';
       const key = `${participant.label}:${identityValue.toLowerCase()}`;
@@ -2464,7 +2499,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       addParam(name, value);
     }
 
-    for (const participant of detail.entry.participants) {
+    for (const participant of detail.entry.participants || []) {
+      if (!participant) continue;
       if (participant.hidden) continue;
       addParam(participant.label, participant.value);
     }
@@ -2502,7 +2538,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * in a test deploy) — returning just the first match would silently hide
    * actions gated on a role that isn't the first one listed.
    */
-  private currentWalletRoles(participants: ContractParticipant[]): string[] {
+  private currentWalletRoles(
+    participants: ContractParticipant[] = [],
+  ): string[] {
+    const safeParticipants = Array.isArray(participants) ? participants : [];
     const wallet = this.currentWallet();
     const candidates = [
       wallet?.getAddress(),
@@ -2512,17 +2551,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       .filter((value): value is string => !!value)
       .map((value) => value.toLowerCase());
 
-    return participants
+    return safeParticipants
       .filter((participant) =>
+        participant &&
         [participant.value, ...(participant.matchValues || [])]
           .map((value) => String(value).toLowerCase())
           .some((value) => candidates.includes(value)),
       )
-      .map((participant) => participant.label);
+      .map((participant) => participant.label)
+      .filter((label): label is string => !!label);
   }
 
   /** Public wrapper for the detail page's "You are <role>" pill. */
-  getCurrentRoleLabel(participants: ContractParticipant[]): string {
+  getCurrentRoleLabel(participants: ContractParticipant[] = []): string {
     return this.currentWalletRoles(participants).join(' / ');
   }
 
@@ -2596,7 +2637,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (!silent) {
       this.loadingRequestToken = requestToken;
       this.selectedDetailLoading.set(true);
-      this.selectedDetail.set({ entry, actions: [], utxos: [] });
+      this.selectedDetail.set({
+        entry: this.withDashboardName(entry),
+        actions: [],
+        utxos: [],
+      });
       if (this.detailRouteId() || this.activeTab() === 'detail') {
         this.clearInteractContractSelection();
       }
@@ -2623,12 +2668,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         resolved.covenant?.scriptHashHex ||
         entry.covenantId ||
         entry.scriptHash;
-      const [actions, utxos] = detailIdentifier
+      const [rawActions, rawUtxos] = detailIdentifier
         ? await Promise.all([
             this.covenantIndexerService.getCovenantActions(detailIdentifier),
             this.covenantIndexerService.getCovenantUtxos(detailIdentifier),
           ])
         : [resolved.actions, [] as IndexerCovenantUtxo[]];
+      const actions = Array.isArray(rawActions) ? rawActions : [];
+      const utxos = Array.isArray(rawUtxos) ? rawUtxos : [];
       const response: IndexerCovenantResponse = {
         actions,
         covenant: resolved.covenant,
@@ -2641,7 +2688,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       const resolvedStatus = detailIdentifier
         ? this.statusFromActiveUtxoCount(utxos.length)
         : entry.status;
-      const updatedEntry: ContractDashboardEntry = {
+      const updatedEntry: ContractDashboardEntry = this.withDashboardName({
         ...entry,
         latestTxid: latestAction?.txidHex || entry.latestTxid,
         latestAction:
@@ -2663,7 +2710,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             ? this.indexerParticipants(resolved.covenant)
             : undefined,
         ),
-      };
+      });
       if (!isCurrentRequest()) return;
       this.selectedDetail.set({
         entry: updatedEntry,
@@ -2898,9 +2945,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const rpc = this.rpcService.getRpc();
     if (!rpc) return undefined;
     try {
-      const response = await rpc.getUtxosByAddresses([
-        registryEntry.contractAddress,
-      ]);
+      const response = await rpc.getUtxosByAddresses({
+        addresses: [registryEntry.contractAddress],
+      });
       const utxos = response.entries || [];
       const found = utxos.find(
         (u: any) =>
@@ -2926,7 +2973,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     // could get applied to this registry entry.
     const detail = this.selectedDetail();
     const indexerUtxo =
-      !liveUtxo && detail?.entry.id === entry.id && detail.utxos.length === 1
+      !liveUtxo &&
+      detail?.entry.id === entry.id &&
+      (detail.utxos || []).length === 1
         ? detail.utxos[0]
         : undefined;
 
@@ -3243,7 +3292,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * before rendering real enabled/disabled state.
    */
   actionsPanelReady = computed(
-    () => !this.selectedDetailLoading() && !!this.currentWallet(),
+    () =>
+      !this.selectedDetailLoading() &&
+      !!this.selectedDetail() &&
+      !!this.currentWallet(),
   );
 
   /**
@@ -5364,7 +5416,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       }
 
       console.log('[Lookup] Querying UTXOs for', address);
-      const utxoResponse = await rpc.getUtxosByAddresses([address]);
+      const utxoResponse = await rpc.getUtxosByAddresses({
+        addresses: [address],
+      });
       const entries = utxoResponse.entries || [];
 
       let totalSompi = BigInt(0);
@@ -5407,7 +5461,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    */
   importLookupContract() {
     const result = this.lookupResult();
-    if (!result || result.utxos.length === 0) return;
+    if (!result || (result.utxos || []).length === 0) return;
     if (!this.lookupContractJson) return;
 
     // Switch to interact tab with UTXO + contract JSON pre-filled
@@ -5452,9 +5506,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   /**
    * Truncate string for display
    */
-  truncate(str: string, length: number = 16): string {
-    if (str.length <= length) return str;
-    return str.substring(0, length) + '...' + str.substring(str.length - 6);
+  truncate(str: string | null | undefined, length: number = 16): string {
+    const value = String(str ?? '');
+    if (value.length <= length) return value;
+    return (
+      value.substring(0, length) + '...' + value.substring(value.length - 6)
+    );
   }
 
   /**

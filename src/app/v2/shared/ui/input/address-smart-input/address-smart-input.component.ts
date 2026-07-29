@@ -67,8 +67,13 @@ export class AddressSmartInputComponent implements OnChanges {
 
   private debounceTimer: any = null;
   private validationTimer: any = null;
+  protected inputValue = signal<string>('');
 
   ngOnChanges(changes: SimpleChanges): void {
+    if ('value' in changes) {
+      this.inputValue.set(this.value ?? '');
+    }
+
     if ('isValid' in changes || 'invalidReason' in changes) {
       if (this.validationTimer) {
         clearTimeout(this.validationTimer);
@@ -83,15 +88,15 @@ export class AddressSmartInputComponent implements OnChanges {
     }
   }
 
-  onInputChange(val: string) {
-    const nextValue = val || '';
-    if (nextValue === this.value) return;
+  onInputChange(val: string | null | undefined) {
+    const nextValue = val ?? '';
+    if (nextValue === this.inputValue()) return;
     if (!this.isInputInteractionActive()) return;
 
-    this.value = nextValue;
-    this.valueChange.emit(this.value);
+    this.inputValue.set(nextValue);
+    this.valueChange.emit(nextValue);
 
-    const input = (this.value || '').trim();
+    const input = nextValue.trim();
 
     // Immediately clear any previously displayed errors when user changes input
     this.resolveError.set('');
@@ -125,7 +130,7 @@ export class AddressSmartInputComponent implements OnChanges {
   }
 
   async resolveNow() {
-    const input = (this.value || '').trim();
+    const input = this.inputValue().trim();
     this.resolvedAddress.set('');
     this.resolvedDomain.set('');
     this.resolveError.set('');

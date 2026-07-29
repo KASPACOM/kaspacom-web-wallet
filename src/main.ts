@@ -5,7 +5,8 @@ import * as kaspa from '../public/kaspa/kaspa';
 import * as Sentry from '@sentry/angular';
 
 const APPLICATION_INIT_TIMEOUT = 30000;
-const KASPA_WASM_PATH = './kaspa/kaspa_bg.wasm';
+const KASPA_WASM_VERSION = '2.0.1-39291059';
+const KASPA_WASM_PATH = `./kaspa/kaspa_bg.wasm?v=${KASPA_WASM_VERSION}`;
 const TRANSIENT_WASM_RETRY_DELAY = 750;
 
 const sentryEnvironment =
@@ -67,6 +68,16 @@ function isTransientLoadError(err: unknown): boolean {
   );
 }
 
+function isWasmImportMismatchError(err: unknown): boolean {
+  const message = getErrorMessage(err).toLowerCase();
+  return (
+    err instanceof WebAssembly.LinkError ||
+    (message.includes('webassembly.instantiate') &&
+      message.includes('function import requires a callable')) ||
+    message.includes('__wbindgen_closure_wrapper')
+  );
+}
+
 function shouldCaptureStartupError(err: unknown): boolean {
   if (isProductionEnvironment) {
     return true;
@@ -104,6 +115,19 @@ async function loadKaspaWasm(): Promise<void> {
   try {
     await kaspa.default({ module_or_path: KASPA_WASM_PATH });
   } catch (err) {
+    if (isWasmImportMismatchError(err)) {
+      console.warn(
+        'Kaspa WASM import mismatch detected; retrying with cache reload',
+        err,
+      );
+      await kaspa.default({
+        module_or_path: new Request(`${KASPA_WASM_PATH}&reload=${Date.now()}`, {
+          cache: 'reload',
+        }),
+      });
+      return;
+    }
+
     if (!isTransientLoadError(err)) {
       throw err;
     }
@@ -189,36 +213,41 @@ function showStorageAccessPrompt(): void {
     </div>
   `;
 
-  document.getElementById('grant-storage-btn')?.addEventListener('click', async (e) => {
-    const btn = e.target as HTMLButtonElement;
-    btn.disabled = true;
-    btn.textContent = 'Enabling...';
-    try {
-      if (document.requestStorageAccess) {
-        await document.requestStorageAccess();
-      }
-      if (checkStorageAvailability()) {
-        initApp();
-      } else {
+  document
+    .getElementById('grant-storage-btn')
+    ?.addEventListener('click', async (e) => {
+      const btn = e.target as HTMLButtonElement;
+      btn.disabled = true;
+      btn.textContent = 'Enabling...';
+      try {
+        if (document.requestStorageAccess) {
+          await document.requestStorageAccess();
+        }
+        if (checkStorageAvailability()) {
+          initApp();
+        } else {
+          showLoadingError(
+            'Storage access is still blocked',
+            'Please check your browser privacy settings.',
+          );
+        }
+      } catch {
         showLoadingError(
-          'Storage access is still blocked',
+          'Storage access was denied',
           'Please check your browser privacy settings.',
         );
       }
-    } catch {
-      showLoadingError(
-        'Storage access was denied',
-        'Please check your browser privacy settings.',
-      );
-    }
-  });
+    });
 }
 
 // Main entry point
 let appInitialized = false;
 if (checkStorageAvailability()) {
   initApp();
-} else if (isInIframe() && typeof document.requestStorageAccess === 'function') {
+} else if (
+  isInIframe() &&
+  typeof document.requestStorageAccess === 'function'
+) {
   // In iframe with storage blocked — show prompt for user gesture
   showStorageAccessPrompt();
 } else {
@@ -243,7 +272,9 @@ function initApp() {
   const loadingTimeout = setTimeout(() => {
     const loader = document.getElementById('application-loader-startup');
     if (loader && !loader.classList.contains('fade-out')) {
-      const error = new Error(`Application initialization timeout (${APPLICATION_INIT_TIMEOUT / 1000}s)`);
+      const error = new Error(
+        `Application initialization timeout (${APPLICATION_INIT_TIMEOUT / 1000}s)`,
+      );
       captureStartupException(error, 'initialization_timeout', {
         timeout_duration: APPLICATION_INIT_TIMEOUT,
         wasm_path: KASPA_WASM_PATH,

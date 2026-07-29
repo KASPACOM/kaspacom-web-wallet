@@ -123,8 +123,11 @@ jobs:
             playwright-${{ runner.os }}-
 
       - name: Install Playwright browsers
-        # Covers the chromium / webkit / firefox projects in the matrix above.
-        run: npx playwright install --with-deps chromium webkit firefox
+        # Only the project this matrix leg runs needs installing — pulling
+        # all three (and their apt deps) on every leg was blowing most of
+        # the 20-minute job timeout on redundant installs before a single
+        # test ran.
+        run: npx playwright install --with-deps ${{ matrix.project }}
 
       - name: Run @smoke on ${{ matrix.project }}
         run: npx playwright test --grep @smoke --project=${{ matrix.project }}

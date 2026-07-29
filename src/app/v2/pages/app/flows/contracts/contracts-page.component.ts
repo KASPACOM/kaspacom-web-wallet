@@ -835,7 +835,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         'That address matches multiple wallet-supported covenants. Open by covenant ID or deploy transaction to choose the exact contract.',
       );
     }
-    const row = exactRow || supportedRows[0];
+    // A hex id/txid/script-hash query must resolve to an exact match — falling
+    // back to "the only row the fuzzy search returned" risks silently
+    // substituting an unrelated covenant (e.g. while the real one is still
+    // indexer-lagged and its direct lookup above failed).
+    const row = exactRow || (isHexIdentifier ? undefined : supportedRows[0]);
     const identifier =
       row?.covenantIdHex || row?.scriptHashHex || row?.genesisTxidHex;
     if (identifier) {
@@ -847,14 +851,18 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       (result) =>
         (result.kind === 'covenant' || result.kind === 'transaction') &&
         !!result.id &&
-        /^[0-9a-fA-F]{64}$/.test(result.id),
+        /^[0-9a-fA-F]{64}$/.test(result.id) &&
+        (!isHexIdentifier ||
+          this.normalizeIdentity(result.id) === normalizedQuery),
     );
     if (concrete?.id) {
       return await this.fetchIndexerCovenant(concrete.id);
     }
 
     throw new Error(
-      'No importable wallet-supported covenant found for that query.',
+      isHexIdentifier
+        ? 'This covenant is not indexed yet. It may still be catching up with the network — try again shortly.'
+        : 'No importable wallet-supported covenant found for that query.',
     );
   }
 
@@ -2193,6 +2201,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   async openDashboardAction(entry: ContractDashboardEntry) {
+    // Same reasoning as navigateToContractDetail(): this can also be reached
+    // directly from a My Contracts card, so drop any stale route-driven id.
+    this.detailRouteId.set(null);
     this.detailPanelTab.set('action');
     this.actionPageView.set('form');
     this.activeTab.set('detail');
@@ -2457,6 +2468,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   navigateToContractDetail(entry: ContractDashboardEntry) {
+    // Drop any stale route-driven id (e.g. left over from an earlier direct
+    // URL visit) — otherwise a loadContracts() still in flight from the tab
+    // switch re-opens it via its own tail logic and clobbers this entry.
+    this.detailRouteId.set(null);
     this.detailPanelTab.set('details');
     this.actionPageView.set('list');
     this.activeTab.set('detail');

@@ -4109,7 +4109,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.getLatestCovenantOutputAction(actions) ||
       action;
     const covenantId = covenant?.covenantIdHex || action.covenantIdHex;
-<<<<<<< Updated upstream
     console.debug('[Contracts][preview] Building indexer import preview', {
       actionCount: actions.length,
       baseAction: action.action,
@@ -4147,37 +4146,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       latestOutputAction,
       activeUtxo,
     );
-=======
-    const activeUtxo = await this.fetchSingleActiveIndexerUtxo([
-      covenantId,
-      activeAction.covenantIdHex,
-      this.extractScriptHashFromScriptPubKey(
-        activeAction.outputs?.scriptPubKeyHex,
-      ),
-      activeAction.scriptHashHex,
-    ]);
-    if (!activeUtxo && covenant?.activeUtxos === 0) {
-      throw new Error(
-        'This covenant has no active UTXO left, so it cannot be opened for actions.',
-      );
-    }
-    if (!activeUtxo && (covenant?.activeUtxos ?? 0) > 0) {
-      throw new Error(
-        'The indexer reports an active covenant, but no single active UTXO could be selected for actions.',
-      );
-    }
->>>>>>> Stashed changes
     const deployTxid =
       activeUtxo?.txidHex ||
       activeAction.txidHex ||
       covenant?.genesisTxidHex ||
       action.txidHex;
-<<<<<<< Updated upstream
     const initialOutputAddress = latestContinuationAction
       ? undefined
       : action.outputs?.address;
-=======
->>>>>>> Stashed changes
     const contractAddress =
       activeUtxo?.address ||
       activeAction.outputs?.address ||
@@ -4332,7 +4308,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       .sort((a, b) => (b.blockTimeMs || 0) - (a.blockTimeMs || 0))[0];
   }
 
-<<<<<<< Updated upstream
   private getLatestContinuationAction(
     actions: IndexerCovenantAction[],
   ): IndexerCovenantAction | undefined {
@@ -4363,8 +4338,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     };
   }
 
-=======
->>>>>>> Stashed changes
   private async fetchSingleActiveIndexerUtxo(
     identifiers: Array<string | undefined | null>,
   ): Promise<IndexerCovenantUtxo | null> {
@@ -4375,18 +4348,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           .filter((identifier): identifier is string => !!identifier),
       ),
     );
-<<<<<<< Updated upstream
     console.debug('[Contracts][utxo] Looking for single active indexer UTXO', {
       identifiers: uniqueIdentifiers,
     });
-=======
->>>>>>> Stashed changes
 
     for (const identifier of uniqueIdentifiers) {
       try {
         const utxos =
           await this.covenantIndexerService.getCovenantUtxos(identifier);
-<<<<<<< Updated upstream
         const activeUtxos = utxos.filter((utxo) => utxo.status !== 'spent');
         const candidates = activeUtxos.length > 0 ? activeUtxos : utxos;
         console.debug('[Contracts][utxo] UTXO lookup result', {
@@ -4407,31 +4376,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         if (candidates.length === 1) return candidates[0];
       } catch (error) {
         console.warn('[Contracts] Failed to fetch covenant UTXO:', {
-=======
-        const activeUtxos = utxos.filter(
-          (utxo) => utxo.status !== 'spent' && !utxo.spentByTxidHex,
-        );
-        if (activeUtxos.length === 1) return activeUtxos[0];
-        if (activeUtxos.length > 1) {
-          throw new Error(
-            `Multiple active UTXOs found for covenant identifier ${identifier}.`,
-          );
-        }
-      } catch (error) {
-        console.warn('[Contracts] Failed to fetch active covenant UTXO:', {
->>>>>>> Stashed changes
           identifier,
           error,
         });
       }
     }
 
-<<<<<<< Updated upstream
     console.warn('[Contracts][utxo] No single active indexer UTXO found', {
       identifiers: uniqueIdentifiers,
     });
-=======
->>>>>>> Stashed changes
     return null;
   }
 

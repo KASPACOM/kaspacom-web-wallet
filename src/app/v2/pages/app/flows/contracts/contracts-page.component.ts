@@ -25,8 +25,6 @@ import {
   KcTooltipDirective,
   NotificationService,
 } from '@kaspacom/ui-kit';
-import { blake2b } from '@noble/hashes/blake2b';
-import { ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { WalletService } from '../../../../../services/wallet.service';
 import { WalletActionService } from '../../../../../services/wallet-action.service';
 import { QrScannerService } from '../../../../../services/qr-scanner.service';
@@ -62,7 +60,6 @@ import { downloadJsonFile, readJsonFile } from './json-file.util';
 import {
   CONTRACT_TEMPLATES,
   ContractTemplate,
-  TemplateField,
 } from '../../../../services/covenant/contract-templates';
 import {
   CtorArg,
@@ -74,7 +71,6 @@ import { KaspaL1NetworkService } from '../../../../../services/kaspa-netwrok-ser
 import { WalletActionType } from '../../../../../types/wallet-action';
 import {
   CovenantCompletePartialActionResult,
-  CovenantDeployActionResult,
   CovenantSpendActionResult,
 } from '../../../../../types/wallet-action-result';
 import { FlowPagesService } from '../../../../services/flow-pages.service';
@@ -95,7 +91,6 @@ import { ContractActionFieldsComponent } from './components/contract-action-fiel
 import {
   TabName,
   ContractDetailTab,
-  CreateMode,
   ContractsTransientState,
   IndexerImportPreview,
   ContractDashboardSource,
@@ -108,8 +103,15 @@ import {
   AvailableAction,
   DeployIndexerState,
   ActionIndexerState,
+  SELF_CUSTODY_WHITELIST_CAPACITY,
 } from './contracts-page.models';
 import { ContractDisplayService } from './services/contract-display.service';
+import { CovenantTemplateService } from './services/covenant-template.service';
+import { hex32ToBytes, computeBlake2bHex } from './crypto.util';
+import {
+  ContractTemplateDeployFormComponent,
+  ContractDeployedEvent,
+} from './components/contract-template-deploy-form/contract-template-deploy-form.component';
 
 @Component({
   selector: 'app-contracts-page',
@@ -128,6 +130,7 @@ import { ContractDisplayService } from './services/contract-display.service';
     CovenantDateTimeInputComponent,
     WalletProfileOrbComponent,
     ContractActionFieldsComponent,
+    ContractTemplateDeployFormComponent,
   ],
   templateUrl: './contracts-page.component.html',
   styleUrl: './contracts-page.component.scss',
@@ -137,7 +140,6 @@ import { ContractDisplayService } from './services/contract-display.service';
   },
 })
 export class ContractsPageComponent implements OnInit, OnDestroy {
-  readonly MIN_DEPLOY_AMOUNT_KAS = 0.5;
   private readonly MIN_CONTINUATION_AMOUNT_SOMPI = 50_000_000n;
 
   private walletService = inject(WalletService);
@@ -161,15 +163,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private notificationService = inject(NotificationService);
   private isBrowser = isPlatformBrowser(this.platformId);
   private display = inject(ContractDisplayService);
+  private templateService = inject(CovenantTemplateService);
   private routeSubscription?: Subscription;
   private registryMigrationPromise?: Promise<void>;
   private contractsLoadRequestToken = 0;
   private readonly contractsDebugEnabled = false;
   private readonly debugLogKeys = new Set<string>();
-  private readonly templatePatchContextCache = new Map<
-    string,
-    Promise<{ compiled: CompiledContract; descriptor: TemplatePatch }>
-  >();
   private readonly localParticipantsCache = new Map<
     string,
     Promise<ContractParticipant[]>
@@ -200,14 +199,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   // Deployment always uses the currently selected wallet.
   selectedAccount = computed(() => this.currentWallet() || undefined);
 
-  deployAvailableBalance = computed(() => {
-    const currentWallet = this.currentWallet();
-    if (!currentWallet) return 0;
-    const mature =
-      currentWallet.getCurrentWalletStateBalanceSignalValue()?.mature || 0n;
-    return Number(mature) / 1e8;
-  });
-
   // Computed pubkey for selected account
   selectedPubkey = computed(() => {
     const wallet = this.selectedAccount();
@@ -217,51 +208,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   selectedPubkeyHash = computed(() => {
     const pubkey = this.selectedPubkey();
-    return pubkey ? this.computeBlake2bHex(this.hex32ToBytes(pubkey)) : '';
+    return pubkey ? computeBlake2bHex(hex32ToBytes(pubkey)) : '';
   });
 
-  // Deploy form - plain properties for ngModel
-  deployContractJson = signal('');
-  deployContractTouched = false;
-  deployContractError = signal('');
-  deployAmount = '';
-  deployContractNickname = '';
-  deployAmountTouched = false;
-  deployAmountError = signal('');
-  deployResult = signal<{
-    address: string;
-    txid: string;
-    covenantId?: string;
-  } | null>(null);
-  deployIndexerState = signal<DeployIndexerState | null>(null);
-  deployError = signal<string | null>(null);
   interactIndexerState = signal<ActionIndexerState | null>(null);
-  isDeploying = signal(false);
-
-  // Computed parsed contract from deploy JSON
-  parsedDeployContract = computed(() => {
-    try {
-      if (!this.deployContractJson()) return null;
-      return this.covenantService.parseCompiledContract(
-        this.deployContractJson(),
-      );
-    } catch {
-      return null;
-    }
-  });
-
-  // Computed constructor params for deploy contract
-  deployConstructorParams = computed(() => {
-    const contract = this.parsedDeployContract();
-    return contract?.ast.params || [];
-  });
-
-  // Computed entrypoint functions for deploy contract
-  deployEntrypointFunctions = computed(() => {
-    const contract = this.parsedDeployContract();
-    if (!contract) return [];
-    return contract.ast.functions.filter((f) => f.entrypoint);
-  });
 
   // Contract registry (my contracts tab)
   allRegistryContracts = signal<ContractRegistryEntry[]>([]);
@@ -362,58 +312,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   getTemplateKey(
     input: any,
   ): 'deadman' | 'timelock' | 'multisig' | 'escrow' | 'default' {
-    // ContractTemplate.id on the Create / Templates tabs.
-    switch (input?.id) {
-      case 'dead-mans-switch':
-        return 'deadman';
-      case 'time-lock-vault':
-        return 'timelock';
-      case 'multi-sig-vault':
-        return 'multisig';
-      case 'escrow-with-arbiter':
-        return 'escrow';
-      case 'self-custody-vault':
-        return 'default';
-    }
-    switch (
-      this.normalizeContractName(input?.contractName ?? input?.name ?? '')
-    ) {
-      case 'DeadManSwitch':
-        return 'deadman';
-      case 'TimeLockVault':
-        return 'timelock';
-      case 'MultiSigVault':
-        return 'multisig';
-      case 'EscrowWithArbiter':
-        return 'escrow';
-      default:
-        return 'default';
-    }
+    return this.display.getTemplateKey(input);
   }
 
-  contractTemplates = CONTRACT_TEMPLATES;
-  createMode = signal<CreateMode>('template');
-  activeTemplate = signal<ContractTemplate | null>(null);
-  deploySteps = computed<{ label: string; value: number }[]>(() => {
-    const pastChooseType =
-      this.activeTemplate() !== null || this.createMode() === 'custom';
-
-    return [
-      { label: 'Choose type', value: pastChooseType ? 100 : 0 },
-      {
-        label: 'Set details',
-        value: !pastChooseType ? 0 : this.isDeploying() ? 100 : 50,
-      },
-      { label: 'Review & deploy', value: this.isDeploying() ? 50 : 0 },
-    ];
-  });
-  templateFormValues: { [paramName: string]: string } = {};
-  templateFieldTouched: { [paramName: string]: boolean } = {};
-  templateFieldErrors: { [paramName: string]: string } = {};
-  templateResolvedAddresses: { [paramName: string]: string } = {};
-  generatedContractJson = signal<string | null>(null);
-  templateError = signal<string | null>(null);
-  readonly selfCustodyWhitelistCapacity = 10;
+  readonly selfCustodyWhitelistCapacity = SELF_CUSTODY_WHITELIST_CAPACITY;
 
   // Interact form - plain properties for ngModel
   selectedContractId = signal('');
@@ -684,9 +586,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   // Current network
   network = computed(() => this.rpcService.getNetwork());
-  networkBlocksPerSecond = computed(
-    () => this.kaspaL1NetworkService.getCurrentNetwork().blocksPerSecond || 10,
-  );
 
   // --- Contract Lookup (My Contracts tab) ---
   lookupAddress = '';
@@ -705,12 +604,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     effect(() => {
       this.network();
       this.loadContracts();
-    });
-
-    effect(() => {
-      this.currentWallet();
-      this.syncWalletOwnedTemplateFields();
-      this.validateDeployAmount(false);
     });
 
     effect(() => {
@@ -932,712 +825,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   isMyContractsTabActive = computed(
     () => this.activeTab() === 'my-contracts' || this.activeTab() === 'detail',
   );
-
-  selectTemplate(template: ContractTemplate) {
-    this.createMode.set('template');
-    const form = this.initializeTemplateForm(template);
-    this.templateFormValues = form.values;
-    this.templateFieldTouched = form.touched;
-    this.templateFieldErrors = form.errors;
-    this.templateResolvedAddresses = form.resolved;
-    this.generatedContractJson.set(null);
-    this.templateError.set(null);
-
-    this.activeTemplate.set(template);
-    this.syncWalletOwnedTemplateFields();
-    this.applyTemplateDefaults(template);
-  }
-
-  private initializeTemplateForm(template: ContractTemplate): {
-    values: Record<string, string>;
-    touched: Record<string, boolean>;
-    errors: Record<string, string>;
-    resolved: Record<string, string>;
-  } {
-    const values: Record<string, string> = {};
-    const touched: Record<string, boolean> = {};
-    const errors: Record<string, string> = {};
-    const resolved: Record<string, string> = {};
-    const walletAddress =
-      this.selectedAccount()?.getAddress() ||
-      this.currentWallet()?.getAddress() ||
-      '';
-
-    for (const field of template.fields) {
-      values[field.paramName] = this.isWalletOwnedField(field)
-        ? walletAddress
-        : '';
-      touched[field.paramName] = false;
-      errors[field.paramName] = '';
-    }
-
-    return { values, touched, errors, resolved };
-  }
-
-  private syncWalletOwnedTemplateFields() {
-    const template = this.activeTemplate();
-    const address =
-      this.selectedAccount()?.getAddress() ||
-      this.currentWallet()?.getAddress();
-    if (!template || !address) return;
-
-    let changed = false;
-    const nextValues = { ...this.templateFormValues };
-
-    for (const field of template.fields) {
-      if (this.isWalletOwnedField(field)) {
-        nextValues[field.paramName] = address;
-        changed = true;
-      }
-    }
-
-    if (changed) {
-      this.templateFormValues = nextValues;
-    }
-  }
-
-  private applyTemplateDefaults(template: ContractTemplate) {
-    if (template.id !== 'self-custody-vault') return;
-    this.templateFormValues['whitelistedDestinations_mode'] = 'anywhere';
-    this.setSelfCustodyDelayFromHours(24, false);
-  }
-
-  selectCustomContract() {
-    this.createMode.set('custom');
-    this.activeTemplate.set(null);
-    this.generatedContractJson.set(null);
-    this.templateError.set(null);
-    this.deployError.set(null);
-    this.deployResult.set(null);
-    this.deployIndexerState.set(null);
-    this.deployContractTouched = false;
-    this.deployContractError.set('');
-    this.validateDeployAmount(false);
-  }
-
-  resetTemplateSelection() {
-    this.activeTemplate.set(null);
-    this.generatedContractJson.set(null);
-    this.templateError.set(null);
-    this.deployError.set(null);
-    this.deployResult.set(null);
-    this.deployIndexerState.set(null);
-    this.deployContractTouched = false;
-    this.deployContractError.set('');
-    this.templateFieldTouched = {};
-    this.templateFieldErrors = {};
-    this.templateResolvedAddresses = {};
-  }
-
-  async generateContract() {
-    const template = this.activeTemplate();
-    if (!template) {
-      this.templateError.set('Please select a template');
-      return;
-    }
-
-    if (!this.validateAllTemplateFields(true)) {
-      this.templateError.set(
-        'Please complete the highlighted fields before deploying.',
-      );
-      return;
-    }
-
-    this.templateError.set(null);
-    this.generatedContractJson.set(null);
-
-    try {
-      const fieldValues = this.getCurrentTemplateFieldValues(template);
-      const newArgs = template.fields.map((field) =>
-        this.fieldToCtorArgFromValues(field, fieldValues),
-      );
-      const { compiled, descriptor } = await this.getTemplatePatchContext(
-        template.id,
-      );
-      const patched = this.templatePatcher.applyPatch(
-        compiled,
-        descriptor,
-        newArgs,
-      );
-
-      let argsPayload: any[] = [];
-      let tmplName = compiled.contract_name;
-
-      if (template.id === 'multi-sig-vault') {
-        tmplName = 'MultiSigVault';
-        argsPayload = [
-          {
-            name: 'signer1',
-            type: 'address',
-            value: this.getTemplateValueByName('key1'),
-          },
-          {
-            name: 'signer2',
-            type: 'address',
-            value: this.getTemplateValueByName('key2'),
-          },
-          {
-            name: 'signer3',
-            type: 'address',
-            value: this.getTemplateValueByName('key3'),
-          },
-        ];
-      } else if (template.id === 'escrow-with-arbiter') {
-        tmplName = 'EscrowWithArbiter';
-        argsPayload = [
-          {
-            name: 'buyer',
-            type: 'address',
-            value: this.getTemplateValueByName('buyer'),
-          },
-          {
-            name: 'seller',
-            type: 'address',
-            value: this.getTemplateValueByName('seller'),
-          },
-          {
-            name: 'arbiter',
-            type: 'address',
-            value: this.templateFormValues['arbiterHash'],
-          },
-          {
-            name: 'timeoutBlueScore',
-            type: 'blueScore',
-            value: String(
-              this.parseDateToUnixMs(
-                String(this.templateFormValues['expiry'] ?? '').trim(),
-                'Refund Expiry Timestamp',
-              ),
-            ),
-          },
-        ];
-      } else if (template.id === 'dead-mans-switch') {
-        tmplName = 'DeadManSwitch';
-        argsPayload = [
-          {
-            name: 'owner',
-            type: 'address',
-            value: this.getTemplateValueByName('owner'),
-          },
-          {
-            name: 'heir',
-            type: 'address',
-            value: this.getTemplateValueByName('heir'),
-          },
-          {
-            name: 'checkInDeadline',
-            type: 'blueScore',
-            value: String(
-              this.parseDateToUnixMs(
-                String(this.templateFormValues['expiry'] ?? '').trim(),
-                'Check-in Deadline',
-              ),
-            ),
-          },
-        ];
-      } else if (template.id === 'time-lock-vault') {
-        tmplName = 'TimeLockVault';
-        argsPayload = [
-          {
-            name: 'signer',
-            type: 'address',
-            value: this.getTemplateValueByName('owner'),
-          },
-          {
-            name: 'recoveryKey',
-            type: 'address',
-            value: this.getTemplateValueByName('recovery'),
-          },
-          {
-            name: 'unlockBlueScore',
-            type: 'blueScore',
-            value: String(
-              this.parseDateToUnixMs(
-                String(this.templateFormValues['timeout'] ?? '').trim(),
-                'Unlock Timestamp',
-              ),
-            ),
-          },
-        ];
-      } else if (template.id === 'self-custody-vault') {
-        tmplName = 'SelfCustodyVault';
-        argsPayload = this.buildSelfCustodyArgsPayload(fieldValues);
-      }
-
-      if (argsPayload.length > 0) {
-        patched.tn10 = {
-          v: 1,
-          tmpl: tmplName,
-          args: argsPayload,
-        };
-      }
-
-      if (template.id === 'self-custody-vault') {
-        this.logSelfCustodyContractParams('template creation', {
-          fieldValues,
-          constructorArgs: newArgs,
-          tn10: patched.tn10,
-          scriptLength: patched.script?.length,
-          address: this.covenantService.getContractAddress(patched),
-        });
-      }
-
-      this.generatedContractJson.set(JSON.stringify(patched, null, 2));
-    } catch (error: any) {
-      this.templateError.set(
-        error?.message || 'Failed to generate contract from template',
-      );
-    }
-  }
-
-  async deployTemplateContract() {
-    this.deployError.set(null);
-    this.deployResult.set(null);
-    this.deployIndexerState.set(null);
-    this.templateError.set(null);
-
-    if (
-      !this.validateAllTemplateFields(true) ||
-      !this.validateDeployAmount(true)
-    ) {
-      this.templateError.set(
-        'Please complete the highlighted fields before deploying.',
-      );
-      return;
-    }
-
-    try {
-      await this.generateContract();
-      const generated = this.generatedContractJson();
-      if (!generated) {
-        const message =
-          this.templateError() || 'Failed to generate contract from template';
-        this.deployError.set(message);
-        return;
-      }
-      this.deployContractJson.set(generated);
-      await this.deployContract();
-    } catch (error: any) {
-      const message =
-        error?.message || 'Failed to prepare contract for deployment';
-      this.templateError.set(message);
-      this.deployError.set(message);
-    }
-  }
-
-  useGeneratedContract() {
-    const generated = this.generatedContractJson();
-    if (!generated) {
-      this.templateError.set('Generate a contract before deploying it');
-      return;
-    }
-
-    this.deployContractJson.set(generated);
-    this.activeTab.set('deploy');
-  }
-
-  isWalletOwnedField(field: TemplateField): boolean {
-    return (
-      field.type === 'address' &&
-      ['owner', 'buyer', 'key1', 'hotKey'].includes(field.paramName)
-    );
-  }
-
-  getFieldHelp(field: TemplateField): string {
-    if (this.isWalletOwnedField(field)) {
-      return 'This is set to your currently selected wallet so the covenant remains controlled from this account.';
-    }
-
-    const help: Record<string, string> = {
-      recovery:
-        'A backup wallet that can recover the funds after the unlock date.',
-      key2: 'A second signer. Any two configured signers can authorize a withdrawal.',
-      key3: 'A third signer. Any two configured signers can authorize a withdrawal.',
-      seller:
-        'The seller receives funds when the buyer and seller both approve release.',
-      heir: 'The beneficiary who can claim the funds if the owner misses the deadline.',
-      arbiterHash:
-        'Paste the arbiter address or public key. The wallet stores the required blake2b-256 hash in the covenant.',
-      coldKey:
-        'Keep this wallet separate from the hot wallet. It can sweep funds immediately in an emergency.',
-      whitelistedDestinations:
-        'Choose send anywhere for no destination restriction, or allow only listed wallets for withdrawals.',
-      initUnvaultDelaySeconds: `This is a DAA-score delay, not wall-clock seconds. The hours value is only an estimate using the current ${this.networkBlocksPerSecond()} BPS network rate. If Kaspa BPS changes later, recreate the vault or use a larger DAA delay because the on-chain contract stores only the DAA amount.`,
-      timeout:
-        'The earliest date when the recovery wallet can use the backup withdrawal path.',
-      expiry:
-        this.activeTemplate()?.id === 'dead-mans-switch'
-          ? 'How many days the owner can be inactive before the heir can claim.'
-          : 'The deadline used by this covenant. The wallet converts this date to the timestamp format required by Kaspa.',
-    };
-
-    return help[field.paramName] || field.description;
-  }
-
-  getTemplateStepNumber(): number {
-    return this.activeTemplate() ? 2 : 1;
-  }
-
-  private getTemplateFieldValue(field: TemplateField): string {
-    return (
-      this.templateResolvedAddresses[field.paramName] ||
-      this.templateFormValues[field.paramName] ||
-      ''
-    );
-  }
-
-  private getTemplateValueByName(paramName: string): string {
-    return (
-      this.templateResolvedAddresses[paramName] ||
-      this.templateFormValues[paramName] ||
-      ''
-    );
-  }
-
-  private getCurrentTemplateFieldValues(
-    template: ContractTemplate,
-  ): Record<string, string> {
-    const values: Record<string, string> = { ...this.templateFormValues };
-    for (const field of template.fields) {
-      values[field.paramName] = this.getTemplateFieldValue(field);
-    }
-    return values;
-  }
-
-  onDeployAmountChange(value: any) {
-    this.deployAmount =
-      value === null || value === undefined ? '' : String(value);
-    this.deployAmountTouched = true;
-    this.validateDeployAmount(false);
-  }
-
-  onDeployContractJsonChange(value: string) {
-    this.deployContractJson.set(value || '');
-    this.deployContractTouched = true;
-    this.validateDeployContractJson(false);
-  }
-
-  validateDeployContractJson(markTouched = false): boolean {
-    if (markTouched) this.deployContractTouched = true;
-
-    const value = this.deployContractJson().trim();
-    if (!value) {
-      this.deployContractError.set(
-        this.deployContractTouched ? 'Compiled contract JSON is required' : '',
-      );
-      return false;
-    }
-
-    try {
-      this.covenantService.parseCompiledContract(value);
-      this.deployContractError.set('');
-      return true;
-    } catch {
-      this.deployContractError.set('Invalid compiled contract JSON');
-      return false;
-    }
-  }
-
-  onMaxDeployAmountClick() {
-    if (this.isDeploying()) return;
-    this.deployAmount = String(this.deployAvailableBalance());
-    this.deployAmountTouched = true;
-    this.validateDeployAmount(false);
-  }
-
-  validateDeployAmount(markTouched = false): boolean {
-    if (markTouched) this.deployAmountTouched = true;
-
-    const raw = String(this.deployAmount ?? '').trim();
-    if (!raw) {
-      this.deployAmountError.set(
-        this.deployAmountTouched ? 'Amount is required' : '',
-      );
-      return false;
-    }
-
-    const amount = Number(raw);
-    if (!Number.isFinite(amount)) {
-      this.deployAmountError.set('Enter a valid amount');
-      return false;
-    }
-
-    if (amount < this.MIN_DEPLOY_AMOUNT_KAS) {
-      this.deployAmountError.set(
-        `Minimum amount is ${this.MIN_DEPLOY_AMOUNT_KAS} KAS`,
-      );
-      return false;
-    }
-
-    if (amount > this.deployAvailableBalance()) {
-      this.deployAmountError.set('Insufficient balance');
-      return false;
-    }
-
-    this.deployAmountError.set('');
-    return true;
-  }
-
-  onTemplateFieldChange(field: TemplateField, value: any) {
-    this.templateFormValues[field.paramName] = value || '';
-    this.templateFieldTouched[field.paramName] = true;
-    if (field.type === 'hash32') {
-      this.onHash32Input(field.paramName, value || '');
-    }
-    this.validateTemplateField(field);
-    this.templateError.set(null);
-  }
-
-  getWhitelistMode(paramName: string): 'anywhere' | 'whitelist' {
-    return this.templateFormValues[paramName + '_mode'] === 'whitelist'
-      ? 'whitelist'
-      : 'anywhere';
-  }
-
-  setWhitelistMode(field: TemplateField, mode: 'anywhere' | 'whitelist') {
-    this.templateFormValues[field.paramName + '_mode'] = mode;
-    if (mode === 'anywhere') {
-      this.templateFormValues[field.paramName] = '';
-    } else if (!this.templateFormValues[field.paramName]) {
-      this.templateFormValues[field.paramName] = JSON.stringify(['']);
-    }
-    this.templateFieldTouched[field.paramName] = true;
-    this.validateTemplateField(field);
-    this.templateError.set(null);
-  }
-
-  getTemplateAddressList(paramName: string): string[] {
-    const raw = String(this.templateFormValues[paramName] ?? '').trim();
-    if (!raw) return [];
-    try {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        return parsed
-          .map((value) => String(value ?? '').trim())
-          .filter(Boolean);
-      }
-    } catch {
-      return raw
-        .split(/\r?\n|,/)
-        .map((value) => value.trim())
-        .filter(Boolean);
-    }
-    return [];
-  }
-
-  getTemplateAddressListRows(paramName: string): string[] {
-    const raw = String(this.templateFormValues[paramName] ?? '').trim();
-    if (!raw) return [''];
-    try {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        return parsed.map((value) => String(value ?? ''));
-      }
-    } catch {
-      return raw.split(/\r?\n|,/).map((value) => value.trim());
-    }
-    return [''];
-  }
-
-  onWhitelistAddressChange(field: TemplateField, index: number, value: string) {
-    const rows = this.getTemplateAddressListRows(field.paramName);
-    rows[index] = value || '';
-    this.templateFormValues[field.paramName] = JSON.stringify(rows);
-    this.templateFieldTouched[field.paramName] = true;
-    this.validateTemplateField(field);
-    this.templateError.set(null);
-  }
-
-  addWhitelistAddress(field: TemplateField) {
-    const rows = this.getTemplateAddressListRows(field.paramName);
-    if (rows.length >= this.selfCustodyWhitelistCapacity) return;
-    rows.push('');
-    this.templateFormValues[field.paramName] = JSON.stringify(rows);
-    this.templateFieldTouched[field.paramName] = true;
-    this.validateTemplateField(field);
-  }
-
-  removeWhitelistAddress(field: TemplateField, index: number) {
-    const rows = this.getTemplateAddressListRows(field.paramName);
-    rows.splice(index, 1);
-    this.templateFormValues[field.paramName] = JSON.stringify(
-      rows.length > 0 ? rows : [''],
-    );
-    this.templateFieldTouched[field.paramName] = true;
-    this.validateTemplateField(field);
-  }
-
-  onTemplateAddressResolved(field: TemplateField, result: any) {
-    if (result?.effectiveAddress) {
-      this.templateResolvedAddresses[field.paramName] = result.effectiveAddress;
-      this.templateFieldErrors[field.paramName] = '';
-    } else {
-      delete this.templateResolvedAddresses[field.paramName];
-      this.validateTemplateField(field);
-    }
-  }
-
-  onTemplateAddressQrClick(field: TemplateField) {
-    if (this.qrScannerService.isCurrentlyScanning()) {
-      this.qrScannerService.stopScanning();
-      return;
-    }
-
-    this.qrScannerService.startScanning({
-      scannerId: `qr-scanner-covenant-${field.paramName}`,
-      title: `Scan ${field.label}`,
-      onSuccess: (address: string) =>
-        this.onTemplateFieldChange(field, address),
-      onError: (error: string) =>
-        console.error('[Contracts] QR scanning error:', error),
-    });
-  }
-
-  validateAllTemplateFields(markTouched = false): boolean {
-    const template = this.activeTemplate();
-    if (!template) return false;
-
-    let valid = true;
-    for (const field of template.fields) {
-      if (markTouched) this.templateFieldTouched[field.paramName] = true;
-      valid = this.validateTemplateField(field) && valid;
-    }
-    return valid;
-  }
-
-  validateTemplateField(field: TemplateField): boolean {
-    if (field.hidden) {
-      this.templateFieldErrors[field.paramName] = '';
-      return true;
-    }
-
-    if (this.isWalletOwnedField(field)) {
-      this.syncWalletOwnedTemplateFields();
-    }
-
-    const value = String(this.templateFormValues[field.paramName] ?? '').trim();
-    let error = '';
-
-    if (!value) {
-      if (
-        field.type === 'address_list' &&
-        this.getWhitelistMode(field.paramName) === 'anywhere'
-      ) {
-        error = '';
-      } else {
-        error = `${field.label} is required`;
-      }
-    } else if (field.type === 'address') {
-      const resolvedAddress = this.templateResolvedAddresses[field.paramName];
-      if (!this.utilsHelper.isValidWalletAddress(value) && !resolvedAddress) {
-        error = 'Invalid wallet address';
-      }
-    } else if (field.type === 'address_list') {
-      const addresses = this.getTemplateAddressList(field.paramName);
-      if (this.getWhitelistMode(field.paramName) === 'whitelist') {
-        if (addresses.length === 0) {
-          error = 'Add at least one whitelist address';
-        } else if (addresses.length > this.selfCustodyWhitelistCapacity) {
-          error = `Maximum ${this.selfCustodyWhitelistCapacity} whitelist addresses`;
-        } else if (
-          addresses.some(
-            (address) => !this.utilsHelper.isValidWalletAddress(address),
-          )
-        ) {
-          error = 'Every whitelist entry must be a valid wallet address';
-        }
-      }
-    } else if (field.type === 'hash32') {
-      const normalized = value.replace(/^0x/i, '');
-      if (!/^[0-9a-fA-F]{64}$/.test(normalized)) {
-        error = 'Enter a Kaspa address, public key, or 32-byte hex hash';
-      }
-    } else if (field.type === 'int_timestamp') {
-      if (!Number.isFinite(new Date(value).getTime())) {
-        error = 'Select a valid date and time';
-      }
-    } else if (
-      field.type === 'int_days' ||
-      field.type === 'int_hours' ||
-      field.type === 'int_daa_delay' ||
-      field.type === 'int_count'
-    ) {
-      const numeric = Number(value);
-      if (!Number.isFinite(numeric) || numeric < 0) {
-        error = 'Enter a non-negative number';
-      } else if (field.type === 'int_daa_delay' && numeric > 0xffffff) {
-        error = 'Maximum is 16,777,215 DAA score units';
-      } else if (
-        (field.type === 'int_days' ||
-          field.type === 'int_daa_delay' ||
-          field.type === 'int_count') &&
-        !Number.isInteger(numeric)
-      ) {
-        error = 'Enter a non-negative whole number';
-      }
-    }
-
-    this.templateFieldErrors[field.paramName] = error;
-    return !error;
-  }
-
-  getTemplateFieldError(field: TemplateField): string {
-    return this.templateFieldTouched[field.paramName]
-      ? this.templateFieldErrors[field.paramName] || ''
-      : '';
-  }
-
-  isTemplateFieldValid(field: TemplateField): boolean {
-    return !this.getTemplateFieldError(field);
-  }
-
-  isCreateDeployDisabled(): boolean {
-    if (this.isDeploying() || !this.currentWallet()) return true;
-    if (!this.isDeployAmountCompleteValid()) return true;
-
-    if (this.createMode() === 'custom') {
-      return !this.isDeployContractJsonCompleteValid();
-    }
-
-    const template = this.activeTemplate();
-    if (!template) return true;
-
-    return template.fields.some((field) => {
-      if (field.hidden) return false;
-      if (
-        field.type === 'address_list' &&
-        this.getWhitelistMode(field.paramName) === 'anywhere'
-      ) {
-        return !!this.templateFieldErrors[field.paramName];
-      }
-      const value = String(
-        this.templateFormValues[field.paramName] ?? '',
-      ).trim();
-      return !value || !!this.templateFieldErrors[field.paramName];
-    });
-  }
-
-  private isDeployAmountCompleteValid(): boolean {
-    const raw = String(this.deployAmount ?? '').trim();
-    if (!raw) return false;
-    const amount = Number(raw);
-    return (
-      Number.isFinite(amount) &&
-      amount >= this.MIN_DEPLOY_AMOUNT_KAS &&
-      amount <= this.deployAvailableBalance()
-    );
-  }
-
-  private isDeployContractJsonCompleteValid(): boolean {
-    const value = this.deployContractJson().trim();
-    if (!value) return false;
-    try {
-      this.covenantService.parseCompiledContract(value);
-      return true;
-    } catch {
-      return false;
-    }
-  }
 
   /**
    * Load contracts from registry and check on-chain status
@@ -2005,9 +1192,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   private currentWalletPubkeyHash(): string | undefined {
     const pubkey = this.currentWalletPubkey();
-    return pubkey
-      ? this.computeBlake2bHex(this.hex32ToBytes(pubkey))
-      : undefined;
+    return pubkey ? computeBlake2bHex(hex32ToBytes(pubkey)) : undefined;
   }
 
   private currentWalletAliasKey(): string | undefined {
@@ -2084,11 +1269,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.editingAliasKey.set(null);
     this.aliasNotice.set(null);
     this.aliasDraft = '';
-  }
-
-  onDeployContractNicknameChange(value: unknown) {
-    this.deployContractNickname =
-      value === null || value === undefined ? '' : String(value);
   }
 
   async saveAlias(contract: ContractDashboardEntry) {
@@ -2456,17 +1636,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   private normalizeContractName(name: string): string {
-    const normalized = String(name || '').replace(/[^a-zA-Z0-9]/g, '');
-    const aliases: Record<string, string> = {
-      DeadMansSwitch: 'DeadManSwitch',
-      "DeadMan'sSwitch": 'DeadManSwitch',
-      TimeLockVault: 'TimeLockVault',
-      MultiSigVault: 'MultiSigVault',
-      Escrow: 'EscrowWithArbiter',
-      SelfCustody: 'SelfCustodyVault',
-      SelfCustodyVault: 'SelfCustodyVault',
-    };
-    return aliases[normalized] || normalized;
+    return this.display.normalizeContractName(name);
   }
 
   private getTemplateDisplayName(name: string): string {
@@ -2626,7 +1796,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       const compiled = this.covenantService.parseCompiledContract(
         contract.compiledJson,
       );
-      const args = this.argsArrayToRecord(compiled.tn10?.args || []);
+      const args = this.templateService.argsArrayToRecord(compiled.tn10?.args || []);
       const hotKey = args['hotKey'];
       const coldKey = args['coldKey'];
       const participants: Array<{ label: string; value: string }> = [];
@@ -2653,7 +1823,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   ): ContractParticipant[] {
     const source = {
       ...(summary.constructor || {}),
-      ...this.argsArrayToRecord(
+      ...this.templateService.argsArrayToRecord(
         this.normalizeIndexerArgs(summary.claimedArgs?.args),
       ),
     };
@@ -2694,15 +1864,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       });
   }
 
-  private argsArrayToRecord(
-    args: IndexerCovenantArg[],
-  ): Record<string, string> {
-    return args.reduce<Record<string, string>>((record, arg) => {
-      record[arg.name] = String(arg.value);
-      return record;
-    }, {});
-  }
-
   private normalizeIndexerArgs(rawArgs: unknown): IndexerCovenantArg[] {
     const aliases: Record<string, { name: string; type: string }> = {
       h: { name: 'hotKey', type: 'address' },
@@ -2741,100 +1902,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
 
     return [];
-  }
-
-  private buildSelfCustodyArgsPayload(
-    values: Record<string, string>,
-  ): IndexerCovenantArg[] {
-    const whitelistMode = this.getWhitelistModeFromValues(
-      'whitelistedDestinations',
-      values,
-    );
-    const whitelistedDestinations =
-      whitelistMode === 'whitelist'
-        ? this.getAddressListFromRaw(values['whitelistedDestinations']).join(
-            ',',
-          )
-        : '';
-    const delayDaaValue =
-      values['initUnvaultDelaySeconds'] ?? values['unvaultDelaySeconds'];
-    const delayDaaScore = this.parseWholeNumber(
-      String(delayDaaValue ?? '').trim() || String(this.hoursToDaaDelay(24)),
-      'Unvault Delay',
-    );
-    const initPhase = values['initPhase']
-      ? this.parseWholeNumber(
-          String(values['initPhase']).trim(),
-          'Initial Phase',
-        )
-      : 0;
-
-    return [
-      {
-        name: 'hotKey',
-        type: 'address',
-        value: String(values['hotKey'] ?? ''),
-      },
-      {
-        name: 'coldKey',
-        type: 'address',
-        value: String(values['coldKey'] ?? ''),
-      },
-      {
-        name: 'whitelistMode',
-        type: 'string',
-        value: whitelistMode,
-      },
-      {
-        name: 'whitelistedDestinations',
-        type: 'address[]',
-        value: whitelistedDestinations,
-      },
-      {
-        name: 'unvaultDelaySeconds',
-        type: 'blueScore',
-        value: String(delayDaaScore),
-      },
-      {
-        name: 'initPhase',
-        type: 'int',
-        value: String(initPhase),
-      },
-    ];
-  }
-
-  private logSelfCustodyContractParams(
-    context: string,
-    details: Record<string, unknown>,
-  ): void {
-    console.log(
-      `[SelfCustodyVault] ${context}`,
-      JSON.parse(
-        JSON.stringify(details, (_key, value) => {
-          if (typeof value === 'bigint') return value.toString();
-          if (value instanceof Uint8Array) return Array.from(value);
-          return value;
-        }),
-      ),
-    );
-  }
-
-  private buildSelfCustodyCompactClaim(values: Record<string, string>) {
-    const args = this.argsArrayToRecord(
-      this.buildSelfCustodyArgsPayload(values),
-    );
-    return {
-      v: 1,
-      tmpl: 'SelfCustodyVault',
-      args: {
-        h: args['hotKey'] || '',
-        c: args['coldKey'] || '',
-        m: args['whitelistMode'] === 'whitelist' ? 'w' : 'a',
-        w: args['whitelistedDestinations'] || '',
-        d: args['unvaultDelaySeconds'] || String(this.hoursToDaaDelay(24)),
-        p: args['initPhase'] || '0',
-      },
-    };
   }
 
   private roleLabel(role: string): string {
@@ -3011,7 +2078,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   ): number | undefined {
     const source = {
       ...(summary.constructor || {}),
-      ...this.argsArrayToRecord(summary.claimedArgs?.args || []),
+      ...this.templateService.argsArrayToRecord(summary.claimedArgs?.args || []),
       // The active UTXO's decoded state reflects the covenant's current
       // field values (e.g. after a keepAlive extends the deadline), whereas
       // `constructor`/`claimedArgs` can still describe the deploy this
@@ -4195,7 +3262,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   ): Record<string, string> {
     const covenant = detail.response?.covenant || detail.entry.indexerSummary;
     const args: Record<string, string> = {
-      ...this.argsArrayToRecord(
+      ...this.templateService.argsArrayToRecord(
         this.normalizeIndexerArgs(covenant?.claimedArgs?.args),
       ),
       ...(covenant?.constructor
@@ -4215,7 +3282,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           this.covenantService.parseCompiledContract(compiledJson);
         Object.assign(
           args,
-          this.argsArrayToRecord(
+          this.templateService.argsArrayToRecord(
             this.normalizeIndexerArgs(compiled.tn10?.args),
           ),
         );
@@ -4251,7 +3318,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const contract = this.parsedInteractContract();
     if (contract?.contract_name !== 'SelfCustodyVault') return [];
 
-    const args = this.argsArrayToRecord(
+    const args = this.templateService.argsArrayToRecord(
       this.normalizeIndexerArgs(contract.tn10?.args),
     );
     const mode = String(args['whitelistMode'] || '').toLowerCase();
@@ -4259,7 +3326,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (mode && mode !== 'whitelist') return [];
     if (!raw) return [];
 
-    return this.getAddressListFromRaw(raw);
+    return this.templateService.getAddressListFromRaw(raw);
   }
 
   onSelfCustodySweepDestinationChange(address: string) {
@@ -4947,11 +4014,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       tmpl: normalizedTemplateName,
       args:
         template.id === 'self-custody-vault'
-          ? this.buildSelfCustodyArgsPayload(fieldValues)
+          ? this.templateService.buildSelfCustodyArgsPayload(fieldValues)
           : args,
     };
     if (template.id === 'self-custody-vault') {
-      this.logSelfCustodyContractParams('indexer import compile', {
+      this.templateService.logSelfCustodyContractParams('indexer import compile', {
         fieldValues,
         tn10: compiled.tn10,
         activeState: activeAction?.outputs?.state,
@@ -4978,7 +4045,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         compiled.tn10 = {
           v: 1,
           tmpl: normalizedTemplateName,
-          args: this.buildSelfCustodyArgsPayload(fieldValues),
+          args: this.templateService.buildSelfCustodyArgsPayload(fieldValues),
         };
         computedAddress = matched.address;
       }
@@ -5123,7 +4190,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           );
           const address = this.covenantService.getContractAddress(compiled);
           if (address === contractAddress) {
-            this.logSelfCustodyContractParams('indexer variant matched', {
+            this.templateService.logSelfCustodyContractParams('indexer variant matched', {
               fieldValues,
               activeState: state,
               address,
@@ -5226,19 +4293,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   ): ContractTemplate | undefined {
     const normalized = this.normalizeTemplateName(templateName);
     if (normalized.includes('deadman')) {
-      return this.templateById('dead-mans-switch');
+      return this.templateService.templateById('dead-mans-switch');
     }
     if (normalized.includes('timelock')) {
-      return this.templateById('time-lock-vault');
+      return this.templateService.templateById('time-lock-vault');
     }
     if (normalized.includes('multisig')) {
-      return this.templateById('multi-sig-vault');
+      return this.templateService.templateById('multi-sig-vault');
     }
     if (normalized.includes('escrow')) {
-      return this.templateById('escrow-with-arbiter');
+      return this.templateService.templateById('escrow-with-arbiter');
     }
     if (normalized.includes('selfcustody')) {
-      return this.templateById('self-custody-vault');
+      return this.templateService.templateById('self-custody-vault');
     }
 
     const aliases: Record<string, string> = {
@@ -5271,55 +4338,25 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       names.has('heir') &&
       names.has('checkInDeadline')
     ) {
-      return this.templateById('dead-mans-switch');
+      return this.templateService.templateById('dead-mans-switch');
     }
     if (
       names.has('signer') &&
       names.has('recoveryKey') &&
       names.has('unlockBlueScore')
     ) {
-      return this.templateById('time-lock-vault');
+      return this.templateService.templateById('time-lock-vault');
     }
     if (names.has('signer1') && names.has('signer2') && names.has('signer3')) {
-      return this.templateById('multi-sig-vault');
+      return this.templateService.templateById('multi-sig-vault');
     }
     if (names.has('buyer') && names.has('seller') && names.has('arbiter')) {
-      return this.templateById('escrow-with-arbiter');
+      return this.templateService.templateById('escrow-with-arbiter');
     }
     if (names.has('hotKey') && names.has('coldKey')) {
-      return this.templateById('self-custody-vault');
+      return this.templateService.templateById('self-custody-vault');
     }
     return undefined;
-  }
-
-  private templateById(id: string): ContractTemplate | undefined {
-    return CONTRACT_TEMPLATES.find((template) => template.id === id);
-  }
-
-  private async getTemplatePatchContext(
-    templateId: string,
-  ): Promise<{ compiled: CompiledContract; descriptor: TemplatePatch }> {
-    const cached = this.templatePatchContextCache.get(templateId);
-    if (cached) return cached;
-
-    const promise = (async () => {
-      const template = this.templateById(templateId);
-      if (!template) {
-        throw new Error(`Unknown covenant template "${templateId}".`);
-      }
-      const compiled = (await firstValueFrom(
-        this.http.get<any>(template.assetPath),
-      )) as CompiledContract;
-      return {
-        compiled,
-        descriptor: this.templatePatcher.extractPatchDescriptor(
-          compiled,
-          template.placeholderArgs,
-        ),
-      };
-    })();
-    this.templatePatchContextCache.set(templateId, promise);
-    return promise;
   }
 
   private normalizeTemplateName(value: string): string {
@@ -5397,7 +4434,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           initUnvaultDelaySeconds: String(
             Number.isFinite(delaySeconds)
               ? delaySeconds
-              : this.hoursToDaaDelay(24),
+              : this.templateService.hoursToDaaDelay(24),
           ),
           initPhase: String(
             state['initPhase'] ??
@@ -5416,9 +4453,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     fieldValues: Record<string, string>,
   ): Promise<CompiledContract> {
     const newArgs = template.fields.map((field) =>
-      this.fieldToCtorArgFromValues(field, fieldValues),
+      this.templateService.fieldToCtorArgFromValues(field, fieldValues),
     );
-    const { compiled, descriptor } = await this.getTemplatePatchContext(
+    const { compiled, descriptor } = await this.templateService.getTemplatePatchContext(
       template.id,
     );
     const patched = this.templatePatcher.applyPatch(
@@ -5427,7 +4464,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       newArgs,
     ) as CompiledContract;
     if (template.id === 'self-custody-vault') {
-      this.logSelfCustodyContractParams('template compile', {
+      this.templateService.logSelfCustodyContractParams('template compile', {
         fieldValues,
         constructorArgs: newArgs,
         scriptLength: patched.script?.length,
@@ -5443,7 +4480,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     paramName: string,
   ): Promise<bigint | undefined> {
     try {
-      const { descriptor } = await this.getTemplatePatchContext(templateId);
+      const { descriptor } = await this.templateService.getTemplatePatchContext(templateId);
       const param = descriptor.params.find((entry) => entry.name === paramName);
       const position = param?.positions[0];
       if (!param || param.paramType !== 'int_field' || !position) {
@@ -5484,7 +4521,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     paramType: TemplatePatch['params'][number]['paramType'],
   ): Promise<string | undefined> {
     try {
-      const { descriptor } = await this.getTemplatePatchContext(templateId);
+      const { descriptor } = await this.templateService.getTemplatePatchContext(templateId);
       const param = descriptor.params.find((entry) => entry.name === paramName);
       const position = param?.positions[0];
       if (!param || param.paramType !== paramType || !position) {
@@ -5506,15 +4543,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   async deleteContract(id: string) {
     await this.registryService.deleteContract(id);
     await this.loadContracts();
-  }
-
-  /**
-   * Get param display string (for template)
-   */
-  getParamTypes(
-    params: Array<{ name: string; type_ref: { base: string } }>,
-  ): string {
-    return params.map((p) => `${p.name}:${p.type_ref.base}`).join(', ');
   }
 
   /**
@@ -5574,133 +4602,64 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Deploy a contract
+   * Handles the ContractTemplateDeployFormComponent's `(deployed)` output —
+   * the "record a successful deploy into the local registry" tail that used
+   * to run inline inside this component's own deployContract(). The child
+   * calls `event.resolve(...)` with the outcome so it can drive its own
+   * deployIndexerState/deployResult signals afterward (registryEntryId is
+   * needed to backfill the covenant ID once indexing settles).
    */
-  async deployContract() {
-    this.deployError.set(null);
-    this.deployResult.set(null);
-    this.deployIndexerState.set(null);
-
-    const wallet = this.selectedAccount();
-    if (!wallet) {
-      this.deployError.set('No wallet selected');
-      return;
-    }
-
-    const contractJson = this.deployContractJson();
-    const amountKas = Number(this.deployAmount);
-
-    if (!contractJson) {
-      this.validateDeployContractJson(true);
-      return;
-    }
-
-    if (!this.validateDeployContractJson(true)) {
-      return;
-    }
-
-    if (!this.validateDeployAmount(true)) {
-      return;
-    }
+  async onContractDeployed(event: ContractDeployedEvent) {
+    const walletKey = this.currentWalletAliasKey();
+    const entry: ContractRegistryEntry = {
+      id: this.registryService.generateId(),
+      contractName: event.compiled.contract_name || 'Unnamed Contract',
+      compiledJson: event.contractJson,
+      deployTxid: event.result.txid,
+      contractAddress: event.result.contractAddress,
+      outpoint: event.result.outpoint,
+      amountSompi: event.amountSompi.toString(),
+      deployedBy: {
+        address: event.walletAddress,
+        pubkey: event.pubkey,
+        accountName: event.walletDisplayName,
+      },
+      deployedAt: Date.now(),
+      network: this.network(),
+      status: 'active',
+      accessRoles: this.parseAccessRoles(event.compiled),
+      covenantId: event.result.covenantId,
+      wallets: walletKey ? { [walletKey]: true } : undefined,
+    };
 
     try {
-      this.isDeploying.set(true);
-
-      const compiled = this.covenantService.parseCompiledContract(contractJson);
-      const amountSompi = BigInt(Math.floor(amountKas * 1e8));
-
-      if (
-        this.currentWallet()?.getIdWithAccount() !== wallet.getIdWithAccount()
-      ) {
-        this.walletService.selectCurrentWallet(wallet.getIdWithAccount());
-      }
-
-      const actionResult =
-        await this.walletActionService.validateAndDoActionAfterApproval({
-          type: WalletActionType.COVENANT_DEPLOY,
-          data: {
-            compiledContractJson: contractJson,
-            contractName: compiled.contract_name || 'Covenant',
-            amountSompi,
-          },
-        });
-
-      if (!actionResult.success || !actionResult.result) {
-        const reason =
-          actionResult.errorCode !== undefined
-            ? ERROR_CODES_MESSAGES[actionResult.errorCode]
-            : undefined;
-        this.deployError.set(
-          reason
-            ? `Covenant deployment failed: ${reason}`
-            : 'Covenant deployment was rejected or failed',
-        );
-        return;
-      }
-
-      const result = actionResult.result as CovenantDeployActionResult;
-      const walletKey = this.currentWalletAliasKey();
-
-      // Save to registry
-      const entry: ContractRegistryEntry = {
-        id: this.registryService.generateId(),
-        contractName: compiled.contract_name || 'Unnamed Contract',
-        compiledJson: contractJson,
-        deployTxid: result.txid,
-        contractAddress: result.contractAddress,
-        outpoint: result.outpoint,
-        amountSompi: amountSompi.toString(),
-        deployedBy: {
-          address: wallet.getAddress(),
-          pubkey: this.selectedPubkey(),
-          accountName: wallet.getDisplayName(),
-        },
-        deployedAt: Date.now(),
-        network: this.network(),
-        status: 'active',
-        accessRoles: this.parseAccessRoles(compiled),
-        covenantId: result.covenantId,
-        wallets: walletKey ? { [walletKey]: true } : undefined,
-      };
-
-      this.deployResult.set({
-        address: result.contractAddress,
-        txid: result.txid,
-        covenantId: result.covenantId,
+      await this.registryService.addContract(entry);
+      this.allRegistryContracts.set([...this.allRegistryContracts(), entry]);
+      this.registryContracts.set([...this.registryContracts(), entry]);
+      const clearNickname = await this.saveInitialContractAlias(
+        entry,
+        event.nickname,
+      );
+      event.resolve({ registryEntryId: entry.id, clearNickname });
+    } catch (e) {
+      console.error(
+        '[Deploy] Contract deployed but failed to save to registry:',
+        e,
+      );
+      event.resolve({
+        saveError: `Contract deployed (txid ${event.result.txid}), but saving it locally failed. Record the outpoint to interact later: ${event.result.outpoint.txid}:${event.result.outpoint.vout}.`,
       });
-
-      try {
-        await this.registryService.addContract(entry);
-        this.allRegistryContracts.set([...this.allRegistryContracts(), entry]);
-        this.registryContracts.set([...this.registryContracts(), entry]);
-        await this.saveInitialContractAlias(entry);
-        void this.trackDeployIndexing(result.txid, entry.id, result.covenantId);
-      } catch (e) {
-        console.error(
-          '[Deploy] Contract deployed but failed to save to registry:',
-          e,
-        );
-        this.deployError.set(
-          `Contract deployed (txid ${result.txid}), but saving it locally failed. Record the outpoint to interact later: ${result.outpoint.txid}:${result.outpoint.vout}.`,
-        );
-        void this.trackDeployIndexing(
-          result.txid,
-          undefined,
-          result.covenantId,
-        );
-      }
-    } catch (error: any) {
-      console.error('[Deploy] Failed:', error);
-      this.deployError.set(error?.message || 'Failed to deploy contract');
-    } finally {
-      this.isDeploying.set(false);
     }
   }
 
-  private async saveInitialContractAlias(entry: ContractRegistryEntry) {
-    const alias = this.deployContractNickname.trim();
+  /** Returns whether the nickname was actually saved (so the caller can clear its own field). */
+  private async saveInitialContractAlias(
+    entry: ContractRegistryEntry,
+    nickname: string,
+  ): Promise<boolean> {
+    const alias = nickname.trim();
     const walletKey = this.currentWalletAliasKey();
-    if (!alias || !walletKey) return;
+    if (!alias || !walletKey) return false;
 
     await this.updateRegistryContract(entry.id, {
       aliases: {
@@ -5708,82 +4667,20 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         [walletKey]: alias,
       },
     });
-    this.deployContractNickname = '';
     this.refreshDashboardNames();
+    return true;
   }
 
-  private async trackDeployIndexing(
-    txid: string,
-    registryEntryId?: string,
-    initialCovenantId?: string,
-  ) {
-    this.deployIndexerState.set({
-      txid,
-      status: 'checking',
-      covenantId: initialCovenantId,
-      message: 'Waiting for the indexer to see this deployment...',
-    });
-
-    for (let attempt = 1; attempt <= 8; attempt++) {
-      try {
-        const status =
-          await this.covenantIndexerService.getTransactionSettlementStatus(
-            txid,
-          );
-        const actions = status.actions || [];
-        const indexedCovenantId =
-          initialCovenantId ||
-          actions.find((action) => action.covenantIdHex)?.covenantIdHex;
-
-        if (status.indexed) {
-          if (registryEntryId && indexedCovenantId) {
-            await this.updateRegistryContract(registryEntryId, {
-              covenantId: indexedCovenantId,
-            });
-          }
-          this.deployResult.update((current) =>
-            current ? { ...current, covenantId: indexedCovenantId } : current,
-          );
-          this.deployIndexerState.set({
-            txid,
-            status: 'indexed',
-            covenantId: indexedCovenantId,
-            message:
-              'Indexed. This contract can now be shared and tracked from My Contracts.',
-          });
-          await this.loadContracts();
-          return;
-        }
-
-        this.deployIndexerState.set({
-          txid,
-          status: 'checking',
-          covenantId: indexedCovenantId,
-          message: `Waiting for indexer confirmation (${attempt}/8)...`,
-        });
-      } catch (error: any) {
-        console.warn('[Contracts] Deploy indexing check failed:', error);
-        this.deployIndexerState.set({
-          txid,
-          status: 'unavailable',
-          covenantId: initialCovenantId,
-          message:
-            error?.message ||
-            'Indexer status is unavailable. The deployment tx was still returned by the wallet.',
-        });
-        return;
-      }
-
-      await this.delay(2500);
-    }
-
-    this.deployIndexerState.set({
-      txid,
-      status: 'not-indexed',
-      covenantId: initialCovenantId,
-      message:
-        'Deployment broadcasted, but the indexer has not confirmed it yet. Refresh My Contracts in a moment.',
-    });
+  /**
+   * Applies a registry-entry patch emitted by a child component (deploy
+   * form, action panel) that doesn't own allRegistryContracts/registryContracts
+   * itself.
+   */
+  onRegistryEntryUpdated(event: {
+    id: string;
+    updates: Partial<ContractRegistryEntry>;
+  }) {
+    void this.updateRegistryContract(event.id, event.updates);
   }
 
   /**
@@ -6069,7 +4966,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         ];
         if (compiled.contract_name === 'SelfCustodyVault') {
           transactionPayloadHex = this.buildSelfCustodyPayloadHex(compiled, 0);
-          this.logSelfCustodyContractParams('topUp continuation output', {
+          this.templateService.logSelfCustodyContractParams('topUp continuation output', {
             inputAmountSompi: inputAmount,
             topUpAmountSompi: topUpAmount,
             outputs,
@@ -6542,7 +5439,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const nextContractJson = JSON.stringify(nextCompiled, null, 2);
     const nextContractAddress =
       this.covenantService.getContractAddress(nextCompiled);
-    this.logSelfCustodyContractParams('unvault continuation target', {
+    this.templateService.logSelfCustodyContractParams('unvault continuation target', {
       inputAmountSompi: inputAmount,
       covenantId,
       currentTn10: compiled.tn10,
@@ -6635,7 +5532,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
 
     const newDeadline = BigInt(
-      this.parseDateToUnixMs(this.dmsNewExpiry, 'New check-in deadline'),
+      this.templateService.parseDateToUnixMs(this.dmsNewExpiry, 'New check-in deadline'),
     );
     const currentDeadline = await this.extractTemplateIntField(
       compiled,
@@ -6820,22 +5717,22 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     heirAddress: string;
     deadlineMs: bigint;
   }): Promise<CompiledContract> {
-    const template = this.templateById('dead-mans-switch');
+    const template = this.templateService.templateById('dead-mans-switch');
     if (!template) {
       throw new Error("Dead Man's Switch template is unavailable");
     }
 
-    const { compiled, descriptor } = await this.getTemplatePatchContext(
+    const { compiled, descriptor } = await this.templateService.getTemplatePatchContext(
       template.id,
     );
     return this.templatePatcher.applyPatch(compiled, descriptor, [
-      this.bytesArg(
+      this.templateService.bytesArg(
         this.templatePatcher.kaspaAddressToPubkeyBytes(values.ownerAddress),
       ),
-      this.bytesArg(
+      this.templateService.bytesArg(
         this.templatePatcher.kaspaAddressToPubkeyBytes(values.heirAddress),
       ),
-      this.intArg(Number(values.deadlineMs)),
+      this.templateService.intArg(Number(values.deadlineMs)),
     ]) as CompiledContract;
   }
 
@@ -6843,7 +5740,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     currentCompiled: CompiledContract,
     phase: number,
   ): Promise<CompiledContract> {
-    const template = this.templateById('self-custody-vault');
+    const template = this.templateService.templateById('self-custody-vault');
     if (!template) {
       throw new Error('Self-Custody Vault template is unavailable');
     }
@@ -6884,12 +5781,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         position.offset,
         position.offset + position.length,
       );
-      return this.bytesArg(
+      return this.templateService.bytesArg(
         param.paramType === 'pubkey[]' ? pushDataPayload(bytes, name) : bytes,
       );
     };
 
-    const currentArgs = this.argsArrayToRecord(
+    const currentArgs = this.templateService.argsArrayToRecord(
       currentCompiled.tn10?.args || [],
     );
     const currentDelaySeconds = Number(currentArgs['unvaultDelaySeconds']);
@@ -6924,27 +5821,27 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     };
     const constructorArgs = [
       hasSavedSelfCustodyArgs
-        ? this.bytesArg(
+        ? this.templateService.bytesArg(
             this.templatePatcher.kaspaAddressToPubkeyBytes(
               currentValues.hotKey,
             ),
           )
         : bytesArgFor('hotKey'),
       hasSavedSelfCustodyArgs
-        ? this.bytesArg(
+        ? this.templateService.bytesArg(
             this.templatePatcher.kaspaAddressToPubkeyBytes(
               currentValues.coldKey,
             ),
           )
         : bytesArgFor('coldKey'),
       hasSavedSelfCustodyArgs
-        ? this.pubkeyListArg('whitelistedDestinations', currentValues)
+        ? this.templateService.pubkeyListArg('whitelistedDestinations', currentValues)
         : bytesArgFor('whitelistedDestinations'),
       hasSavedSelfCustodyArgs
-        ? this.intArg(this.getWhitelistCountFromValues(currentValues))
+        ? this.templateService.intArg(this.templateService.getWhitelistCountFromValues(currentValues))
         : bytesArgFor('whitelistCount'),
-      this.intArg(Number(delaySeconds)),
-      this.intArg(phase),
+      this.templateService.intArg(Number(delaySeconds)),
+      this.templateService.intArg(phase),
     ];
     const patched = this.templatePatcher.applyPatch(baseCompiled, descriptor, [
       ...constructorArgs,
@@ -6952,9 +5849,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     patched.tn10 = {
       v: 1,
       tmpl: 'SelfCustodyVault',
-      args: this.buildSelfCustodyArgsPayload(currentValues),
+      args: this.templateService.buildSelfCustodyArgsPayload(currentValues),
     };
-    this.logSelfCustodyContractParams('compiled continuation', {
+    this.templateService.logSelfCustodyContractParams('compiled continuation', {
       phase,
       currentTn10: currentCompiled.tn10,
       nextTn10: patched.tn10,
@@ -7084,7 +5981,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     transactionPayloadHex?: string,
   ): Promise<CovenantSpendActionResult | undefined> {
     if (compiled.contract_name === 'SelfCustodyVault') {
-      this.logSelfCustodyContractParams('spend action parameters', {
+      this.templateService.logSelfCustodyContractParams('spend action parameters', {
         functionName,
         outpoint,
         inputAmountSompi,
@@ -7309,21 +6206,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     );
   }
 
-  copyDeployedContractShareLink() {
-    const id =
-      this.deployIndexerState()?.covenantId || this.deployResult()?.covenantId;
-    if (!id) return;
-    const link = this.buildShareLink(id);
-    navigator.clipboard.writeText(link).then(
-      () =>
-        this.notificationService.success(
-          'Copied',
-          'Contract share link copied.',
-        ),
-      () => prompt('Copy this contract link:', link),
-    );
-  }
-
   /** Contract explicitly picked in the "Share a contract" card; empty = auto-default to most recent. */
   shareableContractId = signal<string>('');
 
@@ -7373,281 +6255,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  private fieldToCtorArg(
-    field: TemplateField,
-    rawValue: string | number | undefined,
-  ): CtorArg {
-    return this.fieldToCtorArgFromValues(field, {
-      [field.paramName]: String(rawValue ?? ''),
-    });
-  }
-
-  private fieldToCtorArgFromValues(
-    field: TemplateField,
-    values: Record<string, string>,
-  ): CtorArg {
-    const rawValue = values[field.paramName];
-    const value = String(rawValue ?? '').trim();
-    if (
-      !value &&
-      field.type !== 'address_list' &&
-      field.type !== 'whitelist_count' &&
-      field.type !== 'int_hidden'
-    ) {
-      throw new Error(`${field.label} is required`);
-    }
-
-    switch (field.type) {
-      case 'address':
-        return this.bytesArg(
-          this.templatePatcher.kaspaAddressToPubkeyBytes(value),
-        );
-      case 'address_list':
-        return this.pubkeyListArg(field.paramName, values);
-      case 'hash32':
-        return this.bytesArg(this.parseHash32(value, field.label));
-      case 'int_days': {
-        // this.age in SilverScript = DAA score difference (virtual blue score)
-        // On mainnet (1 BPS): DAA ≈ 1/sec → 86,400/day (days * 86400 is correct)
-        // Max ~194 days (3-byte encoding limit: 16,777,215 / 86400 ≈ 194)
-        const days = this.parseWholeNumber(value, field.label);
-        if (days > 194) {
-          throw new Error(
-            `${field.label}: maximum is 194 days (template encoding limit)`,
-          );
-        }
-        return this.intArg(days * 86400);
-      }
-      case 'int_hours': {
-        const hours = this.parsePositiveDecimal(value, field.label);
-        if (hours > 4660) {
-          throw new Error(
-            `${field.label}: maximum is 4660 hours (template encoding limit)`,
-          );
-        }
-        return this.intArg(this.hoursToSeconds(hours));
-      }
-      case 'int_daa_delay': {
-        const daaScore = this.parseWholeNumber(value, field.label);
-        if (daaScore > 0xffffff) {
-          throw new Error(
-            `${field.label}: maximum is 16,777,215 DAA score units (template encoding limit)`,
-          );
-        }
-        return this.intArg(daaScore);
-      }
-      case 'int_count':
-        return this.intArg(this.parseWholeNumber(value, field.label));
-      case 'whitelist_count':
-        return this.intArg(this.getWhitelistCountFromValues(values));
-      case 'int_hidden':
-        return this.intArg(
-          value ? this.parseWholeNumber(value, field.label) : 0,
-        );
-      case 'int_timestamp':
-        return this.intArg(this.parseDateToUnixMs(value, field.label));
-      default:
-        throw new Error(
-          `Unsupported template field type: ${(field as { type: string }).type}`,
-        );
-    }
-  }
-
-  private parseHash32(value: string, label: string): number[] {
-    const normalized = value.replace(/^0x/i, '').toLowerCase();
-    if (!/^[0-9a-f]{64}$/.test(normalized)) {
-      throw new Error(`${label} must be a 32-byte hex string`);
-    }
-
-    const bytes: number[] = [];
-    for (let index = 0; index < normalized.length; index += 2) {
-      bytes.push(Number.parseInt(normalized.slice(index, index + 2), 16));
-    }
-    return bytes;
-  }
-
-  private parseWholeNumber(value: string, label: string): number {
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < 0) {
-      throw new Error(`${label} must be a non-negative whole number`);
-    }
-    return parsed;
-  }
-
-  private parsePositiveDecimal(value: string, label: string): number {
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed) || parsed < 0) {
-      throw new Error(`${label} must be a non-negative number`);
-    }
-    return parsed;
-  }
-
-  private hoursToSeconds(hours: number): number {
-    return Math.max(0, Math.round(hours * 3600));
-  }
-
-  private hoursToDaaDelay(hours: number): number {
-    return Math.max(
-      0,
-      Math.round(hours * 3600 * this.networkBlocksPerSecond()),
-    );
-  }
-
-  private daaDelayToHours(daaScore: number): number {
-    return daaScore / (3600 * this.networkBlocksPerSecond());
-  }
-
-  selfCustodyDelayHoursValue(paramName: string): string {
-    const daaScore = Number(this.templateFormValues[paramName] ?? '');
-    if (!Number.isFinite(daaScore)) return '';
-    const hours = this.daaDelayToHours(daaScore);
-    return Number.isInteger(hours)
-      ? String(hours)
-      : String(Number(hours.toFixed(6)));
-  }
-
-  onSelfCustodyDelayHoursChange(field: TemplateField, value: unknown): void {
-    const rawValue = String(value ?? '').trim();
-    const hours = Number(rawValue || '0');
-    if (!Number.isFinite(hours) || hours < 0) {
-      this.templateFormValues[field.paramName] = rawValue;
-      this.templateFieldTouched[field.paramName] = true;
-      this.validateTemplateField(field);
-      return;
-    }
-    this.setSelfCustodyDelayFromHours(hours, true);
-    this.validateTemplateField(field);
-  }
-
-  onSelfCustodyDelayDaaChange(field: TemplateField, value: unknown): void {
-    this.onTemplateFieldChange(field, value);
-  }
-
-  private setSelfCustodyDelayFromHours(
-    hours: number,
-    markTouched: boolean,
-  ): void {
-    this.templateFormValues['initUnvaultDelaySeconds'] = String(
-      this.hoursToDaaDelay(hours),
-    );
-    if (markTouched) {
-      this.templateFieldTouched['initUnvaultDelaySeconds'] = true;
-    }
-  }
-
-  private parseDateToUnixMs(value: string, label: string): number {
-    // Kaspa LOCK_TIME_THRESHOLD = 500,000,000,000:
-    //   values < 500B → DAA score, values >= 500B → Unix milliseconds
-    // We convert user input (seconds) to milliseconds to stay above the threshold.
-    const asNumber = Number(value);
-    if (Number.isFinite(asNumber) && asNumber > 0) {
-      if (asNumber >= 500_000_000_000) {
-        // Already in milliseconds
-        return Math.floor(asNumber);
-      }
-      if (asNumber > 946684800) {
-        // Unix seconds → convert to milliseconds
-        return Math.floor(asNumber * 1000);
-      }
-    }
-
-    // Fallback: try parsing as date string
-    const timestampMs = new Date(value).getTime();
-    if (!Number.isFinite(timestampMs)) {
-      throw new Error(`${label} must be a valid date and time.`);
-    }
-
-    return timestampMs;
-  }
-
-  private bytesArg(bytes: number[]): CtorArg {
-    return {
-      kind: 'array',
-      data: bytes.map((byte) => ({ kind: 'byte' as const, data: byte })),
-    };
-  }
-
-  private pubkeyListArg(
-    paramName: string,
-    values: Record<string, string>,
-  ): CtorArg {
-    const addresses =
-      this.getWhitelistModeFromValues(paramName, values) === 'whitelist'
-        ? this.getAddressListFromRaw(values[paramName])
-        : [];
-    const selectedAddresses = addresses.slice(
-      0,
-      this.selfCustodyWhitelistCapacity,
-    );
-    const paddedAddresses = [
-      ...selectedAddresses,
-      ...new Array<string>(
-        Math.max(
-          0,
-          this.selfCustodyWhitelistCapacity - selectedAddresses.length,
-        ),
-      ).fill(''),
-    ];
-
-    return {
-      kind: 'array',
-      data: paddedAddresses.map((address) =>
-        this.bytesArg(
-          address
-            ? this.templatePatcher.kaspaAddressToPubkeyBytes(address)
-            : new Array<number>(32).fill(0),
-        ),
-      ),
-    };
-  }
-
-  private getWhitelistModeFromValues(
-    paramName: string,
-    values: Record<string, string>,
-  ): 'anywhere' | 'whitelist' {
-    const mode = values[paramName + '_mode'];
-    if (mode === 'whitelist') return 'whitelist';
-    if (mode === 'anywhere') return 'anywhere';
-    return this.getAddressListFromRaw(values[paramName]).length > 0
-      ? 'whitelist'
-      : 'anywhere';
-  }
-
-  private getWhitelistCountFromValues(values: Record<string, string>): number {
-    return this.getWhitelistModeFromValues(
-      'whitelistedDestinations',
-      values,
-    ) === 'whitelist'
-      ? this.getAddressListFromRaw(values['whitelistedDestinations']).length
-      : 0;
-  }
-
-  private getAddressListFromRaw(rawValue: string | undefined): string[] {
-    const raw = String(rawValue ?? '').trim();
-    if (!raw) return [];
-    try {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        return parsed
-          .map((value) => String(value ?? '').trim())
-          .filter(Boolean);
-      }
-    } catch {
-      return raw
-        .split(/\r?\n|,/)
-        .map((value) => value.trim())
-        .filter(Boolean);
-    }
-    return [];
-  }
-
-  private intArg(value: number): CtorArg {
-    return {
-      kind: 'int',
-      data: value,
-    };
   }
 
   // ─── Interact Tab Helpers ──────────────────────────────────────────
@@ -8109,75 +6716,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   onGenericExtraArgChange(event: { name: string; value: string }) {
     this.onExtraArgValueChange(event.name, event.value);
-  }
-
-  /**
-   * Handle hash32 field input — if user pastes a 32-byte pubkey (64 hex chars),
-   * auto-compute blake2b-256 hash and replace the field value.
-   * If user pastes a 64-char hex string that looks like it could already be a hash,
-   * we keep it as-is (could be either pubkey or hash — user decides).
-   */
-  onHash32Input(paramName: string, value: string) {
-    const normalized = (value || '').trim().replace(/^0x/i, '');
-    this.templateFormValues[paramName + '_isAutoHashed'] = '';
-
-    // If user pastes a pubkey (64 hex chars = 32 bytes), compute blake2b-256 hash
-    // Check if it's a valid hex string first
-    if (/^[0-9a-fA-F]{64}$/.test(normalized)) {
-      // It's 32 bytes — could be a pubkey or already a hash.
-      // We provide a "compute hash" option rather than auto-replacing.
-      return;
-    }
-
-    // If user pastes a Kaspa address, extract pubkey and hash it
-    if (normalized.startsWith('kaspa') || normalized.startsWith('kaspatest')) {
-      try {
-        const pubkeyBytes = this.templatePatcher.kaspaAddressToPubkeyBytes(
-          value.trim(),
-        );
-        const hashHex = this.computeBlake2bHex(pubkeyBytes);
-        this.templateFormValues[paramName] = hashHex;
-        this.templateFormValues[paramName + '_isAutoHashed'] = 'true';
-      } catch {
-        // Invalid address — let validation catch it
-      }
-    }
-  }
-
-  /**
-   * Convert a 64-char hex string into a 32-byte Uint8Array.
-   */
-  private hex32ToBytes(value: string): Uint8Array {
-    const bytes = new Uint8Array(32);
-    for (let i = 0; i < 64; i += 2) {
-      bytes[i / 2] = Number.parseInt(value.slice(i, i + 2), 16);
-    }
-    return bytes;
-  }
-
-  /**
-   * Compute a blake2b-256 hash and return lowercase hex.
-   */
-  private computeBlake2bHex(input: ArrayLike<number>): string {
-    const hash = blake2b(Uint8Array.from(input), { dkLen: 32 });
-    return Array.from(hash)
-      .map((byte) => byte.toString(16).padStart(2, '0'))
-      .join('');
-  }
-
-  /**
-   * Compute blake2b-256 hash of a hex value and update the field
-   */
-  computeBlake2bHash(paramName: string) {
-    const value = (this.templateFormValues[paramName] || '')
-      .trim()
-      .replace(/^0x/i, '');
-    if (!/^[0-9a-fA-F]{64}$/.test(value)) return;
-
-    this.templateFormValues[paramName] = this.computeBlake2bHex(
-      this.hex32ToBytes(value),
-    );
-    this.templateFormValues[paramName + '_isAutoHashed'] = 'true';
   }
 
   // ─── Extra Args (int/bool params) ──────────────────────────────────

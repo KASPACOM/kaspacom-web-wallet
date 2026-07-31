@@ -117,6 +117,60 @@ export class ContractDisplayService {
   }
 
   /**
+   * Canonicalize a contract/template name so aliases from different sources
+   * (indexer, on-chain ABI, template picker) compare equal — e.g. "Escrow"
+   * and "EscrowWithArbiter" both normalize to "EscrowWithArbiter".
+   */
+  normalizeContractName(name: string): string {
+    const normalized = String(name || '').replace(/[^a-zA-Z0-9]/g, '');
+    const aliases: Record<string, string> = {
+      DeadMansSwitch: 'DeadManSwitch',
+      "DeadMan'sSwitch": 'DeadManSwitch',
+      TimeLockVault: 'TimeLockVault',
+      MultiSigVault: 'MultiSigVault',
+      Escrow: 'EscrowWithArbiter',
+      SelfCustody: 'SelfCustodyVault',
+      SelfCustodyVault: 'SelfCustodyVault',
+    };
+    return aliases[normalized] || normalized;
+  }
+
+  /**
+   * Classify a template or dashboard entry into the small set of icon/accent
+   * keys the UI switches on. Accepts either a ContractTemplate (keyed by
+   * `id`) or a ContractDashboardEntry (keyed by `contractName`/`name`).
+   */
+  getTemplateKey(
+    input: any,
+  ): 'deadman' | 'timelock' | 'multisig' | 'escrow' | 'default' {
+    // ContractTemplate.id on the Create / Templates tabs.
+    switch (input?.id) {
+      case 'dead-mans-switch':
+        return 'deadman';
+      case 'time-lock-vault':
+        return 'timelock';
+      case 'multi-sig-vault':
+        return 'multisig';
+      case 'escrow-with-arbiter':
+        return 'escrow';
+      case 'self-custody-vault':
+        return 'default';
+    }
+    switch (this.normalizeContractName(input?.contractName ?? input?.name ?? '')) {
+      case 'DeadManSwitch':
+        return 'deadman';
+      case 'TimeLockVault':
+        return 'timelock';
+      case 'MultiSigVault':
+        return 'multisig';
+      case 'EscrowWithArbiter':
+        return 'escrow';
+      default:
+        return 'default';
+    }
+  }
+
+  /**
    * Builds a share link that carries only the network and canonical covenant
    * ID — never private data or compiled JSON. The receiving wallet imports
    * current state from the indexer when the link is opened.

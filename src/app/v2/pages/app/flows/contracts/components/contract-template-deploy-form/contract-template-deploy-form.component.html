@@ -1,0 +1,732 @@
+<div class="panel flex column gap-20">
+  <!-- Stepper -->
+  <div class="deploy-stepper">
+    @for (step of deploySteps(); track step.label; let last = $last) {
+      <kc-stepper
+        class="deploy-stepper__item"
+        [class.deploy-stepper__item--last]="last"
+        [orientation]="'horizontal'"
+        [size]="'sm'"
+        [width]="'100%'"
+        [title]="step.label"
+        [value]="step.value"
+      />
+    }
+  </div>
+
+  <!-- Step 1: pick a template -->
+  @if (!activeTemplate() && createMode() !== "custom") {
+    <div class="flex column gap-4">
+      <h3
+        class="text-white"
+        style="margin: 0; font-size: 16px; font-weight: 600"
+      >
+        Choose a contract type
+      </h3>
+      <p class="text-gray-60 typo-text-2" style="margin: 0 0 8px">
+        Each template is a proven covenant. Pick the outcome you want —
+        the wallet handles the mechanics.
+      </p>
+    </div>
+    <div class="template-picker">
+      @for (template of contractTemplates; track template.id) {
+        <button
+          type="button"
+          class="template-card"
+          [attr.data-tpl]="getTemplateKey(template)"
+          (click)="selectTemplate(template)"
+        >
+          <span
+            class="tpl-icon"
+            [attr.data-tpl-icon]="getTemplateKey(template)"
+          >
+            @switch (getTemplateKey(template)) {
+              @case ("deadman") {
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 2" />
+                </svg>
+              }
+              @case ("timelock") {
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="4" y="11" width="16" height="10" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+              }
+              @case ("multisig") {
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="9" cy="9" r="3" />
+                  <path
+                    d="M15 6a3 3 0 0 1 0 6M4 20c0-2.8 2.2-5 5-5s5 2.2 5 5M16 15c2.2.4 4 2.4 4 5"
+                  />
+                </svg>
+              }
+              @case ("escrow") {
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M12 3v18M4 7h16M7 7l-3 6a3 3 0 0 0 6 0zM17 7l-3 6a3 3 0 0 0 6 0z"
+                  />
+                </svg>
+              }
+              @default {
+                <span>{{ template.icon }}</span>
+              }
+            }
+          </span>
+          <span class="tc-body">
+            <span class="tc-name">{{ template.name }}</span>
+            <span class="tc-desc">{{ template.description }}</span>
+          </span>
+          <svg
+            class="tc-chevron"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </button>
+      }
+      <button
+        type="button"
+        class="template-card custom"
+        (click)="selectCustomContract()"
+      >
+        <span class="tpl-icon"
+          ><svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"
+            /></svg
+        ></span>
+        <span class="tc-body">
+          <span class="tc-name">Custom covenant</span>
+          <span class="tc-desc"
+            >Paste compiled SilverScript JSON manually.</span
+          >
+        </span>
+        <svg
+          class="tc-chevron"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M9 18l6-6-6-6" />
+        </svg>
+      </button>
+    </div>
+  } @else {
+    <!-- Step 2: parameters -->
+    <div
+      class="flex justify-content-between align-items-center gap-12 wrap"
+    >
+      <div class="flex align-items-center gap-12">
+        <span
+          class="tpl-icon"
+          [attr.data-tpl]="
+            activeTemplate()
+              ? getTemplateKey(activeTemplate()!)
+              : 'default'
+          "
+          style="width: 40px; height: 40px"
+        >
+          @if (activeTemplate()) {
+            @switch (getTemplateKey(activeTemplate()!)) {
+              @case ("deadman") {
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 2" />
+                </svg>
+              }
+              @case ("timelock") {
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="4" y="11" width="16" height="10" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+              }
+              @case ("multisig") {
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="9" cy="9" r="3" />
+                  <path
+                    d="M15 6a3 3 0 0 1 0 6M4 20c0-2.8 2.2-5 5-5s5 2.2 5 5M16 15c2.2.4 4 2.4 4 5"
+                  />
+                </svg>
+              }
+              @case ("escrow") {
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M12 3v18M4 7h16M7 7l-3 6a3 3 0 0 0 6 0zM17 7l-3 6a3 3 0 0 0 6 0z"
+                  />
+                </svg>
+              }
+              @default {
+                <span>{{ activeTemplate()!.icon }}</span>
+              }
+            }
+          } @else {
+            <span>JSON</span>
+          }
+        </span>
+        <div class="flex column gap-4">
+          @if (activeTemplate()) {
+            <h3
+              class="text-white"
+              style="margin: 0; font-size: 16px; font-weight: 600"
+            >
+              {{ activeTemplate()!.name }}
+            </h3>
+            <p class="text-gray-60 typo-text-2" style="margin: 0">
+              Fill in the details in plain terms.
+            </p>
+          } @else {
+            <h3
+              class="text-white"
+              style="margin: 0; font-size: 16px; font-weight: 600"
+            >
+              Custom covenant
+            </h3>
+            <p class="text-gray-60 typo-text-2" style="margin: 0">
+              Paste deploy-ready compiled JSON and choose how much KAS to
+              lock.
+            </p>
+          }
+        </div>
+      </div>
+      <button
+        class="back-button p-8 typo-text-2"
+        (click)="resetTemplateSelection(); createMode.set('template')"
+      >
+        Change
+      </button>
+    </div>
+
+    @if (selectedPubkey()) {
+      <div class="pubkey-display p-12 flex column gap-4">
+        <span class="text-gray-60 typo-text-2"
+          >Account public key (x-only)</span
+        >
+        <div class="flex align-items-center gap-8">
+          <span class="text-white typo-text-2 text-mono">{{
+            display.truncate(selectedPubkey(), 24)
+          }}</span>
+          <app-copy-button
+            [value]="selectedPubkey()"
+            [size]="'sm'"
+          ></app-copy-button>
+        </div>
+      </div>
+    }
+
+    @if (activeTemplate()) {
+      <div class="flex column gap-16">
+        @for (field of activeTemplate()!.fields; track field.paramName) {
+          @if (!field.hidden) {
+            <div class="field">
+              @if (field.type === "address") {
+                <app-address-smart-input
+                  [label]="field.label"
+                  [placeholder]="field.placeholder"
+                  [isFullWidth]="true"
+                  [isValid]="isTemplateFieldValid(field)"
+                  [invalidReason]="getTemplateFieldError(field)"
+                  [isDisabled]="
+                    isDeploying() || isWalletOwnedField(field)
+                  "
+                  [showQrButton]="!isWalletOwnedField(field)"
+                  [value]="templateFormValues[field.paramName] || ''"
+                  (valueChange)="onTemplateFieldChange(field, $event)"
+                  (resolved)="onTemplateAddressResolved(field, $event)"
+                  (qrClick)="onTemplateAddressQrClick(field)"
+                >
+                </app-address-smart-input>
+              }
+              @if (field.type === "address_list") {
+                <div class="flex column gap-12">
+                  <label class="field-label">{{ field.label }}</label>
+                  <div class="flex gap-8 wrap">
+                    <button
+                      type="button"
+                      class="btn secondary"
+                      [class.active]="
+                        getWhitelistMode(field.paramName) === 'anywhere'
+                      "
+                      [disabled]="isDeploying()"
+                      (click)="setWhitelistMode(field, 'anywhere')"
+                    >
+                      Send anywhere
+                    </button>
+                    <button
+                      type="button"
+                      class="btn secondary"
+                      [class.active]="
+                        getWhitelistMode(field.paramName) === 'whitelist'
+                      "
+                      [disabled]="isDeploying()"
+                      (click)="setWhitelistMode(field, 'whitelist')"
+                    >
+                      Allow only whitelist
+                    </button>
+                  </div>
+                  @if (
+                    getWhitelistMode(field.paramName) === "whitelist"
+                  ) {
+                    @for (
+                      address of getTemplateAddressListRows(
+                        field.paramName
+                      );
+                      track $index
+                    ) {
+                      <div class="flex gap-8 align-items-center">
+                        <input
+                          type="text"
+                          class="form-input"
+                          [placeholder]="field.placeholder"
+                          [value]="address"
+                          [disabled]="isDeploying()"
+                          (input)="
+                            onWhitelistAddressChange(
+                              field,
+                              $index,
+                              $any($event.target).value
+                            )
+                          "
+                        />
+                        <button
+                          type="button"
+                          class="btn secondary"
+                          [disabled]="isDeploying()"
+                          (click)="removeWhitelistAddress(field, $index)"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    }
+                    <button
+                      type="button"
+                      class="btn secondary"
+                      [disabled]="
+                        isDeploying() ||
+                        getTemplateAddressListRows(field.paramName)
+                          .length >= selfCustodyWhitelistCapacity
+                      "
+                      (click)="addWhitelistAddress(field)"
+                    >
+                      Add address
+                    </button>
+                    <span class="text-gray-60 typo-text-2">
+                      Maximum {{ selfCustodyWhitelistCapacity }} addresses
+                    </span>
+                    @if (!isTemplateFieldValid(field)) {
+                      <span class="kc-input-error-text">{{
+                        getTemplateFieldError(field)
+                      }}</span>
+                    }
+                  }
+                </div>
+              }
+              @if (field.type === "hash32") {
+                <div class="flex column gap-4">
+                  <kc-input
+                    [label]="field.label"
+                    [placeholder]="'Paste address, public key, or 32-byte hash'"
+                    [type]="'text'"
+                    [isValid]="isTemplateFieldValid(field)"
+                    [isDisabled]="isDeploying()"
+                    [ngModel]="templateFormValues[field.paramName] || ''"
+                    (valueChange)="onTemplateFieldChange(field, $event)"
+                  ></kc-input>
+                  @if (!isTemplateFieldValid(field)) {
+                    <span class="kc-input-error-text">{{
+                      getTemplateFieldError(field)
+                    }}</span>
+                  }
+                  @if (
+                    templateFormValues[field.paramName + "_isAutoHashed"]
+                  ) {
+                    <span class="text-green typo-text-2"
+                      >Hash computed automatically.</span
+                    >
+                  }
+                  @if (
+                    !templateFormValues[
+                      field.paramName + "_isAutoHashed"
+                    ] &&
+                    (templateFormValues[field.paramName] || "").length ===
+                      64
+                  ) {
+                    <div class="flex gap-8 align-items-center">
+                      <span class="text-gray-60 typo-text-2"
+                        >If this is a public key,</span
+                      >
+                      <span
+                        class="text-blue typo-text-2 cursor-pointer"
+                        (click)="computeBlake2bHash(field.paramName)"
+                        >compute its hash</span
+                      >
+                    </div>
+                  }
+                </div>
+              }
+              @if (
+                field.type === "int_days" ||
+                field.type === "int_hours" ||
+                field.type === "int_daa_delay" ||
+                field.type === "int_count"
+              ) {
+                @if (field.type === "int_daa_delay") {
+                  <div class="flex column gap-8">
+                    <span class="field-label"
+                      >Estimated delay (hours)</span
+                    >
+                    <kc-number-input
+                      [label]="'Unvault delay (hours)'"
+                      [placeholder]="'24'"
+                      [min]="'0'"
+                      [isValid]="isTemplateFieldValid(field)"
+                      [isDisabled]="isDeploying()"
+                      [ngModel]="
+                        selfCustodyDelayHoursValue(field.paramName)
+                      "
+                      (valueChange)="
+                        onSelfCustodyDelayHoursChange(field, $event)
+                      "
+                    ></kc-number-input>
+                    <span class="field-label">Exact on-chain delay</span>
+                    <kc-number-input
+                      [label]="field.label"
+                      [placeholder]="field.placeholder"
+                      [min]="'0'"
+                      [isValid]="isTemplateFieldValid(field)"
+                      [isDisabled]="isDeploying()"
+                      [ngModel]="
+                        templateFormValues[field.paramName] || ''
+                      "
+                      (valueChange)="
+                        onSelfCustodyDelayDaaChange(field, $event)
+                      "
+                    ></kc-number-input>
+                  </div>
+                } @else {
+                  <kc-number-input
+                    [label]="field.label"
+                    [placeholder]="field.placeholder"
+                    [min]="'0'"
+                    [isValid]="isTemplateFieldValid(field)"
+                    [isDisabled]="isDeploying()"
+                    [ngModel]="templateFormValues[field.paramName] || ''"
+                    (valueChange)="onTemplateFieldChange(field, $event)"
+                  ></kc-number-input>
+                }
+                @if (!isTemplateFieldValid(field)) {
+                  <span class="kc-input-error-text">{{
+                    getTemplateFieldError(field)
+                  }}</span>
+                }
+              }
+              @if (field.type === "int_timestamp") {
+                <app-covenant-date-time-input
+                  [label]="field.label"
+                  [value]="templateFormValues[field.paramName] || ''"
+                  [isDisabled]="isDeploying()"
+                  [isValid]="isTemplateFieldValid(field)"
+                  [invalidReason]="getTemplateFieldError(field)"
+                  (valueChange)="onTemplateFieldChange(field, $event)"
+                ></app-covenant-date-time-input>
+              }
+              <span class="field-help">{{ getFieldHelp(field) }}</span>
+            </div>
+          }
+        }
+      </div>
+    }
+
+    @if (createMode() === "custom") {
+      <div class="field">
+        <label class="field-label">Compiled contract JSON</label>
+        <textarea
+          class="contract-input"
+          [class.invalid]="!!deployContractError()"
+          rows="8"
+          placeholder="Paste compiled contract JSON from kascov"
+          [ngModel]="deployContractJson()"
+          (ngModelChange)="onDeployContractJsonChange($event)"
+          [disabled]="isDeploying()"
+        ></textarea>
+        @if (deployContractError()) {
+          <span class="text-red typo-text-2">{{
+            deployContractError()
+          }}</span>
+        }
+        <span class="field-help"
+          >Templates are safer for common flows because the wallet
+          explains and validates each parameter.</span
+        >
+      </div>
+
+      @if (parsedDeployContract()) {
+        <div class="contract-summary p-16 flex column gap-12">
+          <h3 class="text-white typo-text-1 fw-bold">Contract summary</h3>
+          <div class="flex column gap-8">
+            <div class="flex column gap-4">
+              <span class="text-gray-60 typo-text-1">Name</span>
+              <span class="text-white typo-text-2">{{
+                parsedDeployContract()!.contract_name || "Unnamed"
+              }}</span>
+            </div>
+            @if (deployConstructorParams().length > 0) {
+              <div class="flex column gap-4">
+                <span class="text-gray-60 typo-text-1"
+                  >Constructor parameters</span
+                >
+                @for (
+                  param of deployConstructorParams();
+                  track param.name
+                ) {
+                  <div class="param-item p-8">
+                    <span class="text-white typo-text-2">{{
+                      param.name
+                    }}</span>
+                    <span
+                      class="text-gray-60 typo-text-2"
+                      style="margin-left: 8px"
+                      >({{ param.type_ref.base }})</span
+                    >
+                  </div>
+                }
+              </div>
+            }
+            @if (deployEntrypointFunctions().length > 0) {
+              <div class="flex column gap-4">
+                <span class="text-gray-60 typo-text-1"
+                  >Entrypoint functions</span
+                >
+                @for (fn of deployEntrypointFunctions(); track fn.name) {
+                  <div class="param-item p-8">
+                    <span class="text-white typo-text-2"
+                      >{{ fn.name }}()</span
+                    >
+                    @if (fn.params.length > 0) {
+                      <span
+                        class="text-gray-60 typo-text-2"
+                        style="margin-left: 8px"
+                        >params: {{ getParamTypes(fn.params) }}</span
+                      >
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+    }
+
+    <!-- Amount -->
+    <div class="field">
+      <label class="field-label">Contract nickname (optional)</label>
+      <kc-input
+        [label]="''"
+        [placeholder]="'Example: Family inheritance vault'"
+        [type]="'text'"
+        [isDisabled]="isDeploying()"
+        [ngModel]="deployContractNickname"
+        (valueChange)="onDeployContractNicknameChange($event)"
+      ></kc-input>
+      <span class="field-help"
+        >Shown anywhere you select or review this contract.</span
+      >
+    </div>
+
+    <!-- Amount -->
+    <div class="field">
+      <kc-number-input
+        [label]="'Amount to lock (KAS)'"
+        [placeholder]="'0.5'"
+        [min]="MIN_DEPLOY_AMOUNT_KAS.toString()"
+        [max]="deployAvailableBalance().toString()"
+        [isValid]="!deployAmountError()"
+        [isDisabled]="isDeploying()"
+        [ngModel]="deployAmount"
+        (valueChange)="onDeployAmountChange($event)"
+      >
+        <div
+          (click)="!isDeploying() && onMaxDeployAmountClick()"
+          [class]="
+            isDeploying() ? 'max-text disabled' : 'max-text clickable'
+          "
+          rightSideSlot
+        >
+          <span>Max</span>
+        </div>
+      </kc-number-input>
+      @if (deployAmountError()) {
+        <span class="kc-input-error-text">{{ deployAmountError() }}</span>
+      }
+      <span class="field-help"
+        >This amount is sent into the covenant. It can only move later by
+        following the covenant rules.</span
+      >
+    </div>
+
+    @if (deployError()) {
+      <div class="error-message">{{ deployError() }}</div>
+    }
+
+    @if (deployResult()) {
+      <div class="result-panel">
+        <h3 class="text-white typo-text-1 fw-bold">Contract deployed</h3>
+        <div class="flex column gap-4">
+          <span class="text-gray-60 typo-text-1">Contract address</span>
+          <div class="flex align-items-center gap-8">
+            <span class="text-white typo-text-2 text-truncate">{{
+              deployResult()!.address
+            }}</span>
+            <app-copy-button
+              [value]="deployResult()!.address"
+              [size]="'sm'"
+            ></app-copy-button>
+          </div>
+        </div>
+        <div class="flex column gap-4">
+          <span class="text-gray-60 typo-text-1">Transaction ID</span>
+          <div class="flex align-items-center gap-8">
+            <a
+              [href]="display.getExplorerLink(deployResult()!.txid)"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-blue typo-text-2 text-truncate"
+              >{{ deployResult()!.txid }}</a
+            >
+            <app-copy-button
+              [value]="deployResult()!.txid"
+              [size]="'sm'"
+            ></app-copy-button>
+          </div>
+        </div>
+        @if (deployIndexerState()) {
+          <div class="flex column gap-4">
+            <span class="text-gray-60 typo-text-1">Indexer status</span>
+            <span class="text-white typo-text-2">{{
+              deployIndexerState()!.message
+            }}</span>
+            @if (deployIndexerState()!.covenantId) {
+              <div class="flex align-items-center gap-8">
+                @if (
+                  display.getCovenantExplorerLink(
+                    deployIndexerState()!.covenantId || ""
+                  );
+                  as covenantLink
+                ) {
+                  <a
+                    [href]="covenantLink"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-blue typo-text-2 text-mono"
+                    >{{
+                      display.truncate(deployIndexerState()!.covenantId || "", 28)
+                    }}</a
+                  >
+                } @else {
+                  <span class="text-gray-60 typo-text-2 text-mono">{{
+                    display.truncate(deployIndexerState()!.covenantId || "", 28)
+                  }}</span>
+                }
+                <app-copy-button
+                  [value]="deployIndexerState()!.covenantId || ''"
+                  [size]="'sm'"
+                ></app-copy-button>
+                @if (deployIndexerState()!.status === "indexed") {
+                  <kc-button
+                    [text]="'Copy share link'"
+                    (buttonClick)="copyDeployedContractShareLink()"
+                  ></kc-button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <kc-button
+      [text]="
+        isDeploying() ? 'Deploying...' : 'Review and deploy covenant'
+      "
+      [isDisabled]="isCreateDeployDisabled()"
+      [isFullWidth]="true"
+      (buttonClick)="
+        createMode() === 'custom'
+          ? deployContract()
+          : deployTemplateContract()
+      "
+    ></kc-button>
+  }
+</div>

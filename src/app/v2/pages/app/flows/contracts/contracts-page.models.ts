@@ -122,3 +122,5 @@ export type ActionIndexerState = {
   status: 'checking' | 'indexed' | 'not-indexed' | 'unavailable';
   message: string;
 };
+
+export const SELF_CUSTODY_WHITELIST_CAPACITY = 10;

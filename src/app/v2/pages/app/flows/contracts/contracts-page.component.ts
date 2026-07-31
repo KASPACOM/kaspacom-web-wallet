@@ -2035,7 +2035,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       // same underlying transaction on both sides) is still a valid match.
       this.sameIdentity(indexerEntry.covenantId, localEntry.covenantId) ||
       this.sameIdentity(indexerEntry.deployTxid, localEntry.deployTxid) ||
-      this.sameIdentity(indexerEntry.scriptHash, localEntry.scriptHash);
+      (!indexerEntry.covenantId &&
+        !indexerEntry.deployTxid &&
+        !localEntry.covenantId &&
+        !localEntry.deployTxid &&
+        this.sameIdentity(indexerEntry.scriptHash, localEntry.scriptHash));
 
     for (const entry of localEntries) {
       merged.set(this.getDashboardIdentityKey(entry), entry);

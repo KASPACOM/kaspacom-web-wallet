@@ -120,6 +120,7 @@ type ContractsTransientState = {
 type IndexerImportPreview = {
   action: IndexerCovenantAction;
   activeAction: IndexerCovenantAction;
+  activeUtxo: IndexerCovenantUtxo;
   args: IndexerCovenantArg[];
   compiledJson: string;
   contractAddress: string;
@@ -3846,6 +3847,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.indexerImportError.set('Look up a covenant before importing it.');
       return;
     }
+    if (!this.isActiveIndexerUtxo(preview.activeUtxo)) {
+      this.indexerImportError.set(
+        'This covenant has no single active UTXO to import. It may already be spent, or the indexer returned an ambiguous active set.',
+      );
+      return;
+    }
 
     const existing = this.findSavedRegistryEntryForIdentity({
       covenantId: preview.covenantId,
@@ -4183,6 +4190,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         latestOutputAction.scriptHashHex,
       ]);
     }
+    if (!activeUtxo) {
+      throw new Error(
+        'This covenant has no single active UTXO to import. It may already be spent, or the indexer returned an ambiguous active set.',
+      );
+    }
 
     const activeAction = this.mergeActiveUtxoIntoAction(
       latestOutputAction,
@@ -4319,6 +4331,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return {
       action,
       activeAction,
+      activeUtxo,
       args,
       compiledJson: JSON.stringify(compiled, null, 2),
       contractAddress,
@@ -4425,6 +4438,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             scriptHash: utxo.scriptHashHex,
           })),
         });
+        if (activeUtxos.length > 1) return null;
         if (activeUtxos.length === 1) return activeUtxos[0];
       } catch (error) {
         console.warn('[Contracts] Failed to fetch covenant UTXO:', {

@@ -186,10 +186,7 @@ export class TemplatePatcherService {
         patch.paramType === 'pubkey[]'
           ? this.encodePushData(rawReplacementBytes)
           : rawReplacementBytes;
-      if (
-        patch.paramType !== 'pubkey[]' &&
-        replacementBytes.length !== patch.placeholderBytes.length
-      ) {
+      if (replacementBytes.length !== patch.placeholderBytes.length) {
         throw new Error(
           `Size mismatch for "${patch.name}": placeholder=${patch.placeholderBytes.length}B, replacement=${replacementBytes.length}B`,
         );

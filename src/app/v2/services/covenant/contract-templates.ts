@@ -44,6 +44,11 @@ const pubkeyArrayArg = (pubkeys: number[][]): CtorArg => ({
   data: pubkeys.map((bytes) => byteArrayArg(bytes)),
 });
 
+const selfCustodyWhitelistPlaceholderPubkeys = Array.from(
+  { length: 10 },
+  (_slot, slotIndex) => new Array<number>(32).fill(128 + slotIndex),
+);
+
 export const CONTRACT_TEMPLATES: ContractTemplate[] = [
   {
     id: 'self-custody-vault',
@@ -78,7 +83,15 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
           'Optional list of recipient wallets. Choose send anywhere or restrict withdrawals to this list.',
       },
       {
-        paramName: 'unvaultDelaySeconds',
+        paramName: 'whitelistCount',
+        label: 'Whitelist count',
+        type: 'whitelist_count',
+        placeholder: '',
+        description: 'Internal number of active whitelist entries.',
+        hidden: true,
+      },
+      {
+        paramName: 'initUnvaultDelaySeconds',
         label: 'Unvault delay (hours)',
         type: 'int_hours',
         placeholder: '24',
@@ -103,13 +116,8 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
         80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97,
         98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
       ]),
-      pubkeyArrayArg([
-        [
-          128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141,
-          142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155,
-          156, 157, 158, 159,
-        ],
-      ]),
+      pubkeyArrayArg(selfCustodyWhitelistPlaceholderPubkeys),
+      intArg(1),
       intArg(86400),
       intArg(0),
     ],

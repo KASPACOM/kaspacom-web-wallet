@@ -1091,7 +1091,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private applyTemplateDefaults(template: ContractTemplate) {
     if (template.id !== 'self-custody-vault') return;
     this.templateFormValues['whitelistedDestinations_mode'] = 'anywhere';
-    this.templateFormValues['unvaultDelaySeconds'] = '24';
+    this.templateFormValues['initUnvaultDelaySeconds'] = '24';
   }
 
   selectCustomContract() {
@@ -1354,7 +1354,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         'Keep this wallet separate from the hot wallet. It can sweep funds immediately in an emergency.',
       whitelistedDestinations:
         'Choose send anywhere for no destination restriction, or allow only listed wallets for withdrawals.',
-      unvaultDelaySeconds:
+      initUnvaultDelaySeconds:
         'The hot wallet must wait this many hours after unvaulting before it can finalize a withdrawal.',
       timeout:
         'The earliest date when the recovery wallet can use the backup withdrawal path.',
@@ -2844,8 +2844,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             ',',
           )
         : '';
+    const delayHoursValue =
+      values['initUnvaultDelaySeconds'] ?? values['unvaultDelaySeconds'];
     const delayHours = this.parsePositiveDecimal(
-      String(values['unvaultDelaySeconds'] ?? '24').trim() || '24',
+      String(delayHoursValue ?? '24').trim() || '24',
       'Unvault Delay',
     );
     const initPhase = values['initPhase']
@@ -5187,6 +5189,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const delayCandidates = this.uniqueStrings([
       this.stateSecondsToHours(state['vaultUnvaultDelaySeconds']),
       this.stateSecondsToHours(state['unvaultDelaySeconds']),
+      baseFieldValues['initUnvaultDelaySeconds'],
       baseFieldValues['unvaultDelaySeconds'],
       String(state['vaultUnvaultDelaySeconds'] ?? ''),
       String(state['unvaultDelaySeconds'] ?? ''),
@@ -5197,7 +5200,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         const fieldValues = {
           ...baseFieldValues,
           initPhase,
-          unvaultDelaySeconds,
+          initUnvaultDelaySeconds: unvaultDelaySeconds,
         };
         try {
           const compiled = await this.compileTemplateWithFieldValues(
@@ -5471,17 +5474,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             byName.get('unvaultDelaySeconds') ??
             requireArg('unvaultDelaySeconds'),
         );
+        const whitelistedDestinations =
+          byName.get('whitelistedDestinations') ?? '';
         return {
           hotKey: requireArg('hotKey'),
           coldKey: requireArg('coldKey'),
-          whitelistedDestinations: byName.get('whitelistedDestinations') ?? '',
+          whitelistedDestinations,
           whitelistedDestinations_mode:
             byName.get('whitelistMode') === 'whitelist'
               ? 'whitelist'
-              : byName.get('whitelistedDestinations')
+              : whitelistedDestinations
                 ? 'whitelist'
                 : 'anywhere',
-          unvaultDelaySeconds: String(
+          initUnvaultDelaySeconds: String(
             Number.isFinite(delaySeconds) ? delaySeconds / 3600 : 24,
           ),
           initPhase: String(
@@ -6978,11 +6983,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const currentDelaySeconds = Number(currentArgs['unvaultDelaySeconds']);
     const delaySeconds = Number.isFinite(currentDelaySeconds)
       ? BigInt(currentDelaySeconds)
-      : await this.extractTemplateIntField(
+      : ((await this.extractTemplateIntField(
+          currentCompiled,
+          'self-custody-vault',
+          'initUnvaultDelaySeconds',
+        )) ??
+        (await this.extractTemplateIntField(
           currentCompiled,
           'self-custody-vault',
           'unvaultDelaySeconds',
-        );
+        )));
 
     if (delaySeconds === undefined) {
       throw new Error('Could not read Self-Custody Vault state from template');
@@ -6997,7 +7007,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       whitelistedDestinations: currentArgs['whitelistedDestinations'] || '',
       whitelistedDestinations_mode:
         currentArgs['whitelistMode'] === 'whitelist' ? 'whitelist' : 'anywhere',
-      unvaultDelaySeconds: String(Number(delaySeconds) / 3600),
+      initUnvaultDelaySeconds: String(Number(delaySeconds) / 3600),
       initPhase: String(phase),
     };
     const constructorArgs = [
@@ -7018,6 +7028,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       hasSavedSelfCustodyArgs
         ? this.pubkeyListArg('whitelistedDestinations', currentValues)
         : bytesArgFor('whitelistedDestinations'),
+      hasSavedSelfCustodyArgs
+        ? this.intArg(this.getWhitelistCountFromValues(currentValues))
+        : bytesArgFor('whitelistCount'),
       this.intArg(Number(delaySeconds)),
       this.intArg(phase),
     ];
@@ -7647,10 +7660,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       0,
       this.selfCustodyWhitelistCapacity,
     );
+    const paddedAddresses = [
+      ...selectedAddresses,
+      ...new Array<string>(
+        Math.max(0, this.selfCustodyWhitelistCapacity - selectedAddresses.length),
+      ).fill(''),
+    ];
 
     return {
       kind: 'array',
-      data: selectedAddresses.map((address) =>
+      data: paddedAddresses.map((address) =>
         this.bytesArg(
           address
             ? this.templatePatcher.kaspaAddressToPubkeyBytes(address)

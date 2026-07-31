@@ -112,6 +112,7 @@ import {
   ContractTemplateDeployFormComponent,
   ContractDeployedEvent,
 } from './components/contract-template-deploy-form/contract-template-deploy-form.component';
+import { ContractsDashboardComponent } from './components/contracts-dashboard/contracts-dashboard.component';
 
 @Component({
   selector: 'app-contracts-page',
@@ -131,6 +132,7 @@ import {
     WalletProfileOrbComponent,
     ContractActionFieldsComponent,
     ContractTemplateDeployFormComponent,
+    ContractsDashboardComponent,
   ],
   templateUrl: './contracts-page.component.html',
   styleUrl: './contracts-page.component.scss',
@@ -1217,7 +1219,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return pubkey ? computeBlake2bHex(hex32ToBytes(pubkey)) : undefined;
   }
 
-  private currentWalletAliasKey(): string | undefined {
+  currentWalletAliasKey(): string | undefined {
     return this.currentWallet()?.getIdWithAccount();
   }
 
@@ -1292,7 +1294,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.aliasDraft = '';
   }
 
-  async saveAlias(contract: ContractDashboardEntry) {
+  async saveAlias(
+    contract: ContractDashboardEntry,
+    draft: string = this.aliasDraft,
+  ) {
     const walletKey = this.currentWalletAliasKey();
     const registryEntry = contract.registryEntry;
     if (!registryEntry) {
@@ -1302,7 +1307,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
     if (!walletKey) return;
 
-    const alias = this.aliasDraft.trim();
+    const alias = draft.trim();
     const aliases = { ...(registryEntry.aliases || {}) };
     if (alias) {
       aliases[walletKey] = alias;

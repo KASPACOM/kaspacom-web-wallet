@@ -27,6 +27,11 @@ export type L2PriorityInfo = {
   gasLimit: bigint;
 };
 
+export type PendingActionConfirmation = {
+  status: 'checking' | 'confirmed' | 'unavailable' | 'timed-out';
+  message: string;
+};
+
 export type ApprovalPageResultParams = {
   isApproved: boolean;
   priorityFee?: bigint;
@@ -84,6 +89,19 @@ export class ApprovalFlowService {
   // Public computed for components to observe completion
   completion = computed(() => this.completionSignal());
 
+  // Lets a flow (e.g. contracts page) report that the backend an action
+  // depends on (the covenant indexer) hasn't caught up yet, so the success
+  // page can hold the user on it instead of letting them navigate away
+  // believing the change is already reflected everywhere.
+  private pendingConfirmationSignal = signal<PendingActionConfirmation | null>(
+    null,
+  );
+  pendingConfirmation = computed(() => this.pendingConfirmationSignal());
+
+  setPendingConfirmation(state: PendingActionConfirmation | null) {
+    this.pendingConfirmationSignal.set(state);
+  }
+
   /**
    * Shows approval dialog using the appropriate display mode
    */
@@ -108,6 +126,7 @@ export class ApprovalFlowService {
 
     this.currentApprovalConfigSignal.set(config);
     this.currentApprovalInstanceId = ++this.approvalInstanceCounter;
+    this.pendingConfirmationSignal.set(null);
 
     return new Promise((resolve) => {
       this.currentResolve = resolve;
@@ -213,6 +232,7 @@ export class ApprovalFlowService {
   closeApproval() {
     // Clear completion signal
     this.completionSignal.set(null);
+    this.pendingConfirmationSignal.set(null);
     this.cleanupApproval();
 
     // Cancel any pending detach-reject timer — the approval is being closed

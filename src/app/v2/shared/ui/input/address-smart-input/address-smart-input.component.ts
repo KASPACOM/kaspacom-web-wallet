@@ -1,5 +1,6 @@
 import {
   Component,
+  ElementRef,
   Input,
   inject,
   signal,
@@ -9,7 +10,12 @@ import {
   output,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { KcInputComponent, KcIconComponent, KcSpinnerComponent, KcTooltipDirective } from '@kaspacom/ui-kit';
+import {
+  KcInputComponent,
+  KcIconComponent,
+  KcSpinnerComponent,
+  KcTooltipDirective,
+} from '@kaspacom/ui-kit';
 import { CopyButtonComponent } from '../../copy-button/copy-button.component';
 import {
   AddressResolutionService,
@@ -32,6 +38,7 @@ import {
 })
 export class AddressSmartInputComponent implements OnChanges {
   private readonly resolver = inject(AddressResolutionService);
+  private readonly host = inject(ElementRef<HTMLElement>);
 
   readonly label = input<string>('Wallet Address');
   readonly placeholder = input<string>('Enter wallet address or KNS domain');
@@ -60,8 +67,13 @@ export class AddressSmartInputComponent implements OnChanges {
 
   private debounceTimer: any = null;
   private validationTimer: any = null;
+  protected inputValue = signal<string>('');
 
   ngOnChanges(changes: SimpleChanges): void {
+    if ('value' in changes) {
+      this.inputValue.set(this.value ?? '');
+    }
+
     if ('isValid' in changes || 'invalidReason' in changes) {
       if (this.validationTimer) {
         clearTimeout(this.validationTimer);
@@ -76,11 +88,15 @@ export class AddressSmartInputComponent implements OnChanges {
     }
   }
 
-  onInputChange(val: string) {
-    this.value = val || '';
-    this.valueChange.emit(this.value);
+  onInputChange(val: string | null | undefined) {
+    const nextValue = val ?? '';
+    if (nextValue === this.inputValue()) return;
+    if (!this.isInputInteractionActive()) return;
 
-    const input = (this.value || '').trim();
+    this.inputValue.set(nextValue);
+    this.valueChange.emit(nextValue);
+
+    const input = nextValue.trim();
 
     // Immediately clear any previously displayed errors when user changes input
     this.resolveError.set('');
@@ -114,7 +130,7 @@ export class AddressSmartInputComponent implements OnChanges {
   }
 
   async resolveNow() {
-    const input = (this.value || '').trim();
+    const input = this.inputValue().trim();
     this.resolvedAddress.set('');
     this.resolvedDomain.set('');
     this.resolveError.set('');
@@ -183,5 +199,10 @@ export class AddressSmartInputComponent implements OnChanges {
   protected shortenAddress(address: string): string {
     if (!address) return '';
     return `${address.slice(0, 10)}...${address.slice(-8)}`;
+  }
+
+  private isInputInteractionActive(): boolean {
+    const activeElement = this.host.nativeElement.ownerDocument?.activeElement;
+    return !!activeElement && this.host.nativeElement.contains(activeElement);
   }
 }

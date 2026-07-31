@@ -59,17 +59,19 @@ export class VerifySeedPhraseNewWalletStepComponent implements OnInit {
     this.checkVerification();
   }
 
-  onInputChange(idx: number, value: string) {
+  onInputChange(idx: number, value: string | null | undefined) {
     const list = [...this.verificationWords()];
     const entry = list[idx];
-    list[idx] = { ...entry, input: value };
+    list[idx] = { ...entry, input: value ?? '' };
     this.verificationWords.set(list);
     this.checkVerification();
   }
 
   private checkVerification() {
     const ok = this.verificationWords().every(
-      (item) => item.input.toLowerCase().trim() === item.word.toLowerCase(),
+      (item) =>
+        (item.input ?? '').trim().toLowerCase() ===
+        (item.word ?? '').toLowerCase(),
     );
     this.isVerified.set(ok);
   }

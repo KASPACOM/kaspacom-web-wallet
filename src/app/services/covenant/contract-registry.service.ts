@@ -1,31 +1,10 @@
 import { Injectable } from '@angular/core';
-
-export type ContractStatus = 'active' | 'spent' | 'unknown';
-
-export interface ContractRegistryEntry {
-  id: string; // uuid
-  contractName: string;
-  compiledJson: string; // full JSON for re-interaction
-  deployTxid: string;
-  contractAddress: string;
-  outpoint: { txid: string; vout: number };
-  amountSompi: string; // bigint as string
-  deployedBy: { address: string; pubkey: string; accountName: string };
-  deployedAt: number; // timestamp
-  network: string;
-  status?: ContractStatus; // on-chain status
-  lastChecked?: number; // timestamp of last status check
-  spendTxid?: string; // TX that spent this contract
-  // Parsed access info
-  accessRoles: Array<{
-    functionName: string;
-    params: Array<{ name: string; type: string }>;
-    description: string; // human readable like "Owner can spend"
-  }>;
-  covenantId?: string;
-  /** ID of the registry entry that this contract continues (keepAlive chain) */
-  predecessorId?: string;
-}
+import { WalletDB } from '../../db/wallet-db.service';
+import type { ContractRegistryEntry } from '../../db/dtos/contract-registry-entry';
+export type {
+  ContractRegistryEntry,
+  ContractStatus,
+} from '../../db/dtos/contract-registry-entry';
 
 @Injectable({
   providedIn: 'root',
@@ -33,29 +12,14 @@ export interface ContractRegistryEntry {
 export class ContractRegistryService {
   private readonly STORAGE_KEY = 'kaspacom_contracts_registry';
 
+  constructor(private db: WalletDB) {}
+
   /**
-   * Get all contracts from localStorage
+   * Get all contracts from IndexedDB.
    */
-  getAllContracts(): ContractRegistryEntry[] {
+  async getAllContracts(): Promise<ContractRegistryEntry[]> {
     try {
-      const data = localStorage.getItem(this.STORAGE_KEY);
-      if (!data) return [];
-      const parsed = JSON.parse(data);
-      if (!Array.isArray(parsed)) return [];
-      // Drop entries missing fields the consumers dereference, so a corrupt or
-      // older-schema record can't crash the contracts UI.
-      return parsed.filter(
-        (c: any) =>
-          c &&
-          typeof c === 'object' &&
-          typeof c.id === 'string' &&
-          typeof c.compiledJson === 'string' &&
-          c.outpoint &&
-          typeof c.outpoint.txid === 'string' &&
-          c.deployedBy &&
-          typeof c.deployedBy.pubkey === 'string' &&
-          typeof c.network === 'string',
-      );
+      return this.sanitizeContracts(await this.db.contractRegistry.toArray());
     } catch (error) {
       console.error('Error reading contracts registry:', error);
       return [];
@@ -65,18 +29,17 @@ export class ContractRegistryService {
   /**
    * Get a contract by ID
    */
-  getContract(id: string): ContractRegistryEntry | undefined {
-    return this.getAllContracts().find((c) => c.id === id);
+  async getContract(id: string): Promise<ContractRegistryEntry | undefined> {
+    const contract = await this.db.contractRegistry.get(id);
+    return this.isValidContract(contract) ? contract : undefined;
   }
 
   /**
    * Add a new contract to the registry
    */
-  addContract(contract: ContractRegistryEntry): void {
+  async addContract(contract: ContractRegistryEntry): Promise<void> {
     try {
-      const contracts = this.getAllContracts();
-      contracts.push(contract);
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(contracts));
+      await this.db.contractRegistry.put(contract);
     } catch (error) {
       console.error('Error saving contract to registry:', error);
       throw error;
@@ -86,14 +49,12 @@ export class ContractRegistryService {
   /**
    * Update an existing contract
    */
-  updateContract(id: string, updates: Partial<ContractRegistryEntry>): void {
+  async updateContract(
+    id: string,
+    updates: Partial<ContractRegistryEntry>,
+  ): Promise<void> {
     try {
-      const contracts = this.getAllContracts();
-      const index = contracts.findIndex((c) => c.id === id);
-      if (index >= 0) {
-        contracts[index] = { ...contracts[index], ...updates };
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(contracts));
-      }
+      await this.db.contractRegistry.update(id, updates);
     } catch (error) {
       console.error('Error updating contract in registry:', error);
       throw error;
@@ -103,10 +64,9 @@ export class ContractRegistryService {
   /**
    * Delete a contract from the registry
    */
-  deleteContract(id: string): void {
+  async deleteContract(id: string): Promise<void> {
     try {
-      const contracts = this.getAllContracts().filter((c) => c.id !== id);
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(contracts));
+      await this.db.contractRegistry.delete(id);
     } catch (error) {
       console.error('Error deleting contract from registry:', error);
       throw error;
@@ -116,15 +76,19 @@ export class ContractRegistryService {
   /**
    * Get contracts deployed by a specific account (by pubkey)
    */
-  getContractsByPubkey(pubkey: string): ContractRegistryEntry[] {
-    return this.getAllContracts().filter((c) => c.deployedBy.pubkey === pubkey);
+  async getContractsByPubkey(pubkey: string): Promise<ContractRegistryEntry[]> {
+    return (await this.getAllContracts()).filter(
+      (c) => c.deployedBy.pubkey === pubkey,
+    );
   }
 
   /**
    * Get contracts by network
    */
-  getContractsByNetwork(network: string): ContractRegistryEntry[] {
-    return this.getAllContracts().filter((c) => c.network === network);
+  async getContractsByNetwork(
+    network: string,
+  ): Promise<ContractRegistryEntry[]> {
+    return (await this.getAllContracts()).filter((c) => c.network === network);
   }
 
   /**
@@ -132,5 +96,52 @@ export class ContractRegistryService {
    */
   generateId(): string {
     return crypto.randomUUID();
+  }
+
+  async migrateContractsRegistryFromLocalStorage(): Promise<void> {
+    let data: string | null = null;
+    try {
+      data = localStorage.getItem(this.STORAGE_KEY);
+    } catch (error) {
+      console.error('Error reading legacy contracts registry:', error);
+      return;
+    }
+
+    if (!data) return;
+
+    try {
+      const parsed = JSON.parse(data);
+      const contracts = this.sanitizeContracts(parsed);
+      if (contracts.length) {
+        await this.db.contractRegistry.bulkPut(contracts);
+      }
+      localStorage.removeItem(this.STORAGE_KEY);
+    } catch (error) {
+      console.error('Error migrating contracts registry to IndexedDB:', error);
+      throw error;
+    }
+  }
+
+  private sanitizeContracts(data: unknown): ContractRegistryEntry[] {
+    if (!Array.isArray(data)) return [];
+    // Drop entries missing fields the consumers dereference, so a corrupt or
+    // older-schema record can't crash the contracts UI.
+    return data.filter((c): c is ContractRegistryEntry =>
+      this.isValidContract(c),
+    );
+  }
+
+  private isValidContract(c: unknown): c is ContractRegistryEntry {
+    return (
+      !!c &&
+      typeof c === 'object' &&
+      typeof (c as any).id === 'string' &&
+      typeof (c as any).compiledJson === 'string' &&
+      !!(c as any).outpoint &&
+      typeof (c as any).outpoint.txid === 'string' &&
+      !!(c as any).deployedBy &&
+      typeof (c as any).deployedBy.pubkey === 'string' &&
+      typeof (c as any).network === 'string'
+    );
   }
 }

@@ -11,6 +11,11 @@ export interface IndexerCovenantArg {
 
 export interface IndexerCovenantAction {
   action?: string;
+  /**
+   * Historical address for this individual indexed action. Do not use this as
+   * the current covenant address; use active UTXOs, covenant.address, or the
+   * latest continuation output address instead.
+   */
   address?: string;
   blockTimeMs?: number;
   classificationKind?: string | null;
@@ -20,6 +25,10 @@ export interface IndexerCovenantAction {
   entrypoint?: string | null;
   inputs?: Record<string, any> | null;
   outputs?: {
+    /**
+     * Output address for this individual action. This is current only for the
+     * latest active deploy/continuation output, not for older actions.
+     */
     address?: string;
     amountSompi?: number | string;
     scriptPubKeyHex?: string;

@@ -6367,6 +6367,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           }
           outputs = [{ address: outputAddress, amount: inputAmount }];
           extraArgsOverride = this.collectExtraArgs(compiled, functionName);
+          useSenderFeeOverride = true;
         } else {
           if (isNaN(outputAmountKas) || outputAmountKas <= 0) {
             this.interactError.set('Output amount must be greater than 0');
@@ -6670,7 +6671,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.interactResult.set({ txid: result.txid, functionName: 'unvault' });
 
     if (this.selectedContractId()) {
-      this.registryService.updateContract(this.selectedContractId(), {
+      await this.updateRegistryContract(this.selectedContractId(), {
         status: 'active',
         compiledJson: nextContractJson,
         contractAddress: nextContractAddress,
@@ -6685,7 +6686,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.interactOutpointTxid = result.txid;
     this.interactOutpointVout = '0';
     this.interactInputAmount = inputAmount.toString();
-    this.loadContracts();
+
+    void this.trackActionIndexing(result.txid, this.selectedContractId());
   }
 
   /**
@@ -7912,13 +7914,39 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     );
   }
 
+  isSenderFeeToggleDisabled(
+    fnName: string | undefined = this.selectedFunction,
+  ): boolean {
+    return (
+      this.isInteracting() ||
+      this.isMultiSigFunction(fnName || '') ||
+      this.isSelfCustodySweepAction(fnName)
+    );
+  }
+
+  getSenderFeeTooltip(
+    fnName: string | undefined = this.selectedFunction,
+  ): string {
+    if (this.isMultiSigFunction(fnName || '')) {
+      return 'Disabled for multi-sig signing. The contract must pay fees because wallet fee inputs would change the transaction after signatures are created.';
+    }
+    if (this.isSelfCustodySweepAction(fnName)) {
+      return 'Required for Self-Custody sweep/finalize. The covenant requires the withdrawal output to keep the full input value, so fees must be paid by the wallet.';
+    }
+    if (this.isTopUpFunction(fnName || '')) {
+      return 'When enabled, fees are paid from wallet change. When disabled, fees are deducted from the top-up output.';
+    }
+    return 'If enabled, transaction fees will be paid from your wallet balance instead of the contract funds.';
+  }
+
   /**
    * Select an entrypoint function — clears stale state and auto-fills
    * output fields based on the function type.
    */
   selectFunction(name: string) {
     this.selectedFunction = name;
-    this.useSenderFee = !this.isMultiSigFunction(name);
+    this.useSenderFee =
+      this.isSelfCustodySweepAction(name) || !this.isMultiSigFunction(name);
 
     // Clear stale interaction state
     this.interactError.set(null);

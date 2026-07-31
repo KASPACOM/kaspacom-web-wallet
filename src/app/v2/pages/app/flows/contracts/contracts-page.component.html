@@ -2710,9 +2710,7 @@
                 type="checkbox"
                 class="cursor-pointer"
                 [(ngModel)]="useSenderFee"
-                [disabled]="
-                  isInteracting() || isMultiSigFunction(selectedFunction)
-                "
+                [disabled]="isSenderFeeToggleDisabled(selectedFunction)"
               /><span class="text-white typo-text-2"
                 >Use wallet to pay for fees</span
               ></label
@@ -2720,13 +2718,7 @@
             <kc-icon
               [iconClass]="'icon-info'"
               [size]="'xs'"
-              [kcTooltip]="
-                isMultiSigFunction(selectedFunction)
-                  ? 'Disabled for multi-sig signing. The contract must pay fees because wallet fee inputs would change the transaction after signatures are created.'
-                  : isTopUpFunction(selectedFunction)
-                    ? 'When enabled, fees are paid from wallet change. When disabled, fees are deducted from the top-up output.'
-                    : 'If enabled, transaction fees will be paid from your wallet balance instead of the contract funds.'
-              "
+              [kcTooltip]="getSenderFeeTooltip(selectedFunction)"
               tooltipPosition="top-center"
             ></kc-icon>
             @if (isTopUpFunction(selectedFunction)) {
@@ -2767,6 +2759,21 @@
                 If wallet-paid fees are off, the top-up amount must be larger
                 than the transaction fee so the recreated covenant output
                 remains larger than the current covenant UTXO.
+              </span>
+            </div>
+          }
+          @if (isSelfCustodySweepAction(selectedFunction)) {
+            <div
+              class="p-12 rounded-lg"
+              style="
+                background: rgba(255, 193, 7, 0.08);
+                border: 1px solid rgba(255, 193, 7, 0.2);
+              "
+            >
+              <span class="text-yellow typo-text-2">
+                Self-Custody sweep/finalize must pay fees from the wallet
+                because the withdrawal output must keep the full contract input
+                value.
               </span>
             </div>
           }
@@ -3405,10 +3412,7 @@
                 type="checkbox"
                 class="cursor-pointer"
                 [(ngModel)]="useSenderFee"
-                [disabled]="
-                  isInteracting() ||
-                  (selectedFunction && isMultiSigFunction(selectedFunction))
-                "
+                [disabled]="isSenderFeeToggleDisabled(selectedFunction)"
               /><span class="text-white typo-text-2"
                 >Use wallet to pay for fees</span
               ></label
@@ -3416,13 +3420,7 @@
             <kc-icon
               [iconClass]="'icon-info'"
               [size]="'xs'"
-              [kcTooltip]="
-                selectedFunction && isMultiSigFunction(selectedFunction)
-                  ? 'Disabled for multi-sig signing. The contract must pay fees because wallet fee inputs would change the transaction after signatures are created.'
-                  : selectedFunction && isTopUpFunction(selectedFunction)
-                    ? 'When enabled, fees are paid from wallet change. When disabled, fees are deducted from the top-up output.'
-                    : 'If enabled, transaction fees will be paid from your wallet balance instead of the contract funds.'
-              "
+              [kcTooltip]="getSenderFeeTooltip(selectedFunction)"
               tooltipPosition="top-center"
             ></kc-icon>
             @if (selectedFunction && isTopUpFunction(selectedFunction)) {
@@ -3463,6 +3461,21 @@
                 If wallet-paid fees are off, the top-up amount must be larger
                 than the transaction fee so the recreated covenant output
                 remains larger than the current covenant UTXO.
+              </span>
+            </div>
+          }
+          @if (selectedFunction && isSelfCustodySweepAction(selectedFunction)) {
+            <div
+              class="p-12 rounded-lg"
+              style="
+                background: rgba(255, 193, 7, 0.08);
+                border: 1px solid rgba(255, 193, 7, 0.2);
+              "
+            >
+              <span class="text-yellow typo-text-2">
+                Self-Custody sweep/finalize must pay fees from the wallet
+                because the withdrawal output must keep the full contract input
+                value.
               </span>
             </div>
           }

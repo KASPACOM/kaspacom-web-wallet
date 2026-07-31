@@ -779,6 +779,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   // Current network
   network = computed(() => this.rpcService.getNetwork());
+  networkBlocksPerSecond = computed(
+    () => this.kaspaL1NetworkService.getCurrentNetwork().blocksPerSecond || 10,
+  );
 
   // --- Contract Lookup (My Contracts tab) ---
   lookupAddress = '';
@@ -1091,7 +1094,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private applyTemplateDefaults(template: ContractTemplate) {
     if (template.id !== 'self-custody-vault') return;
     this.templateFormValues['whitelistedDestinations_mode'] = 'anywhere';
-    this.templateFormValues['initUnvaultDelaySeconds'] = '24';
+    this.setSelfCustodyDelayFromHours(24, false);
   }
 
   selectCustomContract() {
@@ -1354,8 +1357,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         'Keep this wallet separate from the hot wallet. It can sweep funds immediately in an emergency.',
       whitelistedDestinations:
         'Choose send anywhere for no destination restriction, or allow only listed wallets for withdrawals.',
-      initUnvaultDelaySeconds:
-        'The hot wallet must wait this many hours after unvaulting before it can finalize a withdrawal.',
+      initUnvaultDelaySeconds: `This is a DAA-score delay, not wall-clock seconds. The hours value is only an estimate using the current ${this.networkBlocksPerSecond()} BPS network rate. If Kaspa BPS changes later, recreate the vault or use a larger DAA delay because the on-chain contract stores only the DAA amount.`,
       timeout:
         'The earliest date when the recovery wallet can use the backup withdrawal path.',
       expiry:
@@ -1652,13 +1654,18 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     } else if (
       field.type === 'int_days' ||
       field.type === 'int_hours' ||
+      field.type === 'int_daa_delay' ||
       field.type === 'int_count'
     ) {
       const numeric = Number(value);
       if (!Number.isFinite(numeric) || numeric < 0) {
         error = 'Enter a non-negative number';
+      } else if (field.type === 'int_daa_delay' && numeric > 0xffffff) {
+        error = 'Maximum is 16,777,215 DAA score units';
       } else if (
-        (field.type === 'int_days' || field.type === 'int_count') &&
+        (field.type === 'int_days' ||
+          field.type === 'int_daa_delay' ||
+          field.type === 'int_count') &&
         !Number.isInteger(numeric)
       ) {
         error = 'Enter a non-negative whole number';
@@ -2844,10 +2851,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             ',',
           )
         : '';
-    const delayHoursValue =
+    const delayDaaValue =
       values['initUnvaultDelaySeconds'] ?? values['unvaultDelaySeconds'];
-    const delayHours = this.parsePositiveDecimal(
-      String(delayHoursValue ?? '24').trim() || '24',
+    const delayDaaScore = this.parseWholeNumber(
+      String(delayDaaValue ?? '').trim() || String(this.hoursToDaaDelay(24)),
       'Unvault Delay',
     );
     const initPhase = values['initPhase']
@@ -2881,7 +2888,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       {
         name: 'unvaultDelaySeconds',
         type: 'blueScore',
-        value: String(this.hoursToSeconds(delayHours)),
+        value: String(delayDaaScore),
       },
       {
         name: 'initPhase',
@@ -2919,7 +2926,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         c: args['coldKey'] || '',
         m: args['whitelistMode'] === 'whitelist' ? 'w' : 'a',
         w: args['whitelistedDestinations'] || '',
-        d: args['unvaultDelaySeconds'] || '86400',
+        d: args['unvaultDelaySeconds'] || String(this.hoursToDaaDelay(24)),
         p: args['initPhase'] || '0',
       },
     };
@@ -3805,7 +3812,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         const previewBaseAction =
           actions.find((action) => action.action === 'deploy') || actions[0];
         if (!previewBaseAction) {
-          throw new Error('No indexer action is available for preview refresh.');
+          throw new Error(
+            'No indexer action is available for preview refresh.',
+          );
         }
         const preview = await this.buildIndexerImportPreview({
           action: previewBaseAction,
@@ -5187,8 +5196,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       '1',
     ]);
     const delayCandidates = this.uniqueStrings([
-      this.stateSecondsToHours(state['vaultUnvaultDelaySeconds']),
-      this.stateSecondsToHours(state['unvaultDelaySeconds']),
+      String(state['vaultUnvaultDelaySeconds'] ?? ''),
+      String(state['unvaultDelaySeconds'] ?? ''),
       baseFieldValues['initUnvaultDelaySeconds'],
       baseFieldValues['unvaultDelaySeconds'],
       String(state['vaultUnvaultDelaySeconds'] ?? ''),
@@ -5233,12 +5242,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           .filter((value) => value !== ''),
       ),
     );
-  }
-
-  private stateSecondsToHours(value: unknown): string {
-    const seconds = Number(value);
-    if (!Number.isFinite(seconds)) return '';
-    return String(seconds / 3600);
   }
 
   private isActiveIndexerUtxo(
@@ -5487,7 +5490,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
                 ? 'whitelist'
                 : 'anywhere',
           initUnvaultDelaySeconds: String(
-            Number.isFinite(delaySeconds) ? delaySeconds / 3600 : 24,
+            Number.isFinite(delaySeconds)
+              ? delaySeconds
+              : this.hoursToDaaDelay(24),
           ),
           initPhase: String(
             state['initPhase'] ??
@@ -7007,7 +7012,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       whitelistedDestinations: currentArgs['whitelistedDestinations'] || '',
       whitelistedDestinations_mode:
         currentArgs['whitelistMode'] === 'whitelist' ? 'whitelist' : 'anywhere',
-      initUnvaultDelaySeconds: String(Number(delaySeconds) / 3600),
+      initUnvaultDelaySeconds: String(delaySeconds),
       initPhase: String(phase),
     };
     const constructorArgs = [
@@ -7566,6 +7571,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         }
         return this.intArg(this.hoursToSeconds(hours));
       }
+      case 'int_daa_delay': {
+        const daaScore = this.parseWholeNumber(value, field.label);
+        if (daaScore > 0xffffff) {
+          throw new Error(
+            `${field.label}: maximum is 16,777,215 DAA score units (template encoding limit)`,
+          );
+        }
+        return this.intArg(daaScore);
+      }
       case 'int_count':
         return this.intArg(this.parseWholeNumber(value, field.label));
       case 'whitelist_count':
@@ -7616,6 +7630,55 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return Math.max(0, Math.round(hours * 3600));
   }
 
+  private hoursToDaaDelay(hours: number): number {
+    return Math.max(
+      0,
+      Math.round(hours * 3600 * this.networkBlocksPerSecond()),
+    );
+  }
+
+  private daaDelayToHours(daaScore: number): number {
+    return daaScore / (3600 * this.networkBlocksPerSecond());
+  }
+
+  selfCustodyDelayHoursValue(paramName: string): string {
+    const daaScore = Number(this.templateFormValues[paramName] ?? '');
+    if (!Number.isFinite(daaScore)) return '';
+    const hours = this.daaDelayToHours(daaScore);
+    return Number.isInteger(hours)
+      ? String(hours)
+      : String(Number(hours.toFixed(6)));
+  }
+
+  onSelfCustodyDelayHoursChange(field: TemplateField, value: unknown): void {
+    const rawValue = String(value ?? '').trim();
+    const hours = Number(rawValue || '0');
+    if (!Number.isFinite(hours) || hours < 0) {
+      this.templateFormValues[field.paramName] = rawValue;
+      this.templateFieldTouched[field.paramName] = true;
+      this.validateTemplateField(field);
+      return;
+    }
+    this.setSelfCustodyDelayFromHours(hours, true);
+    this.validateTemplateField(field);
+  }
+
+  onSelfCustodyDelayDaaChange(field: TemplateField, value: unknown): void {
+    this.onTemplateFieldChange(field, value);
+  }
+
+  private setSelfCustodyDelayFromHours(
+    hours: number,
+    markTouched: boolean,
+  ): void {
+    this.templateFormValues['initUnvaultDelaySeconds'] = String(
+      this.hoursToDaaDelay(hours),
+    );
+    if (markTouched) {
+      this.templateFieldTouched['initUnvaultDelaySeconds'] = true;
+    }
+  }
+
   private parseDateToUnixMs(value: string, label: string): number {
     // Kaspa LOCK_TIME_THRESHOLD = 500,000,000,000:
     //   values < 500B → DAA score, values >= 500B → Unix milliseconds
@@ -7663,7 +7726,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const paddedAddresses = [
       ...selectedAddresses,
       ...new Array<string>(
-        Math.max(0, this.selfCustodyWhitelistCapacity - selectedAddresses.length),
+        Math.max(
+          0,
+          this.selfCustodyWhitelistCapacity - selectedAddresses.length,
+        ),
       ).fill(''),
     ];
 

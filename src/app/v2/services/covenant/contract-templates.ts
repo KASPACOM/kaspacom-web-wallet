@@ -18,6 +18,7 @@ export interface TemplateField {
     | 'address_list'
     | 'int_days'
     | 'int_hours'
+    | 'int_daa_delay'
     | 'int_timestamp'
     | 'int_count'
     | 'int_hidden'
@@ -92,11 +93,11 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
       },
       {
         paramName: 'initUnvaultDelaySeconds',
-        label: 'Unvault delay (hours)',
-        type: 'int_hours',
-        placeholder: '24',
+        label: 'Unvault delay (DAA)',
+        type: 'int_daa_delay',
+        placeholder: '864000',
         description:
-          'How many hours the hot wallet must wait after unvaulting before finalizing.',
+          'How many DAA score units the hot wallet must wait after unvaulting before finalizing.',
       },
       {
         paramName: 'initPhase',

@@ -482,17 +482,53 @@
                     @if (
                       field.type === "int_days" ||
                       field.type === "int_hours" ||
+                      field.type === "int_daa_delay" ||
                       field.type === "int_count"
                     ) {
-                      <kc-number-input
-                        [label]="field.label"
-                        [placeholder]="field.placeholder"
-                        [min]="'0'"
-                        [isValid]="isTemplateFieldValid(field)"
-                        [isDisabled]="isDeploying()"
-                        [ngModel]="templateFormValues[field.paramName] || ''"
-                        (valueChange)="onTemplateFieldChange(field, $event)"
-                      ></kc-number-input>
+                      @if (field.type === "int_daa_delay") {
+                        <div class="flex column gap-8">
+                          <span class="field-label"
+                            >Estimated delay (hours)</span
+                          >
+                          <kc-number-input
+                            [label]="'Unvault delay (hours)'"
+                            [placeholder]="'24'"
+                            [min]="'0'"
+                            [isValid]="isTemplateFieldValid(field)"
+                            [isDisabled]="isDeploying()"
+                            [ngModel]="
+                              selfCustodyDelayHoursValue(field.paramName)
+                            "
+                            (valueChange)="
+                              onSelfCustodyDelayHoursChange(field, $event)
+                            "
+                          ></kc-number-input>
+                          <span class="field-label">Exact on-chain delay</span>
+                          <kc-number-input
+                            [label]="field.label"
+                            [placeholder]="field.placeholder"
+                            [min]="'0'"
+                            [isValid]="isTemplateFieldValid(field)"
+                            [isDisabled]="isDeploying()"
+                            [ngModel]="
+                              templateFormValues[field.paramName] || ''
+                            "
+                            (valueChange)="
+                              onSelfCustodyDelayDaaChange(field, $event)
+                            "
+                          ></kc-number-input>
+                        </div>
+                      } @else {
+                        <kc-number-input
+                          [label]="field.label"
+                          [placeholder]="field.placeholder"
+                          [min]="'0'"
+                          [isValid]="isTemplateFieldValid(field)"
+                          [isDisabled]="isDeploying()"
+                          [ngModel]="templateFormValues[field.paramName] || ''"
+                          (valueChange)="onTemplateFieldChange(field, $event)"
+                        ></kc-number-input>
+                      }
                       @if (!isTemplateFieldValid(field)) {
                         <span class="kc-input-error-text">{{
                           getTemplateFieldError(field)
@@ -3646,18 +3682,54 @@
                   @if (
                     field.type === "int_days" ||
                     field.type === "int_hours" ||
+                    field.type === "int_daa_delay" ||
                     field.type === "int_count"
                   ) {
-                    <input
-                      type="number"
-                      class="form-input"
-                      [name]="field.paramName"
-                      [placeholder]="field.placeholder"
-                      [title]="field.description"
-                      min="0"
-                      step="1"
-                      [(ngModel)]="templateFormValues[field.paramName]"
-                    />
+                    @if (field.type === "int_daa_delay") {
+                      <div class="flex column gap-8">
+                        <span class="field-label">Estimated delay (hours)</span>
+                        <input
+                          type="number"
+                          class="form-input"
+                          [name]="field.paramName + '_hours'"
+                          placeholder="24"
+                          [title]="field.description"
+                          min="0"
+                          step="0.01"
+                          [ngModel]="
+                            selfCustodyDelayHoursValue(field.paramName)
+                          "
+                          (ngModelChange)="
+                            onSelfCustodyDelayHoursChange(field, $event)
+                          "
+                        />
+                        <span class="field-label">Exact on-chain delay</span>
+                        <input
+                          type="number"
+                          class="form-input"
+                          [name]="field.paramName"
+                          [placeholder]="field.placeholder"
+                          [title]="field.description"
+                          min="0"
+                          step="1"
+                          [ngModel]="templateFormValues[field.paramName]"
+                          (ngModelChange)="
+                            onSelfCustodyDelayDaaChange(field, $event)
+                          "
+                        />
+                      </div>
+                    } @else {
+                      <input
+                        type="number"
+                        class="form-input"
+                        [name]="field.paramName"
+                        [placeholder]="field.placeholder"
+                        [title]="field.description"
+                        min="0"
+                        step="1"
+                        [(ngModel)]="templateFormValues[field.paramName]"
+                      />
+                    }
                   }
                   @if (field.type === "int_timestamp") {
                     <input
@@ -3671,7 +3743,7 @@
                       [(ngModel)]="templateFormValues[field.paramName]"
                     />
                   }
-                  <span class="field-help">{{ field.description }}</span>
+                  <span class="field-help">{{ getFieldHelp(field) }}</span>
                 </div>
               }
             }

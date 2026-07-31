@@ -2552,11 +2552,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       .map((value) => value.toLowerCase());
 
     return safeParticipants
-      .filter((participant) =>
-        participant &&
-        [participant.value, ...(participant.matchValues || [])]
-          .map((value) => String(value).toLowerCase())
-          .some((value) => candidates.includes(value)),
+      .filter(
+        (participant) =>
+          participant &&
+          [participant.value, ...(participant.matchValues || [])]
+            .map((value) => String(value).toLowerCase())
+            .some((value) => candidates.includes(value)),
       )
       .map((participant) => participant.label)
       .filter((label): label is string => !!label);
@@ -3738,22 +3739,48 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const { action, actions, covenant } = response;
     const activeAction = this.getLatestCovenantOutputAction(actions) || action;
     const covenantId = covenant?.covenantIdHex || action.covenantIdHex;
+    const activeUtxo = await this.fetchSingleActiveIndexerUtxo([
+      covenantId,
+      activeAction.covenantIdHex,
+      this.extractScriptHashFromScriptPubKey(
+        activeAction.outputs?.scriptPubKeyHex,
+      ),
+      activeAction.scriptHashHex,
+    ]);
+    if (!activeUtxo && covenant?.activeUtxos === 0) {
+      throw new Error(
+        'This covenant has no active UTXO left, so it cannot be opened for actions.',
+      );
+    }
+    if (!activeUtxo && (covenant?.activeUtxos ?? 0) > 0) {
+      throw new Error(
+        'The indexer reports an active covenant, but no single active UTXO could be selected for actions.',
+      );
+    }
     const deployTxid =
-      activeAction.txidHex || covenant?.genesisTxidHex || action.txidHex;
+      activeUtxo?.txidHex ||
+      activeAction.txidHex ||
+      covenant?.genesisTxidHex ||
+      action.txidHex;
     const contractAddress =
+      activeUtxo?.address ||
       activeAction.outputs?.address ||
       activeAction.address ||
       covenant?.address ||
       action.address ||
       action.outputs?.address;
     const amountSompi = String(
-      activeAction.outputs?.amountSompi ??
+      activeUtxo?.amountSompi ??
+        activeAction.outputs?.amountSompi ??
         covenant?.totalAmountSompi ??
         action.outputs?.amountSompi ??
         '',
     );
     const vout = Number(
-      activeAction.outputs?.vout ?? action.outputs?.vout ?? 0,
+      activeUtxo?.vout ??
+        activeAction.outputs?.vout ??
+        action.outputs?.vout ??
+        0,
     );
     const templateName =
       covenant?.claimedTemplate || covenant?.claimedArgs?.tmpl;
@@ -3827,6 +3854,41 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           (action.action === 'continuation' || action.action === 'deploy'),
       )
       .sort((a, b) => (b.blockTimeMs || 0) - (a.blockTimeMs || 0))[0];
+  }
+
+  private async fetchSingleActiveIndexerUtxo(
+    identifiers: Array<string | undefined | null>,
+  ): Promise<IndexerCovenantUtxo | null> {
+    const uniqueIdentifiers = Array.from(
+      new Set(
+        identifiers
+          .map((identifier) => identifier?.trim())
+          .filter((identifier): identifier is string => !!identifier),
+      ),
+    );
+
+    for (const identifier of uniqueIdentifiers) {
+      try {
+        const utxos =
+          await this.covenantIndexerService.getCovenantUtxos(identifier);
+        const activeUtxos = utxos.filter(
+          (utxo) => utxo.status !== 'spent' && !utxo.spentByTxidHex,
+        );
+        if (activeUtxos.length === 1) return activeUtxos[0];
+        if (activeUtxos.length > 1) {
+          throw new Error(
+            `Multiple active UTXOs found for covenant identifier ${identifier}.`,
+          );
+        }
+      } catch (error) {
+        console.warn('[Contracts] Failed to fetch active covenant UTXO:', {
+          identifier,
+          error,
+        });
+      }
+    }
+
+    return null;
   }
 
   private extractScriptHashFromScriptPubKey(

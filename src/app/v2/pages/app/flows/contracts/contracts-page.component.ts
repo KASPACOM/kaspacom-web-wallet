@@ -92,120 +92,24 @@ import {
 } from './contract-action-fields.config';
 import { ContractActionFieldsComponent } from './components/contract-action-fields/contract-action-fields.component';
 
-type TabName =
-  | 'deploy'
-  | 'my-contracts'
-  | 'lookup-import'
-  | 'interact'
-  | 'templates'
-  | 'detail';
-type ContractDetailTab = 'details' | 'action';
-type CreateMode = 'template' | 'custom';
-type ContractsTransientState = {
-  activeTab?: TabName;
-  detailPanelTab?: ContractDetailTab;
-  actionPageView?: 'list' | 'form';
-  selectedFunction?: string;
-  interactContractJson?: string;
-  interactOutpointTxid?: string;
-  interactOutpointVout?: string;
-  interactInputAmount?: string;
-  interactOutputAddress?: string;
-  interactOutputAmount?: string;
-  topUpAmount?: string;
-  partialSpendJson?: string;
-  interactResult?: { txid: string; functionName: string };
-};
-
-type IndexerImportPreview = {
-  action: IndexerCovenantAction;
-  activeAction: IndexerCovenantAction;
-  activeUtxo: IndexerCovenantUtxo;
-  args: IndexerCovenantArg[];
-  compiledJson: string;
-  contractAddress: string;
-  covenantId: string;
-  deployTxid: string;
-  error?: string;
-  fieldValues: Record<string, string>;
-  outpoint: { txid: string; vout: number };
-  template: ContractTemplate;
-  templateName: string;
-  amountSompi: string;
-  deployedAt: number;
-  isLatestContinuation: boolean;
-};
-
-type ContractDashboardSource = 'indexer' | 'local' | 'both';
-type ContractDashboardFilter =
-  'all' | 'deadman' | 'timelock' | 'multisig' | 'escrow';
-// Status dimension, composed on top of the template-type filter above.
-type ContractStatusFilter = 'all' | 'active' | 'history';
-type ContractParticipant = {
-  label: string;
-  value: string;
-  matchValues?: string[];
-  hidden?: boolean;
-};
-
-type ContractDashboardEntry = {
-  id: string;
-  source: ContractDashboardSource;
-  contractName: string;
-  displayName: string;
-  contractTypeLabel: string;
-  aliasName?: string;
-  aliases?: Record<string, string>;
-  status: 'active' | 'spent' | 'unknown' | 'tracking-incomplete';
-  amountSompi: string;
-  currentAddress?: string;
-  covenantId?: string;
-  scriptHash?: string;
-  deployTxid?: string;
-  latestTxid?: string;
-  latestAction?: string;
-  deadlineMs?: number;
-  participants: ContractParticipant[];
-  nextActionLabel: string;
-  actionHint: string;
-  registryEntry?: ContractRegistryEntry;
-  indexerSummary?: IndexerCovenantDetails;
-};
-
-type ContractDetailState = {
-  entry: ContractDashboardEntry;
-  response?: IndexerCovenantResponse;
-  actions: IndexerCovenantAction[];
-  utxos: IndexerCovenantUtxo[];
-};
-
-type ContractDetailParameter = {
-  label: string;
-  value: string;
-  type?: string;
-};
-
-type AvailableAction = {
-  fnName: string;
-  label: string;
-  description: string;
-  iconClass: string;
-  enabled: boolean;
-  disabledReason?: string;
-};
-
-type DeployIndexerState = {
-  txid: string;
-  status: 'checking' | 'indexed' | 'not-indexed' | 'unavailable';
-  message: string;
-  covenantId?: string;
-};
-
-type ActionIndexerState = {
-  txid: string;
-  status: 'checking' | 'indexed' | 'not-indexed' | 'unavailable';
-  message: string;
-};
+import {
+  TabName,
+  ContractDetailTab,
+  CreateMode,
+  ContractsTransientState,
+  IndexerImportPreview,
+  ContractDashboardSource,
+  ContractDashboardFilter,
+  ContractStatusFilter,
+  ContractParticipant,
+  ContractDashboardEntry,
+  ContractDetailState,
+  ContractDetailParameter,
+  AvailableAction,
+  DeployIndexerState,
+  ActionIndexerState,
+} from './contracts-page.models';
+import { ContractDisplayService } from './services/contract-display.service';
 
 @Component({
   selector: 'app-contracts-page',
@@ -256,6 +160,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private platformId = inject(PLATFORM_ID);
   private notificationService = inject(NotificationService);
   private isBrowser = isPlatformBrowser(this.platformId);
+  private display = inject(ContractDisplayService);
   private routeSubscription?: Subscription;
   private registryMigrationPromise?: Promise<void>;
   private contractsLoadRequestToken = 0;
@@ -7330,99 +7235,55 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * Get explorer link for address
    */
   getExplorerAddressLink(address: string): string {
-    return `${this.kaspaL1NetworkService.getKaspaExplorerBaseurl()}/addresses/${address}`;
+    return this.display.getExplorerAddressLink(address);
   }
 
   /**
    * Get explorer link for transaction
    */
   getExplorerLink(txid: string): string {
-    const covenantExplorerBaseurl =
-      this.kaspaL1NetworkService.getCovenantExplorerBaseurl();
-    if (covenantExplorerBaseurl) {
-      return `${covenantExplorerBaseurl}/tx/${txid}`;
-    }
-    return `${this.kaspaL1NetworkService.getKaspaExplorerBaseurl()}/txs/${txid}`;
+    return this.display.getExplorerLink(txid);
   }
 
   /**
    * Get covenant explorer link for a covenant ID (covenants.kaspa.com), if the current network has one configured
    */
   getCovenantExplorerLink(covenantId: string): string | undefined {
-    const covenantExplorerBaseurl =
-      this.kaspaL1NetworkService.getCovenantExplorerBaseurl();
-    return covenantExplorerBaseurl
-      ? `${covenantExplorerBaseurl}/covenants/${covenantId}`
-      : undefined;
+    return this.display.getCovenantExplorerLink(covenantId);
   }
 
   /**
    * Truncate string for display
    */
   truncate(str: string | null | undefined, length: number = 16): string {
-    const value = String(str ?? '');
-    if (value.length <= length) return value;
-    return (
-      value.substring(0, length) + '...' + value.substring(value.length - 6)
-    );
+    return this.display.truncate(str, length);
   }
 
   /**
    * Format sompi to KAS
    */
   formatSompiToKas(sompi: string): string {
-    try {
-      const kas = Number(BigInt(String(sompi || '0'))) / 1e8;
-      return kas.toFixed(8).replace(/\.?0+$/, '');
-    } catch {
-      return '0';
-    }
+    return this.display.formatSompiToKas(sompi);
   }
 
   getSourceLabel(contract: ContractDashboardEntry): string {
-    return this.getSourceLabels(contract).join(' + ');
+    return this.display.getSourceLabel(contract);
   }
 
   getSourceLabels(contract: ContractDashboardEntry): string[] {
-    if (contract.source === 'both') return ['Local', 'Indexer'];
-    return [contract.source === 'indexer' ? 'Indexer' : 'Local'];
+    return this.display.getSourceLabels(contract);
   }
 
   getStatusLabel(contract: ContractDashboardEntry): string {
-    const labels: Record<ContractDashboardEntry['status'], string> = {
-      active: 'Active',
-      spent: 'Spent',
-      unknown: 'Unknown',
-      'tracking-incomplete': 'Tracking incomplete',
-    };
-    return labels[contract.status] || 'Unknown';
+    return this.display.getStatusLabel(contract);
   }
 
   formatTimestamp(value: number | undefined | null): string {
-    if (!value) return 'Unknown';
-    const date = new Date(value);
-    if (!Number.isFinite(date.getTime())) return 'Unknown';
-    return date.toLocaleString();
+    return this.display.formatTimestamp(value);
   }
 
   formatActionName(action: string): string {
-    const labels: Record<string, string> = {
-      deploy: 'Deploy',
-      spend: 'Spend',
-      continuation: 'Continuation',
-      keepAlive: 'Keep Alive',
-      claim: 'Claim',
-      spend12: 'MultiSig Spend',
-      release: 'Release',
-      refund: 'Refund',
-      arbitrate: 'Arbitrate',
-      recover: 'Recover',
-      withdraw: 'Withdraw',
-      unvault: 'Start Unvault',
-      emergencySweep: 'Emergency Sweep',
-      finalize: 'Finalize',
-    };
-    return labels[action] || action;
+    return this.display.formatActionName(action);
   }
 
   /**
@@ -7431,12 +7292,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * current state from the indexer when the link is opened.
    */
   buildShareLink(covenantId: string): string {
-    if (!this.isBrowser) return '';
-    const url = new URL(
-      `${window.location.origin}/app/contracts/${covenantId}`,
-    );
-    url.searchParams.set('network', this.network());
-    return url.toString();
+    return this.display.buildShareLink(covenantId);
   }
 
   copyContractShareLink(contract: ContractDashboardEntry) {

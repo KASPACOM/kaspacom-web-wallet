@@ -14,6 +14,8 @@ import {
 import { CompiledContract } from '../../../../../../services/covenant/covenant-sdk/types';
 import { IndexerCovenantArg } from '../../../../../../services/covenant/covenant-indexer.service';
 import { KaspaL1NetworkService } from '../../../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
+import { RpcService } from '../../../../../../services/kaspa-netwrok-services/rpc.service';
+import { PublicKey } from '../../../../../../../../public/kaspa/kaspa';
 import { SELF_CUSTODY_WHITELIST_CAPACITY } from '../contracts-page.models';
 
 /**
@@ -29,6 +31,7 @@ export class CovenantTemplateService {
   private http = inject(HttpClient);
   private templatePatcher = inject(TemplatePatcherService);
   private kaspaL1NetworkService = inject(KaspaL1NetworkService);
+  private rpcService = inject(RpcService);
 
   private templatePatchContextCache = new Map<
     string,
@@ -377,6 +380,122 @@ export class CovenantTemplateService {
           return value;
         }),
       ),
+    );
+  }
+
+  /**
+   * Convert an x-only 32-byte pubkey hex into a Kaspa P2PK address for the current network.
+   */
+  pubkeyToAddress(pkHex: string): string {
+    try {
+      return new PublicKey(pkHex)
+        .toAddress(this.rpcService.getNetwork())
+        .toString();
+    } catch {
+      return '';
+    }
+  }
+
+  async extractTemplateIntField(
+    compiled: CompiledContract,
+    templateId: string,
+    paramName: string,
+  ): Promise<bigint | undefined> {
+    try {
+      const { descriptor } = await this.getTemplatePatchContext(templateId);
+      const param = descriptor.params.find((entry) => entry.name === paramName);
+      const position = param?.positions[0];
+      if (!param || param.paramType !== 'int_field' || !position) {
+        return undefined;
+      }
+
+      const bytes = compiled.script.slice(
+        position.offset,
+        position.offset + position.length,
+      );
+      let value = 0n;
+      for (let index = 0; index < bytes.length; index += 1) {
+        value += BigInt(bytes[index] & 0xff) << BigInt(index * 8);
+      }
+      return value;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async extractTemplatePubkeyHex(
+    compiled: CompiledContract,
+    templateId: string,
+    paramName: string,
+  ): Promise<string | undefined> {
+    return this.extractTemplateParamHex(compiled, templateId, paramName, 'pubkey');
+  }
+
+  async extractTemplateParamHex(
+    compiled: CompiledContract,
+    templateId: string,
+    paramName: string,
+    paramType: TemplatePatch['params'][number]['paramType'],
+  ): Promise<string | undefined> {
+    try {
+      const { descriptor } = await this.getTemplatePatchContext(templateId);
+      const param = descriptor.params.find((entry) => entry.name === paramName);
+      const position = param?.positions[0];
+      if (!param || param.paramType !== paramType || !position) {
+        return undefined;
+      }
+
+      return compiled.script
+        .slice(position.offset, position.offset + position.length)
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join('');
+    } catch {
+      return undefined;
+    }
+  }
+
+  private normalizeTemplateName(value: string): string {
+    return String(value ?? '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '');
+  }
+
+  templateForIndexerName(templateName: string): ContractTemplate | undefined {
+    const normalized = this.normalizeTemplateName(templateName);
+    if (normalized.includes('deadman')) {
+      return this.templateById('dead-mans-switch');
+    }
+    if (normalized.includes('timelock')) {
+      return this.templateById('time-lock-vault');
+    }
+    if (normalized.includes('multisig')) {
+      return this.templateById('multi-sig-vault');
+    }
+    if (normalized.includes('escrow')) {
+      return this.templateById('escrow-with-arbiter');
+    }
+    if (normalized.includes('selfcustody')) {
+      return this.templateById('self-custody-vault');
+    }
+
+    const aliases: Record<string, string> = {
+      timelockvault: 'time-lock-vault',
+      multisigvault: 'multi-sig-vault',
+      multisig: 'multi-sig-vault',
+      escrowwitharbiter: 'escrow-with-arbiter',
+      escrow: 'escrow-with-arbiter',
+      deadmansswitch: 'dead-mans-switch',
+      deadmans: 'dead-mans-switch',
+      deadman: 'dead-mans-switch',
+      selfcustodyvault: 'self-custody-vault',
+      selfcustody: 'self-custody-vault',
+    };
+    const templateId = aliases[normalized];
+    return CONTRACT_TEMPLATES.find(
+      (template) =>
+        template.id === templateId ||
+        this.normalizeTemplateName(template.id) === normalized ||
+        this.normalizeTemplateName(template.name) === normalized,
     );
   }
 }

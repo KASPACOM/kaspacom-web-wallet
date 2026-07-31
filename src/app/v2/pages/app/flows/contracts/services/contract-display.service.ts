@@ -135,6 +135,22 @@ export class ContractDisplayService {
     return aliases[normalized] || normalized;
   }
 
+  getTemplateDisplayName(name: string): string {
+    const labels: Record<string, string> = {
+      DeadManSwitch: "Dead Man's Switch",
+      TimeLockVault: 'Time Lock',
+      MultiSigVault: 'MultiSig',
+      EscrowWithArbiter: 'Escrow',
+      SelfCustodyVault: 'Self-Custody Vault',
+    };
+    return labels[this.normalizeContractName(name)] || name || 'Covenant';
+  }
+
+  getContractTypeLabel(contract: { contractName?: string }): string {
+    const name = this.normalizeContractName(contract.contractName || '');
+    return this.getTemplateDisplayName(name);
+  }
+
   /**
    * Classify a template or dashboard entry into the small set of icon/accent
    * keys the UI switches on. Accepts either a ContractTemplate (keyed by

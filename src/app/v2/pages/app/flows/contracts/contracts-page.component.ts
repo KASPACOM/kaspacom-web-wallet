@@ -5575,7 +5575,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       const { descriptor } = await this.getTemplatePatchContext(templateId);
       const param = descriptor.params.find((entry) => entry.name === paramName);
       const position = param?.positions[0];
-      if (!param || param.paramType !== 'int_field' || !position) {
+      if (
+        !param ||
+        (param.paramType !== 'int_field' && param.paramType !== 'int') ||
+        !position
+      ) {
         return undefined;
       }
 
@@ -5583,11 +5587,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         position.offset,
         position.offset + position.length,
       );
+      if (bytes.length === 0) return undefined;
+
+      const negative = (bytes[bytes.length - 1] & 0x80) !== 0;
       let value = 0n;
       for (let index = 0; index < bytes.length; index += 1) {
-        value += BigInt(bytes[index] & 0xff) << BigInt(index * 8);
+        const byte =
+          index === bytes.length - 1 ? bytes[index] & 0x7f : bytes[index];
+        value += BigInt(byte) << BigInt(index * 8);
       }
-      return value;
+      return negative ? -value : value;
     } catch {
       return undefined;
     }

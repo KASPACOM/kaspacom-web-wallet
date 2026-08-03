@@ -502,7 +502,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       );
     if (!state) return;
 
-    if (state.activeTab) this.activeTab.set(state.activeTab);
+    // 'detail' can't be restored: selectedDetail (the fetched contract/
+    // registry/indexer data) isn't part of this snapshot — re-fetching it
+    // here would need the covenant identifier, which interactContract()
+    // doesn't currently save. Landing on 'detail' with no selectedDetail
+    // renders a blank panel (only its loading/error/not-found states are
+    // conditional; the happy-path detail view requires selectedDetail).
+    // 'my-contracts' is always populated by this point (ngOnInit's network
+    // effect already ran loadContracts()), so it's a safe, working fallback.
+    if (state.activeTab) {
+      this.activeTab.set(
+        state.activeTab === 'detail' ? 'my-contracts' : state.activeTab,
+      );
+    }
     if (state.detailPanelTab) this.detailPanelTab.set(state.detailPanelTab);
     if (state.actionPageView) this.actionPageView.set(state.actionPageView);
     if (state.selectedFunction !== undefined)
@@ -2190,6 +2202,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.detailRouteId.set(null);
     this.detailRouteNotFound.set(false);
     this.activeTab.set('my-contracts');
+    void this.loadContracts();
   }
 
   private async openDetailFromRoute(routeId: string) {

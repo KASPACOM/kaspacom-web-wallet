@@ -113,6 +113,10 @@ import {
   ContractDeployedEvent,
 } from './components/contract-template-deploy-form/contract-template-deploy-form.component';
 import { ContractsDashboardComponent } from './components/contracts-dashboard/contracts-dashboard.component';
+import {
+  ContractLookupImportComponent,
+  LookupInteractRequest,
+} from './components/contract-lookup-import/contract-lookup-import.component';
 
 @Component({
   selector: 'app-contracts-page',
@@ -133,6 +137,7 @@ import { ContractsDashboardComponent } from './components/contracts-dashboard/co
     ContractActionFieldsComponent,
     ContractTemplateDeployFormComponent,
     ContractsDashboardComponent,
+    ContractLookupImportComponent,
   ],
   templateUrl: './contracts-page.component.html',
   styleUrl: './contracts-page.component.scss',
@@ -331,7 +336,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private destroyed = false;
 
   // Lookup form
-  lookupContractJson = '';
   interactOutputAmount = '';
   topUpAmount = '';
   selectedFunction = '';
@@ -585,18 +589,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   // Current network
   network = computed(() => this.rpcService.getNetwork());
-
-  // --- Contract Lookup (My Contracts tab) ---
-  lookupAddress = '';
-  lookupLoading = signal(false);
-  lookupError = signal<string | null>(null);
-  lookupResult = signal<{
-    address: string;
-    balanceSompi: string;
-    utxoCount: number;
-    utxos: Array<{ txid: string; vout: number; amount: string }>;
-    scriptPublicKey?: string;
-  } | null>(null);
 
   constructor() {
     // Reload My-Contracts whenever the active network changes (also runs once now).
@@ -5330,81 +5322,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return contract.deployedBy.pubkey === currentPubkey;
   }
 
-  onLookupAddressChange(value: any) {
-    this.lookupAddress = value || '';
-  }
-
   /**
-   * Look up a contract address on-chain — fetch its UTXOs and balance
+   * Handles ContractLookupImportComponent's `(interactRequested)` output —
+   * mirrors what importLookupContract() used to do directly: switch to the
+   * interact tab with the looked-up UTXO + contract JSON pre-filled.
    */
-  async lookupContract() {
-    const address = this.lookupAddress.trim();
-    if (!address) return;
-
-    this.lookupLoading.set(true);
-    this.lookupError.set(null);
-    this.lookupResult.set(null);
-
-    try {
-      const rpc = this.rpcService.getRpc();
-      if (!rpc) {
-        throw new Error('RPC not available — wallet may not be connected');
-      }
-
-      console.log('[Lookup] Querying UTXOs for', address);
-      const utxoResponse = await rpc.getUtxosByAddresses({
-        addresses: [address],
-      });
-      const entries = utxoResponse.entries || [];
-
-      let totalSompi = BigInt(0);
-      const utxos: Array<{ txid: string; vout: number; amount: string }> = [];
-
-      for (const entry of entries) {
-        const amount = entry.amount;
-        totalSompi += amount;
-        utxos.push({
-          txid: entry.outpoint?.transactionId || '',
-          vout: Number(entry.outpoint?.index ?? 0),
-          amount: amount.toString(),
-        });
-      }
-
-      this.lookupResult.set({
-        address,
-        balanceSompi: totalSompi.toString(),
-        utxoCount: utxos.length,
-        utxos,
-      });
-
-      console.log(
-        '[Lookup] Found',
-        utxos.length,
-        'UTXOs, total:',
-        totalSompi.toString(),
-        'sompi',
-      );
-    } catch (err: any) {
-      console.error('[Lookup] Failed:', err);
-      this.lookupError.set(err?.message || 'Failed to query contract address');
-    } finally {
-      this.lookupLoading.set(false);
-    }
-  }
-
-  /**
-   * Import a looked-up contract into the registry (with compiled JSON)
-   */
-  importLookupContract() {
-    const result = this.lookupResult();
-    if (!result || (result.utxos || []).length === 0) return;
-    if (!this.lookupContractJson) return;
-
-    // Switch to interact tab with UTXO + contract JSON pre-filled
-    this.interactContractJson.set(this.lookupContractJson);
-    this.interactOutpointTxid = result.utxos[0].txid;
-    this.interactOutpointVout = String(result.utxos[0].vout);
-    this.interactInputAmount = result.utxos[0].amount;
+  onLookupInteractRequested(event: LookupInteractRequest) {
+    this.interactContractJson.set(event.contractJson);
+    this.interactOutpointTxid = event.outpointTxid;
+    this.interactOutpointVout = event.outpointVout;
+    this.interactInputAmount = event.inputAmount;
     this.interactOutputAddress = this.currentWallet()?.getAddress() || '';
     this.switchTab('interact');
   }

@@ -56,7 +56,6 @@ import {
   PartialSpendJsonDialogData,
   PartialSpendJsonModalComponent,
 } from './components/partial-spend-json-modal/partial-spend-json-modal.component';
-import { downloadJsonFile } from './json-file.util';
 import { ContractTemplate } from '../../../../services/covenant/contract-templates';
 import {
   CtorArg,
@@ -114,6 +113,7 @@ import {
   LookupInteractRequest,
 } from './components/contract-lookup-import/contract-lookup-import.component';
 import { ContractActionPanelComponent } from './components/contract-action-panel/contract-action-panel.component';
+import { ContractDetailComponent } from './components/contract-detail/contract-detail.component';
 
 @Component({
   selector: 'app-contracts-page',
@@ -136,6 +136,7 @@ import { ContractActionPanelComponent } from './components/contract-action-panel
     ContractsDashboardComponent,
     ContractLookupImportComponent,
     ContractActionPanelComponent,
+    ContractDetailComponent,
   ],
   templateUrl: './contracts-page.component.html',
   styleUrl: './contracts-page.component.scss',
@@ -1461,11 +1462,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       .map((value) => value.toLowerCase());
   }
 
-  /** Public wrapper for the detail page's "You are <role>" pill. */
-  getCurrentRoleLabel(participants: ContractParticipant[] = []): string {
-    return this.currentWalletRoles(participants).join(' / ');
-  }
-
   private extractDeadlineMs(
     summary: IndexerCovenantDetails,
     utxoState?: Record<string, any> | null,
@@ -2671,34 +2667,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return args;
   }
 
-  getSelfCustodyWhitelistWallets(detail: ContractDetailState): string[] {
-    if (
-      this.normalizeContractName(detail.entry.contractName) !==
-      'SelfCustodyVault'
-    ) {
-      return [];
-    }
-
-    const args = this.selfCustodyArgsForDetail(detail);
-    const mode = String(args['whitelistMode'] || '').toLowerCase();
-    const raw = args['whitelistedDestinations'];
-    if (mode && mode !== 'whitelist') return [];
-    if (!raw) return [];
-
-    return raw
-      .split(',')
-      .map((address) => address.trim())
-      .filter(Boolean);
-  }
-
-  getSelfCustodyPhaseInfo(detail: ContractDetailState): string | null {
-    const phase = this.getSelfCustodyPhase(detail);
-    if (phase === undefined) return null;
-    if (phase === 0) return '0 - locked';
-    if (phase === 1) return '1 - unvaulting';
-    return `${phase} - unknown`;
-  }
-
   private getSelfCustodyPhase(detail: ContractDetailState): number | undefined {
     if (
       this.normalizeContractName(detail.entry.contractName) !==
@@ -3823,34 +3791,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    */
   onActionIndexingRequested(event: { txid: string; registryId: string }) {
     void this.trackActionIndexing(event.txid, event.registryId);
-  }
-
-  /**
-   * Copy partial spend JSON to clipboard — used by the detail summary's
-   * "Pending signature" card (ContractActionPanelComponent has its own copy
-   * for the same button inside the action form itself).
-   */
-  copyPartialSpend() {
-    const json = this.partialSpendJson();
-    if (!json) return;
-    navigator.clipboard.writeText(json).then(
-      () =>
-        this.notificationService.success(
-          'Copied',
-          'Partial spend JSON copied! Send it to the co-signer.',
-        ),
-      () => prompt('Copy this partial spend JSON:', json),
-    );
-  }
-
-  /**
-   * Download the pending partial spend JSON as a .json file — used by the
-   * detail summary's "Pending signature" card.
-   */
-  downloadPartialSpend() {
-    const json = this.partialSpendJson();
-    if (!json) return;
-    downloadJsonFile(json, 'partial-spend');
   }
 
   /**

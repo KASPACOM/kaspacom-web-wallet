@@ -3408,8 +3408,8 @@
         "type_ref": {
           "base": "int"
         },
-        "name": "unvaultDelaySeconds",
-        "span": "int unvaultDelaySeconds",
+        "name": "whitelistCount",
+        "span": "int whitelistCount",
         "type_span": "int ",
         "name_span": "whitelistCount"
       },
@@ -3637,17 +3637,9 @@
                 "data": {
                   "op": "gt",
                   "left": {
-                    "kind": "unary_suffix",
-                    "data": {
-                      "source": {
-                        "kind": "identifier",
-                        "data": "whitelistedDestinations",
-                        "span": "whitelistedDestinations"
-                      },
-                      "kind": "length",
-                      "span": ".length"
-                    },
-                    "span": "whitelistedDestinations.length"
+                    "kind": "identifier",
+                    "data": "activeWhitelistCount",
+                    "span": "activeWhitelistCount"
                   },
                   "right": {
                     "kind": "int",
@@ -3655,7 +3647,7 @@
                     "span": "0"
                   }
                 },
-                "span": "whitelistedDestinations.length > 0"
+                "span": "activeWhitelistCount > 0"
               },
               "then_branch": [
                 {
@@ -3696,23 +3688,15 @@
                           "span": "destinationIndex"
                         },
                         "right": {
-                          "kind": "unary_suffix",
-                          "data": {
-                            "source": {
-                              "kind": "identifier",
-                              "data": "whitelistedDestinations",
-                              "span": "whitelistedDestinations"
-                            },
-                            "kind": "length",
-                            "span": ".length"
-                          },
-                          "span": "whitelistedDestinations.length"
+                          "kind": "identifier",
+                          "data": "activeWhitelistCount",
+                          "span": "activeWhitelistCount"
                         }
                       },
-                      "span": "destinationIndex < whitelistedDestinations.length"
+                      "span": "destinationIndex < activeWhitelistCount"
                     },
                     "message": null,
-                    "span": "require(destinationIndex < whitelistedDestinations.length);",
+                    "span": "require(destinationIndex < activeWhitelistCount);",
                     "message_span": null
                   }
                 },
@@ -3839,7 +3823,7 @@
                         "data": "nextPhase",
                         "span": "nextPhase"
                       },
-                      "span": "phase: nextPhase\n        ",
+                      "span": "phase: nextPhase",
                       "name_span": "phase"
                     },
                     {
@@ -5217,7 +5201,7 @@
   "without_selector": false,
   "state_layout": {
     "start": 1,
-    "len": 9
+    "len": 27
   },
   "debug_info": null
 }

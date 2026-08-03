@@ -92,7 +92,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
         hidden: true,
       },
       {
-        paramName: 'initUnvaultDelaySeconds',
+        paramName: 'initUnvaultDelayDaa',
         label: 'Unvault delay (DAA)',
         type: 'int_daa_delay',
         placeholder: '864000',

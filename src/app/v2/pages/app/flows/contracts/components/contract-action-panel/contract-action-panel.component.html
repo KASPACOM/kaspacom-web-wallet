@@ -1,0 +1,1050 @@
+<!-- ═══════════════ CURATED ACTION — FULL-PAGE FORM ═══════════════ -->
+@if (
+  activeTab() === "detail" &&
+    detailPanelTab() === "action" &&
+    actionPageView() === "form" &&
+    selectedDetail() &&
+    selectedDetail()!.entry.status === "active" &&
+    interactContractJson() &&
+    getSelectedActionFieldConfig();
+  as selectedActionFields
+) {
+  <div class="panel flex column gap-20" id="contract-action-panel">
+    <button class="back-button p-8 typo-text-2" (click)="goBackToActionList()">
+      ← Back to actions
+    </button>
+
+    <div class="action-contract-name">
+      <div class="flex column gap-2">
+        <span class="text-white typo-text-1 fw-bold">{{
+          selectedDetail()!.entry.displayName
+        }}</span>
+        <span class="text-gray-60 typo-text-2">{{
+          selectedDetail()!.entry.contractTypeLabel
+        }}</span>
+      </div>
+      @if (canEditContractAlias(selectedDetail()!.entry)) {
+        @if (editingAliasKey() === getAliasEditKey(selectedDetail()!.entry)) {
+          <div class="alias-editor detail-alias-editor">
+            <input
+              class="alias-input"
+              type="text"
+              placeholder="Contract nickname"
+              [(ngModel)]="aliasDraft"
+            />
+            <button
+              class="alias-btn"
+              type="button"
+              (click)="saveAlias(selectedDetail()!.entry)"
+            >
+              Save
+            </button>
+            <button class="alias-btn ghost" type="button" (click)="cancelAliasEdit()">
+              Cancel
+            </button>
+          </div>
+        } @else {
+          <div class="alias-actions">
+            <button
+              class="alias-link"
+              type="button"
+              (click)="beginAliasEdit(selectedDetail()!.entry)"
+            >
+              {{
+                selectedDetail()!.entry.aliasName ? "Edit nickname" : "Add nickname"
+              }}
+            </button>
+            @if (selectedDetail()!.entry.aliasName) {
+              <button
+                class="alias-link muted"
+                type="button"
+                (click)="removeAlias(selectedDetail()!.entry)"
+              >
+                Remove nickname
+              </button>
+            }
+          </div>
+          @if (aliasNotice()?.key === getAliasEditKey(selectedDetail()!.entry)) {
+            <div class="alias-notice">
+              {{ aliasNotice()!.message }}
+            </div>
+          }
+        }
+      } @else {
+        <div class="alias-notice">
+          {{ getAliasUnavailableMessage() }}
+        </div>
+      }
+    </div>
+
+    @if (parsedInteractContract()) {
+      <div class="contract-summary p-16 flex column gap-12">
+        <h3 class="text-white typo-text-1 fw-bold interact-contract-title">
+          {{ parsedInteractContract()!.contract_name || "Contract" }}
+        </h3>
+        <div class="flex column gap-8">
+          <div class="flex align-items-center gap-4">
+            <span class="text-gray-60 typo-text-2">Locked amount</span
+            ><kc-icon
+              [iconClass]="'icon-info'"
+              [size]="'xs'"
+              kcTooltip="Total KAS locked in this covenant UTXO"
+              tooltipPosition="top-center"
+            ></kc-icon>
+          </div>
+          <span class="text-white typo-text-1 fw-bold"
+            >{{ interactInputAmountKas() }} KAS</span
+          >
+        </div>
+        @if (interactOutpointTxid()) {
+          <div class="flex column gap-4">
+            <span class="text-gray-60 typo-text-2">Transaction</span>
+            <div class="flex align-items-center gap-8">
+              <a
+                [href]="getExplorerLink(interactOutpointTxid())"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-blue typo-text-2 text-truncate"
+                >{{ truncate(interactOutpointTxid(), 24) }}</a
+              ><app-copy-button
+                [value]="interactOutpointTxid()"
+                [size]="'sm'"
+              ></app-copy-button>
+            </div>
+          </div>
+        }
+        @if (currentWallet()) {
+          <div class="flex column gap-4">
+            <span class="text-gray-60 typo-text-2">Your account</span
+            ><span class="text-white typo-text-2">{{
+              currentWallet()!.getDisplayName()
+            }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="form-group flex column gap-8">
+        <h3 class="text-white typo-text-1 fw-bold">
+          {{
+            getSelectedActionMeta()?.label || getFunctionLabel(selectedFunction())
+          }}
+        </h3>
+        <span class="text-gray-60 typo-text-2">{{
+          getSelectedActionMeta()?.description ||
+            getFunctionDescription(selectedFunction())
+        }}</span>
+        @if (isMultiSigFunction(selectedFunction())) {
+          <div
+            class="p-12 rounded-lg"
+            style="
+              background: rgba(255, 193, 7, 0.1);
+              border: 1px solid rgba(255, 193, 7, 0.3);
+            "
+          >
+            <span class="text-yellow typo-text-2"
+              >Two-phase signing: clicking the button will sign your part
+              and generate a partial spend JSON. Send it to the co-signer to
+              complete.</span
+            >
+          </div>
+        }
+      </div>
+
+      <app-contract-action-fields
+        [fields]="selectedActionFields.fields"
+        [isDisabled]="isInteracting()"
+        [addressValue]="interactOutputAddress()"
+        [amountValue]="
+          isTopUpFunction(selectedFunction()) ? topUpAmount() : interactOutputAmount()
+        "
+        [timestampValue]="dmsNewExpiry"
+        [extraArgValues]="extraArgValues"
+        (addressChange)="onGenericAddressChange($event)"
+        (addressResolved)="onGenericAddressResolved($event)"
+        (addressQrClick)="onGenericAddressQrClick()"
+        (amountChange)="onGenericAmountChange($event)"
+        (amountMaxClick)="onGenericAmountMaxClick()"
+        (timestampChange)="onGenericTimestampChange($event)"
+        (extraArgChange)="onGenericExtraArgChange($event)"
+      ></app-contract-action-fields>
+
+      @if (!selectedActionFields.suppressGenericExtraArgs) {
+        @for (arg of extraArgsForFunction(); track arg.name) {
+          <div class="form-group flex column gap-8">
+            <kc-number-input
+              [label]="arg.name + ' (' + arg.type_name + ')'"
+              [placeholder]="'Enter ' + arg.name + ' value'"
+              [isDisabled]="isInteracting()"
+              [ngModel]="extraArgValues[arg.name] || ''"
+              (valueChange)="onExtraArgValueChange(arg.name, $event)"
+            ></kc-number-input>
+          </div>
+        }
+      }
+
+      @if (partialSpendJson()) {
+        <div
+          class="flex column gap-8 p-12 rounded-lg"
+          style="
+            background: rgba(255, 193, 7, 0.08);
+            border: 1px solid rgba(255, 193, 7, 0.2);
+          "
+        >
+          <span class="text-yellow typo-text-1 fw-bold">Partial spend created</span>
+          <span class="text-gray-75 typo-text-2"
+            >Your signature has been added. Copy the JSON below and send it
+            to the co-signer to complete the transaction.</span
+          >
+          <textarea
+            class="contract-input"
+            rows="4"
+            readonly
+            [value]="partialSpendJson()!"
+          ></textarea>
+          <kc-button
+            [text]="'Copy partial spend JSON'"
+            [isFullWidth]="true"
+            (buttonClick)="copyPartialSpend()"
+          ></kc-button>
+          <kc-button
+            [text]="'Download JSON file'"
+            [variant]="'secondary'"
+            [isFullWidth]="true"
+            (buttonClick)="downloadPartialSpend()"
+          ></kc-button>
+        </div>
+      }
+
+      @if (isMultiSigFunction(selectedFunction())) {
+        <details class="advanced-section">
+          <summary>Complete co-signer transaction</summary>
+          <div class="adv-body">
+            <span class="text-gray-75 typo-text-2"
+              >Paste the partial spend JSON received from the co-signer, or
+              import it from a file. Your signature will be added and the
+              transaction broadcast.</span
+            >
+            <textarea
+              class="contract-input"
+              rows="4"
+              placeholder="Paste partial spend JSON from co-signer"
+              [(ngModel)]="importPartialJson"
+              [disabled]="isCompletingPartial()"
+            ></textarea>
+            <kc-button
+              [text]="'Import JSON file'"
+              [variant]="'secondary'"
+              [isDisabled]="isCompletingPartial()"
+              [isFullWidth]="true"
+              (buttonClick)="importPartialSpendFromFile()"
+            ></kc-button>
+            <kc-button
+              [text]="isCompletingPartial() ? 'Completing...' : 'Sign & broadcast'"
+              [isDisabled]="isCompletingPartial() || !importPartialJson"
+              [isFullWidth]="true"
+              (buttonClick)="completePartialSpend()"
+            ></kc-button>
+            @if (partialCompleteError()) {
+              <div class="error-message">{{ partialCompleteError() }}</div>
+            }
+            @if (partialCompleteResult()) {
+              <div class="result-panel">
+                <h3 class="text-white typo-text-1 fw-bold">Transaction sent</h3>
+                <div class="flex column gap-4">
+                  <span class="text-gray-60 typo-text-1">Transaction</span>
+                  <div class="flex align-items-center gap-8">
+                    <a
+                      [href]="getExplorerLink(partialCompleteResult()!.txid)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="text-blue typo-text-2 text-truncate"
+                      >{{ partialCompleteResult()!.txid }}</a
+                    ><app-copy-button
+                      [value]="partialCompleteResult()!.txid"
+                      [size]="'sm'"
+                    ></app-copy-button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </details>
+      }
+
+      @if (interactError()) {
+        <div class="error-message">{{ interactError() }}</div>
+      }
+      @if (interactResult()) {
+        <div class="result-panel">
+          <h3 class="text-white typo-text-1 fw-bold">Transaction sent</h3>
+          <div class="flex column gap-4">
+            <span class="text-gray-60 typo-text-1">Action</span
+            ><span class="text-white typo-text-2">{{
+              getFunctionLabel(interactResult()!.functionName)
+            }}</span>
+          </div>
+          <div class="flex column gap-4">
+            <span class="text-gray-60 typo-text-1">Transaction</span>
+            <div class="flex align-items-center gap-8">
+              <a
+                [href]="getExplorerLink(interactResult()!.txid)"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-blue typo-text-2 text-truncate"
+                >{{ interactResult()!.txid }}</a
+              ><app-copy-button
+                [value]="interactResult()!.txid"
+                [size]="'sm'"
+              ></app-copy-button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <div class="form-group flex align-items-center gap-8">
+        <label class="flex align-items-center gap-8 cursor-pointer m-0"
+          ><input
+            type="checkbox"
+            class="cursor-pointer"
+            [(ngModel)]="useSenderFee"
+            [disabled]="isSenderFeeToggleDisabled(selectedFunction())"
+          /><span class="text-white typo-text-2">Use wallet to pay for fees</span></label
+        >
+        <kc-icon
+          [iconClass]="'icon-info'"
+          [size]="'xs'"
+          [kcTooltip]="getSenderFeeTooltip(selectedFunction())"
+          tooltipPosition="top-center"
+        ></kc-icon>
+        @if (isTopUpFunction(selectedFunction())) {
+          <span class="text-gray-60 typo-text-2">
+            Selected:
+            {{ useSenderFee ? "wallet pays fees" : "fees come from the top-up output" }}
+          </span>
+        }
+      </div>
+      @if (isMultiSigFunction(selectedFunction())) {
+        <div
+          class="p-12 rounded-lg"
+          style="
+            background: rgba(255, 193, 7, 0.08);
+            border: 1px solid rgba(255, 193, 7, 0.2);
+          "
+        >
+          <span class="text-yellow typo-text-2"
+            >Multi-sig transactions must pay fees from the contract funds.
+            Wallet-paid fees add inputs and would invalidate the partial
+            signatures.</span
+          >
+        </div>
+      }
+      @if (isTopUpFunction(selectedFunction())) {
+        <div
+          class="p-12 rounded-lg"
+          style="
+            background: rgba(255, 193, 7, 0.08);
+            border: 1px solid rgba(255, 193, 7, 0.2);
+          "
+        >
+          <span class="text-yellow typo-text-2">
+            If wallet-paid fees are off, the top-up amount must be larger
+            than the transaction fee so the recreated covenant output
+            remains larger than the current covenant UTXO.
+          </span>
+        </div>
+      }
+      @if (isSelfCustodySweepAction(selectedFunction())) {
+        <div
+          class="p-12 rounded-lg"
+          style="
+            background: rgba(255, 193, 7, 0.08);
+            border: 1px solid rgba(255, 193, 7, 0.2);
+          "
+        >
+          <span class="text-yellow typo-text-2">
+            Self-Custody sweep/finalize must pay fees from the wallet
+            because the withdrawal output must keep the full contract input
+            value.
+          </span>
+        </div>
+      }
+
+      <kc-button
+        [text]="isInteracting() ? 'Processing...' : getFunctionLabel(selectedFunction())"
+        [isDisabled]="isInteracting() || !interactContractJson() || !interactOutpointTxid()"
+        [isFullWidth]="true"
+        (buttonClick)="interactContract()"
+      ></kc-button>
+    }
+  </div>
+}
+
+<!-- ═══════════════ INTERACT (advanced / manual — carried over) ═══════════════ -->
+<!-- Also doubles as the action-page fallback for contracts with no
+     curated field config (see getSelectedActionFieldConfig()) — those
+     still need the raw ABI-driven function picker + inline fields. -->
+@if (
+  activeTab() === "interact" ||
+  (activeTab() === "detail" &&
+    detailPanelTab() === "action" &&
+    actionPageView() === "form" &&
+    !getSelectedActionFieldConfig() &&
+    selectedDetail() &&
+    selectedDetail()!.entry.status === "active" &&
+    interactContractJson())
+) {
+  <div class="panel flex column gap-20" id="contract-action-panel">
+    @if (activeTab() === "detail") {
+      <button class="back-button p-8 typo-text-2" (click)="goBackToActionList()">
+        ← Back to actions
+      </button>
+
+      <div class="action-contract-name">
+        <div class="flex column gap-2">
+          <span class="text-white typo-text-1 fw-bold">{{
+            selectedDetail()!.entry.displayName
+          }}</span>
+          <span class="text-gray-60 typo-text-2">{{
+            selectedDetail()!.entry.contractTypeLabel
+          }}</span>
+        </div>
+        @if (canEditContractAlias(selectedDetail()!.entry)) {
+          @if (editingAliasKey() === getAliasEditKey(selectedDetail()!.entry)) {
+            <div class="alias-editor detail-alias-editor">
+              <input
+                class="alias-input"
+                type="text"
+                placeholder="Contract nickname"
+                [(ngModel)]="aliasDraft"
+              />
+              <button
+                class="alias-btn"
+                type="button"
+                (click)="saveAlias(selectedDetail()!.entry)"
+              >
+                Save
+              </button>
+              <button class="alias-btn ghost" type="button" (click)="cancelAliasEdit()">
+                Cancel
+              </button>
+            </div>
+          } @else {
+            <div class="alias-actions">
+              <button
+                class="alias-link"
+                type="button"
+                (click)="beginAliasEdit(selectedDetail()!.entry)"
+              >
+                {{
+                  selectedDetail()!.entry.aliasName ? "Edit nickname" : "Add nickname"
+                }}
+              </button>
+              @if (selectedDetail()!.entry.aliasName) {
+                <button
+                  class="alias-link muted"
+                  type="button"
+                  (click)="removeAlias(selectedDetail()!.entry)"
+                >
+                  Remove nickname
+                </button>
+              }
+            </div>
+            @if (aliasNotice()?.key === getAliasEditKey(selectedDetail()!.entry)) {
+              <div class="alias-notice">
+                {{ aliasNotice()!.message }}
+              </div>
+            }
+          }
+        } @else {
+          <div class="alias-notice">
+            {{ getAliasUnavailableMessage() }}
+          </div>
+        }
+      </div>
+    }
+    @if (activeTab() === "interact") {
+      <div class="form-group flex column gap-8">
+        <label class="field-label">Select contract</label>
+        <kc-dropdown-select
+          [options]="registryContractOptions()"
+          [placeholder]="'Select a deployed contract'"
+          [isFullWidth]="true"
+          [isDisabled]="isInteracting()"
+          [value]="selectedContractId()"
+          (valueChange)="onInteractContractSelect($event)"
+        ></kc-dropdown-select>
+      </div>
+
+      <details class="advanced-section">
+        <summary>Advanced: paste contract JSON</summary>
+        <div class="adv-body">
+          <textarea
+            class="contract-input"
+            rows="4"
+            placeholder="Paste compiled contract JSON here"
+            [ngModel]="interactContractJson()"
+            (ngModelChange)="interactContractJson.set($event)"
+            [disabled]="isInteracting()"
+          ></textarea>
+        </div>
+      </details>
+    }
+
+    @if (parsedInteractContract()) {
+      <div class="contract-summary p-16 flex column gap-12">
+        <h3 class="text-white typo-text-1 fw-bold interact-contract-title">
+          {{ parsedInteractContract()!.contract_name || "Contract" }}
+        </h3>
+        <div class="flex column gap-8">
+          <div class="flex align-items-center gap-4">
+            <span class="text-gray-60 typo-text-2">Locked amount</span
+            ><kc-icon
+              [iconClass]="'icon-info'"
+              [size]="'xs'"
+              kcTooltip="Total KAS locked in this covenant UTXO"
+              tooltipPosition="top-center"
+            ></kc-icon>
+          </div>
+          <span class="text-white typo-text-1 fw-bold"
+            >{{ interactInputAmountKas() }} KAS</span
+          >
+        </div>
+        @if (interactOutpointTxid()) {
+          <div class="flex column gap-4">
+            <span class="text-gray-60 typo-text-2">Transaction</span>
+            <div class="flex align-items-center gap-8">
+              <a
+                [href]="getExplorerLink(interactOutpointTxid())"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-blue typo-text-2 text-truncate"
+                >{{ truncate(interactOutpointTxid(), 24) }}</a
+              ><app-copy-button
+                [value]="interactOutpointTxid()"
+                [size]="'sm'"
+              ></app-copy-button>
+            </div>
+          </div>
+        }
+        @if (currentWallet()) {
+          <div class="flex column gap-4">
+            <span class="text-gray-60 typo-text-2">Your account</span
+            ><span class="text-white typo-text-2">{{
+              currentWallet()!.getDisplayName()
+            }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="form-group flex column gap-8">
+        <div class="flex align-items-center gap-4">
+          <label class="field-label">Action</label
+          ><kc-icon
+            [iconClass]="'icon-info'"
+            [size]="'xs'"
+            kcTooltip="Each action has different requirements (e.g. owner key, timelock expiry)."
+            tooltipPosition="top-center"
+          ></kc-icon>
+        </div>
+        @if (
+          activeTab() === "interact" ||
+          (actionsPanelReady() && availableActions().length === 0)
+        ) {
+          <div class="flex gap-8 wrap">
+            @for (fn of availableFunctions(); track fn.name) {
+              <kc-button
+                [text]="getFunctionLabel(fn.name)"
+                [isDisabled]="isInteracting()"
+                [class.active-function]="selectedFunction() === fn.name"
+                [style]="selectedFunction() === fn.name ? 'opacity: 1' : 'opacity: 0.75'"
+                (buttonClick)="selectFunction(fn.name)"
+              ></kc-button>
+            }
+          </div>
+        }
+        @if (selectedFunction()) {
+          <div
+            class="p-12 rounded-lg"
+            style="
+              background: rgba(111, 199, 186, 0.08);
+              border: 1px solid rgba(111, 199, 186, 0.2);
+            "
+          >
+            <span class="text-gray-75 typo-text-2">{{
+              getFunctionDescription(selectedFunction())
+            }}</span>
+          </div>
+        }
+        @if (availableFunctions().length === 0 && interactContractJson()) {
+          <span class="text-gray-60 typo-text-2"
+            >No callable functions found in this contract</span
+          >
+        }
+        @if (selectedFunction() && isMultiSigFunction(selectedFunction())) {
+          <div
+            class="p-12 rounded-lg"
+            style="
+              background: rgba(255, 193, 7, 0.1);
+              border: 1px solid rgba(255, 193, 7, 0.3);
+            "
+          >
+            <span class="text-yellow typo-text-2"
+              >Two-phase signing: clicking the button will sign your part
+              and generate a partial spend JSON. Send it to the co-signer to
+              complete.</span
+            >
+          </div>
+        }
+      </div>
+
+      @if (isDmsKeepAlive()) {
+        <div class="form-group flex column gap-8">
+          <app-covenant-date-time-input
+            [label]="'New check-in deadline'"
+            [value]="dmsNewExpiry"
+            [isDisabled]="isInteracting()"
+            [isValid]="true"
+            (valueChange)="dmsNewExpiry = $event"
+          ></app-covenant-date-time-input>
+          <span class="text-gray-60 typo-text-2"
+            >Pick when the heir should become able to claim if you do not
+            refresh again.</span
+          >
+        </div>
+        <div
+          class="p-12 rounded-lg"
+          style="
+            background: rgba(111, 199, 186, 0.08);
+            border: 1px solid rgba(111, 199, 186, 0.2);
+          "
+        >
+          <span class="text-gray-75 typo-text-2"
+            >A new Dead Man's Switch contract will be generated with the
+            same owner and heir but the updated expiry. Funds will move to
+            the new contract in the same transaction. The covenant lineage
+            is preserved.</span
+          >
+        </div>
+      }
+
+      @if (isDmsChangeHeir()) {
+        <div class="form-group flex column gap-8">
+          <app-address-smart-input
+            [label]="'New Heir Wallet'"
+            [placeholder]="'Enter heir wallet address or KNS domain'"
+            [isFullWidth]="true"
+            [isValid]="true"
+            [invalidReason]="''"
+            [isDisabled]="isInteracting()"
+            [value]="interactOutputAddress()"
+            (valueChange)="onInteractOutputAddressChange($event)"
+            (resolved)="onInteractOutputAddressResolved($event)"
+            (qrClick)="onInteractOutputQrClick()"
+          >
+          </app-address-smart-input>
+        </div>
+
+        <div
+          class="p-12 rounded-lg"
+          style="
+            background: rgba(111, 199, 186, 0.08);
+            border: 1px solid rgba(111, 199, 186, 0.2);
+          "
+        >
+          <span class="text-gray-75 typo-text-2">
+            Funds stay locked in the covenant. Only the heir wallet changes.
+          </span>
+        </div>
+      }
+
+      @if (selectedFunction() && isTopUpFunction(selectedFunction())) {
+        <div class="form-group flex column gap-8">
+          <kc-number-input
+            [label]="'Top up amount (KAS)'"
+            [placeholder]="'0'"
+            [min]="'0'"
+            [isDisabled]="isInteracting()"
+            [ngModel]="topUpAmount()"
+            (valueChange)="onTopUpAmountChange($event)"
+          ></kc-number-input>
+        </div>
+
+        <div
+          class="p-12 rounded-lg"
+          style="
+            background: rgba(111, 199, 186, 0.08);
+            border: 1px solid rgba(111, 199, 186, 0.2);
+          "
+        >
+          <span class="text-gray-75 typo-text-2"
+            >The current covenant UTXO will be spent and recreated as output
+            0 with the same covenant ID. The new covenant amount will be the
+            current balance plus the top-up amount before any contract-paid
+            fee deduction.</span
+          >
+        </div>
+      }
+
+      @if (selectedFunction() && isSelfCustodySweepAction(selectedFunction())) {
+        @if (getSelfCustodyInteractWhitelistWallets().length > 0) {
+          <div class="form-group flex column gap-8">
+            <label class="form-label">Send funds to</label>
+            <select
+              class="contract-input"
+              [disabled]="isInteracting()"
+              [ngModel]="interactOutputAddress()"
+              (ngModelChange)="onSelfCustodySweepDestinationChange($event)"
+            >
+              @for (
+                address of getSelfCustodyInteractWhitelistWallets();
+                track address;
+                let i = $index
+              ) {
+                <option [value]="address">{{ i }} - {{ address }}</option>
+              }
+            </select>
+            <span class="text-gray-60 typo-text-2">
+              The full vault balance will be sent to the selected
+              whitelisted wallet.
+            </span>
+          </div>
+        } @else {
+          <div class="form-group flex column gap-8">
+            <app-address-smart-input
+              [label]="'Send funds to'"
+              [placeholder]="'Enter recipient wallet address or KNS domain'"
+              [isFullWidth]="true"
+              [isValid]="true"
+              [invalidReason]="''"
+              [isDisabled]="isInteracting()"
+              [value]="interactOutputAddress()"
+              (valueChange)="onInteractOutputAddressChange($event)"
+              (resolved)="onInteractOutputAddressResolved($event)"
+              (qrClick)="onInteractOutputQrClick()"
+            ></app-address-smart-input>
+            <span class="text-gray-60 typo-text-2">
+              The full vault balance will be sent to this wallet.
+            </span>
+          </div>
+        }
+      }
+
+      @if (
+        selectedFunction() &&
+        functionRequiresOutput(selectedFunction()) &&
+        !isSelfCustodySweepAction(selectedFunction()) &&
+        !isDmsKeepAlive() &&
+        !isDmsChangeHeir()
+      ) {
+        <div class="form-group flex column gap-8">
+          <app-address-smart-input
+            [label]="'Send to'"
+            [placeholder]="'Enter recipient wallet address or KNS domain'"
+            [isFullWidth]="true"
+            [isValid]="true"
+            [invalidReason]="''"
+            [isDisabled]="isInteracting()"
+            [value]="interactOutputAddress()"
+            (valueChange)="onInteractOutputAddressChange($event)"
+            (resolved)="onInteractOutputAddressResolved($event)"
+            (qrClick)="onInteractOutputQrClick()"
+          ></app-address-smart-input>
+        </div>
+        @if (isDmsClaim()) {
+          <div
+            class="p-12 rounded-lg"
+            style="
+              background: rgba(111, 199, 186, 0.08);
+              border: 1px solid rgba(111, 199, 186, 0.2);
+            "
+          >
+            <span class="text-gray-75 typo-text-2"
+              >Claiming sends the entire contract balance to this address —
+              Dead Man's Switch claims can't be partial.</span
+            >
+          </div>
+        } @else {
+          <div class="form-group flex column gap-8">
+            <kc-number-input
+              [label]="'Withdraw amount (KAS)'"
+              [placeholder]="'0'"
+              [min]="'0'"
+              [isDisabled]="isInteracting()"
+              [ngModel]="interactOutputAmount()"
+              (valueChange)="onInteractOutputAmountChange($event)"
+            >
+              <div
+                (click)="!isInteracting() && fillMaxOutputAmount()"
+                [class]="isInteracting() ? 'max-text disabled' : 'max-text clickable'"
+                rightSideSlot
+              >
+                <span>Max</span>
+              </div>
+            </kc-number-input>
+          </div>
+        }
+      }
+
+      @if (
+        selectedFunction() &&
+        !functionRequiresOutput(selectedFunction()) &&
+        !isDmsKeepAlive() &&
+        !isDmsChangeHeir() &&
+        !isTopUpFunction(selectedFunction())
+      ) {
+        <div
+          class="p-12 rounded-lg"
+          style="
+            background: rgba(111, 199, 186, 0.08);
+            border: 1px solid rgba(111, 199, 186, 0.2);
+          "
+        >
+          <span class="text-gray-75 typo-text-2"
+            >Funds will be re-locked into the same contract (minus ~0.00001
+            KAS fee). No external withdrawal.</span
+          >
+        </div>
+      }
+
+      @for (arg of extraArgsForFunction(); track arg.name) {
+        <div class="form-group flex column gap-8">
+          <kc-number-input
+            [label]="getExtraArgLabel(arg)"
+            [placeholder]="getExtraArgPlaceholder(arg)"
+            [isDisabled]="isInteracting()"
+            [ngModel]="extraArgValues[arg.name] || ''"
+            (valueChange)="onExtraArgValueChange(arg.name, $event)"
+          ></kc-number-input>
+          <span class="text-gray-60 typo-text-2">
+            {{ getExtraArgHelp(arg) }}
+          </span>
+        </div>
+      }
+
+      @if (partialSpendJson()) {
+        <div
+          class="flex column gap-8 p-12 rounded-lg"
+          style="
+            background: rgba(255, 193, 7, 0.08);
+            border: 1px solid rgba(255, 193, 7, 0.2);
+          "
+        >
+          <span class="text-yellow typo-text-1 fw-bold">Partial spend created</span>
+          <span class="text-gray-75 typo-text-2"
+            >Your signature has been added. Copy the JSON below and send it
+            to the co-signer to complete the transaction.</span
+          >
+          <textarea
+            class="contract-input"
+            rows="4"
+            readonly
+            [value]="partialSpendJson()!"
+          ></textarea>
+          <kc-button
+            [text]="'Copy partial spend JSON'"
+            [isFullWidth]="true"
+            (buttonClick)="copyPartialSpend()"
+          ></kc-button>
+          <kc-button
+            [text]="'Download JSON file'"
+            [variant]="'secondary'"
+            [isFullWidth]="true"
+            (buttonClick)="downloadPartialSpend()"
+          ></kc-button>
+        </div>
+      }
+    }
+
+    @if (parsedInteractContract() && contractHasMultiSigFunction()) {
+      <details class="advanced-section">
+        <summary>Complete co-signer transaction</summary>
+        <div class="adv-body">
+          <span class="text-gray-75 typo-text-2"
+            >Paste the partial spend JSON received from the co-signer, or
+            import it from a file. Your signature will be added and the
+            transaction broadcast.</span
+          >
+          <textarea
+            class="contract-input"
+            rows="4"
+            placeholder="Paste partial spend JSON from co-signer"
+            [(ngModel)]="importPartialJson"
+            [disabled]="isCompletingPartial()"
+          ></textarea>
+          <kc-button
+            [text]="'Import JSON file'"
+            [variant]="'secondary'"
+            [isDisabled]="isCompletingPartial()"
+            [isFullWidth]="true"
+            (buttonClick)="importPartialSpendFromFile()"
+          ></kc-button>
+          <kc-button
+            [text]="isCompletingPartial() ? 'Completing...' : 'Sign & broadcast'"
+            [isDisabled]="isCompletingPartial() || !importPartialJson"
+            [isFullWidth]="true"
+            (buttonClick)="completePartialSpend()"
+          ></kc-button>
+          @if (partialCompleteError()) {
+            <div class="error-message">{{ partialCompleteError() }}</div>
+          }
+          @if (partialCompleteResult()) {
+            <div class="result-panel">
+              <h3 class="text-white typo-text-1 fw-bold">Transaction sent</h3>
+              <div class="flex column gap-4">
+                <span class="text-gray-60 typo-text-1">Transaction</span>
+                <div class="flex align-items-center gap-8">
+                  <a
+                    [href]="getExplorerLink(partialCompleteResult()!.txid)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-blue typo-text-2 text-truncate"
+                    >{{ partialCompleteResult()!.txid }}</a
+                  ><app-copy-button
+                    [value]="partialCompleteResult()!.txid"
+                    [size]="'sm'"
+                  ></app-copy-button>
+                </div>
+              </div>
+              @if (interactIndexerState()) {
+                <div class="flex column gap-4">
+                  <span class="text-gray-60 typo-text-1">Indexer status</span>
+                  <span class="text-white typo-text-2">{{
+                    interactIndexerState()!.message
+                  }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </details>
+    }
+
+    @if (interactError()) {
+      <div class="error-message">{{ interactError() }}</div>
+    }
+    @if (interactResult()) {
+      <div class="result-panel">
+        <h3 class="text-white typo-text-1 fw-bold">Transaction sent</h3>
+        <div class="flex column gap-4">
+          <span class="text-gray-60 typo-text-1">Action</span
+          ><span class="text-white typo-text-2">{{
+            getFunctionLabel(interactResult()!.functionName)
+          }}</span>
+        </div>
+        <div class="flex column gap-4">
+          <span class="text-gray-60 typo-text-1">Transaction</span>
+          <div class="flex align-items-center gap-8">
+            <a
+              [href]="getExplorerLink(interactResult()!.txid)"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-blue typo-text-2 text-truncate"
+              >{{ interactResult()!.txid }}</a
+            ><app-copy-button
+              [value]="interactResult()!.txid"
+              [size]="'sm'"
+            ></app-copy-button>
+          </div>
+        </div>
+        @if (interactIndexerState()) {
+          <div class="flex column gap-4">
+            <span class="text-gray-60 typo-text-1">Indexer status</span>
+            <span class="text-white typo-text-2">{{
+              interactIndexerState()!.message
+            }}</span>
+          </div>
+        }
+      </div>
+    }
+
+    @if (parsedInteractContract()) {
+      <div class="form-group flex align-items-center gap-8">
+        <label class="flex align-items-center gap-8 cursor-pointer m-0"
+          ><input
+            type="checkbox"
+            class="cursor-pointer"
+            [(ngModel)]="useSenderFee"
+            [disabled]="isSenderFeeToggleDisabled(selectedFunction())"
+          /><span class="text-white typo-text-2">Use wallet to pay for fees</span></label
+        >
+        <kc-icon
+          [iconClass]="'icon-info'"
+          [size]="'xs'"
+          [kcTooltip]="getSenderFeeTooltip(selectedFunction())"
+          tooltipPosition="top-center"
+        ></kc-icon>
+        @if (selectedFunction() && isTopUpFunction(selectedFunction())) {
+          <span class="text-gray-60 typo-text-2">
+            Selected:
+            {{ useSenderFee ? "wallet pays fees" : "fees come from the top-up output" }}
+          </span>
+        }
+      </div>
+      @if (selectedFunction() && isMultiSigFunction(selectedFunction())) {
+        <div
+          class="p-12 rounded-lg"
+          style="
+            background: rgba(255, 193, 7, 0.08);
+            border: 1px solid rgba(255, 193, 7, 0.2);
+          "
+        >
+          <span class="text-yellow typo-text-2"
+            >Multi-sig transactions must pay fees from the contract funds.
+            Wallet-paid fees add inputs and would invalidate the partial
+            signatures.</span
+          >
+        </div>
+      }
+      @if (selectedFunction() && isTopUpFunction(selectedFunction())) {
+        <div
+          class="p-12 rounded-lg"
+          style="
+            background: rgba(255, 193, 7, 0.08);
+            border: 1px solid rgba(255, 193, 7, 0.2);
+          "
+        >
+          <span class="text-yellow typo-text-2">
+            If wallet-paid fees are off, the top-up amount must be larger
+            than the transaction fee so the recreated covenant output
+            remains larger than the current covenant UTXO.
+          </span>
+        </div>
+      }
+      @if (selectedFunction() && isSelfCustodySweepAction(selectedFunction())) {
+        <div
+          class="p-12 rounded-lg"
+          style="
+            background: rgba(255, 193, 7, 0.08);
+            border: 1px solid rgba(255, 193, 7, 0.2);
+          "
+        >
+          <span class="text-yellow typo-text-2">
+            Self-Custody sweep/finalize must pay fees from the wallet
+            because the withdrawal output must keep the full contract input
+            value.
+          </span>
+        </div>
+      }
+    }
+
+    @if (parsedInteractContract()) {
+      <kc-button
+        [text]="
+          isInteracting()
+            ? 'Processing...'
+            : selectedFunction()
+              ? getFunctionLabel(selectedFunction())
+              : 'Select an action'
+        "
+        [isDisabled]="
+          isInteracting() ||
+          !interactContractJson() ||
+          !interactOutpointTxid() ||
+          !selectedFunction()
+        "
+        [isFullWidth]="true"
+        (buttonClick)="interactContract()"
+      ></kc-button>
+    }
+  </div>
+}

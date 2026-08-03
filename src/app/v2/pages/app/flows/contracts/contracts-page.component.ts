@@ -444,7 +444,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     'MultiSigVault',
     'EscrowWithArbiter',
     'SelfCustodyVault',
-    'SelfCustodyVaultV2',
   ];
 
   /**
@@ -720,15 +719,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     )
       return [];
     if (
-      this.isSelfCustodyContractName(contract.contract_name) &&
-      ['emergencySweep', 'finalizeAll', 'finalizePartial'].includes(
-        this.selectedFunction,
-      )
+      contract.contract_name === 'SelfCustodyVault' &&
+      ['emergencySweep', 'finalize'].includes(this.selectedFunction)
     ) {
       return abiEntry.inputs.filter(
         (i) =>
           (i.type_name === 'int' || i.type_name === 'bool') &&
-          !['destinationIndex', 'withdrawalAmount'].includes(i.name),
+          i.name !== 'destinationIndex',
       );
     }
     // Only render extra-arg inputs the interact flow can actually collect/pass
@@ -741,7 +738,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   getExtraArgLabel(arg: { name: string; type_name: string }): string {
     const contract = this.parsedInteractContract();
     if (
-      this.isSelfCustodyContractName(contract?.contract_name) &&
+      contract?.contract_name === 'SelfCustodyVault' &&
       arg.name === 'destinationIndex'
     ) {
       return 'Whitelist destination index';
@@ -752,7 +749,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   getExtraArgPlaceholder(arg: { name: string; type_name: string }): string {
     const contract = this.parsedInteractContract();
     if (
-      this.isSelfCustodyContractName(contract?.contract_name) &&
+      contract?.contract_name === 'SelfCustodyVault' &&
       arg.name === 'destinationIndex'
     ) {
       return '0 for first whitelisted address';
@@ -763,7 +760,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   getExtraArgHelp(arg: { name: string; type_name: string }): string {
     const contract = this.parsedInteractContract();
     if (
-      this.isSelfCustodyContractName(contract?.contract_name) &&
+      contract?.contract_name === 'SelfCustodyVault' &&
       arg.name === 'destinationIndex'
     ) {
       return 'Finalize and Emergency Sweep create the hot/cold signature automatically. This number selects which whitelisted destination must match the withdrawal address; leave 0 when there is no whitelist or to use the first whitelist entry.';
@@ -1258,7 +1255,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           },
         ];
       } else if (template.id === 'self-custody-vault') {
-        tmplName = 'SelfCustodyVaultV2';
+        tmplName = 'SelfCustodyVault';
         argsPayload = this.buildSelfCustodyArgsPayload(fieldValues);
       }
 
@@ -1360,7 +1357,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         'Keep this wallet separate from the hot wallet. It can sweep funds immediately in an emergency.',
       whitelistedDestinations:
         'Choose send anywhere for no destination restriction, or allow only listed wallets for withdrawals.',
-      initUnvaultDelayDaa: `This is a DAA-score delay, not wall-clock seconds. The hours value is only an estimate using the current ${this.networkBlocksPerSecond()} BPS network rate. If Kaspa BPS changes later, recreate the vault or use a larger DAA delay because the on-chain contract stores only the DAA amount.`,
+      initUnvaultDelaySeconds: `This is a DAA-score delay, not wall-clock seconds. The hours value is only an estimate using the current ${this.networkBlocksPerSecond()} BPS network rate. If Kaspa BPS changes later, recreate the vault or use a larger DAA delay because the on-chain contract stores only the DAA amount.`,
       timeout:
         'The earliest date when the recovery wallet can use the backup withdrawal path.',
       expiry:
@@ -2563,13 +2560,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       Escrow: 'EscrowWithArbiter',
       SelfCustody: 'SelfCustodyVault',
       SelfCustodyVault: 'SelfCustodyVault',
-      SelfCustodyVaultV2: 'SelfCustodyVault',
     };
     return aliases[normalized] || normalized;
-  }
-
-  private isSelfCustodyContractName(name: string | undefined): boolean {
-    return this.normalizeContractName(name || '') === 'SelfCustodyVault';
   }
 
   private getTemplateDisplayName(name: string): string {
@@ -2812,7 +2804,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       c: { name: 'coldKey', type: 'address' },
       m: { name: 'whitelistMode', type: 'string' },
       w: { name: 'whitelistedDestinations', type: 'address[]' },
-      d: { name: 'unvaultDelayDaa', type: 'blueScore' },
+      d: { name: 'unvaultDelaySeconds', type: 'blueScore' },
       p: { name: 'initPhase', type: 'int' },
     };
     const expand = (key: string, value: unknown, type = '') => {
@@ -2860,10 +2852,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           )
         : '';
     const delayDaaValue =
-      values['initUnvaultDelayDaa'] ??
-      values['unvaultDelayDaa'] ??
-      values['initUnvaultDelaySeconds'] ??
-      values['unvaultDelaySeconds'];
+      values['initUnvaultDelaySeconds'] ?? values['unvaultDelaySeconds'];
     const delayDaaScore = this.parseWholeNumber(
       String(delayDaaValue ?? '').trim() || String(this.hoursToDaaDelay(24)),
       'Unvault Delay',
@@ -2897,7 +2886,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         value: whitelistedDestinations,
       },
       {
-        name: 'unvaultDelayDaa',
+        name: 'unvaultDelaySeconds',
         type: 'blueScore',
         value: String(delayDaaScore),
       },
@@ -2931,13 +2920,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     );
     return {
       v: 1,
-      tmpl: 'SelfCustodyVaultV2',
+      tmpl: 'SelfCustodyVault',
       args: {
         h: args['hotKey'] || '',
         c: args['coldKey'] || '',
         m: args['whitelistMode'] === 'whitelist' ? 'w' : 'a',
         w: args['whitelistedDestinations'] || '',
-        d: args['unvaultDelayDaa'] || String(this.hoursToDaaDelay(24)),
+        d: args['unvaultDelaySeconds'] || String(this.hoursToDaaDelay(24)),
         p: args['initPhase'] || '0',
       },
     };
@@ -4167,17 +4156,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         extraGuard: (detail) =>
           this.requireSelfCustodyRole(detail, 'Cold wallet'),
       },
-      finalizeAll: {
-        label: 'Finalize Full Withdrawal',
+      finalize: {
+        label: 'Finalize',
         description:
-          'Use the hot wallet to withdraw the full balance after the unvault delay.',
-        iconClass: 'icon-coins-02',
-        requiredRole: 'Hot wallet',
-      },
-      finalizePartial: {
-        label: 'Finalize Partial Withdrawal',
-        description:
-          'Withdraw part of the balance after the delay and relock the remainder.',
+          'Use the hot wallet to withdraw after the unvault delay has passed.',
         iconClass: 'icon-coins-02',
         requiredRole: 'Hot wallet',
       },
@@ -4213,7 +4195,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (!table) return [];
 
     const available = this.availableFunctions();
-    const availableNames = new Set(available.map((fn) => fn.name));
+    const availableNames =
+      normalized === 'SelfCustodyVault'
+        ? new Set(Object.keys(table))
+        : new Set(available.map((fn) => fn.name));
     const currentRoles = this.currentWalletRolesForDetail(detail);
     const selfCustodyPhase = this.getSelfCustodyPhase(detail);
     const testMode = this.isTestModeEnabled();
@@ -4359,9 +4344,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   getSelfCustodyInteractWhitelistWallets(): string[] {
     const contract = this.parsedInteractContract();
-    if (!contract || !this.isSelfCustodyContractName(contract.contract_name)) {
-      return [];
-    }
+    if (contract?.contract_name !== 'SelfCustodyVault') return [];
 
     const args = this.argsArrayToRecord(
       this.normalizeIndexerArgs(contract.tn10?.args),
@@ -4426,7 +4409,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (fnName === 'unvault' && phase !== 0) {
       return 'Only available while initPhase is 0 (locked).';
     }
-    if (['finalizeAll', 'finalizePartial'].includes(fnName) && phase !== 1) {
+    if (fnName === 'finalize' && phase !== 1) {
       return 'Only available while initPhase is 1 (unvaulting).';
     }
     if (fnName === 'topUp' && phase !== 0) {
@@ -4528,20 +4511,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         ? ['arbitrate', 'release', 'refund', 'topUp']
         : ['release', 'refund', 'arbitrate', 'topUp'],
       SelfCustodyVault: currentRoles.includes('Cold wallet')
-        ? [
-            'emergencySweep',
-            'unvault',
-            'finalizeAll',
-            'finalizePartial',
-            'topUp',
-          ]
-        : [
-            'unvault',
-            'finalizePartial',
-            'finalizeAll',
-            'topUp',
-            'emergencySweep',
-          ],
+        ? ['emergencySweep', 'unvault', 'finalize', 'topUp']
+        : ['unvault', 'finalize', 'topUp', 'emergencySweep'],
     };
 
     const actions = this.getAvailableActions(detailForEntry);
@@ -5226,22 +5197,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     ]);
     const delayCandidates = this.uniqueStrings([
       String(state['vaultUnvaultDelaySeconds'] ?? ''),
-      String(state['unvaultDelayDaa'] ?? ''),
       String(state['unvaultDelaySeconds'] ?? ''),
-      baseFieldValues['initUnvaultDelayDaa'],
       baseFieldValues['initUnvaultDelaySeconds'],
-      baseFieldValues['unvaultDelayDaa'],
       baseFieldValues['unvaultDelaySeconds'],
       String(state['vaultUnvaultDelaySeconds'] ?? ''),
       String(state['unvaultDelaySeconds'] ?? ''),
     ]);
 
     for (const initPhase of phaseCandidates) {
-      for (const unvaultDelayDaa of delayCandidates) {
+      for (const unvaultDelaySeconds of delayCandidates) {
         const fieldValues = {
           ...baseFieldValues,
           initPhase,
-          initUnvaultDelayDaa: unvaultDelayDaa,
+          initUnvaultDelaySeconds: unvaultDelaySeconds,
         };
         try {
           const compiled = await this.compileTemplateWithFieldValues(
@@ -5505,11 +5473,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       case 'self-custody-vault':
         const state = activeAction?.outputs?.state || {};
         const delaySeconds = Number(
-          state['unvaultDelayDaa'] ??
-            state['vaultUnvaultDelaySeconds'] ??
-            byName.get('unvaultDelayDaa') ??
+          state['vaultUnvaultDelaySeconds'] ??
             byName.get('unvaultDelaySeconds') ??
-            requireArg('unvaultDelayDaa'),
+            requireArg('unvaultDelaySeconds'),
         );
         const whitelistedDestinations =
           byName.get('whitelistedDestinations') ?? '';
@@ -5523,7 +5489,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
               : whitelistedDestinations
                 ? 'whitelist'
                 : 'anywhere',
-          initUnvaultDelayDaa: String(
+          initUnvaultDelaySeconds: String(
             Number.isFinite(delaySeconds)
               ? delaySeconds
               : this.hoursToDaaDelay(24),
@@ -6163,7 +6129,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       let useSenderFeeOverride: boolean | undefined;
       let covenantIdOverride: string | undefined;
       let transactionPayloadHex: string | undefined;
-      let selfCustodyContinuation: CompiledContract | undefined;
 
       if (this.isTopUpFunction(functionName)) {
         if (isNaN(topUpAmountKas) || topUpAmountKas <= 0) {
@@ -6197,7 +6162,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             covenantId,
           },
         ];
-        if (this.isSelfCustodyContractName(compiled.contract_name)) {
+        if (compiled.contract_name === 'SelfCustodyVault') {
           transactionPayloadHex = this.buildSelfCustodyPayloadHex(compiled, 0);
           this.logSelfCustodyContractParams('topUp continuation output', {
             inputAmountSompi: inputAmount,
@@ -6375,10 +6340,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           return;
         }
         if (
-          this.isSelfCustodyContractName(compiled.contract_name) &&
-          ['emergencySweep', 'finalizeAll', 'finalizePartial'].includes(
-            functionName,
-          )
+          compiled.contract_name === 'SelfCustodyVault' &&
+          ['emergencySweep', 'finalize'].includes(functionName)
         ) {
           const whitelist = this.getSelfCustodyInteractWhitelistWallets();
           if (whitelist.length > this.selfCustodyWhitelistCapacity) {
@@ -6402,60 +6365,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           } else {
             this.extraArgValues['destinationIndex'] = '0';
           }
-          if (functionName === 'finalizePartial') {
-            if (isNaN(outputAmountKas) || outputAmountKas <= 0) {
-              this.interactError.set(
-                'Withdrawal amount must be greater than 0',
-              );
-              return;
-            }
-            const withdrawalAmount = BigInt(Math.floor(outputAmountKas * 1e8));
-            if (withdrawalAmount >= inputAmount) {
-              this.interactError.set(
-                'Partial withdrawal must leave funds in the vault. Use full finalization to withdraw everything.',
-              );
-              return;
-            }
-            const remainder = inputAmount - withdrawalAmount;
-            if (remainder < this.MIN_CONTINUATION_AMOUNT_SOMPI) {
-              this.interactError.set(
-                'Partial withdrawal must leave at least 0.5 KAS in the relocked vault.',
-              );
-              return;
-            }
-            const covenantId =
-              this.selectedContract()?.covenantId ||
-              this.selectedDetail()?.entry.covenantId;
-            if (!covenantId) {
-              this.interactError.set(
-                'Cannot finalize partially until the covenant ID is known.',
-              );
-              return;
-            }
-            selfCustodyContinuation = await this.compileSelfCustodyContinuation(
-              compiled,
-              0,
-            );
-            outputs = [
-              { address: outputAddress, amount: withdrawalAmount },
-              {
-                address: this.covenantService.getContractAddress(
-                  selfCustodyContinuation,
-                ),
-                amount: remainder,
-                covenantId,
-              },
-            ];
-            this.extraArgValues['withdrawalAmount'] =
-              withdrawalAmount.toString();
-            transactionPayloadHex = this.buildSelfCustodyPayloadHex(
-              selfCustodyContinuation,
-              0,
-            );
-            covenantIdOverride = covenantId;
-          } else {
-            outputs = [{ address: outputAddress, amount: inputAmount }];
-          }
+          outputs = [{ address: outputAddress, amount: inputAmount }];
           extraArgsOverride = this.collectExtraArgs(compiled, functionName);
           useSenderFeeOverride = true;
         } else {
@@ -6623,9 +6533,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           this.interactInputAmount = outputs[0].amount.toString();
           this.topUpAmount = '';
         } else if (this.functionRequiresOutput(functionName)) {
-          const covenantAddress = this.covenantService.getContractAddress(
-            selfCustodyContinuation || compiled,
-          );
+          const covenantAddress =
+            this.covenantService.getContractAddress(compiled);
           const continuationOutputIndex = outputs.findIndex(
             (output) => output.address === covenantAddress,
           );
@@ -6635,27 +6544,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
               lastChecked: Date.now(),
               outpoint: { txid: result.txid, vout: continuationOutputIndex },
               amountSompi: continuationAmount.toString(),
-              ...(selfCustodyContinuation
-                ? {
-                    status: 'active' as const,
-                    compiledJson: JSON.stringify(
-                      selfCustodyContinuation,
-                      null,
-                      2,
-                    ),
-                    contractAddress: covenantAddress,
-                    accessRoles: this.parseAccessRoles(selfCustodyContinuation),
-                  }
-                : {}),
             });
             this.interactOutpointTxid = result.txid;
             this.interactOutpointVout = continuationOutputIndex.toString();
             this.interactInputAmount = continuationAmount.toString();
-            if (selfCustodyContinuation) {
-              this.interactContractJson.set(
-                JSON.stringify(selfCustodyContinuation, null, 2),
-              );
-            }
           } else {
             // Full withdrawal: funds left the covenant
             await this.updateRegistryContract(this.selectedContractId(), {
@@ -7095,23 +6987,21 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const currentArgs = this.argsArrayToRecord(
       currentCompiled.tn10?.args || [],
     );
-    const currentDelayDaa = Number(
-      currentArgs['unvaultDelayDaa'] ?? currentArgs['unvaultDelaySeconds'],
-    );
-    const delayDaa = Number.isFinite(currentDelayDaa)
-      ? BigInt(currentDelayDaa)
+    const currentDelaySeconds = Number(currentArgs['unvaultDelaySeconds']);
+    const delaySeconds = Number.isFinite(currentDelaySeconds)
+      ? BigInt(currentDelaySeconds)
       : ((await this.extractTemplateIntField(
           currentCompiled,
           'self-custody-vault',
-          'initUnvaultDelayDaa',
+          'initUnvaultDelaySeconds',
         )) ??
         (await this.extractTemplateIntField(
           currentCompiled,
           'self-custody-vault',
-          'unvaultDelayDaa',
+          'unvaultDelaySeconds',
         )));
 
-    if (delayDaa === undefined) {
+    if (delaySeconds === undefined) {
       throw new Error('Could not read Self-Custody Vault state from template');
     }
 
@@ -7124,7 +7014,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       whitelistedDestinations: currentArgs['whitelistedDestinations'] || '',
       whitelistedDestinations_mode:
         currentArgs['whitelistMode'] === 'whitelist' ? 'whitelist' : 'anywhere',
-      initUnvaultDelayDaa: String(delayDaa),
+      initUnvaultDelaySeconds: String(delaySeconds),
       initPhase: String(phase),
     };
     const constructorArgs = [
@@ -7148,7 +7038,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       hasSavedSelfCustodyArgs
         ? this.intArg(this.getWhitelistCountFromValues(currentValues))
         : bytesArgFor('whitelistCount'),
-      this.intArg(Number(delayDaa)),
+      this.intArg(Number(delaySeconds)),
       this.intArg(phase),
     ];
     const patched = this.templatePatcher.applyPatch(baseCompiled, descriptor, [
@@ -7156,14 +7046,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     ]) as CompiledContract;
     patched.tn10 = {
       v: 1,
-      tmpl: 'SelfCustodyVaultV2',
+      tmpl: 'SelfCustodyVault',
       args: this.buildSelfCustodyArgsPayload(currentValues),
     };
     this.logSelfCustodyContractParams('compiled continuation', {
       phase,
       currentTn10: currentCompiled.tn10,
       nextTn10: patched.tn10,
-      delayDaa,
+      delaySeconds,
       constructorArgs,
       currentAddress: this.covenantService.getContractAddress(currentCompiled),
       nextAddress: this.covenantService.getContractAddress(patched),
@@ -7288,7 +7178,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     useSenderFee = false,
     transactionPayloadHex?: string,
   ): Promise<CovenantSpendActionResult | undefined> {
-    if (this.isSelfCustodyContractName(compiled.contract_name)) {
+    if (compiled.contract_name === 'SelfCustodyVault') {
       this.logSelfCustodyContractParams('spend action parameters', {
         functionName,
         outpoint,
@@ -7530,8 +7420,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       withdraw: 'Withdraw',
       unvault: 'Start Unvault',
       emergencySweep: 'Emergency Sweep',
-      finalizeAll: 'Finalize Full Withdrawal',
-      finalizePartial: 'Finalize Partial Withdrawal',
+      finalize: 'Finalize',
     };
     return labels[action] || action;
   }
@@ -7784,11 +7673,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     hours: number,
     markTouched: boolean,
   ): void {
-    this.templateFormValues['initUnvaultDelayDaa'] = String(
+    this.templateFormValues['initUnvaultDelaySeconds'] = String(
       this.hoursToDaaDelay(hours),
     );
     if (markTouched) {
-      this.templateFieldTouched['initUnvaultDelayDaa'] = true;
+      this.templateFieldTouched['initUnvaultDelaySeconds'] = true;
     }
   }
 
@@ -7960,7 +7849,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const contract = this.parsedInteractContract();
     return (
       this.selectedFunction === 'unvault' &&
-      this.isSelfCustodyContractName(contract?.contract_name)
+      contract?.contract_name === 'SelfCustodyVault'
     );
   }
 
@@ -8020,10 +7909,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   ): boolean {
     return (
       !!fnName &&
-      ['emergencySweep', 'finalizeAll', 'finalizePartial'].includes(fnName) &&
-      this.isSelfCustodyContractName(
-        this.parsedInteractContract()?.contract_name,
-      )
+      ['emergencySweep', 'finalize'].includes(fnName) &&
+      this.parsedInteractContract()?.contract_name === 'SelfCustodyVault'
     );
   }
 
@@ -8044,7 +7931,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       return 'Disabled for multi-sig signing. The contract must pay fees because wallet fee inputs would change the transaction after signatures are created.';
     }
     if (this.isSelfCustodySweepAction(fnName)) {
-      return 'Required for Self-Custody withdrawals. Covenant principal is conserved exactly, so fees must be paid by the wallet.';
+      return 'Required for Self-Custody sweep/finalize. The covenant requires the withdrawal output to keep the full input value, so fees must be paid by the wallet.';
     }
     if (this.isTopUpFunction(fnName || '')) {
       return 'When enabled, fees are paid from wallet change. When disabled, fees are deducted from the top-up output.';
@@ -8070,10 +7957,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.dmsNewExpiry = '';
     this.topUpAmount = '';
     if (
-      ['emergencySweep', 'finalizeAll', 'finalizePartial'].includes(name) &&
-      this.isSelfCustodyContractName(
-        this.parsedInteractContract()?.contract_name,
-      )
+      ['emergencySweep', 'finalize'].includes(name) &&
+      this.parsedInteractContract()?.contract_name === 'SelfCustodyVault'
     ) {
       const whitelist = this.getSelfCustodyInteractWhitelistWallets();
       this.extraArgValues['destinationIndex'] = '0';
@@ -8189,8 +8074,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       changeHeir: 'Change Heir',
       unvault: 'Start Unvault',
       emergencySweep: 'Emergency Sweep',
-      finalizeAll: 'Finalize Full Withdrawal',
-      finalizePartial: 'Finalize Partial Withdrawal',
+      finalize: 'Finalize',
     };
     return labels[name] || name;
   }
@@ -8245,10 +8129,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           'Start the delayed withdrawal phase using the hot wallet. Funds stay in the vault.',
         emergencySweep:
           'Sweep funds with the cold wallet. If a whitelist is active, the destination index must match the recipient.',
-        finalizeAll:
-          'Withdraw the full balance after the unvault delay. If a whitelist is active, the destination must be approved.',
-        finalizePartial:
-          'Withdraw part of the balance after the delay and relock the remainder.',
+        finalize:
+          'Complete a hot-wallet withdrawal after the unvault delay. If a whitelist is active, the destination index must match the recipient.',
       },
     };
 
@@ -8279,8 +8161,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       unvault:
         'Move the vault into its delayed withdrawal phase without sending funds externally.',
       emergencySweep: 'Withdraw with the cold wallet.',
-      finalizeAll: 'Finalize a full delayed withdrawal.',
-      finalizePartial: 'Finalize a partial delayed withdrawal.',
+      finalize: 'Finalize a delayed withdrawal.',
     };
 
     return fallback[name] || `Call the "${name}" function on this contract.`;

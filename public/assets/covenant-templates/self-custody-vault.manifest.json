@@ -1,8 +1,0 @@
-{
-  "contractName": "SelfCustodyVaultV2",
-  "silverscriptRevision": "d57e5dff62f2a9e0e3dd2d5f203d051911f6276d",
-  "sourcePath": "wallet-lab/wallet-contracts/self-custody-vault-v2.sil",
-  "sourceSha256": "e9e065d5345e95217fc9f7aa686cc7b68864ad1612f0920cb483646bc0329bf1",
-  "scriptSha256": "44617c7480a56a383f6cd354c226808f7e0195c40c811687676c1062a5fa1ea7",
-  "artifactSha256": "4398217e19ee12b9f36b75f5bbf55df60837ff1d84dcfdabfcc0404de7ab6fb5"
-}

@@ -11,7 +11,6 @@ import { UtilsHelper } from '../../../../../services/utils.service';
 import { WalletService } from '../../../../../services/wallet.service';
 import { AccountSettingsService } from '../../../../services/account-settings.service';
 import { FlowPagesService } from '../../../../services/flow-pages.service';
-import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
 import { WalletProfileOrbComponent } from '../../../../shared/ui/wallet-profile-orb/wallet-profile-orb.component';
 import { FlowPageId } from '../flow-page/flow-page.registry';
 import { DesktopViewService } from '../../../../services/desktop-view.service';
@@ -24,7 +23,6 @@ import { KaspaL1NetworkService } from '../../../../../services/kaspa-netwrok-ser
     KcIconComponent,
     KcIconButtonComponent,
     RouterModule,
-    CopyButtonComponent,
     WalletProfileOrbComponent,
     KcTooltipDirective,
   ],
@@ -103,10 +101,6 @@ export class WrapperHeaderComponent {
 
   toggleAccountSettings(): void {
     this.accountSettingsService.toggle();
-  }
-
-  onCopyButtonClick(event: Event): void {
-    event.stopPropagation();
   }
 
   isDevelopmentMode(): boolean {

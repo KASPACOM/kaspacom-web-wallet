@@ -461,10 +461,11 @@ function getSequenceLockForFunction(
   if (!functionUsesTxVar(compiled, functionName, 'this_age')) return 0n;
 
   const metadataArgs = argsArrayToRecord(compiled.tn10?.args || []);
-  const sequenceLockValue = metadataArgs['unvaultDelaySeconds'];
+  const sequenceLockValue =
+    metadataArgs['unvaultDelayDaa'] ?? metadataArgs['unvaultDelaySeconds'];
   if (!sequenceLockValue) {
     throw new Error(
-      `Function "${functionName}" requires this.age, but the contract metadata is missing unvaultDelaySeconds.`,
+      `Function "${functionName}" requires this.age, but the contract metadata is missing unvaultDelayDaa.`,
     );
   }
 

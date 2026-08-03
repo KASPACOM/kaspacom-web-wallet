@@ -26,7 +26,10 @@ describe('CovenantTemplateService', () => {
 
     TestBed.configureTestingModule({
       providers: [
-        { provide: HttpClient, useValue: jasmine.createSpyObj('HttpClient', ['get']) },
+        {
+          provide: HttpClient,
+          useValue: jasmine.createSpyObj('HttpClient', ['get']),
+        },
         { provide: TemplatePatcherService, useValue: templatePatcher },
         { provide: KaspaL1NetworkService, useValue: kaspaL1NetworkService },
         { provide: RpcService, useValue: rpcService },
@@ -58,9 +61,10 @@ describe('CovenantTemplateService', () => {
     });
 
     it('parses a JSON array', () => {
-      expect(
-        service.getAddressListFromRaw('["addr1", "addr2", ""]'),
-      ).toEqual(['addr1', 'addr2']);
+      expect(service.getAddressListFromRaw('["addr1", "addr2", ""]')).toEqual([
+        'addr1',
+        'addr2',
+      ]);
     });
 
     it('falls back to newline/comma-separated values when not JSON', () => {

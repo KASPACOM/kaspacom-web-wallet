@@ -18,9 +18,7 @@ describe('ContractDisplayService', () => {
     kaspaL1NetworkService.getKaspaExplorerBaseurl.and.returnValue(
       'https://explorer.kaspa.org',
     );
-    kaspaL1NetworkService.getCovenantExplorerBaseurl.and.returnValue(
-      undefined,
-    );
+    kaspaL1NetworkService.getCovenantExplorerBaseurl.and.returnValue(undefined);
     rpcService.getNetwork.and.returnValue('mainnet');
 
     TestBed.configureTestingModule({
@@ -175,9 +173,7 @@ describe('ContractDisplayService', () => {
       expect(service.normalizeContractName("Dead Man's Switch")).toBe(
         'DeadManSwitch',
       );
-      expect(service.normalizeContractName('Escrow')).toBe(
-        'EscrowWithArbiter',
-      );
+      expect(service.normalizeContractName('Escrow')).toBe('EscrowWithArbiter');
       expect(service.normalizeContractName('SelfCustody')).toBe(
         'SelfCustodyVault',
       );
@@ -228,9 +224,7 @@ describe('ContractDisplayService', () => {
       expect(
         service.getTemplateKey({ contractName: 'EscrowWithArbiter' }),
       ).toBe('escrow');
-      expect(service.getTemplateKey({ name: 'DeadManSwitch' })).toBe(
-        'deadman',
-      );
+      expect(service.getTemplateKey({ name: 'DeadManSwitch' })).toBe('deadman');
     });
 
     it('defaults when nothing matches', () => {

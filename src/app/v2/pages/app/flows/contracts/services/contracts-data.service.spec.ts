@@ -148,12 +148,12 @@ describe('ContractsDataService', () => {
         { label: 'Owner', value: 'Kaspa:ABC' },
         { label: 'Heir', value: '', matchValues: ['deadbeef'] },
       ];
-      expect(
-        service.rolesForCandidates(participants, ['kaspa:abc']),
-      ).toEqual(['Owner']);
-      expect(
-        service.rolesForCandidates(participants, ['deadbeef']),
-      ).toEqual(['Heir']);
+      expect(service.rolesForCandidates(participants, ['kaspa:abc'])).toEqual([
+        'Owner',
+      ]);
+      expect(service.rolesForCandidates(participants, ['deadbeef'])).toEqual([
+        'Heir',
+      ]);
     });
 
     it('returns an empty array when nothing matches', () => {
@@ -199,9 +199,7 @@ describe('ContractsDataService', () => {
 
     it('distinguishes arbiter/buyer/seller roles on an Escrow', () => {
       expect(
-        service.getNextActionLabel('EscrowWithArbiter', 'active', [
-          'Arbiter',
-        ]),
+        service.getNextActionLabel('EscrowWithArbiter', 'active', ['Arbiter']),
       ).toBe('Arbitrate');
       expect(
         service.getNextActionLabel('EscrowWithArbiter', 'active', ['Buyer']),
@@ -215,7 +213,9 @@ describe('ContractsDataService', () => {
   describe('extractDeadlineMs', () => {
     it('reads the deadline from claimed args and normalizes seconds to ms', () => {
       const summary: IndexerCovenantDetails = {
-        claimedArgs: { args: [{ name: 'deadline', type: 'int', value: '2000000000' }] },
+        claimedArgs: {
+          args: [{ name: 'deadline', type: 'int', value: '2000000000' }],
+        },
       };
       expect(service.extractDeadlineMs(summary)).toBe(2000000000000);
     });
@@ -228,9 +228,9 @@ describe('ContractsDataService', () => {
       const summary: IndexerCovenantDetails = {
         constructor: { deadline: 1 },
       };
-      expect(
-        service.extractDeadlineMs(summary, { deadline: 2000000000 }),
-      ).toBe(2000000000000);
+      expect(service.extractDeadlineMs(summary, { deadline: 2000000000 })).toBe(
+        2000000000000,
+      );
     });
   });
 
@@ -323,9 +323,7 @@ describe('ContractsDataService', () => {
 
   describe('mergeParticipants', () => {
     it('de-dupes by label + identity value, local participants take precedence', () => {
-      const local: ContractParticipant[] = [
-        { label: 'Owner', value: 'addr1' },
-      ];
+      const local: ContractParticipant[] = [{ label: 'Owner', value: 'addr1' }];
       const indexer: ContractParticipant[] = [
         { label: 'Owner', value: 'addr1' },
         { label: 'Heir', value: 'addr2' },
@@ -348,16 +346,18 @@ describe('ContractsDataService', () => {
   describe('extractScriptHashFromScriptPubKey', () => {
     it('extracts the 32-byte hash from a P2SH covenant scriptPubKey', () => {
       const hash = 'ab'.repeat(32);
-      expect(
-        service.extractScriptHashFromScriptPubKey(`aa20${hash}87`),
-      ).toBe(hash);
+      expect(service.extractScriptHashFromScriptPubKey(`aa20${hash}87`)).toBe(
+        hash,
+      );
     });
 
     it('returns undefined for a non-matching scriptPubKey', () => {
       expect(
         service.extractScriptHashFromScriptPubKey('76a914deadbeef88ac'),
       ).toBeUndefined();
-      expect(service.extractScriptHashFromScriptPubKey(undefined)).toBeUndefined();
+      expect(
+        service.extractScriptHashFromScriptPubKey(undefined),
+      ).toBeUndefined();
     });
   });
 

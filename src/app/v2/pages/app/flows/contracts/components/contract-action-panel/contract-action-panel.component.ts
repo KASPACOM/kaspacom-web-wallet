@@ -171,7 +171,10 @@ export class ContractActionPanelComponent {
   backToListRequested = output<void>();
   aliasEditRequested = output<ContractDashboardEntry>();
   aliasEditCancelled = output<void>();
-  aliasSaveRequested = output<{ contract: ContractDashboardEntry; draft: string }>();
+  aliasSaveRequested = output<{
+    contract: ContractDashboardEntry;
+    draft: string;
+  }>();
   aliasRemoveRequested = output<ContractDashboardEntry>();
 
   private readonly contractsDebugEnabled = false;
@@ -554,14 +557,17 @@ export class ContractActionPanelComponent {
         ];
         if (compiled.contract_name === 'SelfCustodyVault') {
           transactionPayloadHex = this.buildSelfCustodyPayloadHex(compiled, 0);
-          this.templateService.logSelfCustodyContractParams('topUp continuation output', {
-            inputAmountSompi: inputAmount,
-            topUpAmountSompi: topUpAmount,
-            outputs,
-            covenantId,
-            currentTn10: compiled.tn10,
-            currentAddress: this.covenantService.getContractAddress(compiled),
-          });
+          this.templateService.logSelfCustodyContractParams(
+            'topUp continuation output',
+            {
+              inputAmountSompi: inputAmount,
+              topUpAmountSompi: topUpAmount,
+              outputs,
+              covenantId,
+              currentTn10: compiled.tn10,
+              currentAddress: this.covenantService.getContractAddress(compiled),
+            },
+          );
         }
       } else if (
         functionName === 'arbitrate' &&
@@ -590,7 +596,9 @@ export class ContractActionPanelComponent {
         // Derive seller/buyer addresses from pubkeys baked into the compiled script.
         // Escrow constructor order: buyer (param 0), seller (param 1).
         const pubkeys = this.extractPubkeysFromScript(compiled);
-        const buyerAddress = pubkeys[0] ? this.templateService.pubkeyToAddress(pubkeys[0]) : '';
+        const buyerAddress = pubkeys[0]
+          ? this.templateService.pubkeyToAddress(pubkeys[0])
+          : '';
         const sellerAddress = pubkeys[1]
           ? this.templateService.pubkeyToAddress(pubkeys[1])
           : '';
@@ -1047,15 +1055,18 @@ export class ContractActionPanelComponent {
     const nextContractJson = JSON.stringify(nextCompiled, null, 2);
     const nextContractAddress =
       this.covenantService.getContractAddress(nextCompiled);
-    this.templateService.logSelfCustodyContractParams('unvault continuation target', {
-      inputAmountSompi: inputAmount,
-      covenantId,
-      currentTn10: compiled.tn10,
-      nextTn10: nextCompiled.tn10,
-      currentAddress: this.covenantService.getContractAddress(compiled),
-      nextAddress: nextContractAddress,
-      nextScriptLength: nextCompiled.script?.length,
-    });
+    this.templateService.logSelfCustodyContractParams(
+      'unvault continuation target',
+      {
+        inputAmountSompi: inputAmount,
+        covenantId,
+        currentTn10: compiled.tn10,
+        nextTn10: nextCompiled.tn10,
+        currentAddress: this.covenantService.getContractAddress(compiled),
+        nextAddress: nextContractAddress,
+        nextScriptLength: nextCompiled.script?.length,
+      },
+    );
     const payloadHex = this.buildSelfCustodyPayloadHex(nextCompiled, 1);
 
     const result = await this.runCovenantSpendAction(
@@ -1146,7 +1157,10 @@ export class ContractActionPanelComponent {
     }
 
     const newDeadline = BigInt(
-      this.templateService.parseDateToUnixMs(this.dmsNewExpiry, 'New check-in deadline'),
+      this.templateService.parseDateToUnixMs(
+        this.dmsNewExpiry,
+        'New check-in deadline',
+      ),
     );
     const currentDeadline = await this.templateService.extractTemplateIntField(
       compiled,
@@ -1155,7 +1169,9 @@ export class ContractActionPanelComponent {
     );
     const owner = await this.extractDmsPubkeyHex(compiled, 'owner');
     const heir = await this.extractDmsPubkeyHex(compiled, 'heir');
-    const ownerAddress = owner ? this.templateService.pubkeyToAddress(owner) : '';
+    const ownerAddress = owner
+      ? this.templateService.pubkeyToAddress(owner)
+      : '';
     const heirAddress = heir ? this.templateService.pubkeyToAddress(heir) : '';
     if (!ownerAddress || !heirAddress) {
       this.interactError.set(
@@ -1262,7 +1278,9 @@ export class ContractActionPanelComponent {
     }
 
     const owner = await this.extractDmsPubkeyHex(compiled, 'owner');
-    const ownerAddress = owner ? this.templateService.pubkeyToAddress(owner) : '';
+    const ownerAddress = owner
+      ? this.templateService.pubkeyToAddress(owner)
+      : '';
     const currentDeadline = await this.templateService.extractTemplateIntField(
       compiled,
       'dead-mans-switch',
@@ -1348,9 +1366,8 @@ export class ContractActionPanelComponent {
       throw new Error("Dead Man's Switch template is unavailable");
     }
 
-    const { compiled, descriptor } = await this.templateService.getTemplatePatchContext(
-      template.id,
-    );
+    const { compiled, descriptor } =
+      await this.templateService.getTemplatePatchContext(template.id);
     return this.templatePatcher.applyPatch(compiled, descriptor, [
       this.templateService.bytesArg(
         this.templatePatcher.kaspaAddressToPubkeyBytes(values.ownerAddress),
@@ -1461,10 +1478,15 @@ export class ContractActionPanelComponent {
           )
         : bytesArgFor('coldKey'),
       hasSavedSelfCustodyArgs
-        ? this.templateService.pubkeyListArg('whitelistedDestinations', currentValues)
+        ? this.templateService.pubkeyListArg(
+            'whitelistedDestinations',
+            currentValues,
+          )
         : bytesArgFor('whitelistedDestinations'),
       hasSavedSelfCustodyArgs
-        ? this.templateService.intArg(this.templateService.getWhitelistCountFromValues(currentValues))
+        ? this.templateService.intArg(
+            this.templateService.getWhitelistCountFromValues(currentValues),
+          )
         : bytesArgFor('whitelistCount'),
       this.templateService.intArg(Number(delaySeconds)),
       this.templateService.intArg(phase),
@@ -1597,18 +1619,21 @@ export class ContractActionPanelComponent {
     transactionPayloadHex?: string,
   ): Promise<CovenantSpendActionResult | undefined> {
     if (compiled.contract_name === 'SelfCustodyVault') {
-      this.templateService.logSelfCustodyContractParams('spend action parameters', {
-        functionName,
-        outpoint,
-        inputAmountSompi,
-        outputs,
-        extraArgs,
-        covenantId,
-        useSenderFee,
-        transactionPayloadHex,
-        contractAddress: this.covenantService.getContractAddress(compiled),
-        tn10: compiled.tn10,
-      });
+      this.templateService.logSelfCustodyContractParams(
+        'spend action parameters',
+        {
+          functionName,
+          outpoint,
+          inputAmountSompi,
+          outputs,
+          extraArgs,
+          covenantId,
+          useSenderFee,
+          transactionPayloadHex,
+          contractAddress: this.covenantService.getContractAddress(compiled),
+          tn10: compiled.tn10,
+        },
+      );
     }
 
     const actionResult =
@@ -2355,7 +2380,9 @@ export class ContractActionPanelComponent {
         if (inputSompi) {
           try {
             this.interactOutputAmount.set(
-              (Number(BigInt(inputSompi)) / 1e8).toFixed(8).replace(/\.?0+$/, ''),
+              (Number(BigInt(inputSompi)) / 1e8)
+                .toFixed(8)
+                .replace(/\.?0+$/, ''),
             );
           } catch {
             this.interactOutputAmount.set('');

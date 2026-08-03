@@ -727,10 +727,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.dashboardLoading.set(false);
 
     const wallet = this.currentWallet();
-    const indexerEntriesPromise = this.contractsData.loadIndexerDashboardEntries(
-      [wallet?.getAddress(), this.currentWalletPubkeyHash()],
-      buildCtx(filtered, allContracts),
-    );
+    const indexerEntriesPromise =
+      this.contractsData.loadIndexerDashboardEntries(
+        [wallet?.getAddress(), this.currentWalletPubkeyHash()],
+        buildCtx(filtered, allContracts),
+      );
     this.indexerLoading.set(true);
 
     // Check on-chain status for each contract. Skipped during action-indexing
@@ -3136,14 +3137,17 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           : args,
     };
     if (template.id === 'self-custody-vault') {
-      this.templateService.logSelfCustodyContractParams('indexer import compile', {
-        fieldValues,
-        tn10: compiled.tn10,
-        activeState: activeAction?.outputs?.state,
-        activeUtxoState: activeUtxo?.state,
-        scriptLength: compiled.script?.length,
-        address: this.covenantService.getContractAddress(compiled),
-      });
+      this.templateService.logSelfCustodyContractParams(
+        'indexer import compile',
+        {
+          fieldValues,
+          tn10: compiled.tn10,
+          activeState: activeAction?.outputs?.state,
+          activeUtxoState: activeUtxo?.state,
+          scriptLength: compiled.script?.length,
+          address: this.covenantService.getContractAddress(compiled),
+        },
+      );
     }
     let computedAddress = this.covenantService.getContractAddress(compiled);
     if (
@@ -3302,11 +3306,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           );
           const address = this.covenantService.getContractAddress(compiled);
           if (address === contractAddress) {
-            this.templateService.logSelfCustodyContractParams('indexer variant matched', {
-              fieldValues,
-              activeState: state,
-              address,
-            });
+            this.templateService.logSelfCustodyContractParams(
+              'indexer variant matched',
+              {
+                fieldValues,
+                activeState: state,
+                address,
+              },
+            );
             return { fieldValues, compiled, address };
           }
         } catch {
@@ -3523,9 +3530,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const newArgs = template.fields.map((field) =>
       this.templateService.fieldToCtorArgFromValues(field, fieldValues),
     );
-    const { compiled, descriptor } = await this.templateService.getTemplatePatchContext(
-      template.id,
-    );
+    const { compiled, descriptor } =
+      await this.templateService.getTemplatePatchContext(template.id);
     const patched = this.templatePatcher.applyPatch(
       compiled,
       descriptor,
@@ -4023,5 +4029,4 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
-
 }

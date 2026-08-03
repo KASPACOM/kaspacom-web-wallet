@@ -24,8 +24,8 @@
         Choose a contract type
       </h3>
       <p class="text-gray-60 typo-text-2" style="margin: 0 0 8px">
-        Each template is a proven covenant. Pick the outcome you want —
-        the wallet handles the mechanics.
+        Each template is a proven covenant. Pick the outcome you want — the
+        wallet handles the mechanics.
       </p>
     </div>
     <div class="template-picker">
@@ -157,16 +157,12 @@
     </div>
   } @else {
     <!-- Step 2: parameters -->
-    <div
-      class="flex justify-content-between align-items-center gap-12 wrap"
-    >
+    <div class="flex justify-content-between align-items-center gap-12 wrap">
       <div class="flex align-items-center gap-12">
         <span
           class="tpl-icon"
           [attr.data-tpl]="
-            activeTemplate()
-              ? getTemplateKey(activeTemplate()!)
-              : 'default'
+            activeTemplate() ? getTemplateKey(activeTemplate()!) : 'default'
           "
           style="width: 40px; height: 40px"
         >
@@ -254,8 +250,7 @@
               Custom covenant
             </h3>
             <p class="text-gray-60 typo-text-2" style="margin: 0">
-              Paste deploy-ready compiled JSON and choose how much KAS to
-              lock.
+              Paste deploy-ready compiled JSON and choose how much KAS to lock.
             </p>
           }
         </div>
@@ -297,9 +292,7 @@
                   [isFullWidth]="true"
                   [isValid]="isTemplateFieldValid(field)"
                   [invalidReason]="getTemplateFieldError(field)"
-                  [isDisabled]="
-                    isDeploying() || isWalletOwnedField(field)
-                  "
+                  [isDisabled]="isDeploying() || isWalletOwnedField(field)"
                   [showQrButton]="!isWalletOwnedField(field)"
                   [value]="templateFormValues[field.paramName] || ''"
                   (valueChange)="onTemplateFieldChange(field, $event)"
@@ -335,13 +328,9 @@
                       Allow only whitelist
                     </button>
                   </div>
-                  @if (
-                    getWhitelistMode(field.paramName) === "whitelist"
-                  ) {
+                  @if (getWhitelistMode(field.paramName) === "whitelist") {
                     @for (
-                      address of getTemplateAddressListRows(
-                        field.paramName
-                      );
+                      address of getTemplateAddressListRows(field.paramName);
                       track $index
                     ) {
                       <div class="flex gap-8 align-items-center">
@@ -374,8 +363,8 @@
                       class="btn secondary"
                       [disabled]="
                         isDeploying() ||
-                        getTemplateAddressListRows(field.paramName)
-                          .length >= selfCustodyWhitelistCapacity
+                        getTemplateAddressListRows(field.paramName).length >=
+                          selfCustodyWhitelistCapacity
                       "
                       (click)="addWhitelistAddress(field)"
                     >
@@ -408,19 +397,14 @@
                       getTemplateFieldError(field)
                     }}</span>
                   }
-                  @if (
-                    templateFormValues[field.paramName + "_isAutoHashed"]
-                  ) {
+                  @if (templateFormValues[field.paramName + "_isAutoHashed"]) {
                     <span class="text-green typo-text-2"
                       >Hash computed automatically.</span
                     >
                   }
                   @if (
-                    !templateFormValues[
-                      field.paramName + "_isAutoHashed"
-                    ] &&
-                    (templateFormValues[field.paramName] || "").length ===
-                      64
+                    !templateFormValues[field.paramName + "_isAutoHashed"] &&
+                    (templateFormValues[field.paramName] || "").length === 64
                   ) {
                     <div class="flex gap-8 align-items-center">
                       <span class="text-gray-60 typo-text-2"
@@ -443,18 +427,14 @@
               ) {
                 @if (field.type === "int_daa_delay") {
                   <div class="flex column gap-8">
-                    <span class="field-label"
-                      >Estimated delay (hours)</span
-                    >
+                    <span class="field-label">Estimated delay (hours)</span>
                     <kc-number-input
                       [label]="'Unvault delay (hours)'"
                       [placeholder]="'24'"
                       [min]="'0'"
                       [isValid]="isTemplateFieldValid(field)"
                       [isDisabled]="isDeploying()"
-                      [ngModel]="
-                        selfCustodyDelayHoursValue(field.paramName)
-                      "
+                      [ngModel]="selfCustodyDelayHoursValue(field.paramName)"
                       (valueChange)="
                         onSelfCustodyDelayHoursChange(field, $event)
                       "
@@ -466,12 +446,8 @@
                       [min]="'0'"
                       [isValid]="isTemplateFieldValid(field)"
                       [isDisabled]="isDeploying()"
-                      [ngModel]="
-                        templateFormValues[field.paramName] || ''
-                      "
-                      (valueChange)="
-                        onSelfCustodyDelayDaaChange(field, $event)
-                      "
+                      [ngModel]="templateFormValues[field.paramName] || ''"
+                      (valueChange)="onSelfCustodyDelayDaaChange(field, $event)"
                     ></kc-number-input>
                   </div>
                 } @else {
@@ -521,13 +497,11 @@
           [disabled]="isDeploying()"
         ></textarea>
         @if (deployContractError()) {
-          <span class="text-red typo-text-2">{{
-            deployContractError()
-          }}</span>
+          <span class="text-red typo-text-2">{{ deployContractError() }}</span>
         }
         <span class="field-help"
-          >Templates are safer for common flows because the wallet
-          explains and validates each parameter.</span
+          >Templates are safer for common flows because the wallet explains and
+          validates each parameter.</span
         >
       </div>
 
@@ -546,14 +520,9 @@
                 <span class="text-gray-60 typo-text-1"
                   >Constructor parameters</span
                 >
-                @for (
-                  param of deployConstructorParams();
-                  track param.name
-                ) {
+                @for (param of deployConstructorParams(); track param.name) {
                   <div class="param-item p-8">
-                    <span class="text-white typo-text-2">{{
-                      param.name
-                    }}</span>
+                    <span class="text-white typo-text-2">{{ param.name }}</span>
                     <span
                       class="text-gray-60 typo-text-2"
                       style="margin-left: 8px"
@@ -570,9 +539,7 @@
                 >
                 @for (fn of deployEntrypointFunctions(); track fn.name) {
                   <div class="param-item p-8">
-                    <span class="text-white typo-text-2"
-                      >{{ fn.name }}()</span
-                    >
+                    <span class="text-white typo-text-2">{{ fn.name }}()</span>
                     @if (fn.params.length > 0) {
                       <span
                         class="text-gray-60 typo-text-2"
@@ -619,9 +586,7 @@
       >
         <div
           (click)="!isDeploying() && onMaxDeployAmountClick()"
-          [class]="
-            isDeploying() ? 'max-text disabled' : 'max-text clickable'
-          "
+          [class]="isDeploying() ? 'max-text disabled' : 'max-text clickable'"
           rightSideSlot
         >
           <span>Max</span>
@@ -691,7 +656,10 @@
                     rel="noopener noreferrer"
                     class="text-blue typo-text-2 text-mono"
                     >{{
-                      display.truncate(deployIndexerState()!.covenantId || "", 28)
+                      display.truncate(
+                        deployIndexerState()!.covenantId || "",
+                        28
+                      )
                     }}</a
                   >
                 } @else {
@@ -717,15 +685,11 @@
     }
 
     <kc-button
-      [text]="
-        isDeploying() ? 'Deploying...' : 'Review and deploy covenant'
-      "
+      [text]="isDeploying() ? 'Deploying...' : 'Review and deploy covenant'"
       [isDisabled]="isCreateDeployDisabled()"
       [isFullWidth]="true"
       (buttonClick)="
-        createMode() === 'custom'
-          ? deployContract()
-          : deployTemplateContract()
+        createMode() === 'custom' ? deployContract() : deployTemplateContract()
       "
     ></kc-button>
   }

@@ -1,7 +1,11 @@
 import { Component, effect, inject, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { KcIconComponent, KcButtonComponent, NotificationService } from '@kaspacom/ui-kit';
+import {
+  KcIconComponent,
+  KcButtonComponent,
+  NotificationService,
+} from '@kaspacom/ui-kit';
 import { WalletService } from '../../../../../../../services/wallet.service';
 import { CovenantService } from '../../../../../../../services/covenant/covenant.service';
 import { CopyButtonComponent } from '../../../../../../shared/ui/copy-button/copy-button.component';
@@ -55,7 +59,10 @@ export class ContractDetailComponent {
   shareRequested = output<ContractDashboardEntry>();
   aliasEditRequested = output<ContractDashboardEntry>();
   aliasEditCancelled = output<void>();
-  aliasSaveRequested = output<{ contract: ContractDashboardEntry; draft: string }>();
+  aliasSaveRequested = output<{
+    contract: ContractDashboardEntry;
+    draft: string;
+  }>();
   aliasRemoveRequested = output<ContractDashboardEntry>();
 
   aliasDraft = '';
@@ -181,9 +188,13 @@ export class ContractDetailComponent {
   }
 
   // ─── Self-Custody Vault phase / whitelist ───────────────────────────
-  private localTemplateArgs(contract: {
-    compiledJson?: string;
-  } | undefined): Array<{ name: string; value: string }> {
+  private localTemplateArgs(
+    contract:
+      | {
+          compiledJson?: string;
+        }
+      | undefined,
+  ): Array<{ name: string; value: string }> {
     if (!contract?.compiledJson) return [];
     try {
       const compiled = this.covenantService.parseCompiledContract(

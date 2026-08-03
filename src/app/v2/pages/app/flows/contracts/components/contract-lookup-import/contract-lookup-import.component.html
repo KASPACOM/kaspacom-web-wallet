@@ -2,7 +2,10 @@
   <!-- Import from indexer / share -->
   <div class="panel flex column gap-20">
     <div class="flex column gap-4">
-      <h3 class="text-white" style="margin: 0; font-size: 16px; font-weight: 600">
+      <h3
+        class="text-white"
+        style="margin: 0; font-size: 16px; font-weight: 600"
+      >
         Import a contract
       </h3>
       <p class="text-gray-60 typo-text-2" style="margin: 0">
@@ -39,7 +42,9 @@
             {{ indexerImportPreview()!.template.name }}
           </h4>
           <span class="text-gray-60 typo-text-2"
-            >{{ display.formatSompiToKas(indexerImportPreview()!.amountSompi) }}
+            >{{
+              display.formatSompiToKas(indexerImportPreview()!.amountSompi)
+            }}
             KAS</span
           >
         </div>
@@ -57,7 +62,9 @@
                 target="_blank"
                 rel="noopener noreferrer"
                 class="text-blue typo-text-2 text-mono"
-                >{{ display.truncate(indexerImportPreview()!.covenantId, 28) }}</a
+                >{{
+                  display.truncate(indexerImportPreview()!.covenantId, 28)
+                }}</a
               >
             } @else {
               <span class="text-white typo-text-2 text-mono">{{
@@ -128,13 +135,16 @@
   <!-- Share a contract -->
   <div class="panel flex column gap-20">
     <div class="flex column gap-4">
-      <h3 class="text-white" style="margin: 0; font-size: 16px; font-weight: 600">
+      <h3
+        class="text-white"
+        style="margin: 0; font-size: 16px; font-weight: 600"
+      >
         Share a contract
       </h3>
       <p class="text-gray-60 typo-text-2" style="margin: 0">
-        A share link carries only the network and canonical covenant ID —
-        never private data or compiled JSON. Whoever opens it previews the
-        contract before tracking it.
+        A share link carries only the network and canonical covenant ID — never
+        private data or compiled JSON. Whoever opens it previews the contract
+        before tracking it.
       </p>
     </div>
 
@@ -176,7 +186,10 @@
     <summary>Advanced: look up by address</summary>
     <div class="panel flex column gap-16 adv-body">
       <div class="flex column gap-4">
-        <h3 class="text-white" style="margin: 0; font-size: 16px; font-weight: 600">
+        <h3
+          class="text-white"
+          style="margin: 0; font-size: 16px; font-weight: 600"
+        >
           Look up by address
         </h3>
         <p class="text-gray-60 typo-text-2" style="margin: 0">
@@ -232,8 +245,7 @@
           </div>
           @if (lookupResult()!.utxoCount === 0) {
             <div class="text-gray-60 typo-text-2 p-12">
-              No UTXOs found — contract may have been spent or address is
-              empty.
+              No UTXOs found — contract may have been spent or address is empty.
             </div>
           }
           @if ((lookupResult()!.utxos || []).length > 0) {

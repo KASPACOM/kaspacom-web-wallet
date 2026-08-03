@@ -445,16 +445,13 @@ export class ContractTemplateDeployFormComponent {
       }
 
       if (template.id === 'self-custody-vault') {
-        this.templateService.logSelfCustodyContractParams(
-          'template creation',
-          {
-            fieldValues,
-            constructorArgs: newArgs,
-            tn10: patched.tn10,
-            scriptLength: patched.script?.length,
-            address: this.covenantService.getContractAddress(patched),
-          },
-        );
+        this.templateService.logSelfCustodyContractParams('template creation', {
+          fieldValues,
+          constructorArgs: newArgs,
+          tn10: patched.tn10,
+          scriptLength: patched.script?.length,
+          address: this.covenantService.getContractAddress(patched),
+        });
       }
 
       this.generatedContractJson.set(JSON.stringify(patched, null, 2));
@@ -719,8 +716,7 @@ export class ContractTemplateDeployFormComponent {
 
   addWhitelistAddress(field: TemplateField) {
     const rows = this.getTemplateAddressListRows(field.paramName);
-    if (rows.length >= this.selfCustodyWhitelistCapacity)
-      return;
+    if (rows.length >= this.selfCustodyWhitelistCapacity) return;
     rows.push('');
     this.templateFormValues[field.paramName] = JSON.stringify(rows);
     this.templateFieldTouched[field.paramName] = true;
@@ -807,12 +803,12 @@ export class ContractTemplateDeployFormComponent {
       if (this.getWhitelistMode(field.paramName) === 'whitelist') {
         if (addresses.length === 0) {
           error = 'Add at least one whitelist address';
-        } else if (
-          addresses.length > this.selfCustodyWhitelistCapacity
-        ) {
+        } else if (addresses.length > this.selfCustodyWhitelistCapacity) {
           error = `Maximum ${this.selfCustodyWhitelistCapacity} whitelist addresses`;
         } else if (
-          addresses.some((address) => !this.utilsHelper.isValidWalletAddress(address))
+          addresses.some(
+            (address) => !this.utilsHelper.isValidWalletAddress(address),
+          )
         ) {
           error = 'Every whitelist entry must be a valid wallet address';
         }
@@ -967,9 +963,7 @@ export class ContractTemplateDeployFormComponent {
       .replace(/^0x/i, '');
     if (!/^[0-9a-fA-F]{64}$/.test(value)) return;
 
-    this.templateFormValues[paramName] = computeBlake2bHex(
-      hex32ToBytes(value),
-    );
+    this.templateFormValues[paramName] = computeBlake2bHex(hex32ToBytes(value));
     this.templateFormValues[paramName + '_isAutoHashed'] = 'true';
   }
 

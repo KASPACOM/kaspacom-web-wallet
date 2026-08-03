@@ -178,7 +178,10 @@ export class CovenantTemplateService {
   }
 
   hoursToDaaDelay(hours: number): number {
-    return Math.max(0, Math.round(hours * 3600 * this.networkBlocksPerSecond()));
+    return Math.max(
+      0,
+      Math.round(hours * 3600 * this.networkBlocksPerSecond()),
+    );
   }
 
   daaDelayToHours(daaScore: number): number {
@@ -428,7 +431,12 @@ export class CovenantTemplateService {
     templateId: string,
     paramName: string,
   ): Promise<string | undefined> {
-    return this.extractTemplateParamHex(compiled, templateId, paramName, 'pubkey');
+    return this.extractTemplateParamHex(
+      compiled,
+      templateId,
+      paramName,
+      'pubkey',
+    );
   }
 
   async extractTemplateParamHex(

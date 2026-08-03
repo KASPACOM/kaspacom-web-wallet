@@ -172,7 +172,9 @@ export class ContractDisplayService {
       case 'self-custody-vault':
         return 'default';
     }
-    switch (this.normalizeContractName(input?.contractName ?? input?.name ?? '')) {
+    switch (
+      this.normalizeContractName(input?.contractName ?? input?.name ?? '')
+    ) {
       case 'DeadManSwitch':
         return 'deadman';
       case 'TimeLockVault':

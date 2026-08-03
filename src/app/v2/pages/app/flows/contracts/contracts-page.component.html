@@ -162,7 +162,6 @@
           <!-- Detail panel -->
         }
 
-
         @if (
           selectedDetail() &&
           (activeTab() !== "detail" || actionPageView() === "list")
@@ -216,7 +215,9 @@
       [detailPanelTab]="detailPanelTab()"
       [registryContracts]="registryContracts()"
       [registryContractOptions]="registryContractOptions()"
-      [availableActions]="selectedDetail() ? getAvailableActions(selectedDetail()!) : []"
+      [availableActions]="
+        selectedDetail() ? getAvailableActions(selectedDetail()!) : []
+      "
       [actionsPanelReady]="actionsPanelReady()"
       [editingAliasKey]="editingAliasKey()"
       [aliasNotice]="aliasNotice()"
@@ -256,7 +257,5 @@
       (aliasSaveRequested)="saveAlias($event.contract, $event.draft)"
       (aliasRemoveRequested)="removeAlias($event)"
     />
-
-
   </div>
 </div>

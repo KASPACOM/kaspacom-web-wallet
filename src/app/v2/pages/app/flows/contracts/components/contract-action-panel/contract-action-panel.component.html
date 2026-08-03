@@ -39,7 +39,11 @@
             >
               Save
             </button>
-            <button class="alias-btn ghost" type="button" (click)="cancelAliasEdit()">
+            <button
+              class="alias-btn ghost"
+              type="button"
+              (click)="cancelAliasEdit()"
+            >
               Cancel
             </button>
           </div>
@@ -51,7 +55,9 @@
               (click)="beginAliasEdit(selectedDetail()!.entry)"
             >
               {{
-                selectedDetail()!.entry.aliasName ? "Edit nickname" : "Add nickname"
+                selectedDetail()!.entry.aliasName
+                  ? "Edit nickname"
+                  : "Add nickname"
               }}
             </button>
             @if (selectedDetail()!.entry.aliasName) {
@@ -64,7 +70,9 @@
               </button>
             }
           </div>
-          @if (aliasNotice()?.key === getAliasEditKey(selectedDetail()!.entry)) {
+          @if (
+            aliasNotice()?.key === getAliasEditKey(selectedDetail()!.entry)
+          ) {
             <div class="alias-notice">
               {{ aliasNotice()!.message }}
             </div>
@@ -126,7 +134,8 @@
       <div class="form-group flex column gap-8">
         <h3 class="text-white typo-text-1 fw-bold">
           {{
-            getSelectedActionMeta()?.label || getFunctionLabel(selectedFunction())
+            getSelectedActionMeta()?.label ||
+              getFunctionLabel(selectedFunction())
           }}
         </h3>
         <span class="text-gray-60 typo-text-2">{{
@@ -142,8 +151,8 @@
             "
           >
             <span class="text-yellow typo-text-2"
-              >Two-phase signing: clicking the button will sign your part
-              and generate a partial spend JSON. Send it to the co-signer to
+              >Two-phase signing: clicking the button will sign your part and
+              generate a partial spend JSON. Send it to the co-signer to
               complete.</span
             >
           </div>
@@ -155,7 +164,9 @@
         [isDisabled]="isInteracting()"
         [addressValue]="interactOutputAddress()"
         [amountValue]="
-          isTopUpFunction(selectedFunction()) ? topUpAmount() : interactOutputAmount()
+          isTopUpFunction(selectedFunction())
+            ? topUpAmount()
+            : interactOutputAmount()
         "
         [timestampValue]="dmsNewExpiry"
         [extraArgValues]="extraArgValues"
@@ -190,10 +201,12 @@
             border: 1px solid rgba(255, 193, 7, 0.2);
           "
         >
-          <span class="text-yellow typo-text-1 fw-bold">Partial spend created</span>
+          <span class="text-yellow typo-text-1 fw-bold"
+            >Partial spend created</span
+          >
           <span class="text-gray-75 typo-text-2"
-            >Your signature has been added. Copy the JSON below and send it
-            to the co-signer to complete the transaction.</span
+            >Your signature has been added. Copy the JSON below and send it to
+            the co-signer to complete the transaction.</span
           >
           <textarea
             class="contract-input"
@@ -239,7 +252,9 @@
               (buttonClick)="importPartialSpendFromFile()"
             ></kc-button>
             <kc-button
-              [text]="isCompletingPartial() ? 'Completing...' : 'Sign & broadcast'"
+              [text]="
+                isCompletingPartial() ? 'Completing...' : 'Sign & broadcast'
+              "
               [isDisabled]="isCompletingPartial() || !importPartialJson"
               [isFullWidth]="true"
               (buttonClick)="completePartialSpend()"
@@ -308,7 +323,9 @@
             class="cursor-pointer"
             [(ngModel)]="useSenderFee"
             [disabled]="isSenderFeeToggleDisabled(selectedFunction())"
-          /><span class="text-white typo-text-2">Use wallet to pay for fees</span></label
+          /><span class="text-white typo-text-2"
+            >Use wallet to pay for fees</span
+          ></label
         >
         <kc-icon
           [iconClass]="'icon-info'"
@@ -319,7 +336,11 @@
         @if (isTopUpFunction(selectedFunction())) {
           <span class="text-gray-60 typo-text-2">
             Selected:
-            {{ useSenderFee ? "wallet pays fees" : "fees come from the top-up output" }}
+            {{
+              useSenderFee
+                ? "wallet pays fees"
+                : "fees come from the top-up output"
+            }}
           </span>
         }
       </div>
@@ -347,9 +368,9 @@
           "
         >
           <span class="text-yellow typo-text-2">
-            If wallet-paid fees are off, the top-up amount must be larger
-            than the transaction fee so the recreated covenant output
-            remains larger than the current covenant UTXO.
+            If wallet-paid fees are off, the top-up amount must be larger than
+            the transaction fee so the recreated covenant output remains larger
+            than the current covenant UTXO.
           </span>
         </div>
       }
@@ -362,16 +383,21 @@
           "
         >
           <span class="text-yellow typo-text-2">
-            Self-Custody sweep/finalize must pay fees from the wallet
-            because the withdrawal output must keep the full contract input
-            value.
+            Self-Custody sweep/finalize must pay fees from the wallet because
+            the withdrawal output must keep the full contract input value.
           </span>
         </div>
       }
 
       <kc-button
-        [text]="isInteracting() ? 'Processing...' : getFunctionLabel(selectedFunction())"
-        [isDisabled]="isInteracting() || !interactContractJson() || !interactOutpointTxid()"
+        [text]="
+          isInteracting()
+            ? 'Processing...'
+            : getFunctionLabel(selectedFunction())
+        "
+        [isDisabled]="
+          isInteracting() || !interactContractJson() || !interactOutpointTxid()
+        "
         [isFullWidth]="true"
         (buttonClick)="interactContract()"
       ></kc-button>
@@ -395,7 +421,10 @@
 ) {
   <div class="panel flex column gap-20" id="contract-action-panel">
     @if (activeTab() === "detail") {
-      <button class="back-button p-8 typo-text-2" (click)="goBackToActionList()">
+      <button
+        class="back-button p-8 typo-text-2"
+        (click)="goBackToActionList()"
+      >
         ← Back to actions
       </button>
 
@@ -424,7 +453,11 @@
               >
                 Save
               </button>
-              <button class="alias-btn ghost" type="button" (click)="cancelAliasEdit()">
+              <button
+                class="alias-btn ghost"
+                type="button"
+                (click)="cancelAliasEdit()"
+              >
                 Cancel
               </button>
             </div>
@@ -436,7 +469,9 @@
                 (click)="beginAliasEdit(selectedDetail()!.entry)"
               >
                 {{
-                  selectedDetail()!.entry.aliasName ? "Edit nickname" : "Add nickname"
+                  selectedDetail()!.entry.aliasName
+                    ? "Edit nickname"
+                    : "Add nickname"
                 }}
               </button>
               @if (selectedDetail()!.entry.aliasName) {
@@ -449,7 +484,9 @@
                 </button>
               }
             </div>
-            @if (aliasNotice()?.key === getAliasEditKey(selectedDetail()!.entry)) {
+            @if (
+              aliasNotice()?.key === getAliasEditKey(selectedDetail()!.entry)
+            ) {
               <div class="alias-notice">
                 {{ aliasNotice()!.message }}
               </div>
@@ -556,7 +593,11 @@
                 [text]="getFunctionLabel(fn.name)"
                 [isDisabled]="isInteracting()"
                 [class.active-function]="selectedFunction() === fn.name"
-                [style]="selectedFunction() === fn.name ? 'opacity: 1' : 'opacity: 0.75'"
+                [style]="
+                  selectedFunction() === fn.name
+                    ? 'opacity: 1'
+                    : 'opacity: 0.75'
+                "
                 (buttonClick)="selectFunction(fn.name)"
               ></kc-button>
             }
@@ -589,8 +630,8 @@
             "
           >
             <span class="text-yellow typo-text-2"
-              >Two-phase signing: clicking the button will sign your part
-              and generate a partial spend JSON. Send it to the co-signer to
+              >Two-phase signing: clicking the button will sign your part and
+              generate a partial spend JSON. Send it to the co-signer to
               complete.</span
             >
           </div>
@@ -619,10 +660,10 @@
           "
         >
           <span class="text-gray-75 typo-text-2"
-            >A new Dead Man's Switch contract will be generated with the
-            same owner and heir but the updated expiry. Funds will move to
-            the new contract in the same transaction. The covenant lineage
-            is preserved.</span
+            >A new Dead Man's Switch contract will be generated with the same
+            owner and heir but the updated expiry. Funds will move to the new
+            contract in the same transaction. The covenant lineage is
+            preserved.</span
           >
         </div>
       }
@@ -677,10 +718,10 @@
           "
         >
           <span class="text-gray-75 typo-text-2"
-            >The current covenant UTXO will be spent and recreated as output
-            0 with the same covenant ID. The new covenant amount will be the
-            current balance plus the top-up amount before any contract-paid
-            fee deduction.</span
+            >The current covenant UTXO will be spent and recreated as output 0
+            with the same covenant ID. The new covenant amount will be the
+            current balance plus the top-up amount before any contract-paid fee
+            deduction.</span
           >
         </div>
       }
@@ -704,8 +745,8 @@
               }
             </select>
             <span class="text-gray-60 typo-text-2">
-              The full vault balance will be sent to the selected
-              whitelisted wallet.
+              The full vault balance will be sent to the selected whitelisted
+              wallet.
             </span>
           </div>
         } @else {
@@ -759,8 +800,8 @@
             "
           >
             <span class="text-gray-75 typo-text-2"
-              >Claiming sends the entire contract balance to this address —
-              Dead Man's Switch claims can't be partial.</span
+              >Claiming sends the entire contract balance to this address — Dead
+              Man's Switch claims can't be partial.</span
             >
           </div>
         } @else {
@@ -775,7 +816,9 @@
             >
               <div
                 (click)="!isInteracting() && fillMaxOutputAmount()"
-                [class]="isInteracting() ? 'max-text disabled' : 'max-text clickable'"
+                [class]="
+                  isInteracting() ? 'max-text disabled' : 'max-text clickable'
+                "
                 rightSideSlot
               >
                 <span>Max</span>
@@ -800,8 +843,8 @@
           "
         >
           <span class="text-gray-75 typo-text-2"
-            >Funds will be re-locked into the same contract (minus ~0.00001
-            KAS fee). No external withdrawal.</span
+            >Funds will be re-locked into the same contract (minus ~0.00001 KAS
+            fee). No external withdrawal.</span
           >
         </div>
       }
@@ -829,10 +872,12 @@
             border: 1px solid rgba(255, 193, 7, 0.2);
           "
         >
-          <span class="text-yellow typo-text-1 fw-bold">Partial spend created</span>
+          <span class="text-yellow typo-text-1 fw-bold"
+            >Partial spend created</span
+          >
           <span class="text-gray-75 typo-text-2"
-            >Your signature has been added. Copy the JSON below and send it
-            to the co-signer to complete the transaction.</span
+            >Your signature has been added. Copy the JSON below and send it to
+            the co-signer to complete the transaction.</span
           >
           <textarea
             class="contract-input"
@@ -860,9 +905,9 @@
         <summary>Complete co-signer transaction</summary>
         <div class="adv-body">
           <span class="text-gray-75 typo-text-2"
-            >Paste the partial spend JSON received from the co-signer, or
-            import it from a file. Your signature will be added and the
-            transaction broadcast.</span
+            >Paste the partial spend JSON received from the co-signer, or import
+            it from a file. Your signature will be added and the transaction
+            broadcast.</span
           >
           <textarea
             class="contract-input"
@@ -879,7 +924,9 @@
             (buttonClick)="importPartialSpendFromFile()"
           ></kc-button>
           <kc-button
-            [text]="isCompletingPartial() ? 'Completing...' : 'Sign & broadcast'"
+            [text]="
+              isCompletingPartial() ? 'Completing...' : 'Sign & broadcast'
+            "
             [isDisabled]="isCompletingPartial() || !importPartialJson"
             [isFullWidth]="true"
             (buttonClick)="completePartialSpend()"
@@ -965,7 +1012,9 @@
             class="cursor-pointer"
             [(ngModel)]="useSenderFee"
             [disabled]="isSenderFeeToggleDisabled(selectedFunction())"
-          /><span class="text-white typo-text-2">Use wallet to pay for fees</span></label
+          /><span class="text-white typo-text-2"
+            >Use wallet to pay for fees</span
+          ></label
         >
         <kc-icon
           [iconClass]="'icon-info'"
@@ -976,7 +1025,11 @@
         @if (selectedFunction() && isTopUpFunction(selectedFunction())) {
           <span class="text-gray-60 typo-text-2">
             Selected:
-            {{ useSenderFee ? "wallet pays fees" : "fees come from the top-up output" }}
+            {{
+              useSenderFee
+                ? "wallet pays fees"
+                : "fees come from the top-up output"
+            }}
           </span>
         }
       </div>
@@ -1004,9 +1057,9 @@
           "
         >
           <span class="text-yellow typo-text-2">
-            If wallet-paid fees are off, the top-up amount must be larger
-            than the transaction fee so the recreated covenant output
-            remains larger than the current covenant UTXO.
+            If wallet-paid fees are off, the top-up amount must be larger than
+            the transaction fee so the recreated covenant output remains larger
+            than the current covenant UTXO.
           </span>
         </div>
       }
@@ -1019,9 +1072,8 @@
           "
         >
           <span class="text-yellow typo-text-2">
-            Self-Custody sweep/finalize must pay fees from the wallet
-            because the withdrawal output must keep the full contract input
-            value.
+            Self-Custody sweep/finalize must pay fees from the wallet because
+            the withdrawal output must keep the full contract input value.
           </span>
         </div>
       }

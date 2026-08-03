@@ -108,7 +108,9 @@ export class ContractsDataService {
   ): number | undefined {
     const source = {
       ...(summary.constructor || {}),
-      ...this.templateService.argsArrayToRecord(summary.claimedArgs?.args || []),
+      ...this.templateService.argsArrayToRecord(
+        summary.claimedArgs?.args || [],
+      ),
       ...(utxoState || {}),
     };
     const raw =
@@ -679,7 +681,11 @@ export class ContractsDataService {
         latestAction: 'deploy',
         deadlineMs: this.extractDeadlineMs(summary),
         participants,
-        nextActionLabel: this.getNextActionLabel(contractName, status, currentRoles),
+        nextActionLabel: this.getNextActionLabel(
+          contractName,
+          status,
+          currentRoles,
+        ),
         actionHint:
           summary.claimVerified === false
             ? 'Template claim is not verified on-chain yet'

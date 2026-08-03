@@ -9,26 +9,11 @@ import {
   PLATFORM_ID,
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Dialog } from '@angular/cdk/dialog';
-import { firstValueFrom, Subscription } from 'rxjs';
-import {
-  DropdownOption,
-  KcButtonComponent,
-  KcDropdownSelectComponent,
-  KcIconComponent,
-  KcInputComponent,
-  KcNumberInputComponent,
-  KcStepperComponent,
-  KcTooltipDirective,
-  NotificationService,
-} from '@kaspacom/ui-kit';
+import { Subscription } from 'rxjs';
+import { DropdownOption, NotificationService } from '@kaspacom/ui-kit';
 import { WalletService } from '../../../../../services/wallet.service';
-import { WalletActionService } from '../../../../../services/wallet-action.service';
-import { QrScannerService } from '../../../../../services/qr-scanner.service';
-import { UtilsHelper } from '../../../../../services/utils.service';
 import { CovenantService } from '../../../../../services/covenant/covenant.service';
 import { RpcService } from '../../../../../services/kaspa-netwrok-services/rpc.service';
 import {
@@ -44,47 +29,23 @@ import {
   IndexerCovenantResponse,
   IndexerCovenantUtxo,
 } from '../../../../../services/covenant/covenant-indexer.service';
-import {
-  CompiledContract,
-  CovenantOutpoint,
-  PartiallySignedSpend,
-  SpendOutput,
-} from '../../../../../services/covenant/covenant-sdk/types';
-import type { CovenantFunctionArg } from '../../../../../services/covenant/covenant-sdk/covenant';
-import { CopyButtonComponent } from '../../../../shared/ui/copy-button/copy-button.component';
-import {
-  PartialSpendJsonDialogData,
-  PartialSpendJsonModalComponent,
-} from './components/partial-spend-json-modal/partial-spend-json-modal.component';
+import { CompiledContract } from '../../../../../services/covenant/covenant-sdk/types';
 import { ContractTemplate } from '../../../../services/covenant/contract-templates';
 import {
-  CtorArg,
   TemplatePatch,
   TemplatePatcherService,
 } from '../../../../services/covenant/template-patcher.service';
-import { KaspaL1NetworkService } from '../../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
-import { WalletActionType } from '../../../../../types/wallet-action';
-import {
-  CovenantCompletePartialActionResult,
-  CovenantSpendActionResult,
-} from '../../../../../types/wallet-action-result';
 import { FlowPagesService } from '../../../../services/flow-pages.service';
 import { WideWorkspaceService } from '../../../../services/wide-workspace.service';
 import {
   ApprovalFlowService,
   PendingActionConfirmation,
 } from '../../../../services/approval-flow.service';
-import { AddressSmartInputComponent } from '../../../../shared/ui/input/address-smart-input/address-smart-input.component';
-import { CovenantDateTimeInputComponent } from './covenant-date-time-input.component';
-import { WalletProfileOrbComponent } from '../../../../shared/ui/wallet-profile-orb/wallet-profile-orb.component';
-import { ContractActionFieldsComponent } from './components/contract-action-fields/contract-action-fields.component';
-
 import {
   TabName,
   ContractDetailTab,
   ContractsTransientState,
   IndexerImportPreview,
-  ContractDashboardSource,
   ContractDashboardFilter,
   ContractStatusFilter,
   ContractParticipant,
@@ -92,7 +53,6 @@ import {
   ContractDetailState,
   ContractDetailParameter,
   AvailableAction,
-  DeployIndexerState,
   ActionIndexerState,
   SELF_CUSTODY_WHITELIST_CAPACITY,
 } from './contracts-page.models';
@@ -120,18 +80,6 @@ import { ContractDetailComponent } from './components/contract-detail/contract-d
   imports: [
     CommonModule,
     FormsModule,
-    KcButtonComponent,
-    KcDropdownSelectComponent,
-    KcIconComponent,
-    KcInputComponent,
-    KcNumberInputComponent,
-    KcStepperComponent,
-    KcTooltipDirective,
-    CopyButtonComponent,
-    AddressSmartInputComponent,
-    CovenantDateTimeInputComponent,
-    WalletProfileOrbComponent,
-    ContractActionFieldsComponent,
     ContractTemplateDeployFormComponent,
     ContractsDashboardComponent,
     ContractLookupImportComponent,
@@ -149,22 +97,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private readonly MIN_CONTINUATION_AMOUNT_SOMPI = 50_000_000n;
 
   private walletService = inject(WalletService);
-  private walletActionService = inject(WalletActionService);
-  private qrScannerService = inject(QrScannerService);
-  private utilsHelper = inject(UtilsHelper);
   private covenantService = inject(CovenantService);
   private covenantIndexerService = inject(CovenantIndexerService);
   private rpcService = inject(RpcService);
   private registryService = inject(ContractRegistryService);
   private templatePatcher = inject(TemplatePatcherService);
-  private http = inject(HttpClient);
-  private kaspaL1NetworkService = inject(KaspaL1NetworkService);
   private flowPagesService = inject(FlowPagesService);
   wideWorkspaceService = inject(WideWorkspaceService);
   private approvalFlowService = inject(ApprovalFlowService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private dialog = inject(Dialog);
   private platformId = inject(PLATFORM_ID);
   private notificationService = inject(NotificationService);
   private isBrowser = isPlatformBrowser(this.platformId);

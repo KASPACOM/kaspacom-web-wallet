@@ -13,6 +13,10 @@ export type TabName =
   | 'my-contracts'
   | 'lookup-import'
   | 'interact'
+  // Confirmed unreachable: activeTab is never set to 'templates' by any nav
+  // button or .set() call. Left in the union rather than removed pending a
+  // separate decision on the dead 'templates' tab markup this once paired
+  // with (already gone from the current shell template).
   | 'templates'
   | 'detail';
 export type ContractDetailTab = 'details' | 'action';

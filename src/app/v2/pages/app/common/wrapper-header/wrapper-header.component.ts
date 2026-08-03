@@ -7,7 +7,6 @@ import {
 } from '@kaspacom/ui-kit';
 import { environment } from '../../../../../../environments/environment';
 import { EthereumWalletChainManager } from '../../../../../services/etherium-services/etherium-wallet-chain.manager';
-import { UtilsHelper } from '../../../../../services/utils.service';
 import { WalletService } from '../../../../../services/wallet.service';
 import { AccountSettingsService } from '../../../../services/account-settings.service';
 import { FlowPagesService } from '../../../../services/flow-pages.service';
@@ -32,7 +31,6 @@ import { KaspaL1NetworkService } from '../../../../../services/kaspa-netwrok-ser
 export class WrapperHeaderComponent {
   router = inject(Router);
   walletService = inject(WalletService);
-  utilsHelper = inject(UtilsHelper);
   accountSettingsService = inject(AccountSettingsService);
   flowPagesService = inject(FlowPagesService);
   ethereumWalletChainManager = inject(EthereumWalletChainManager);
@@ -46,8 +44,10 @@ export class WrapperHeaderComponent {
     const chainId = this.ethereumWalletChainManager.getCurrentChainSignal()();
     if (isL2 && chainId) {
       const normalizedId = chainId.toLowerCase();
-      const envConfig = this.ethereumWalletChainManager.getChainEnvConfig(normalizedId);
-      const chainConfig = this.ethereumWalletChainManager.getChainConfig(normalizedId);
+      const envConfig =
+        this.ethereumWalletChainManager.getChainEnvConfig(normalizedId);
+      const chainConfig =
+        this.ethereumWalletChainManager.getChainConfig(normalizedId);
       return {
         name: envConfig?.shortName || chainConfig?.chainName,
         icon: envConfig?.icon || CHAIN_ID_LOGOS[normalizedId] || null,
@@ -70,13 +70,6 @@ export class WrapperHeaderComponent {
   accountName = computed(() => {
     const wallet = this.currentWallet();
     return wallet?.getAccountName() || 'Account 1';
-  });
-
-  walletAddress = this.walletService.getCurrentDisplayWalletAddressAsString;
-
-  shortenedAddress = computed(() => {
-    const address = this.walletAddress();
-    return address ? this.utilsHelper.shortenAddress(address) : '';
   });
 
   onSettingsClick(): void {

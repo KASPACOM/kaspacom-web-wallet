@@ -164,6 +164,8 @@ type ContractDashboardEntry = {
   deployTxid?: string;
   latestTxid?: string;
   latestAction?: string;
+  /** blockTimeMs of the action behind latestTxid/latestAction, used to compare recency against other sources. */
+  latestActionAtMs?: number;
   deadlineMs?: number;
   participants: ContractParticipant[];
   nextActionLabel: string;
@@ -1754,6 +1756,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (updates.compiledJson) {
       this.localParticipantsCache.clear();
     }
+    // An action just executed locally, so it's by definition the freshest
+    // known state for this contract — surface it on the card immediately
+    // rather than waiting for the next full loadContracts()/indexer merge
+    // (which may still lag until the indexer catches up).
+    const optimisticLatest = updates.lastActionType
+      ? {
+          latestAction: updates.lastActionType,
+          latestTxid:
+            updates.lastActionTxid ||
+            updates.spendTxid ||
+            updates.outpoint?.txid,
+        }
+      : undefined;
     let updatedRegistryEntry: ContractRegistryEntry | undefined;
     this.allRegistryContracts.set(
       this.allRegistryContracts().map((contract) => {
@@ -1801,6 +1816,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
                 ...entry.registryEntry,
                 ...updates,
               },
+              ...optimisticLatest,
             })
           : entry,
       ),
@@ -1816,6 +1832,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
                 ...detail.entry.registryEntry,
                 ...updates,
               },
+              ...optimisticLatest,
             }),
           }
         : detail,
@@ -2091,7 +2108,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     );
 
     for (const rows of rowsByIdentifier) {
-      const entries = rows
+      const filteredRows = rows
         // Do not add `classification=covenant` here. Fresh wallet-created
         // template contracts can be indexed as `unknown/unrevealed` while still
         // carrying a trusted claimedTemplate/claimedArgs payload, so filtering by
@@ -2100,8 +2117,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           this.supportedIndexerTemplates.includes(
             this.getIndexerTemplateName(row),
           ),
-        )
-        .map((row) => this.indexerSummaryToDashboard(row));
+        );
+      const entries = await Promise.all(
+        filteredRows.map(async (row) =>
+          this.indexerSummaryToDashboard(
+            row,
+            await this.fetchLatestIndexerAction(row),
+          ),
+        ),
+      );
       for (const entry of entries) {
         byKey.set(this.getDashboardIdentityKey(entry), entry);
       }
@@ -2155,6 +2179,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         merged.delete(this.getDashboardIdentityKey(matchedLocal));
       }
 
+      // The indexer is normally the source of truth for the latest action,
+      // but it only knows about what it has indexed — a keepAlive/claim/etc.
+      // the wallet just broadcast locally can be newer than anything the
+      // indexer has seen yet. Prefer whichever side actually has the more
+      // recent action rather than always trusting the indexer.
+      const localActionAtMs =
+        local?.registryEntry?.lastActionType && local.registryEntry.lastActionAt
+          ? local.registryEntry.lastActionAt
+          : undefined;
+      const preferLocalLatest =
+        localActionAtMs !== undefined &&
+        localActionAtMs > (entry.latestActionAtMs ?? 0);
+
       merged.set(
         local?.id || key,
         this.withDashboardName({
@@ -2167,8 +2204,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           source: local ? 'both' : entry.source,
           status: entry.status,
           amountSompi: entry.amountSompi,
-          latestTxid: entry.latestTxid,
-          latestAction: entry.latestAction,
+          latestTxid: preferLocalLatest ? local?.latestTxid : entry.latestTxid,
+          latestAction: preferLocalLatest
+            ? local?.latestAction
+            : entry.latestAction,
+          latestActionAtMs: preferLocalLatest
+            ? localActionAtMs
+            : entry.latestActionAtMs,
           participants: this.mergeParticipants(
             local?.participants,
             entry.participants,
@@ -2209,6 +2251,30 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return merged;
   }
 
+  /**
+   * `spendTxid` only covers a terminal full withdrawal; continuation actions
+   * (keepAlive, changeHeir, partial claim/withdraw, topUp) instead record
+   * what they did in `lastActionType`/`lastActionTxid` at the moment they're
+   * executed, so the overview can show the real latest action locally until
+   * the indexer catches up.
+   */
+  private localLatestAction(contract: ContractRegistryEntry): {
+    latestTxid?: string;
+    latestAction?: string;
+  } {
+    if (contract.lastActionType) {
+      return {
+        latestTxid: contract.lastActionTxid || contract.outpoint?.txid,
+        latestAction: contract.lastActionType,
+      };
+    }
+    return {
+      latestTxid:
+        contract.spendTxid || contract.outpoint?.txid || contract.deployTxid,
+      latestAction: contract.spendTxid ? 'spend' : 'deploy',
+    };
+  }
+
   private async localEntryToDashboard(
     contract: ContractRegistryEntry,
   ): Promise<ContractDashboardEntry> {
@@ -2226,9 +2292,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       currentAddress: contract.contractAddress,
       covenantId: contract.covenantId,
       deployTxid: contract.deployTxid,
-      latestTxid:
-        contract.spendTxid || contract.outpoint?.txid || contract.deployTxid,
-      latestAction: contract.spendTxid ? 'spend' : 'deploy',
+      ...this.localLatestAction(contract),
       deadlineMs: await this.extractLocalDmsDeadlineMs(contract, contractName),
       participants,
       nextActionLabel: this.getNextActionLabel(
@@ -2274,8 +2338,34 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * The list endpoint's summary payload has no action history — only the
+   * genesis txid — so the actual latest action (keepAlive/claim/withdraw/...)
+   * has to be fetched per covenant from the actions endpoint. Best-effort:
+   * a failure here just falls back to showing the deploy, same as before.
+   */
+  private async fetchLatestIndexerAction(
+    summary: IndexerCovenantDetails,
+  ): Promise<IndexerCovenantAction | undefined> {
+    const identifier = summary.covenantIdHex || summary.scriptHashHex;
+    if (!identifier) return undefined;
+    try {
+      const actions =
+        await this.covenantIndexerService.getCovenantActions(identifier);
+      return this.latestAction(actions);
+    } catch (error) {
+      console.warn(
+        '[Contracts] Failed to load latest action for covenant',
+        identifier,
+        error,
+      );
+      return undefined;
+    }
+  }
+
   private indexerSummaryToDashboard(
     summary: IndexerCovenantDetails,
+    latestAction?: IndexerCovenantAction,
   ): ContractDashboardEntry {
     const contractName = this.getIndexerTemplateName(summary);
     const participants = this.indexerParticipants(summary);
@@ -2297,8 +2387,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       covenantId: summary.covenantIdHex,
       scriptHash: summary.scriptHashHex,
       deployTxid: summary.genesisTxidHex,
-      latestTxid: summary.genesisTxidHex,
-      latestAction: 'deploy',
+      latestTxid: latestAction?.txidHex || summary.genesisTxidHex,
+      latestAction:
+        latestAction?.entrypoint || latestAction?.action || 'deploy',
+      latestActionAtMs: latestAction?.blockTimeMs,
       deadlineMs: this.extractDeadlineMs(summary),
       participants,
       nextActionLabel: this.getNextActionLabel(
@@ -5323,6 +5415,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             await this.updateRegistryContract(this.selectedContractId(), {
               status: 'spent',
               spendTxid: result.txid,
+              lastActionType: result.functionName,
+              lastActionTxid: result.txid,
+              lastActionAt: Date.now(),
               lastChecked: Date.now(),
             });
             void this.trackActionIndexing(
@@ -5568,6 +5663,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             amountSompi: outputs[0].amount.toString(),
             covenantId:
               this.selectedContract()?.covenantId || result.covenantId,
+            lastActionType: result.functionName,
+            lastActionTxid: result.txid,
+            lastActionAt: Date.now(),
           });
           this.interactOutpointTxid = result.txid;
           this.interactOutpointVout = '0';
@@ -5585,6 +5683,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
               lastChecked: Date.now(),
               outpoint: { txid: result.txid, vout: continuationOutputIndex },
               amountSompi: continuationAmount.toString(),
+              lastActionType: result.functionName,
+              lastActionTxid: result.txid,
+              lastActionAt: Date.now(),
             });
             this.interactOutpointTxid = result.txid;
             this.interactOutpointVout = continuationOutputIndex.toString();
@@ -5594,6 +5695,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             await this.updateRegistryContract(this.selectedContractId(), {
               status: 'spent',
               spendTxid: result.txid,
+              lastActionType: result.functionName,
+              lastActionTxid: result.txid,
+              lastActionAt: Date.now(),
               lastChecked: Date.now(),
             });
           }
@@ -5603,6 +5707,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             lastChecked: Date.now(),
             outpoint: { txid: result.txid, vout: 0 },
             amountSompi: inputAmount.toString(), // The registry doesn't accurately know the post-fee amount until refreshed, but setting inputAmount is close enough
+            lastActionType: result.functionName,
+            lastActionTxid: result.txid,
+            lastActionAt: Date.now(),
           });
           // Update the interact form with the new outpoint
           this.interactOutpointTxid = result.txid;
@@ -5769,6 +5876,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         accessRoles: this.parseAccessRoles(nextCompiled),
         outpoint: { txid: result.txid, vout: 0 },
         amountSompi: inputAmount.toString(),
+        lastActionType: 'keepAlive',
+        lastActionTxid: result.txid,
+        lastActionAt: Date.now(),
         lastChecked: Date.now(),
       });
     }
@@ -5871,6 +5981,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         accessRoles: this.parseAccessRoles(nextCompiled),
         outpoint: { txid: result.txid, vout: 0 },
         amountSompi: inputAmount.toString(),
+        lastActionType: 'changeHeir',
+        lastActionTxid: result.txid,
+        lastActionAt: Date.now(),
         lastChecked: Date.now(),
       });
     }
@@ -6211,6 +6324,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       arbitrate: 'Arbitrate',
       recover: 'Recover',
       withdraw: 'Withdraw',
+      changeHeir: 'Change Heir',
+      topUp: 'Top Up',
+      increment: 'Increment',
     };
     return labels[action] || action;
   }
@@ -6928,11 +7044,17 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             lastChecked: Date.now(),
             outpoint: { txid: result.txid, vout: continuationOutputIndex },
             amountSompi: partial.outputs[continuationOutputIndex].amountSompi,
+            lastActionType: result.functionName,
+            lastActionTxid: result.txid,
+            lastActionAt: Date.now(),
           });
         } else {
           await this.updateRegistryContract(this.selectedContractId(), {
             status: 'spent',
             spendTxid: result.txid,
+            lastActionType: result.functionName,
+            lastActionTxid: result.txid,
+            lastActionAt: Date.now(),
             lastChecked: Date.now(),
           });
         }

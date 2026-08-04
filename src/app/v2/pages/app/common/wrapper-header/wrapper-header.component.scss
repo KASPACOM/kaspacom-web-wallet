@@ -50,10 +50,13 @@
 
   &__info {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 2px;
+    align-items: center;
     min-width: 0;
+
+    // Drop the wallet name entirely on narrow screens rather than ellipsis it
+    @media (max-width: 400px) {
+      display: none;
+    }
   }
 
   &__wallet-name {
@@ -64,17 +67,6 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  &__account-name {
-    font-weight: 500;
-    font-size: 12px;
-    line-height: 1.2;
-    color: var(--gray-60);
-    letter-spacing: 0.2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

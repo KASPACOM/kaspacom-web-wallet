@@ -67,11 +67,6 @@ export class WrapperHeaderComponent {
     return wallet?.getName() || 'Wallet';
   });
 
-  accountName = computed(() => {
-    const wallet = this.currentWallet();
-    return wallet?.getAccountName() || 'Account 1';
-  });
-
   onSettingsClick(): void {
     this.flowPagesService.openFlow({
       id: 'settings-menu' as FlowPageId,

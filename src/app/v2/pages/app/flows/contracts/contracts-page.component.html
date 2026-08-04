@@ -2964,7 +2964,9 @@
             </div>
             <div class="form-group flex column gap-8">
               <kc-number-input
-                [label]="isDmsClaim() ? 'Claim amount (KAS)' : 'Withdraw amount (KAS)'"
+                [label]="
+                  isDmsClaim() ? 'Claim amount (KAS)' : 'Withdraw amount (KAS)'
+                "
                 [placeholder]="'0'"
                 [min]="'0'"
                 [isDisabled]="isInteracting()"
@@ -2974,9 +2976,7 @@
                 <div
                   (click)="!isInteracting() && fillMaxOutputAmount()"
                   [class]="
-                    isInteracting()
-                      ? 'max-text disabled'
-                      : 'max-text clickable'
+                    isInteracting() ? 'max-text disabled' : 'max-text clickable'
                   "
                   rightSideSlot
                 >
@@ -2993,11 +2993,11 @@
                 "
               >
                 <span class="text-yellow typo-text-2"
-                  >Leaving a balance behind keeps it secured under the same
-                  heir and deadline — but the owner can still call Keep Alive
-                  at any time (even after the deadline passes) to reset the
-                  countdown on it. Claim the full balance if you want to
-                  guarantee you receive it now.</span
+                  >Leaving a balance behind keeps it secured under the same heir
+                  and deadline — but the owner can still call Keep Alive at any
+                  time (even after the deadline passes) to reset the countdown
+                  on it. Claim the full balance if you want to guarantee you
+                  receive it now.</span
                 >
               </div>
             }

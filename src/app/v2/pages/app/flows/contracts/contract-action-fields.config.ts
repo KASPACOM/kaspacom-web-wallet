@@ -1,10 +1,5 @@
 export type ActionFieldType =
-  | 'address'
-  | 'amount'
-  | 'timestamp'
-  | 'extra-int'
-  | 'extra-bool'
-  | 'banner';
+  'address' | 'amount' | 'timestamp' | 'extra-int' | 'extra-bool' | 'banner';
 
 interface ActionFieldBase {
   type: ActionFieldType;
@@ -129,7 +124,7 @@ export const CONTRACT_ACTION_FIELDS: ContractActionFieldConfig = {
         {
           type: 'banner',
           tone: 'warning',
-          text: "Leaving a balance behind keeps it secured under the same heir and deadline — but the owner can still call Keep Alive at any time (even after the deadline passes) to reset the countdown on it. Claim the full balance if you want to guarantee you receive it now.",
+          text: 'Leaving a balance behind keeps it secured under the same heir and deadline — but the owner can still call Keep Alive at any time (even after the deadline passes) to reset the countdown on it. Claim the full balance if you want to guarantee you receive it now.',
         },
       ],
     },

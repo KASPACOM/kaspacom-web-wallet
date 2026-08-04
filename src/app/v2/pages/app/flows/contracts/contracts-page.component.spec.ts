@@ -1,11 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { PLATFORM_ID } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import {
-  ActivatedRoute,
-  Router,
-  convertToParamMap,
-} from '@angular/router';
+import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
 import { of } from 'rxjs';
 import { NotificationService } from '@kaspacom/ui-kit';
@@ -51,8 +47,20 @@ const DMS_COMPILED_CONTRACT: CompiledContract = {
         return_types: [],
         body: [],
       },
-      { name: 'topUp', params: [], entrypoint: true, return_types: [], body: [] },
-      { name: 'claim', params: [], entrypoint: true, return_types: [], body: [] },
+      {
+        name: 'topUp',
+        params: [],
+        entrypoint: true,
+        return_types: [],
+        body: [],
+      },
+      {
+        name: 'claim',
+        params: [],
+        entrypoint: true,
+        return_types: [],
+        body: [],
+      },
     ],
   },
   abi: [
@@ -78,7 +86,7 @@ const DMS_COMPILED_CONTRACT: CompiledContract = {
 const COVENANT_ADDRESS = 'kaspatest:qzcovenantaddressmock';
 const HEIR_ADDRESS = 'kaspatest:qzheiraddressmock';
 
-describe('ContractsPageComponent — Dead Man\'s Switch partial claim', () => {
+describe("ContractsPageComponent — Dead Man's Switch partial claim", () => {
   let component: ContractsPageComponent;
   let walletActionServiceSpy: jasmine.SpyObj<WalletActionService>;
   let covenantServiceSpy: jasmine.SpyObj<CovenantService>;
@@ -128,8 +136,8 @@ describe('ContractsPageComponent — Dead Man\'s Switch partial claim', () => {
       'parseCompiledContract',
     ]);
     covenantServiceSpy.getContractAddress.and.returnValue(COVENANT_ADDRESS);
-    covenantServiceSpy.parseCompiledContract.and.callFake(
-      (json: string) => JSON.parse(json),
+    covenantServiceSpy.parseCompiledContract.and.callFake((json: string) =>
+      JSON.parse(json),
     );
 
     const covenantIndexerServiceSpy = jasmine.createSpyObj(
@@ -220,11 +228,17 @@ describe('ContractsPageComponent — Dead Man\'s Switch partial claim', () => {
         { provide: QrScannerService, useValue: qrScannerServiceSpy },
         { provide: UtilsHelper, useValue: utilsHelperSpy },
         { provide: CovenantService, useValue: covenantServiceSpy },
-        { provide: CovenantIndexerService, useValue: covenantIndexerServiceSpy },
+        {
+          provide: CovenantIndexerService,
+          useValue: covenantIndexerServiceSpy,
+        },
         { provide: RpcService, useValue: rpcServiceSpy },
         { provide: ContractRegistryService, useValue: registryServiceSpy },
         { provide: TemplatePatcherService, useValue: templatePatcherSpy },
-        { provide: HttpClient, useValue: jasmine.createSpyObj('HttpClient', ['get']) },
+        {
+          provide: HttpClient,
+          useValue: jasmine.createSpyObj('HttpClient', ['get']),
+        },
         { provide: KaspaL1NetworkService, useValue: kaspaL1NetworkServiceSpy },
         { provide: FlowPagesService, useValue: flowPagesServiceSpy },
         { provide: WideWorkspaceService, useValue: wideWorkspaceServiceSpy },
@@ -257,7 +271,11 @@ describe('ContractsPageComponent — Dead Man\'s Switch partial claim', () => {
     component.interactOutputAmount = options.outputAmountKas;
   }
 
-  function lastSpendOutputs(): { address: string; amount: bigint; covenantId?: string }[] {
+  function lastSpendOutputs(): {
+    address: string;
+    amount: bigint;
+    covenantId?: string;
+  }[] {
     const call =
       walletActionServiceSpy.validateAndDoActionAfterApproval.calls.mostRecent();
     return (call.args[0] as any).data.outputs;
@@ -273,7 +291,11 @@ describe('ContractsPageComponent — Dead Man\'s Switch partial claim', () => {
       );
       expect(outputs).toEqual([
         { address: HEIR_ADDRESS, amount: 100_000_000n },
-        { address: COVENANT_ADDRESS, amount: 100_000_000n, covenantId: undefined },
+        {
+          address: COVENANT_ADDRESS,
+          amount: 100_000_000n,
+          covenantId: undefined,
+        },
       ]);
     });
 
@@ -284,7 +306,9 @@ describe('ContractsPageComponent — Dead Man\'s Switch partial claim', () => {
         HEIR_ADDRESS,
         200_000_000n,
       );
-      expect(outputs).toEqual([{ address: HEIR_ADDRESS, amount: 200_000_000n }]);
+      expect(outputs).toEqual([
+        { address: HEIR_ADDRESS, amount: 200_000_000n },
+      ]);
     });
 
     it('supports multiple sequential partial withdrawals against the shrinking balance', () => {
@@ -348,7 +372,11 @@ describe('ContractsPageComponent — Dead Man\'s Switch partial claim', () => {
 
       expect(lastSpendOutputs()).toEqual([
         { address: HEIR_ADDRESS, amount: 100_000_000n },
-        { address: COVENANT_ADDRESS, amount: 100_000_000n, covenantId: undefined },
+        {
+          address: COVENANT_ADDRESS,
+          amount: 100_000_000n,
+          covenantId: undefined,
+        },
       ]);
       expect(registryServiceSpy.updateContract).toHaveBeenCalledWith(
         'registry-entry-1',
@@ -373,7 +401,10 @@ describe('ContractsPageComponent — Dead Man\'s Switch partial claim', () => {
       ]);
       expect(registryServiceSpy.updateContract).toHaveBeenCalledWith(
         'registry-entry-1',
-        jasmine.objectContaining({ status: 'spent', spendTxid: 'f'.repeat(64) }),
+        jasmine.objectContaining({
+          status: 'spent',
+          spendTxid: 'f'.repeat(64),
+        }),
       );
     });
 

@@ -14,7 +14,9 @@ async function fetchBalanceKas(address: string): Promise<number> {
   if (!res.ok) throw new Error(`explorer ${res.status}`);
   const body = (await res.json()) as { balance?: number | string };
   const sompi =
-    typeof body.balance === 'string' ? Number(body.balance) : (body.balance ?? 0);
+    typeof body.balance === 'string'
+      ? Number(body.balance)
+      : (body.balance ?? 0);
   return sompi / SOMPI_PER_KAS;
 }
 
@@ -63,7 +65,10 @@ async function suppressCookieBanner(page: Page): Promise<void> {
 }
 
 async function openContractsTab(page: Page): Promise<void> {
-  await page.locator('div', { hasText: /^Contracts$/ }).first().click();
+  await page
+    .locator('div', { hasText: /^Contracts$/ })
+    .first()
+    .click();
 }
 
 async function openContractDetails(page: Page): Promise<void> {
@@ -141,7 +146,9 @@ async function returnToContractDetails(page: Page): Promise<void> {
 }
 
 async function openClaimForm(page: Page): Promise<void> {
-  await page.getByRole('button', { name: ' Claim Claim the inheritance' }).click();
+  await page
+    .getByRole('button', { name: ' Claim Claim the inheritance' })
+    .click();
 }
 
 /**
@@ -180,7 +187,10 @@ test.describe("Dead Man's Switch — partial claim", () => {
     await suppressCookieBanner(page);
     await authenticateFundedWallet(page);
     const address = await readWalletAddress(page);
-    testInfo.annotations.push({ type: 'owner-heir-address', description: address });
+    testInfo.annotations.push({
+      type: 'owner-heir-address',
+      description: address,
+    });
 
     const balanceBeforeDeploy = await fetchBalanceKas(address);
     testInfo.annotations.push({
@@ -198,9 +208,13 @@ test.describe("Dead Man's Switch — partial claim", () => {
     const deadlineValue = localDateTimeValue(70_000);
     await page.locator('input[type="datetime-local"]').fill(deadlineValue);
     const deployAmountKas = 6;
-    await page.getByRole('textbox', { name: '0.5' }).fill(String(deployAmountKas));
+    await page
+      .getByRole('textbox', { name: '0.5' })
+      .fill(String(deployAmountKas));
 
-    await page.getByRole('button', { name: 'Review and deploy covenant' }).click();
+    await page
+      .getByRole('button', { name: 'Review and deploy covenant' })
+      .click();
     await page.getByRole('button', { name: 'Approve' }).click();
     await expect(page.getByText('Transaction Successful!')).toBeVisible({
       timeout: 30_000,
@@ -260,7 +274,9 @@ test.describe("Dead Man's Switch — partial claim", () => {
     expect(balanceDuringValidation).toBeGreaterThan(
       balanceBeforeDeploy - deployAmountKas - 0.02,
     );
-    expect(balanceDuringValidation).toBeLessThan(balanceBeforeDeploy - deployAmountKas + 0.001);
+    expect(balanceDuringValidation).toBeLessThan(
+      balanceBeforeDeploy - deployAmountKas + 0.001,
+    );
 
     // ── Sequential partial claims: 2 KAS, then 1.5 KAS.
     await page.getByRole('textbox', { name: '0' }).fill('2');

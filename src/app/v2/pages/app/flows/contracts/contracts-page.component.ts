@@ -92,6 +92,11 @@ import {
 } from './contract-action-fields.config';
 import { ContractActionFieldsComponent } from './components/contract-action-fields/contract-action-fields.component';
 
+// Caps how many /actions lookups run at once per identifier when building
+// the indexer dashboard, so a wallet with many covenants doesn't burst past
+// browser connection limits / indexer rate limits.
+const INDEXER_ACTION_FETCH_CONCURRENCY = 5;
+
 type TabName =
   | 'deploy'
   | 'my-contracts'
@@ -2118,14 +2123,20 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
             this.getIndexerTemplateName(row),
           ),
         );
-      const entries = await Promise.all(
-        filteredRows.map(async (row) =>
-          this.indexerSummaryToDashboard(
-            row,
-            await this.fetchLatestIndexerAction(row),
+      const jobResults =
+        await this.utilsHelper.runJobsConcurrently<ContractDashboardEntry>(
+          filteredRows.map(
+            (row) => async () =>
+              this.indexerSummaryToDashboard(
+                row,
+                await this.fetchLatestIndexerAction(row),
+              ),
           ),
-        ),
-      );
+          INDEXER_ACTION_FETCH_CONCURRENCY,
+        );
+      const entries = jobResults
+        .filter((jobResult) => jobResult.jobCompleted)
+        .map((jobResult) => jobResult.result!);
       for (const entry of entries) {
         byKey.set(this.getDashboardIdentityKey(entry), entry);
       }

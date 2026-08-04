@@ -38,6 +38,8 @@ export class CovenantTemplateService {
     Promise<{ compiled: CompiledContract; descriptor: TemplatePatch }>
   >();
 
+  private readonly contractsDebugEnabled = false;
+
   templateById(id: string): ContractTemplate | undefined {
     return CONTRACT_TEMPLATES.find((template) => template.id === id);
   }
@@ -64,6 +66,7 @@ export class CovenantTemplateService {
         ),
       };
     })();
+    promise.catch(() => this.templatePatchContextCache.delete(templateId));
     this.templatePatchContextCache.set(templateId, promise);
     return promise;
   }
@@ -374,6 +377,7 @@ export class CovenantTemplateService {
     context: string,
     details: Record<string, unknown>,
   ): void {
+    if (!this.contractsDebugEnabled) return;
     console.log(
       `[SelfCustodyVault] ${context}`,
       JSON.parse(

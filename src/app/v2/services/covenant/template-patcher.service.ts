@@ -16,6 +16,11 @@ export interface TemplateParam {
 export interface TemplatePatch {
   contractName: string;
   params: TemplateParam[];
+  scriptSize?: {
+    value: number;
+    positions: { offset: number; length: number }[];
+    placeholderBytes: number[];
+  };
 }
 
 @Injectable({
@@ -27,7 +32,7 @@ export class TemplatePatcherService {
       throw new Error(`Expected integer value, received ${value}`);
     }
 
-    if (value === 0 || value === -1 || (value >= 1 && value <= 16)) {
+    if (value === 0) {
       return [];
     }
 
@@ -79,6 +84,16 @@ export class TemplatePatcherService {
     templateArgs: CtorArg[],
   ): TemplatePatch {
     const script = this.assertNumberArray(compiled?.script, 'compiled.script');
+    const scriptSizePlaceholderBytes = this.encodePushData(
+      this.encodeScriptInt(script.length),
+    );
+    const scriptSizePositions = this.findAllOccurrences(
+      script,
+      scriptSizePlaceholderBytes,
+    ).map((offset) => ({
+      offset,
+      length: scriptSizePlaceholderBytes.length,
+    }));
     const params = Array.isArray(compiled?.ast?.params)
       ? compiled.ast.params
       : [];
@@ -100,7 +115,7 @@ export class TemplatePatcherService {
         const paramType = this.getParamType(param, arg, isFieldInit);
         const rawPlaceholderBytes = this.argToBytes(arg, isFieldInit);
         const placeholderBytes =
-          paramType === 'pubkey[]'
+          paramType === 'pubkey[]' || paramType === 'int'
             ? this.encodePushData(rawPlaceholderBytes)
             : rawPlaceholderBytes;
         const positions = this.findAllOccurrences(script, placeholderBytes).map(
@@ -134,6 +149,14 @@ export class TemplatePatcherService {
     return {
       contractName: compiled?.contract_name || 'Unnamed Contract',
       params: descriptorParams,
+      scriptSize:
+        scriptSizePositions.length > 0
+          ? {
+              value: script.length,
+              positions: scriptSizePositions,
+              placeholderBytes: scriptSizePlaceholderBytes,
+            }
+          : undefined,
     };
   }
 
@@ -149,6 +172,7 @@ export class TemplatePatcherService {
       template?.script,
       'template.script',
     ).slice();
+    const originalScriptLength = script.length;
 
     if (params.length !== newArgs.length) {
       throw new Error(
@@ -183,10 +207,14 @@ export class TemplatePatcherService {
         );
       }
       const replacementBytes =
-        patch.paramType === 'pubkey[]'
+        patch.paramType === 'pubkey[]' || patch.paramType === 'int'
           ? this.encodePushData(rawReplacementBytes)
           : rawReplacementBytes;
-      if (replacementBytes.length !== patch.placeholderBytes.length) {
+      if (
+        patch.paramType !== 'pubkey[]' &&
+        patch.paramType !== 'int' &&
+        replacementBytes.length !== patch.placeholderBytes.length
+      ) {
         throw new Error(
           `Size mismatch for "${patch.name}": placeholder=${patch.placeholderBytes.length}B, replacement=${replacementBytes.length}B`,
         );
@@ -219,6 +247,17 @@ export class TemplatePatcherService {
 
       script.splice(position.offset, position.length, ...bytes);
     }
+
+    this.patchEmbeddedScriptSize(
+      script,
+      descriptor,
+      replacements.map((replacement) => ({
+        offset: replacement.position.offset,
+        oldLength: replacement.position.length,
+        newLength: replacement.bytes.length,
+      })),
+      originalScriptLength,
+    );
 
     return {
       ...template,
@@ -327,6 +366,65 @@ export class TemplatePatcherService {
     }
 
     throw new Error(`Pushdata payload is too large: ${bytes.length} bytes`);
+  }
+
+  private patchEmbeddedScriptSize(
+    script: number[],
+    descriptor: TemplatePatch,
+    replacements: Array<{
+      offset: number;
+      oldLength: number;
+      newLength: number;
+    }>,
+    originalScriptLength: number,
+  ): void {
+    const scriptSize = descriptor.scriptSize;
+    if (!scriptSize || script.length === originalScriptLength) {
+      return;
+    }
+
+    const replacementBytes = this.encodePushData(
+      this.encodeScriptInt(script.length),
+    );
+    if (replacementBytes.length !== scriptSize.placeholderBytes.length) {
+      throw new Error(
+        `Cannot patch embedded script size: placeholder=${scriptSize.placeholderBytes.length}B, replacement=${replacementBytes.length}B`,
+      );
+    }
+
+    for (const position of scriptSize.positions) {
+      const adjustedOffset = this.adjustOffsetAfterReplacements(
+        position.offset,
+        replacements,
+      );
+      for (let offset = 0; offset < position.length; offset += 1) {
+        if (
+          script[adjustedOffset + offset] !==
+          scriptSize.placeholderBytes[offset]
+        ) {
+          throw new Error(
+            `Script corruption detected while patching embedded script size at ${adjustedOffset + offset}`,
+          );
+        }
+      }
+      script.splice(adjustedOffset, position.length, ...replacementBytes);
+    }
+  }
+
+  private adjustOffsetAfterReplacements(
+    offset: number,
+    replacements: Array<{
+      offset: number;
+      oldLength: number;
+      newLength: number;
+    }>,
+  ): number {
+    return replacements.reduce((adjusted, replacement) => {
+      if (replacement.offset < offset) {
+        return adjusted + replacement.newLength - replacement.oldLength;
+      }
+      return adjusted;
+    }, offset);
   }
 
   private findAllOccurrences(haystack: number[], needle: number[]): number[] {

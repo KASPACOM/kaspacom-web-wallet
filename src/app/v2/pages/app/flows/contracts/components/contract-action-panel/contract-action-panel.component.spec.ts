@@ -45,8 +45,9 @@ describe('ContractActionPanelComponent', () => {
       ],
     });
 
-    component = TestBed.createComponent(ContractActionPanelComponent)
-      .componentInstance;
+    component = TestBed.createComponent(
+      ContractActionPanelComponent,
+    ).componentInstance;
   });
 
   describe('getSelfCustodySweepDropdownOptions', () => {

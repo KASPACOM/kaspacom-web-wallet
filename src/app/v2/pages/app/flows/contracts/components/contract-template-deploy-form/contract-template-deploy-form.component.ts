@@ -523,7 +523,7 @@ export class ContractTemplateDeployFormComponent {
         'Keep this wallet separate from the hot wallet. It can sweep funds immediately in an emergency.',
       whitelistedDestinations:
         'Choose send anywhere for no destination restriction, or allow only listed wallets for withdrawals.',
-      initUnvaultDelaySeconds: `This is a DAA-score delay, not wall-clock seconds. The hours value is only an estimate using the current ${this.networkBlocksPerSecond()} BPS network rate. If Kaspa BPS changes later, recreate the vault or use a larger DAA delay because the on-chain contract stores only the DAA amount.`,
+      unvaultDelaySeconds: `This is a DAA-score delay, not wall-clock seconds. The hours value is only an estimate using the current ${this.networkBlocksPerSecond()} BPS network rate. If Kaspa BPS changes later, recreate the vault or use a larger DAA delay because the on-chain contract stores only the DAA amount.`,
       timeout:
         'The earliest date when the recovery wallet can use the backup withdrawal path.',
       expiry:
@@ -997,11 +997,11 @@ export class ContractTemplateDeployFormComponent {
     hours: number,
     markTouched: boolean,
   ): void {
-    this.templateFormValues['initUnvaultDelaySeconds'] = String(
+    this.templateFormValues['unvaultDelaySeconds'] = String(
       this.templateService.hoursToDaaDelay(hours),
     );
     if (markTouched) {
-      this.templateFieldTouched['initUnvaultDelaySeconds'] = true;
+      this.templateFieldTouched['unvaultDelaySeconds'] = true;
     }
   }
 

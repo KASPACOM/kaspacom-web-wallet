@@ -3299,7 +3299,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const delayCandidates = this.uniqueStrings([
       String(state['vaultUnvaultDelaySeconds'] ?? ''),
       String(state['unvaultDelaySeconds'] ?? ''),
-      baseFieldValues['initUnvaultDelaySeconds'],
       baseFieldValues['unvaultDelaySeconds'],
       String(state['vaultUnvaultDelaySeconds'] ?? ''),
       String(state['unvaultDelaySeconds'] ?? ''),
@@ -3310,7 +3309,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         const fieldValues = {
           ...baseFieldValues,
           initPhase,
-          initUnvaultDelaySeconds: unvaultDelaySeconds,
+          unvaultDelaySeconds,
         };
         try {
           const compiled = await this.compileTemplateWithFieldValues(
@@ -3519,7 +3518,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
               : whitelistedDestinations
                 ? 'whitelist'
                 : 'anywhere',
-          initUnvaultDelaySeconds: String(
+          unvaultDelaySeconds: String(
             Number.isFinite(delaySeconds)
               ? delaySeconds
               : this.templateService.hoursToDaaDelay(24),

@@ -730,20 +730,39 @@
         @if (getSelfCustodyInteractWhitelistWallets().length > 0) {
           <div class="form-group flex column gap-8">
             <label class="form-label">Send funds to</label>
-            <select
-              class="contract-input"
-              [disabled]="isInteracting()"
-              [ngModel]="interactOutputAddress()"
-              (ngModelChange)="onSelfCustodySweepDestinationChange($event)"
+            <kc-dropdown-select
+              class="whitelist-dropdown"
+              [options]="getSelfCustodySweepDropdownOptions()"
+              [placeholder]="'Select a whitelisted wallet'"
+              [isFullWidth]="true"
+              [isDisabled]="isInteracting()"
+              [value]="interactOutputAddress()"
+              (valueChange)="onSelfCustodySweepDestinationChange($any($event))"
             >
-              @for (
-                address of getSelfCustodyInteractWhitelistWallets();
-                track address;
-                let i = $index
-              ) {
-                <option [value]="address">{{ i }} - {{ address }}</option>
-              }
-            </select>
+              <ng-template #optionTemplate let-option>
+                <div class="whitelist-option">
+                  <app-wallet-profile-orb
+                    class="whitelist-option-avatar"
+                    [address]="$any(option.value)"
+                    [sizePx]="22"
+                  ></app-wallet-profile-orb>
+                  <span class="whitelist-option-index">{{
+                    getSelfCustodyWhitelistIndex(option.value)
+                  }}</span>
+                  <span
+                    class="whitelist-option-address"
+                    [title]="$any(option.value)"
+                    >{{ $any(option.value) | shortenAddress: 8 : 6 }}</span
+                  >
+                  <app-copy-button
+                    class="whitelist-option-copy"
+                    [value]="$any(option.value)"
+                    [size]="'xs'"
+                    (click)="$event.stopPropagation()"
+                  ></app-copy-button>
+                </div>
+              </ng-template>
+            </kc-dropdown-select>
             <span class="text-gray-60 typo-text-2">
               The full vault balance will be sent to the selected whitelisted
               wallet.

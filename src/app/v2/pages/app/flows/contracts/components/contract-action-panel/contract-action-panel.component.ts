@@ -35,6 +35,8 @@ import {
 } from '../../../../../../../services/covenant/covenant-sdk/types';
 import type { CovenantFunctionArg } from '../../../../../../../services/covenant/covenant-sdk/covenant';
 import { CopyButtonComponent } from '../../../../../../shared/ui/copy-button/copy-button.component';
+import { WalletProfileOrbComponent } from '../../../../../../shared/ui/wallet-profile-orb/wallet-profile-orb.component';
+import { ShortenAddressPipe } from '../../../../../../../pipes/shorten-address.pipe';
 import {
   PartialSpendJsonDialogData,
   PartialSpendJsonModalComponent,
@@ -82,6 +84,8 @@ import { ContractsDataService } from '../../services/contracts-data.service';
     KcNumberInputComponent,
     KcTooltipDirective,
     CopyButtonComponent,
+    WalletProfileOrbComponent,
+    ShortenAddressPipe,
     AddressSmartInputComponent,
     CovenantDateTimeInputComponent,
     ContractActionFieldsComponent,
@@ -2320,6 +2324,20 @@ export class ContractActionPanelComponent {
     if (!raw) return [];
 
     return this.templateService.getAddressListFromRaw(raw);
+  }
+
+  getSelfCustodySweepDropdownOptions(): DropdownOption[] {
+    return this.getSelfCustodyInteractWhitelistWallets().map((address) => ({
+      value: address,
+      label: address,
+    }));
+  }
+
+  getSelfCustodyWhitelistIndex(address: unknown): number {
+    return Math.max(
+      0,
+      this.getSelfCustodyInteractWhitelistWallets().indexOf(String(address)),
+    );
   }
 
   onSelfCustodySweepDestinationChange(address: string) {

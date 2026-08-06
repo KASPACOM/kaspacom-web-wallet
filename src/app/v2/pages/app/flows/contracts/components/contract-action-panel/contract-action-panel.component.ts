@@ -502,7 +502,9 @@ export class ContractActionPanelComponent {
     try {
       this.isInteracting.set(true);
 
-      const compiled = this.covenantService.parseCompiledContract(contractJson);
+      let compiled = this.covenantService.parseCompiledContract(contractJson);
+      compiled = this.hydrateSelfCustodyTn10FromIndexer(compiled);
+      const actionContractJson = JSON.stringify(compiled, null, 2);
       const outpoint: CovenantOutpoint = { txid: txid.trim(), vout };
       const inputAmount = BigInt(inputAmountSompi);
       const privateKey = wallet.getPrivateKey().toString();
@@ -610,7 +612,7 @@ export class ContractActionPanelComponent {
         if (!this.isMultiSigFunction(functionName)) {
           const result = await this.runCovenantSpendAction(
             compiled,
-            contractJson,
+            actionContractJson,
             outpoint,
             inputAmount,
             functionName,
@@ -682,7 +684,7 @@ export class ContractActionPanelComponent {
       } else if (this.isDmsChangeHeir()) {
         await this.executeDmsChangeHeir(
           compiled,
-          contractJson,
+          actionContractJson,
           outpoint,
           inputAmount,
           outputAddress,
@@ -691,7 +693,7 @@ export class ContractActionPanelComponent {
       } else if (this.isSelfCustodyUnvault()) {
         await this.executeSelfCustodyUnvault(
           compiled,
-          contractJson,
+          actionContractJson,
           outpoint,
           inputAmount,
         );
@@ -788,7 +790,7 @@ export class ContractActionPanelComponent {
         // DMS keepAlive — delegate to the dedicated method which handles new-contract generation
         await this.executeDmsKeepAlive(
           compiled,
-          contractJson,
+          actionContractJson,
           outpoint,
           inputAmount,
         );
@@ -818,7 +820,7 @@ export class ContractActionPanelComponent {
           await this.walletActionService.validateAndApproveAction({
             type: WalletActionType.COVENANT_SPEND,
             data: {
-              compiledContractJson: contractJson,
+              compiledContractJson: actionContractJson,
               contractName: compiled.contract_name || 'Covenant',
               outpoint,
               inputAmountSompi: inputAmount,
@@ -859,7 +861,7 @@ export class ContractActionPanelComponent {
           detailPanelTab: this.detailPanelTab(),
           actionPageView: this.actionPageView(),
           selectedFunction: functionName,
-          interactContractJson: contractJson,
+          interactContractJson: actionContractJson,
           interactOutpointTxid: this.interactOutpointTxid(),
           interactOutpointVout: this.interactOutpointVout(),
           interactInputAmount: this.interactInputAmount(),
@@ -887,7 +889,7 @@ export class ContractActionPanelComponent {
 
       const result = await this.runCovenantSpendAction(
         compiled,
-        contractJson,
+        actionContractJson,
         outpoint,
         inputAmount,
         functionName,
@@ -1360,6 +1362,69 @@ export class ContractActionPanelComponent {
       ),
       this.templateService.intArg(Number(values.deadlineMs)),
     ]) as CompiledContract;
+  }
+
+  private hydrateSelfCustodyTn10FromIndexer(
+    compiled: CompiledContract,
+  ): CompiledContract {
+    if (compiled.contract_name !== 'SelfCustodyVault') {
+      return compiled;
+    }
+
+    const existingArgs = this.contractsData.normalizeIndexerArgs(
+      compiled.tn10?.args,
+    );
+    const existingValues = this.templateService.argsArrayToRecord(existingArgs);
+    if (existingValues['unvaultDelaySeconds']) {
+      return compiled;
+    }
+
+    const indexerArgs = this.getSelectedSelfCustodyIndexerArgs();
+    const indexerValues = this.templateService.argsArrayToRecord(indexerArgs);
+    if (!indexerValues['unvaultDelaySeconds']) {
+      return compiled;
+    }
+
+    const tn10Args =
+      indexerValues['hotKey'] && indexerValues['coldKey']
+        ? this.templateService.buildSelfCustodyArgsPayload({
+            hotKey: indexerValues['hotKey'],
+            coldKey: indexerValues['coldKey'],
+            whitelistMode: indexerValues['whitelistMode'] || '',
+            whitelistedDestinations:
+              indexerValues['whitelistedDestinations'] || '',
+            whitelistedDestinations_mode:
+              indexerValues['whitelistMode'] === 'whitelist'
+                ? 'whitelist'
+                : indexerValues['whitelistedDestinations']
+                  ? 'whitelist'
+                  : 'anywhere',
+            unvaultDelaySeconds: indexerValues['unvaultDelaySeconds'],
+            initPhase: indexerValues['initPhase'] || '0',
+          })
+        : indexerArgs;
+
+    return {
+      ...compiled,
+      tn10: {
+        v: compiled.tn10?.v || 1,
+        tmpl: compiled.tn10?.tmpl || 'SelfCustodyVault',
+        args: tn10Args,
+      },
+    } as CompiledContract;
+  }
+
+  private getSelectedSelfCustodyIndexerArgs(): Array<{
+    name: string;
+    type: string;
+    value: string;
+  }> {
+    const detail = this.selectedDetail();
+    return this.contractsData.normalizeIndexerArgs(
+      detail?.response?.covenant?.claimedArgs?.args ||
+        detail?.entry.indexerSummary?.claimedArgs?.args ||
+        [],
+    );
   }
 
   private async compileSelfCustodyContinuation(
@@ -2197,8 +2262,14 @@ export class ContractActionPanelComponent {
     const args = this.templateService.argsArrayToRecord(
       this.contractsData.normalizeIndexerArgs(contract.tn10?.args),
     );
-    const mode = String(args['whitelistMode'] || '').toLowerCase();
-    const raw = args['whitelistedDestinations'];
+    const sourceArgs =
+      args['unvaultDelaySeconds'] || args['whitelistedDestinations']
+        ? args
+        : this.templateService.argsArrayToRecord(
+            this.getSelectedSelfCustodyIndexerArgs(),
+          );
+    const mode = String(sourceArgs['whitelistMode'] || '').toLowerCase();
+    const raw = sourceArgs['whitelistedDestinations'];
     if (mode && mode !== 'whitelist') return [];
     if (!raw) return [];
 

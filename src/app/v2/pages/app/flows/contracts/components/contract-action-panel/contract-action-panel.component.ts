@@ -107,6 +107,7 @@ export class ContractActionPanelComponent {
   private dialog = inject(Dialog);
   private walletService = inject(WalletService);
   display = inject(ContractDisplayService);
+  private shortenAddressPipe = new ShortenAddressPipe();
 
   readonly selfCustodyWhitelistCapacity = SELF_CUSTODY_WHITELIST_CAPACITY;
 
@@ -2327,9 +2328,15 @@ export class ContractActionPanelComponent {
   }
 
   getSelfCustodySweepDropdownOptions(): DropdownOption[] {
+    // label must mirror what optionTemplate renders (the shortened address),
+    // not the full address — kc-dropdown-select sizes its overlay from
+    // DropdownOption.label via calculateLongestOptionWidth(), not from the
+    // projected template, so a full raw address here forces an oversized
+    // minWidth that overflows on narrow screens even though the rendered
+    // row itself is short.
     return this.getSelfCustodyInteractWhitelistWallets().map((address) => ({
       value: address,
-      label: address,
+      label: this.shortenAddressPipe.transform(address, 8, 6),
     }));
   }
 

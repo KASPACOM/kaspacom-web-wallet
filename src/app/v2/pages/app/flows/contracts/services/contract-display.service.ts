@@ -108,6 +108,7 @@ export class ContractDisplayService {
       refund: 'Refund',
       arbitrate: 'Arbitrate',
       recover: 'Recover',
+      changeRecovery: 'Change Recovery',
       withdraw: 'Withdraw',
       unvault: 'Start Unvault',
       emergencySweep: 'Emergency Sweep',

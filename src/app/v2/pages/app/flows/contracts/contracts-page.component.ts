@@ -2369,6 +2369,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           return null;
         },
       },
+      changeRecovery: {
+        label: 'Change Recovery',
+        description: 'Update the wallet allowed to recover after the timelock.',
+        iconClass: 'icon-user-gear',
+        requiredRole: 'Owner',
+      },
       topUp: {
         label: 'Top Up',
         description:
@@ -2714,8 +2720,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         ? ['keepAlive', 'changeHeir', 'topUp', 'claim']
         : ['claim', 'keepAlive', 'changeHeir', 'topUp'],
       TimeLockVault: currentRoles.includes('Recovery')
-        ? ['recover', 'spend', 'topUp']
-        : ['spend', 'recover', 'topUp'],
+        ? ['recover', 'spend', 'changeRecovery', 'topUp']
+        : ['spend', 'changeRecovery', 'recover', 'topUp'],
       MultiSigVault: ['spend12', 'spend13', 'spend23', 'topUp'],
       EscrowWithArbiter: currentRoles.includes('Arbiter')
         ? ['arbitrate', 'release', 'refund', 'topUp']

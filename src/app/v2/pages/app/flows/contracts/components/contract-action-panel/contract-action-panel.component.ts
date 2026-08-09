@@ -690,6 +690,15 @@ export class ContractActionPanelComponent {
           outputAddress,
         );
         return;
+      } else if (this.isTimeLockChangeRecovery()) {
+        await this.executeTimeLockChangeRecovery(
+          compiled,
+          actionContractJson,
+          outpoint,
+          inputAmount,
+          outputAddress,
+        );
+        return;
       } else if (this.isSelfCustodyUnvault()) {
         await this.executeSelfCustodyUnvault(
           compiled,
@@ -753,7 +762,19 @@ export class ContractActionPanelComponent {
           } else {
             this.extraArgValues['destinationIndex'] = '0';
           }
-          outputs = [{ address: outputAddress, amount: inputAmount }];
+          if (isNaN(outputAmountKas) || outputAmountKas <= 0) {
+            this.interactError.set('Output amount must be greater than 0');
+            return;
+          }
+          const withdrawalAmount = BigInt(Math.floor(outputAmountKas * 1e8));
+          const withdrawalOutputs = this.buildWithdrawalOutputs(
+            compiled,
+            inputAmount,
+            outputAddress,
+            withdrawalAmount,
+          );
+          if (!withdrawalOutputs) return;
+          outputs = withdrawalOutputs;
           extraArgsOverride = this.collectExtraArgs(compiled, functionName);
           useSenderFeeOverride = true;
         } else {
@@ -1341,6 +1362,120 @@ export class ContractActionPanelComponent {
     });
   }
 
+  private async executeTimeLockChangeRecovery(
+    compiled: CompiledContract,
+    contractJson: string,
+    outpoint: CovenantOutpoint,
+    inputAmount: bigint,
+    newRecoveryAddress: string,
+  ): Promise<void> {
+    this.interactError.set(null);
+
+    if (!newRecoveryAddress) {
+      this.interactError.set('New recovery wallet address is required');
+      return;
+    }
+
+    const covenantId = this.selectedContract()?.covenantId;
+    if (!covenantId) {
+      this.interactError.set(
+        'Cannot change recovery until this contract covenant ID is known. Refresh/import it from the indexer first.',
+      );
+      return;
+    }
+
+    let newRecovery: Uint8Array;
+    try {
+      newRecovery = Uint8Array.from(
+        this.templatePatcher.kaspaAddressToPubkeyBytes(newRecoveryAddress),
+      );
+    } catch {
+      this.interactError.set('Enter a valid new recovery wallet address');
+      return;
+    }
+
+    const owner = await this.extractTimeLockPubkeyHex(compiled, 'owner');
+    const ownerAddress = owner
+      ? this.templateService.pubkeyToAddress(owner)
+      : '';
+    const timeout = await this.templateService.extractTemplateIntField(
+      compiled,
+      'time-lock-vault',
+      'timeout',
+    );
+    if (!ownerAddress || timeout === undefined) {
+      this.interactError.set(
+        'Could not derive owner/timeout from contract script',
+      );
+      return;
+    }
+
+    const nextCompiled = await this.compileTimeLockContinuation({
+      ownerAddress,
+      recoveryAddress: newRecoveryAddress,
+      timeout,
+    });
+    const nextContractJson = JSON.stringify(nextCompiled, null, 2);
+    const nextContractAddress =
+      this.covenantService.getContractAddress(nextCompiled);
+    const payloadHex = this.buildTimeLockPayloadHex({
+      ownerAddress,
+      recoveryAddress: newRecoveryAddress,
+      timeout,
+    });
+
+    const result = await this.runCovenantSpendAction(
+      compiled,
+      contractJson,
+      outpoint,
+      inputAmount,
+      'changeRecovery',
+      [
+        {
+          address: nextContractAddress,
+          amount: inputAmount,
+          covenantId,
+        },
+      ],
+      { newRecovery },
+      covenantId,
+      true,
+      payloadHex,
+    );
+    if (!result) return;
+
+    this.interactResult.set({
+      txid: result.txid,
+      functionName: 'changeRecovery',
+    });
+
+    if (this.selectedContractId()) {
+      this.registryEntryUpdated.emit({
+        id: this.selectedContractId(),
+        updates: {
+          status: 'active',
+          compiledJson: nextContractJson,
+          contractAddress: nextContractAddress,
+          accessRoles: this.parseAccessRoles(nextCompiled),
+          outpoint: { txid: result.txid, vout: 0 },
+          amountSompi: inputAmount.toString(),
+          lastChecked: Date.now(),
+        },
+      });
+    }
+    this.interactContractJson.set(nextContractJson);
+    this.interactOutpointTxid.set(result.txid);
+    this.interactOutpointVout.set('0');
+    this.interactInputAmount.set(inputAmount.toString());
+    this.interactOutputAddress.set('');
+    this.interactResolvedOutputAddress.set(null);
+
+    this.actionIndexingRequested.emit({
+      txid: result.txid,
+      registryId: this.selectedContractId(),
+    });
+  }
+
   private async compileDmsContinuation(values: {
     ownerAddress: string;
     heirAddress: string;
@@ -1361,6 +1496,29 @@ export class ContractActionPanelComponent {
         this.templatePatcher.kaspaAddressToPubkeyBytes(values.heirAddress),
       ),
       this.templateService.intArg(Number(values.deadlineMs)),
+    ]) as CompiledContract;
+  }
+
+  private async compileTimeLockContinuation(values: {
+    ownerAddress: string;
+    recoveryAddress: string;
+    timeout: bigint;
+  }): Promise<CompiledContract> {
+    const template = this.templateService.templateById('time-lock-vault');
+    if (!template) {
+      throw new Error('Time-Lock Vault template is unavailable');
+    }
+
+    const { compiled, descriptor } =
+      await this.templateService.getTemplatePatchContext(template.id);
+    return this.templatePatcher.applyPatch(compiled, descriptor, [
+      this.templateService.bytesArg(
+        this.templatePatcher.kaspaAddressToPubkeyBytes(values.ownerAddress),
+      ),
+      this.templateService.bytesArg(
+        this.templatePatcher.kaspaAddressToPubkeyBytes(values.recoveryAddress),
+      ),
+      this.templateService.intArg(Number(values.timeout)),
     ]) as CompiledContract;
   }
 
@@ -1524,6 +1682,32 @@ export class ContractActionPanelComponent {
     );
   }
 
+  private async extractTimeLockPubkeyHex(
+    compiled: CompiledContract,
+    field: 'owner' | 'recovery',
+  ): Promise<string | undefined> {
+    if (field === 'owner') {
+      return this.templateService.extractTemplatePubkeyHex(
+        compiled,
+        'time-lock-vault',
+        'owner',
+      );
+    }
+
+    return (
+      (await this.templateService.extractTemplatePubkeyHex(
+        compiled,
+        'time-lock-vault',
+        'initRecovery',
+      )) ||
+      (await this.templateService.extractTemplatePubkeyHex(
+        compiled,
+        'time-lock-vault',
+        'recovery',
+      ))
+    );
+  }
+
   private buildDmsPayloadHex(values: {
     ownerAddress: string;
     heirAddress: string;
@@ -1541,6 +1725,34 @@ export class ContractActionPanelComponent {
               name: 'checkInDeadline',
               type: 'blueScore',
               value: values.deadlineMs.toString(),
+            },
+          ],
+        },
+      }),
+    );
+  }
+
+  private buildTimeLockPayloadHex(values: {
+    ownerAddress: string;
+    recoveryAddress: string;
+    timeout: bigint;
+  }): string {
+    return this.stringToHex(
+      JSON.stringify({
+        tn10: {
+          v: 1,
+          tmpl: 'TimeLockVault',
+          args: [
+            { name: 'signer', type: 'address', value: values.ownerAddress },
+            {
+              name: 'recoveryKey',
+              type: 'address',
+              value: values.recoveryAddress,
+            },
+            {
+              name: 'unlockBlueScore',
+              type: 'blueScore',
+              value: values.timeout.toString(),
             },
           ],
         },
@@ -1728,6 +1940,7 @@ export class ContractActionPanelComponent {
       execute: 'Execute',
       topUp: 'Top Up',
       changeHeir: 'Change Heir',
+      changeRecovery: 'Change Recovery',
       unvault: 'Start Unvault',
       emergencySweep: 'Emergency Sweep',
       finalize: 'Finalize',
@@ -1746,6 +1959,8 @@ export class ContractActionPanelComponent {
     const contextual: Record<string, Record<string, string>> = {
       timelockvault: {
         spend: 'Withdraw your locked funds immediately using the owner key.',
+        changeRecovery:
+          'Change the backup wallet that can recover after the timelock expires.',
         recover:
           'Emergency recovery using the backup key. Only available after the timelock expires.',
       },
@@ -1814,6 +2029,7 @@ export class ContractActionPanelComponent {
       execute: "Execute this contract's logic.",
       topUp:
         'Add KAS to this covenant by spending the current covenant UTXO and recreating it with the same covenant ID.',
+      changeRecovery: 'Re-deploy the contract with an updated recovery wallet.',
       unvault:
         'Move the vault into its delayed withdrawal phase without sending funds externally.',
       emergencySweep: 'Withdraw with the cold wallet.',
@@ -2161,6 +2377,12 @@ export class ContractActionPanelComponent {
       .includes('deadman');
   }
 
+  isTimeLockChangeRecovery(): boolean {
+    const contract = this.parsedInteractContract();
+    if (!contract || this.selectedFunction() !== 'changeRecovery') return false;
+    return contract.contract_name === 'TimeLockVault';
+  }
+
   isSelfCustodyUnvault(): boolean {
     const contract = this.parsedInteractContract();
     return (
@@ -2216,7 +2438,8 @@ export class ContractActionPanelComponent {
       !!fnName &&
       !this.REDEPLOY_FUNCTIONS.has(fnName) &&
       !this.isTopUpFunction(fnName) &&
-      !this.isDmsChangeHeir()
+      !this.isDmsChangeHeir() &&
+      !this.isTimeLockChangeRecovery()
     );
   }
 
@@ -2247,7 +2470,7 @@ export class ContractActionPanelComponent {
       return 'Disabled for multi-sig signing. The contract must pay fees because wallet fee inputs would change the transaction after signatures are created.';
     }
     if (this.isSelfCustodySweepAction(fnName)) {
-      return 'Required for Self-Custody sweep/finalize. The covenant requires the withdrawal output to keep the full input value, so fees must be paid by the wallet.';
+      return 'Required for Self-Custody sweep/finalize. The covenant requires exact withdrawal and continuation outputs, so fees must be paid by the wallet.';
     }
     if (this.isTopUpFunction(fnName || '')) {
       return 'When enabled, fees are paid from wallet change. When disabled, fees are deducted from the top-up output.';
@@ -2317,7 +2540,11 @@ export class ContractActionPanelComponent {
       }
     }
 
-    if (this.isTopUpFunction(name) || this.isDmsChangeHeir()) {
+    if (
+      this.isTopUpFunction(name) ||
+      this.isDmsChangeHeir() ||
+      this.isTimeLockChangeRecovery()
+    ) {
       this.interactOutputAddress.set('');
       this.interactOutputAmount.set('');
     } else if (this.functionRequiresOutput(name)) {

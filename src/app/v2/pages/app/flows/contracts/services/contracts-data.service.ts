@@ -263,6 +263,7 @@ export class ContractsDataService {
     const labels: Record<string, string> = {
       owner: 'Owner',
       heir: 'Heir',
+      initRecovery: 'Recovery',
       signer: 'Owner',
       recovery: 'Recovery',
       recoveryKey: 'Recovery',
@@ -373,6 +374,7 @@ export class ContractsDataService {
       'owner',
       'heir',
       'signer',
+      'initRecovery',
       'recovery',
       'recoveryKey',
       'key1',
@@ -416,7 +418,7 @@ export class ContractsDataService {
 
     const roleParamsByTemplate: Record<string, string[]> = {
       'dead-mans-switch': ['owner', 'heir'],
-      'time-lock-vault': ['owner', 'recovery'],
+      'time-lock-vault': ['owner', 'initRecovery'],
       'multi-sig-vault': ['key1', 'key2', 'key3'],
       'escrow-with-arbiter': ['buyer', 'seller', 'arbiterHash'],
     };
@@ -425,7 +427,9 @@ export class ContractsDataService {
 
     for (const paramName of roleParams) {
       const field = template.fields.find(
-        (item) => item.paramName === paramName,
+        (item) =>
+          item.paramName === paramName ||
+          (paramName === 'initRecovery' && item.paramName === 'recovery'),
       );
       if (!field) continue;
       const value =

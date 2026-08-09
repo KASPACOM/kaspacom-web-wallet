@@ -392,14 +392,24 @@ export class CovenantTemplateService {
       const { descriptor } = await this.getTemplatePatchContext(templateId);
       const param = descriptor.params.find((entry) => entry.name === paramName);
       const position = param?.positions[0];
-      if (!param || param.paramType !== 'int_field' || !position) {
+      if (
+        !param ||
+        (param.paramType !== 'int_field' && param.paramType !== 'int') ||
+        !position
+      ) {
         return undefined;
       }
 
-      const bytes = compiled.script.slice(
+      const encodedBytes = compiled.script.slice(
         position.offset,
         position.offset + position.length,
       );
+      const bytes =
+        param.paramType === 'int'
+          ? this.extractScriptIntPushData(encodedBytes)
+          : encodedBytes;
+      if (!bytes) return undefined;
+
       let value = 0n;
       for (let index = 0; index < bytes.length; index += 1) {
         value += BigInt(bytes[index] & 0xff) << BigInt(index * 8);
@@ -408,6 +418,32 @@ export class CovenantTemplateService {
     } catch {
       return undefined;
     }
+  }
+
+  private extractScriptIntPushData(bytes: number[]): number[] | undefined {
+    const opcode = bytes[0];
+    if (opcode === undefined) return undefined;
+
+    if (opcode <= 75) {
+      return bytes.length === opcode + 1 ? bytes.slice(1) : undefined;
+    }
+
+    if (opcode === 76) {
+      const length = bytes[1];
+      return length !== undefined && bytes.length === length + 2
+        ? bytes.slice(2)
+        : undefined;
+    }
+
+    if (opcode === 77) {
+      const low = bytes[1];
+      const high = bytes[2];
+      if (low === undefined || high === undefined) return undefined;
+      const length = low + (high << 8);
+      return bytes.length === length + 3 ? bytes.slice(3) : undefined;
+    }
+
+    return undefined;
   }
 
   async extractTemplatePubkeyHex(

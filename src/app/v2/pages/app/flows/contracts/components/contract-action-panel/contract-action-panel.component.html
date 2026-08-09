@@ -384,7 +384,8 @@
         >
           <span class="text-yellow typo-text-2">
             Self-Custody sweep/finalize must pay fees from the wallet because
-            the withdrawal output must keep the full contract input value.
+            the withdrawal and continuation outputs must match the contract
+            input value exactly.
           </span>
         </div>
       }
@@ -698,6 +699,36 @@
         </div>
       }
 
+      @if (isTimeLockChangeRecovery()) {
+        <div class="form-group flex column gap-8">
+          <app-address-smart-input
+            [label]="'New Recovery Wallet'"
+            [placeholder]="'Enter recovery wallet address or KNS domain'"
+            [isFullWidth]="true"
+            [isValid]="true"
+            [invalidReason]="''"
+            [isDisabled]="isInteracting()"
+            [value]="interactOutputAddress()"
+            (valueChange)="onInteractOutputAddressChange($event)"
+            (resolved)="onInteractOutputAddressResolved($event)"
+            (qrClick)="onInteractOutputQrClick()"
+          >
+          </app-address-smart-input>
+        </div>
+
+        <div
+          class="p-12 rounded-lg"
+          style="
+            background: rgba(111, 199, 186, 0.08);
+            border: 1px solid rgba(111, 199, 186, 0.2);
+          "
+        >
+          <span class="text-gray-75 typo-text-2">
+            Funds stay locked in the covenant. Only the recovery wallet changes.
+          </span>
+        </div>
+      }
+
       @if (selectedFunction() && isTopUpFunction(selectedFunction())) {
         <div class="form-group flex column gap-8">
           <kc-number-input
@@ -745,8 +776,7 @@
               }
             </select>
             <span class="text-gray-60 typo-text-2">
-              The full vault balance will be sent to the selected whitelisted
-              wallet.
+              Funds will be sent to the selected whitelisted wallet.
             </span>
           </div>
         } @else {
@@ -764,10 +794,31 @@
               (qrClick)="onInteractOutputQrClick()"
             ></app-address-smart-input>
             <span class="text-gray-60 typo-text-2">
-              The full vault balance will be sent to this wallet.
+              Funds will be sent to this wallet.
             </span>
           </div>
         }
+
+        <div class="form-group flex column gap-8">
+          <kc-number-input
+            [label]="'Withdraw amount (KAS)'"
+            [placeholder]="'0'"
+            [min]="'0'"
+            [isDisabled]="isInteracting()"
+            [ngModel]="interactOutputAmount()"
+            (valueChange)="onInteractOutputAmountChange($event)"
+          >
+            <div
+              (click)="!isInteracting() && fillMaxOutputAmount()"
+              [class]="
+                isInteracting() ? 'max-text disabled' : 'max-text clickable'
+              "
+              rightSideSlot
+            >
+              <span>Max</span>
+            </div>
+          </kc-number-input>
+        </div>
       }
 
       @if (
@@ -833,6 +884,7 @@
         !functionRequiresOutput(selectedFunction()) &&
         !isDmsKeepAlive() &&
         !isDmsChangeHeir() &&
+        !isTimeLockChangeRecovery() &&
         !isTopUpFunction(selectedFunction())
       ) {
         <div
@@ -1073,7 +1125,8 @@
         >
           <span class="text-yellow typo-text-2">
             Self-Custody sweep/finalize must pay fees from the wallet because
-            the withdrawal output must keep the full contract input value.
+            the withdrawal and continuation outputs must match the contract
+            input value exactly.
           </span>
         </div>
       }

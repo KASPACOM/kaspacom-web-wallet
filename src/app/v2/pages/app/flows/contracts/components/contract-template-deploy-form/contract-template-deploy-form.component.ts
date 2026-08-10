@@ -1,11 +1,4 @@
-import {
-  Component,
-  computed,
-  effect,
-  inject,
-  output,
-  signal,
-} from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -22,6 +15,10 @@ import { QrScannerService } from '../../../../../../../services/qr-scanner.servi
 import { UtilsHelper } from '../../../../../../../services/utils.service';
 import { CovenantService } from '../../../../../../../services/covenant/covenant.service';
 import { CovenantIndexerService } from '../../../../../../../services/covenant/covenant-indexer.service';
+import {
+  ContractRegistryEntry,
+  ContractRegistryService,
+} from '../../../../../../../services/covenant/contract-registry.service';
 import { KaspaL1NetworkService } from '../../../../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
 import { TemplatePatcherService } from '../../../../../../services/covenant/template-patcher.service';
 import {
@@ -51,22 +48,6 @@ import {
  * deployResult afterward — registryEntryId is needed to backfill the
  * covenant ID once the indexer confirms the deploy.
  */
-export type ContractDeployedEvent = {
-  contractJson: string;
-  compiled: CompiledContract;
-  result: CovenantDeployActionResult;
-  amountSompi: bigint;
-  walletAddress: string;
-  walletDisplayName: string;
-  pubkey: string;
-  nickname: string;
-  resolve: (outcome: {
-    registryEntryId?: string;
-    clearNickname?: boolean;
-    saveError?: string;
-  }) => void;
-};
-
 @Component({
   selector: 'app-contract-template-deploy-form',
   imports: [
@@ -93,18 +74,12 @@ export class ContractTemplateDeployFormComponent {
   private utilsHelper = inject(UtilsHelper);
   private covenantService = inject(CovenantService);
   private covenantIndexerService = inject(CovenantIndexerService);
+  private registryService = inject(ContractRegistryService);
   private kaspaL1NetworkService = inject(KaspaL1NetworkService);
   private templatePatcher = inject(TemplatePatcherService);
   private notificationService = inject(NotificationService);
   display = inject(ContractDisplayService);
   private templateService = inject(CovenantTemplateService);
-
-  deployed = output<ContractDeployedEvent>();
-  registryEntryUpdated = output<{
-    id: string;
-    updates: { covenantId?: string };
-  }>();
-  contractsChanged = output<void>();
 
   constructor() {
     // Keep wallet-owned fields (e.g. hotKey) and the deploy-amount validity
@@ -138,6 +113,7 @@ export class ContractTemplateDeployFormComponent {
   networkBlocksPerSecond = computed(
     () => this.kaspaL1NetworkService.getCurrentNetwork().blocksPerSecond || 10,
   );
+  network = computed(() => this.kaspaL1NetworkService.getNetworkId());
 
   createMode = signal<CreateMode>('template');
   activeTemplate = signal<ContractTemplate | null>(null);
@@ -1009,6 +985,109 @@ export class ContractTemplateDeployFormComponent {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  private parseAccessRoles(contract: CompiledContract): Array<{
+    functionName: string;
+    params: Array<{ name: string; type: string }>;
+    description: string;
+  }> {
+    const roles: Array<{
+      functionName: string;
+      params: Array<{ name: string; type: string }>;
+      description: string;
+    }> = [];
+    const constructorPubkeys = contract.ast.params
+      .filter((p) => p.type_ref.base === 'pubkey')
+      .map((p) => ({ name: p.name, type: 'pubkey' }));
+    const entrypoints = contract.ast.functions.filter((f) => f.entrypoint);
+
+    for (const fn of entrypoints) {
+      const fnParams = fn.params.map((p) => ({
+        name: p.name,
+        type: p.type_ref.base,
+      }));
+      const pubkeyParams = constructorPubkeys.filter((p) =>
+        fnParams.some((fp) => fp.type === 'pubkey' && fp.name === p.name),
+      );
+
+      let description = `Function "${fn.name}" can be called`;
+      if (pubkeyParams.length > 0) {
+        description += ` by ${pubkeyParams.map((p) => p.name).join(', ')}`;
+      }
+
+      roles.push({
+        functionName: fn.name,
+        params: fnParams,
+        description,
+      });
+    }
+
+    return roles;
+  }
+
+  private async saveDeployedContractToRegistry(input: {
+    contractJson: string;
+    compiled: CompiledContract;
+    result: CovenantDeployActionResult;
+    amountSompi: bigint;
+    walletAddress: string;
+    walletDisplayName: string;
+    pubkey: string;
+    walletKey?: string;
+    nickname: string;
+  }): Promise<{
+    registryEntryId?: string;
+    clearNickname?: boolean;
+    saveError?: string;
+  }> {
+    const entry: ContractRegistryEntry = {
+      id: this.registryService.generateId(),
+      contractName: input.compiled.contract_name || 'Unnamed Contract',
+      compiledJson: input.contractJson,
+      deployTxid: input.result.txid,
+      contractAddress: input.result.contractAddress,
+      outpoint: input.result.outpoint,
+      amountSompi: input.amountSompi.toString(),
+      deployedBy: {
+        address: input.walletAddress,
+        pubkey: input.pubkey,
+        accountName: input.walletDisplayName,
+      },
+      deployedAt: Date.now(),
+      network: this.network(),
+      status: 'active',
+      accessRoles: this.parseAccessRoles(input.compiled),
+      covenantId: input.result.covenantId,
+      wallets: input.walletKey ? { [input.walletKey]: true } : undefined,
+    };
+
+    try {
+      await this.registryService.addContract(entry);
+
+      const alias = input.nickname.trim();
+      if (alias && input.walletKey) {
+        await this.registryService.updateContract(entry.id, {
+          aliases: {
+            ...(entry.aliases || {}),
+            [input.walletKey]: alias,
+          },
+        });
+      }
+
+      return {
+        registryEntryId: entry.id,
+        clearNickname: !!alias && !!input.walletKey,
+      };
+    } catch (error) {
+      console.error(
+        '[Contracts][DeployForm] Contract deployed but failed to save to registry:',
+        error,
+      );
+      return {
+        saveError: `Contract deployed (txid ${input.result.txid}), but saving it locally failed. Record the outpoint to interact later: ${input.result.outpoint.txid}:${input.result.outpoint.vout}.`,
+      };
+    }
+  }
+
   async deployContract() {
     this.deployError.set(null);
     this.deployResult.set(null);
@@ -1079,22 +1158,20 @@ export class ContractTemplateDeployFormComponent {
         covenantId: result.covenantId,
       });
 
-      const outcome = await new Promise<{
-        registryEntryId?: string;
-        clearNickname?: boolean;
-        saveError?: string;
-      }>((resolve) => {
-        this.deployed.emit({
-          contractJson,
-          compiled,
-          result,
-          amountSompi,
-          walletAddress: wallet.getAddress(),
-          walletDisplayName: wallet.getDisplayName(),
-          pubkey: this.selectedPubkey(),
-          nickname: this.deployContractNickname,
-          resolve,
-        });
+      const outcome = await this.saveDeployedContractToRegistry({
+        contractJson,
+        compiled,
+        result,
+        amountSompi,
+        walletAddress: wallet.getAddress(),
+        walletDisplayName: wallet.getDisplayName(),
+        pubkey: wallet
+          .getPrivateKey()
+          .toPublicKey()
+          .toXOnlyPublicKey()
+          .toString(),
+        walletKey: wallet.getIdWithAccount(),
+        nickname: this.deployContractNickname,
       });
 
       if (outcome.saveError) {
@@ -1140,9 +1217,8 @@ export class ContractTemplateDeployFormComponent {
 
         if (status.indexed) {
           if (registryEntryId && indexedCovenantId) {
-            this.registryEntryUpdated.emit({
-              id: registryEntryId,
-              updates: { covenantId: indexedCovenantId },
+            await this.registryService.updateContract(registryEntryId, {
+              covenantId: indexedCovenantId,
             });
           }
           this.deployResult.update((current) =>
@@ -1155,7 +1231,6 @@ export class ContractTemplateDeployFormComponent {
             message:
               'Indexed. This contract can now be shared and tracked from My Contracts.',
           });
-          this.contractsChanged.emit();
           return;
         }
 

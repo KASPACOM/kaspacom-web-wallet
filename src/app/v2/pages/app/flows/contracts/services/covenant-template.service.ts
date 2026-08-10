@@ -400,14 +400,13 @@ export class CovenantTemplateService {
         return undefined;
       }
 
-      const encodedBytes = compiled.script.slice(
-        position.offset,
-        position.offset + position.length,
-      );
       const bytes =
         param.paramType === 'int'
-          ? this.extractScriptIntPushData(encodedBytes)
-          : encodedBytes;
+          ? this.extractScriptIntPushData(compiled.script, position.offset)
+          : compiled.script.slice(
+              position.offset,
+              position.offset + position.length,
+            );
       if (!bytes) return undefined;
 
       let value = 0n;
@@ -420,27 +419,33 @@ export class CovenantTemplateService {
     }
   }
 
-  private extractScriptIntPushData(bytes: number[]): number[] | undefined {
-    const opcode = bytes[0];
+  private extractScriptIntPushData(
+    script: number[],
+    offset: number,
+  ): number[] | undefined {
+    const opcode = script[offset];
     if (opcode === undefined) return undefined;
 
     if (opcode <= 75) {
-      return bytes.length === opcode + 1 ? bytes.slice(1) : undefined;
+      if (script.length < offset + 1 + opcode) return undefined;
+      return script.slice(offset + 1, offset + 1 + opcode);
     }
 
     if (opcode === 76) {
-      const length = bytes[1];
-      return length !== undefined && bytes.length === length + 2
-        ? bytes.slice(2)
-        : undefined;
+      const length = script[offset + 1];
+      if (length === undefined || script.length < offset + 2 + length) {
+        return undefined;
+      }
+      return script.slice(offset + 2, offset + 2 + length);
     }
 
     if (opcode === 77) {
-      const low = bytes[1];
-      const high = bytes[2];
+      const low = script[offset + 1];
+      const high = script[offset + 2];
       if (low === undefined || high === undefined) return undefined;
       const length = low + (high << 8);
-      return bytes.length === length + 3 ? bytes.slice(3) : undefined;
+      if (script.length < offset + 3 + length) return undefined;
+      return script.slice(offset + 3, offset + 3 + length);
     }
 
     return undefined;

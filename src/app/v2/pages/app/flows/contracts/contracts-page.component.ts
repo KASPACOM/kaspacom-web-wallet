@@ -62,11 +62,9 @@ import {
   ContractsDataService,
   ContractsDashboardBuildContext,
 } from './services/contracts-data.service';
+import { ContractsRegistryRefreshService } from './services/contracts-registry-refresh.service';
 import { hex32ToBytes, computeBlake2bHex } from './crypto.util';
-import {
-  ContractTemplateDeployFormComponent,
-  ContractDeployedEvent,
-} from './components/contract-template-deploy-form/contract-template-deploy-form.component';
+import { ContractTemplateDeployFormComponent } from './components/contract-template-deploy-form/contract-template-deploy-form.component';
 import { ContractsDashboardComponent } from './components/contracts-dashboard/contracts-dashboard.component';
 import {
   ContractLookupImportComponent,
@@ -113,6 +111,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private display = inject(ContractDisplayService);
   private templateService = inject(CovenantTemplateService);
   private contractsData = inject(ContractsDataService);
+  private contractsRegistryRefresh = inject(ContractsRegistryRefreshService);
   private routeSubscription?: Subscription;
   private registryMigrationPromise?: Promise<void>;
   private contractsLoadRequestToken = 0;
@@ -450,6 +449,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     effect(() => {
       this.network();
       this.loadContracts();
+    });
+
+    effect(() => {
+      const refreshVersion = this.contractsRegistryRefresh.changes();
+      if (refreshVersion === 0) return;
+      void this.loadContracts({ skipOnChainStatusRefresh: true });
     });
 
     effect(() => {
@@ -3681,76 +3686,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
 
     return roles;
-  }
-
-  /**
-   * Handles the ContractTemplateDeployFormComponent's `(deployed)` output —
-   * the "record a successful deploy into the local registry" tail that used
-   * to run inline inside this component's own deployContract(). The child
-   * calls `event.resolve(...)` with the outcome so it can drive its own
-   * deployIndexerState/deployResult signals afterward (registryEntryId is
-   * needed to backfill the covenant ID once indexing settles).
-   */
-  async onContractDeployed(event: ContractDeployedEvent) {
-    const walletKey = this.currentWalletAliasKey();
-    const entry: ContractRegistryEntry = {
-      id: this.registryService.generateId(),
-      contractName: event.compiled.contract_name || 'Unnamed Contract',
-      compiledJson: event.contractJson,
-      deployTxid: event.result.txid,
-      contractAddress: event.result.contractAddress,
-      outpoint: event.result.outpoint,
-      amountSompi: event.amountSompi.toString(),
-      deployedBy: {
-        address: event.walletAddress,
-        pubkey: event.pubkey,
-        accountName: event.walletDisplayName,
-      },
-      deployedAt: Date.now(),
-      network: this.network(),
-      status: 'active',
-      accessRoles: this.parseAccessRoles(event.compiled),
-      covenantId: event.result.covenantId,
-      wallets: walletKey ? { [walletKey]: true } : undefined,
-    };
-
-    try {
-      await this.registryService.addContract(entry);
-      this.allRegistryContracts.set([...this.allRegistryContracts(), entry]);
-      this.registryContracts.set([...this.registryContracts(), entry]);
-      const clearNickname = await this.saveInitialContractAlias(
-        entry,
-        event.nickname,
-      );
-      event.resolve({ registryEntryId: entry.id, clearNickname });
-    } catch (e) {
-      console.error(
-        '[Deploy] Contract deployed but failed to save to registry:',
-        e,
-      );
-      event.resolve({
-        saveError: `Contract deployed (txid ${event.result.txid}), but saving it locally failed. Record the outpoint to interact later: ${event.result.outpoint.txid}:${event.result.outpoint.vout}.`,
-      });
-    }
-  }
-
-  /** Returns whether the nickname was actually saved (so the caller can clear its own field). */
-  private async saveInitialContractAlias(
-    entry: ContractRegistryEntry,
-    nickname: string,
-  ): Promise<boolean> {
-    const alias = nickname.trim();
-    const walletKey = this.currentWalletAliasKey();
-    if (!alias || !walletKey) return false;
-
-    await this.updateRegistryContract(entry.id, {
-      aliases: {
-        ...(entry.aliases || {}),
-        [walletKey]: alias,
-      },
-    });
-    this.refreshDashboardNames();
-    return true;
   }
 
   /**

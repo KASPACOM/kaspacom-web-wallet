@@ -42,11 +42,7 @@
   <div class="contracts-main">
     <!-- ═══════════════ CREATE / DEPLOY ═══════════════ -->
     @if (activeTab() === "deploy") {
-      <app-contract-template-deploy-form
-        (deployed)="onContractDeployed($event)"
-        (registryEntryUpdated)="onRegistryEntryUpdated($event)"
-        (contractsChanged)="loadContracts()"
-      />
+      <app-contract-template-deploy-form />
     }
 
     <!-- ═══════════════ MY CONTRACTS ═══════════════ -->

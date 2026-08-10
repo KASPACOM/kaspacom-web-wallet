@@ -954,6 +954,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (updates.compiledJson) {
       this.contractsData.clearLocalParticipantsCache();
     }
+    // An action just executed locally, so it's by definition the freshest
+    // known state for this contract — surface it on the card immediately
+    // rather than waiting for the next full loadContracts()/indexer merge
+    // (which may still lag until the indexer catches up).
+    const optimisticLatest = updates.lastActionType
+      ? {
+          latestAction: updates.lastActionType,
+          latestTxid:
+            updates.lastActionTxid ||
+            updates.spendTxid ||
+            updates.outpoint?.txid,
+        }
+      : undefined;
     let updatedRegistryEntry: ContractRegistryEntry | undefined;
     this.allRegistryContracts.set(
       this.allRegistryContracts().map((contract) => {
@@ -1001,6 +1014,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
                 ...entry.registryEntry,
                 ...updates,
               },
+              ...optimisticLatest,
             })
           : entry,
       ),
@@ -1016,6 +1030,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
                 ...detail.entry.registryEntry,
                 ...updates,
               },
+              ...optimisticLatest,
             }),
           }
         : detail,

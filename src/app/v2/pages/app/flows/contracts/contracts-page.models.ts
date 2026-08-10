@@ -84,6 +84,8 @@ export type ContractDashboardEntry = {
   deployTxid?: string;
   latestTxid?: string;
   latestAction?: string;
+  /** blockTimeMs or local timestamp for latestTxid/latestAction recency comparisons. */
+  latestActionAtMs?: number;
   deadlineMs?: number;
   participants: ContractParticipant[];
   nextActionLabel: string;

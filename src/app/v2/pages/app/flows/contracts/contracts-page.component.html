@@ -35,7 +35,7 @@
       [class.active]="activeTab() === 'lookup-import'"
       (click)="switchTab('lookup-import')"
     >
-      Import / Share
+      Import
     </button>
   </div>
 
@@ -148,7 +148,6 @@
             (tabRequested)="switchTab($event)"
             (contractDetailsRequested)="navigateToContractDetail($event)"
             (contractActionRequested)="openDashboardAction($event)"
-            (shareRequested)="copyContractShareLink($event)"
             (aliasEditRequested)="beginAliasEdit($event)"
             (aliasEditCancelled)="cancelAliasEdit()"
             (aliasSaveRequested)="saveAlias($event.contract, $event.draft)"
@@ -175,7 +174,6 @@
             [walletKey]="currentWalletAliasKey()"
             (actionRequested)="selectDetailAction($event)"
             (closeRequested)="backToContractsList()"
-            (shareRequested)="copyContractShareLink($event)"
             (aliasEditRequested)="beginAliasEdit($event)"
             (aliasEditCancelled)="cancelAliasEdit()"
             (aliasSaveRequested)="saveAlias($event.contract, $event.draft)"
@@ -192,14 +190,9 @@
         [indexerImportLoading]="indexerImportLoading()"
         [indexerImportError]="indexerImportError()"
         [indexerImportPreview]="indexerImportPreview()"
-        [shareableContractOptions]="shareableContractOptions()"
-        [effectiveShareableContractId]="effectiveShareableContractId()"
-        [shareableContractLink]="shareableContractLink()"
         (indexerImportQueryChanged)="onIndexerImportQueryChange($event)"
         (lookupIndexerImportRequested)="lookupIndexerImport()"
         (importIndexerPreviewRequested)="importIndexerPreview()"
-        (shareableContractChanged)="onShareableContractChange($event)"
-        (copyShareableContractLinkRequested)="copyShareableContractLink()"
         (interactRequested)="onLookupInteractRequested($event)"
       />
     }

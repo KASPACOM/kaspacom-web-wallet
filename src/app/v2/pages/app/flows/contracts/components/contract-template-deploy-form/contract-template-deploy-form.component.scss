@@ -96,9 +96,6 @@ $tpl-accents: (
     border-color: var(--tpl-accent, var(--kaspa-20));
     background: rgba(255, 255, 255, 0.04);
   }
-  &.custom {
-    border-style: dashed;
-  }
   .tc-body {
     display: flex;
     flex-direction: column;

@@ -56,7 +56,6 @@ export class ContractDetailComponent {
 
   actionRequested = output<string | undefined>();
   closeRequested = output<void>();
-  shareRequested = output<ContractDashboardEntry>();
   aliasEditRequested = output<ContractDashboardEntry>();
   aliasEditCancelled = output<void>();
   aliasSaveRequested = output<{
@@ -89,10 +88,6 @@ export class ContractDetailComponent {
 
   close() {
     this.closeRequested.emit();
-  }
-
-  share(contract: ContractDashboardEntry) {
-    this.shareRequested.emit(contract);
   }
 
   // ─── Alias editing (relayed to the shell — the same contract's editor

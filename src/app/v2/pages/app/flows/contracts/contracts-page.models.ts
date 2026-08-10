@@ -20,7 +20,6 @@ export type TabName =
   | 'templates'
   | 'detail';
 export type ContractDetailTab = 'details' | 'action';
-export type CreateMode = 'template' | 'custom';
 export type ContractsTransientState = {
   activeTab?: TabName;
   detailPanelTab?: ContractDetailTab;

@@ -6,7 +6,6 @@ import {
   KcInputComponent,
   KcNumberInputComponent,
   KcStepperComponent,
-  NotificationService,
 } from '@kaspacom/ui-kit';
 import { ERROR_CODES_MESSAGES } from '@kaspacom/wallet-messages';
 import { WalletService } from '../../../../../../../services/wallet.service';
@@ -37,7 +36,6 @@ import { CovenantTemplateService } from '../../services/covenant-template.servic
 import { ContractsRegistryRefreshService } from '../../services/contracts-registry-refresh.service';
 import { hex32ToBytes, computeBlake2bHex } from '../../crypto.util';
 import {
-  CreateMode,
   DeployIndexerState,
   SELF_CUSTODY_WHITELIST_CAPACITY,
 } from '../../contracts-page.models';
@@ -78,7 +76,6 @@ export class ContractTemplateDeployFormComponent {
   private registryService = inject(ContractRegistryService);
   private kaspaL1NetworkService = inject(KaspaL1NetworkService);
   private templatePatcher = inject(TemplatePatcherService);
-  private notificationService = inject(NotificationService);
   display = inject(ContractDisplayService);
   private templateService = inject(CovenantTemplateService);
   private contractsRegistryRefresh = inject(ContractsRegistryRefreshService);
@@ -117,11 +114,9 @@ export class ContractTemplateDeployFormComponent {
   );
   network = computed(() => this.kaspaL1NetworkService.getNetworkId());
 
-  createMode = signal<CreateMode>('template');
   activeTemplate = signal<ContractTemplate | null>(null);
   deploySteps = computed<{ label: string; value: number }[]>(() => {
-    const pastChooseType =
-      this.activeTemplate() !== null || this.createMode() === 'custom';
+    const pastChooseType = this.activeTemplate() !== null;
 
     return [
       { label: 'Choose type', value: pastChooseType ? 100 : 0 },
@@ -140,8 +135,6 @@ export class ContractTemplateDeployFormComponent {
   templateError = signal<string | null>(null);
 
   deployContractJson = signal('');
-  deployContractTouched = false;
-  deployContractError = signal('');
   deployAmount = '';
   deployContractNickname = '';
   deployAmountTouched = false;
@@ -155,28 +148,6 @@ export class ContractTemplateDeployFormComponent {
   deployError = signal<string | null>(null);
   isDeploying = signal(false);
 
-  parsedDeployContract = computed(() => {
-    try {
-      if (!this.deployContractJson()) return null;
-      return this.covenantService.parseCompiledContract(
-        this.deployContractJson(),
-      );
-    } catch {
-      return null;
-    }
-  });
-
-  deployConstructorParams = computed(() => {
-    const contract = this.parsedDeployContract();
-    return contract?.ast.params || [];
-  });
-
-  deployEntrypointFunctions = computed(() => {
-    const contract = this.parsedDeployContract();
-    if (!contract) return [];
-    return contract.ast.functions.filter((f) => f.entrypoint);
-  });
-
   getTemplateKey(
     input: any,
   ): 'deadman' | 'timelock' | 'multisig' | 'escrow' | 'default' {
@@ -184,7 +155,6 @@ export class ContractTemplateDeployFormComponent {
   }
 
   selectTemplate(template: ContractTemplate) {
-    this.createMode.set('template');
     const form = this.initializeTemplateForm(template);
     this.templateFormValues = form.values;
     this.templateFieldTouched = form.touched;
@@ -252,19 +222,6 @@ export class ContractTemplateDeployFormComponent {
     this.setSelfCustodyDelayFromHours(24, false);
   }
 
-  selectCustomContract() {
-    this.createMode.set('custom');
-    this.activeTemplate.set(null);
-    this.generatedContractJson.set(null);
-    this.templateError.set(null);
-    this.deployError.set(null);
-    this.deployResult.set(null);
-    this.deployIndexerState.set(null);
-    this.deployContractTouched = false;
-    this.deployContractError.set('');
-    this.validateDeployAmount(false);
-  }
-
   resetTemplateSelection() {
     this.activeTemplate.set(null);
     this.generatedContractJson.set(null);
@@ -272,8 +229,6 @@ export class ContractTemplateDeployFormComponent {
     this.deployError.set(null);
     this.deployResult.set(null);
     this.deployIndexerState.set(null);
-    this.deployContractTouched = false;
-    this.deployContractError.set('');
     this.templateFieldTouched = {};
     this.templateFieldErrors = {};
     this.templateResolvedAddresses = {};
@@ -555,33 +510,6 @@ export class ContractTemplateDeployFormComponent {
     this.validateDeployAmount(false);
   }
 
-  onDeployContractJsonChange(value: string) {
-    this.deployContractJson.set(value || '');
-    this.deployContractTouched = true;
-    this.validateDeployContractJson(false);
-  }
-
-  validateDeployContractJson(markTouched = false): boolean {
-    if (markTouched) this.deployContractTouched = true;
-
-    const value = this.deployContractJson().trim();
-    if (!value) {
-      this.deployContractError.set(
-        this.deployContractTouched ? 'Compiled contract JSON is required' : '',
-      );
-      return false;
-    }
-
-    try {
-      this.covenantService.parseCompiledContract(value);
-      this.deployContractError.set('');
-      return true;
-    } catch {
-      this.deployContractError.set('Invalid compiled contract JSON');
-      return false;
-    }
-  }
-
   onMaxDeployAmountClick() {
     if (this.isDeploying()) return;
     this.deployAmount = String(this.deployAvailableBalance());
@@ -839,10 +767,6 @@ export class ContractTemplateDeployFormComponent {
     if (this.isDeploying() || !this.currentWallet()) return true;
     if (!this.isDeployAmountCompleteValid()) return true;
 
-    if (this.createMode() === 'custom') {
-      return !this.isDeployContractJsonCompleteValid();
-    }
-
     const template = this.activeTemplate();
     if (!template) return true;
 
@@ -869,38 +793,6 @@ export class ContractTemplateDeployFormComponent {
       Number.isFinite(amount) &&
       amount >= this.MIN_DEPLOY_AMOUNT_KAS &&
       amount <= this.deployAvailableBalance()
-    );
-  }
-
-  private isDeployContractJsonCompleteValid(): boolean {
-    const value = this.deployContractJson().trim();
-    if (!value) return false;
-    try {
-      this.covenantService.parseCompiledContract(value);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  getParamTypes(
-    params: Array<{ name: string; type_ref: { base: string } }>,
-  ): string {
-    return params.map((p) => `${p.name}:${p.type_ref.base}`).join(', ');
-  }
-
-  copyDeployedContractShareLink() {
-    const id =
-      this.deployIndexerState()?.covenantId || this.deployResult()?.covenantId;
-    if (!id) return;
-    const link = this.display.buildShareLink(id);
-    navigator.clipboard.writeText(link).then(
-      () =>
-        this.notificationService.success(
-          'Copied',
-          'Contract share link copied.',
-        ),
-      () => prompt('Copy this contract link:', link),
     );
   }
 
@@ -1107,11 +999,7 @@ export class ContractTemplateDeployFormComponent {
     const amountKas = Number(this.deployAmount);
 
     if (!contractJson) {
-      this.validateDeployContractJson(true);
-      return;
-    }
-
-    if (!this.validateDeployContractJson(true)) {
+      this.deployError.set('Failed to generate contract from template');
       return;
     }
 
@@ -1234,7 +1122,7 @@ export class ContractTemplateDeployFormComponent {
             status: 'indexed',
             covenantId: indexedCovenantId,
             message:
-              'Indexed. This contract can now be shared and tracked from My Contracts.',
+              'Indexed. This contract is now tracked from My Contracts.',
           });
           return;
         }

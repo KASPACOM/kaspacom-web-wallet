@@ -10,9 +10,8 @@ import {
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription } from 'rxjs';
-import { DropdownOption, NotificationService } from '@kaspacom/ui-kit';
+import { Router } from '@angular/router';
+import { DropdownOption } from '@kaspacom/ui-kit';
 import { WalletService } from '../../../../../services/wallet.service';
 import { CovenantService } from '../../../../../services/covenant/covenant.service';
 import { RpcService } from '../../../../../services/kaspa-netwrok-services/rpc.service';
@@ -103,16 +102,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private flowPagesService = inject(FlowPagesService);
   wideWorkspaceService = inject(WideWorkspaceService);
   private approvalFlowService = inject(ApprovalFlowService);
-  private route = inject(ActivatedRoute);
   private router = inject(Router);
   private platformId = inject(PLATFORM_ID);
-  private notificationService = inject(NotificationService);
   private isBrowser = isPlatformBrowser(this.platformId);
   private display = inject(ContractDisplayService);
   private templateService = inject(CovenantTemplateService);
   private contractsData = inject(ContractsDataService);
   private contractsRegistryRefresh = inject(ContractsRegistryRefreshService);
-  private routeSubscription?: Subscription;
   private registryMigrationPromise?: Promise<void>;
   private contractsLoadRequestToken = 0;
   private readonly contractsDebugEnabled = false;
@@ -236,7 +232,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   actionPageView = signal<'list' | 'form'>('list');
   detailRouteId = signal<string | null>(null);
   detailRouteNotFound = signal(false);
-  pendingUrlImport = signal<string | null>(null);
   private readonly supportedIndexerTemplates = [
     'DeadManSwitch',
     'TimeLockVault',
@@ -251,7 +246,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * Reuses the canonical name already computed by normalizeContractName()
    * (indexer label + argument-name fallback, resolved upstream in #257 and
    * stored as contractName on every ContractDashboardEntry); unresolved
-   * (custom / tracking-incomplete) → 'default' (neutral UI).
+   * (tracking-incomplete / unrecognized) → 'default' (neutral UI).
    */
   getTemplateKey(
     input: any,
@@ -457,47 +452,17 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       void this.loadContracts({ skipOnChainStatusRefresh: true });
     });
 
-    effect(() => {
-      const contractId = this.pendingUrlImport();
-      const wallet = this.currentWallet();
-      this.network();
-      if (!contractId || !wallet) return;
-
-      this.pendingUrlImport.set(null);
-      void this.showInboundIndexerImport(contractId);
-    });
   }
 
   ngOnInit() {
     this.wideWorkspaceService.activate();
     void this.ensureContractRegistryMigrated();
     this.restoreTransientState();
-    this.routeSubscription = this.route.paramMap.subscribe((params) => {
-      const contractId = params.get('contractId');
-      this.detailRouteId.set(null);
-      this.detailRouteNotFound.set(false);
-      if (contractId) {
-        const requestedNetwork = this.route.snapshot.queryParamMap
-          .get('network')
-          ?.trim();
-        if (requestedNetwork && requestedNetwork !== this.network()) {
-          if (!this.rpcService.setNetwork(requestedNetwork)) {
-            this.selectedDetailError.set(
-              `This contract link targets unsupported network "${requestedNetwork}".`,
-            );
-            return;
-          }
-        }
-        this.queueInboundIndexerImport(contractId);
-      }
-    });
-    void this.applyInboundContractLink();
   }
 
   ngOnDestroy() {
     this.destroyed = true;
     this.wideWorkspaceService.deactivate();
-    this.routeSubscription?.unsubscribe();
   }
 
   private restoreTransientState() {
@@ -543,47 +508,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.interactResult.set(state.interactResult);
 
     this.flowPagesService.saveTransientState('contracts', undefined);
-  }
-
-  private async applyInboundContractLink() {
-    const params = this.route.snapshot.queryParamMap;
-    const contractId = params.get('contract')?.trim();
-    if (!contractId) return;
-
-    const requestedNetwork = params.get('network')?.trim();
-    if (
-      requestedNetwork &&
-      requestedNetwork !== this.network() &&
-      !this.rpcService.setNetwork(requestedNetwork)
-    ) {
-      this.activeTab.set('lookup-import');
-      this.indexerImportError.set(
-        `This contract link targets unsupported network "${requestedNetwork}".`,
-      );
-      return;
-    }
-
-    this.queueInboundIndexerImport(contractId);
-  }
-
-  private queueInboundIndexerImport(contractId: string) {
-    this.activeTab.set('lookup-import');
-    this.indexerImportQuery = contractId;
-    this.indexerImportError.set(null);
-    this.indexerImportPreview.set(null);
-
-    if (!this.currentWallet()) {
-      this.pendingUrlImport.set(contractId);
-      return;
-    }
-
-    void this.showInboundIndexerImport(contractId);
-  }
-
-  private async showInboundIndexerImport(contractId: string) {
-    this.activeTab.set('lookup-import');
-    this.indexerImportQuery = contractId;
-    await this.lookupIndexerImport();
   }
 
   private ensureContractRegistryMigrated(): Promise<void> {
@@ -2403,29 +2327,21 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       },
     },
     MultiSigVault: {
-      spend12: {
-        label: '2-of-3 Withdraw (Signer 1 + 2)',
+      initiateWithdrawal: {
+        label: 'Initiate Withdrawal',
         description:
-          'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 1 and Signer 2.',
+          'Choose a co-signer, sign your part, and generate a partial spend JSON.',
         iconClass: 'icon-coins-02',
         extraGuard: (detail) =>
-          this.requireOneOfSigners(detail, 'Signer 1', 'Signer 2'),
+          this.requireOneOfRoles(detail, ['Signer 1', 'Signer 2', 'Signer 3']),
       },
-      spend13: {
-        label: '2-of-3 Withdraw (Signer 1 + 3)',
+      completePartial: {
+        label: 'Complete Co-Signer Withdrawal',
         description:
-          'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 1 and Signer 3.',
-        iconClass: 'icon-coins-02',
+          'Paste a partial withdrawal JSON from another signer, add your signature, and broadcast.',
+        iconClass: 'icon-send-01',
         extraGuard: (detail) =>
-          this.requireOneOfSigners(detail, 'Signer 1', 'Signer 3'),
-      },
-      spend23: {
-        label: '2-of-3 Withdraw (Signer 2 + 3)',
-        description:
-          'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 2 and Signer 3.',
-        iconClass: 'icon-coins-02',
-        extraGuard: (detail) =>
-          this.requireOneOfSigners(detail, 'Signer 2', 'Signer 3'),
+          this.requireOneOfRoles(detail, ['Signer 1', 'Signer 2', 'Signer 3']),
       },
       topUp: {
         label: 'Top Up',
@@ -2441,6 +2357,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           'Both buyer and seller agree to release funds to the recipient.',
         iconClass: 'icon-send-01',
         requiredRole: 'Buyer',
+      },
+      completePartial: {
+        label: 'Complete Release Funds',
+        description:
+          'Seller: paste the buyer’s partial release JSON, add your signature, and broadcast.',
+        iconClass: 'icon-send-01',
+        requiredRole: 'Seller',
       },
       refund: {
         label: 'Refund',
@@ -2531,7 +2454,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const testMode = this.isTestModeEnabled();
 
     return Object.entries(table).map(([fnName, meta]) => {
-      const existsOnChain = availableNames.has(fnName);
+      const existsOnChain =
+        fnName === 'completePartial' ||
+        fnName === 'initiateWithdrawal' ||
+        availableNames.has(fnName);
 
       let disabledReason: string | null = null;
       if (testMode) {
@@ -2742,10 +2668,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       TimeLockVault: currentRoles.includes('Recovery')
         ? ['recover', 'spend', 'changeRecovery', 'topUp']
         : ['spend', 'changeRecovery', 'recover', 'topUp'],
-      MultiSigVault: ['spend12', 'spend13', 'spend23', 'topUp'],
+      MultiSigVault: ['initiateWithdrawal', 'completePartial', 'topUp'],
       EscrowWithArbiter: currentRoles.includes('Arbiter')
         ? ['arbitrate', 'release', 'refund', 'topUp']
-        : ['release', 'refund', 'arbitrate', 'topUp'],
+        : currentRoles.includes('Seller')
+          ? ['completePartial', 'release', 'refund', 'arbitrate', 'topUp']
+          : ['release', 'refund', 'arbitrate', 'topUp'],
       SelfCustodyVault: currentRoles.includes('Cold wallet')
         ? ['emergencySweep', 'unvault', 'finalize', 'topUp']
         : ['unvault', 'finalize', 'topUp', 'emergencySweep'],
@@ -2775,7 +2703,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
     if (!query) {
       this.indexerImportError.set(
-        'Enter a covenant ID, script hash, transaction ID, contract address, or share-link value.',
+        'Enter a covenant ID, script hash, transaction ID, or contract address.',
       );
       return;
     }
@@ -3922,76 +3850,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   formatActionName(action: string): string {
     return this.display.formatActionName(action);
-  }
-
-  /**
-   * Builds a share link that carries only the network and canonical covenant
-   * ID — never private data or compiled JSON. The receiving wallet imports
-   * current state from the indexer when the link is opened.
-   */
-  buildShareLink(covenantId: string): string {
-    return this.display.buildShareLink(covenantId);
-  }
-
-  copyContractShareLink(contract: ContractDashboardEntry) {
-    const id = contract.covenantId;
-    if (!id) return;
-    const link = this.buildShareLink(id);
-    navigator.clipboard.writeText(link).then(
-      () =>
-        this.notificationService.success(
-          'Copied',
-          'Contract share link copied.',
-        ),
-      () => prompt('Copy this contract link:', link),
-    );
-  }
-
-  /** Contract explicitly picked in the "Share a contract" card; empty = auto-default to most recent. */
-  shareableContractId = signal<string>('');
-
-  /** Dropdown options for the "Share a contract" card — only contracts with a covenant ID can be shared. */
-  shareableContracts = computed<ContractDashboardEntry[]>(() =>
-    this.dashboardContracts().filter((c) => !!c.covenantId),
-  );
-
-  /** Effective selection — the explicit pick, or the most-recently-interacted contract. */
-  effectiveShareableContractId = computed<string>(
-    () => this.shareableContractId() || this.shareableContracts()[0]?.id || '',
-  );
-
-  /** Dropdown options for the "Share a contract" card. */
-  shareableContractOptions = computed<DropdownOption[]>(() =>
-    this.shareableContracts().map((contract) => ({
-      value: contract.id,
-      label: `${contract.displayName} - ${contract.contractTypeLabel} - ${contract.covenantId}`,
-    })),
-  );
-
-  /** Readonly link shown in the "Share a contract" card. */
-  shareableContractLink = computed<string>(() => {
-    const id = this.effectiveShareableContractId();
-    if (!id) return '';
-    const contract = this.shareableContracts().find((c) => c.id === id);
-    if (!contract?.covenantId) return '';
-    return this.buildShareLink(contract.covenantId);
-  });
-
-  onShareableContractChange(value: string) {
-    this.shareableContractId.set(value || '');
-  }
-
-  copyShareableContractLink() {
-    const link = this.shareableContractLink();
-    if (!link) return;
-    navigator.clipboard.writeText(link).then(
-      () =>
-        this.notificationService.success(
-          'Copied',
-          'Contract share link copied.',
-        ),
-      () => prompt('Copy this contract link:', link),
-    );
   }
 
   private delay(ms: number): Promise<void> {

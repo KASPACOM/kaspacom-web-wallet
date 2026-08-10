@@ -120,7 +120,7 @@
   gap: 14px;
   flex-wrap: wrap;
 }
-// Flex basis (not just min-width: 0) so this column wraps the Share/Close
+// Flex basis (not just min-width: 0) so this column wraps the title actions
 // buttons to their own line on narrow viewports instead of shrinking the
 // title down to a near-zero-width, one-letter-per-line sliver.
 .detail-title-main {

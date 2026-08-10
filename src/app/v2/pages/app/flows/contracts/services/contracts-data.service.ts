@@ -171,12 +171,12 @@ export class ContractsDataService {
       return currentRoles.includes('Recovery') ? 'Recover' : 'Withdraw';
     if (normalized === 'MultiSigVault')
       return currentRoles.some((role) => role.startsWith('Signer'))
-        ? 'Sign / Complete'
+        ? 'Initiate Withdrawal'
         : 'Open Actions';
     if (normalized === 'EscrowWithArbiter') {
       if (currentRoles.includes('Arbiter')) return 'Arbitrate';
       if (currentRoles.includes('Buyer')) return 'Release / Refund';
-      if (currentRoles.includes('Seller')) return 'Release';
+      if (currentRoles.includes('Seller')) return 'Complete Release';
     }
     if (normalized === 'SelfCustodyVault') {
       if (currentRoles.includes('Cold wallet')) return 'Emergency Sweep';
@@ -512,7 +512,7 @@ export class ContractsDataService {
         await this.localTemplateParticipants(compiled);
       if (templateParticipants.length > 0) return templateParticipants;
     } catch {
-      // Fall back to deployer metadata for older or custom saved contracts.
+      // Fall back to deployer metadata for older saved contracts.
     }
 
     const selfCustodyParticipants = this.localSelfCustodyParticipants(contract);

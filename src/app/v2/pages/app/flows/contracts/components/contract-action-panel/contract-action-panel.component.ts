@@ -147,6 +147,7 @@ export class ContractActionPanelComponent {
   extraArgValues: { [paramName: string]: string } = {};
   importPartialJson = '';
   aliasDraft = '';
+  selectedCoSignerRole = '';
 
   // Bound to the shell's currentWalletAliasKey() — used only to recompute
   // aliasDraft the same way ContractsDashboardComponent does, so the two
@@ -274,6 +275,12 @@ export class ContractActionPanelComponent {
       contract.ast.functions.find((f) => f.name === entry.name && f.entrypoint),
     );
 
+    if (contract.contract_name === 'MultiSigVault') {
+      funcs = funcs.filter(
+        (entry) => !['spend12', 'spend13', 'spend23'].includes(entry.name),
+      );
+    }
+
     // Dead Man's Switch never exposes a generic "withdraw" — it was removed
     // from the template, but legacy on-chain contracts compiled while it was
     // briefly part of the template may still report it in their ABI. A
@@ -337,6 +344,7 @@ export class ContractActionPanelComponent {
   extraArgsForFunction(): Array<{ name: string; type_name: string }> {
     const contract = this.parsedInteractContract();
     if (!contract || !this.selectedFunction()) return [];
+    if (this.isPseudoAction(this.selectedFunction())) return [];
     const abiEntry = contract.abi.find(
       (e) => e.name === this.selectedFunction(),
     );
@@ -473,7 +481,8 @@ export class ContractActionPanelComponent {
     const txid = this.interactOutpointTxid();
     const vout = parseInt(this.interactOutpointVout(), 10);
     const inputAmountSompi = this.interactInputAmount();
-    const functionName = this.selectedFunction();
+    const selectedAction = this.selectedFunction();
+    const functionName = this.resolveSelectedFunctionName();
     let outputAddress =
       this.interactResolvedOutputAddress() || this.interactOutputAddress();
     const outputAmountKas = parseFloat(this.interactOutputAmount());
@@ -494,8 +503,18 @@ export class ContractActionPanelComponent {
       return;
     }
 
-    if (!functionName) {
+    if (!selectedAction) {
       this.interactError.set('Please select an entrypoint function');
+      return;
+    }
+
+    if (selectedAction === 'completePartial') {
+      await this.completePartialSpend();
+      return;
+    }
+
+    if (!functionName) {
+      this.interactError.set('Please select a co-signer wallet');
       return;
     }
 
@@ -1898,7 +1917,7 @@ export class ContractActionPanelComponent {
 
   /**
    * Field config for whatever function is currently selected. Null for
-   * generic/custom contracts with no curated actionMetaTable entry — those
+   * generic/unrecognized contracts with no curated actionMetaTable entry — those
    * keep rendering the old manual/ABI-driven chain instead of this form.
    */
   getSelectedActionFieldConfig(): ActionFieldConfigEntry | null {
@@ -1916,7 +1935,11 @@ export class ContractActionPanelComponent {
     this.interactError.set(null);
     this.interactResult.set(null);
     this.partialSpendJson.set(null);
+    this.partialCompleteError.set(null);
+    this.partialCompleteResult.set(null);
+    this.importPartialJson = '';
     this.extraArgValues = {};
+    this.selectedCoSignerRole = '';
     this.dmsNewExpiry = '';
     this.topUpAmount.set('');
   }
@@ -1930,6 +1953,8 @@ export class ContractActionPanelComponent {
       spend12: '2-of-3 Withdraw (Signer 1 + 2)',
       spend13: '2-of-3 Withdraw (Signer 1 + 3)',
       spend23: '2-of-3 Withdraw (Signer 2 + 3)',
+      initiateWithdrawal: 'Initiate Withdrawal',
+      completePartial: 'Sign & Broadcast',
       withdraw: 'Withdraw',
       recover: 'Recovery Withdraw',
       claim: 'Claim',
@@ -1979,6 +2004,10 @@ export class ContractActionPanelComponent {
           'Cancel the escrow and return funds to the sender. May require timelock expiry.',
       },
       multisigvault: {
+        initiateWithdrawal:
+          'Choose which co-signer wallet should complete the withdrawal.',
+        completePartial:
+          'Paste a partial withdrawal JSON from another signer, add your signature, and broadcast.',
         spend12:
           'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 1 and Signer 2.',
         spend13:
@@ -2021,6 +2050,8 @@ export class ContractActionPanelComponent {
         'Emergency withdrawal using the recovery key. Only available after the timelock expires.',
       claim: 'Claim the funds locked in this contract.',
       release: 'Release the locked funds to the designated recipient.',
+      completePartial:
+        'Paste a partial transaction JSON, add your signature, and broadcast.',
       refund: 'Return the locked funds to the original sender.',
       increment:
         'Update the on-chain state. The contract is re-deployed with new values.',
@@ -2409,6 +2440,7 @@ export class ContractActionPanelComponent {
    * Check if the selected function requires multiple signers (two-phase signing)
    */
   isMultiSigFunction(fnName: string): boolean {
+    if (fnName === 'initiateWithdrawal') return true;
     const contract = this.parsedInteractContract();
     if (!contract) return false;
     const abiEntry = contract.abi.find((e) => e.name === fnName);
@@ -2416,17 +2448,84 @@ export class ContractActionPanelComponent {
     return abiEntry.inputs.filter((i) => i.type_name === 'sig').length > 1;
   }
 
-  /**
-   * Whether this contract has *any* multi-sig entrypoint — gates the
-   * "Complete co-signer transaction" section, which is only relevant for
-   * contracts that can produce a partial spend in the first place (e.g. a
-   * plain Dead Man's Switch or single-sig Escrow release has nothing for a
-   * co-signer to complete).
-   */
-  contractHasMultiSigFunction(): boolean {
-    return this.availableFunctions().some((fn) =>
-      this.isMultiSigFunction(fn.name),
+  isPseudoAction(fnName: string): boolean {
+    return fnName === 'initiateWithdrawal' || fnName === 'completePartial';
+  }
+
+  isCompletePartialAction(
+    fnName: string | undefined = this.selectedFunction(),
+  ): boolean {
+    return fnName === 'completePartial';
+  }
+
+  isInitiateWithdrawalAction(
+    fnName: string | undefined = this.selectedFunction(),
+  ): boolean {
+    return fnName === 'initiateWithdrawal';
+  }
+
+  private getCurrentSignerRole(): 'Signer 1' | 'Signer 2' | 'Signer 3' | '' {
+    const detail = this.selectedDetail();
+    const wallet = this.currentWallet();
+    if (!detail || !wallet) return '';
+
+    const walletValues = new Set<string>(
+      [
+        wallet.getAddress(),
+        wallet.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString(),
+      ]
+        .filter(Boolean)
+        .map((value) => value.toLowerCase()),
     );
+
+    const signer = (detail.entry.participants || []).find((participant) => {
+      if (!['Signer 1', 'Signer 2', 'Signer 3'].includes(participant.label)) {
+        return false;
+      }
+      const values = [participant.value, ...(participant.matchValues || [])]
+        .filter(Boolean)
+        .map((value) => value.toLowerCase());
+      return values.some((value) => walletValues.has(value));
+    });
+
+    return (signer?.label as 'Signer 1' | 'Signer 2' | 'Signer 3') || '';
+  }
+
+  private getParticipantValueForRole(role: string): string {
+    const participant = (this.selectedDetail()?.entry.participants || []).find(
+      (entry) => entry.label === role,
+    );
+    return participant?.value || role;
+  }
+
+  coSignerOptions(): DropdownOption[] {
+    const currentSigner = this.getCurrentSignerRole();
+    return ['Signer 1', 'Signer 2', 'Signer 3']
+      .filter((role) => role !== currentSigner)
+      .map((role) => ({
+        value: role,
+        label: `${this.getParticipantValueForRole(role)} (${role})`,
+      }));
+  }
+
+  onCoSignerChange(value: unknown) {
+    this.selectedCoSignerRole = value ? String(value) : '';
+    this.interactError.set(null);
+  }
+
+  private resolveSelectedFunctionName(): string {
+    const selected = this.selectedFunction();
+    if (selected !== 'initiateWithdrawal') return selected;
+
+    const currentSigner = this.getCurrentSignerRole();
+    const coSigner = this.selectedCoSignerRole;
+    const pair = [currentSigner, coSigner].sort().join('|');
+    const map: Record<string, string> = {
+      'Signer 1|Signer 2': 'spend12',
+      'Signer 1|Signer 3': 'spend13',
+      'Signer 2|Signer 3': 'spend23',
+    };
+    return map[pair] || '';
   }
 
   /**
@@ -2436,6 +2535,7 @@ export class ContractActionPanelComponent {
   functionRequiresOutput(fnName: string): boolean {
     return (
       !!fnName &&
+      fnName !== 'completePartial' &&
       !this.REDEPLOY_FUNCTIONS.has(fnName) &&
       !this.isTopUpFunction(fnName) &&
       !this.isDmsChangeHeir() &&
@@ -2525,9 +2625,18 @@ export class ContractActionPanelComponent {
     this.interactResult.set(null);
     this.interactIndexerState.set(null);
     this.partialSpendJson.set(null);
+    this.partialCompleteError.set(null);
+    this.partialCompleteResult.set(null);
+    this.importPartialJson = '';
     this.extraArgValues = {};
+    this.selectedCoSignerRole = '';
     this.dmsNewExpiry = '';
     this.topUpAmount.set('');
+    if (this.isInitiateWithdrawalAction(name)) {
+      this.selectedCoSignerRole = String(
+        this.coSignerOptions()[0]?.value || '',
+      );
+    }
     if (
       ['emergencySweep', 'finalize'].includes(name) &&
       this.parsedInteractContract()?.contract_name === 'SelfCustodyVault'

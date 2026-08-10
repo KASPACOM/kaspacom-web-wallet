@@ -15,7 +15,7 @@
   </div>
 
   <!-- Step 1: pick a template -->
-  @if (!activeTemplate() && createMode() !== "custom") {
+  @if (!activeTemplate()) {
     <div class="flex column gap-4">
       <h3
         class="text-white"
@@ -118,42 +118,6 @@
           </svg>
         </button>
       }
-      <button
-        type="button"
-        class="template-card custom"
-        (click)="selectCustomContract()"
-      >
-        <span class="tpl-icon"
-          ><svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.7"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path
-              d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"
-            /></svg
-        ></span>
-        <span class="tc-body">
-          <span class="tc-name">Custom covenant</span>
-          <span class="tc-desc"
-            >Paste compiled SilverScript JSON manually.</span
-          >
-        </span>
-        <svg
-          class="tc-chevron"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M9 18l6-6-6-6" />
-        </svg>
-      </button>
     </div>
   } @else {
     <!-- Step 2: parameters -->
@@ -232,32 +196,20 @@
           }
         </span>
         <div class="flex column gap-4">
-          @if (activeTemplate()) {
-            <h3
-              class="text-white"
-              style="margin: 0; font-size: 16px; font-weight: 600"
-            >
-              {{ activeTemplate()!.name }}
-            </h3>
-            <p class="text-gray-60 typo-text-2" style="margin: 0">
-              Fill in the details in plain terms.
-            </p>
-          } @else {
-            <h3
-              class="text-white"
-              style="margin: 0; font-size: 16px; font-weight: 600"
-            >
-              Custom covenant
-            </h3>
-            <p class="text-gray-60 typo-text-2" style="margin: 0">
-              Paste deploy-ready compiled JSON and choose how much KAS to lock.
-            </p>
-          }
+          <h3
+            class="text-white"
+            style="margin: 0; font-size: 16px; font-weight: 600"
+          >
+            {{ activeTemplate()!.name }}
+          </h3>
+          <p class="text-gray-60 typo-text-2" style="margin: 0">
+            Fill in the details in plain terms.
+          </p>
         </div>
       </div>
       <button
         class="back-button p-8 typo-text-2"
-        (click)="resetTemplateSelection(); createMode.set('template')"
+        (click)="resetTemplateSelection()"
       >
         Change
       </button>
@@ -484,78 +436,6 @@
       </div>
     }
 
-    @if (createMode() === "custom") {
-      <div class="field">
-        <label class="field-label">Compiled contract JSON</label>
-        <textarea
-          class="contract-input"
-          [class.invalid]="!!deployContractError()"
-          rows="8"
-          placeholder="Paste compiled contract JSON from kascov"
-          [ngModel]="deployContractJson()"
-          (ngModelChange)="onDeployContractJsonChange($event)"
-          [disabled]="isDeploying()"
-        ></textarea>
-        @if (deployContractError()) {
-          <span class="text-red typo-text-2">{{ deployContractError() }}</span>
-        }
-        <span class="field-help"
-          >Templates are safer for common flows because the wallet explains and
-          validates each parameter.</span
-        >
-      </div>
-
-      @if (parsedDeployContract()) {
-        <div class="contract-summary p-16 flex column gap-12">
-          <h3 class="text-white typo-text-1 fw-bold">Contract summary</h3>
-          <div class="flex column gap-8">
-            <div class="flex column gap-4">
-              <span class="text-gray-60 typo-text-1">Name</span>
-              <span class="text-white typo-text-2">{{
-                parsedDeployContract()!.contract_name || "Unnamed"
-              }}</span>
-            </div>
-            @if (deployConstructorParams().length > 0) {
-              <div class="flex column gap-4">
-                <span class="text-gray-60 typo-text-1"
-                  >Constructor parameters</span
-                >
-                @for (param of deployConstructorParams(); track param.name) {
-                  <div class="param-item p-8">
-                    <span class="text-white typo-text-2">{{ param.name }}</span>
-                    <span
-                      class="text-gray-60 typo-text-2"
-                      style="margin-left: 8px"
-                      >({{ param.type_ref.base }})</span
-                    >
-                  </div>
-                }
-              </div>
-            }
-            @if (deployEntrypointFunctions().length > 0) {
-              <div class="flex column gap-4">
-                <span class="text-gray-60 typo-text-1"
-                  >Entrypoint functions</span
-                >
-                @for (fn of deployEntrypointFunctions(); track fn.name) {
-                  <div class="param-item p-8">
-                    <span class="text-white typo-text-2">{{ fn.name }}()</span>
-                    @if (fn.params.length > 0) {
-                      <span
-                        class="text-gray-60 typo-text-2"
-                        style="margin-left: 8px"
-                        >params: {{ getParamTypes(fn.params) }}</span
-                      >
-                    }
-                  </div>
-                }
-              </div>
-            }
-          </div>
-        </div>
-      }
-    }
-
     <!-- Amount -->
     <div class="field">
       <label class="field-label">Contract nickname (optional)</label>
@@ -671,12 +551,6 @@
                   [value]="deployIndexerState()!.covenantId || ''"
                   [size]="'sm'"
                 ></app-copy-button>
-                @if (deployIndexerState()!.status === "indexed") {
-                  <kc-button
-                    [text]="'Copy share link'"
-                    (buttonClick)="copyDeployedContractShareLink()"
-                  ></kc-button>
-                }
               </div>
             }
           </div>
@@ -688,9 +562,7 @@
       [text]="isDeploying() ? 'Deploying...' : 'Review and deploy covenant'"
       [isDisabled]="isCreateDeployDisabled()"
       [isFullWidth]="true"
-      (buttonClick)="
-        createMode() === 'custom' ? deployContract() : deployTemplateContract()
-      "
+      (buttonClick)="deployTemplateContract()"
     ></kc-button>
   }
 </div>

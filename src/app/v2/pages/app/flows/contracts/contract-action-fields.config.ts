@@ -163,13 +163,13 @@ export const CONTRACT_ACTION_FIELDS: ContractActionFieldConfig = {
     },
   },
   MultiSigVault: {
-    spend12: { fields: WITHDRAW_FIELDS },
-    spend13: { fields: WITHDRAW_FIELDS },
-    spend23: { fields: WITHDRAW_FIELDS },
+    initiateWithdrawal: { fields: WITHDRAW_FIELDS },
+    completePartial: { fields: [] },
     topUp: { fields: TOP_UP_FIELDS },
   },
   EscrowWithArbiter: {
     release: { fields: WITHDRAW_FIELDS },
+    completePartial: { fields: [] },
     refund: { fields: WITHDRAW_FIELDS },
     topUp: { fields: TOP_UP_FIELDS },
     arbitrate: {

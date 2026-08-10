@@ -1,21 +1,17 @@
-import { Injectable, PLATFORM_ID, inject } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { RpcService } from '../../../../../../services/kaspa-netwrok-services/rpc.service';
+import { Injectable, inject } from '@angular/core';
 import { KaspaL1NetworkService } from '../../../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
 import { ContractDashboardEntry } from '../contracts-page.models';
 
 /**
  * Pure display/formatting helpers for the Contracts page — no state, safe to
  * inject anywhere a contract needs to be rendered (dashboard, detail, deploy
- * result, share links).
+ * result).
  */
 @Injectable({
   providedIn: 'root',
 })
 export class ContractDisplayService {
-  private rpcService = inject(RpcService);
   private kaspaL1NetworkService = inject(KaspaL1NetworkService);
-  private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   /**
    * Get explorer link for address
@@ -187,19 +183,5 @@ export class ContractDisplayService {
       default:
         return 'default';
     }
-  }
-
-  /**
-   * Builds a share link that carries only the network and canonical covenant
-   * ID — never private data or compiled JSON. The receiving wallet imports
-   * current state from the indexer when the link is opened.
-   */
-  buildShareLink(covenantId: string): string {
-    if (!this.isBrowser) return '';
-    const url = new URL(
-      `${window.location.origin}/app/contracts/${covenantId}`,
-    );
-    url.searchParams.set('network', this.rpcService.getNetwork());
-    return url.toString();
   }
 }

@@ -2,15 +2,21 @@
   "contract_name": "TimeLockVault",
   "compiler_version": "0.1.0",
   "script": [
-    107, 108, 118, 0, 156, 99, 117, 118, 32, 170, 171, 172, 173, 174, 175, 176,
-    177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191,
-    192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 172, 105, 117, 81, 103,
-    118, 81, 156, 99, 117, 118, 32, 187, 186, 185, 184, 183, 182, 181, 180, 179,
-    178, 177, 176, 175, 174, 173, 172, 171, 170, 169, 168, 167, 166, 165, 164,
-    163, 162, 161, 160, 159, 158, 157, 156, 172, 105, 6, 0, 16, 165, 212, 232,
-    0, 176, 117, 81, 103, 118, 82, 156, 99, 117, 185, 0, 156, 105, 0, 194, 185,
-    190, 160, 105, 0, 195, 185, 191, 135, 105, 81, 103, 117, 0, 105, 104, 104,
-    104
+    107, 32, 187, 186, 185, 184, 183, 182, 181, 180, 179, 178, 177, 176, 175,
+    174, 173, 172, 171, 170, 169, 168, 167, 166, 165, 164, 163, 162, 161, 160,
+    159, 158, 157, 156, 108, 118, 0, 156, 99, 117, 120, 32, 170, 171, 172, 173,
+    174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188,
+    189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 172, 105,
+    117, 117, 81, 103, 118, 81, 156, 99, 117, 82, 121, 32, 170, 171, 172, 173,
+    174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188,
+    189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 172, 105,
+    0, 194, 185, 190, 162, 105, 120, 1, 32, 124, 126, 185, 118, 201, 2, 236, 0,
+    148, 118, 81, 147, 188, 124, 126, 185, 118, 201, 118, 2, 236, 0, 148, 1, 34,
+    147, 124, 188, 126, 170, 2, 0, 0, 1, 170, 126, 1, 32, 126, 124, 126, 1, 135,
+    126, 0, 195, 135, 105, 117, 117, 117, 81, 103, 118, 82, 156, 99, 117, 120,
+    120, 172, 105, 6, 0, 16, 165, 212, 232, 0, 176, 117, 117, 81, 103, 118, 83,
+    156, 99, 117, 185, 0, 156, 105, 0, 194, 185, 190, 160, 105, 0, 195, 185,
+    191, 135, 105, 117, 81, 103, 117, 0, 105, 104, 104, 104, 104
   ],
   "ast": {
     "pragma": {
@@ -35,10 +41,10 @@
         "type_ref": {
           "base": "pubkey"
         },
-        "name": "recovery",
-        "span": "pubkey recovery",
+        "name": "initRecovery",
+        "span": "pubkey initRecovery",
         "type_span": "pubkey ",
-        "name_span": "recovery"
+        "name_span": "initRecovery"
       },
       {
         "type_ref": {
@@ -48,6 +54,22 @@
         "span": "int timeout",
         "type_span": "int ",
         "name_span": "timeout"
+      }
+    ],
+    "fields": [
+      {
+        "type_ref": {
+          "base": "pubkey"
+        },
+        "name": "recovery",
+        "expr": {
+          "kind": "identifier",
+          "data": "initRecovery",
+          "span": "initRecovery"
+        },
+        "span": "pubkey recovery = initRecovery;",
+        "type_span": "pubkey ",
+        "name_span": "recovery"
       }
     ],
     "constants": [],
@@ -102,6 +124,138 @@
         "span": "entrypoint function spend(sig s) {\n        // Owner can spend anytime with valid signature\n        require(checkSig(s, owner));\n    }",
         "name_span": "spend",
         "body_span": "require(checkSig(s, owner));"
+      },
+      {
+        "name": "changeRecovery",
+        "params": [
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "s",
+            "span": "sig s",
+            "type_span": "sig ",
+            "name_span": "s"
+          },
+          {
+            "type_ref": {
+              "base": "pubkey"
+            },
+            "name": "newRecovery",
+            "span": "pubkey newRecovery",
+            "type_span": "pubkey ",
+            "name_span": "newRecovery"
+          }
+        ],
+        "entrypoint": true,
+        "return_types": [],
+        "returns_tuple": false,
+        "body": [
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "s",
+                      "span": "s"
+                    },
+                    {
+                      "kind": "identifier",
+                      "data": "owner",
+                      "span": "owner"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(s, owner)"
+              },
+              "message": null,
+              "span": "require(checkSig(s, owner));",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "ge",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_value",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".value"
+                    },
+                    "span": "tx.outputs[0].value"
+                  },
+                  "right": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "input_value",
+                      "index": {
+                        "kind": "nullary",
+                        "data": "active_input_index",
+                        "span": "this.activeInputIndex"
+                      },
+                      "field_span": ".value"
+                    },
+                    "span": "tx.inputs[this.activeInputIndex].value"
+                  }
+                },
+                "span": "tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "function_call",
+            "data": {
+              "name": "validateOutputState",
+              "args": [
+                {
+                  "kind": "int",
+                  "data": 0,
+                  "span": "0"
+                },
+                {
+                  "kind": "state_object",
+                  "data": [
+                    {
+                      "name": "recovery",
+                      "expr": {
+                        "kind": "identifier",
+                        "data": "newRecovery",
+                        "span": "newRecovery"
+                      },
+                      "span": "recovery: newRecovery ",
+                      "name_span": "recovery"
+                    }
+                  ],
+                  "span": "{ recovery: newRecovery }"
+                }
+              ],
+              "span": "validateOutputState(0, { recovery: newRecovery });",
+              "name_span": "validateOutputState"
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function changeRecovery(sig s, pubkey newRecovery) {\n        require(checkSig(s, owner));\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);\n        validateOutputState(0, { recovery: newRecovery });\n    }",
+        "name_span": "changeRecovery",
+        "body_span": "require(checkSig(s, owner));\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);\n        validateOutputState(0, { recovery: newRecovery });"
       },
       {
         "name": "recover",
@@ -290,7 +444,7 @@
         "body_span": "require(this.activeInputIndex == 0);\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);"
       }
     ],
-    "span": "contract TimeLockVault(\n    pubkey owner,\n    pubkey recovery,\n    int timeout\n) {\n    entrypoint function spend(sig s) {\n        // Owner can spend anytime with valid signature\n        require(checkSig(s, owner));\n    }\n\n    entrypoint function recover(sig s) {\n        // Recovery can spend only after timeout\n        require(checkSig(s, recovery));\n        require(tx.time >= timeout);\n    }\n\n    entrypoint function topUp() {\n        require(this.activeInputIndex == 0);\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\n    }\n}",
+    "span": "contract TimeLockVault(\n    pubkey owner,\n    pubkey initRecovery,\n    int timeout\n) {\n    pubkey recovery = initRecovery;\n\n    entrypoint function spend(sig s) {\n        // Owner can spend anytime with valid signature\n        require(checkSig(s, owner));\n    }\n\n    entrypoint function changeRecovery(sig s, pubkey newRecovery) {\n        require(checkSig(s, owner));\n        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value);\n        validateOutputState(0, { recovery: newRecovery });\n    }\n\n    entrypoint function recover(sig s) {\n        // Recovery can spend only after timeout\n        require(checkSig(s, recovery));\n        require(tx.time >= timeout);\n    }\n\n    entrypoint function topUp() {\n        require(this.activeInputIndex == 0);\n        require(tx.outputs[0].value > tx.inputs[this.activeInputIndex].value);\n        require(tx.outputs[0].scriptPubKey == tx.inputs[this.activeInputIndex].scriptPubKey);\n    }\n}",
     "name_span": "TimeLockVault"
   },
   "abi": [
@@ -300,6 +454,19 @@
         {
           "name": "s",
           "type_name": "sig"
+        }
+      ]
+    },
+    {
+      "name": "changeRecovery",
+      "inputs": [
+        {
+          "name": "s",
+          "type_name": "sig"
+        },
+        {
+          "name": "newRecovery",
+          "type_name": "pubkey"
         }
       ]
     },
@@ -320,7 +487,7 @@
   "without_selector": false,
   "state_layout": {
     "start": 1,
-    "len": 0
+    "len": 33
   },
   "debug_info": null
 }

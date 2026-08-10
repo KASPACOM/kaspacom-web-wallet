@@ -1,0 +1,397 @@
+// Duplicated (not moved) from ../../contracts-page.component.scss — Angular's
+// emulated view encapsulation scopes CSS per-component. .banner, .error-message
+// base styles and the kc-pulse keyframes already live in
+// src/styles/shared-ui.scss (global), so only the rules below — still local
+// to the shell's own stylesheet — need a copy here.
+
+.tpl-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tpl-accent, var(--kaspa-20));
+  background: color-mix(
+    in srgb,
+    var(--tpl-accent, var(--kaspa-20)) 14%,
+    transparent
+  );
+
+  svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.alias-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.alias-link,
+.alias-btn {
+  border: 0;
+  background: transparent;
+  color: var(--kaspa-20);
+  font: inherit;
+  font-size: 12px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.alias-link.muted,
+.alias-btn.ghost {
+  color: var(--gray-60);
+}
+
+.alias-editor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.detail-alias-editor {
+  margin-top: 0;
+}
+
+.alias-notice {
+  margin-top: 6px;
+  color: var(--warning-50, #f8c96a);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.alias-input {
+  min-width: 180px;
+  max-width: 100%;
+  height: 32px;
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+  background: var(--gray-15);
+  color: var(--white);
+  padding: 0 10px;
+  font-size: 13px;
+  outline: none;
+
+  &:focus {
+    border-color: var(--kaspa-20);
+  }
+}
+
+.error-message {
+  background: rgba(224, 66, 66, 0.1);
+  border: 1px solid var(--red-20);
+  color: var(--red-20);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  word-break: break-word;
+}
+
+.contract-input {
+  resize: vertical;
+  min-height: 120px;
+  font-size: 13px;
+}
+
+.detail-header {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: var(--gray-10);
+  border: 1px solid var(--border-secondary);
+  border-radius: 16px;
+  padding: 20px;
+
+  @media (min-width: 768px) {
+    padding: 22px;
+  }
+}
+.detail-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+// Flex basis (not just min-width: 0) so this column wraps the Share/Close
+// buttons to their own line on narrow viewports instead of shrinking the
+// title down to a near-zero-width, one-letter-per-line sliver.
+.detail-title-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 160px;
+  min-width: 0;
+}
+.detail-title-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.detail-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--white);
+
+  @media (min-width: 768px) {
+    font-size: 20px;
+  }
+}
+.detail-blurb {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--gray-60);
+  line-height: 1.5;
+  max-width: 560px;
+}
+
+.state-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, 1fr);
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+}
+.state-cell {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  .cell-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--white);
+  }
+}
+
+.identifiers-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.identifier {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 220px;
+
+  .identifier-value {
+    font-size: 12px;
+    color: var(--gray-75);
+    font-family: var(--font-mono, monospace);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+}
+
+.detail-cols {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+  grid-template-columns: 1fr;
+}
+.detail-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+// role-based action panel
+.action-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.role-pill {
+  font-size: 11px;
+  color: var(--kaspa-20);
+  white-space: nowrap;
+  background: rgba(111, 199, 186, 0.12);
+  border: 1px solid rgba(111, 199, 186, 0.3);
+  border-radius: 6px;
+  padding: 2px 9px;
+}
+.action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.action-list-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  .sk-row {
+    height: 52px;
+    border-radius: 11px;
+    border: 1px solid var(--border-secondary);
+    background: var(--gray-10);
+    animation: kc-pulse 1.4s ease-in-out infinite;
+  }
+}
+.action-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  border-radius: 11px;
+  padding: 13px 14px;
+  font: inherit;
+  transition: all 0.15s;
+  border: 1px solid var(--border-secondary);
+  background: var(--gray-10);
+  color: var(--white);
+  cursor: pointer;
+
+  .ai-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+  }
+  .ai-title {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  &.primary {
+    border-color: var(--kaspa-20);
+    background: rgba(111, 199, 186, 0.1);
+  }
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--gray-45);
+  }
+
+  .ai-lock {
+    margin-left: auto;
+    flex-shrink: 0;
+    opacity: 0.6;
+  }
+}
+
+// participants
+.participant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.participant {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 9px;
+  padding: 9px 11px;
+  .p-avatar {
+    flex-shrink: 0;
+  }
+  .p-body {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+    flex: 1;
+    min-width: 0;
+  }
+  .p-role {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--white);
+  }
+  .p-val {
+    font-size: 11px;
+    color: var(--gray-60);
+    font-family: var(--font-mono, monospace);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// timeline
+.timeline {
+  display: flex;
+  flex-direction: column;
+}
+.tl-row {
+  display: flex;
+  gap: 12px;
+}
+.tl-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.tl-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--kaspa-20);
+  border: 2px solid var(--gray-10);
+  box-shadow: 0 0 0 1px var(--kaspa-20);
+  margin-top: 3px;
+}
+.tl-line {
+  flex: 1;
+  width: 2px;
+  background: var(--border-secondary);
+  min-height: 14px;
+}
+.tl-body {
+  padding-bottom: 16px;
+  flex: 1;
+  min-width: 0;
+}
+.tl-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.tl-action {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--white);
+  flex-shrink: 0;
+}
+// shared with .action-item .ai-hint above (small muted meta text)
+.tl-when,
+.action-item .ai-hint {
+  font-size: 11px;
+  color: var(--gray-60);
+}
+.tl-tx {
+  font-size: 11px;
+  color: var(--blue-20);
+  text-decoration: none;
+  font-family: var(--font-mono, monospace);
+  margin-left: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  &:hover {
+    text-decoration: underline;
+  }
+}

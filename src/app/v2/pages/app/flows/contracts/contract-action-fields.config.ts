@@ -1,10 +1,5 @@
 export type ActionFieldType =
-  | 'address'
-  | 'amount'
-  | 'timestamp'
-  | 'extra-int'
-  | 'extra-bool'
-  | 'banner';
+  'address' | 'amount' | 'timestamp' | 'extra-int' | 'extra-bool' | 'banner';
 
 interface ActionFieldBase {
   type: ActionFieldType;
@@ -151,6 +146,21 @@ export const CONTRACT_ACTION_FIELDS: ContractActionFieldConfig = {
     spend: { fields: WITHDRAW_FIELDS },
     recover: { fields: WITHDRAW_FIELDS },
     topUp: { fields: TOP_UP_FIELDS },
+    changeRecovery: {
+      fields: [
+        {
+          type: 'address',
+          key: 'outputAddress',
+          label: 'New Recovery Wallet',
+          placeholder: 'Enter recovery wallet address or KNS domain',
+        },
+        {
+          type: 'banner',
+          tone: 'info',
+          text: 'Funds stay locked in the covenant. Only the recovery wallet changes.',
+        },
+      ],
+    },
   },
   MultiSigVault: {
     spend12: { fields: WITHDRAW_FIELDS },

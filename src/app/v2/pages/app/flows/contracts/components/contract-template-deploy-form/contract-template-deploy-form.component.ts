@@ -34,6 +34,7 @@ import { AddressSmartInputComponent } from '../../../../../../shared/ui/input/ad
 import { CovenantDateTimeInputComponent } from '../../covenant-date-time-input.component';
 import { ContractDisplayService } from '../../services/contract-display.service';
 import { CovenantTemplateService } from '../../services/covenant-template.service';
+import { ContractsRegistryRefreshService } from '../../services/contracts-registry-refresh.service';
 import { hex32ToBytes, computeBlake2bHex } from '../../crypto.util';
 import {
   CreateMode,
@@ -80,6 +81,7 @@ export class ContractTemplateDeployFormComponent {
   private notificationService = inject(NotificationService);
   display = inject(ContractDisplayService);
   private templateService = inject(CovenantTemplateService);
+  private contractsRegistryRefresh = inject(ContractsRegistryRefreshService);
 
   constructor() {
     // Keep wallet-owned fields (e.g. hotKey) and the deploy-amount validity
@@ -1073,6 +1075,8 @@ export class ContractTemplateDeployFormComponent {
         });
       }
 
+      this.contractsRegistryRefresh.notify('saved');
+
       return {
         registryEntryId: entry.id,
         clearNickname: !!alias && !!input.walletKey,
@@ -1220,6 +1224,7 @@ export class ContractTemplateDeployFormComponent {
             await this.registryService.updateContract(registryEntryId, {
               covenantId: indexedCovenantId,
             });
+            this.contractsRegistryRefresh.notify('indexed');
           }
           this.deployResult.update((current) =>
             current ? { ...current, covenantId: indexedCovenantId } : current,

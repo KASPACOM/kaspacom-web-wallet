@@ -62,6 +62,7 @@ import {
   ContractsDataService,
   ContractsDashboardBuildContext,
 } from './services/contracts-data.service';
+import { ContractsRegistryRefreshService } from './services/contracts-registry-refresh.service';
 import { hex32ToBytes, computeBlake2bHex } from './crypto.util';
 import { ContractTemplateDeployFormComponent } from './components/contract-template-deploy-form/contract-template-deploy-form.component';
 import { ContractsDashboardComponent } from './components/contracts-dashboard/contracts-dashboard.component';
@@ -110,6 +111,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private display = inject(ContractDisplayService);
   private templateService = inject(CovenantTemplateService);
   private contractsData = inject(ContractsDataService);
+  private contractsRegistryRefresh = inject(ContractsRegistryRefreshService);
   private routeSubscription?: Subscription;
   private registryMigrationPromise?: Promise<void>;
   private contractsLoadRequestToken = 0;
@@ -447,6 +449,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     effect(() => {
       this.network();
       this.loadContracts();
+    });
+
+    effect(() => {
+      const refreshVersion = this.contractsRegistryRefresh.changes();
+      if (refreshVersion === 0) return;
+      void this.loadContracts({ skipOnChainStatusRefresh: true });
     });
 
     effect(() => {

@@ -260,7 +260,7 @@ describe('CovenantTemplateService', () => {
             {
               name: 'timeout',
               paramType: 'int',
-              positions: [{ offset: 2, length: 7 }],
+              positions: [{ offset: 2, length: 6 }],
               placeholderBytes: [],
             },
           ],
@@ -268,7 +268,7 @@ describe('CovenantTemplateService', () => {
       });
 
       const value = await service.extractTemplateIntField(
-        { script: [0, 0, 6, 0, 16, 165, 212, 232, 1] } as any,
+        { script: [0, 0, 6, 0, 32, 74, 169, 209, 1] } as any,
         'time-lock-vault',
         'timeout',
       );

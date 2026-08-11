@@ -716,11 +716,18 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       // Indexer-backed tracking is the source of truth for contracts involving
       // the wallet. Local registry entries are merged below so older local-only
       // deployments still remain visible while the indexer catches up.
-      const [indexerEntries, refreshedLocalDashboardEntries] =
-        await Promise.all([indexerEntriesPromise, localRefreshPromise]);
+      const [indexerEntries] = await Promise.all([
+        indexerEntriesPromise,
+        localRefreshPromise,
+      ]);
       if (!isCurrentRequest()) return;
 
-      localDashboardEntries = refreshedLocalDashboardEntries;
+      localDashboardEntries = await this.getLatestLocalDashboardEntries(
+        buildCtx,
+        isCurrentRequest,
+      );
+      if (!isCurrentRequest()) return;
+
       this.dashboardContracts.set(
         this.contractsData.mergeDashboardEntries(
           indexerEntries,
@@ -735,6 +742,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         error?.message ||
           'Indexer tracking is unavailable. Showing locally saved contracts only.',
       );
+      localDashboardEntries = await this.getLatestLocalDashboardEntries(
+        buildCtx,
+        isCurrentRequest,
+      );
+      if (!isCurrentRequest()) return;
+
       this.dashboardContracts.set(
         this.sortDashboardEntries(localDashboardEntries),
       );
@@ -767,6 +780,38 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         await this.openContractDetail(refreshed, { silent: true });
       }
     }
+  }
+
+  /**
+   * The indexer request can take long enough for the user to edit local
+   * metadata such as nicknames while "Syncing indexer contracts" is visible.
+   * Re-read the registry at the final dashboard commit point so an older
+   * loadContracts() snapshot cannot overwrite those local edits.
+   */
+  private async getLatestLocalDashboardEntries(
+    buildCtx: (
+      localRegistryContracts: ContractRegistryEntry[],
+      allRegistryContracts: ContractRegistryEntry[],
+    ) => ContractsDashboardBuildContext,
+    isCurrentRequest: () => boolean,
+  ): Promise<ContractDashboardEntry[]> {
+    const allContracts = await this.registryService.getAllContracts();
+    if (!isCurrentRequest()) return [];
+
+    this.allRegistryContracts.set(allContracts);
+    const filtered = await this.getCurrentWalletLocalContracts(allContracts);
+    if (!isCurrentRequest()) return [];
+    this.registryContracts.set(filtered);
+
+    const dashboardEntries = await Promise.all(
+      filtered.map((entry) =>
+        this.contractsData.localEntryToDashboard(
+          entry,
+          buildCtx(filtered, allContracts),
+        ),
+      ),
+    );
+    return isCurrentRequest() ? dashboardEntries : [];
   }
 
   /**

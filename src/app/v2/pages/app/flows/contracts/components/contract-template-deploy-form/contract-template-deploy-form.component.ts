@@ -955,18 +955,12 @@ export class ContractTemplateDeployFormComponent {
     };
 
     try {
-      await this.registryService.addContract(entry);
-
       const alias = input.nickname.trim();
       if (alias && input.walletKey) {
-        await this.registryService.updateContract(entry.id, {
-          aliases: {
-            ...(entry.aliases || {}),
-            [input.walletKey]: alias,
-          },
-        });
+        entry.aliases = { [input.walletKey]: alias };
       }
 
+      await this.registryService.addContract(entry);
       this.contractsRegistryRefresh.notify('saved');
 
       return {

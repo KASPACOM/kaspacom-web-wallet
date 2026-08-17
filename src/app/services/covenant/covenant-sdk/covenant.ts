@@ -11,6 +11,7 @@ import {
   PrivateKey,
   RpcClient,
   ScriptBuilder,
+  type ScriptBuilderOptions,
   SighashType,
   signTransaction,
   Transaction,
@@ -32,6 +33,9 @@ import {
 
 const SUBNETWORK_ID_NATIVE = '0000000000000000000000000000000000000000';
 const DUMMY_SIGNATURE_BYTES = new Uint8Array(65);
+const COVENANT_SCRIPT_BUILDER_OPTIONS: ScriptBuilderOptions = {
+  flags: { covenantsEnabled: true },
+};
 
 export type CovenantFunctionArg = Uint8Array | bigint;
 type SupportedSigArg = CovenantFunctionArg;
@@ -60,6 +64,16 @@ function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
+}
+
+function encodeCovenantP2shSignatureScript(
+  compiled: CompiledContract,
+  signaturePrefix: string | Uint8Array,
+): string {
+  return ScriptBuilder.fromScript(
+    toScriptBytes(compiled),
+    COVENANT_SCRIPT_BUILDER_OPTIONS,
+  ).encodePayToScriptHashSignatureScript(signaturePrefix);
 }
 
 function requireAddress(value: Address | undefined, context: string): Address {
@@ -220,7 +234,7 @@ async function getAddressUtxos(
   rpc: RpcClient,
   address: string,
 ): Promise<UtxoEntryReference[]> {
-  const utxoPromise = rpc.getUtxosByAddresses([address]);
+  const utxoPromise = rpc.getUtxosByAddresses({ addresses: [address] });
   const timeoutPromise = new Promise<never>((_, reject) =>
     setTimeout(
       () =>
@@ -310,9 +324,10 @@ function applyEstimatedSignatureScripts(
   );
   const sigPrefix = buildSigScript(compiled, functionName, functionArgs);
 
-  tx.inputs[0].signatureScript = ScriptBuilder.fromScript(
-    toScriptBytes(compiled),
-  ).encodePayToScriptHashSignatureScript(sigPrefix);
+  tx.inputs[0].signatureScript = encodeCovenantP2shSignatureScript(
+    compiled,
+    sigPrefix,
+  );
 
   for (let i = 1; i < tx.inputs.length; i += 1) {
     tx.inputs[i].signatureScript = new ScriptBuilder()
@@ -392,6 +407,7 @@ function reconcileDeployFee(
 function buildCovenantInput(
   entry: UtxoEntryReference,
   computeBudget: number = 10,
+  sequence: bigint = 0n,
 ): TransactionInput {
   // The ITransactionInput.utxo field is typed as UtxoEntryReference (a class
   // with a private constructor) but the runtime accepts a plain object
@@ -402,11 +418,63 @@ function buildCovenantInput(
   return new TransactionInput({
     previousOutpoint: entry.outpoint,
     signatureScript: '',
-    sequence: 0n,
+    sequence,
     sigOpCount: 0,
     computeBudget,
     utxo: utxoRef,
   });
+}
+
+function argsArrayToRecord(args: any): Record<string, string> {
+  if (!Array.isArray(args)) return {};
+  return args.reduce((record: Record<string, string>, arg: any) => {
+    const name = String(arg?.name ?? arg?.n ?? '');
+    if (!name) return record;
+    record[name] = String(arg?.value ?? arg?.v ?? '');
+    return record;
+  }, {});
+}
+
+function getFunctionAst(compiled: CompiledContract, functionName: string): any {
+  return compiled.ast?.functions?.find(
+    (entry: any) => entry.name === functionName,
+  );
+}
+
+function functionUsesTxVar(
+  compiled: CompiledContract,
+  functionName: string,
+  txVar: 'this_age' | 'tx_time',
+): boolean {
+  const astFunction = getFunctionAst(compiled, functionName);
+  return (
+    astFunction?.body?.some(
+      (node: any) => node.kind === 'time_op' && node.data?.tx_var === txVar,
+    ) ?? false
+  );
+}
+
+function getSequenceLockForFunction(
+  compiled: CompiledContract,
+  functionName: string,
+): bigint {
+  if (!functionUsesTxVar(compiled, functionName, 'this_age')) return 0n;
+
+  const metadataArgs = argsArrayToRecord(compiled.tn10?.args || []);
+  const sequenceLockValue = metadataArgs['unvaultDelaySeconds'];
+  if (!sequenceLockValue) {
+    throw new Error(
+      `Function "${functionName}" requires this.age, but the contract metadata is missing unvaultDelaySeconds.`,
+    );
+  }
+
+  const sequence = BigInt(sequenceLockValue);
+  if (sequence < 0n || sequence > 0xffffffffn) {
+    throw new Error(
+      `Invalid sequence lock for "${functionName}": ${sequence.toString()}`,
+    );
+  }
+  return sequence;
 }
 
 /**
@@ -454,7 +522,7 @@ export async function deployContract(
     throw new Error(`No spendable UTXOs found for ${senderAddress}`);
   }
 
-  let payload;
+  let payload: Uint8Array | undefined;
 
   // Attach TN10 deployment-claim metadata to the final transaction.
   const deploymentClaim = compiled.tn10;
@@ -681,7 +749,10 @@ export async function spendContract(
     utxoCovenantId = getUtxoCovenantId(entry);
   }
 
-  const txInputs: ITransactionInput[] = [buildCovenantInput(entry)];
+  const sequenceLock = getSequenceLockForFunction(compiled, functionName);
+  const txInputs: ITransactionInput[] = [
+    buildCovenantInput(entry, 10, sequenceLock),
+  ];
 
   // --- Fee and Change Logic (Dynamic) ---
   const MAX_TRANSACTION_FEE = 20000n;
@@ -782,13 +853,7 @@ export async function spendContract(
   // Determine lockTime based on AST time_op nodes:
   //   tx_var === 'tx_time' (tx.time) → needs lockTime set to Unix ms
   //   tx_var === 'this_age' (this.age) → DAA block count, does NOT need lockTime
-  const astFunction = compiled.ast?.functions?.find(
-    (f: any) => f.name === functionName,
-  );
-  const needsLockTime =
-    astFunction?.body?.some(
-      (node: any) => node.kind === 'time_op' && node.data?.tx_var === 'tx_time',
-    ) ?? false;
+  const needsLockTime = functionUsesTxVar(compiled, functionName, 'tx_time');
   let lockTime = 0n;
   if (needsLockTime) {
     try {
@@ -911,9 +976,10 @@ export async function spendContract(
   );
   const sigPrefix = buildSigScript(compiled, functionName, functionArgs);
 
-  unsignedTx.inputs[0].signatureScript = ScriptBuilder.fromScript(
-    toScriptBytes(compiled),
-  ).encodePayToScriptHashSignatureScript(sigPrefix);
+  unsignedTx.inputs[0].signatureScript = encodeCovenantP2shSignatureScript(
+    compiled,
+    sigPrefix,
+  );
 
   // Sign extra inputs (gas) if any
   for (let i = 1; i < unsignedTx.inputs.length; i++) {
@@ -1040,11 +1106,7 @@ export async function buildPartialSpend(
   const sigOpCount = sigParams.length || 1;
 
   // Detect timelock: only tx.time needs lockTime, this.age does not
-  const astFn = compiled.ast?.functions?.find((f) => f.name === functionName);
-  const needsLockTime =
-    astFn?.body?.some(
-      (n: any) => n.kind === 'time_op' && n.data?.tx_var === 'tx_time',
-    ) ?? false;
+  const needsLockTime = functionUsesTxVar(compiled, functionName, 'tx_time');
   let lockTime = 0n;
   if (needsLockTime) {
     try {
@@ -1056,7 +1118,10 @@ export async function buildPartialSpend(
   }
 
   // Build unsigned TX
-  const txInputs: ITransactionInput[] = [buildCovenantInput(entry, 30)];
+  const sequenceLock = getSequenceLockForFunction(compiled, functionName);
+  const txInputs: ITransactionInput[] = [
+    buildCovenantInput(entry, 30, sequenceLock),
+  ];
 
   const adjustedOutputs = outputs.map((o) => ({ ...o }));
   const txOutputs: ITransactionOutput[] = adjustedOutputs.map((output) =>
@@ -1235,7 +1300,13 @@ export async function completePartialSpend(
   const utxoCovenantId = getUtxoCovenantId(entry);
 
   // Rebuild the exact same unsigned TX
-  const txInputs: ITransactionInput[] = [buildCovenantInput(entry, 30)];
+  const sequenceLock = getSequenceLockForFunction(
+    compiled,
+    partialSpend.functionName,
+  );
+  const txInputs: ITransactionInput[] = [
+    buildCovenantInput(entry, 30, sequenceLock),
+  ];
 
   const txOutputs: ITransactionOutput[] = partialSpend.outputs.map((output) =>
     buildSpendOutput(
@@ -1338,9 +1409,10 @@ export async function completePartialSpend(
     partialSpend.functionName,
     functionArgs,
   );
-  unsignedTx.inputs[0].signatureScript = ScriptBuilder.fromScript(
-    toScriptBytes(compiled),
-  ).encodePayToScriptHashSignatureScript(sigPrefix);
+  unsignedTx.inputs[0].signatureScript = encodeCovenantP2shSignatureScript(
+    compiled,
+    sigPrefix,
+  );
 
   const fee =
     BigInt(partialSpend.inputAmountSompi) -

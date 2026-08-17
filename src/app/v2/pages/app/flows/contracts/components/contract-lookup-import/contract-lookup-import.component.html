@@ -1,0 +1,246 @@
+<div class="flex column gap-16">
+  <!-- Import from indexer / share -->
+  <div class="panel flex column gap-20">
+    <div class="flex column gap-4">
+      <h3
+        class="text-white"
+        style="margin: 0; font-size: 16px; font-weight: 600"
+      >
+        Import a contract
+      </h3>
+      <p class="text-gray-60 typo-text-2" style="margin: 0">
+        Paste a covenant ID, script hash, deploy transaction, or covenant
+        address. Only wallet-supported templates can be imported.
+      </p>
+    </div>
+    <div class="flex gap-8 align-items-end wrap">
+      <div class="field" style="flex: 1">
+        <kc-input
+          [label]="'Contract lookup'"
+          [placeholder]="'covenant ID, txid, or kaspatest:...'"
+          [type]="'text'"
+          [isDisabled]="indexerImportLoading()"
+          [ngModel]="indexerImportQuery()"
+          (valueChange)="onIndexerImportQueryChange($event)"
+        ></kc-input>
+      </div>
+      <kc-button
+        [text]="indexerImportLoading() ? 'Loading...' : 'Find'"
+        [isDisabled]="indexerImportLoading() || !indexerImportQuery().trim()"
+        (buttonClick)="lookupIndexerImportRequested.emit()"
+      ></kc-button>
+    </div>
+
+    @if (indexerImportError()) {
+      <div class="error-message">{{ indexerImportError() }}</div>
+    }
+
+    @if (indexerImportPreview()) {
+      <div class="lookup-result flex column gap-12 p-16">
+        <div class="flex justify-content-between align-items-center wrap">
+          <h4 class="text-white typo-text-1 fw-bold">
+            {{ indexerImportPreview()!.template.name }}
+          </h4>
+          <span class="text-gray-60 typo-text-2"
+            >{{
+              display.formatSompiToKas(indexerImportPreview()!.amountSompi)
+            }}
+            KAS</span
+          >
+        </div>
+        <div class="flex column gap-4">
+          <span class="text-gray-60 typo-text-1">Covenant ID</span>
+          <div class="flex align-items-center gap-8">
+            @if (
+              display.getCovenantExplorerLink(
+                indexerImportPreview()!.covenantId
+              );
+              as covenantLink
+            ) {
+              <a
+                [href]="covenantLink"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-blue typo-text-2 text-mono"
+                >{{
+                  display.truncate(indexerImportPreview()!.covenantId, 28)
+                }}</a
+              >
+            } @else {
+              <span class="text-white typo-text-2 text-mono">{{
+                display.truncate(indexerImportPreview()!.covenantId, 28)
+              }}</span>
+            }
+            <app-copy-button
+              [value]="indexerImportPreview()!.covenantId"
+              [size]="'sm'"
+            ></app-copy-button>
+          </div>
+        </div>
+        <div class="flex column gap-4">
+          <span class="text-gray-60 typo-text-1">Contract address</span>
+          <div class="flex align-items-center gap-8">
+            <a
+              [href]="
+                display.getExplorerAddressLink(
+                  indexerImportPreview()!.contractAddress
+                )
+              "
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-blue typo-text-2"
+              >{{
+                display.truncate(indexerImportPreview()!.contractAddress, 34)
+              }}</a
+            >
+            <app-copy-button
+              [value]="indexerImportPreview()!.contractAddress"
+              [size]="'sm'"
+            ></app-copy-button>
+          </div>
+        </div>
+        <div class="flex column gap-8">
+          <span class="text-gray-60 typo-text-1">Parameters</span>
+          @for (
+            field of indexerImportPreview()!.template.fields;
+            track field.paramName
+          ) {
+            <div class="param-item p-8 flex column gap-4">
+              <span class="text-white typo-text-2">{{ field.label }}</span>
+              <div class="flex align-items-center gap-8">
+                <span
+                  class="text-gray-60 typo-text-2 text-mono text-truncate"
+                  [title]="indexerImportPreview()!.fieldValues[field.paramName]"
+                  >{{
+                    indexerImportPreview()!.fieldValues[field.paramName]
+                  }}</span
+                >
+                <app-copy-button
+                  [value]="indexerImportPreview()!.fieldValues[field.paramName]"
+                  [size]="'sm'"
+                ></app-copy-button>
+              </div>
+            </div>
+          }
+        </div>
+        <kc-button
+          [text]="'Track this contract'"
+          [isFullWidth]="true"
+          (buttonClick)="importIndexerPreviewRequested.emit()"
+        ></kc-button>
+      </div>
+    }
+  </div>
+
+  <!-- On-chain address lookup (advanced) -->
+  <details class="advanced-section">
+    <summary>Advanced: look up by address</summary>
+    <div class="panel flex column gap-16 adv-body">
+      <div class="flex column gap-4">
+        <h3
+          class="text-white"
+          style="margin: 0; font-size: 16px; font-weight: 600"
+        >
+          Look up by address
+        </h3>
+        <p class="text-gray-60 typo-text-2" style="margin: 0">
+          Check a contract address's on-chain state (balance, UTXOs) directly.
+        </p>
+      </div>
+      <div class="flex gap-8 align-items-end wrap">
+        <div class="field" style="flex: 1">
+          <kc-input
+            [label]="'Contract address'"
+            [placeholder]="'kaspatest:pr...'"
+            [type]="'text'"
+            [isDisabled]="lookupLoading()"
+            [ngModel]="lookupAddress"
+            (valueChange)="onLookupAddressChange($event)"
+          ></kc-input>
+        </div>
+        <kc-button
+          [text]="lookupLoading() ? 'Querying...' : 'Look up'"
+          [isDisabled]="lookupLoading() || !lookupAddress.trim()"
+          (buttonClick)="lookupContract()"
+        ></kc-button>
+      </div>
+
+      @if (lookupError()) {
+        <div class="error-message">{{ lookupError() }}</div>
+      }
+
+      @if (lookupResult()) {
+        <div class="lookup-result flex column gap-12 p-16">
+          <div class="flex justify-content-between align-items-center wrap">
+            <h4 class="text-white typo-text-1 fw-bold">Contract state</h4>
+            <a
+              [href]="display.getExplorerAddressLink(lookupResult()!.address)"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-blue typo-text-2"
+              >View in explorer ↗</a
+            >
+          </div>
+          <div class="flex gap-24">
+            <div class="stat">
+              <span class="stat-label">Balance</span
+              ><span class="stat-value"
+                >{{ display.formatSompiToKas(lookupResult()!.balanceSompi) }}
+                <small>KAS</small></span
+              >
+            </div>
+            <div class="stat">
+              <span class="stat-label">UTXOs</span
+              ><span class="stat-value">{{ lookupResult()!.utxoCount }}</span>
+            </div>
+          </div>
+          @if (lookupResult()!.utxoCount === 0) {
+            <div class="text-gray-60 typo-text-2 p-12">
+              No UTXOs found — contract may have been spent or address is empty.
+            </div>
+          }
+          @if ((lookupResult()!.utxos || []).length > 0) {
+            <div class="flex column gap-8">
+              @for (
+                utxo of lookupResult()!.utxos || [];
+                track utxo.txid + ":" + utxo.vout
+              ) {
+                <div
+                  class="utxo-row flex justify-content-between align-items-center gap-12"
+                >
+                  <a
+                    [href]="display.getExplorerLink(utxo.txid)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-blue typo-text-2"
+                    >{{ display.truncate(utxo.txid, 20) }}:{{ utxo.vout }}</a
+                  >
+                  <span class="text-white typo-text-2 fw-bold"
+                    >{{ display.formatSompiToKas(utxo.amount) }} KAS</span
+                  >
+                </div>
+              }
+            </div>
+            <div class="field">
+              <label class="field-label"
+                >Paste the compiled contract JSON to interact:</label
+              >
+              <textarea
+                class="contract-input"
+                [(ngModel)]="lookupContractJson"
+                rows="3"
+                placeholder="Paste the contract JSON here (from the deployer)..."
+              ></textarea>
+            </div>
+            <kc-button
+              [text]="'Interact with this contract'"
+              [isFullWidth]="true"
+              [isDisabled]="!lookupContractJson"
+              (buttonClick)="importLookupContract()"
+            ></kc-button>
+          }
+        </div>
+      }
+    </div>
+  </details>
+</div>

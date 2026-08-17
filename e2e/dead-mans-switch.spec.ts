@@ -165,15 +165,26 @@ async function reopenClaimForm(page: Page): Promise<void> {
   await openClaimForm(page);
 }
 
+/**
+ * Fill the claim amount field. Padded past the default 15s action timeout —
+ * this input has been seen to take a moment to become fillable right after a
+ * prior claim attempt's error/re-render settles.
+ */
+async function fillClaimAmount(page: Page, amountKas: string): Promise<void> {
+  await page
+    .getByRole('textbox', { name: '0' })
+    .fill(amountKas, { timeout: 20_000 });
+}
+
 async function claimAmount(page: Page, amountKas: string): Promise<void> {
   // Called right after returnToContractDetails(), so the Details view is
   // already open — just open the Claim form directly.
   await openClaimForm(page);
-  await page.getByRole('textbox', { name: '0' }).fill(amountKas);
+  await fillClaimAmount(page, amountKas);
   await page.getByRole('button', { name: 'Claim', exact: true }).click();
   await submitActionWithLocktimeRetry(page, async () => {
     await reopenClaimForm(page);
-    await page.getByRole('textbox', { name: '0' }).fill(amountKas);
+    await fillClaimAmount(page, amountKas);
     await page.getByRole('button', { name: 'Claim', exact: true }).click();
   });
   await returnToContractDetails(page);
@@ -271,7 +282,7 @@ test.describe("Dead Man's Switch — partial claim", () => {
       ['abc', 'Output amount must be greater than 0'],
       ['999', 'Withdraw amount cannot exceed the contract balance'],
     ] as const) {
-      await page.getByRole('textbox', { name: '0' }).fill(bad);
+      await fillClaimAmount(page, bad);
       await page.getByRole('button', { name: 'Claim', exact: true }).click();
       await expect(page.getByText(expectedMessage)).toBeVisible();
     }
@@ -286,11 +297,11 @@ test.describe("Dead Man's Switch — partial claim", () => {
     );
 
     // ── Sequential partial claims: 2 KAS, then 1.5 KAS.
-    await page.getByRole('textbox', { name: '0' }).fill('2');
+    await fillClaimAmount(page, '2');
     await page.getByRole('button', { name: 'Claim', exact: true }).click();
     await submitActionWithLocktimeRetry(page, async () => {
       await reopenClaimForm(page);
-      await page.getByRole('textbox', { name: '0' }).fill('2');
+      await fillClaimAmount(page, '2');
       await page.getByRole('button', { name: 'Claim', exact: true }).click();
     });
     await returnToContractDetails(page);

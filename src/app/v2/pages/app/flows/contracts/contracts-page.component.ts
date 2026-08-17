@@ -5404,6 +5404,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           return;
         }
         const withdrawalAmount = BigInt(Math.floor(outputAmountKas * 1e8));
+        if (withdrawalAmount <= 0n) {
+          this.interactError.set(
+            'Output amount must be at least 0.00000001 KAS',
+          );
+          return;
+        }
         if (functionName === 'transfer' && compiled.contract_name === 'KCC20') {
           try {
             extraArgsOverride = {

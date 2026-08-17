@@ -424,6 +424,23 @@ describe("ContractsPageComponent — Dead Man's Switch partial claim", () => {
       });
     }
 
+    it('rejects a claim amount that rounds down to 0 sompi without submitting a transaction', async () => {
+      setUpDmsClaim({
+        inputSompi: 200_000_000n,
+        outputAmountKas: '0.000000001',
+      });
+
+      await component.interactContract();
+
+      expect(component.interactError()).toBe(
+        'Output amount must be at least 0.00000001 KAS',
+      );
+      expect(
+        walletActionServiceSpy.validateAndDoActionAfterApproval,
+      ).not.toHaveBeenCalled();
+      expect(registryServiceSpy.updateContract).not.toHaveBeenCalled();
+    });
+
     it('rejects a claim amount above the available balance without submitting a transaction', async () => {
       setUpDmsClaim({ inputSompi: 200_000_000n, outputAmountKas: '3' });
 

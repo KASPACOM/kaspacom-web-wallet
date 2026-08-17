@@ -77,8 +77,10 @@ async function openContractDetails(page: Page): Promise<void> {
 
 /**
  * Submit whatever curated action form is currently open (Claim, in this
- * spec) and dismiss the resulting approval/result screens, retrying once if
- * the network rejects the transaction for a stale locktime.
+ * spec) and dismiss the resulting approval/result screens, retrying if the
+ * network rejects the transaction for a stale locktime, or if building it
+ * fails outright because the RPC node hasn't yet indexed a UTXO a prior
+ * claim in the same test just created.
  *
  * The DMS covenant enforces `tx.time >= deadline` using the transaction's own
  * locktime field, which the SDK derives from an estimate that can lag behind
@@ -87,6 +89,22 @@ async function openContractDetails(page: Page): Promise<void> {
  * and the node rejects it — a pre-existing quirk of any DMS claim (not
  * specific to partial claims). Retrying rebuilds the transaction with a
  * fresher locktime.
+ *
+ * Separately, clicking Claim can fail to build the transaction outright with
+ * "Covenant outpoint ... was not found" (see `covenant.ts`'s
+ * `getAddressUtxos`) — observed once here referencing the *deploy*
+ * transaction's outpoint on the second of two sequential claims, i.e. the
+ * app was still trying to spend the UTXO the first claim already consumed.
+ * `returnToContractDetails()` may `page.reload()` between claims, and the
+ * registry update after a claim is persisted fire-and-forget (`void
+ * updateRegistryContract(...)`, unawaited) — plausible that the reload can
+ * occasionally win that race and read back the pre-claim outpoint. That's an
+ * app-side question worth its own investigation; the retry here only papers
+ * over it for this spec (rebuild and resubmit, same as a stale locktime).
+ * The error renders inline on the still-open claim form (`.error-message`),
+ * not as a submitted/failed transaction — it never reaches the Approve
+ * button — so it's raced against that button rather than handled after
+ * clicking it.
  */
 async function submitActionWithLocktimeRetry(
   page: Page,
@@ -96,10 +114,25 @@ async function submitActionWithLocktimeRetry(
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     // Approve triggers transaction building (RPC round trips for UTXOs/fee
     // estimation) before it's clickable — under testnet RPC latency this has
-    // been observed to exceed even a 30s action timeout.
-    await page.getByRole('button', { name: 'Approve' }).click({
-      timeout: 45_000,
-    });
+    // been observed to exceed even a 30s action timeout. It may also never
+    // appear at all if building failed synchronously (inline error instead).
+    const approveBtn = page.getByRole('button', { name: 'Approve' });
+    const inlineError = page.locator('.error-message').first();
+    await expect(approveBtn.or(inlineError)).toBeVisible({ timeout: 45_000 });
+
+    if (await inlineError.isVisible().catch(() => false)) {
+      const message = (await inlineError.innerText().catch(() => '')).trim();
+      if (attempt === maxAttempts) {
+        throw new Error(
+          `Claim submission failed (attempt ${attempt}): ${message}`,
+        );
+      }
+      await page.waitForTimeout(20_000);
+      await reopenAction();
+      continue;
+    }
+
+    await approveBtn.click();
 
     const failed = page.getByText('Transaction Failed');
     const succeeded = page.getByText('Transaction Successful!');

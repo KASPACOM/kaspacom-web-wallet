@@ -388,6 +388,13 @@ $tpl-accents: (
   color: var(--gray-45);
 }
 
+.field .btn.secondary.active {
+  background: var(--kaspa-20);
+  border-color: var(--kaspa-20);
+  color: #071f1c;
+  box-shadow: 0 0 0 1px rgba(111, 199, 186, 0.22);
+}
+
 // ── detail view ─────────────────────────────────────────────────────────
 .detail-header {
   display: flex;
@@ -408,7 +415,7 @@ $tpl-accents: (
   gap: 14px;
   flex-wrap: wrap;
 }
-// Flex basis (not just min-width: 0) so this column wraps the Share/Close
+// Flex basis (not just min-width: 0) so this column wraps the title actions
 // buttons to their own line on narrow viewports instead of shrinking the
 // title down to a near-zero-width, one-letter-per-line sliver.
 .detail-title-main {
@@ -733,9 +740,6 @@ $tpl-accents: (
   &:hover {
     border-color: var(--tpl-accent, var(--kaspa-20));
     background: rgba(255, 255, 255, 0.04);
-  }
-  &.custom {
-    border-style: dashed;
   }
   .tc-body {
     display: flex;

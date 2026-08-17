@@ -3771,22 +3771,28 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * form, action panel) that doesn't own allRegistryContracts/registryContracts
    * itself.
    */
-  onRegistryEntryUpdated(event: {
+  // Arrow-function fields, not methods: passed into ContractActionPanelComponent
+  // as callback inputs (see its registryEntryUpdated/actionIndexingRequested
+  // doc comments) rather than listened to via an output() template binding,
+  // since that binding is torn down the instant the approval overlay
+  // destroys this component — well before a covenant action's post-signing
+  // continuation runs. A lexically-bound arrow field keeps working
+  // regardless, the same way the pre-split monolith's own `this.foo(...)`
+  // calls did.
+  onRegistryEntryUpdated = (event: {
     id: string;
     updates: Partial<ContractRegistryEntry>;
-  }) {
+  }) => {
     void this.updateRegistryContract(event.id, event.updates);
-  }
+  };
 
-  /**
-   * Kicks off indexer-status polling for a just-broadcast action, requested
-   * by ContractActionPanelComponent (which doesn't own dashboardContracts/
-   * registryContracts, so it can't call trackActionIndexing() itself).
-   */
-  onActionIndexingRequested(event: { txid: string; registryId: string }) {
+  onActionIndexingRequested = (event: { txid: string; registryId: string }) => {
     this.markActionCompleteForDetailsLanding(event.registryId);
     void this.trackActionIndexing(event.txid, event.registryId);
-  }
+  };
+
+  // Same reasoning — see onActionIndexingRequested's doc comment.
+  readonly backToContractsListCallback = () => this.backToContractsList();
 
   /**
    * Poll the indexer for a non-deploy covenant action (TopUp, withdraw,

@@ -14,6 +14,12 @@ export interface SavedContractRegistryEntry {
   status?: ContractStatus; // on-chain status
   lastChecked?: number; // timestamp of last status check
   spendTxid?: string; // TX that spent this contract
+  /** Function name of the most recent action this wallet executed locally (e.g. 'keepAlive', 'claim'), until the indexer catches up. */
+  lastActionType?: string;
+  /** TX that performed `lastActionType`. */
+  lastActionTxid?: string;
+  /** When `lastActionType` was executed — set only alongside it, unlike `lastChecked` which unrelated status-refresh polling also bumps. */
+  lastActionAt?: number;
   // Parsed access info
   accessRoles: Array<{
     functionName: string;

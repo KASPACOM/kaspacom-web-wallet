@@ -1,0 +1,41 @@
+// Duplicated (not moved) from ../../contracts-page.component.scss — Angular's
+// emulated view encapsulation scopes CSS per-component, so this component
+// needs its own copies of the rules it depends on that aren't already global
+// in src/styles/shared-ui.scss. The shell's copies are left in place (still
+// live for the detail/action panel, which uses the same classes).
+
+.error-message {
+  background: rgba(224, 66, 66, 0.1);
+  border: 1px solid var(--red-20);
+  color: var(--red-20);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  word-break: break-word;
+}
+
+.stat .stat-label {
+  font-size: 11px;
+  color: var(--gray-45);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  .stat-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--white);
+    white-space: nowrap;
+  }
+  .stat-value small {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--gray-60);
+  }
+  .stat-value.sm {
+    font-size: 14px;
+  }
+}

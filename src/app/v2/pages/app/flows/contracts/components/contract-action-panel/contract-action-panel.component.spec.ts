@@ -1,26 +1,21 @@
 import { TestBed } from '@angular/core/testing';
-import { PLATFORM_ID } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
 import { of } from 'rxjs';
 import { NotificationService } from '@kaspacom/ui-kit';
 
-import { ContractsPageComponent } from './contracts-page.component';
-import { WalletService } from '../../../../../services/wallet.service';
-import { WalletActionService } from '../../../../../services/wallet-action.service';
-import { QrScannerService } from '../../../../../services/qr-scanner.service';
-import { UtilsHelper } from '../../../../../services/utils.service';
-import { CovenantService } from '../../../../../services/covenant/covenant.service';
-import { CovenantIndexerService } from '../../../../../services/covenant/covenant-indexer.service';
-import { RpcService } from '../../../../../services/kaspa-netwrok-services/rpc.service';
-import { ContractRegistryService } from '../../../../../services/covenant/contract-registry.service';
-import { TemplatePatcherService } from '../../../../services/covenant/template-patcher.service';
-import { KaspaL1NetworkService } from '../../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
-import { FlowPagesService } from '../../../../services/flow-pages.service';
-import { WideWorkspaceService } from '../../../../services/wide-workspace.service';
-import { ApprovalFlowService } from '../../../../services/approval-flow.service';
-import { CompiledContract } from '../../../../../services/covenant/covenant-sdk/types';
+import { ContractActionPanelComponent } from './contract-action-panel.component';
+import { WalletService } from '../../../../../../../services/wallet.service';
+import { WalletActionService } from '../../../../../../../services/wallet-action.service';
+import { QrScannerService } from '../../../../../../../services/qr-scanner.service';
+import { CovenantService } from '../../../../../../../services/covenant/covenant.service';
+import { CovenantIndexerService } from '../../../../../../../services/covenant/covenant-indexer.service';
+import { RpcService } from '../../../../../../../services/kaspa-netwrok-services/rpc.service';
+import { TemplatePatcherService } from '../../../../../../services/covenant/template-patcher.service';
+import { KaspaL1NetworkService } from '../../../../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
+import { FlowPagesService } from '../../../../../../services/flow-pages.service';
+import { ApprovalFlowService } from '../../../../../../services/approval-flow.service';
+import { CompiledContract } from '../../../../../../../services/covenant/covenant-sdk/types';
 
 const MIN_CONTINUATION_AMOUNT_SOMPI = 50_000_000n; // 0.5 KAS
 
@@ -86,11 +81,11 @@ const DMS_COMPILED_CONTRACT: CompiledContract = {
 const COVENANT_ADDRESS = 'kaspatest:qzcovenantaddressmock';
 const HEIR_ADDRESS = 'kaspatest:qzheiraddressmock';
 
-describe("ContractsPageComponent — Dead Man's Switch partial claim", () => {
-  let component: ContractsPageComponent;
+describe("ContractActionPanelComponent — Dead Man's Switch partial claim", () => {
+  let component: ContractActionPanelComponent;
   let walletActionServiceSpy: jasmine.SpyObj<WalletActionService>;
   let covenantServiceSpy: jasmine.SpyObj<CovenantService>;
-  let registryServiceSpy: jasmine.SpyObj<ContractRegistryService>;
+  let registryEntryUpdatedSpy: jasmine.Spy;
 
   beforeEach(async () => {
     const walletServiceSpy = jasmine.createSpyObj('WalletService', [
@@ -125,11 +120,6 @@ describe("ContractsPageComponent — Dead Man's Switch partial claim", () => {
       'stopScanning',
     ]);
 
-    const utilsHelperSpy = jasmine.createSpyObj('UtilsHelper', [
-      'isValidWalletAddress',
-    ]);
-    utilsHelperSpy.isValidWalletAddress.and.returnValue(true);
-
     covenantServiceSpy = jasmine.createSpyObj('CovenantService', [
       'buildPartial',
       'getContractAddress',
@@ -154,8 +144,6 @@ describe("ContractsPageComponent — Dead Man's Switch partial claim", () => {
       ],
     );
     covenantIndexerServiceSpy.listCovenants.and.resolveTo([]);
-    // Rejecting makes trackActionIndexing() bail out after a single attempt
-    // instead of looping/delaying in the background after each test.
     covenantIndexerServiceSpy.getTransactionSettlementStatus.and.rejectWith(
       new Error('not mocked'),
     );
@@ -166,18 +154,6 @@ describe("ContractsPageComponent — Dead Man's Switch partial claim", () => {
       'setNetwork',
     ]);
     rpcServiceSpy.getNetwork.and.returnValue('testnet-10');
-
-    registryServiceSpy = jasmine.createSpyObj('ContractRegistryService', [
-      'addContract',
-      'deleteContract',
-      'generateId',
-      'getAllContracts',
-      'migrateContractsRegistryFromLocalStorage',
-      'updateContract',
-    ]);
-    registryServiceSpy.getAllContracts.and.resolveTo([]);
-    registryServiceSpy.migrateContractsRegistryFromLocalStorage.and.resolveTo();
-    registryServiceSpy.updateContract.and.resolveTo();
 
     const templatePatcherSpy = jasmine.createSpyObj('TemplatePatcherService', [
       'applyPatch',
@@ -196,11 +172,6 @@ describe("ContractsPageComponent — Dead Man's Switch partial claim", () => {
     ]);
     flowPagesServiceSpy.getTransientState.and.returnValue(undefined);
 
-    const wideWorkspaceServiceSpy = jasmine.createSpyObj(
-      'WideWorkspaceService',
-      ['activate', 'deactivate'],
-    );
-
     const approvalFlowServiceSpy = jasmine.createSpyObj('ApprovalFlowService', [
       'closeApproval',
       'setPendingConfirmation',
@@ -213,27 +184,18 @@ describe("ContractsPageComponent — Dead Man's Switch partial claim", () => {
     const dialogSpy = jasmine.createSpyObj('Dialog', ['open']);
     dialogSpy.open.and.returnValue({ closed: of(undefined) });
 
-    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
-
-    const activatedRouteStub = {
-      paramMap: of(convertToParamMap({})),
-      snapshot: { queryParamMap: convertToParamMap({}) },
-    };
-
     await TestBed.configureTestingModule({
-      imports: [ContractsPageComponent],
+      imports: [ContractActionPanelComponent],
       providers: [
         { provide: WalletService, useValue: walletServiceSpy },
         { provide: WalletActionService, useValue: walletActionServiceSpy },
         { provide: QrScannerService, useValue: qrScannerServiceSpy },
-        { provide: UtilsHelper, useValue: utilsHelperSpy },
         { provide: CovenantService, useValue: covenantServiceSpy },
         {
           provide: CovenantIndexerService,
           useValue: covenantIndexerServiceSpy,
         },
         { provide: RpcService, useValue: rpcServiceSpy },
-        { provide: ContractRegistryService, useValue: registryServiceSpy },
         { provide: TemplatePatcherService, useValue: templatePatcherSpy },
         {
           provide: HttpClient,
@@ -241,19 +203,17 @@ describe("ContractsPageComponent — Dead Man's Switch partial claim", () => {
         },
         { provide: KaspaL1NetworkService, useValue: kaspaL1NetworkServiceSpy },
         { provide: FlowPagesService, useValue: flowPagesServiceSpy },
-        { provide: WideWorkspaceService, useValue: wideWorkspaceServiceSpy },
         { provide: ApprovalFlowService, useValue: approvalFlowServiceSpy },
-        { provide: ActivatedRoute, useValue: activatedRouteStub },
-        { provide: Router, useValue: routerSpy },
         { provide: Dialog, useValue: dialogSpy },
-        { provide: PLATFORM_ID, useValue: 'browser' },
         { provide: NotificationService, useValue: notificationServiceSpy },
       ],
     }).compileComponents();
 
-    const fixture = TestBed.createComponent(ContractsPageComponent);
+    const fixture = TestBed.createComponent(ContractActionPanelComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+
+    registryEntryUpdatedSpy = spyOn(component.registryEntryUpdated, 'emit');
   });
 
   function setUpDmsClaim(options: {
@@ -263,12 +223,12 @@ describe("ContractsPageComponent — Dead Man's Switch partial claim", () => {
   }) {
     component.interactContractJson.set(JSON.stringify(DMS_COMPILED_CONTRACT));
     component.selectedContractId.set('registry-entry-1');
-    component.selectedFunction = 'claim';
-    component.interactOutpointTxid = 'a'.repeat(64);
-    component.interactOutpointVout = '0';
-    component.interactInputAmount = options.inputSompi.toString();
-    component.interactOutputAddress = options.outputAddress ?? HEIR_ADDRESS;
-    component.interactOutputAmount = options.outputAmountKas;
+    component.selectedFunction.set('claim');
+    component.interactOutpointTxid.set('a'.repeat(64));
+    component.interactOutpointVout.set('0');
+    component.interactInputAmount.set(options.inputSompi.toString());
+    component.interactOutputAddress.set(options.outputAddress ?? HEIR_ADDRESS);
+    component.interactOutputAmount.set(options.outputAmountKas);
   }
 
   function lastSpendOutputs(): {
@@ -279,6 +239,10 @@ describe("ContractsPageComponent — Dead Man's Switch partial claim", () => {
     const call =
       walletActionServiceSpy.validateAndDoActionAfterApproval.calls.mostRecent();
     return (call.args[0] as any).data.outputs;
+  }
+
+  function lastRegistryUpdate() {
+    return registryEntryUpdatedSpy.calls.mostRecent().args[0];
   }
 
   describe('buildWithdrawalOutputs() — shared partial-withdrawal engine', () => {
@@ -378,16 +342,19 @@ describe("ContractsPageComponent — Dead Man's Switch partial claim", () => {
           covenantId: undefined,
         },
       ]);
-      expect(registryServiceSpy.updateContract).toHaveBeenCalledWith(
-        'registry-entry-1',
+      expect(lastRegistryUpdate()).toEqual(
         jasmine.objectContaining({
-          outpoint: { txid: 'f'.repeat(64), vout: 1 },
-          amountSompi: '100000000',
+          id: 'registry-entry-1',
+          updates: jasmine.objectContaining({
+            outpoint: { txid: 'f'.repeat(64), vout: 1 },
+            amountSompi: '100000000',
+          }),
         }),
       );
-      expect(registryServiceSpy.updateContract).not.toHaveBeenCalledWith(
-        'registry-entry-1',
-        jasmine.objectContaining({ status: 'spent' }),
+      expect(registryEntryUpdatedSpy).not.toHaveBeenCalledWith(
+        jasmine.objectContaining({
+          updates: jasmine.objectContaining({ status: 'spent' }),
+        }),
       );
     });
 
@@ -399,11 +366,13 @@ describe("ContractsPageComponent — Dead Man's Switch partial claim", () => {
       expect(lastSpendOutputs()).toEqual([
         { address: HEIR_ADDRESS, amount: 200_000_000n },
       ]);
-      expect(registryServiceSpy.updateContract).toHaveBeenCalledWith(
-        'registry-entry-1',
+      expect(lastRegistryUpdate()).toEqual(
         jasmine.objectContaining({
-          status: 'spent',
-          spendTxid: 'f'.repeat(64),
+          id: 'registry-entry-1',
+          updates: jasmine.objectContaining({
+            status: 'spent',
+            spendTxid: 'f'.repeat(64),
+          }),
         }),
       );
     });
@@ -420,7 +389,7 @@ describe("ContractsPageComponent — Dead Man's Switch partial claim", () => {
         expect(
           walletActionServiceSpy.validateAndDoActionAfterApproval,
         ).not.toHaveBeenCalled();
-        expect(registryServiceSpy.updateContract).not.toHaveBeenCalled();
+        expect(registryEntryUpdatedSpy).not.toHaveBeenCalled();
       });
     }
 
@@ -438,7 +407,7 @@ describe("ContractsPageComponent — Dead Man's Switch partial claim", () => {
       expect(
         walletActionServiceSpy.validateAndDoActionAfterApproval,
       ).not.toHaveBeenCalled();
-      expect(registryServiceSpy.updateContract).not.toHaveBeenCalled();
+      expect(registryEntryUpdatedSpy).not.toHaveBeenCalled();
     });
 
     it('rejects a claim amount above the available balance without submitting a transaction', async () => {
@@ -452,7 +421,7 @@ describe("ContractsPageComponent — Dead Man's Switch partial claim", () => {
       expect(
         walletActionServiceSpy.validateAndDoActionAfterApproval,
       ).not.toHaveBeenCalled();
-      expect(registryServiceSpy.updateContract).not.toHaveBeenCalled();
+      expect(registryEntryUpdatedSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -463,10 +432,10 @@ describe("ContractsPageComponent — Dead Man's Switch partial claim", () => {
         'executeDmsKeepAlive',
       ).and.resolveTo();
       component.interactContractJson.set(JSON.stringify(DMS_COMPILED_CONTRACT));
-      component.selectedFunction = 'keepAlive';
-      component.interactOutpointTxid = 'a'.repeat(64);
-      component.interactOutpointVout = '0';
-      component.interactInputAmount = '200000000';
+      component.selectedFunction.set('keepAlive');
+      component.interactOutpointTxid.set('a'.repeat(64));
+      component.interactOutpointVout.set('0');
+      component.interactInputAmount.set('200000000');
 
       await component.interactContract();
 
@@ -482,11 +451,11 @@ describe("ContractsPageComponent — Dead Man's Switch partial claim", () => {
         'executeDmsChangeHeir',
       ).and.resolveTo();
       component.interactContractJson.set(JSON.stringify(DMS_COMPILED_CONTRACT));
-      component.selectedFunction = 'changeHeir';
-      component.interactOutpointTxid = 'a'.repeat(64);
-      component.interactOutpointVout = '0';
-      component.interactInputAmount = '200000000';
-      component.interactOutputAddress = HEIR_ADDRESS;
+      component.selectedFunction.set('changeHeir');
+      component.interactOutpointTxid.set('a'.repeat(64));
+      component.interactOutpointVout.set('0');
+      component.interactInputAmount.set('200000000');
+      component.interactOutputAddress.set(HEIR_ADDRESS);
 
       await component.interactContract();
 

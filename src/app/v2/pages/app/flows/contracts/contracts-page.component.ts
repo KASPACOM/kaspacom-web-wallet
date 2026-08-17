@@ -15,6 +15,8 @@ import { DropdownOption } from '@kaspacom/ui-kit';
 import { WalletService } from '../../../../../services/wallet.service';
 import { CovenantService } from '../../../../../services/covenant/covenant.service';
 import { RpcService } from '../../../../../services/kaspa-netwrok-services/rpc.service';
+import { KaspaNetworkActionsService } from '../../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
+import { RpcConnectionStatus } from '../../../../../types/kaspa-network/rpc-connection-status.enum';
 import {
   ContractRegistryService,
   ContractRegistryEntry,
@@ -97,6 +99,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private covenantService = inject(CovenantService);
   private covenantIndexerService = inject(CovenantIndexerService);
   private rpcService = inject(RpcService);
+  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private registryService = inject(ContractRegistryService);
   private templatePatcher = inject(TemplatePatcherService);
   private flowPagesService = inject(FlowPagesService);
@@ -269,6 +272,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   // instead of updating signals/services and scheduling more RPC/indexer
   // traffic after the component is gone.
   private destroyed = false;
+
+  // Tracks the previous RPC connection status so the reconnect effect below
+  // can tell a genuine recovery (disconnected -> connected) apart from the
+  // initial connect, which the network() effect already handles.
+  private lastRpcConnectionStatus?: RpcConnectionStatus;
 
   // Lookup form
   interactOutputAmount = '';
@@ -452,6 +460,23 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       void this.loadContracts({ skipOnChainStatusRefresh: true });
     });
 
+    // refreshContractStatuses() swallows RPC errors per-address (it just
+    // leaves the affected contracts' status/amount stale) and nothing else
+    // re-triggers it — so a load that lands while the RPC WebSocket is mid-
+    // reconnect (e.g. right after a page reload) can permanently miss a
+    // spend/UTXO change with no automatic retry once the connection
+    // recovers. Re-run the full refresh on a genuine reconnect (not the
+    // initial connect, which the network() effect above already covers).
+    effect(() => {
+      const status =
+        this.kaspaNetworkActionsService.getConnectionStatusSignal()();
+      const wasDisconnected =
+        this.lastRpcConnectionStatus === RpcConnectionStatus.DISCONNECTED;
+      this.lastRpcConnectionStatus = status;
+      if (status === RpcConnectionStatus.CONNECTED && wasDisconnected) {
+        void this.loadContracts();
+      }
+    });
   }
 
   ngOnInit() {

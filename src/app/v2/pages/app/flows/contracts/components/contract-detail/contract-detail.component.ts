@@ -63,6 +63,8 @@ export class ContractDetailComponent {
     draft: string;
   }>();
   aliasRemoveRequested = output<ContractDashboardEntry>();
+  canRemoveContract = input(false);
+  contractRemoveRequested = output<ContractDashboardEntry>();
 
   aliasDraft = '';
 
@@ -119,6 +121,10 @@ export class ContractDetailComponent {
 
   removeAlias(contract: ContractDashboardEntry) {
     this.aliasRemoveRequested.emit(contract);
+  }
+
+  removeTrackedContract(contract: ContractDashboardEntry) {
+    this.contractRemoveRequested.emit(contract);
   }
 
   // ─── Pending partial-spend card ─────────────────────────────────────

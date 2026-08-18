@@ -89,6 +89,19 @@
               />
             </svg>
           }
+          @case ("selfcustody") {
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 3l7 3v5c0 4.5-2.9 8.4-7 10-4.1-1.6-7-5.5-7-10V6z" />
+              <path d="M9 12l2 2 4-5" />
+            </svg>
+          }
           @default {
             <svg
               viewBox="0 0 24 24"
@@ -168,6 +181,15 @@
                   (click)="removeAlias(selectedDetail().entry)"
                 >
                   Remove nickname
+                </button>
+              }
+              @if (canRemoveContract()) {
+                <button
+                  class="alias-link danger"
+                  type="button"
+                  (click)="removeTrackedContract(selectedDetail().entry)"
+                >
+                  Remove contract
                 </button>
               }
             </div>

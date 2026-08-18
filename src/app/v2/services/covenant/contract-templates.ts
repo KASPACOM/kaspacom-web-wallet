@@ -55,7 +55,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
     name: 'Self-Custody Vault',
     description:
       'Protect funds with a hot key, cold key, delayed unvaulting, and an optional destination whitelist.',
-    icon: 'SCV',
+    icon: '🛡',
     assetPath: 'assets/covenant-templates/self-custody-vault.json',
     fields: [
       {

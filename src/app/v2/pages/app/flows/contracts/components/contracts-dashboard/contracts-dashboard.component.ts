@@ -47,6 +47,7 @@ export class ContractsDashboardComponent {
   editingAliasKey = input<string | null>(null);
   aliasNotice = input<{ key: string; message: string } | null>(null);
   walletKey = input<string | undefined>(undefined);
+  removableContractKeys = input<ReadonlySet<string>>(new Set());
 
   dashboardFilterChanged = output<ContractDashboardFilter>();
   statusFilterChanged = output<ContractStatusFilter>();
@@ -64,6 +65,7 @@ export class ContractsDashboardComponent {
     draft: string;
   }>();
   aliasRemoveRequested = output<ContractDashboardEntry>();
+  contractRemoveRequested = output<ContractDashboardEntry>();
 
   // Local to this card's editor input — the shell keeps the authoritative
   // editingAliasKey/aliasNotice (also read by the detail panel), but the
@@ -127,5 +129,14 @@ export class ContractsDashboardComponent {
 
   removeAlias(contract: ContractDashboardEntry) {
     this.aliasRemoveRequested.emit(contract);
+  }
+
+  canRemoveTrackedContract(contract: ContractDashboardEntry): boolean {
+    return this.removableContractKeys().has(this.getAliasEditKey(contract));
+  }
+
+  removeTrackedContract(contract: ContractDashboardEntry) {
+    if (!this.canRemoveTrackedContract(contract)) return;
+    this.contractRemoveRequested.emit(contract);
   }
 }

@@ -71,14 +71,47 @@ async function openContractsTab(page: Page): Promise<void> {
     .click();
 }
 
-async function openContractDetails(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Details' }).first().click();
+/**
+ * Open the "Details" view for a specific contract card, not just whichever
+ * one currently sorts first in "My Contracts". This wallet accumulates many
+ * Dead Man's Switch deployments across repeated local test runs (same
+ * owner/heir address every time), and card ordering isn't a reliable way to
+ * keep re-targeting *this* run's contract — a stale card winning `.first()`
+ * surfaces as "Covenant outpoint ... was not found" much later, on whatever
+ * unrelated, already-fully-spent contract got clicked into.
+ *
+ * Each value in `matchValues` is checked against the card's id/address
+ * `title` attribute or its latest-action link `href`. Multiple candidates
+ * matter because the card's id row switches from showing the contract
+ * address to its covenant ID once the indexer catches up — passing both
+ * keeps matching working across that switch. Falls back to `.first()` only
+ * for the very first open right after a fresh deploy, before any
+ * identifying value is known yet.
+ */
+async function openContractDetails(
+  page: Page,
+  matchValues?: string[],
+): Promise<void> {
+  const values = (matchValues || []).filter(Boolean);
+  const card = values.length
+    ? page
+        .locator('.contract-card')
+        .filter({
+          has: page.locator(
+            values
+              .map((v) => `[title="${v}"], a[href*="${v}"]`)
+              .join(', '),
+          ),
+        })
+        .first()
+    : page.locator('.contract-card').first();
+  await card.getByRole('button', { name: 'Details' }).click();
 }
 
 /**
  * Submit whatever curated action form is currently open (Claim, in this
- * spec) and dismiss the resulting approval/result screens, retrying once if
- * the network rejects the transaction for a stale locktime.
+ * spec) and dismiss the resulting approval/result screens, retrying if the
+ * network rejects the transaction for a stale locktime.
  *
  * The DMS covenant enforces `tx.time >= deadline` using the transaction's own
  * locktime field, which the SDK derives from an estimate that can lag behind
@@ -86,15 +119,24 @@ async function openContractDetails(page: Page): Promise<void> {
  * long before Approve, the built locktime can fall back under the deadline
  * and the node rejects it — a pre-existing quirk of any DMS claim (not
  * specific to partial claims). Retrying rebuilds the transaction with a
- * fresher locktime.
+ * fresher locktime; the gap narrows by roughly the retry wait each attempt,
+ * so more attempts are needed for TN10's slower confirmation pace than for
+ * the first claim of a run — observed missing by under a second on the 6th
+ * attempt in one local run, so this leaves real headroom above that.
  */
 async function submitActionWithLocktimeRetry(
   page: Page,
   reopenAction: () => Promise<void>,
 ): Promise<void> {
-  const maxAttempts = 6;
+  const maxAttempts = 10;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    await page.getByRole('button', { name: 'Approve' }).click();
+    // The app retries a not-yet-visible covenant outpoint for up to ~28s
+    // before the review screen (and this button) even renders — comfortably
+    // past the global 15s action timeout, so this click needs its own
+    // headroom rather than timing out on a submission that's still working.
+    await page
+      .getByRole('button', { name: 'Approve' })
+      .click({ timeout: 35_000 });
 
     const failed = page.getByText('Transaction Failed');
     const succeeded = page.getByText('Transaction Successful!');
@@ -127,7 +169,10 @@ async function submitActionWithLocktimeRetry(
  * since the registry update itself is applied optimistically, not indexer-
  * gated.
  */
-async function returnToContractDetails(page: Page): Promise<void> {
+async function returnToContractDetails(
+  page: Page,
+  contractIdentifiers: string[],
+): Promise<void> {
   const done = page.getByRole('button', { name: /^Done$/ });
   const gotDone = await done
     .waitFor({ state: 'visible', timeout: 20_000 })
@@ -135,14 +180,14 @@ async function returnToContractDetails(page: Page): Promise<void> {
     .catch(() => false);
   if (gotDone) {
     await done.click();
-    await openContractDetails(page);
+    await openContractDetails(page, contractIdentifiers);
     return;
   }
 
   await page.reload({ waitUntil: 'domcontentloaded' });
   await login(page, TEST_PASSWORD);
   await openContractsTab(page);
-  await openContractDetails(page);
+  await openContractDetails(page, contractIdentifiers);
 }
 
 async function openClaimForm(page: Page): Promise<void> {
@@ -155,23 +200,30 @@ async function openClaimForm(page: Page): Promise<void> {
  * A failed/closed attempt drops back to the "My Contracts" list, not the
  * claim form — reopening means going through Details -> Claim again.
  */
-async function reopenClaimForm(page: Page): Promise<void> {
-  await openContractDetails(page);
+async function reopenClaimForm(
+  page: Page,
+  contractIdentifiers: string[],
+): Promise<void> {
+  await openContractDetails(page, contractIdentifiers);
   await openClaimForm(page);
 }
 
-async function claimAmount(page: Page, amountKas: string): Promise<void> {
+async function claimAmount(
+  page: Page,
+  amountKas: string,
+  contractIdentifiers: string[],
+): Promise<void> {
   // Called right after returnToContractDetails(), so the Details view is
   // already open — just open the Claim form directly.
   await openClaimForm(page);
   await page.getByRole('textbox', { name: '0' }).fill(amountKas);
   await page.getByRole('button', { name: 'Claim', exact: true }).click();
   await submitActionWithLocktimeRetry(page, async () => {
-    await reopenClaimForm(page);
+    await reopenClaimForm(page, contractIdentifiers);
     await page.getByRole('textbox', { name: '0' }).fill(amountKas);
     await page.getByRole('button', { name: 'Claim', exact: true }).click();
   });
-  await returnToContractDetails(page);
+  await returnToContractDetails(page, contractIdentifiers);
 }
 
 test.describe("Dead Man's Switch — partial claim", () => {
@@ -180,9 +232,10 @@ test.describe("Dead Man's Switch — partial claim", () => {
   test('@funded deploy, sequential partial claims, invalid amounts, then full remainder', async ({
     page,
   }, testInfo) => {
-    // Deploy + deadline wait + multiple on-chain claims comfortably exceeds
-    // the default 60s Playwright timeout.
-    test.setTimeout(14 * 60_000);
+    // Deploy + deadline wait + multiple on-chain claims (each with up to 10
+    // locktime-retry attempts) comfortably exceeds the default 60s Playwright
+    // timeout.
+    test.setTimeout(20 * 60_000);
 
     await suppressCookieBanner(page);
     await authenticateFundedWallet(page);
@@ -232,20 +285,43 @@ test.describe("Dead Man's Switch — partial claim", () => {
     await page.getByRole('button', { name: 'Done' }).click();
 
     // Find the contract's covenant address from the detail panel so we can
-    // poll the explorer independently of the UI. Truncated address displays
-    // carry the full value in a `title` attribute; the contract address is
-    // whichever one isn't this wallet's own address (owner === heir here).
-    await openContractDetails(page);
-    const addressTitles = page.locator('[title^="kaspatest:"]');
-    let contractAddress: string | undefined;
-    const titleCount = await addressTitles.count();
-    for (let i = 0; i < titleCount; i++) {
-      const title = await addressTitles.nth(i).getAttribute('title');
-      if (title && title !== address) {
-        contractAddress = title;
-        break;
-      }
+    // poll the explorer independently of the UI, and so every later reopen
+    // can target this exact contract instead of whichever one sorts first.
+    // Matching by deployTxid here (not `.first()`) is what makes this
+    // reliable in a wallet that accumulates many DMS contracts across
+    // repeated local test runs. Read the "Contract address" identifier
+    // directly by its label rather than scraping any `[title^="kaspatest:"]`
+    // element on the page — with owner === heir, both the Owner and Heir
+    // participant rows now carry this wallet's own address as their title
+    // too, so a generic scrape can no longer assume the first non-own-wallet
+    // title it finds is the contract's.
+    const deployTxidTrimmed = deployTxid?.trim() || undefined;
+    await openContractDetails(
+      page,
+      deployTxidTrimmed ? [deployTxidTrimmed] : undefined,
+    );
+    const contractAddressValue = page
+      .locator('.identifier', { hasText: 'Contract address' })
+      .locator('.identifier-value');
+    await contractAddressValue.waitFor({ state: 'visible', timeout: 15_000 });
+    const contractAddress = await contractAddressValue.getAttribute('title');
+    if (!contractAddress) {
+      throw new Error(
+        "Could not determine this run's contract address from the detail panel.",
+      );
     }
+    // Once the indexer catches up, the dashboard card's id row switches from
+    // showing this address to showing the covenant ID instead — capture both
+    // (when available) so every later reopen keeps matching regardless of
+    // which one the card currently shows.
+    const covenantId = await page
+      .locator('.identifier', { hasText: 'Covenant ID' })
+      .locator('.identifier-value')
+      .getAttribute('title')
+      .catch(() => null);
+    const contractIdentifiers = [contractAddress, covenantId].filter(
+      (value): value is string => !!value,
+    );
 
     // Wait for the deadline to pass with margin — the DMS covenant's
     // `tx.time >= deadline` check compares against the built transaction's
@@ -254,7 +330,7 @@ test.describe("Dead Man's Switch — partial claim", () => {
     await page.reload({ waitUntil: 'domcontentloaded' });
     await login(page, TEST_PASSWORD);
     await openContractsTab(page);
-    await openContractDetails(page);
+    await openContractDetails(page, contractIdentifiers);
 
     // ── Invalid amounts, rejected inline with no on-chain effect.
     await openClaimForm(page);
@@ -282,11 +358,11 @@ test.describe("Dead Man's Switch — partial claim", () => {
     await page.getByRole('textbox', { name: '0' }).fill('2');
     await page.getByRole('button', { name: 'Claim', exact: true }).click();
     await submitActionWithLocktimeRetry(page, async () => {
-      await reopenClaimForm(page);
+      await reopenClaimForm(page, contractIdentifiers);
       await page.getByRole('textbox', { name: '0' }).fill('2');
       await page.getByRole('button', { name: 'Claim', exact: true }).click();
     });
-    await returnToContractDetails(page);
+    await returnToContractDetails(page, contractIdentifiers);
 
     if (contractAddress) {
       await expect
@@ -298,7 +374,7 @@ test.describe("Dead Man's Switch — partial claim", () => {
       description: (await fetchBalanceKas(address)).toString(),
     });
 
-    await claimAmount(page, '1.5');
+    await claimAmount(page, '1.5', contractIdentifiers);
 
     if (contractAddress) {
       await expect
@@ -315,7 +391,7 @@ test.describe("Dead Man's Switch — partial claim", () => {
     await page.locator('.max-text.clickable').first().click();
     await page.getByRole('button', { name: 'Claim', exact: true }).click();
     await submitActionWithLocktimeRetry(page, async () => {
-      await reopenClaimForm(page);
+      await reopenClaimForm(page, contractIdentifiers);
       await page.locator('.max-text.clickable').first().click();
       await page.getByRole('button', { name: 'Claim', exact: true }).click();
     });

@@ -2031,7 +2031,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private async syncRegistryEntryForDashboardAction(
     entry: ContractDashboardEntry,
   ): Promise<ContractRegistryEntry> {
-    const registryEntry = entry.registryEntry!;
+    const cachedEntry = entry.registryEntry!;
+    // entry.registryEntry is a snapshot from the last loadContracts()
+    // dashboard build. A very recent action (e.g. a claim moments ago)
+    // updates the registry store directly without necessarily rebuilding
+    // that dashboard snapshot first — reading the stale copy here can
+    // silently re-apply an already-superseded outpoint/amount, and the
+    // "already past deploy" regression guard below only works if this
+    // reflects what's actually persisted. Re-read the record fresh instead.
+    const registryEntry =
+      (await this.registryService.getContract(cachedEntry.id)) ?? cachedEntry;
     const liveUtxo = await this.findLiveContractUtxo(registryEntry);
     this.logContractsDebug(
       '[Contracts][registry] Syncing registry entry for action',
@@ -2116,7 +2125,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       };
     }
 
-    if (detail?.entry.id === entry.id && detail.response) {
+    // liveUtxo already confirmed the *current* registry outpoint is still
+    // unspent, straight from RPC. The indexer's own action/UTXO history can
+    // lag well behind that (its actions list may still show only "deploy"
+    // after a claim has already confirmed on-chain) — refreshing from it
+    // here would silently clobber the verified-fresh outpoint/amount with a
+    // stale, already-spent one, and the next spend would fail at broadcast
+    // with "outpoint was not found". Nothing needs refreshing from the
+    // indexer when the live check already vouches for what we have.
+    if (!liveUtxo && detail?.entry.id === entry.id && detail.response) {
       try {
         const actions =
           detail.actions.length > 0
@@ -2136,31 +2153,54 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           activeUtxo: indexerUtxo || null,
           currentAddress: contractAddress,
         });
-        const compiled = this.covenantService.parseCompiledContract(
-          preview.compiledJson,
-        );
-        Object.assign(updates, {
-          contractName: compiled.contract_name || registryEntry.contractName,
-          compiledJson: preview.compiledJson,
-          contractAddress: preview.contractAddress,
-          outpoint: preview.outpoint,
-          amountSompi: preview.amountSompi,
-          status: 'active' as ContractStatus,
-          accessRoles: this.parseAccessRoles(compiled),
-          covenantId: preview.covenantId,
-        });
-        this.logContractsDebug(
-          '[Contracts][registry] Refreshed registry artifact from preview',
-          {
-            registryId: registryEntry.id,
-            previewAddress: preview.contractAddress,
-            previewOutpoint: preview.outpoint,
-            previewAmountSompi: preview.amountSompi,
-            previewCovenantId: preview.covenantId,
-            isLatestContinuation: preview.isLatestContinuation,
-            compiledContractName: compiled.contract_name,
-          },
-        );
+        // The indexer's action history can still only show "deploy" well
+        // after a claim has already confirmed on-chain, in which case this
+        // preview is built from the deploy action and its outpoint regresses
+        // to the original (now long-spent) deploy outpoint. The registry
+        // already having moved past deploy is proof this preview is stale —
+        // applying it anyway would clobber a correct, fresher outpoint with
+        // one the next spend can never find, permanently ("outpoint was not
+        // found") until the indexer catches up.
+        const registryAlreadyPastDeploy =
+          registryEntry.outpoint.txid !== registryEntry.deployTxid;
+        const previewRegressesToDeploy =
+          preview.outpoint.txid === registryEntry.deployTxid;
+        if (registryAlreadyPastDeploy && previewRegressesToDeploy) {
+          this.logContractsDebug(
+            '[Contracts][registry] Skipped stale preview refresh (would regress to deploy outpoint)',
+            {
+              registryId: registryEntry.id,
+              registryOutpoint: registryEntry.outpoint,
+              previewOutpoint: preview.outpoint,
+            },
+          );
+        } else {
+          const compiled = this.covenantService.parseCompiledContract(
+            preview.compiledJson,
+          );
+          Object.assign(updates, {
+            contractName: compiled.contract_name || registryEntry.contractName,
+            compiledJson: preview.compiledJson,
+            contractAddress: preview.contractAddress,
+            outpoint: preview.outpoint,
+            amountSompi: preview.amountSompi,
+            status: 'active' as ContractStatus,
+            accessRoles: this.parseAccessRoles(compiled),
+            covenantId: preview.covenantId,
+          });
+          this.logContractsDebug(
+            '[Contracts][registry] Refreshed registry artifact from preview',
+            {
+              registryId: registryEntry.id,
+              previewAddress: preview.contractAddress,
+              previewOutpoint: preview.outpoint,
+              previewAmountSompi: preview.amountSompi,
+              previewCovenantId: preview.covenantId,
+              isLatestContinuation: preview.isLatestContinuation,
+              compiledContractName: compiled.contract_name,
+            },
+          );
+        }
       } catch (error) {
         console.warn(
           '[Contracts] Failed to refresh registry contract artifact from latest continuation:',

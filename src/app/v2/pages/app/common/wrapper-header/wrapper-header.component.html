@@ -3,20 +3,9 @@
     <div class="profile-container" (click)="toggleAccountSettings()">
       <app-wallet-profile-orb class="profile-container__chain-icon" />
       <div class="profile-container__info">
-        <div class="profile-container__wallet-name-section">
-          <div class="profile-container__wallet-name">{{ walletName() }}</div>
-        </div>
-        <div class="profile-container__account-section">
-          <div class="profile-container__account-name">{{ accountName() }}</div>
-        </div>
+        <div class="profile-container__wallet-name">{{ walletName() }}</div>
       </div>
     </div>
-    <app-copy-button
-      class="external-copy-button"
-      [value]="walletAddress()"
-      [size]="'sm'"
-      (click)="onCopyButtonClick($event)"
-    />
   </div>
   <div class="network-selection-section">
     <div class="network-info" (click)="onNetworkSelectionClick()">

@@ -49,6 +49,10 @@
   color: var(--gray-60);
 }
 
+.alias-link.danger {
+  color: var(--red-20);
+}
+
 .alias-editor {
   display: flex;
   align-items: center;

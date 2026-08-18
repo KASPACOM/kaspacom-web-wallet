@@ -57,7 +57,7 @@ export type IndexerImportPreview = {
 
 export type ContractDashboardSource = 'indexer' | 'local' | 'both';
 export type ContractDashboardFilter =
-  'all' | 'deadman' | 'timelock' | 'multisig' | 'escrow';
+  'all' | 'deadman' | 'timelock' | 'multisig' | 'escrow' | 'selfcustody';
 // Status dimension, composed on top of the template-type filter above.
 export type ContractStatusFilter = 'all' | 'active' | 'history';
 export type ContractParticipant = {

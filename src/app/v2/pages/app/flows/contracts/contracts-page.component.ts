@@ -192,6 +192,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
     return this.sortDashboardEntries(list);
   });
+  removableTrackedContractKeys = computed(
+    () =>
+      new Set(
+        this.dashboardContracts()
+          .filter((contract) => this.canRemoveTrackedContract(contract))
+          .map((contract) => this.getAliasEditKey(contract)),
+      ),
+  );
   dashboardLoading = signal(false);
   indexerLoading = signal(false);
   dashboardError = signal<string | null>(null);
@@ -250,7 +258,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    */
   getTemplateKey(
     input: any,
-  ): 'deadman' | 'timelock' | 'multisig' | 'escrow' | 'default' {
+  ):
+    'deadman' | 'timelock' | 'multisig' | 'escrow' | 'selfcustody' | 'default' {
     return this.display.getTemplateKey(input);
   }
 
@@ -451,7 +460,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       if (refreshVersion === 0) return;
       void this.loadContracts({ skipOnChainStatusRefresh: true });
     });
-
   }
 
   ngOnInit() {
@@ -1015,7 +1023,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     contract: ContractRegistryEntry,
   ): boolean {
     const walletKey = this.currentWalletAliasKey();
-    if (walletKey && contract.wallets?.[walletKey]) return true;
+    if (walletKey && contract.wallets) return !!contract.wallets[walletKey];
 
     const wallet = this.currentWallet();
     const address = wallet?.getAddress()?.toLowerCase();
@@ -1031,6 +1039,38 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       (!!address && deployedAddress === address) ||
       (!!pubkey && deployedPubkey === pubkey)
     );
+  }
+
+  canRemoveTrackedContract(contract: ContractDashboardEntry): boolean {
+    return (
+      !!contract.registryEntry &&
+      this.currentWalletRoles(contract.participants || []).length === 0
+    );
+  }
+
+  async removeTrackedContract(contract: ContractDashboardEntry) {
+    const registryEntry = contract.registryEntry;
+    if (!registryEntry || !this.canRemoveTrackedContract(contract)) return;
+
+    const walletKey = this.currentWalletAliasKey();
+    const wallets = { ...(registryEntry.wallets || {}) };
+    if (walletKey) {
+      delete wallets[walletKey];
+    }
+
+    const hasRemainingWallets = Object.values(wallets).some(Boolean);
+    if (hasRemainingWallets) {
+      await this.updateRegistryContract(registryEntry.id, { wallets });
+    } else {
+      await this.registryService.deleteContract(registryEntry.id);
+    }
+
+    this.selectedDetail.set(null);
+    this.selectedDetailError.set(null);
+    if (this.activeTab() === 'detail') {
+      this.activeTab.set('my-contracts');
+    }
+    await this.loadContracts();
   }
 
   private async addCurrentWalletToRegistryContract(

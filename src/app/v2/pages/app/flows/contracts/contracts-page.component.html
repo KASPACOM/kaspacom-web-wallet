@@ -141,6 +141,7 @@
             [editingAliasKey]="editingAliasKey()"
             [aliasNotice]="aliasNotice()"
             [walletKey]="currentWalletAliasKey()"
+            [removableContractKeys]="removableTrackedContractKeys()"
             (dashboardFilterChanged)="setDashboardFilter($event)"
             (statusFilterChanged)="setStatusFilter($event)"
             (dashboardSearchChanged)="dashboardSearch.set($event)"
@@ -152,6 +153,7 @@
             (aliasEditCancelled)="cancelAliasEdit()"
             (aliasSaveRequested)="saveAlias($event.contract, $event.draft)"
             (aliasRemoveRequested)="removeAlias($event)"
+            (contractRemoveRequested)="removeTrackedContract($event)"
           />
 
           <!-- Detail panel -->
@@ -178,6 +180,10 @@
             (aliasEditCancelled)="cancelAliasEdit()"
             (aliasSaveRequested)="saveAlias($event.contract, $event.draft)"
             (aliasRemoveRequested)="removeAlias($event)"
+            [canRemoveContract]="
+              canRemoveTrackedContract(selectedDetail()!.entry)
+            "
+            (contractRemoveRequested)="removeTrackedContract($event)"
           />
         }
       </div>

@@ -13,6 +13,7 @@ $tpl-accents: (
   timelock: var(--kaspa-20),
   multisig: var(--blue-20),
   escrow: var(--purple-20),
+  selfcustody: var(--yellow-20),
   default: var(--kaspa-20),
 );
 
@@ -201,6 +202,10 @@ $tpl-accents: (
 .alias-link.muted,
 .alias-btn.ghost {
   color: var(--gray-60);
+}
+
+.alias-link.danger {
+  color: var(--red-20);
 }
 
 .alias-editor {

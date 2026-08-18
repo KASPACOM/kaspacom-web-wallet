@@ -150,7 +150,8 @@ export class ContractTemplateDeployFormComponent {
 
   getTemplateKey(
     input: any,
-  ): 'deadman' | 'timelock' | 'multisig' | 'escrow' | 'default' {
+  ):
+    'deadman' | 'timelock' | 'multisig' | 'escrow' | 'selfcustody' | 'default' {
     return this.display.getTemplateKey(input);
   }
 
@@ -1115,8 +1116,7 @@ export class ContractTemplateDeployFormComponent {
             txid,
             status: 'indexed',
             covenantId: indexedCovenantId,
-            message:
-              'Indexed. This contract is now tracked from My Contracts.',
+            message: 'Indexed. This contract is now tracked from My Contracts.',
           });
           return;
         }

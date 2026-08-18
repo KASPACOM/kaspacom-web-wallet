@@ -155,7 +155,8 @@ export class ContractDisplayService {
    */
   getTemplateKey(
     input: any,
-  ): 'deadman' | 'timelock' | 'multisig' | 'escrow' | 'default' {
+  ):
+    'deadman' | 'timelock' | 'multisig' | 'escrow' | 'selfcustody' | 'default' {
     // ContractTemplate.id on the Create / Templates tabs.
     switch (input?.id) {
       case 'dead-mans-switch':
@@ -167,7 +168,7 @@ export class ContractDisplayService {
       case 'escrow-with-arbiter':
         return 'escrow';
       case 'self-custody-vault':
-        return 'default';
+        return 'selfcustody';
     }
     switch (
       this.normalizeContractName(input?.contractName ?? input?.name ?? '')
@@ -180,6 +181,8 @@ export class ContractDisplayService {
         return 'multisig';
       case 'EscrowWithArbiter':
         return 'escrow';
+      case 'SelfCustodyVault':
+        return 'selfcustody';
       default:
         return 'default';
     }

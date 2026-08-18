@@ -9,12 +9,12 @@ import { WalletService } from '../../../../../../../services/wallet.service';
 import { WalletActionService } from '../../../../../../../services/wallet-action.service';
 import { QrScannerService } from '../../../../../../../services/qr-scanner.service';
 import { CovenantService } from '../../../../../../../services/covenant/covenant.service';
-import { CovenantIndexerService } from '../../../../../../../services/covenant/covenant-indexer.service';
-import { RpcService } from '../../../../../../../services/kaspa-netwrok-services/rpc.service';
 import { TemplatePatcherService } from '../../../../../../services/covenant/template-patcher.service';
-import { KaspaL1NetworkService } from '../../../../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
 import { FlowPagesService } from '../../../../../../services/flow-pages.service';
 import { ApprovalFlowService } from '../../../../../../services/approval-flow.service';
+import { ContractDisplayService } from '../../services/contract-display.service';
+import { CovenantTemplateService } from '../../services/covenant-template.service';
+import { ContractsDataService } from '../../services/contracts-data.service';
 import { CompiledContract } from '../../../../../../../services/covenant/covenant-sdk/types';
 
 const MIN_CONTINUATION_AMOUNT_SOMPI = 50_000_000n; // 0.5 KAS
@@ -130,41 +130,11 @@ describe("ContractActionPanelComponent — Dead Man's Switch partial claim", () 
       JSON.parse(json),
     );
 
-    const covenantIndexerServiceSpy = jasmine.createSpyObj(
-      'CovenantIndexerService',
-      [
-        'getCovenant',
-        'getCovenantActions',
-        'getCovenantByCanonicalId',
-        'getCovenantUtxos',
-        'getTransactionActions',
-        'getTransactionSettlementStatus',
-        'listCovenants',
-        'search',
-      ],
-    );
-    covenantIndexerServiceSpy.listCovenants.and.resolveTo([]);
-    covenantIndexerServiceSpy.getTransactionSettlementStatus.and.rejectWith(
-      new Error('not mocked'),
-    );
-
-    const rpcServiceSpy = jasmine.createSpyObj('RpcService', [
-      'getNetwork',
-      'getRpc',
-      'setNetwork',
-    ]);
-    rpcServiceSpy.getNetwork.and.returnValue('testnet-10');
-
     const templatePatcherSpy = jasmine.createSpyObj('TemplatePatcherService', [
       'applyPatch',
       'extractPatchDescriptor',
       'kaspaAddressToPubkeyBytes',
     ]);
-
-    const kaspaL1NetworkServiceSpy = jasmine.createSpyObj(
-      'KaspaL1NetworkService',
-      ['getCovenantExplorerBaseurl', 'getKaspaExplorerBaseurl'],
-    );
 
     const flowPagesServiceSpy = jasmine.createSpyObj('FlowPagesService', [
       'getTransientState',
@@ -191,17 +161,14 @@ describe("ContractActionPanelComponent — Dead Man's Switch partial claim", () 
         { provide: WalletActionService, useValue: walletActionServiceSpy },
         { provide: QrScannerService, useValue: qrScannerServiceSpy },
         { provide: CovenantService, useValue: covenantServiceSpy },
-        {
-          provide: CovenantIndexerService,
-          useValue: covenantIndexerServiceSpy,
-        },
-        { provide: RpcService, useValue: rpcServiceSpy },
         { provide: TemplatePatcherService, useValue: templatePatcherSpy },
         {
           provide: HttpClient,
           useValue: jasmine.createSpyObj('HttpClient', ['get']),
         },
-        { provide: KaspaL1NetworkService, useValue: kaspaL1NetworkServiceSpy },
+        { provide: ContractDisplayService, useValue: {} },
+        { provide: CovenantTemplateService, useValue: {} },
+        { provide: ContractsDataService, useValue: {} },
         { provide: FlowPagesService, useValue: flowPagesServiceSpy },
         { provide: ApprovalFlowService, useValue: approvalFlowServiceSpy },
         { provide: Dialog, useValue: dialogSpy },
@@ -463,6 +430,148 @@ describe("ContractActionPanelComponent — Dead Man's Switch partial claim", () 
       expect(
         walletActionServiceSpy.validateAndDoActionAfterApproval,
       ).not.toHaveBeenCalled();
+    });
+  });
+});
+
+// Long, realistic testnet addresses — long enough that the raw address
+// (rather than a shortened label) would visibly overflow a 375px-wide
+// dropdown if kc-dropdown-select's overlay sizing used it directly.
+const WHITELIST_ADDRESS_1 =
+  'kaspatest:qpglk4khgvnwn7fdfpnfq7v5edjyy7glw8e2rgh7ur2q3uwdlg5dznh824dvr';
+const WHITELIST_ADDRESS_2 =
+  'kaspatest:qq2ez0mgpg0hp082hlpqvcnrx8m0quwnh8hf5nc7f2z2q9nxfj9vv0y8dzgn';
+
+describe('ContractActionPanelComponent', () => {
+  let component: ContractActionPanelComponent;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [ContractActionPanelComponent],
+      providers: [
+        { provide: CovenantService, useValue: {} },
+        { provide: WalletActionService, useValue: {} },
+        { provide: TemplatePatcherService, useValue: {} },
+        { provide: CovenantTemplateService, useValue: {} },
+        { provide: ContractsDataService, useValue: {} },
+        { provide: HttpClient, useValue: {} },
+        { provide: ApprovalFlowService, useValue: {} },
+        { provide: FlowPagesService, useValue: {} },
+        { provide: NotificationService, useValue: {} },
+        { provide: QrScannerService, useValue: {} },
+        { provide: Dialog, useValue: {} },
+        { provide: WalletService, useValue: {} },
+        { provide: ContractDisplayService, useValue: {} },
+      ],
+    });
+
+    component = TestBed.createComponent(
+      ContractActionPanelComponent,
+    ).componentInstance;
+  });
+
+  describe('getSelfCustodySweepDropdownOptions', () => {
+    // Regression test for a review finding on the whitelist wallet selector
+    // dropdown: kc-dropdown-select sizes its overlay off DropdownOption.label
+    // via calculateLongestOptionWidth() — it measures the raw label text, not
+    // what optionTemplate actually renders. Passing the full address as label
+    // (instead of the shortened text shown in the row) forces an oversized
+    // minWidth that overflows/clips the overlay on narrow screens even though
+    // the rendered row itself is short. `value` must stay the full address
+    // (used for selection/equality); only `label` must be shortened.
+    it('uses a shortened label for sizing while keeping the full address as value', () => {
+      spyOn(
+        component,
+        'getSelfCustodyInteractWhitelistWallets',
+      ).and.returnValue([WHITELIST_ADDRESS_1, WHITELIST_ADDRESS_2]);
+
+      const options = component.getSelfCustodySweepDropdownOptions();
+
+      expect(options.length).toBe(2);
+      expect(options[0].value).toBe(WHITELIST_ADDRESS_1);
+      expect(options[1].value).toBe(WHITELIST_ADDRESS_2);
+      for (const option of options) {
+        const fullAddress = option.value as string;
+        expect(option.label).not.toBe(fullAddress);
+        expect(option.label.length).toBeLessThan(fullAddress.length);
+        expect(option.label).toContain('...');
+      }
+    });
+
+    it('uses longer shortened labels on wider screens', () => {
+      spyOn(
+        component,
+        'getSelfCustodyInteractWhitelistWallets',
+      ).and.returnValue([WHITELIST_ADDRESS_1]);
+
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        value: 375,
+      });
+      component.onResize();
+      const narrowLabel =
+        component.getSelfCustodySweepDropdownOptions()[0].label;
+
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        value: 1400,
+      });
+      component.onResize();
+      const wideLabel = component.getSelfCustodySweepDropdownOptions()[0].label;
+
+      expect(narrowLabel.length).toBeLessThan(wideLabel.length);
+      expect(wideLabel.length).toBeLessThan(WHITELIST_ADDRESS_1.length);
+      expect(wideLabel).toBe(
+        component.formatResponsiveDropdownAddress(WHITELIST_ADDRESS_1),
+      );
+    });
+
+    it('returns no options when there is no whitelist', () => {
+      spyOn(
+        component,
+        'getSelfCustodyInteractWhitelistWallets',
+      ).and.returnValue([]);
+
+      expect(component.getSelfCustodySweepDropdownOptions()).toEqual([]);
+    });
+  });
+
+  describe('coSignerOptions', () => {
+    it('uses a shortened participant address in the label while keeping signer role as value', () => {
+      spyOn<any>(component, 'getCurrentSignerRole').and.returnValue('Signer 1');
+      spyOn(component, 'getParticipantValueForRole').and.callFake((role) =>
+        role === 'Signer 2' ? WHITELIST_ADDRESS_1 : WHITELIST_ADDRESS_2,
+      );
+
+      const options = component.coSignerOptions();
+
+      expect(options.length).toBe(2);
+      expect(options[0].value).toBe('Signer 2');
+      expect(options[0].label).toContain('Signer 2');
+      expect(options[0].label).not.toContain(WHITELIST_ADDRESS_1);
+      expect(options[0].label).toContain('...');
+    });
+  });
+
+  describe('getSelfCustodyWhitelistIndex', () => {
+    it('resolves the index of an address within the whitelist', () => {
+      spyOn(
+        component,
+        'getSelfCustodyInteractWhitelistWallets',
+      ).and.returnValue([WHITELIST_ADDRESS_1, WHITELIST_ADDRESS_2]);
+
+      expect(component.getSelfCustodyWhitelistIndex(WHITELIST_ADDRESS_2)).toBe(
+        1,
+      );
+    });
+
+    it('falls back to 0 for an address not in the whitelist', () => {
+      spyOn(
+        component,
+        'getSelfCustodyInteractWhitelistWallets',
+      ).and.returnValue([WHITELIST_ADDRESS_1]);
+
+      expect(component.getSelfCustodyWhitelistIndex('unknown')).toBe(0);
     });
   });
 });

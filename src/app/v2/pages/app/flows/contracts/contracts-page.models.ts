@@ -87,6 +87,7 @@ export type ContractDashboardEntry = {
   latestActionAtMs?: number;
   deadlineMs?: number;
   participants: ContractParticipant[];
+  currentRoles?: string[];
   nextActionLabel: string;
   actionHint: string;
   registryEntry?: ContractRegistryEntry;

@@ -228,6 +228,9 @@ export class ContractsDataService {
       participants: Array.isArray(entry.participants)
         ? entry.participants.filter(Boolean)
         : [],
+      currentRoles: Array.isArray(entry.currentRoles)
+        ? entry.currentRoles.filter(Boolean)
+        : [],
       aliasName,
       contractTypeLabel,
       displayName: aliasName || contractTypeLabel,
@@ -662,6 +665,7 @@ export class ContractsDataService {
           contractName,
         ),
         participants,
+        currentRoles,
         nextActionLabel: this.getNextActionLabel(
           contractName,
           contract.status || 'unknown',
@@ -714,6 +718,7 @@ export class ContractsDataService {
         latestActionAtMs: latestAction?.blockTimeMs,
         deadlineMs: this.extractDeadlineMs(summary),
         participants,
+        currentRoles,
         nextActionLabel: this.getNextActionLabel(
           contractName,
           status,
@@ -884,6 +889,9 @@ export class ContractsDataService {
               local?.participants,
               entry.participants,
             ),
+            currentRoles: entry.currentRoles?.length
+              ? entry.currentRoles
+              : local?.currentRoles,
             deadlineMs: local?.deadlineMs ?? entry.deadlineMs,
             aliases: local?.aliases || entry.aliases,
             registryEntry: local?.registryEntry || entry.registryEntry,

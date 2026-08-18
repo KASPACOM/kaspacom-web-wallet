@@ -443,16 +443,13 @@
           </div>
         }
 
-        @if ((contract.participants || []).length > 0) {
+        @if (getVisibleRoles(contract).length > 0) {
           <div class="role-chips">
-            @for (
-              p of (contract.participants || []).slice(0, 3);
-              track p.label + p.value
-            ) {
+            @for (role of getVisibleRoles(contract).slice(0, 3); track role) {
               <span
                 class="role-chip"
-                [class]="'role-chip ' + getRoleClass(p.label)"
-                >{{ p.label }}</span
+                [class]="'role-chip ' + getRoleClass(role)"
+                >{{ role }}</span
               >
             }
           </div>

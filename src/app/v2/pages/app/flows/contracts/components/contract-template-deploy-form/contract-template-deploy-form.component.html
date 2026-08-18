@@ -458,6 +458,11 @@
                   [invalidReason]="getTemplateFieldError(field)"
                   (valueChange)="onTemplateFieldChange(field, $event)"
                 ></app-covenant-date-time-input>
+                @if (getTemplateDateWarning(field)) {
+                  <span class="field-warning">{{
+                    getTemplateDateWarning(field)
+                  }}</span>
+                }
               }
               <span class="field-help">{{ getFieldHelp(field) }}</span>
             </div>

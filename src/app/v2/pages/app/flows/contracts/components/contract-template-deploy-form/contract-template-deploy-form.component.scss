@@ -73,6 +73,13 @@ $tpl-accents: (
   }
 }
 
+.field-warning {
+  display: block;
+  color: var(--warning-50, #f8c96a);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .template-picker {
   display: flex;
   flex-direction: column;

@@ -27,6 +27,7 @@ export class ContractActionFieldsComponent {
   addressValue = input<string>('');
   amountValue = input<string>('');
   timestampValue = input<string>('');
+  timestampWarning = input<string>('');
   extraArgValues = input<Record<string, string>>({});
 
   addressChange = output<string>();

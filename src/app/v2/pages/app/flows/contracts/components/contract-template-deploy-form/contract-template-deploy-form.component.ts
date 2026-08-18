@@ -764,6 +764,22 @@ export class ContractTemplateDeployFormComponent {
     return !this.getTemplateFieldError(field);
   }
 
+  getTemplateDateWarning(field: TemplateField): string {
+    if (field.type !== 'int_timestamp') {
+      return '';
+    }
+
+    const value = String(this.templateFormValues[field.paramName] ?? '').trim();
+    if (!value) return '';
+
+    const selectedTime = new Date(value).getTime();
+    if (!Number.isFinite(selectedTime) || selectedTime >= Date.now()) {
+      return '';
+    }
+
+    return `${field.label} is in the past. This contract path may be available immediately.`;
+  }
+
   isCreateDeployDisabled(): boolean {
     if (this.isDeploying() || !this.currentWallet()) return true;
     if (!this.isDeployAmountCompleteValid()) return true;

@@ -10,7 +10,6 @@ import {
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { DropdownOption } from '@kaspacom/ui-kit';
 import { WalletService } from '../../../../../services/wallet.service';
 import { CovenantService } from '../../../../../services/covenant/covenant.service';
@@ -102,7 +101,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private flowPagesService = inject(FlowPagesService);
   wideWorkspaceService = inject(WideWorkspaceService);
   private approvalFlowService = inject(ApprovalFlowService);
-  private router = inject(Router);
   private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
   private display = inject(ContractDisplayService);
@@ -239,10 +237,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    *    distinguish "just finished acting on this" from "opened it fresh".
    *  - openContractDetail() skips its auto-jump into an available action's
    *    form (the `!hasEnabledDefault` branch of prepareDashboardAction) —
-   *    without it, the route subscription's own openDetailFromRoute() call
-   *    on the freshly re-created instance (and every subsequent background
-   *    refresh from the indexing poll) could still jump straight into a
-   *    form instead of landing on details.
+   *    without it, the freshly re-created instance (and every subsequent
+   *    background refresh from the indexing poll) could still jump straight
+   *    into a form instead of landing on details.
    */
   hideActionsAfterCompletion = signal(false);
   /**
@@ -258,13 +255,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * Set in ngOnDestroy(). This component is torn down by the flow-page
    * outlet whenever it hosts the "contracts" flow page (see
    * bailIfLeftContractsFlow()'s doc comment) — but it's also directly
-   * routed at /app/contracts and /app/contracts/:contractId (see
-   * logged.routes.ts), and in that hosting mode the approval overlay layers
-   * on top via the flow-page outlet without ever destroying this instance,
-   * so isPageInStack('contracts') is permanently false (this page was never
-   * pushed onto that stack) even though the user never left. Gating the
-   * bail on this flag too means "not in the flow-page stack" only counts as
-   * "left" once this specific instance has actually been destroyed.
+   * routed at /app/contracts (see logged.routes.ts), and in that hosting
+   * mode the approval overlay layers on top via the flow-page outlet
+   * without ever destroying this instance, so isPageInStack('contracts')
+   * is permanently false (this page was never pushed onto that stack)
+   * even though the user never left. Gating the bail on this flag too
+   * means "not in the flow-page stack" only counts as "left" once this
+   * specific instance has actually been destroyed.
    */
   private destroyed = false;
   selectedDetailError = signal<string | null>(null);
@@ -276,8 +273,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * whether this whole panel appears below the always-visible details.
    */
   actionPageView = signal<'list' | 'form'>('list');
-  detailRouteId = signal<string | null>(null);
-  detailRouteNotFound = signal(false);
   private readonly supportedIndexerTemplates = [
     'DeadManSwitch',
     'TimeLockVault',
@@ -561,17 +556,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     return this.registryMigrationPromise;
   }
 
-  private findDashboardEntryForPreview(
-    preview: IndexerImportPreview,
-  ): ContractDashboardEntry | undefined {
-    return this.dashboardContracts().find(
-      (entry) =>
-        this.sameIdentity(entry.covenantId, preview.covenantId) ||
-        this.sameIdentity(entry.deployTxid, preview.deployTxid) ||
-        this.sameIdentity(entry.scriptHash, preview.action.scriptHashHex),
-    );
-  }
-
   private async resolveIndexerImportQuery(query: string): Promise<{
     action: IndexerCovenantAction;
     actions: IndexerCovenantAction[];
@@ -822,10 +806,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
     if (!isCurrentRequest()) return;
 
-    const routeId = this.detailRouteId();
-    if (routeId) {
-      await this.openDetailFromRoute(routeId);
-    } else if (this.activeTab() === 'detail' && this.selectedDetail()) {
+    if (this.activeTab() === 'detail' && this.selectedDetail()) {
       // An open detail view isn't cleared above (so the panel doesn't flash
       // empty), but it also needs to be re-fetched with the freshly merged
       // entry — otherwise fields like the check-in deadline stay stuck at
@@ -1304,14 +1285,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     );
   }
 
-  private findRegistryEntryForDashboard(input: {
-    covenantId?: string;
-    deployTxid?: string;
-    outpoint?: { txid: string; vout: number };
-  }): ContractRegistryEntry | undefined {
-    return this.findSavedRegistryEntryForIdentity(input);
-  }
-
   private mergeParticipants(
     localParticipants: ContractParticipant[] | undefined,
     indexerParticipants: ContractParticipant[] | undefined,
@@ -1334,10 +1307,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   private normalizeContractName(name: string): string {
     return this.display.normalizeContractName(name);
-  }
-
-  private getTemplateDisplayName(name: string): string {
-    return this.display.getTemplateDisplayName(name);
   }
 
   private getRegistryContractIdentityLabel(
@@ -1369,10 +1338,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   private normalizeIndexerArgs(rawArgs: unknown): IndexerCovenantArg[] {
     return this.contractsData.normalizeIndexerArgs(rawArgs);
-  }
-
-  private roleLabel(role: string): string {
-    return this.contractsData.roleLabel(role);
   }
 
   private getParticipantDisplayValue(
@@ -1443,18 +1408,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     } catch {
       return [];
     }
-  }
-
-  private getNextActionLabel(
-    contractName: string,
-    status: ContractDashboardEntry['status'],
-    participants: ContractParticipant[],
-  ): string {
-    return this.contractsData.getNextActionLabel(
-      contractName,
-      status,
-      this.currentWalletRoles(participants),
-    );
   }
 
   /**
@@ -1533,7 +1486,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         actions: [],
         utxos: [],
       });
-      if (this.detailRouteId() || this.activeTab() === 'detail') {
+      if (this.activeTab() === 'detail') {
         this.clearInteractContractSelection();
       }
       if (!skipScrollToTop) this.scrollContractsContentToTop();
@@ -1672,7 +1625,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         utxos,
       });
       if (
-        (this.detailRouteId() || this.activeTab() === 'detail') &&
+        this.activeTab() === 'detail' &&
         updatedEntry.status === 'active' &&
         !suppressAutoActionOpen
       ) {
@@ -1697,7 +1650,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         console.warn('[Contracts][detail] Action prep skipped', {
           entryId: updatedEntry.id,
           activeTab: this.activeTab(),
-          detailRouteId: this.detailRouteId(),
           status: updatedEntry.status,
         });
       }
@@ -1717,7 +1669,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           "Indexer hasn't caught up with this contract yet — showing your locally saved copy. Try refreshing in a moment for live status.",
         );
         if (
-          (this.detailRouteId() || this.activeTab() === 'detail') &&
+          this.activeTab() === 'detail' &&
           entry.status === 'active' &&
           !suppressAutoActionOpen
         ) {
@@ -1766,9 +1718,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   async openDashboardAction(entry: ContractDashboardEntry) {
-    // Same reasoning as navigateToContractDetail(): this can also be reached
-    // directly from a My Contracts card, so drop any stale route-driven id.
-    this.detailRouteId.set(null);
     this.detailPanelTab.set('action');
     this.actionPageView.set('form');
     this.activeTab.set('detail');
@@ -2266,10 +2215,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   navigateToContractDetail(entry: ContractDashboardEntry) {
-    // Drop any stale route-driven id (e.g. left over from an earlier direct
-    // URL visit) — otherwise a loadContracts() still in flight from the tab
-    // switch re-opens it via its own tail logic and clobbers this entry.
-    this.detailRouteId.set(null);
     this.detailPanelTab.set('details');
     this.actionPageView.set('list');
     this.activeTab.set('detail');
@@ -2280,14 +2225,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   }
 
   backToContractsList() {
-    const wasRouteDetail = !!this.detailRouteId();
-    if (wasRouteDetail) {
-      void this.router.navigate(['/app/contracts']);
-    }
     this.selectedDetail.set(null);
     this.selectedDetailError.set(null);
-    this.detailRouteId.set(null);
-    this.detailRouteNotFound.set(false);
     this.activeTab.set('my-contracts');
     // Leaving the detail view entirely — don't let suppression leak into
     // whichever contract's detail is opened next, and don't let any
@@ -2297,53 +2236,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.hideActionsAfterCompletion.set(false);
     this.flowPagesService.saveTransientState('contracts', undefined);
     void this.loadContracts();
-  }
-
-  private async openDetailFromRoute(routeId: string) {
-    if (this.dashboardLoading()) return;
-
-    const entry = this.findDashboardEntryByRouteId(routeId);
-    if (entry) {
-      this.detailRouteNotFound.set(false);
-      await this.openContractDetail(entry);
-      return;
-    }
-
-    try {
-      this.selectedDetailLoading.set(true);
-      const response = await this.resolveIndexerImportQuery(routeId);
-      const preview = await this.buildIndexerImportPreview(response);
-      const existing = this.findDashboardEntryForPreview(preview);
-      this.detailRouteNotFound.set(false);
-      await this.openContractDetail(
-        existing || this.indexerPreviewToDashboard(preview, response),
-      );
-    } catch (error: any) {
-      this.detailRouteNotFound.set(true);
-      this.selectedDetail.set(null);
-      this.selectedDetailError.set(
-        error?.message ||
-          'Contract not found for this wallet or indexer network.',
-      );
-      this.selectedDetailLoading.set(false);
-    }
-  }
-
-  private findDashboardEntryByRouteId(
-    routeId: string,
-  ): ContractDashboardEntry | undefined {
-    const normalizedRouteId = this.normalizeIdentity(routeId);
-    return this.dashboardContracts().find(
-      (entry) =>
-        this.normalizeIdentity(this.getContractRouteId(entry)) ===
-          normalizedRouteId ||
-        this.normalizeIdentity(entry.deployTxid) === normalizedRouteId ||
-        this.normalizeIdentity(entry.scriptHash) === normalizedRouteId,
-    );
-  }
-
-  private getContractRouteId(entry: ContractDashboardEntry): string {
-    return entry.covenantId || entry.scriptHash || entry.deployTxid || entry.id;
   }
 
   private getDashboardIdentityKey(entry: ContractDashboardEntry): string {
@@ -2982,73 +2874,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.activeTab.set('my-contracts');
     }
     await this.loadContracts();
-  }
-
-  private indexerPreviewToDashboard(
-    preview: IndexerImportPreview,
-    response: {
-      action: IndexerCovenantAction;
-      actions: IndexerCovenantAction[];
-      covenant?: IndexerCovenantDetails;
-    },
-  ): ContractDashboardEntry {
-    const contractName = this.normalizeContractName(
-      preview.templateName || preview.template.name,
-    );
-    const latestAction =
-      this.latestAction(response.actions) ||
-      preview.activeAction ||
-      response.action;
-    const status = this.statusFromActiveUtxoCount(
-      response.covenant?.activeUtxos,
-    );
-    const participants = response.covenant
-      ? this.indexerParticipants(response.covenant)
-      : preview.args.map((arg) => ({
-          label: this.roleLabel(arg.name),
-          value: String(arg.value),
-        }));
-    const scriptHash =
-      response.covenant?.scriptHashHex ||
-      preview.activeAction.scriptHashHex ||
-      response.action.scriptHashHex;
-    const registryEntry = this.findRegistryEntryForDashboard({
-      covenantId: preview.covenantId,
-      deployTxid: preview.deployTxid,
-      outpoint: preview.outpoint,
-    });
-
-    return this.withDashboardName({
-      id: `indexer:${preview.covenantId}`,
-      source: 'indexer',
-      contractName,
-      displayName: this.getTemplateDisplayName(contractName),
-      contractTypeLabel: this.getTemplateDisplayName(contractName),
-      aliases: registryEntry?.aliases,
-      status,
-      amountSompi: preview.amountSompi,
-      currentAddress: preview.contractAddress,
-      covenantId: preview.covenantId,
-      scriptHash,
-      deployTxid: preview.deployTxid,
-      latestTxid: latestAction?.txidHex || preview.deployTxid,
-      latestAction:
-        latestAction?.entrypoint || latestAction?.action || 'deploy',
-      deadlineMs: response.covenant
-        ? this.extractDeadlineMs(response.covenant)
-        : undefined,
-      participants,
-      nextActionLabel: this.getNextActionLabel(
-        contractName,
-        status,
-        participants,
-      ),
-      actionHint: preview.isLatestContinuation
-        ? 'Open latest continuation state'
-        : 'Open current covenant state',
-      registryEntry,
-      indexerSummary: response.covenant,
-    });
   }
 
   private statusFromActiveUtxoCount(

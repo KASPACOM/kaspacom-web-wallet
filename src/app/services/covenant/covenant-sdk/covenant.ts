@@ -250,6 +250,35 @@ async function getAddressUtxos(
   return utxos.entries;
 }
 
+/**
+ * A covenant outpoint just produced by our own prior action (e.g. the
+ * continuation output of a partial claim) can take a few seconds to appear
+ * in the RPC node's own UTXO view after being broadcast — a normal
+ * propagation lag, not a stale-registry bug. Retrying briefly here avoids
+ * surfacing "outpoint was not found" for what is actually still-confirming
+ * blockchain state.
+ */
+async function findCovenantOutpointUtxo(
+  rpc: RpcClient,
+  covenantAddress: string,
+  outpoint: CovenantOutpoint,
+): Promise<UtxoEntryReference | undefined> {
+  const maxAttempts = 15;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const utxos = await getAddressUtxos(rpc, covenantAddress);
+    const entry = utxos.find(
+      (candidate) =>
+        candidate.outpoint.transactionId === outpoint.txid &&
+        candidate.outpoint.index === outpoint.vout,
+    );
+    if (entry) return entry;
+    if (attempt < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+  }
+  return undefined;
+}
+
 function findOutputIndex(
   transaction: Transaction,
   address: string,
@@ -724,12 +753,7 @@ export async function spendContract(
   const privateKey = new PrivateKey(privateKeyHex);
   const covenantAddress = getCovenantAddress(compiled, network);
 
-  const utxos = await getAddressUtxos(rpc, covenantAddress);
-  const entry = utxos.find(
-    (candidate) =>
-      candidate.outpoint.transactionId === outpoint.txid &&
-      candidate.outpoint.index === outpoint.vout,
-  );
+  const entry = await findCovenantOutpointUtxo(rpc, covenantAddress, outpoint);
 
   if (!entry) {
     throw new Error(

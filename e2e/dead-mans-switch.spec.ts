@@ -95,10 +95,10 @@ async function submitActionWithLocktimeRetry(
   const maxAttempts = 6;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     // Approve triggers transaction building (RPC round trips for UTXOs/fee
-    // estimation) before it's clickable — under testnet RPC latency this has
-    // been observed to exceed even a 30s action timeout.
+    // estimation) before it's clickable — the default 15s action timeout can
+    // be too tight for that under testnet RPC latency.
     await page.getByRole('button', { name: 'Approve' }).click({
-      timeout: 45_000,
+      timeout: 30_000,
     });
 
     const failed = page.getByText('Transaction Failed');
@@ -284,9 +284,7 @@ test.describe("Dead Man's Switch — partial claim", () => {
     ] as const) {
       await fillClaimAmount(page, bad);
       await page.getByRole('button', { name: 'Claim', exact: true }).click();
-      await expect(page.getByText(expectedMessage)).toBeVisible({
-        timeout: 20_000,
-      });
+      await expect(page.getByText(expectedMessage)).toBeVisible();
     }
     // No transaction was submitted by any of the rejected amounts above —
     // balance only reflects the deploy spend (amount + its own small fee).

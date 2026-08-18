@@ -88,6 +88,8 @@
     [text]="
       loading() ? 'Refreshing...' : indexerLoading() ? 'Syncing...' : 'Refresh'
     "
+    [variant]="'secondary'"
+    [size]="'s'"
     [isDisabled]="loading() || indexerLoading()"
     (buttonClick)="refreshRequested.emit()"
   ></kc-button>

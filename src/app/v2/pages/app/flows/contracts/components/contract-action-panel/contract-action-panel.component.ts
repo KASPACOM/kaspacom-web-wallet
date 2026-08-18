@@ -2,6 +2,7 @@ import {
   Component,
   computed,
   effect,
+  HostListener,
   inject,
   input,
   model,
@@ -33,6 +34,8 @@ import {
 } from '../../../../../../../services/covenant/covenant-sdk/types';
 import type { CovenantFunctionArg } from '../../../../../../../services/covenant/covenant-sdk/covenant';
 import { CopyButtonComponent } from '../../../../../../shared/ui/copy-button/copy-button.component';
+import { WalletProfileOrbComponent } from '../../../../../../shared/ui/wallet-profile-orb/wallet-profile-orb.component';
+import { ShortenAddressPipe } from '../../../../../../../pipes/shorten-address.pipe';
 import {
   PartialSpendJsonDialogData,
   PartialSpendJsonModalComponent,
@@ -76,6 +79,7 @@ import { ContractsDataService } from '../../services/contracts-data.service';
     KcNumberInputComponent,
     KcTooltipDirective,
     CopyButtonComponent,
+    WalletProfileOrbComponent,
     AddressSmartInputComponent,
     CovenantDateTimeInputComponent,
     ContractActionFieldsComponent,
@@ -96,6 +100,8 @@ export class ContractActionPanelComponent {
   private dialog = inject(Dialog);
   private walletService = inject(WalletService);
   display = inject(ContractDisplayService);
+  private shortenAddressPipe = new ShortenAddressPipe();
+  private responsiveDropdownAddressChars = signal({ front: 12, back: 8 });
 
   // ─── Shell-owned data, read-only from here ─────────────────────────
   selectedDetail = input<ContractDetailState | null>(null);
@@ -189,6 +195,8 @@ export class ContractActionPanelComponent {
   }
 
   constructor() {
+    this.updateResponsiveDropdownAddressChars();
+
     effect(() => {
       const request = this.pendingFunctionSelect();
       if (request) this.selectFunction(request.fn);
@@ -207,6 +215,25 @@ export class ContractActionPanelComponent {
         entry.aliasName ||
         '';
     });
+  }
+
+  @HostListener('window:resize')
+  onResize() {
+    this.updateResponsiveDropdownAddressChars();
+  }
+
+  private updateResponsiveDropdownAddressChars(): void {
+    const width = typeof window === 'undefined' ? 768 : window.innerWidth;
+
+    if (width <= 480) {
+      this.responsiveDropdownAddressChars.set({ front: 10, back: 8 });
+    } else if (width <= 768) {
+      this.responsiveDropdownAddressChars.set({ front: 14, back: 10 });
+    } else if (width <= 1200) {
+      this.responsiveDropdownAddressChars.set({ front: 20, back: 12 });
+    } else {
+      this.responsiveDropdownAddressChars.set({ front: 28, back: 16 });
+    }
   }
 
   currentWallet = computed(() => this.walletService.getCurrentWallet());
@@ -2491,7 +2518,7 @@ export class ContractActionPanelComponent {
     return (signer?.label as 'Signer 1' | 'Signer 2' | 'Signer 3') || '';
   }
 
-  private getParticipantValueForRole(role: string): string {
+  getParticipantValueForRole(role: string): string {
     const participant = (this.selectedDetail()?.entry.participants || []).find(
       (entry) => entry.label === role,
     );
@@ -2504,7 +2531,9 @@ export class ContractActionPanelComponent {
       .filter((role) => role !== currentSigner)
       .map((role) => ({
         value: role,
-        label: `${this.getParticipantValueForRole(role)} (${role})`,
+        label: `${role} - ${this.formatResponsiveDropdownAddress(
+          this.getParticipantValueForRole(role),
+        )}`,
       }));
   }
 
@@ -2597,6 +2626,31 @@ export class ContractActionPanelComponent {
     if (!raw) return [];
 
     return this.templateService.getAddressListFromRaw(raw);
+  }
+
+  getSelfCustodySweepDropdownOptions(): DropdownOption[] {
+    // label must mirror what optionTemplate renders (the shortened address),
+    // not the full address — kc-dropdown-select sizes its overlay from
+    // DropdownOption.label via calculateLongestOptionWidth(), not from the
+    // projected template, so a full raw address here forces an oversized
+    // minWidth that overflows on narrow screens even though the rendered
+    // row itself is short.
+    return this.getSelfCustodyInteractWhitelistWallets().map((address) => ({
+      value: address,
+      label: this.formatResponsiveDropdownAddress(address),
+    }));
+  }
+
+  formatResponsiveDropdownAddress(address: string | null | undefined): string {
+    const chars = this.responsiveDropdownAddressChars();
+    return this.shortenAddressPipe.transform(address, chars.front, chars.back);
+  }
+
+  getSelfCustodyWhitelistIndex(address: unknown): number {
+    return Math.max(
+      0,
+      this.getSelfCustodyInteractWhitelistWallets().indexOf(String(address)),
+    );
   }
 
   onSelfCustodySweepDestinationChange(address: string) {

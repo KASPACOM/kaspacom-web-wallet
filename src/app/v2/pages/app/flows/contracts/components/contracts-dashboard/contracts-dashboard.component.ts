@@ -99,6 +99,14 @@ export class ContractsDashboardComponent {
     return contract.registryEntry?.id || contract.id;
   }
 
+  getRoleClass(label: string): string {
+    return String(label || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
+
   getAliasUnavailableMessage(): string {
     return 'Import this contract before adding a nickname.';
   }

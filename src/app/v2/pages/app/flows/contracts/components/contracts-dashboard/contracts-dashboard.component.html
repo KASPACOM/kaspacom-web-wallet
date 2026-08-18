@@ -451,7 +451,7 @@
             ) {
               <span
                 class="role-chip"
-                [class]="'role-chip ' + p.label.toLowerCase()"
+                [class]="'role-chip ' + getRoleClass(p.label)"
                 >{{ p.label }}</span
               >
             }

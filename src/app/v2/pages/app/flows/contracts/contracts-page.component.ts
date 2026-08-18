@@ -190,6 +190,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
     return this.sortDashboardEntries(list);
   });
+  removableTrackedContractKeys = computed(
+    () =>
+      new Set(
+        this.dashboardContracts()
+          .filter((contract) => this.canRemoveTrackedContract(contract))
+          .map((contract) => this.getAliasEditKey(contract)),
+      ),
+  );
   dashboardLoading = signal(false);
   indexerLoading = signal(false);
   dashboardError = signal<string | null>(null);
@@ -206,6 +214,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * ready as each one's writes land out of order.
    */
   private detailRequestToken = 0;
+  /**
+   * Entry id of the contract whose action form the user explicitly opened
+   * via selectDetailAction() (clicking a specific action in the list), so a
+   * same-entry prepareDashboardAction() call that resolves later — e.g. the
+   * indexer lookup timing out and falling back to the local registry entry —
+   * doesn't clobber it with selectDefaultFunctionForContract()'s pick.
+   * navigateToContractDetail() always resets actionPageView to 'list' on a
+   * fresh open, so this only guards a form the user is still actually in.
+   */
+  private userPickedFunctionForEntryId: string | null = null;
   /**
    * Tracks which non-silent openContractDetail()/prepareDashboardAction()
    * call is allowed to clear selectedDetailLoading. detailRequestToken is
@@ -291,7 +309,8 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    */
   getTemplateKey(
     input: any,
-  ): 'deadman' | 'timelock' | 'multisig' | 'escrow' | 'default' {
+  ):
+    'deadman' | 'timelock' | 'multisig' | 'escrow' | 'selfcustody' | 'default' {
     return this.display.getTemplateKey(input);
   }
 
@@ -1073,7 +1092,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     contract: ContractRegistryEntry,
   ): boolean {
     const walletKey = this.currentWalletAliasKey();
-    if (walletKey && contract.wallets?.[walletKey]) return true;
+    if (walletKey && contract.wallets) return !!contract.wallets[walletKey];
 
     const wallet = this.currentWallet();
     const address = wallet?.getAddress()?.toLowerCase();
@@ -1089,6 +1108,38 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       (!!address && deployedAddress === address) ||
       (!!pubkey && deployedPubkey === pubkey)
     );
+  }
+
+  canRemoveTrackedContract(contract: ContractDashboardEntry): boolean {
+    return (
+      !!contract.registryEntry &&
+      this.currentWalletRoles(contract.participants || []).length === 0
+    );
+  }
+
+  async removeTrackedContract(contract: ContractDashboardEntry) {
+    const registryEntry = contract.registryEntry;
+    if (!registryEntry || !this.canRemoveTrackedContract(contract)) return;
+
+    const walletKey = this.currentWalletAliasKey();
+    const wallets = { ...(registryEntry.wallets || {}) };
+    if (walletKey) {
+      delete wallets[walletKey];
+    }
+
+    const hasRemainingWallets = Object.values(wallets).some(Boolean);
+    if (hasRemainingWallets) {
+      await this.updateRegistryContract(registryEntry.id, { wallets });
+    } else {
+      await this.registryService.deleteContract(registryEntry.id);
+    }
+
+    this.selectedDetail.set(null);
+    this.selectedDetailError.set(null);
+    if (this.activeTab() === 'detail') {
+      this.activeTab.set('my-contracts');
+    }
+    await this.loadContracts();
   }
 
   private async addCurrentWalletToRegistryContract(
@@ -1465,10 +1516,22 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    */
   async openContractDetail(
     entry: ContractDashboardEntry,
-    options?: { silent?: boolean; skipScrollToTop?: boolean },
+    options?: {
+      silent?: boolean;
+      skipScrollToTop?: boolean;
+      autoSelectFunction?: boolean;
+    },
   ) {
     const silent = options?.silent ?? false;
     const skipScrollToTop = options?.skipScrollToTop ?? false;
+    // Only the dashboard's quick-action buttons (openDashboardAction) want to
+    // land straight in a prefilled form. A plain "Details" open — or a
+    // background refresh of an already-open one — should leave whichever
+    // view/action the user is already on alone: auto-selecting a default here
+    // can otherwise jump the user out from under a form they're mid-way
+    // through (e.g. Keep Alive winning over a just-opened Claim form once a
+    // slower-resolving indexer fallback catches up).
+    const autoSelectFunction = options?.autoSelectFunction ?? false;
     const requestToken = ++this.detailRequestToken;
     const isCurrentRequest = () => requestToken === this.detailRequestToken;
     // Stays true across every background/route-driven call in the settling
@@ -1633,6 +1696,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           updatedEntry,
           requestToken,
           silent,
+          autoSelectFunction,
         );
         this.logContractsDebug(
           '[Contracts][detail] prepareDashboardAction finished',
@@ -1673,7 +1737,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           entry.status === 'active' &&
           !suppressAutoActionOpen
         ) {
-          await this.prepareDashboardAction(entry, requestToken, silent);
+          await this.prepareDashboardAction(
+            entry,
+            requestToken,
+            silent,
+            autoSelectFunction,
+          );
         }
       } else {
         this.selectedDetailError.set(
@@ -1724,7 +1793,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     // A deliberate request to act — any suppression left over from an
     // earlier action's settling window no longer applies.
     this.hideActionsAfterCompletion.set(false);
-    await this.openContractDetail(entry, { skipScrollToTop: true });
+    await this.openContractDetail(entry, {
+      skipScrollToTop: true,
+      autoSelectFunction: true,
+    });
     this.scrollToActionPanel();
   }
 
@@ -1747,6 +1819,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
     if (fnName) {
       this.dashboardError.set(null);
+      if (detail) this.userPickedFunctionForEntryId = detail.entry.id;
       this.pendingFunctionSelect.set({ fn: fnName });
     }
     this.scrollToActionPanel();
@@ -1830,6 +1903,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     entry: ContractDashboardEntry,
     requestToken: number,
     silent = false,
+    autoSelectFunction = false,
   ): Promise<boolean> {
     this.logContractsDebug('[Contracts][actions] Preparing dashboard action', {
       entryId: entry.id,
@@ -1849,6 +1923,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       if (requestToken !== this.detailRequestToken) return false;
       this.selectedContractId.set(registryEntry.id);
       this.applySelectedRegistryContract(registryEntry.id);
+      if (!autoSelectFunction) return true;
       const hasEnabledDefault = this.selectDefaultFunctionForContract(entry);
       this.logContractsDebug(
         '[Contracts][actions] Prepared from registry entry',
@@ -1950,7 +2025,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       if (imported) {
         this.selectedContractId.set(imported.id);
         this.applySelectedRegistryContract(imported.id);
-        const hasEnabledDefault = this.selectDefaultFunctionForContract(entry);
+        const hasEnabledDefault = autoSelectFunction
+          ? this.selectDefaultFunctionForContract(entry)
+          : false;
         this.logContractsDebug(
           '[Contracts][actions] Imported preview selected for action',
           {
@@ -1968,7 +2045,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         if (!silent) {
           this.activeTab.set('detail');
           this.detailPanelTab.set('action');
-          this.actionPageView.set(hasEnabledDefault ? 'form' : 'list');
+          if (autoSelectFunction) {
+            this.actionPageView.set(hasEnabledDefault ? 'form' : 'list');
+          }
         }
         return true;
       }
@@ -2033,7 +2112,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private async syncRegistryEntryForDashboardAction(
     entry: ContractDashboardEntry,
   ): Promise<ContractRegistryEntry> {
-    const registryEntry = entry.registryEntry!;
+    const cachedEntry = entry.registryEntry!;
+    // entry.registryEntry is a snapshot from the last loadContracts()
+    // dashboard build. A very recent action (e.g. a claim moments ago)
+    // updates the registry store directly without necessarily rebuilding
+    // that dashboard snapshot first — reading the stale copy here can
+    // silently re-apply an already-superseded outpoint/amount, and the
+    // "already past deploy" regression guard below only works if this
+    // reflects what's actually persisted. Re-read the record fresh instead.
+    const registryEntry =
+      (await this.registryService.getContract(cachedEntry.id)) ?? cachedEntry;
     const liveUtxo = await this.findLiveContractUtxo(registryEntry);
     this.logContractsDebug(
       '[Contracts][registry] Syncing registry entry for action',
@@ -2118,7 +2206,15 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       };
     }
 
-    if (detail?.entry.id === entry.id && detail.response) {
+    // liveUtxo already confirmed the *current* registry outpoint is still
+    // unspent, straight from RPC. The indexer's own action/UTXO history can
+    // lag well behind that (its actions list may still show only "deploy"
+    // after a claim has already confirmed on-chain) — refreshing from it
+    // here would silently clobber the verified-fresh outpoint/amount with a
+    // stale, already-spent one, and the next spend would fail at broadcast
+    // with "outpoint was not found". Nothing needs refreshing from the
+    // indexer when the live check already vouches for what we have.
+    if (!liveUtxo && detail?.entry.id === entry.id && detail.response) {
       try {
         const actions =
           detail.actions.length > 0
@@ -2138,31 +2234,54 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           activeUtxo: indexerUtxo || null,
           currentAddress: contractAddress,
         });
-        const compiled = this.covenantService.parseCompiledContract(
-          preview.compiledJson,
-        );
-        Object.assign(updates, {
-          contractName: compiled.contract_name || registryEntry.contractName,
-          compiledJson: preview.compiledJson,
-          contractAddress: preview.contractAddress,
-          outpoint: preview.outpoint,
-          amountSompi: preview.amountSompi,
-          status: 'active' as ContractStatus,
-          accessRoles: this.parseAccessRoles(compiled),
-          covenantId: preview.covenantId,
-        });
-        this.logContractsDebug(
-          '[Contracts][registry] Refreshed registry artifact from preview',
-          {
-            registryId: registryEntry.id,
-            previewAddress: preview.contractAddress,
-            previewOutpoint: preview.outpoint,
-            previewAmountSompi: preview.amountSompi,
-            previewCovenantId: preview.covenantId,
-            isLatestContinuation: preview.isLatestContinuation,
-            compiledContractName: compiled.contract_name,
-          },
-        );
+        // The indexer's action history can still only show "deploy" well
+        // after a claim has already confirmed on-chain, in which case this
+        // preview is built from the deploy action and its outpoint regresses
+        // to the original (now long-spent) deploy outpoint. The registry
+        // already having moved past deploy is proof this preview is stale —
+        // applying it anyway would clobber a correct, fresher outpoint with
+        // one the next spend can never find, permanently ("outpoint was not
+        // found") until the indexer catches up.
+        const registryAlreadyPastDeploy =
+          registryEntry.outpoint.txid !== registryEntry.deployTxid;
+        const previewRegressesToDeploy =
+          preview.outpoint.txid === registryEntry.deployTxid;
+        if (registryAlreadyPastDeploy && previewRegressesToDeploy) {
+          this.logContractsDebug(
+            '[Contracts][registry] Skipped stale preview refresh (would regress to deploy outpoint)',
+            {
+              registryId: registryEntry.id,
+              registryOutpoint: registryEntry.outpoint,
+              previewOutpoint: preview.outpoint,
+            },
+          );
+        } else {
+          const compiled = this.covenantService.parseCompiledContract(
+            preview.compiledJson,
+          );
+          Object.assign(updates, {
+            contractName: compiled.contract_name || registryEntry.contractName,
+            compiledJson: preview.compiledJson,
+            contractAddress: preview.contractAddress,
+            outpoint: preview.outpoint,
+            amountSompi: preview.amountSompi,
+            status: 'active' as ContractStatus,
+            accessRoles: this.parseAccessRoles(compiled),
+            covenantId: preview.covenantId,
+          });
+          this.logContractsDebug(
+            '[Contracts][registry] Refreshed registry artifact from preview',
+            {
+              registryId: registryEntry.id,
+              previewAddress: preview.contractAddress,
+              previewOutpoint: preview.outpoint,
+              previewAmountSompi: preview.amountSompi,
+              previewCovenantId: preview.covenantId,
+              isLatestContinuation: preview.isLatestContinuation,
+              compiledContractName: compiled.contract_name,
+            },
+          );
+        }
       } catch (error) {
         console.warn(
           '[Contracts] Failed to refresh registry contract artifact from latest continuation:',
@@ -2696,6 +2815,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private selectDefaultFunctionForContract(
     entry: ContractDashboardEntry,
   ): boolean {
+    if (
+      this.actionPageView() === 'form' &&
+      this.selectedFunction &&
+      this.userPickedFunctionForEntryId === entry.id
+    ) {
+      return true;
+    }
+
     const normalized = this.normalizeContractName(entry.contractName);
     const selectedDetail = this.selectedDetail();
     const detailForEntry =

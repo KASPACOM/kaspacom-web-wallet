@@ -99,9 +99,14 @@
     background: rgba(230, 162, 35, 0.15);
     color: var(--orange-20);
   }
+  &.hot-wallet {
+    background: rgba(230, 162, 35, 0.15);
+    color: var(--orange-20);
+  }
   &.heir,
   &.recovery,
-  &.seller {
+  &.seller,
+  &.cold-wallet {
     background: rgba(89, 92, 255, 0.15);
     color: var(--blue-20);
   }

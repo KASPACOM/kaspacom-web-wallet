@@ -211,7 +211,7 @@ describe('ContractDisplayService', () => {
         'multisig',
       );
       expect(service.getTemplateKey({ id: 'self-custody-vault' })).toBe(
-        'default',
+        'selfcustody',
       );
     });
 

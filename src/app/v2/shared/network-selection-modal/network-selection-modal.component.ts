@@ -257,11 +257,6 @@ export class NetworkSelectionModalComponent implements OnInit {
     this.setL2Network(network);
   }
 
-  onAddNetworkSpaceKey(event: Event): void {
-    event.preventDefault();
-    this.onAddNetwork();
-  }
-
   onAddNetwork(): void {
     this.flowPagesService.navigateToPage({
       id: 'add-custom-network',

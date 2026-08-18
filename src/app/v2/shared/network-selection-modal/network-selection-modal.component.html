@@ -33,7 +33,18 @@
     </div>
 
     <!-- L2 Networks -->
-    <h3 class="network-group-title">L2 Networks</h3>
+    <div class="network-group-header">
+      <h3 class="network-group-title">L2 Networks</h3>
+      <kc-icon-button
+        class="add-network-btn"
+        [icon]="'icon-add'"
+        [size]="'sm'"
+        [variant]="'secondary'"
+        [ariaLabel]="'Add custom network'"
+        [title]="'Add custom network'"
+        (buttonClick)="onAddNetwork()"
+      />
+    </div>
     <div class="networks-list">
       @for (network of networks(); track network) {
         <div
@@ -111,21 +122,6 @@
           </div>
         </div>
       }
-    </div>
-
-    <!-- Add Network -->
-    <div
-      class="add-network-row"
-      role="button"
-      tabindex="0"
-      (click)="onAddNetwork()"
-      (keydown.enter)="onAddNetwork()"
-      (keydown.space)="onAddNetworkSpaceKey($event)"
-    >
-      <div class="add-network-icon">
-        <kc-icon [iconClass]="'icon-plus'" [size]="'sm'" />
-      </div>
-      <span class="add-network-label">Add custom network</span>
     </div>
   </div>
 </div>

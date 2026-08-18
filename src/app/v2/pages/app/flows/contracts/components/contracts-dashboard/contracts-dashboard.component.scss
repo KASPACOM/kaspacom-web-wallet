@@ -13,6 +13,7 @@ $tpl-accents: (
   timelock: var(--kaspa-20),
   multisig: var(--blue-20),
   escrow: var(--purple-20),
+  selfcustody: var(--yellow-20),
   default: var(--kaspa-20),
 );
 
@@ -30,6 +31,9 @@ $tpl-accents: (
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+}
+.dashboard-toolbar {
+  margin-bottom: 20px;
 }
 .dashboard-toolbar .dashboard-search {
   flex: 1;
@@ -75,6 +79,19 @@ $tpl-accents: (
 }
 
 // ── contract card grid ──────────────────────────────────────────────────
+// Shares the same top margin with its mutually-exclusive loading/empty
+// siblings (.skeleton-grid/.state-block, both defined in shared-ui.scss) and
+// with .banner (the indexer-sync/error notices that can precede them) so the
+// gap under .filter-row stays constant no matter which state renders first.
+// Adjacent block margins collapse, so a banner immediately followed by the
+// grid/skeleton/empty-state doesn't double this gap.
+.card-grid,
+.skeleton-grid,
+.state-block,
+.banner {
+  margin-top: 20px;
+}
+
 .card-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -185,6 +202,10 @@ $tpl-accents: (
 .alias-link.muted,
 .alias-btn.ghost {
   color: var(--gray-60);
+}
+
+.alias-link.danger {
+  color: var(--red-20);
 }
 
 .alias-editor {

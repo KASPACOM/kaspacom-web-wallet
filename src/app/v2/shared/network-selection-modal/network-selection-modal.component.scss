@@ -11,9 +11,28 @@
     overflow-y: auto;
 
     .network-group-title {
-      color: var(--gray-75);
-      border-bottom: 1px solid var(--gray-25);
-      padding-bottom: 10px;
+      margin: 0 0 8px;
+      padding: 0 4px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-70, var(--gray-75));
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .network-group-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 20px 0 8px;
+
+      .network-group-title {
+        margin: 0;
+      }
+
+      .add-network-btn {
+        flex-shrink: 0;
+      }
     }
 
     .networks-list {
@@ -41,8 +60,16 @@
         }
 
         &.confirming-delete {
-          background: color-mix(in srgb, var(--red-10, #fee2e2) 60%, transparent);
-          border-color: color-mix(in srgb, var(--red-30, #fca5a5) 80%, transparent);
+          background: color-mix(
+            in srgb,
+            var(--red-10, #fee2e2) 60%,
+            transparent
+          );
+          border-color: color-mix(
+            in srgb,
+            var(--red-30, #fca5a5) 80%,
+            transparent
+          );
           cursor: default;
         }
 
@@ -125,41 +152,6 @@
             opacity: 1;
           }
         }
-      }
-    }
-
-    .add-network-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      margin-top: 4px;
-      border-radius: 12px;
-      cursor: pointer;
-      border: 1px dashed var(--gray-30, #d1d5db);
-      transition: all 0.2s ease;
-      color: var(--color-primary);
-
-      &:hover {
-        background: var(--color-primary-light);
-        border-color: var(--color-primary);
-      }
-
-      .add-network-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background: var(--color-primary-light);
-        color: var(--color-primary);
-        flex-shrink: 0;
-      }
-
-      .add-network-label {
-        font-size: 15px;
-        font-weight: 600;
       }
     }
   }

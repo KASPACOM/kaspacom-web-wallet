@@ -163,13 +163,42 @@
         <div class="form-group flex column gap-8">
           <label class="field-label">Co-signer wallet</label>
           <kc-dropdown-select
+            class="whitelist-dropdown"
             [options]="coSignerOptions()"
             [placeholder]="'Select co-signer'"
             [isFullWidth]="true"
             [isDisabled]="isInteracting()"
             [value]="selectedCoSignerRole"
             (valueChange)="onCoSignerChange($event)"
-          ></kc-dropdown-select>
+          >
+            <ng-template #optionTemplate let-option>
+              <div class="whitelist-option">
+                <app-wallet-profile-orb
+                  class="whitelist-option-avatar"
+                  [address]="getParticipantValueForRole($any(option.value))"
+                  [sizePx]="22"
+                ></app-wallet-profile-orb>
+                <span class="whitelist-option-index">{{
+                  $any(option.value)
+                }}</span>
+                <span
+                  class="whitelist-option-address"
+                  [title]="getParticipantValueForRole($any(option.value))"
+                  >{{
+                    formatResponsiveDropdownAddress(
+                      getParticipantValueForRole($any(option.value))
+                    )
+                  }}</span
+                >
+                <app-copy-button
+                  class="whitelist-option-copy"
+                  [value]="getParticipantValueForRole($any(option.value))"
+                  [size]="'xs'"
+                  (click)="$event.stopPropagation()"
+                ></app-copy-button>
+              </div>
+            </ng-template>
+          </kc-dropdown-select>
           <span class="text-gray-60 typo-text-2">
             The wallet will use the correct 2-of-3 withdrawal function for your
             signer role and the selected co-signer.
@@ -782,20 +811,41 @@
         @if (getSelfCustodyInteractWhitelistWallets().length > 0) {
           <div class="form-group flex column gap-8">
             <label class="form-label">Send funds to</label>
-            <select
-              class="contract-input"
-              [disabled]="isInteracting()"
-              [ngModel]="interactOutputAddress()"
-              (ngModelChange)="onSelfCustodySweepDestinationChange($event)"
+            <kc-dropdown-select
+              class="whitelist-dropdown"
+              [options]="getSelfCustodySweepDropdownOptions()"
+              [placeholder]="'Select a whitelisted wallet'"
+              [isFullWidth]="true"
+              [isDisabled]="isInteracting()"
+              [value]="interactOutputAddress()"
+              (valueChange)="onSelfCustodySweepDestinationChange($any($event))"
             >
-              @for (
-                address of getSelfCustodyInteractWhitelistWallets();
-                track address;
-                let i = $index
-              ) {
-                <option [value]="address">{{ i }} - {{ address }}</option>
-              }
-            </select>
+              <ng-template #optionTemplate let-option>
+                <div class="whitelist-option">
+                  <app-wallet-profile-orb
+                    class="whitelist-option-avatar"
+                    [address]="$any(option.value)"
+                    [sizePx]="22"
+                  ></app-wallet-profile-orb>
+                  <span class="whitelist-option-index">{{
+                    getSelfCustodyWhitelistIndex(option.value)
+                  }}</span>
+                  <span
+                    class="whitelist-option-address"
+                    [title]="$any(option.value)"
+                    >{{
+                      formatResponsiveDropdownAddress($any(option.value))
+                    }}</span
+                  >
+                  <app-copy-button
+                    class="whitelist-option-copy"
+                    [value]="$any(option.value)"
+                    [size]="'xs'"
+                    (click)="$event.stopPropagation()"
+                  ></app-copy-button>
+                </div>
+              </ng-template>
+            </kc-dropdown-select>
             <span class="text-gray-60 typo-text-2">
               Funds will be sent to the selected whitelisted wallet.
             </span>
@@ -863,39 +913,43 @@
             (qrClick)="onInteractOutputQrClick()"
           ></app-address-smart-input>
         </div>
+        <div class="form-group flex column gap-8">
+          <kc-number-input
+            [label]="
+              isDmsClaim() ? 'Claim amount (KAS)' : 'Withdraw amount (KAS)'
+            "
+            [placeholder]="'0'"
+            [min]="'0'"
+            [isDisabled]="isInteracting()"
+            [ngModel]="interactOutputAmount()"
+            (valueChange)="onInteractOutputAmountChange($event)"
+          >
+            <div
+              (click)="!isInteracting() && fillMaxOutputAmount()"
+              [class]="
+                isInteracting() ? 'max-text disabled' : 'max-text clickable'
+              "
+              rightSideSlot
+            >
+              <span>Max</span>
+            </div>
+          </kc-number-input>
+        </div>
         @if (isDmsClaim()) {
           <div
             class="p-12 rounded-lg"
             style="
-              background: rgba(111, 199, 186, 0.08);
-              border: 1px solid rgba(111, 199, 186, 0.2);
+              background: rgba(255, 193, 7, 0.08);
+              border: 1px solid rgba(255, 193, 7, 0.2);
             "
           >
-            <span class="text-gray-75 typo-text-2"
-              >Claiming sends the entire contract balance to this address — Dead
-              Man's Switch claims can't be partial.</span
+            <span class="text-yellow typo-text-2"
+              >Leaving a balance behind keeps it secured under the same heir
+              and deadline — but the owner can still call Keep Alive at any
+              time (even after the deadline passes) to reset the countdown
+              on it. Claim the full balance if you want to guarantee you
+              receive it now.</span
             >
-          </div>
-        } @else {
-          <div class="form-group flex column gap-8">
-            <kc-number-input
-              [label]="'Withdraw amount (KAS)'"
-              [placeholder]="'0'"
-              [min]="'0'"
-              [isDisabled]="isInteracting()"
-              [ngModel]="interactOutputAmount()"
-              (valueChange)="onInteractOutputAmountChange($event)"
-            >
-              <div
-                (click)="!isInteracting() && fillMaxOutputAmount()"
-                [class]="
-                  isInteracting() ? 'max-text disabled' : 'max-text clickable'
-                "
-                rightSideSlot
-              >
-                <span>Max</span>
-              </div>
-            </kc-number-input>
           </div>
         }
       }

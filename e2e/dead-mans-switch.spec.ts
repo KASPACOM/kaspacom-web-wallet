@@ -94,12 +94,7 @@ async function submitActionWithLocktimeRetry(
 ): Promise<void> {
   const maxAttempts = 6;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    // Approve triggers transaction building (RPC round trips for UTXOs/fee
-    // estimation) before it's clickable — the default 15s action timeout can
-    // be too tight for that under testnet RPC latency.
-    await page.getByRole('button', { name: 'Approve' }).click({
-      timeout: 30_000,
-    });
+    await page.getByRole('button', { name: 'Approve' }).click();
 
     const failed = page.getByText('Transaction Failed');
     const succeeded = page.getByText('Transaction Successful!');
@@ -220,9 +215,7 @@ test.describe("Dead Man's Switch — partial claim", () => {
     await page
       .getByRole('button', { name: 'Review and deploy covenant' })
       .click();
-    await page.getByRole('button', { name: 'Approve' }).click({
-      timeout: 30_000,
-    });
+    await page.getByRole('button', { name: 'Approve' }).click();
     await expect(page.getByText('Transaction Successful!')).toBeVisible({
       timeout: 30_000,
     });

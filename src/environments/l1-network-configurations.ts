@@ -51,6 +51,8 @@ export const KASPA_TN12_L1_NETWORK_CONFIG: L1NetworkConfigInterface = {
   kaspaComApiBaseurl: 'https://dev-api.kaspa.com',
   kaspaComDefiApiBaseurl: 'https://dev-api-defi.kaspa.com',
   kaspaApiBaseurl: 'https://api-tn12.kaspa.org',
+  // Intentionally points at the testnet-10 KRC721 indexer/cache: there is no
+  // separate TN12 deployment, so TN12 avatars are served via TN10's service.
   krc721ApiBaseurl:
     'https://dev-krc721-indexer.kaspa.com/api/v1/krc721/testnet-10',
   krc721CacheStreamUrl: 'https://krc721-cache-dev.kaspa.com/krc721/testnet-10',
@@ -62,8 +64,8 @@ export const PRODUCTION_L1_NETWORKS: L1NetworkConfigInterface[] = [
   KASPA_MAINNET_L1_NETWORK_CONFIG,
 ];
 
+// Mainnet is intentionally excluded here: the dev/test domain must never expose it as a selectable network.
 export const DEVELOPMENT_L1_NETWORKS: L1NetworkConfigInterface[] = [
   KASPA_TN10_L1_NETWORK_CONFIG,
   KASPA_TN12_L1_NETWORK_CONFIG,
-  KASPA_MAINNET_L1_NETWORK_CONFIG,
 ];

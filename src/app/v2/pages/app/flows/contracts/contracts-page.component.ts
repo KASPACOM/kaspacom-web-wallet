@@ -209,6 +209,16 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    */
   private detailRequestToken = 0;
   /**
+   * Entry id of the contract whose action form the user explicitly opened
+   * via selectDetailAction() (clicking a specific action in the list), so a
+   * same-entry prepareDashboardAction() call that resolves later — e.g. the
+   * indexer lookup timing out and falling back to the local registry entry —
+   * doesn't clobber it with selectDefaultFunctionForContract()'s pick.
+   * navigateToContractDetail() always resets actionPageView to 'list' on a
+   * fresh open, so this only guards a form the user is still actually in.
+   */
+  private userPickedFunctionForEntryId: string | null = null;
+  /**
    * Tracks which non-silent openContractDetail()/prepareDashboardAction()
    * call is allowed to clear selectedDetailLoading. detailRequestToken is
    * bumped by EVERY call including silent background refreshes (e.g. the
@@ -1435,10 +1445,22 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    */
   async openContractDetail(
     entry: ContractDashboardEntry,
-    options?: { silent?: boolean; skipScrollToTop?: boolean },
+    options?: {
+      silent?: boolean;
+      skipScrollToTop?: boolean;
+      autoSelectFunction?: boolean;
+    },
   ) {
     const silent = options?.silent ?? false;
     const skipScrollToTop = options?.skipScrollToTop ?? false;
+    // Only the dashboard's quick-action buttons (openDashboardAction) want to
+    // land straight in a prefilled form. A plain "Details" open — or a
+    // background refresh of an already-open one — should leave whichever
+    // view/action the user is already on alone: auto-selecting a default here
+    // can otherwise jump the user out from under a form they're mid-way
+    // through (e.g. Keep Alive winning over a just-opened Claim form once a
+    // slower-resolving indexer fallback catches up).
+    const autoSelectFunction = options?.autoSelectFunction ?? false;
     const requestToken = ++this.detailRequestToken;
     const isCurrentRequest = () => requestToken === this.detailRequestToken;
 
@@ -1596,6 +1618,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           updatedEntry,
           requestToken,
           silent,
+          autoSelectFunction,
         );
         this.logContractsDebug(
           '[Contracts][detail] prepareDashboardAction finished',
@@ -1636,7 +1659,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           (this.detailRouteId() || this.activeTab() === 'detail') &&
           entry.status === 'active'
         ) {
-          await this.prepareDashboardAction(entry, requestToken, silent);
+          await this.prepareDashboardAction(
+            entry,
+            requestToken,
+            silent,
+            autoSelectFunction,
+          );
         }
       } else {
         this.selectedDetailError.set(
@@ -1684,7 +1712,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.detailPanelTab.set('action');
     this.actionPageView.set('form');
     this.activeTab.set('detail');
-    await this.openContractDetail(entry, { skipScrollToTop: true });
+    await this.openContractDetail(entry, {
+      skipScrollToTop: true,
+      autoSelectFunction: true,
+    });
     this.scrollToActionPanel();
   }
 
@@ -1707,6 +1738,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
     if (fnName) {
       this.dashboardError.set(null);
+      if (detail) this.userPickedFunctionForEntryId = detail.entry.id;
       this.pendingFunctionSelect.set({ fn: fnName });
     }
     this.scrollToActionPanel();
@@ -1790,6 +1822,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     entry: ContractDashboardEntry,
     requestToken: number,
     silent = false,
+    autoSelectFunction = false,
   ): Promise<boolean> {
     this.logContractsDebug('[Contracts][actions] Preparing dashboard action', {
       entryId: entry.id,
@@ -1809,6 +1842,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       if (requestToken !== this.detailRequestToken) return false;
       this.selectedContractId.set(registryEntry.id);
       this.applySelectedRegistryContract(registryEntry.id);
+      if (!autoSelectFunction) return true;
       const hasEnabledDefault = this.selectDefaultFunctionForContract(entry);
       this.logContractsDebug(
         '[Contracts][actions] Prepared from registry entry',
@@ -1910,7 +1944,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       if (imported) {
         this.selectedContractId.set(imported.id);
         this.applySelectedRegistryContract(imported.id);
-        const hasEnabledDefault = this.selectDefaultFunctionForContract(entry);
+        const hasEnabledDefault = autoSelectFunction
+          ? this.selectDefaultFunctionForContract(entry)
+          : false;
         this.logContractsDebug(
           '[Contracts][actions] Imported preview selected for action',
           {
@@ -1928,7 +1964,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         if (!silent) {
           this.activeTab.set('detail');
           this.detailPanelTab.set('action');
-          this.actionPageView.set(hasEnabledDefault ? 'form' : 'list');
+          if (autoSelectFunction) {
+            this.actionPageView.set(hasEnabledDefault ? 'form' : 'list');
+          }
         }
         return true;
       }
@@ -2699,6 +2737,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private selectDefaultFunctionForContract(
     entry: ContractDashboardEntry,
   ): boolean {
+    if (
+      this.actionPageView() === 'form' &&
+      this.selectedFunction &&
+      this.userPickedFunctionForEntryId === entry.id
+    ) {
+      return true;
+    }
+
     const normalized = this.normalizeContractName(entry.contractName);
     const selectedDetail = this.selectedDetail();
     const detailForEntry =

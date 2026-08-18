@@ -913,39 +913,43 @@
             (qrClick)="onInteractOutputQrClick()"
           ></app-address-smart-input>
         </div>
+        <div class="form-group flex column gap-8">
+          <kc-number-input
+            [label]="
+              isDmsClaim() ? 'Claim amount (KAS)' : 'Withdraw amount (KAS)'
+            "
+            [placeholder]="'0'"
+            [min]="'0'"
+            [isDisabled]="isInteracting()"
+            [ngModel]="interactOutputAmount()"
+            (valueChange)="onInteractOutputAmountChange($event)"
+          >
+            <div
+              (click)="!isInteracting() && fillMaxOutputAmount()"
+              [class]="
+                isInteracting() ? 'max-text disabled' : 'max-text clickable'
+              "
+              rightSideSlot
+            >
+              <span>Max</span>
+            </div>
+          </kc-number-input>
+        </div>
         @if (isDmsClaim()) {
           <div
             class="p-12 rounded-lg"
             style="
-              background: rgba(111, 199, 186, 0.08);
-              border: 1px solid rgba(111, 199, 186, 0.2);
+              background: rgba(255, 193, 7, 0.08);
+              border: 1px solid rgba(255, 193, 7, 0.2);
             "
           >
-            <span class="text-gray-75 typo-text-2"
-              >Claiming sends the entire contract balance to this address — Dead
-              Man's Switch claims can't be partial.</span
+            <span class="text-yellow typo-text-2"
+              >Leaving a balance behind keeps it secured under the same heir
+              and deadline — but the owner can still call Keep Alive at any
+              time (even after the deadline passes) to reset the countdown
+              on it. Claim the full balance if you want to guarantee you
+              receive it now.</span
             >
-          </div>
-        } @else {
-          <div class="form-group flex column gap-8">
-            <kc-number-input
-              [label]="'Withdraw amount (KAS)'"
-              [placeholder]="'0'"
-              [min]="'0'"
-              [isDisabled]="isInteracting()"
-              [ngModel]="interactOutputAmount()"
-              (valueChange)="onInteractOutputAmountChange($event)"
-            >
-              <div
-                (click)="!isInteracting() && fillMaxOutputAmount()"
-                [class]="
-                  isInteracting() ? 'max-text disabled' : 'max-text clickable'
-                "
-                rightSideSlot
-              >
-                <span>Max</span>
-              </div>
-            </kc-number-input>
           </div>
         }
       }

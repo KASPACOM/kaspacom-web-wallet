@@ -112,16 +112,19 @@ export const CONTRACT_ACTION_FIELDS: ContractActionFieldConfig = {
       suppressGenericExtraArgs: true,
     },
     claim: {
-      // No amount field: leaving a remainder locked in the same DMS script
-      // would let the (presumably unresponsive) owner call keepAlive on it —
-      // DMS keepAlive has no deadline check — permanently blocking the heir
-      // from ever claiming it. The heir always claims the full balance.
       fields: [
         { type: 'address', key: 'outputAddress', label: 'Send to' },
         {
+          type: 'amount',
+          key: 'outputAmount',
+          label: 'Claim amount (KAS)',
+          allowMax: true,
+          description: 'Claim part or all of the locked balance.',
+        },
+        {
           type: 'banner',
-          tone: 'info',
-          text: 'Claiming always transfers the full locked balance — partial claims are not allowed, so the owner cannot re-arm the deadline on a leftover balance.',
+          tone: 'warning',
+          text: 'Leaving a balance behind keeps it secured under the same heir and deadline — but the owner can still call Keep Alive at any time (even after the deadline passes) to reset the countdown on it. Claim the full balance if you want to guarantee you receive it now.',
         },
       ],
     },

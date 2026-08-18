@@ -753,22 +753,6 @@ export class ContractActionPanelComponent {
           inputAmount,
         );
         return;
-      } else if (this.isDmsClaim()) {
-        // DMS claim always transfers the entire balance to the heir — there's
-        // no continuation output for a remainder to go to, since the
-        // Dead Man's Switch relationship ends once claimed. Ignore whatever
-        // amount the user may have typed and use the full input amount
-        // instead of routing through buildWithdrawalOutputs's partial path.
-        if (!outputAddress) {
-          this.interactError.set('Output address is required');
-          return;
-        }
-        outputs = [
-          {
-            address: outputAddress,
-            amount: inputAmount,
-          },
-        ];
       } else if (this.functionRequiresOutput(functionName)) {
         if (
           compiled.contract_name === 'DeadManSwitch' &&
@@ -829,6 +813,12 @@ export class ContractActionPanelComponent {
             return;
           }
           const withdrawalAmount = BigInt(Math.floor(outputAmountKas * 1e8));
+          if (withdrawalAmount <= 0n) {
+            this.interactError.set(
+              'Output amount must be at least 0.00000001 KAS',
+            );
+            return;
+          }
           if (
             functionName === 'transfer' &&
             compiled.contract_name === 'KCC20'
@@ -2450,9 +2440,12 @@ export class ContractActionPanelComponent {
   }
 
   /**
-   * Returns true when the current function is DMS claim. Claim always
-   * transfers the full balance to the heir — there's no continuation output,
-   * so unlike a regular withdrawal it can't be partial.
+   * Returns true when the current function is a Dead Man's Switch claim.
+   * Claim can be partial — it routes through the generic
+   * buildWithdrawalOutputs() path like any other withdrawal — but this
+   * predicate still gates a claim-specific warning: any remainder left in
+   * the contract stays under the same heir/deadline, and the owner's
+   * keepAlive has no deadline check, so it could re-arm a leftover balance.
    */
   isDmsClaim(): boolean {
     const contract = this.parsedInteractContract();
@@ -2740,9 +2733,9 @@ export class ContractActionPanelComponent {
     } else if (this.isSelfCustodyUnvault()) {
       this.interactOutputAddress.set('');
       this.interactOutputAmount.set('');
-      // Curated actions whose field config omits an amount field (e.g. DMS
-      // claim) always withdraw the full balance — there's no input for the
-      // user to fill in, so fill it in for them instead of leaving it empty.
+      // Curated actions whose field config omits an amount field always
+      // withdraw the full balance — there's no input for the user to fill
+      // in, so fill it in for them instead of leaving it empty.
       // (getSelectedActionFieldConfig() already reflects `name` — it was
       // just assigned to selectedFunction above.)
       const config = this.getSelectedActionFieldConfig();

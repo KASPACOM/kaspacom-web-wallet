@@ -163,13 +163,42 @@
         <div class="form-group flex column gap-8">
           <label class="field-label">Co-signer wallet</label>
           <kc-dropdown-select
+            class="whitelist-dropdown"
             [options]="coSignerOptions()"
             [placeholder]="'Select co-signer'"
             [isFullWidth]="true"
             [isDisabled]="isInteracting()"
             [value]="selectedCoSignerRole"
             (valueChange)="onCoSignerChange($event)"
-          ></kc-dropdown-select>
+          >
+            <ng-template #optionTemplate let-option>
+              <div class="whitelist-option">
+                <app-wallet-profile-orb
+                  class="whitelist-option-avatar"
+                  [address]="getParticipantValueForRole($any(option.value))"
+                  [sizePx]="22"
+                ></app-wallet-profile-orb>
+                <span class="whitelist-option-index">{{
+                  $any(option.value)
+                }}</span>
+                <span
+                  class="whitelist-option-address"
+                  [title]="getParticipantValueForRole($any(option.value))"
+                  >{{
+                    formatResponsiveDropdownAddress(
+                      getParticipantValueForRole($any(option.value))
+                    )
+                  }}</span
+                >
+                <app-copy-button
+                  class="whitelist-option-copy"
+                  [value]="getParticipantValueForRole($any(option.value))"
+                  [size]="'xs'"
+                  (click)="$event.stopPropagation()"
+                ></app-copy-button>
+              </div>
+            </ng-template>
+          </kc-dropdown-select>
           <span class="text-gray-60 typo-text-2">
             The wallet will use the correct 2-of-3 withdrawal function for your
             signer role and the selected co-signer.
@@ -804,7 +833,9 @@
                   <span
                     class="whitelist-option-address"
                     [title]="$any(option.value)"
-                    >{{ $any(option.value) | shortenAddress: 8 : 6 }}</span
+                    >{{
+                      formatResponsiveDropdownAddress($any(option.value))
+                    }}</span
                   >
                   <app-copy-button
                     class="whitelist-option-copy"

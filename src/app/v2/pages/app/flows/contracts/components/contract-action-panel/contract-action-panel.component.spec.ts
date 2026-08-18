@@ -78,6 +78,34 @@ describe('ContractActionPanelComponent', () => {
       }
     });
 
+    it('uses longer shortened labels on wider screens', () => {
+      spyOn(
+        component,
+        'getSelfCustodyInteractWhitelistWallets',
+      ).and.returnValue([WHITELIST_ADDRESS_1]);
+
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        value: 375,
+      });
+      component.onResize();
+      const narrowLabel =
+        component.getSelfCustodySweepDropdownOptions()[0].label;
+
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        value: 1400,
+      });
+      component.onResize();
+      const wideLabel = component.getSelfCustodySweepDropdownOptions()[0].label;
+
+      expect(narrowLabel.length).toBeLessThan(wideLabel.length);
+      expect(wideLabel.length).toBeLessThan(WHITELIST_ADDRESS_1.length);
+      expect(wideLabel).toBe(
+        component.formatResponsiveDropdownAddress(WHITELIST_ADDRESS_1),
+      );
+    });
+
     it('returns no options when there is no whitelist', () => {
       spyOn(
         component,
@@ -85,6 +113,23 @@ describe('ContractActionPanelComponent', () => {
       ).and.returnValue([]);
 
       expect(component.getSelfCustodySweepDropdownOptions()).toEqual([]);
+    });
+  });
+
+  describe('coSignerOptions', () => {
+    it('uses a shortened participant address in the label while keeping signer role as value', () => {
+      spyOn<any>(component, 'getCurrentSignerRole').and.returnValue('Signer 1');
+      spyOn(component, 'getParticipantValueForRole').and.callFake((role) =>
+        role === 'Signer 2' ? WHITELIST_ADDRESS_1 : WHITELIST_ADDRESS_2,
+      );
+
+      const options = component.coSignerOptions();
+
+      expect(options.length).toBe(2);
+      expect(options[0].value).toBe('Signer 2');
+      expect(options[0].label).toContain('Signer 2');
+      expect(options[0].label).not.toContain(WHITELIST_ADDRESS_1);
+      expect(options[0].label).toContain('...');
     });
   });
 

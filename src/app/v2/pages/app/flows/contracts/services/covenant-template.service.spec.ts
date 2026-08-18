@@ -250,6 +250,58 @@ describe('CovenantTemplateService', () => {
     });
   });
 
+  describe('extractTemplateIntField', () => {
+    it('extracts constructor int params encoded as script pushdata', async () => {
+      spyOn(service, 'getTemplatePatchContext').and.resolveTo({
+        compiled: {} as any,
+        descriptor: {
+          contractName: 'TimeLockVault',
+          params: [
+            {
+              name: 'timeout',
+              paramType: 'int',
+              positions: [{ offset: 2, length: 6 }],
+              placeholderBytes: [],
+            },
+          ],
+        },
+      });
+
+      const value = await service.extractTemplateIntField(
+        { script: [0, 0, 6, 0, 32, 74, 169, 209, 1] } as any,
+        'time-lock-vault',
+        'timeout',
+      );
+
+      expect(value).toBe(2000000000000n);
+    });
+
+    it('extracts fixed-width int fields', async () => {
+      spyOn(service, 'getTemplatePatchContext').and.resolveTo({
+        compiled: {} as any,
+        descriptor: {
+          contractName: 'StatefulContract',
+          params: [
+            {
+              name: 'phase',
+              paramType: 'int_field',
+              positions: [{ offset: 1, length: 8 }],
+              placeholderBytes: [],
+            },
+          ],
+        },
+      });
+
+      const value = await service.extractTemplateIntField(
+        { script: [0, 5, 0, 0, 0, 0, 0, 0, 0] } as any,
+        'stateful-contract',
+        'phase',
+      );
+
+      expect(value).toBe(5n);
+    });
+  });
+
   describe('templateForIndexerName', () => {
     it('matches by known keyword substrings', () => {
       expect(service.templateForIndexerName('DeadMansSwitchV2')?.id).toBe(

@@ -2,9 +2,7 @@ import { Component, inject, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-  DropdownOption,
   KcButtonComponent,
-  KcDropdownSelectComponent,
   KcInputComponent,
 } from '@kaspacom/ui-kit';
 import { RpcService } from '../../../../../../../services/kaspa-netwrok-services/rpc.service';
@@ -26,7 +24,6 @@ export type LookupInteractRequest = {
     FormsModule,
     KcButtonComponent,
     KcInputComponent,
-    KcDropdownSelectComponent,
     CopyButtonComponent,
   ],
   templateUrl: './contract-lookup-import.component.html',
@@ -36,24 +33,15 @@ export class ContractLookupImportComponent {
   private rpcService = inject(RpcService);
   display = inject(ContractDisplayService);
 
-  // Indexer import preview — shell-owned (deep links like ?contract=... drive
-  // these signals directly, outside this component, to auto-populate a
-  // lookup when the page loads).
+  // Indexer import preview.
   indexerImportQuery = input('');
   indexerImportLoading = input(false);
   indexerImportError = input<string | null>(null);
   indexerImportPreview = input<IndexerImportPreview | null>(null);
 
-  // Share panel — derived from the shell's dashboardContracts.
-  shareableContractOptions = input<DropdownOption[]>([]);
-  effectiveShareableContractId = input('');
-  shareableContractLink = input('');
-
   indexerImportQueryChanged = output<string>();
   lookupIndexerImportRequested = output<void>();
   importIndexerPreviewRequested = output<void>();
-  shareableContractChanged = output<string>();
-  copyShareableContractLinkRequested = output<void>();
 
   // On-chain address lookup — fully local, no shell coupling needed.
   lookupAddress = '';
@@ -72,10 +60,6 @@ export class ContractLookupImportComponent {
 
   onIndexerImportQueryChange(value: any) {
     this.indexerImportQueryChanged.emit(value || '');
-  }
-
-  onShareableContractChange(value: string) {
-    this.shareableContractChanged.emit(value || '');
   }
 
   onLookupAddressChange(value: any) {

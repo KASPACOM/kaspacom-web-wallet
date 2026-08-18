@@ -191,10 +191,10 @@ describe('ContractsDataService', () => {
       );
     });
 
-    it('prompts signers to sign on a MultiSig Vault', () => {
+    it('prompts signers to initiate or complete on a MultiSig Vault', () => {
       expect(
         service.getNextActionLabel('MultiSigVault', 'active', ['Signer 1']),
-      ).toBe('Sign / Complete');
+      ).toBe('Initiate Withdrawal');
     });
 
     it('distinguishes arbiter/buyer/seller roles on an Escrow', () => {
@@ -206,7 +206,7 @@ describe('ContractsDataService', () => {
       ).toBe('Release / Refund');
       expect(
         service.getNextActionLabel('EscrowWithArbiter', 'active', ['Seller']),
-      ).toBe('Release');
+      ).toBe('Complete Release');
     });
   });
 

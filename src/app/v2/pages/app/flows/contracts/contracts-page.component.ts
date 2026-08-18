@@ -10,9 +10,8 @@ import {
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription } from 'rxjs';
-import { DropdownOption, NotificationService } from '@kaspacom/ui-kit';
+import { Router } from '@angular/router';
+import { DropdownOption } from '@kaspacom/ui-kit';
 import { WalletService } from '../../../../../services/wallet.service';
 import { CovenantService } from '../../../../../services/covenant/covenant.service';
 import { RpcService } from '../../../../../services/kaspa-netwrok-services/rpc.service';
@@ -62,11 +61,9 @@ import {
   ContractsDataService,
   ContractsDashboardBuildContext,
 } from './services/contracts-data.service';
+import { ContractsRegistryRefreshService } from './services/contracts-registry-refresh.service';
 import { hex32ToBytes, computeBlake2bHex } from './crypto.util';
-import {
-  ContractTemplateDeployFormComponent,
-  ContractDeployedEvent,
-} from './components/contract-template-deploy-form/contract-template-deploy-form.component';
+import { ContractTemplateDeployFormComponent } from './components/contract-template-deploy-form/contract-template-deploy-form.component';
 import { ContractsDashboardComponent } from './components/contracts-dashboard/contracts-dashboard.component';
 import {
   ContractLookupImportComponent,
@@ -105,15 +102,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private flowPagesService = inject(FlowPagesService);
   wideWorkspaceService = inject(WideWorkspaceService);
   private approvalFlowService = inject(ApprovalFlowService);
-  private route = inject(ActivatedRoute);
   private router = inject(Router);
   private platformId = inject(PLATFORM_ID);
-  private notificationService = inject(NotificationService);
   private isBrowser = isPlatformBrowser(this.platformId);
   private display = inject(ContractDisplayService);
   private templateService = inject(CovenantTemplateService);
   private contractsData = inject(ContractsDataService);
-  private routeSubscription?: Subscription;
+  private contractsRegistryRefresh = inject(ContractsRegistryRefreshService);
   private registryMigrationPromise?: Promise<void>;
   private contractsLoadRequestToken = 0;
   private readonly contractsDebugEnabled = false;
@@ -237,7 +232,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   actionPageView = signal<'list' | 'form'>('list');
   detailRouteId = signal<string | null>(null);
   detailRouteNotFound = signal(false);
-  pendingUrlImport = signal<string | null>(null);
   private readonly supportedIndexerTemplates = [
     'DeadManSwitch',
     'TimeLockVault',
@@ -252,7 +246,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * Reuses the canonical name already computed by normalizeContractName()
    * (indexer label + argument-name fallback, resolved upstream in #257 and
    * stored as contractName on every ContractDashboardEntry); unresolved
-   * (custom / tracking-incomplete) → 'default' (neutral UI).
+   * (tracking-incomplete / unrecognized) → 'default' (neutral UI).
    */
   getTemplateKey(
     input: any,
@@ -453,46 +447,22 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     });
 
     effect(() => {
-      const contractId = this.pendingUrlImport();
-      const wallet = this.currentWallet();
-      this.network();
-      if (!contractId || !wallet) return;
-
-      this.pendingUrlImport.set(null);
-      void this.showInboundIndexerImport(contractId);
+      const refreshVersion = this.contractsRegistryRefresh.changes();
+      if (refreshVersion === 0) return;
+      void this.loadContracts({ skipOnChainStatusRefresh: true });
     });
+
   }
 
   ngOnInit() {
     this.wideWorkspaceService.activate();
     void this.ensureContractRegistryMigrated();
     this.restoreTransientState();
-    this.routeSubscription = this.route.paramMap.subscribe((params) => {
-      const contractId = params.get('contractId');
-      this.detailRouteId.set(null);
-      this.detailRouteNotFound.set(false);
-      if (contractId) {
-        const requestedNetwork = this.route.snapshot.queryParamMap
-          .get('network')
-          ?.trim();
-        if (requestedNetwork && requestedNetwork !== this.network()) {
-          if (!this.rpcService.setNetwork(requestedNetwork)) {
-            this.selectedDetailError.set(
-              `This contract link targets unsupported network "${requestedNetwork}".`,
-            );
-            return;
-          }
-        }
-        this.queueInboundIndexerImport(contractId);
-      }
-    });
-    void this.applyInboundContractLink();
   }
 
   ngOnDestroy() {
     this.destroyed = true;
     this.wideWorkspaceService.deactivate();
-    this.routeSubscription?.unsubscribe();
   }
 
   private restoreTransientState() {
@@ -538,47 +508,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.interactResult.set(state.interactResult);
 
     this.flowPagesService.saveTransientState('contracts', undefined);
-  }
-
-  private async applyInboundContractLink() {
-    const params = this.route.snapshot.queryParamMap;
-    const contractId = params.get('contract')?.trim();
-    if (!contractId) return;
-
-    const requestedNetwork = params.get('network')?.trim();
-    if (
-      requestedNetwork &&
-      requestedNetwork !== this.network() &&
-      !this.rpcService.setNetwork(requestedNetwork)
-    ) {
-      this.activeTab.set('lookup-import');
-      this.indexerImportError.set(
-        `This contract link targets unsupported network "${requestedNetwork}".`,
-      );
-      return;
-    }
-
-    this.queueInboundIndexerImport(contractId);
-  }
-
-  private queueInboundIndexerImport(contractId: string) {
-    this.activeTab.set('lookup-import');
-    this.indexerImportQuery = contractId;
-    this.indexerImportError.set(null);
-    this.indexerImportPreview.set(null);
-
-    if (!this.currentWallet()) {
-      this.pendingUrlImport.set(contractId);
-      return;
-    }
-
-    void this.showInboundIndexerImport(contractId);
-  }
-
-  private async showInboundIndexerImport(contractId: string) {
-    this.activeTab.set('lookup-import');
-    this.indexerImportQuery = contractId;
-    await this.lookupIndexerImport();
   }
 
   private ensureContractRegistryMigrated(): Promise<void> {
@@ -787,11 +716,18 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       // Indexer-backed tracking is the source of truth for contracts involving
       // the wallet. Local registry entries are merged below so older local-only
       // deployments still remain visible while the indexer catches up.
-      const [indexerEntries, refreshedLocalDashboardEntries] =
-        await Promise.all([indexerEntriesPromise, localRefreshPromise]);
+      const [indexerEntries] = await Promise.all([
+        indexerEntriesPromise,
+        localRefreshPromise,
+      ]);
       if (!isCurrentRequest()) return;
 
-      localDashboardEntries = refreshedLocalDashboardEntries;
+      localDashboardEntries = await this.getLatestLocalDashboardEntries(
+        buildCtx,
+        isCurrentRequest,
+      );
+      if (!isCurrentRequest()) return;
+
       this.dashboardContracts.set(
         this.contractsData.mergeDashboardEntries(
           indexerEntries,
@@ -806,6 +742,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         error?.message ||
           'Indexer tracking is unavailable. Showing locally saved contracts only.',
       );
+      localDashboardEntries = await this.getLatestLocalDashboardEntries(
+        buildCtx,
+        isCurrentRequest,
+      );
+      if (!isCurrentRequest()) return;
+
       this.dashboardContracts.set(
         this.sortDashboardEntries(localDashboardEntries),
       );
@@ -838,6 +780,38 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         await this.openContractDetail(refreshed, { silent: true });
       }
     }
+  }
+
+  /**
+   * The indexer request can take long enough for the user to edit local
+   * metadata such as nicknames while "Syncing indexer contracts" is visible.
+   * Re-read the registry at the final dashboard commit point so an older
+   * loadContracts() snapshot cannot overwrite those local edits.
+   */
+  private async getLatestLocalDashboardEntries(
+    buildCtx: (
+      localRegistryContracts: ContractRegistryEntry[],
+      allRegistryContracts: ContractRegistryEntry[],
+    ) => ContractsDashboardBuildContext,
+    isCurrentRequest: () => boolean,
+  ): Promise<ContractDashboardEntry[]> {
+    const allContracts = await this.registryService.getAllContracts();
+    if (!isCurrentRequest()) return [];
+
+    this.allRegistryContracts.set(allContracts);
+    const filtered = await this.getCurrentWalletLocalContracts(allContracts);
+    if (!isCurrentRequest()) return [];
+    this.registryContracts.set(filtered);
+
+    const dashboardEntries = await Promise.all(
+      filtered.map((entry) =>
+        this.contractsData.localEntryToDashboard(
+          entry,
+          buildCtx(filtered, allContracts),
+        ),
+      ),
+    );
+    return isCurrentRequest() ? dashboardEntries : [];
   }
 
   /**
@@ -954,6 +928,19 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     if (updates.compiledJson) {
       this.contractsData.clearLocalParticipantsCache();
     }
+    // An action just executed locally, so it's by definition the freshest
+    // known state for this contract — surface it on the card immediately
+    // rather than waiting for the next full loadContracts()/indexer merge
+    // (which may still lag until the indexer catches up).
+    const optimisticLatest = updates.lastActionType
+      ? {
+          latestAction: updates.lastActionType,
+          latestTxid:
+            updates.lastActionTxid ||
+            updates.spendTxid ||
+            updates.outpoint?.txid,
+        }
+      : undefined;
     let updatedRegistryEntry: ContractRegistryEntry | undefined;
     this.allRegistryContracts.set(
       this.allRegistryContracts().map((contract) => {
@@ -1001,6 +988,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
                 ...entry.registryEntry,
                 ...updates,
               },
+              ...optimisticLatest,
             })
           : entry,
       ),
@@ -1016,6 +1004,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
                 ...detail.entry.registryEntry,
                 ...updates,
               },
+              ...optimisticLatest,
             }),
           }
         : detail,
@@ -2369,6 +2358,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           return null;
         },
       },
+      changeRecovery: {
+        label: 'Change Recovery',
+        description: 'Update the wallet allowed to recover after the timelock.',
+        iconClass: 'icon-user-gear',
+        requiredRole: 'Owner',
+      },
       topUp: {
         label: 'Top Up',
         description:
@@ -2377,29 +2372,21 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       },
     },
     MultiSigVault: {
-      spend12: {
-        label: '2-of-3 Withdraw (Signer 1 + 2)',
+      initiateWithdrawal: {
+        label: 'Initiate Withdrawal',
         description:
-          'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 1 and Signer 2.',
+          'Choose a co-signer, sign your part, and generate a partial spend JSON.',
         iconClass: 'icon-coins-02',
         extraGuard: (detail) =>
-          this.requireOneOfSigners(detail, 'Signer 1', 'Signer 2'),
+          this.requireOneOfRoles(detail, ['Signer 1', 'Signer 2', 'Signer 3']),
       },
-      spend13: {
-        label: '2-of-3 Withdraw (Signer 1 + 3)',
+      completePartial: {
+        label: 'Complete Co-Signer Withdrawal',
         description:
-          'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 1 and Signer 3.',
-        iconClass: 'icon-coins-02',
+          'Paste a partial withdrawal JSON from another signer, add your signature, and broadcast.',
+        iconClass: 'icon-send-01',
         extraGuard: (detail) =>
-          this.requireOneOfSigners(detail, 'Signer 1', 'Signer 3'),
-      },
-      spend23: {
-        label: '2-of-3 Withdraw (Signer 2 + 3)',
-        description:
-          'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 2 and Signer 3.',
-        iconClass: 'icon-coins-02',
-        extraGuard: (detail) =>
-          this.requireOneOfSigners(detail, 'Signer 2', 'Signer 3'),
+          this.requireOneOfRoles(detail, ['Signer 1', 'Signer 2', 'Signer 3']),
       },
       topUp: {
         label: 'Top Up',
@@ -2415,6 +2402,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           'Both buyer and seller agree to release funds to the recipient.',
         iconClass: 'icon-send-01',
         requiredRole: 'Buyer',
+      },
+      completePartial: {
+        label: 'Complete Release Funds',
+        description:
+          'Seller: paste the buyer’s partial release JSON, add your signature, and broadcast.',
+        iconClass: 'icon-send-01',
+        requiredRole: 'Seller',
       },
       refund: {
         label: 'Refund',
@@ -2505,7 +2499,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const testMode = this.isTestModeEnabled();
 
     return Object.entries(table).map(([fnName, meta]) => {
-      const existsOnChain = availableNames.has(fnName);
+      const existsOnChain =
+        fnName === 'completePartial' ||
+        fnName === 'initiateWithdrawal' ||
+        availableNames.has(fnName);
 
       let disabledReason: string | null = null;
       if (testMode) {
@@ -2714,12 +2711,14 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         ? ['keepAlive', 'changeHeir', 'topUp', 'claim']
         : ['claim', 'keepAlive', 'changeHeir', 'topUp'],
       TimeLockVault: currentRoles.includes('Recovery')
-        ? ['recover', 'spend', 'topUp']
-        : ['spend', 'recover', 'topUp'],
-      MultiSigVault: ['spend12', 'spend13', 'spend23', 'topUp'],
+        ? ['recover', 'spend', 'changeRecovery', 'topUp']
+        : ['spend', 'changeRecovery', 'recover', 'topUp'],
+      MultiSigVault: ['initiateWithdrawal', 'completePartial', 'topUp'],
       EscrowWithArbiter: currentRoles.includes('Arbiter')
         ? ['arbitrate', 'release', 'refund', 'topUp']
-        : ['release', 'refund', 'arbitrate', 'topUp'],
+        : currentRoles.includes('Seller')
+          ? ['completePartial', 'release', 'refund', 'arbitrate', 'topUp']
+          : ['release', 'refund', 'arbitrate', 'topUp'],
       SelfCustodyVault: currentRoles.includes('Cold wallet')
         ? ['emergencySweep', 'unvault', 'finalize', 'topUp']
         : ['unvault', 'finalize', 'topUp', 'emergencySweep'],
@@ -2749,7 +2748,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
     if (!query) {
       this.indexerImportError.set(
-        'Enter a covenant ID, script hash, transaction ID, contract address, or share-link value.',
+        'Enter a covenant ID, script hash, transaction ID, or contract address.',
       );
       return;
     }
@@ -3299,7 +3298,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const delayCandidates = this.uniqueStrings([
       String(state['vaultUnvaultDelaySeconds'] ?? ''),
       String(state['unvaultDelaySeconds'] ?? ''),
-      baseFieldValues['initUnvaultDelaySeconds'],
       baseFieldValues['unvaultDelaySeconds'],
       String(state['vaultUnvaultDelaySeconds'] ?? ''),
       String(state['unvaultDelaySeconds'] ?? ''),
@@ -3310,7 +3308,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         const fieldValues = {
           ...baseFieldValues,
           initPhase,
-          initUnvaultDelaySeconds: unvaultDelaySeconds,
+          unvaultDelaySeconds,
         };
         try {
           const compiled = await this.compileTemplateWithFieldValues(
@@ -3519,7 +3517,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
               : whitelistedDestinations
                 ? 'whitelist'
                 : 'anywhere',
-          initUnvaultDelaySeconds: String(
+          unvaultDelaySeconds: String(
             Number.isFinite(delaySeconds)
               ? delaySeconds
               : this.templateService.hoursToDaaDelay(24),
@@ -3661,76 +3659,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     }
 
     return roles;
-  }
-
-  /**
-   * Handles the ContractTemplateDeployFormComponent's `(deployed)` output —
-   * the "record a successful deploy into the local registry" tail that used
-   * to run inline inside this component's own deployContract(). The child
-   * calls `event.resolve(...)` with the outcome so it can drive its own
-   * deployIndexerState/deployResult signals afterward (registryEntryId is
-   * needed to backfill the covenant ID once indexing settles).
-   */
-  async onContractDeployed(event: ContractDeployedEvent) {
-    const walletKey = this.currentWalletAliasKey();
-    const entry: ContractRegistryEntry = {
-      id: this.registryService.generateId(),
-      contractName: event.compiled.contract_name || 'Unnamed Contract',
-      compiledJson: event.contractJson,
-      deployTxid: event.result.txid,
-      contractAddress: event.result.contractAddress,
-      outpoint: event.result.outpoint,
-      amountSompi: event.amountSompi.toString(),
-      deployedBy: {
-        address: event.walletAddress,
-        pubkey: event.pubkey,
-        accountName: event.walletDisplayName,
-      },
-      deployedAt: Date.now(),
-      network: this.network(),
-      status: 'active',
-      accessRoles: this.parseAccessRoles(event.compiled),
-      covenantId: event.result.covenantId,
-      wallets: walletKey ? { [walletKey]: true } : undefined,
-    };
-
-    try {
-      await this.registryService.addContract(entry);
-      this.allRegistryContracts.set([...this.allRegistryContracts(), entry]);
-      this.registryContracts.set([...this.registryContracts(), entry]);
-      const clearNickname = await this.saveInitialContractAlias(
-        entry,
-        event.nickname,
-      );
-      event.resolve({ registryEntryId: entry.id, clearNickname });
-    } catch (e) {
-      console.error(
-        '[Deploy] Contract deployed but failed to save to registry:',
-        e,
-      );
-      event.resolve({
-        saveError: `Contract deployed (txid ${event.result.txid}), but saving it locally failed. Record the outpoint to interact later: ${event.result.outpoint.txid}:${event.result.outpoint.vout}.`,
-      });
-    }
-  }
-
-  /** Returns whether the nickname was actually saved (so the caller can clear its own field). */
-  private async saveInitialContractAlias(
-    entry: ContractRegistryEntry,
-    nickname: string,
-  ): Promise<boolean> {
-    const alias = nickname.trim();
-    const walletKey = this.currentWalletAliasKey();
-    if (!alias || !walletKey) return false;
-
-    await this.updateRegistryContract(entry.id, {
-      aliases: {
-        ...(entry.aliases || {}),
-        [walletKey]: alias,
-      },
-    });
-    this.refreshDashboardNames();
-    return true;
   }
 
   /**
@@ -3967,76 +3895,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   formatActionName(action: string): string {
     return this.display.formatActionName(action);
-  }
-
-  /**
-   * Builds a share link that carries only the network and canonical covenant
-   * ID — never private data or compiled JSON. The receiving wallet imports
-   * current state from the indexer when the link is opened.
-   */
-  buildShareLink(covenantId: string): string {
-    return this.display.buildShareLink(covenantId);
-  }
-
-  copyContractShareLink(contract: ContractDashboardEntry) {
-    const id = contract.covenantId;
-    if (!id) return;
-    const link = this.buildShareLink(id);
-    navigator.clipboard.writeText(link).then(
-      () =>
-        this.notificationService.success(
-          'Copied',
-          'Contract share link copied.',
-        ),
-      () => prompt('Copy this contract link:', link),
-    );
-  }
-
-  /** Contract explicitly picked in the "Share a contract" card; empty = auto-default to most recent. */
-  shareableContractId = signal<string>('');
-
-  /** Dropdown options for the "Share a contract" card — only contracts with a covenant ID can be shared. */
-  shareableContracts = computed<ContractDashboardEntry[]>(() =>
-    this.dashboardContracts().filter((c) => !!c.covenantId),
-  );
-
-  /** Effective selection — the explicit pick, or the most-recently-interacted contract. */
-  effectiveShareableContractId = computed<string>(
-    () => this.shareableContractId() || this.shareableContracts()[0]?.id || '',
-  );
-
-  /** Dropdown options for the "Share a contract" card. */
-  shareableContractOptions = computed<DropdownOption[]>(() =>
-    this.shareableContracts().map((contract) => ({
-      value: contract.id,
-      label: `${contract.displayName} - ${contract.contractTypeLabel} - ${contract.covenantId}`,
-    })),
-  );
-
-  /** Readonly link shown in the "Share a contract" card. */
-  shareableContractLink = computed<string>(() => {
-    const id = this.effectiveShareableContractId();
-    if (!id) return '';
-    const contract = this.shareableContracts().find((c) => c.id === id);
-    if (!contract?.covenantId) return '';
-    return this.buildShareLink(contract.covenantId);
-  });
-
-  onShareableContractChange(value: string) {
-    this.shareableContractId.set(value || '');
-  }
-
-  copyShareableContractLink() {
-    const link = this.shareableContractLink();
-    if (!link) return;
-    navigator.clipboard.writeText(link).then(
-      () =>
-        this.notificationService.success(
-          'Copied',
-          'Contract share link copied.',
-        ),
-      () => prompt('Copy this contract link:', link),
-    );
   }
 
   private delay(ms: number): Promise<void> {

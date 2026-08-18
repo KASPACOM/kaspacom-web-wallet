@@ -51,6 +51,7 @@ export class ContractsDataService {
     string,
     Promise<ContractParticipant[]>
   >();
+  private readonly INDEXER_ACTION_FETCH_CONCURRENCY = 5;
 
   clearLocalParticipantsCache(): void {
     this.localParticipantsCache.clear();
@@ -170,12 +171,12 @@ export class ContractsDataService {
       return currentRoles.includes('Recovery') ? 'Recover' : 'Withdraw';
     if (normalized === 'MultiSigVault')
       return currentRoles.some((role) => role.startsWith('Signer'))
-        ? 'Sign / Complete'
+        ? 'Initiate Withdrawal'
         : 'Open Actions';
     if (normalized === 'EscrowWithArbiter') {
       if (currentRoles.includes('Arbiter')) return 'Arbitrate';
       if (currentRoles.includes('Buyer')) return 'Release / Refund';
-      if (currentRoles.includes('Seller')) return 'Release';
+      if (currentRoles.includes('Seller')) return 'Complete Release';
     }
     if (normalized === 'SelfCustodyVault') {
       if (currentRoles.includes('Cold wallet')) return 'Emergency Sweep';
@@ -263,6 +264,7 @@ export class ContractsDataService {
     const labels: Record<string, string> = {
       owner: 'Owner',
       heir: 'Heir',
+      initRecovery: 'Recovery',
       signer: 'Owner',
       recovery: 'Recovery',
       recoveryKey: 'Recovery',
@@ -373,6 +375,7 @@ export class ContractsDataService {
       'owner',
       'heir',
       'signer',
+      'initRecovery',
       'recovery',
       'recoveryKey',
       'key1',
@@ -416,7 +419,7 @@ export class ContractsDataService {
 
     const roleParamsByTemplate: Record<string, string[]> = {
       'dead-mans-switch': ['owner', 'heir'],
-      'time-lock-vault': ['owner', 'recovery'],
+      'time-lock-vault': ['owner', 'initRecovery'],
       'multi-sig-vault': ['key1', 'key2', 'key3'],
       'escrow-with-arbiter': ['buyer', 'seller', 'arbiterHash'],
     };
@@ -425,7 +428,9 @@ export class ContractsDataService {
 
     for (const paramName of roleParams) {
       const field = template.fields.find(
-        (item) => item.paramName === paramName,
+        (item) =>
+          item.paramName === paramName ||
+          (paramName === 'initRecovery' && item.paramName === 'recovery'),
       );
       if (!field) continue;
       const value =
@@ -507,7 +512,7 @@ export class ContractsDataService {
         await this.localTemplateParticipants(compiled);
       if (templateParticipants.length > 0) return templateParticipants;
     } catch {
-      // Fall back to deployer metadata for older or custom saved contracts.
+      // Fall back to deployer metadata for older saved contracts.
     }
 
     const selfCustodyParticipants = this.localSelfCustodyParticipants(contract);
@@ -557,6 +562,31 @@ export class ContractsDataService {
     const promise = this.buildLocalParticipants(contract, predecessor);
     this.localParticipantsCache.set(cacheKey, promise);
     return promise;
+  }
+
+  /**
+   * `spendTxid` only covers a terminal full withdrawal; continuation actions
+   * record their local action metadata when broadcast so the dashboard can show
+   * that optimistic latest action until the indexer catches up.
+   */
+  private localLatestAction(contract: ContractRegistryEntry): {
+    latestTxid?: string;
+    latestAction?: string;
+    latestActionAtMs?: number;
+  } {
+    if (contract.lastActionType) {
+      return {
+        latestTxid: contract.lastActionTxid || contract.outpoint?.txid,
+        latestAction: contract.lastActionType,
+        latestActionAtMs: contract.lastActionAt,
+      };
+    }
+    return {
+      latestTxid:
+        contract.spendTxid || contract.outpoint?.txid || contract.deployTxid,
+      latestAction: contract.spendTxid ? 'spend' : 'deploy',
+      latestActionAtMs: contract.spendTxid ? contract.lastChecked : undefined,
+    };
   }
 
   /**
@@ -624,9 +654,7 @@ export class ContractsDataService {
         currentAddress: contract.contractAddress,
         covenantId: contract.covenantId,
         deployTxid: contract.deployTxid,
-        latestTxid:
-          contract.spendTxid || contract.outpoint?.txid || contract.deployTxid,
-        latestAction: contract.spendTxid ? 'spend' : 'deploy',
+        ...this.localLatestAction(contract),
         deadlineMs: await this.extractLocalDmsDeadlineMs(
           contract,
           contractName,
@@ -647,6 +675,7 @@ export class ContractsDataService {
   indexerSummaryToDashboard(
     summary: IndexerCovenantDetails,
     ctx: ContractsDashboardBuildContext,
+    latestAction?: IndexerCovenantAction,
   ): ContractDashboardEntry {
     const contractName = this.getIndexerTemplateName(summary);
     const participants = this.indexerParticipants(summary);
@@ -677,8 +706,10 @@ export class ContractsDataService {
         covenantId: summary.covenantIdHex,
         scriptHash: summary.scriptHashHex,
         deployTxid: summary.genesisTxidHex,
-        latestTxid: summary.genesisTxidHex,
-        latestAction: 'deploy',
+        latestTxid: latestAction?.txidHex || summary.genesisTxidHex,
+        latestAction:
+          latestAction?.entrypoint || latestAction?.action || 'deploy',
+        latestActionAtMs: latestAction?.blockTimeMs,
         deadlineMs: this.extractDeadlineMs(summary),
         participants,
         nextActionLabel: this.getNextActionLabel(
@@ -705,6 +736,38 @@ export class ContractsDataService {
     'SelfCustodyVault',
   ];
 
+  private async fetchLatestIndexerAction(
+    summary: IndexerCovenantDetails,
+  ): Promise<IndexerCovenantAction | undefined> {
+    const identifier = summary.covenantIdHex || summary.scriptHashHex;
+    if (!identifier) return undefined;
+    try {
+      const actions =
+        await this.covenantIndexerService.getCovenantActions(identifier);
+      return this.latestAction(actions);
+    } catch (error) {
+      console.warn(
+        '[Contracts] Failed to load latest action for covenant',
+        identifier,
+        error,
+      );
+      return undefined;
+    }
+  }
+
+  private async mapWithConcurrency<T, R>(
+    items: T[],
+    concurrency: number,
+    mapper: (item: T) => Promise<R>,
+  ): Promise<R[]> {
+    const results: R[] = [];
+    for (let index = 0; index < items.length; index += concurrency) {
+      const batch = items.slice(index, index + concurrency);
+      results.push(...(await Promise.all(batch.map(mapper))));
+    }
+    return results;
+  }
+
   async loadIndexerDashboardEntries(
     identifiers: Array<string | undefined>,
     ctx: ContractsDashboardBuildContext,
@@ -726,13 +789,22 @@ export class ContractsDataService {
     );
 
     for (const rows of rowsByIdentifier) {
-      const entries = rows
+      const filteredRows = rows
         .filter((row) =>
           this.supportedIndexerTemplates.includes(
             this.getIndexerTemplateName(row),
           ),
-        )
-        .map((row) => this.indexerSummaryToDashboard(row, ctx));
+        );
+      const entries = await this.mapWithConcurrency(
+        filteredRows,
+        this.INDEXER_ACTION_FETCH_CONCURRENCY,
+        async (row) =>
+          this.indexerSummaryToDashboard(
+            row,
+            ctx,
+            await this.fetchLatestIndexerAction(row),
+          ),
+      );
       for (const entry of entries) {
         byKey.set(this.getDashboardIdentityKey(entry), entry);
       }
@@ -782,6 +854,14 @@ export class ContractsDataService {
         merged.delete(this.getDashboardIdentityKey(matchedLocal));
       }
 
+      const localActionAtMs =
+        local?.registryEntry?.lastActionType && local.registryEntry.lastActionAt
+          ? local.registryEntry.lastActionAt
+          : undefined;
+      const preferLocalLatest =
+        localActionAtMs !== undefined &&
+        localActionAtMs > (entry.latestActionAtMs ?? 0);
+
       merged.set(
         local?.id || key,
         this.withDashboardName(
@@ -791,8 +871,13 @@ export class ContractsDataService {
             source: local ? 'both' : entry.source,
             status: entry.status,
             amountSompi: entry.amountSompi,
-            latestTxid: entry.latestTxid,
-            latestAction: entry.latestAction,
+            latestTxid: preferLocalLatest ? local?.latestTxid : entry.latestTxid,
+            latestAction: preferLocalLatest
+              ? local?.latestAction
+              : entry.latestAction,
+            latestActionAtMs: preferLocalLatest
+              ? localActionAtMs
+              : entry.latestActionAtMs,
             participants: this.mergeParticipants(
               local?.participants,
               entry.participants,

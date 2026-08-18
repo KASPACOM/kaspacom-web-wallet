@@ -20,7 +20,6 @@ export type TabName =
   | 'templates'
   | 'detail';
 export type ContractDetailTab = 'details' | 'action';
-export type CreateMode = 'template' | 'custom';
 export type ContractsTransientState = {
   activeTab?: TabName;
   detailPanelTab?: ContractDetailTab;
@@ -84,6 +83,8 @@ export type ContractDashboardEntry = {
   deployTxid?: string;
   latestTxid?: string;
   latestAction?: string;
+  /** blockTimeMs or local timestamp for latestTxid/latestAction recency comparisons. */
+  latestActionAtMs?: number;
   deadlineMs?: number;
   participants: ContractParticipant[];
   nextActionLabel: string;

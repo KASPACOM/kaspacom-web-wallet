@@ -9,8 +9,8 @@
         Import a contract
       </h3>
       <p class="text-gray-60 typo-text-2" style="margin: 0">
-        Paste a shared link, covenant ID, script hash, deploy transaction, or
-        covenant address. Only wallet-supported templates can be imported.
+        Paste a covenant ID, script hash, deploy transaction, or covenant
+        address. Only wallet-supported templates can be imported.
       </p>
     </div>
     <div class="flex gap-8 align-items-end wrap">
@@ -127,55 +127,6 @@
           [text]="'Track this contract'"
           [isFullWidth]="true"
           (buttonClick)="importIndexerPreviewRequested.emit()"
-        ></kc-button>
-      </div>
-    }
-  </div>
-
-  <!-- Share a contract -->
-  <div class="panel flex column gap-20">
-    <div class="flex column gap-4">
-      <h3
-        class="text-white"
-        style="margin: 0; font-size: 16px; font-weight: 600"
-      >
-        Share a contract
-      </h3>
-      <p class="text-gray-60 typo-text-2" style="margin: 0">
-        A share link carries only the network and canonical covenant ID — never
-        private data or compiled JSON. Whoever opens it previews the contract
-        before tracking it.
-      </p>
-    </div>
-
-    @if (shareableContractOptions().length === 0) {
-      <div class="text-gray-60 typo-text-2 p-12">
-        No trackable contracts yet — deploy or import one first.
-      </div>
-    } @else {
-      <div class="field">
-        <label class="field-label">Contract</label>
-        <kc-dropdown-select
-          [options]="shareableContractOptions()"
-          [placeholder]="'Select a contract'"
-          [isFullWidth]="true"
-          [value]="effectiveShareableContractId()"
-          (valueChange)="onShareableContractChange($any($event))"
-        ></kc-dropdown-select>
-      </div>
-      <div class="flex gap-8 align-items-end wrap">
-        <div class="field" style="flex: 1">
-          <kc-input
-            [label]="'Share link'"
-            [type]="'text'"
-            [isDisabled]="true"
-            [ngModel]="shareableContractLink()"
-          ></kc-input>
-        </div>
-        <kc-button
-          [text]="'Copy'"
-          [isDisabled]="!shareableContractLink()"
-          (buttonClick)="copyShareableContractLinkRequested.emit()"
         ></kc-button>
       </div>
     }

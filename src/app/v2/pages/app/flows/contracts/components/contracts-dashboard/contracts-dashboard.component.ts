@@ -56,7 +56,6 @@ export class ContractsDashboardComponent {
 
   contractDetailsRequested = output<ContractDashboardEntry>();
   contractActionRequested = output<ContractDashboardEntry>();
-  shareRequested = output<ContractDashboardEntry>();
 
   aliasEditRequested = output<ContractDashboardEntry>();
   aliasEditCancelled = output<void>();

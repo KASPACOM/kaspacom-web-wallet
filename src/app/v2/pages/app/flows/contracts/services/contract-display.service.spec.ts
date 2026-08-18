@@ -1,16 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { ContractDisplayService } from './contract-display.service';
-import { RpcService } from '../../../../../../services/kaspa-netwrok-services/rpc.service';
 import { KaspaL1NetworkService } from '../../../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
 import { ContractDashboardEntry } from '../contracts-page.models';
 
 describe('ContractDisplayService', () => {
   let service: ContractDisplayService;
-  let rpcService: jasmine.SpyObj<RpcService>;
   let kaspaL1NetworkService: jasmine.SpyObj<KaspaL1NetworkService>;
 
   beforeEach(() => {
-    rpcService = jasmine.createSpyObj('RpcService', ['getNetwork']);
     kaspaL1NetworkService = jasmine.createSpyObj('KaspaL1NetworkService', [
       'getKaspaExplorerBaseurl',
       'getCovenantExplorerBaseurl',
@@ -19,11 +16,9 @@ describe('ContractDisplayService', () => {
       'https://explorer.kaspa.org',
     );
     kaspaL1NetworkService.getCovenantExplorerBaseurl.and.returnValue(undefined);
-    rpcService.getNetwork.and.returnValue('mainnet');
 
     TestBed.configureTestingModule({
       providers: [
-        { provide: RpcService, useValue: rpcService },
         { provide: KaspaL1NetworkService, useValue: kaspaL1NetworkService },
       ],
     });
@@ -229,15 +224,6 @@ describe('ContractDisplayService', () => {
 
     it('defaults when nothing matches', () => {
       expect(service.getTemplateKey({})).toBe('default');
-    });
-  });
-
-  describe('buildShareLink', () => {
-    it('builds a link carrying only the covenant id and network', () => {
-      const link = service.buildShareLink('cov123');
-      const url = new URL(link);
-      expect(url.pathname).toBe('/app/contracts/cov123');
-      expect(url.searchParams.get('network')).toBe('mainnet');
     });
   });
 });

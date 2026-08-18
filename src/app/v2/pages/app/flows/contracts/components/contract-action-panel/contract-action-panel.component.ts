@@ -9,10 +9,8 @@ import {
   signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Dialog } from '@angular/cdk/dialog';
-import { firstValueFrom } from 'rxjs';
 import {
   DropdownOption,
   KcButtonComponent,
@@ -42,10 +40,7 @@ import {
   PartialSpendJsonModalComponent,
 } from '../partial-spend-json-modal/partial-spend-json-modal.component';
 import { downloadJsonFile, readJsonFile } from '../../json-file.util';
-import {
-  CtorArg,
-  TemplatePatcherService,
-} from '../../../../../../services/covenant/template-patcher.service';
+import { TemplatePatcherService } from '../../../../../../services/covenant/template-patcher.service';
 import { WalletActionType } from '../../../../../../../types/wallet-action';
 import {
   CovenantCompletePartialActionResult,
@@ -67,7 +62,6 @@ import {
   ContractDetailState,
   AvailableAction,
   ActionIndexerState,
-  SELF_CUSTODY_WHITELIST_CAPACITY,
 } from '../../contracts-page.models';
 import { ContractDisplayService } from '../../services/contract-display.service';
 import { CovenantTemplateService } from '../../services/covenant-template.service';
@@ -99,7 +93,6 @@ export class ContractActionPanelComponent {
   private templatePatcher = inject(TemplatePatcherService);
   private templateService = inject(CovenantTemplateService);
   private contractsData = inject(ContractsDataService);
-  private http = inject(HttpClient);
   private approvalFlowService = inject(ApprovalFlowService);
   private flowPagesService = inject(FlowPagesService);
   private notificationService = inject(NotificationService);
@@ -108,8 +101,6 @@ export class ContractActionPanelComponent {
   private walletService = inject(WalletService);
   display = inject(ContractDisplayService);
   private shortenAddressPipe = new ShortenAddressPipe();
-
-  readonly selfCustodyWhitelistCapacity = SELF_CUSTODY_WHITELIST_CAPACITY;
 
   // ─── Shell-owned data, read-only from here ─────────────────────────
   selectedDetail = input<ContractDetailState | null>(null);
@@ -161,6 +152,7 @@ export class ContractActionPanelComponent {
   extraArgValues: { [paramName: string]: string } = {};
   importPartialJson = '';
   aliasDraft = '';
+  selectedCoSignerRole = '';
 
   // Bound to the shell's currentWalletAliasKey() — used only to recompute
   // aliasDraft the same way ContractsDashboardComponent does, so the two
@@ -288,6 +280,12 @@ export class ContractActionPanelComponent {
       contract.ast.functions.find((f) => f.name === entry.name && f.entrypoint),
     );
 
+    if (contract.contract_name === 'MultiSigVault') {
+      funcs = funcs.filter(
+        (entry) => !['spend12', 'spend13', 'spend23'].includes(entry.name),
+      );
+    }
+
     // Dead Man's Switch never exposes a generic "withdraw" — it was removed
     // from the template, but legacy on-chain contracts compiled while it was
     // briefly part of the template may still report it in their ABI. A
@@ -351,6 +349,7 @@ export class ContractActionPanelComponent {
   extraArgsForFunction(): Array<{ name: string; type_name: string }> {
     const contract = this.parsedInteractContract();
     if (!contract || !this.selectedFunction()) return [];
+    if (this.isPseudoAction(this.selectedFunction())) return [];
     const abiEntry = contract.abi.find(
       (e) => e.name === this.selectedFunction(),
     );
@@ -487,7 +486,8 @@ export class ContractActionPanelComponent {
     const txid = this.interactOutpointTxid();
     const vout = parseInt(this.interactOutpointVout(), 10);
     const inputAmountSompi = this.interactInputAmount();
-    const functionName = this.selectedFunction();
+    const selectedAction = this.selectedFunction();
+    const functionName = this.resolveSelectedFunctionName();
     let outputAddress =
       this.interactResolvedOutputAddress() || this.interactOutputAddress();
     const outputAmountKas = parseFloat(this.interactOutputAmount());
@@ -508,15 +508,27 @@ export class ContractActionPanelComponent {
       return;
     }
 
-    if (!functionName) {
+    if (!selectedAction) {
       this.interactError.set('Please select an entrypoint function');
+      return;
+    }
+
+    if (selectedAction === 'completePartial') {
+      await this.completePartialSpend();
+      return;
+    }
+
+    if (!functionName) {
+      this.interactError.set('Please select a co-signer wallet');
       return;
     }
 
     try {
       this.isInteracting.set(true);
 
-      const compiled = this.covenantService.parseCompiledContract(contractJson);
+      let compiled = this.covenantService.parseCompiledContract(contractJson);
+      compiled = this.hydrateSelfCustodyTn10FromIndexer(compiled);
+      const actionContractJson = JSON.stringify(compiled, null, 2);
       const outpoint: CovenantOutpoint = { txid: txid.trim(), vout };
       const inputAmount = BigInt(inputAmountSompi);
       const privateKey = wallet.getPrivateKey().toString();
@@ -561,7 +573,7 @@ export class ContractActionPanelComponent {
           },
         ];
         if (compiled.contract_name === 'SelfCustodyVault') {
-          transactionPayloadHex = this.buildSelfCustodyPayloadHex(compiled, 0);
+          useSenderFeeOverride = true;
           this.templateService.logSelfCustodyContractParams(
             'topUp continuation output',
             {
@@ -624,7 +636,7 @@ export class ContractActionPanelComponent {
         if (!this.isMultiSigFunction(functionName)) {
           const result = await this.runCovenantSpendAction(
             compiled,
-            contractJson,
+            actionContractJson,
             outpoint,
             inputAmount,
             functionName,
@@ -696,7 +708,16 @@ export class ContractActionPanelComponent {
       } else if (this.isDmsChangeHeir()) {
         await this.executeDmsChangeHeir(
           compiled,
-          contractJson,
+          actionContractJson,
+          outpoint,
+          inputAmount,
+          outputAddress,
+        );
+        return;
+      } else if (this.isTimeLockChangeRecovery()) {
+        await this.executeTimeLockChangeRecovery(
+          compiled,
+          actionContractJson,
           outpoint,
           inputAmount,
           outputAddress,
@@ -705,7 +726,7 @@ export class ContractActionPanelComponent {
       } else if (this.isSelfCustodyUnvault()) {
         await this.executeSelfCustodyUnvault(
           compiled,
-          contractJson,
+          actionContractJson,
           outpoint,
           inputAmount,
         );
@@ -750,12 +771,6 @@ export class ContractActionPanelComponent {
           ['emergencySweep', 'finalize'].includes(functionName)
         ) {
           const whitelist = this.getSelfCustodyInteractWhitelistWallets();
-          if (whitelist.length > this.selfCustodyWhitelistCapacity) {
-            this.interactError.set(
-              `This Self-Custody Vault has ${whitelist.length} whitelist addresses, but the current contract artifact supports ${this.selfCustodyWhitelistCapacity}. Recreate the vault with a supported whitelist before sweeping or finalizing.`,
-            );
-            return;
-          }
           if (whitelist.length > 0) {
             const destinationIndex = whitelist.findIndex(
               (address) => address === outputAddress,
@@ -771,7 +786,19 @@ export class ContractActionPanelComponent {
           } else {
             this.extraArgValues['destinationIndex'] = '0';
           }
-          outputs = [{ address: outputAddress, amount: inputAmount }];
+          if (isNaN(outputAmountKas) || outputAmountKas <= 0) {
+            this.interactError.set('Output amount must be greater than 0');
+            return;
+          }
+          const withdrawalAmount = BigInt(Math.floor(outputAmountKas * 1e8));
+          const withdrawalOutputs = this.buildWithdrawalOutputs(
+            compiled,
+            inputAmount,
+            outputAddress,
+            withdrawalAmount,
+          );
+          if (!withdrawalOutputs) return;
+          outputs = withdrawalOutputs;
           extraArgsOverride = this.collectExtraArgs(compiled, functionName);
           useSenderFeeOverride = true;
         } else {
@@ -808,7 +835,7 @@ export class ContractActionPanelComponent {
         // DMS keepAlive — delegate to the dedicated method which handles new-contract generation
         await this.executeDmsKeepAlive(
           compiled,
-          contractJson,
+          actionContractJson,
           outpoint,
           inputAmount,
         );
@@ -838,7 +865,7 @@ export class ContractActionPanelComponent {
           await this.walletActionService.validateAndApproveAction({
             type: WalletActionType.COVENANT_SPEND,
             data: {
-              compiledContractJson: contractJson,
+              compiledContractJson: actionContractJson,
               contractName: compiled.contract_name || 'Covenant',
               outpoint,
               inputAmountSompi: inputAmount,
@@ -879,7 +906,7 @@ export class ContractActionPanelComponent {
           detailPanelTab: this.detailPanelTab(),
           actionPageView: this.actionPageView(),
           selectedFunction: functionName,
-          interactContractJson: contractJson,
+          interactContractJson: actionContractJson,
           interactOutpointTxid: this.interactOutpointTxid(),
           interactOutpointVout: this.interactOutpointVout(),
           interactInputAmount: this.interactInputAmount(),
@@ -907,7 +934,7 @@ export class ContractActionPanelComponent {
 
       const result = await this.runCovenantSpendAction(
         compiled,
-        contractJson,
+        actionContractJson,
         outpoint,
         inputAmount,
         functionName,
@@ -1072,7 +1099,6 @@ export class ContractActionPanelComponent {
         nextScriptLength: nextCompiled.script?.length,
       },
     );
-    const payloadHex = this.buildSelfCustodyPayloadHex(nextCompiled, 1);
 
     const result = await this.runCovenantSpendAction(
       compiled,
@@ -1090,7 +1116,6 @@ export class ContractActionPanelComponent {
       undefined,
       covenantId,
       true,
-      payloadHex,
     );
     if (!result) return;
 
@@ -1361,6 +1386,120 @@ export class ContractActionPanelComponent {
     });
   }
 
+  private async executeTimeLockChangeRecovery(
+    compiled: CompiledContract,
+    contractJson: string,
+    outpoint: CovenantOutpoint,
+    inputAmount: bigint,
+    newRecoveryAddress: string,
+  ): Promise<void> {
+    this.interactError.set(null);
+
+    if (!newRecoveryAddress) {
+      this.interactError.set('New recovery wallet address is required');
+      return;
+    }
+
+    const covenantId = this.selectedContract()?.covenantId;
+    if (!covenantId) {
+      this.interactError.set(
+        'Cannot change recovery until this contract covenant ID is known. Refresh/import it from the indexer first.',
+      );
+      return;
+    }
+
+    let newRecovery: Uint8Array;
+    try {
+      newRecovery = Uint8Array.from(
+        this.templatePatcher.kaspaAddressToPubkeyBytes(newRecoveryAddress),
+      );
+    } catch {
+      this.interactError.set('Enter a valid new recovery wallet address');
+      return;
+    }
+
+    const owner = await this.extractTimeLockPubkeyHex(compiled, 'owner');
+    const ownerAddress = owner
+      ? this.templateService.pubkeyToAddress(owner)
+      : '';
+    const timeout = await this.templateService.extractTemplateIntField(
+      compiled,
+      'time-lock-vault',
+      'timeout',
+    );
+    if (!ownerAddress || timeout === undefined) {
+      this.interactError.set(
+        'Could not derive owner/timeout from contract script',
+      );
+      return;
+    }
+
+    const nextCompiled = await this.compileTimeLockContinuation({
+      ownerAddress,
+      recoveryAddress: newRecoveryAddress,
+      timeout,
+    });
+    const nextContractJson = JSON.stringify(nextCompiled, null, 2);
+    const nextContractAddress =
+      this.covenantService.getContractAddress(nextCompiled);
+    const payloadHex = this.buildTimeLockPayloadHex({
+      ownerAddress,
+      recoveryAddress: newRecoveryAddress,
+      timeout,
+    });
+
+    const result = await this.runCovenantSpendAction(
+      compiled,
+      contractJson,
+      outpoint,
+      inputAmount,
+      'changeRecovery',
+      [
+        {
+          address: nextContractAddress,
+          amount: inputAmount,
+          covenantId,
+        },
+      ],
+      { newRecovery },
+      covenantId,
+      true,
+      payloadHex,
+    );
+    if (!result) return;
+
+    this.interactResult.set({
+      txid: result.txid,
+      functionName: 'changeRecovery',
+    });
+
+    if (this.selectedContractId()) {
+      this.registryEntryUpdated.emit({
+        id: this.selectedContractId(),
+        updates: {
+          status: 'active',
+          compiledJson: nextContractJson,
+          contractAddress: nextContractAddress,
+          accessRoles: this.parseAccessRoles(nextCompiled),
+          outpoint: { txid: result.txid, vout: 0 },
+          amountSompi: inputAmount.toString(),
+          lastChecked: Date.now(),
+        },
+      });
+    }
+    this.interactContractJson.set(nextContractJson);
+    this.interactOutpointTxid.set(result.txid);
+    this.interactOutpointVout.set('0');
+    this.interactInputAmount.set(inputAmount.toString());
+    this.interactOutputAddress.set('');
+    this.interactResolvedOutputAddress.set(null);
+
+    this.actionIndexingRequested.emit({
+      txid: result.txid,
+      registryId: this.selectedContractId(),
+    });
+  }
+
   private async compileDmsContinuation(values: {
     ownerAddress: string;
     heirAddress: string;
@@ -1384,136 +1523,159 @@ export class ContractActionPanelComponent {
     ]) as CompiledContract;
   }
 
+  private async compileTimeLockContinuation(values: {
+    ownerAddress: string;
+    recoveryAddress: string;
+    timeout: bigint;
+  }): Promise<CompiledContract> {
+    const template = this.templateService.templateById('time-lock-vault');
+    if (!template) {
+      throw new Error('Time-Lock Vault template is unavailable');
+    }
+
+    const { compiled, descriptor } =
+      await this.templateService.getTemplatePatchContext(template.id);
+    return this.templatePatcher.applyPatch(compiled, descriptor, [
+      this.templateService.bytesArg(
+        this.templatePatcher.kaspaAddressToPubkeyBytes(values.ownerAddress),
+      ),
+      this.templateService.bytesArg(
+        this.templatePatcher.kaspaAddressToPubkeyBytes(values.recoveryAddress),
+      ),
+      this.templateService.intArg(Number(values.timeout)),
+    ]) as CompiledContract;
+  }
+
+  private hydrateSelfCustodyTn10FromIndexer(
+    compiled: CompiledContract,
+  ): CompiledContract {
+    if (compiled.contract_name !== 'SelfCustodyVault') {
+      return compiled;
+    }
+
+    const existingArgs = this.contractsData.normalizeIndexerArgs(
+      compiled.tn10?.args,
+    );
+    const existingValues = this.templateService.argsArrayToRecord(existingArgs);
+    if (existingValues['unvaultDelaySeconds']) {
+      return compiled;
+    }
+
+    const indexerArgs = this.getSelectedSelfCustodyIndexerArgs();
+    const indexerValues = this.templateService.argsArrayToRecord(indexerArgs);
+    if (!indexerValues['unvaultDelaySeconds']) {
+      return compiled;
+    }
+
+    const tn10Args =
+      indexerValues['hotKey'] && indexerValues['coldKey']
+        ? this.templateService.buildSelfCustodyArgsPayload({
+            hotKey: indexerValues['hotKey'],
+            coldKey: indexerValues['coldKey'],
+            whitelistMode: indexerValues['whitelistMode'] || '',
+            whitelistedDestinations:
+              indexerValues['whitelistedDestinations'] || '',
+            whitelistedDestinations_mode:
+              indexerValues['whitelistMode'] === 'whitelist'
+                ? 'whitelist'
+                : indexerValues['whitelistedDestinations']
+                  ? 'whitelist'
+                  : 'anywhere',
+            unvaultDelaySeconds: indexerValues['unvaultDelaySeconds'],
+            initPhase: indexerValues['initPhase'] || '0',
+          })
+        : indexerArgs;
+
+    return {
+      ...compiled,
+      tn10: {
+        v: compiled.tn10?.v || 1,
+        tmpl: compiled.tn10?.tmpl || 'SelfCustodyVault',
+        args: tn10Args,
+      },
+    } as CompiledContract;
+  }
+
+  private getSelectedSelfCustodyIndexerArgs(): Array<{
+    name: string;
+    type: string;
+    value: string;
+  }> {
+    const detail = this.selectedDetail();
+    return this.contractsData.normalizeIndexerArgs(
+      detail?.response?.covenant?.claimedArgs?.args ||
+        detail?.entry.indexerSummary?.claimedArgs?.args ||
+        [],
+    );
+  }
+
   private async compileSelfCustodyContinuation(
     currentCompiled: CompiledContract,
     phase: number,
   ): Promise<CompiledContract> {
-    const template = this.templateService.templateById('self-custody-vault');
-    if (!template) {
-      throw new Error('Self-Custody Vault template is unavailable');
-    }
-
-    const baseCompiled = await firstValueFrom(
-      this.http.get<any>(template.assetPath),
-    );
-    const descriptor = this.templatePatcher.extractPatchDescriptor(
-      baseCompiled,
-      template.placeholderArgs,
-    );
-
-    const pushDataPayload = (bytes: number[], name: string): number[] => {
-      const opcode = bytes[0];
-      let headerLength = 1;
-      let payloadLength = opcode;
-      if (opcode === 76) {
-        headerLength = 2;
-        payloadLength = bytes[1];
-      } else if (opcode === 77) {
-        headerLength = 3;
-        payloadLength = bytes[1] | (bytes[2] << 8);
-      } else if (opcode > 75) {
-        throw new Error(`Unsupported pushdata opcode for ${name}`);
-      }
-
-      return bytes.slice(headerLength, headerLength + payloadLength);
-    };
-
-    const bytesArgFor = (name: string): CtorArg => {
-      const param = descriptor.params.find((entry) => entry.name === name);
-      const position = param?.positions[0];
-      if (!param || !position) {
-        throw new Error(`Self-Custody Vault template is missing ${name}`);
-      }
-
-      const bytes = currentCompiled.script.slice(
-        position.offset,
-        position.offset + position.length,
-      );
-      return this.templateService.bytesArg(
-        param.paramType === 'pubkey[]' ? pushDataPayload(bytes, name) : bytes,
-      );
-    };
-
-    const currentArgs = this.templateService.argsArrayToRecord(
-      currentCompiled.tn10?.args || [],
-    );
-    const currentDelaySeconds = Number(currentArgs['unvaultDelaySeconds']);
-    const delaySeconds = Number.isFinite(currentDelaySeconds)
-      ? BigInt(currentDelaySeconds)
-      : ((await this.templateService.extractTemplateIntField(
-          currentCompiled,
-          'self-custody-vault',
-          'initUnvaultDelaySeconds',
-        )) ??
-        (await this.templateService.extractTemplateIntField(
-          currentCompiled,
-          'self-custody-vault',
-          'unvaultDelaySeconds',
-        )));
-
-    if (delaySeconds === undefined) {
-      throw new Error('Could not read Self-Custody Vault state from template');
-    }
-
-    const hasSavedSelfCustodyArgs = Boolean(
-      currentArgs['hotKey'] || currentArgs['coldKey'],
-    );
-    const currentValues = {
-      hotKey: currentArgs['hotKey'] || '',
-      coldKey: currentArgs['coldKey'] || '',
-      whitelistedDestinations: currentArgs['whitelistedDestinations'] || '',
-      whitelistedDestinations_mode:
-        currentArgs['whitelistMode'] === 'whitelist' ? 'whitelist' : 'anywhere',
-      initUnvaultDelaySeconds: String(delaySeconds),
-      initPhase: String(phase),
-    };
-    const constructorArgs = [
-      hasSavedSelfCustodyArgs
-        ? this.templateService.bytesArg(
-            this.templatePatcher.kaspaAddressToPubkeyBytes(
-              currentValues.hotKey,
-            ),
-          )
-        : bytesArgFor('hotKey'),
-      hasSavedSelfCustodyArgs
-        ? this.templateService.bytesArg(
-            this.templatePatcher.kaspaAddressToPubkeyBytes(
-              currentValues.coldKey,
-            ),
-          )
-        : bytesArgFor('coldKey'),
-      hasSavedSelfCustodyArgs
-        ? this.templateService.pubkeyListArg(
-            'whitelistedDestinations',
-            currentValues,
-          )
-        : bytesArgFor('whitelistedDestinations'),
-      hasSavedSelfCustodyArgs
-        ? this.templateService.intArg(
-            this.templateService.getWhitelistCountFromValues(currentValues),
-          )
-        : bytesArgFor('whitelistCount'),
-      this.templateService.intArg(Number(delaySeconds)),
-      this.templateService.intArg(phase),
-    ];
-    const patched = this.templatePatcher.applyPatch(baseCompiled, descriptor, [
-      ...constructorArgs,
-    ]) as CompiledContract;
-    patched.tn10 = {
-      v: 1,
-      tmpl: 'SelfCustodyVault',
-      args: this.templateService.buildSelfCustodyArgsPayload(currentValues),
-    };
+    const patched = this.patchSelfCustodyPhase(currentCompiled, phase);
     this.templateService.logSelfCustodyContractParams('compiled continuation', {
       phase,
       currentTn10: currentCompiled.tn10,
       nextTn10: patched.tn10,
-      delaySeconds,
-      constructorArgs,
       currentAddress: this.covenantService.getContractAddress(currentCompiled),
       nextAddress: this.covenantService.getContractAddress(patched),
+      currentScriptLength: currentCompiled.script?.length,
       scriptLength: patched.script?.length,
     });
+
+    return patched;
+  }
+
+  private patchSelfCustodyPhase(
+    currentCompiled: CompiledContract,
+    phase: number,
+  ): CompiledContract {
+    const stateLayout = (currentCompiled as any).state_layout;
+    const stateStart = stateLayout?.start;
+    const stateLength = stateLayout?.len;
+    if (
+      !Number.isInteger(stateStart) ||
+      !Number.isInteger(stateLength) ||
+      stateLength < 9
+    ) {
+      throw new Error('Self-Custody Vault state layout is missing phase bytes');
+    }
+
+    const script = [...currentCompiled.script];
+    if (script[stateStart] !== 8) {
+      throw new Error('Unsupported Self-Custody Vault phase state encoding');
+    }
+
+    const phaseBytes = this.templatePatcher.encodeFixedInt(phase, 8);
+    script.splice(stateStart + 1, 8, ...phaseBytes);
+
+    const patched = {
+      ...currentCompiled,
+      script,
+      tn10: currentCompiled.tn10
+        ? JSON.parse(JSON.stringify(currentCompiled.tn10))
+        : undefined,
+    } as CompiledContract;
+
+    if (patched.tn10) {
+      if (Array.isArray(patched.tn10.args)) {
+        const phaseArg = patched.tn10.args.find(
+          (arg: any) => arg?.name === 'initPhase',
+        );
+        if (phaseArg) {
+          phaseArg.value = String(phase);
+        } else {
+          patched.tn10.args.push({
+            name: 'initPhase',
+            type: 'int',
+            value: String(phase),
+          });
+        }
+      } else if (patched.tn10.args && typeof patched.tn10.args === 'object') {
+        patched.tn10.args.p = String(phase);
+      }
+    }
 
     return patched;
   }
@@ -1544,6 +1706,32 @@ export class ContractActionPanelComponent {
     );
   }
 
+  private async extractTimeLockPubkeyHex(
+    compiled: CompiledContract,
+    field: 'owner' | 'recovery',
+  ): Promise<string | undefined> {
+    if (field === 'owner') {
+      return this.templateService.extractTemplatePubkeyHex(
+        compiled,
+        'time-lock-vault',
+        'owner',
+      );
+    }
+
+    return (
+      (await this.templateService.extractTemplatePubkeyHex(
+        compiled,
+        'time-lock-vault',
+        'initRecovery',
+      )) ||
+      (await this.templateService.extractTemplatePubkeyHex(
+        compiled,
+        'time-lock-vault',
+        'recovery',
+      ))
+    );
+  }
+
   private buildDmsPayloadHex(values: {
     ownerAddress: string;
     heirAddress: string;
@@ -1568,41 +1756,32 @@ export class ContractActionPanelComponent {
     );
   }
 
-  private buildSelfCustodyPayloadHex(
-    compiled: CompiledContract,
-    initPhaseOverride?: number,
-  ): string {
-    if (!compiled.tn10) {
-      throw new Error(
-        'Self-Custody Vault continuation is missing TN10 metadata',
-      );
-    }
-    const tn10 = JSON.parse(JSON.stringify(compiled.tn10));
-    if (initPhaseOverride !== undefined) {
-      if (Array.isArray(tn10.args)) {
-        const phaseArg = tn10.args.find(
-          (arg: any) => arg?.name === 'initPhase',
-        );
-        if (phaseArg) {
-          phaseArg.value = String(initPhaseOverride);
-        } else {
-          tn10.args.push({
-            name: 'initPhase',
-            type: 'int',
-            value: String(initPhaseOverride),
-          });
-        }
-      } else if (tn10.args && typeof tn10.args === 'object') {
-        tn10.args.p = String(initPhaseOverride);
-      }
-    }
-    const payloadJson = JSON.stringify({ tn10 });
-    console.log('[SelfCustodyVault] transaction payload', {
-      initPhaseOverride,
-      payloadJson,
-      payloadHex: this.stringToHex(payloadJson),
-    });
-    return this.stringToHex(payloadJson);
+  private buildTimeLockPayloadHex(values: {
+    ownerAddress: string;
+    recoveryAddress: string;
+    timeout: bigint;
+  }): string {
+    return this.stringToHex(
+      JSON.stringify({
+        tn10: {
+          v: 1,
+          tmpl: 'TimeLockVault',
+          args: [
+            { name: 'signer', type: 'address', value: values.ownerAddress },
+            {
+              name: 'recoveryKey',
+              type: 'address',
+              value: values.recoveryAddress,
+            },
+            {
+              name: 'unlockBlueScore',
+              type: 'blueScore',
+              value: values.timeout.toString(),
+            },
+          ],
+        },
+      }),
+    );
   }
 
   private stringToHex(value: string): string {
@@ -1743,7 +1922,7 @@ export class ContractActionPanelComponent {
 
   /**
    * Field config for whatever function is currently selected. Null for
-   * generic/custom contracts with no curated actionMetaTable entry — those
+   * generic/unrecognized contracts with no curated actionMetaTable entry — those
    * keep rendering the old manual/ABI-driven chain instead of this form.
    */
   getSelectedActionFieldConfig(): ActionFieldConfigEntry | null {
@@ -1761,7 +1940,11 @@ export class ContractActionPanelComponent {
     this.interactError.set(null);
     this.interactResult.set(null);
     this.partialSpendJson.set(null);
+    this.partialCompleteError.set(null);
+    this.partialCompleteResult.set(null);
+    this.importPartialJson = '';
     this.extraArgValues = {};
+    this.selectedCoSignerRole = '';
     this.dmsNewExpiry = '';
     this.topUpAmount.set('');
   }
@@ -1775,6 +1958,8 @@ export class ContractActionPanelComponent {
       spend12: '2-of-3 Withdraw (Signer 1 + 2)',
       spend13: '2-of-3 Withdraw (Signer 1 + 3)',
       spend23: '2-of-3 Withdraw (Signer 2 + 3)',
+      initiateWithdrawal: 'Initiate Withdrawal',
+      completePartial: 'Sign & Broadcast',
       withdraw: 'Withdraw',
       recover: 'Recovery Withdraw',
       claim: 'Claim',
@@ -1785,6 +1970,7 @@ export class ContractActionPanelComponent {
       execute: 'Execute',
       topUp: 'Top Up',
       changeHeir: 'Change Heir',
+      changeRecovery: 'Change Recovery',
       unvault: 'Start Unvault',
       emergencySweep: 'Emergency Sweep',
       finalize: 'Finalize',
@@ -1803,6 +1989,8 @@ export class ContractActionPanelComponent {
     const contextual: Record<string, Record<string, string>> = {
       timelockvault: {
         spend: 'Withdraw your locked funds immediately using the owner key.',
+        changeRecovery:
+          'Change the backup wallet that can recover after the timelock expires.',
         recover:
           'Emergency recovery using the backup key. Only available after the timelock expires.',
       },
@@ -1821,6 +2009,10 @@ export class ContractActionPanelComponent {
           'Cancel the escrow and return funds to the sender. May require timelock expiry.',
       },
       multisigvault: {
+        initiateWithdrawal:
+          'Choose which co-signer wallet should complete the withdrawal.',
+        completePartial:
+          'Paste a partial withdrawal JSON from another signer, add your signature, and broadcast.',
         spend12:
           'Withdraw using 2-of-3 multi-sig. Requires signatures from Signer 1 and Signer 2.',
         spend13:
@@ -1863,6 +2055,8 @@ export class ContractActionPanelComponent {
         'Emergency withdrawal using the recovery key. Only available after the timelock expires.',
       claim: 'Claim the funds locked in this contract.',
       release: 'Release the locked funds to the designated recipient.',
+      completePartial:
+        'Paste a partial transaction JSON, add your signature, and broadcast.',
       refund: 'Return the locked funds to the original sender.',
       increment:
         'Update the on-chain state. The contract is re-deployed with new values.',
@@ -1871,6 +2065,7 @@ export class ContractActionPanelComponent {
       execute: "Execute this contract's logic.",
       topUp:
         'Add KAS to this covenant by spending the current covenant UTXO and recreating it with the same covenant ID.',
+      changeRecovery: 'Re-deploy the contract with an updated recovery wallet.',
       unvault:
         'Move the vault into its delayed withdrawal phase without sending funds externally.',
       emergencySweep: 'Withdraw with the cold wallet.',
@@ -2218,6 +2413,12 @@ export class ContractActionPanelComponent {
       .includes('deadman');
   }
 
+  isTimeLockChangeRecovery(): boolean {
+    const contract = this.parsedInteractContract();
+    if (!contract || this.selectedFunction() !== 'changeRecovery') return false;
+    return contract.contract_name === 'TimeLockVault';
+  }
+
   isSelfCustodyUnvault(): boolean {
     const contract = this.parsedInteractContract();
     return (
@@ -2244,6 +2445,7 @@ export class ContractActionPanelComponent {
    * Check if the selected function requires multiple signers (two-phase signing)
    */
   isMultiSigFunction(fnName: string): boolean {
+    if (fnName === 'initiateWithdrawal') return true;
     const contract = this.parsedInteractContract();
     if (!contract) return false;
     const abiEntry = contract.abi.find((e) => e.name === fnName);
@@ -2251,17 +2453,84 @@ export class ContractActionPanelComponent {
     return abiEntry.inputs.filter((i) => i.type_name === 'sig').length > 1;
   }
 
-  /**
-   * Whether this contract has *any* multi-sig entrypoint — gates the
-   * "Complete co-signer transaction" section, which is only relevant for
-   * contracts that can produce a partial spend in the first place (e.g. a
-   * plain Dead Man's Switch or single-sig Escrow release has nothing for a
-   * co-signer to complete).
-   */
-  contractHasMultiSigFunction(): boolean {
-    return this.availableFunctions().some((fn) =>
-      this.isMultiSigFunction(fn.name),
+  isPseudoAction(fnName: string): boolean {
+    return fnName === 'initiateWithdrawal' || fnName === 'completePartial';
+  }
+
+  isCompletePartialAction(
+    fnName: string | undefined = this.selectedFunction(),
+  ): boolean {
+    return fnName === 'completePartial';
+  }
+
+  isInitiateWithdrawalAction(
+    fnName: string | undefined = this.selectedFunction(),
+  ): boolean {
+    return fnName === 'initiateWithdrawal';
+  }
+
+  private getCurrentSignerRole(): 'Signer 1' | 'Signer 2' | 'Signer 3' | '' {
+    const detail = this.selectedDetail();
+    const wallet = this.currentWallet();
+    if (!detail || !wallet) return '';
+
+    const walletValues = new Set<string>(
+      [
+        wallet.getAddress(),
+        wallet.getPrivateKey().toPublicKey().toXOnlyPublicKey().toString(),
+      ]
+        .filter(Boolean)
+        .map((value) => value.toLowerCase()),
     );
+
+    const signer = (detail.entry.participants || []).find((participant) => {
+      if (!['Signer 1', 'Signer 2', 'Signer 3'].includes(participant.label)) {
+        return false;
+      }
+      const values = [participant.value, ...(participant.matchValues || [])]
+        .filter(Boolean)
+        .map((value) => value.toLowerCase());
+      return values.some((value) => walletValues.has(value));
+    });
+
+    return (signer?.label as 'Signer 1' | 'Signer 2' | 'Signer 3') || '';
+  }
+
+  private getParticipantValueForRole(role: string): string {
+    const participant = (this.selectedDetail()?.entry.participants || []).find(
+      (entry) => entry.label === role,
+    );
+    return participant?.value || role;
+  }
+
+  coSignerOptions(): DropdownOption[] {
+    const currentSigner = this.getCurrentSignerRole();
+    return ['Signer 1', 'Signer 2', 'Signer 3']
+      .filter((role) => role !== currentSigner)
+      .map((role) => ({
+        value: role,
+        label: `${this.getParticipantValueForRole(role)} (${role})`,
+      }));
+  }
+
+  onCoSignerChange(value: unknown) {
+    this.selectedCoSignerRole = value ? String(value) : '';
+    this.interactError.set(null);
+  }
+
+  private resolveSelectedFunctionName(): string {
+    const selected = this.selectedFunction();
+    if (selected !== 'initiateWithdrawal') return selected;
+
+    const currentSigner = this.getCurrentSignerRole();
+    const coSigner = this.selectedCoSignerRole;
+    const pair = [currentSigner, coSigner].sort().join('|');
+    const map: Record<string, string> = {
+      'Signer 1|Signer 2': 'spend12',
+      'Signer 1|Signer 3': 'spend13',
+      'Signer 2|Signer 3': 'spend23',
+    };
+    return map[pair] || '';
   }
 
   /**
@@ -2271,9 +2540,11 @@ export class ContractActionPanelComponent {
   functionRequiresOutput(fnName: string): boolean {
     return (
       !!fnName &&
+      fnName !== 'completePartial' &&
       !this.REDEPLOY_FUNCTIONS.has(fnName) &&
       !this.isTopUpFunction(fnName) &&
-      !this.isDmsChangeHeir()
+      !this.isDmsChangeHeir() &&
+      !this.isTimeLockChangeRecovery()
     );
   }
 
@@ -2304,7 +2575,7 @@ export class ContractActionPanelComponent {
       return 'Disabled for multi-sig signing. The contract must pay fees because wallet fee inputs would change the transaction after signatures are created.';
     }
     if (this.isSelfCustodySweepAction(fnName)) {
-      return 'Required for Self-Custody sweep/finalize. The covenant requires the withdrawal output to keep the full input value, so fees must be paid by the wallet.';
+      return 'Required for Self-Custody sweep/finalize. The covenant requires exact withdrawal and continuation outputs, so fees must be paid by the wallet.';
     }
     if (this.isTopUpFunction(fnName || '')) {
       return 'When enabled, fees are paid from wallet change. When disabled, fees are deducted from the top-up output.';
@@ -2319,8 +2590,14 @@ export class ContractActionPanelComponent {
     const args = this.templateService.argsArrayToRecord(
       this.contractsData.normalizeIndexerArgs(contract.tn10?.args),
     );
-    const mode = String(args['whitelistMode'] || '').toLowerCase();
-    const raw = args['whitelistedDestinations'];
+    const sourceArgs =
+      args['unvaultDelaySeconds'] || args['whitelistedDestinations']
+        ? args
+        : this.templateService.argsArrayToRecord(
+            this.getSelectedSelfCustodyIndexerArgs(),
+          );
+    const mode = String(sourceArgs['whitelistMode'] || '').toLowerCase();
+    const raw = sourceArgs['whitelistedDestinations'];
     if (mode && mode !== 'whitelist') return [];
     if (!raw) return [];
 
@@ -2373,9 +2650,18 @@ export class ContractActionPanelComponent {
     this.interactResult.set(null);
     this.interactIndexerState.set(null);
     this.partialSpendJson.set(null);
+    this.partialCompleteError.set(null);
+    this.partialCompleteResult.set(null);
+    this.importPartialJson = '';
     this.extraArgValues = {};
+    this.selectedCoSignerRole = '';
     this.dmsNewExpiry = '';
     this.topUpAmount.set('');
+    if (this.isInitiateWithdrawalAction(name)) {
+      this.selectedCoSignerRole = String(
+        this.coSignerOptions()[0]?.value || '',
+      );
+    }
     if (
       ['emergencySweep', 'finalize'].includes(name) &&
       this.parsedInteractContract()?.contract_name === 'SelfCustodyVault'
@@ -2388,7 +2674,11 @@ export class ContractActionPanelComponent {
       }
     }
 
-    if (this.isTopUpFunction(name) || this.isDmsChangeHeir()) {
+    if (
+      this.isTopUpFunction(name) ||
+      this.isDmsChangeHeir() ||
+      this.isTimeLockChangeRecovery()
+    ) {
       this.interactOutputAddress.set('');
       this.interactOutputAmount.set('');
     } else if (this.functionRequiresOutput(name)) {

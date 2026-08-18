@@ -22,7 +22,6 @@ export interface TemplateField {
     | 'int_timestamp'
     | 'int_count'
     | 'int_hidden'
-    | 'whitelist_count'
     | 'hash32';
   placeholder: string;
   description: string;
@@ -46,7 +45,7 @@ const pubkeyArrayArg = (pubkeys: number[][]): CtorArg => ({
 });
 
 const selfCustodyWhitelistPlaceholderPubkeys = Array.from(
-  { length: 10 },
+  { length: 2 },
   (_slot, slotIndex) => new Array<number>(32).fill(128 + slotIndex),
 );
 
@@ -84,15 +83,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
           'Optional list of recipient wallets. Choose send anywhere or restrict withdrawals to this list.',
       },
       {
-        paramName: 'whitelistCount',
-        label: 'Whitelist count',
-        type: 'whitelist_count',
-        placeholder: '',
-        description: 'Internal number of active whitelist entries.',
-        hidden: true,
-      },
-      {
-        paramName: 'initUnvaultDelaySeconds',
+        paramName: 'unvaultDelaySeconds',
         label: 'Unvault delay (DAA)',
         type: 'int_daa_delay',
         placeholder: '864000',
@@ -118,7 +109,6 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
         98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
       ]),
       pubkeyArrayArg(selfCustodyWhitelistPlaceholderPubkeys),
-      intArg(1),
       intArg(86400),
       intArg(0),
     ],

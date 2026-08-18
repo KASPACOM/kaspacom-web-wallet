@@ -159,25 +159,100 @@
         }
       </div>
 
-      <app-contract-action-fields
-        [fields]="selectedActionFields.fields"
-        [isDisabled]="isInteracting()"
-        [addressValue]="interactOutputAddress()"
-        [amountValue]="
-          isTopUpFunction(selectedFunction())
-            ? topUpAmount()
-            : interactOutputAmount()
-        "
-        [timestampValue]="dmsNewExpiry"
-        [extraArgValues]="extraArgValues"
-        (addressChange)="onGenericAddressChange($event)"
-        (addressResolved)="onGenericAddressResolved($event)"
-        (addressQrClick)="onGenericAddressQrClick()"
-        (amountChange)="onGenericAmountChange($event)"
-        (amountMaxClick)="onGenericAmountMaxClick()"
-        (timestampChange)="onGenericTimestampChange($event)"
-        (extraArgChange)="onGenericExtraArgChange($event)"
-      ></app-contract-action-fields>
+      @if (isInitiateWithdrawalAction()) {
+        <div class="form-group flex column gap-8">
+          <label class="field-label">Co-signer wallet</label>
+          <kc-dropdown-select
+            [options]="coSignerOptions()"
+            [placeholder]="'Select co-signer'"
+            [isFullWidth]="true"
+            [isDisabled]="isInteracting()"
+            [value]="selectedCoSignerRole"
+            (valueChange)="onCoSignerChange($event)"
+          ></kc-dropdown-select>
+          <span class="text-gray-60 typo-text-2">
+            The wallet will use the correct 2-of-3 withdrawal function for your
+            signer role and the selected co-signer.
+          </span>
+        </div>
+      }
+
+      @if (isCompletePartialAction()) {
+        <div class="flex column gap-12">
+          <span class="text-gray-75 typo-text-2"
+            >Paste the partial spend JSON received from the co-signer, or
+            import it from a file. Your signature will be added and the
+            transaction broadcast.</span
+          >
+          <textarea
+            class="contract-input"
+            rows="6"
+            placeholder="Paste partial spend JSON from co-signer"
+            [(ngModel)]="importPartialJson"
+            [disabled]="isCompletingPartial()"
+          ></textarea>
+          <kc-button
+            [text]="'Import JSON file'"
+            [variant]="'secondary'"
+            [isDisabled]="isCompletingPartial()"
+            [isFullWidth]="true"
+            (buttonClick)="importPartialSpendFromFile()"
+          ></kc-button>
+          <kc-button
+            [text]="
+              isCompletingPartial() ? 'Completing...' : 'Sign & broadcast'
+            "
+            [isDisabled]="isCompletingPartial() || !importPartialJson"
+            [isFullWidth]="true"
+            (buttonClick)="completePartialSpend()"
+          ></kc-button>
+          @if (partialCompleteError()) {
+            <div class="error-message">{{ partialCompleteError() }}</div>
+          }
+          @if (partialCompleteResult()) {
+            <div class="result-panel">
+              <h3 class="text-white typo-text-1 fw-bold">Transaction sent</h3>
+              <div class="flex column gap-4">
+                <span class="text-gray-60 typo-text-1">Transaction</span>
+                <div class="flex align-items-center gap-8">
+                  <a
+                    [href]="getExplorerLink(partialCompleteResult()!.txid)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-blue typo-text-2 text-truncate"
+                    >{{ partialCompleteResult()!.txid }}</a
+                  ><app-copy-button
+                    [value]="partialCompleteResult()!.txid"
+                    [size]="'sm'"
+                  ></app-copy-button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      @if (!isCompletePartialAction()) {
+        <app-contract-action-fields
+          [fields]="selectedActionFields.fields"
+          [isDisabled]="isInteracting()"
+          [addressValue]="interactOutputAddress()"
+          [amountValue]="
+            isTopUpFunction(selectedFunction())
+              ? topUpAmount()
+              : interactOutputAmount()
+          "
+          [timestampValue]="dmsNewExpiry"
+          [extraArgValues]="extraArgValues"
+          (addressChange)="onGenericAddressChange($event)"
+          (addressResolved)="onGenericAddressResolved($event)"
+          (addressQrClick)="onGenericAddressQrClick()"
+          (amountChange)="onGenericAmountChange($event)"
+          (amountMaxClick)="onGenericAmountMaxClick()"
+          (timestampChange)="onGenericTimestampChange($event)"
+          (extraArgChange)="onGenericExtraArgChange($event)"
+        ></app-contract-action-fields>
+      }
 
       @if (!selectedActionFields.suppressGenericExtraArgs) {
         @for (arg of extraArgsForFunction(); track arg.name) {
@@ -228,64 +303,6 @@
         </div>
       }
 
-      @if (isMultiSigFunction(selectedFunction())) {
-        <details class="advanced-section">
-          <summary>Complete co-signer transaction</summary>
-          <div class="adv-body">
-            <span class="text-gray-75 typo-text-2"
-              >Paste the partial spend JSON received from the co-signer, or
-              import it from a file. Your signature will be added and the
-              transaction broadcast.</span
-            >
-            <textarea
-              class="contract-input"
-              rows="4"
-              placeholder="Paste partial spend JSON from co-signer"
-              [(ngModel)]="importPartialJson"
-              [disabled]="isCompletingPartial()"
-            ></textarea>
-            <kc-button
-              [text]="'Import JSON file'"
-              [variant]="'secondary'"
-              [isDisabled]="isCompletingPartial()"
-              [isFullWidth]="true"
-              (buttonClick)="importPartialSpendFromFile()"
-            ></kc-button>
-            <kc-button
-              [text]="
-                isCompletingPartial() ? 'Completing...' : 'Sign & broadcast'
-              "
-              [isDisabled]="isCompletingPartial() || !importPartialJson"
-              [isFullWidth]="true"
-              (buttonClick)="completePartialSpend()"
-            ></kc-button>
-            @if (partialCompleteError()) {
-              <div class="error-message">{{ partialCompleteError() }}</div>
-            }
-            @if (partialCompleteResult()) {
-              <div class="result-panel">
-                <h3 class="text-white typo-text-1 fw-bold">Transaction sent</h3>
-                <div class="flex column gap-4">
-                  <span class="text-gray-60 typo-text-1">Transaction</span>
-                  <div class="flex align-items-center gap-8">
-                    <a
-                      [href]="getExplorerLink(partialCompleteResult()!.txid)"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="text-blue typo-text-2 text-truncate"
-                      >{{ partialCompleteResult()!.txid }}</a
-                    ><app-copy-button
-                      [value]="partialCompleteResult()!.txid"
-                      [size]="'sm'"
-                    ></app-copy-button>
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
-        </details>
-      }
-
       @if (interactError()) {
         <div class="error-message">{{ interactError() }}</div>
       }
@@ -316,6 +333,7 @@
         </div>
       }
 
+      @if (!isCompletePartialAction()) {
       <div class="form-group flex align-items-center gap-8">
         <label class="flex align-items-center gap-8 cursor-pointer m-0"
           ><input
@@ -344,6 +362,7 @@
           </span>
         }
       </div>
+      }
       @if (isMultiSigFunction(selectedFunction())) {
         <div
           class="p-12 rounded-lg"
@@ -384,11 +403,13 @@
         >
           <span class="text-yellow typo-text-2">
             Self-Custody sweep/finalize must pay fees from the wallet because
-            the withdrawal output must keep the full contract input value.
+            the withdrawal and continuation outputs must match the contract
+            input value exactly.
           </span>
         </div>
       }
 
+      @if (!isCompletePartialAction()) {
       <kc-button
         [text]="
           isInteracting()
@@ -401,6 +422,7 @@
         [isFullWidth]="true"
         (buttonClick)="interactContract()"
       ></kc-button>
+      }
     }
   </div>
 }
@@ -698,6 +720,36 @@
         </div>
       }
 
+      @if (isTimeLockChangeRecovery()) {
+        <div class="form-group flex column gap-8">
+          <app-address-smart-input
+            [label]="'New Recovery Wallet'"
+            [placeholder]="'Enter recovery wallet address or KNS domain'"
+            [isFullWidth]="true"
+            [isValid]="true"
+            [invalidReason]="''"
+            [isDisabled]="isInteracting()"
+            [value]="interactOutputAddress()"
+            (valueChange)="onInteractOutputAddressChange($event)"
+            (resolved)="onInteractOutputAddressResolved($event)"
+            (qrClick)="onInteractOutputQrClick()"
+          >
+          </app-address-smart-input>
+        </div>
+
+        <div
+          class="p-12 rounded-lg"
+          style="
+            background: rgba(111, 199, 186, 0.08);
+            border: 1px solid rgba(111, 199, 186, 0.2);
+          "
+        >
+          <span class="text-gray-75 typo-text-2">
+            Funds stay locked in the covenant. Only the recovery wallet changes.
+          </span>
+        </div>
+      }
+
       @if (selectedFunction() && isTopUpFunction(selectedFunction())) {
         <div class="form-group flex column gap-8">
           <kc-number-input
@@ -764,8 +816,7 @@
               </ng-template>
             </kc-dropdown-select>
             <span class="text-gray-60 typo-text-2">
-              The full vault balance will be sent to the selected whitelisted
-              wallet.
+              Funds will be sent to the selected whitelisted wallet.
             </span>
           </div>
         } @else {
@@ -783,10 +834,31 @@
               (qrClick)="onInteractOutputQrClick()"
             ></app-address-smart-input>
             <span class="text-gray-60 typo-text-2">
-              The full vault balance will be sent to this wallet.
+              Funds will be sent to this wallet.
             </span>
           </div>
         }
+
+        <div class="form-group flex column gap-8">
+          <kc-number-input
+            [label]="'Withdraw amount (KAS)'"
+            [placeholder]="'0'"
+            [min]="'0'"
+            [isDisabled]="isInteracting()"
+            [ngModel]="interactOutputAmount()"
+            (valueChange)="onInteractOutputAmountChange($event)"
+          >
+            <div
+              (click)="!isInteracting() && fillMaxOutputAmount()"
+              [class]="
+                isInteracting() ? 'max-text disabled' : 'max-text clickable'
+              "
+              rightSideSlot
+            >
+              <span>Max</span>
+            </div>
+          </kc-number-input>
+        </div>
       }
 
       @if (
@@ -852,6 +924,7 @@
         !functionRequiresOutput(selectedFunction()) &&
         !isDmsKeepAlive() &&
         !isDmsChangeHeir() &&
+        !isTimeLockChangeRecovery() &&
         !isTopUpFunction(selectedFunction())
       ) {
         <div
@@ -917,72 +990,6 @@
           ></kc-button>
         </div>
       }
-    }
-
-    @if (parsedInteractContract() && contractHasMultiSigFunction()) {
-      <details class="advanced-section">
-        <summary>Complete co-signer transaction</summary>
-        <div class="adv-body">
-          <span class="text-gray-75 typo-text-2"
-            >Paste the partial spend JSON received from the co-signer, or import
-            it from a file. Your signature will be added and the transaction
-            broadcast.</span
-          >
-          <textarea
-            class="contract-input"
-            rows="4"
-            placeholder="Paste partial spend JSON from co-signer"
-            [(ngModel)]="importPartialJson"
-            [disabled]="isCompletingPartial()"
-          ></textarea>
-          <kc-button
-            [text]="'Import JSON file'"
-            [variant]="'secondary'"
-            [isDisabled]="isCompletingPartial()"
-            [isFullWidth]="true"
-            (buttonClick)="importPartialSpendFromFile()"
-          ></kc-button>
-          <kc-button
-            [text]="
-              isCompletingPartial() ? 'Completing...' : 'Sign & broadcast'
-            "
-            [isDisabled]="isCompletingPartial() || !importPartialJson"
-            [isFullWidth]="true"
-            (buttonClick)="completePartialSpend()"
-          ></kc-button>
-          @if (partialCompleteError()) {
-            <div class="error-message">{{ partialCompleteError() }}</div>
-          }
-          @if (partialCompleteResult()) {
-            <div class="result-panel">
-              <h3 class="text-white typo-text-1 fw-bold">Transaction sent</h3>
-              <div class="flex column gap-4">
-                <span class="text-gray-60 typo-text-1">Transaction</span>
-                <div class="flex align-items-center gap-8">
-                  <a
-                    [href]="getExplorerLink(partialCompleteResult()!.txid)"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="text-blue typo-text-2 text-truncate"
-                    >{{ partialCompleteResult()!.txid }}</a
-                  ><app-copy-button
-                    [value]="partialCompleteResult()!.txid"
-                    [size]="'sm'"
-                  ></app-copy-button>
-                </div>
-              </div>
-              @if (interactIndexerState()) {
-                <div class="flex column gap-4">
-                  <span class="text-gray-60 typo-text-1">Indexer status</span>
-                  <span class="text-white typo-text-2">{{
-                    interactIndexerState()!.message
-                  }}</span>
-                </div>
-              }
-            </div>
-          }
-        </div>
-      </details>
     }
 
     @if (interactError()) {
@@ -1092,7 +1099,8 @@
         >
           <span class="text-yellow typo-text-2">
             Self-Custody sweep/finalize must pay fees from the wallet because
-            the withdrawal output must keep the full contract input value.
+            the withdrawal and continuation outputs must match the contract
+            input value exactly.
           </span>
         </div>
       }

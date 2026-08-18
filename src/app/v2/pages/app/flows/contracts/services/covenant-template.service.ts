@@ -16,7 +16,6 @@ import { IndexerCovenantArg } from '../../../../../../services/covenant/covenant
 import { KaspaL1NetworkService } from '../../../../../../services/kaspa-netwrok-services/kaspa-l1-network.service';
 import { RpcService } from '../../../../../../services/kaspa-netwrok-services/rpc.service';
 import { PublicKey } from '../../../../../../../../public/kaspa/kaspa';
-import { SELF_CUSTODY_WHITELIST_CAPACITY } from '../contracts-page.models';
 
 /**
  * Compiling/patching a covenant template and building its constructor
@@ -210,25 +209,10 @@ export class CovenantTemplateService {
       this.getWhitelistModeFromValues(paramName, values) === 'whitelist'
         ? this.getAddressListFromRaw(values[paramName])
         : [];
-    const selectedAddresses = addresses.slice(
-      0,
-      SELF_CUSTODY_WHITELIST_CAPACITY,
-    );
-    const paddedAddresses = [
-      ...selectedAddresses,
-      ...new Array<string>(
-        Math.max(0, SELF_CUSTODY_WHITELIST_CAPACITY - selectedAddresses.length),
-      ).fill(''),
-    ];
-
     return {
       kind: 'array',
-      data: paddedAddresses.map((address) =>
-        this.bytesArg(
-          address
-            ? this.templatePatcher.kaspaAddressToPubkeyBytes(address)
-            : new Array<number>(32).fill(0),
-        ),
+      data: addresses.map((address) =>
+        this.bytesArg(this.templatePatcher.kaspaAddressToPubkeyBytes(address)),
       ),
     };
   }
@@ -251,7 +235,6 @@ export class CovenantTemplateService {
     if (
       !value &&
       field.type !== 'address_list' &&
-      field.type !== 'whitelist_count' &&
       field.type !== 'int_hidden'
     ) {
       throw new Error(`${field.label} is required`);
@@ -298,8 +281,6 @@ export class CovenantTemplateService {
       }
       case 'int_count':
         return this.intArg(this.parseWholeNumber(value, field.label));
-      case 'whitelist_count':
-        return this.intArg(this.getWhitelistCountFromValues(values));
       case 'int_hidden':
         return this.intArg(
           value ? this.parseWholeNumber(value, field.label) : 0,
@@ -326,8 +307,7 @@ export class CovenantTemplateService {
             ',',
           )
         : '';
-    const delayDaaValue =
-      values['initUnvaultDelaySeconds'] ?? values['unvaultDelaySeconds'];
+    const delayDaaValue = values['unvaultDelaySeconds'];
     const delayDaaScore = this.parseWholeNumber(
       String(delayDaaValue ?? '').trim() || String(this.hoursToDaaDelay(24)),
       'Unvault Delay',
@@ -412,14 +392,23 @@ export class CovenantTemplateService {
       const { descriptor } = await this.getTemplatePatchContext(templateId);
       const param = descriptor.params.find((entry) => entry.name === paramName);
       const position = param?.positions[0];
-      if (!param || param.paramType !== 'int_field' || !position) {
+      if (
+        !param ||
+        (param.paramType !== 'int_field' && param.paramType !== 'int') ||
+        !position
+      ) {
         return undefined;
       }
 
-      const bytes = compiled.script.slice(
-        position.offset,
-        position.offset + position.length,
-      );
+      const bytes =
+        param.paramType === 'int'
+          ? this.extractScriptIntPushData(compiled.script, position.offset)
+          : compiled.script.slice(
+              position.offset,
+              position.offset + position.length,
+            );
+      if (!bytes) return undefined;
+
       let value = 0n;
       for (let index = 0; index < bytes.length; index += 1) {
         value += BigInt(bytes[index] & 0xff) << BigInt(index * 8);
@@ -428,6 +417,38 @@ export class CovenantTemplateService {
     } catch {
       return undefined;
     }
+  }
+
+  private extractScriptIntPushData(
+    script: number[],
+    offset: number,
+  ): number[] | undefined {
+    const opcode = script[offset];
+    if (opcode === undefined) return undefined;
+
+    if (opcode <= 75) {
+      if (script.length < offset + 1 + opcode) return undefined;
+      return script.slice(offset + 1, offset + 1 + opcode);
+    }
+
+    if (opcode === 76) {
+      const length = script[offset + 1];
+      if (length === undefined || script.length < offset + 2 + length) {
+        return undefined;
+      }
+      return script.slice(offset + 2, offset + 2 + length);
+    }
+
+    if (opcode === 77) {
+      const low = script[offset + 1];
+      const high = script[offset + 2];
+      if (low === undefined || high === undefined) return undefined;
+      const length = low + (high << 8);
+      if (script.length < offset + 3 + length) return undefined;
+      return script.slice(offset + 3, offset + 3 + length);
+    }
+
+    return undefined;
   }
 
   async extractTemplatePubkeyHex(

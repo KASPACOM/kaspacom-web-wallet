@@ -41,12 +41,6 @@ export const loggedRoutes: Routes = [
         data: { animation: 'Activity' },
       },
       {
-        path: 'contracts/:contractId',
-        canActivate: [DevelopGuard],
-        component: ContractsPageComponent,
-        data: { animation: 'Contracts' },
-      },
-      {
         path: 'contracts',
         canActivate: [DevelopGuard],
         component: ContractsPageComponent,

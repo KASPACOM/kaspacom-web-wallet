@@ -99,30 +99,6 @@
             </div>
           }
 
-          @if (detailRouteNotFound()) {
-            <div class="state-block is-error">
-              <span class="sb-icon"
-                ><svg
-                  width="26"
-                  height="26"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.6"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M15 9l-6 6M9 9l6 6" /></svg
-              ></span>
-              <div class="sb-title">Contract not found</div>
-              <div class="sb-text">
-                No wallet-supported covenant was found for this link on
-                {{ network() }}.
-              </div>
-            </div>
-          }
-
           @if (!selectedDetail() && selectedDetailError()) {
             <div class="error-message">{{ selectedDetailError() }}</div>
           }
@@ -169,6 +145,7 @@
             [selectedDetailLoading]="selectedDetailLoading()"
             [selectedDetailError]="selectedDetailError()"
             [actionPageView]="actionPageView()"
+            [hideActionsAfterCompletion]="hideActionsAfterCompletion()"
             [actionsPanelReady]="actionsPanelReady()"
             [availableActions]="getAvailableActions(selectedDetail()!)"
             [partialSpendJsonForDetail]="partialSpendJsonForDetail()"
@@ -214,6 +191,7 @@
       [availableActions]="
         selectedDetail() ? getAvailableActions(selectedDetail()!) : []
       "
+      [selectedDetailLoading]="selectedDetailLoading()"
       [actionsPanelReady]="actionsPanelReady()"
       [editingAliasKey]="editingAliasKey()"
       [aliasNotice]="aliasNotice()"
@@ -245,9 +223,9 @@
       [(interactOutputAmount)]="interactOutputAmount"
       [(topUpAmount)]="topUpAmount"
       [(interactResolvedOutputAddress)]="interactResolvedOutputAddress"
-      (registryEntryUpdated)="onRegistryEntryUpdated($event)"
-      (actionIndexingRequested)="onActionIndexingRequested($event)"
-      (backToListRequested)="backToContractsList()"
+      [registryEntryUpdated]="onRegistryEntryUpdated"
+      [actionIndexingRequested]="onActionIndexingRequested"
+      [backToListRequested]="backToContractsListCallback"
       (aliasEditRequested)="beginAliasEdit($event)"
       (aliasEditCancelled)="cancelAliasEdit()"
       (aliasSaveRequested)="saveAlias($event.contract, $event.draft)"

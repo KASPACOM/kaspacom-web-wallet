@@ -34,6 +34,8 @@ export type ContractsTransientState = {
   topUpAmount?: string;
   partialSpendJson?: string;
   interactResult?: { txid: string; functionName: string };
+  hideActionsAfterCompletion?: boolean;
+  landOnContractId?: string;
 };
 
 export type IndexerImportPreview = {

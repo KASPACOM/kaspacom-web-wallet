@@ -102,6 +102,50 @@ export class ApprovalFlowService {
     this.pendingConfirmationSignal.set(state);
   }
 
+  // The flow-page outlet destroys ContractsPageComponent the instant the
+  // approval overlay covers it (see isContractsWide's comment in
+  // app-wrapper.component.ts), so the action-indexing poll that started on
+  // the old instance keeps running detached from any UI once the user
+  // returns to "My Contracts" — a freshly-created instance's own initial
+  // load has no idea that check is still in flight, and races ahead with
+  // its own fetch, which is exactly the staleness the poll exists to avoid.
+  // Tracking the poll's completion here, outside the component, lets that
+  // new instance await it before doing its own first load instead of racing it.
+  private actionIndexingCompletionSignal = signal<Promise<void> | null>(null);
+
+  setActionIndexingCompletion(promise: Promise<void> | null) {
+    this.actionIndexingCompletionSignal.set(promise);
+  }
+
+  // A poll's own cleanup must not blindly null the signal: if the user
+  // skipped/moved on and started a second covenant action before this poll
+  // finished, the signal has since been overwritten with that newer poll's
+  // promise — clearing unconditionally here would wipe that reference out
+  // while the newer poll is still running, making the next
+  // waitForActionIndexing() resolve immediately instead of waiting on it.
+  // Only clear if the signal still holds the exact promise this poll set.
+  clearActionIndexingCompletion(promise: Promise<void>) {
+    if (this.actionIndexingCompletionSignal() === promise) {
+      this.actionIndexingCompletionSignal.set(null);
+    }
+  }
+
+  /** Resolves immediately if no action-indexing poll is in flight. */
+  async waitForActionIndexing(): Promise<void> {
+    await this.actionIndexingCompletionSignal();
+  }
+
+  // The success page's "Skip waiting" link dismisses the poll's blocking
+  // effect without cancelling the poll itself (trackActionIndexingCore()
+  // keeps running in the background and still updates the registry/
+  // pendingConfirmation when it eventually settles). Clearing the signal
+  // here just means the *next* waitForActionIndexing() call — from the
+  // freshly re-created Contracts instance — resolves immediately instead of
+  // waiting on a promise the user explicitly opted out of.
+  skipActionIndexing() {
+    this.actionIndexingCompletionSignal.set(null);
+  }
+
   /**
    * Shows approval dialog using the appropriate display mode
    */

@@ -90,14 +90,25 @@ import { WalletActionService } from '../../../../../../../services/wallet-action
           </p>
         }
         <kc-button
-          [text]="isAwaitingConfirmation() ? 'Confirming...' : 'Done'"
+          text="Done"
           variant="primary"
           size="m"
           [isFullWidth]="true"
           [isDisabled]="isAwaitingConfirmation()"
+          [isLoading]="isAwaitingConfirmation()"
+          loadingText="Confirming..."
           (buttonClick)="onDone()"
           class="done-button"
         />
+        @if (isAwaitingConfirmation()) {
+          <button
+            type="button"
+            class="skip-confirmation-link"
+            (click)="onDone(true)"
+          >
+            Skip waiting
+          </button>
+        }
       </div>
     </div>
   `,
@@ -179,7 +190,7 @@ export class ApprovalSuccessPageComponent {
     this.showDetails = !this.showDetails;
   }
 
-  onDone() {
+  onDone(skipWaiting = false) {
     // Covenant actions are dispatched from the contracts page, which stays
     // mounted behind the approval overlay with the action result rendered on
     // it — navigating to home would destroy that view, so only close the
@@ -190,6 +201,15 @@ export class ApprovalSuccessPageComponent {
 
       // Navigate to homepage with the correct tab
       this.router.navigate(['/app/home'], { queryParams: { tab } });
+    }
+
+    // "Skip waiting" is only rendered while isAwaitingConfirmation() is
+    // true, i.e. an action-indexing poll is still in flight — opt the next
+    // Contracts load out of blocking on it. The disabled-until-indexed
+    // "Done" path never needs this: it can't be clicked until the poll has
+    // already settled.
+    if (skipWaiting) {
+      this.approvalFlowService.skipActionIndexing();
     }
 
     // Close the approval flow

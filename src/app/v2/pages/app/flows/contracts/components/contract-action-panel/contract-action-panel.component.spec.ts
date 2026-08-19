@@ -178,9 +178,20 @@ describe("ContractActionPanelComponent — Dead Man's Switch partial claim", () 
 
     const fixture = TestBed.createComponent(ContractActionPanelComponent);
     component = fixture.componentInstance;
+    registryEntryUpdatedSpy = jasmine.createSpy('registryEntryUpdated');
+    fixture.componentRef.setInput(
+      'registryEntryUpdated',
+      registryEntryUpdatedSpy,
+    );
+    fixture.componentRef.setInput(
+      'actionIndexingRequested',
+      jasmine.createSpy('actionIndexingRequested'),
+    );
+    fixture.componentRef.setInput(
+      'backToListRequested',
+      jasmine.createSpy('backToListRequested'),
+    );
     fixture.detectChanges();
-
-    registryEntryUpdatedSpy = spyOn(component.registryEntryUpdated, 'emit');
   });
 
   function setUpDmsClaim(options: {

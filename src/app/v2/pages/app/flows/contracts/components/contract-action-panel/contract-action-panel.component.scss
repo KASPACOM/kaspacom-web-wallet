@@ -67,6 +67,52 @@
   background: var(--gray-10);
 }
 
+.action-form-skeleton {
+  border: 1px solid var(--border-secondary);
+  background: var(--gray-10);
+  border-radius: 10px;
+  padding: 20px;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  .sk {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    animation: kc-pulse 1.4s ease-in-out infinite;
+    display: block;
+  }
+
+  .sk.line {
+    height: 12px;
+  }
+
+  .sk.wide {
+    width: 60%;
+  }
+
+  .sk.narrow {
+    width: 40%;
+  }
+
+  .sk.block {
+    flex: 1;
+    min-height: 120px;
+  }
+
+  .sk.avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+  }
+
+  .sk.button {
+    height: 40px;
+    width: 160px;
+  }
+}
+
 .alias-input {
   min-width: 180px;
   max-width: 100%;

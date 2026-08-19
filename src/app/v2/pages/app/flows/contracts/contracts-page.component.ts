@@ -10,7 +10,6 @@ import {
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { DropdownOption } from '@kaspacom/ui-kit';
 import { WalletService } from '../../../../../services/wallet.service';
 import { CovenantService } from '../../../../../services/covenant/covenant.service';
@@ -102,7 +101,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private flowPagesService = inject(FlowPagesService);
   wideWorkspaceService = inject(WideWorkspaceService);
   private approvalFlowService = inject(ApprovalFlowService);
-  private router = inject(Router);
   private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
   private display = inject(ContractDisplayService);
@@ -239,6 +237,51 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * disturbed by concurrent silent ones.
    */
   private loadingRequestToken = 0;
+  /**
+   * True right after a covenant action succeeds, until the user explicitly
+   * navigates again (navigateToContractDetail()/openDashboardAction()).
+   * Carried across the destroy/recreate cycle via transient state (see
+   * restoreTransientState()) — the flow-page outlet destroys and recreates
+   * this component the instant the approval overlay covers and uncovers it,
+   * so a plain in-memory flag wouldn't survive from the action to the
+   * "Done" click.
+   *
+   * Two effects while true:
+   *  - the template hides the "Available actions" panel (see
+   *    contracts-page.component.html) so landing back on a contract after
+   *    finishing an action shows plain details, not an immediate prompt to
+   *    take another one — that panel is otherwise shown unconditionally
+   *    whenever actionPageView() is 'list', with no other state to
+   *    distinguish "just finished acting on this" from "opened it fresh".
+   *  - openContractDetail() skips its auto-jump into an available action's
+   *    form (the `!hasEnabledDefault` branch of prepareDashboardAction) —
+   *    without it, the freshly re-created instance (and every subsequent
+   *    background refresh from the indexing poll) could still jump straight
+   *    into a form instead of landing on details.
+   */
+  hideActionsAfterCompletion = signal(false);
+  /**
+   * Registry id of the contract to open straight to details for, restored
+   * from transient state by restoreTransientState() and consumed once by
+   * loadContracts()'s tail — see markActionCompleteForDetailsLanding(). A
+   * freshly re-created instance otherwise has no route id and no
+   * selectedDetail, so it would land on the plain "My Contracts" list
+   * instead of the contract the user just finished acting on.
+   */
+  private pendingLandOnContractId?: string;
+  /**
+   * Set in ngOnDestroy(). This component is torn down by the flow-page
+   * outlet whenever it hosts the "contracts" flow page (see
+   * bailIfLeftContractsFlow()'s doc comment) — but it's also directly
+   * routed at /app/contracts (see logged.routes.ts), and in that hosting
+   * mode the approval overlay layers on top via the flow-page outlet
+   * without ever destroying this instance, so isPageInStack('contracts')
+   * is permanently false (this page was never pushed onto that stack)
+   * even though the user never left. Gating the bail on this flag too
+   * means "not in the flow-page stack" only counts as "left" once this
+   * specific instance has actually been destroyed.
+   */
+  private destroyed = false;
   selectedDetailError = signal<string | null>(null);
   detailPanelTab = signal<ContractDetailTab>('details');
   /**
@@ -248,8 +291,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * whether this whole panel appears below the always-visible details.
    */
   actionPageView = signal<'list' | 'form'>('list');
-  detailRouteId = signal<string | null>(null);
-  detailRouteNotFound = signal(false);
   private readonly supportedIndexerTemplates = [
     'DeadManSwitch',
     'TimeLockVault',
@@ -283,11 +324,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   interactInputAmount = '';
   interactOutputAddress = '';
   interactResolvedOutputAddress: string | null = null;
-
-  // Set in ngOnDestroy() so trackActionIndexing()'s poll loop can bail out
-  // instead of updating signals/services and scheduling more RPC/indexer
-  // traffic after the component is gone.
-  private destroyed = false;
 
   // Lookup form
   interactOutputAmount = '';
@@ -524,6 +560,10 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.partialSpendJson.set(state.partialSpendJson);
     if (state.interactResult !== undefined)
       this.interactResult.set(state.interactResult);
+    if (state.hideActionsAfterCompletion)
+      this.hideActionsAfterCompletion.set(true);
+    if (state.landOnContractId)
+      this.pendingLandOnContractId = state.landOnContractId;
 
     this.flowPagesService.saveTransientState('contracts', undefined);
   }
@@ -533,17 +573,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.registryMigrationPromise ??=
       this.registryService.migrateContractsRegistryFromLocalStorage();
     return this.registryMigrationPromise;
-  }
-
-  private findDashboardEntryForPreview(
-    preview: IndexerImportPreview,
-  ): ContractDashboardEntry | undefined {
-    return this.dashboardContracts().find(
-      (entry) =>
-        this.sameIdentity(entry.covenantId, preview.covenantId) ||
-        this.sameIdentity(entry.deployTxid, preview.deployTxid) ||
-        this.sameIdentity(entry.scriptHash, preview.action.scriptHashHex),
-    );
   }
 
   private async resolveIndexerImportQuery(query: string): Promise<{
@@ -593,7 +622,11 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         'That address matches multiple wallet-supported covenants. Open by covenant ID or deploy transaction to choose the exact contract.',
       );
     }
-    const row = exactRow || supportedRows[0];
+    // A hex id/txid/script-hash query must resolve to an exact match — falling
+    // back to "the only row the fuzzy search returned" risks silently
+    // substituting an unrelated covenant (e.g. while the real one is still
+    // indexer-lagged and its direct lookup above failed).
+    const row = exactRow || (isHexIdentifier ? undefined : supportedRows[0]);
     const identifier =
       row?.covenantIdHex || row?.scriptHashHex || row?.genesisTxidHex;
     if (identifier) {
@@ -605,14 +638,18 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       (result) =>
         (result.kind === 'covenant' || result.kind === 'transaction') &&
         !!result.id &&
-        /^[0-9a-fA-F]{64}$/.test(result.id),
+        /^[0-9a-fA-F]{64}$/.test(result.id) &&
+        (!isHexIdentifier ||
+          this.normalizeIdentity(result.id) === normalizedQuery),
     );
     if (concrete?.id) {
       return await this.fetchIndexerCovenant(concrete.id);
     }
 
     throw new Error(
-      'No importable wallet-supported covenant found for that query.',
+      isHexIdentifier
+        ? 'This covenant is not indexed yet. It may still be catching up with the network — try again shortly.'
+        : 'No importable wallet-supported covenant found for that query.',
     );
   }
 
@@ -648,6 +685,17 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.selectedDetail.set(null);
       this.selectedDetailError.set(null);
     }
+
+    // A fresh instance (e.g. re-created after the approval overlay covered
+    // and then uncovered this page — see ApprovalFlowService.waitForActionIndexing)
+    // otherwise has no idea an action-indexing poll from the previous instance
+    // is still in flight, and its own first load races ahead of it, showing
+    // stale data. `skipOnChainStatusRefresh` is only ever passed by that same
+    // poll's own internal calls, so gating on its absence can't deadlock.
+    if (!options.skipOnChainStatusRefresh) {
+      await this.approvalFlowService.waitForActionIndexing();
+    }
+    if (!isCurrentRequest()) return;
 
     const walletKey = this.currentWalletAliasKey();
     const currentRoleCandidates = this.currentWalletRoleCandidates();
@@ -777,10 +825,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
     if (!isCurrentRequest()) return;
 
-    const routeId = this.detailRouteId();
-    if (routeId) {
-      await this.openDetailFromRoute(routeId);
-    } else if (this.activeTab() === 'detail' && this.selectedDetail()) {
+    if (this.activeTab() === 'detail' && this.selectedDetail()) {
       // An open detail view isn't cleared above (so the panel doesn't flash
       // empty), but it also needs to be re-fetched with the freshly merged
       // entry — otherwise fields like the check-in deadline stay stuck at
@@ -796,6 +841,20 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       );
       if (refreshed) {
         await this.openContractDetail(refreshed, { silent: true });
+      }
+    } else if (this.pendingLandOnContractId) {
+      // Land on the contract an action just completed on — see
+      // pendingLandOnContractId's doc comment. One-shot: clear it regardless
+      // of whether a match was found, so it doesn't stick around and hijack
+      // some later, unrelated load.
+      const contractId = this.pendingLandOnContractId;
+      this.pendingLandOnContractId = undefined;
+      const target = this.dashboardContracts().find(
+        (entry) => entry.registryEntry?.id === contractId,
+      );
+      if (target) {
+        this.activeTab.set('detail');
+        await this.openContractDetail(target);
       }
     }
   }
@@ -1277,14 +1336,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     );
   }
 
-  private findRegistryEntryForDashboard(input: {
-    covenantId?: string;
-    deployTxid?: string;
-    outpoint?: { txid: string; vout: number };
-  }): ContractRegistryEntry | undefined {
-    return this.findSavedRegistryEntryForIdentity(input);
-  }
-
   private mergeParticipants(
     localParticipants: ContractParticipant[] | undefined,
     indexerParticipants: ContractParticipant[] | undefined,
@@ -1307,10 +1358,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   private normalizeContractName(name: string): string {
     return this.display.normalizeContractName(name);
-  }
-
-  private getTemplateDisplayName(name: string): string {
-    return this.display.getTemplateDisplayName(name);
   }
 
   private getRegistryContractIdentityLabel(
@@ -1342,10 +1389,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
 
   private normalizeIndexerArgs(rawArgs: unknown): IndexerCovenantArg[] {
     return this.contractsData.normalizeIndexerArgs(rawArgs);
-  }
-
-  private roleLabel(role: string): string {
-    return this.contractsData.roleLabel(role);
   }
 
   private getParticipantDisplayValue(
@@ -1416,18 +1459,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     } catch {
       return [];
     }
-  }
-
-  private getNextActionLabel(
-    contractName: string,
-    status: ContractDashboardEntry['status'],
-    participants: ContractParticipant[],
-  ): string {
-    return this.contractsData.getNextActionLabel(
-      contractName,
-      status,
-      this.currentWalletRoles(participants),
-    );
   }
 
   /**
@@ -1503,6 +1534,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const autoSelectFunction = options?.autoSelectFunction ?? false;
     const requestToken = ++this.detailRequestToken;
     const isCurrentRequest = () => requestToken === this.detailRequestToken;
+    // Stays true across every background/route-driven call in the settling
+    // window after an action (there can be several — the indexing poll keeps
+    // refreshing until it catches up) — only an explicit user navigation
+    // (navigateToContractDetail()/openDashboardAction()) clears it. See the
+    // field's doc comment.
+    const suppressAutoActionOpen = this.hideActionsAfterCompletion();
 
     if (!silent) {
       this.loadingRequestToken = requestToken;
@@ -1512,7 +1549,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         actions: [],
         utxos: [],
       });
-      if (this.detailRouteId() || this.activeTab() === 'detail') {
+      if (this.activeTab() === 'detail') {
         this.clearInteractContractSelection();
       }
       if (!skipScrollToTop) this.scrollContractsContentToTop();
@@ -1651,8 +1688,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         utxos,
       });
       if (
-        (this.detailRouteId() || this.activeTab() === 'detail') &&
-        updatedEntry.status === 'active'
+        this.activeTab() === 'detail' &&
+        updatedEntry.status === 'active' &&
+        !suppressAutoActionOpen
       ) {
         const prepared = await this.prepareDashboardAction(
           updatedEntry,
@@ -1676,7 +1714,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
         console.warn('[Contracts][detail] Action prep skipped', {
           entryId: updatedEntry.id,
           activeTab: this.activeTab(),
-          detailRouteId: this.detailRouteId(),
           status: updatedEntry.status,
         });
       }
@@ -1696,8 +1733,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           "Indexer hasn't caught up with this contract yet — showing your locally saved copy. Try refreshing in a moment for live status.",
         );
         if (
-          (this.detailRouteId() || this.activeTab() === 'detail') &&
-          entry.status === 'active'
+          this.activeTab() === 'detail' &&
+          entry.status === 'active' &&
+          !suppressAutoActionOpen
         ) {
           await this.prepareDashboardAction(
             entry,
@@ -1752,6 +1790,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.detailPanelTab.set('action');
     this.actionPageView.set('form');
     this.activeTab.set('detail');
+    // A deliberate request to act — any suppression left over from an
+    // earlier action's settling window no longer applies.
+    this.hideActionsAfterCompletion.set(false);
     await this.openContractDetail(entry, {
       skipScrollToTop: true,
       autoSelectFunction: true,
@@ -2296,67 +2337,24 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.detailPanelTab.set('details');
     this.actionPageView.set('list');
     this.activeTab.set('detail');
+    // A deliberate fresh navigation — any suppression left over from an
+    // earlier action's settling window no longer applies.
+    this.hideActionsAfterCompletion.set(false);
     void this.openContractDetail(entry);
   }
 
   backToContractsList() {
-    const wasRouteDetail = !!this.detailRouteId();
-    if (wasRouteDetail) {
-      void this.router.navigate(['/app/contracts']);
-    }
     this.selectedDetail.set(null);
     this.selectedDetailError.set(null);
-    this.detailRouteId.set(null);
-    this.detailRouteNotFound.set(false);
     this.activeTab.set('my-contracts');
+    // Leaving the detail view entirely — don't let suppression leak into
+    // whichever contract's detail is opened next, and don't let any
+    // transient state saved before this point (e.g. surfacing a co-signer
+    // partial-spend dialog) get restored into the next destroy/recreate
+    // cycle instead of the plain "My Contracts" list this is resetting to.
+    this.hideActionsAfterCompletion.set(false);
+    this.flowPagesService.saveTransientState('contracts', undefined);
     void this.loadContracts();
-  }
-
-  private async openDetailFromRoute(routeId: string) {
-    if (this.dashboardLoading()) return;
-
-    const entry = this.findDashboardEntryByRouteId(routeId);
-    if (entry) {
-      this.detailRouteNotFound.set(false);
-      await this.openContractDetail(entry);
-      return;
-    }
-
-    try {
-      this.selectedDetailLoading.set(true);
-      const response = await this.resolveIndexerImportQuery(routeId);
-      const preview = await this.buildIndexerImportPreview(response);
-      const existing = this.findDashboardEntryForPreview(preview);
-      this.detailRouteNotFound.set(false);
-      await this.openContractDetail(
-        existing || this.indexerPreviewToDashboard(preview, response),
-      );
-    } catch (error: any) {
-      this.detailRouteNotFound.set(true);
-      this.selectedDetail.set(null);
-      this.selectedDetailError.set(
-        error?.message ||
-          'Contract not found for this wallet or indexer network.',
-      );
-      this.selectedDetailLoading.set(false);
-    }
-  }
-
-  private findDashboardEntryByRouteId(
-    routeId: string,
-  ): ContractDashboardEntry | undefined {
-    const normalizedRouteId = this.normalizeIdentity(routeId);
-    return this.dashboardContracts().find(
-      (entry) =>
-        this.normalizeIdentity(this.getContractRouteId(entry)) ===
-          normalizedRouteId ||
-        this.normalizeIdentity(entry.deployTxid) === normalizedRouteId ||
-        this.normalizeIdentity(entry.scriptHash) === normalizedRouteId,
-    );
-  }
-
-  private getContractRouteId(entry: ContractDashboardEntry): string {
-    return entry.covenantId || entry.scriptHash || entry.deployTxid || entry.id;
   }
 
   private getDashboardIdentityKey(entry: ContractDashboardEntry): string {
@@ -2588,12 +2586,26 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * causing a disabled -> enabled flicker. Gate the panel on both settling
    * before rendering real enabled/disabled state.
    */
-  actionsPanelReady = computed(
-    () =>
-      !this.selectedDetailLoading() &&
-      !!this.selectedDetail() &&
-      !!this.currentWallet(),
-  );
+  actionsPanelReady = computed(() => {
+    const detail = this.selectedDetail();
+    if (this.selectedDetailLoading() || !detail || !this.currentWallet()) {
+      return false;
+    }
+    if (detail.entry.status !== 'active') return true;
+
+    const hasCuratedActions =
+      !!this.actionMetaTable[
+        this.normalizeContractName(detail.entry.contractName)
+      ];
+    if (!hasCuratedActions) return true;
+
+    return (
+      (!!this.parsedInteractContract() &&
+        this.availableFunctions().length > 0) ||
+      !!this.selectedDetailError() ||
+      !!this.dashboardError()
+    );
+  });
 
   /**
    * Full list of possible actions for the detail page's "Available actions"
@@ -3003,73 +3015,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.activeTab.set('my-contracts');
     }
     await this.loadContracts();
-  }
-
-  private indexerPreviewToDashboard(
-    preview: IndexerImportPreview,
-    response: {
-      action: IndexerCovenantAction;
-      actions: IndexerCovenantAction[];
-      covenant?: IndexerCovenantDetails;
-    },
-  ): ContractDashboardEntry {
-    const contractName = this.normalizeContractName(
-      preview.templateName || preview.template.name,
-    );
-    const latestAction =
-      this.latestAction(response.actions) ||
-      preview.activeAction ||
-      response.action;
-    const status = this.statusFromActiveUtxoCount(
-      response.covenant?.activeUtxos,
-    );
-    const participants = response.covenant
-      ? this.indexerParticipants(response.covenant)
-      : preview.args.map((arg) => ({
-          label: this.roleLabel(arg.name),
-          value: String(arg.value),
-        }));
-    const scriptHash =
-      response.covenant?.scriptHashHex ||
-      preview.activeAction.scriptHashHex ||
-      response.action.scriptHashHex;
-    const registryEntry = this.findRegistryEntryForDashboard({
-      covenantId: preview.covenantId,
-      deployTxid: preview.deployTxid,
-      outpoint: preview.outpoint,
-    });
-
-    return this.withDashboardName({
-      id: `indexer:${preview.covenantId}`,
-      source: 'indexer',
-      contractName,
-      displayName: this.getTemplateDisplayName(contractName),
-      contractTypeLabel: this.getTemplateDisplayName(contractName),
-      aliases: registryEntry?.aliases,
-      status,
-      amountSompi: preview.amountSompi,
-      currentAddress: preview.contractAddress,
-      covenantId: preview.covenantId,
-      scriptHash,
-      deployTxid: preview.deployTxid,
-      latestTxid: latestAction?.txidHex || preview.deployTxid,
-      latestAction:
-        latestAction?.entrypoint || latestAction?.action || 'deploy',
-      deadlineMs: response.covenant
-        ? this.extractDeadlineMs(response.covenant)
-        : undefined,
-      participants,
-      nextActionLabel: this.getNextActionLabel(
-        contractName,
-        status,
-        participants,
-      ),
-      actionHint: preview.isLatestContinuation
-        ? 'Open latest continuation state'
-        : 'Open current covenant state',
-      registryEntry,
-      indexerSummary: response.covenant,
-    });
   }
 
   private statusFromActiveUtxoCount(
@@ -3792,21 +3737,28 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * form, action panel) that doesn't own allRegistryContracts/registryContracts
    * itself.
    */
-  onRegistryEntryUpdated(event: {
+  // Arrow-function fields, not methods: passed into ContractActionPanelComponent
+  // as callback inputs (see its registryEntryUpdated/actionIndexingRequested
+  // doc comments) rather than listened to via an output() template binding,
+  // since that binding is torn down the instant the approval overlay
+  // destroys this component — well before a covenant action's post-signing
+  // continuation runs. A lexically-bound arrow field keeps working
+  // regardless, the same way the pre-split monolith's own `this.foo(...)`
+  // calls did.
+  onRegistryEntryUpdated = (event: {
     id: string;
     updates: Partial<ContractRegistryEntry>;
-  }) {
+  }) => {
     void this.updateRegistryContract(event.id, event.updates);
-  }
+  };
 
-  /**
-   * Kicks off indexer-status polling for a just-broadcast action, requested
-   * by ContractActionPanelComponent (which doesn't own dashboardContracts/
-   * registryContracts, so it can't call trackActionIndexing() itself).
-   */
-  onActionIndexingRequested(event: { txid: string; registryId: string }) {
+  onActionIndexingRequested = (event: { txid: string; registryId: string }) => {
+    this.markActionCompleteForDetailsLanding(event.registryId);
     void this.trackActionIndexing(event.txid, event.registryId);
-  }
+  };
+
+  // Same reasoning — see onActionIndexingRequested's doc comment.
+  readonly backToContractsListCallback = () => this.backToContractsList();
 
   /**
    * Poll the indexer for a non-deploy covenant action (TopUp, withdraw,
@@ -3831,6 +3783,23 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     txid: string,
     registryEntryId?: string,
   ): Promise<void> {
+    let resolveCompletion!: () => void;
+    const completion = new Promise<void>(
+      (resolve) => (resolveCompletion = resolve),
+    );
+    this.approvalFlowService.setActionIndexingCompletion(completion);
+    try {
+      await this.trackActionIndexingCore(txid, registryEntryId);
+    } finally {
+      resolveCompletion();
+      this.approvalFlowService.clearActionIndexingCompletion(completion);
+    }
+  }
+
+  private async trackActionIndexingCore(
+    txid: string,
+    registryEntryId?: string,
+  ): Promise<void> {
     this.setActionIndexerState({
       txid,
       status: 'checking',
@@ -3840,20 +3809,20 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     let seenSettled = false;
 
     for (let attempt = 1; attempt <= 8; attempt++) {
-      if (this.destroyed) return;
+      if (this.bailIfLeftContractsFlow()) return;
       try {
         if (!seenSettled) {
           const status =
             await this.covenantIndexerService.getTransactionSettlementStatus(
               txid,
             );
-          if (this.destroyed) return;
+          if (this.bailIfLeftContractsFlow()) return;
           seenSettled = status.indexed;
         }
 
         if (seenSettled) {
           await this.loadContracts({ skipOnChainStatusRefresh: true });
-          if (this.destroyed) return;
+          if (this.bailIfLeftContractsFlow()) return;
           if (this.dashboardCaughtUpWithLocal(registryEntryId)) {
             this.setActionIndexerState({
               txid,
@@ -3865,13 +3834,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
           this.setActionIndexerState({
             txid,
             status: 'checking',
-            message: `Transaction confirmed — waiting for the contract list to catch up (${attempt}/8)...`,
+            message: 'Transaction confirmed — waiting for confirmation...',
           });
         } else {
           this.setActionIndexerState({
             txid,
             status: 'checking',
-            message: `Waiting for indexer confirmation (${attempt}/8)...`,
+            message: 'Waiting for confirmation...',
           });
         }
       } catch (error: any) {
@@ -3887,7 +3856,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       }
 
       await this.delay(2500);
-      if (this.destroyed) return;
+      if (this.bailIfLeftContractsFlow()) return;
     }
 
     this.setActionIndexerState({
@@ -3896,6 +3865,67 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       message:
         'Broadcast, but My Contracts may not reflect this change yet. Refresh in a moment.',
     });
+  }
+
+  /**
+   * Call right after a covenant action succeeds — see
+   * hideActionsAfterCompletion's and pendingLandOnContractId's doc comments
+   * for what this does and why. `registryEntryId` is the acted-on contract
+   * (this.selectedContractId() at the call site) — omit it if there's no
+   * local registry entry to land back on.
+   *
+   * Also flips detailPanelTab/actionPageView back to the plain details view
+   * directly on `this`, not just via the transient state the flow-page
+   * hosting mode restores into a fresh instance. When this component is
+   * router-hosted (see `destroyed`'s doc comment) it's never torn down by
+   * the approval overlay, so this same instance is what the user sees
+   * again — without this, it would still be sitting on whatever action
+   * form (e.g. "Claim") they just submitted.
+   */
+  private markActionCompleteForDetailsLanding(registryEntryId?: string): void {
+    this.hideActionsAfterCompletion.set(true);
+    this.detailPanelTab.set('details');
+    this.actionPageView.set('list');
+    this.flowPagesService.saveTransientState('contracts', {
+      hideActionsAfterCompletion: true,
+      landOnContractId: registryEntryId || undefined,
+    } satisfies ContractsTransientState);
+  }
+
+  /**
+   * The flow-page outlet actually destroys ContractsPageComponent the
+   * instant the approval success screen is layered on top of it (see
+   * isContractsWide's comment in app-wrapper.component.ts) — it does NOT
+   * stay mounted behind the overlay. Bailing on that destruction, as this
+   * used to do via a component-local `destroyed` flag, made trackActionIndexing()
+   * abandon the poll (and flush pendingConfirmation to 'unavailable')
+   * immediately after every covenant action, before the indexer had any
+   * chance to catch up — the success page's "Done" button was effectively
+   * always enabled and the "Skip waiting" link never appeared.
+   *
+   * 'contracts' stays in the flow-page stack while merely covered by the
+   * overlay (isPageInStack() is true), so use that instead to tell "covered
+   * but coming back" apart from "actually left" (e.g. navigated fully away
+   * via backToContractsList()) — only the latter should flush a terminal
+   * state so pendingConfirmation doesn't get stuck at 'checking' forever.
+   *
+   * That alone isn't enough when this component is router-hosted (see
+   * `destroyed`'s doc comment): isPageInStack('contracts') is then always
+   * false, since this page was never pushed onto that stack in the first
+   * place, even though the routed instance stays mounted the whole time.
+   * Require this instance to have actually been destroyed too, so the
+   * routed hosting mode never bails just because it isn't (and never was)
+   * a flow page.
+   */
+  private bailIfLeftContractsFlow(): boolean {
+    if (!this.destroyed) return false;
+    if (this.flowPagesService.isPageInStack('contracts')) return false;
+    this.approvalFlowService.setPendingConfirmation({
+      status: 'unavailable',
+      message:
+        'Left the contracts page before indexing finished. The transaction was still broadcast.',
+    });
+    return true;
   }
 
   /**

@@ -110,6 +110,7 @@ export class ContractActionPanelComponent {
   registryContracts = input<ContractRegistryEntry[]>([]);
   registryContractOptions = input<DropdownOption[]>([]);
   availableActions = input<AvailableAction[]>([]);
+  selectedDetailLoading = input(false);
   actionsPanelReady = input<boolean>(false);
   editingAliasKey = input<string | null>(null);
   aliasNotice = input<{ key: string; message: string } | null>(null);
@@ -161,12 +162,30 @@ export class ContractActionPanelComponent {
   walletKey = input<string | undefined>(undefined);
 
   // ─── Outputs ────────────────────────────────────────────────────────
-  registryEntryUpdated = output<{
-    id: string;
-    updates: Partial<ContractRegistryEntry>;
-  }>();
-  actionIndexingRequested = output<{ txid: string; registryId: string }>();
-  backToListRequested = output<void>();
+  // registryEntryUpdated/actionIndexingRequested are plain callback inputs,
+  // not output()s: the shell (ContractsPageComponent) is destroyed the
+  // instant the approval overlay is layered on top of Contracts (see
+  // ContractsPageComponent's `destroyed` field doc comment), which happens
+  // well before a covenant action's signing/broadcast finishes. An
+  // output()'s template binding is torn down along with the *emitting*
+  // component's own view at that same moment, so calling .emit() from this
+  // component's post-await continuation — which keeps running as plain JS
+  // regardless of Angular's destroy lifecycle — would silently go nowhere.
+  // A callback captured as a bound function on the shell doesn't have that
+  // problem: it's just a JS closure, callable exactly like the direct
+  // `this.trackActionIndexing(...)` calls the pre-split monolith used to
+  // make on itself.
+  registryEntryUpdated =
+    input.required<
+      (event: { id: string; updates: Partial<ContractRegistryEntry> }) => void
+    >();
+  actionIndexingRequested =
+    input.required<(event: { txid: string; registryId: string }) => void>();
+  // Same reasoning as registryEntryUpdated/actionIndexingRequested above:
+  // the partial-spend dialog this fires from is opened after the shell has
+  // already been destroyed by the approval overlay, so this also needs to
+  // be a callback rather than an output().
+  backToListRequested = input.required<() => void>();
   aliasEditRequested = output<ContractDashboardEntry>();
   aliasEditCancelled = output<void>();
   aliasSaveRequested = output<{
@@ -174,6 +193,24 @@ export class ContractActionPanelComponent {
     draft: string;
   }>();
   aliasRemoveRequested = output<ContractDashboardEntry>();
+
+  isDetailActionFormRoute(): boolean {
+    return (
+      this.activeTab() === 'detail' &&
+      this.detailPanelTab() === 'action' &&
+      this.actionPageView() === 'form'
+    );
+  }
+
+  isDetailActionFormLoading(): boolean {
+    return (
+      this.isDetailActionFormRoute() &&
+      (this.selectedDetailLoading() ||
+        !this.selectedDetail() ||
+        !this.interactContractJson() ||
+        !this.selectedFunction())
+    );
+  }
 
   private readonly contractsDebugEnabled = false;
   private readonly debugLogKeys = new Set<string>();
@@ -673,7 +710,7 @@ export class ContractActionPanelComponent {
             functionName: result.functionName,
           });
           if (this.selectedContractId()) {
-            this.registryEntryUpdated.emit({
+            this.registryEntryUpdated()({
               id: this.selectedContractId(),
               updates: {
                 status: 'spent',
@@ -681,7 +718,7 @@ export class ContractActionPanelComponent {
                 lastChecked: Date.now(),
               },
             });
-            this.actionIndexingRequested.emit({
+            this.actionIndexingRequested()({
               txid: result.txid,
               registryId: this.selectedContractId(),
             });
@@ -966,7 +1003,7 @@ export class ContractActionPanelComponent {
       // Update registry based on function type
       if (this.selectedContractId()) {
         if (this.isTopUpFunction(functionName)) {
-          this.registryEntryUpdated.emit({
+          this.registryEntryUpdated()({
             id: this.selectedContractId(),
             updates: {
               lastChecked: Date.now(),
@@ -988,7 +1025,7 @@ export class ContractActionPanelComponent {
           );
           if (continuationOutputIndex >= 0) {
             const continuationAmount = outputs[continuationOutputIndex].amount;
-            this.registryEntryUpdated.emit({
+            this.registryEntryUpdated()({
               id: this.selectedContractId(),
               updates: {
                 lastChecked: Date.now(),
@@ -1001,7 +1038,7 @@ export class ContractActionPanelComponent {
             this.interactInputAmount.set(continuationAmount.toString());
           } else {
             // Full withdrawal: funds left the covenant
-            this.registryEntryUpdated.emit({
+            this.registryEntryUpdated()({
               id: this.selectedContractId(),
               updates: {
                 status: 'spent',
@@ -1012,7 +1049,7 @@ export class ContractActionPanelComponent {
           }
         } else {
           // Redeploy (keepAlive/increment): update the outpoint to the new UTXO
-          this.registryEntryUpdated.emit({
+          this.registryEntryUpdated()({
             id: this.selectedContractId(),
             updates: {
               lastChecked: Date.now(),
@@ -1024,7 +1061,7 @@ export class ContractActionPanelComponent {
           this.interactOutpointTxid.set(result.txid);
           this.interactOutpointVout.set('0');
         }
-        this.actionIndexingRequested.emit({
+        this.actionIndexingRequested()({
           txid: result.txid,
           registryId: this.selectedContractId(),
         });
@@ -1134,7 +1171,7 @@ export class ContractActionPanelComponent {
     this.interactResult.set({ txid: result.txid, functionName: 'unvault' });
 
     if (this.selectedContractId()) {
-      this.registryEntryUpdated.emit({
+      this.registryEntryUpdated()({
         id: this.selectedContractId(),
         updates: {
           status: 'active',
@@ -1153,7 +1190,7 @@ export class ContractActionPanelComponent {
     this.interactOutpointVout.set('0');
     this.interactInputAmount.set(inputAmount.toString());
 
-    this.actionIndexingRequested.emit({
+    this.actionIndexingRequested()({
       txid: result.txid,
       registryId: this.selectedContractId(),
     });
@@ -1262,7 +1299,7 @@ export class ContractActionPanelComponent {
     this.interactResult.set({ txid: result.txid, functionName: 'keepAlive' });
 
     if (this.selectedContractId()) {
-      this.registryEntryUpdated.emit({
+      this.registryEntryUpdated()({
         id: this.selectedContractId(),
         updates: {
           status: 'active',
@@ -1281,7 +1318,7 @@ export class ContractActionPanelComponent {
     this.interactInputAmount.set(inputAmount.toString());
     this.dmsNewExpiry = '';
 
-    this.actionIndexingRequested.emit({
+    this.actionIndexingRequested()({
       txid: result.txid,
       registryId: this.selectedContractId(),
     });
@@ -1372,7 +1409,7 @@ export class ContractActionPanelComponent {
     this.interactResult.set({ txid: result.txid, functionName: 'changeHeir' });
 
     if (this.selectedContractId()) {
-      this.registryEntryUpdated.emit({
+      this.registryEntryUpdated()({
         id: this.selectedContractId(),
         updates: {
           status: 'active',
@@ -1392,7 +1429,7 @@ export class ContractActionPanelComponent {
     this.interactOutputAddress.set('');
     this.interactResolvedOutputAddress.set(null);
 
-    this.actionIndexingRequested.emit({
+    this.actionIndexingRequested()({
       txid: result.txid,
       registryId: this.selectedContractId(),
     });
@@ -1486,7 +1523,7 @@ export class ContractActionPanelComponent {
     });
 
     if (this.selectedContractId()) {
-      this.registryEntryUpdated.emit({
+      this.registryEntryUpdated()({
         id: this.selectedContractId(),
         updates: {
           status: 'active',
@@ -1506,7 +1543,7 @@ export class ContractActionPanelComponent {
     this.interactOutputAddress.set('');
     this.interactResolvedOutputAddress.set(null);
 
-    this.actionIndexingRequested.emit({
+    this.actionIndexingRequested()({
       txid: result.txid,
       registryId: this.selectedContractId(),
     });
@@ -2273,7 +2310,7 @@ export class ContractActionPanelComponent {
           (output) => output.address === covenantAddress,
         );
         if (continuationOutputIndex >= 0) {
-          this.registryEntryUpdated.emit({
+          this.registryEntryUpdated()({
             id: this.selectedContractId(),
             updates: {
               lastChecked: Date.now(),
@@ -2282,7 +2319,7 @@ export class ContractActionPanelComponent {
             },
           });
         } else {
-          this.registryEntryUpdated.emit({
+          this.registryEntryUpdated()({
             id: this.selectedContractId(),
             updates: {
               status: 'spent',
@@ -2291,7 +2328,7 @@ export class ContractActionPanelComponent {
             },
           });
         }
-        this.actionIndexingRequested.emit({
+        this.actionIndexingRequested()({
           txid: result.txid,
           registryId: this.selectedContractId(),
         });
@@ -2319,7 +2356,7 @@ export class ContractActionPanelComponent {
           json,
         },
       })
-      .closed.subscribe(() => this.backToListRequested.emit());
+      .closed.subscribe(() => this.backToListRequested()());
   }
 
   /**

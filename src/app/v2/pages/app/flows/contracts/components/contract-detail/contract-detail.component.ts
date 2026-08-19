@@ -47,6 +47,7 @@ export class ContractDetailComponent {
   selectedDetailLoading = input(false);
   selectedDetailError = input<string | null>(null);
   actionPageView = input<'list' | 'form'>('list');
+  hideActionsAfterCompletion = input(false);
   actionsPanelReady = input(false);
   availableActions = input<AvailableAction[]>([]);
   partialSpendJsonForDetail = input<string | null>(null);

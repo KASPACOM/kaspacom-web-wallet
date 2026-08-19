@@ -820,6 +820,9 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       // entry — otherwise fields like the check-in deadline stay stuck at
       // whatever they were when the panel was first opened, even after an
       // action (e.g. keepAlive) has changed them on-chain.
+      if (this.actionPageView() === 'form') {
+        return;
+      }
       const current = this.selectedDetail()!.entry;
       const refreshed = this.dashboardContracts().find(
         (entry) =>
@@ -1788,16 +1791,24 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     this.detailPanelTab.set('action');
     this.actionPageView.set('form');
     const detail = this.selectedDetail();
-    if (detail) {
-      const prepared = await this.prepareDetailInteractState(detail);
-      if (!prepared) return;
-    }
     if (fnName) {
       this.dashboardError.set(null);
+      this.selectedFunction = fnName;
       if (detail) this.userPickedFunctionForEntryId = detail.entry.id;
       this.pendingFunctionSelect.set({ fn: fnName });
     }
     this.scrollToActionPanel();
+    if (detail) {
+      const prepared = await this.prepareDetailInteractState(detail);
+      if (!prepared) {
+        this.actionPageView.set('list');
+        return;
+      }
+      if (fnName) {
+        this.selectedFunction = fnName;
+        this.pendingFunctionSelect.set({ fn: fnName });
+      }
+    }
   }
 
   private async prepareDetailInteractState(
@@ -1805,49 +1816,84 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   ): Promise<boolean> {
     const entry = detail.entry;
     if (entry.registryEntry) {
-      const registryEntry =
-        await this.syncRegistryEntryForDashboardAction(entry);
-      this.selectedContractId.set(registryEntry.id);
-      this.applySelectedRegistryContract(registryEntry.id);
+      this.selectedContractId.set(entry.registryEntry.id);
+      if (entry.registryEntry.compiledJson) {
+        this.applyRegistryContractToInteractState(entry.registryEntry);
+        void this.syncRegistryEntryForDashboardAction(entry)
+          .then((registryEntry) => {
+            if (this.selectedDetail()?.entry.id !== entry.id) return;
+            if (this.selectedContractId() !== registryEntry.id) return;
+            this.applyRegistryContractToInteractState(registryEntry);
+          })
+          .catch((error) => {
+            console.warn(
+              '[Contracts] Background registry sync failed for action prep:',
+              error,
+            );
+          });
+        return true;
+      }
+
+      return await this.prepareIndexerDetailInteractState(
+        detail,
+        entry.registryEntry,
+      );
+    }
+
+    if (this.interactContractJson() && this.parsedInteractContract()) {
       return true;
     }
 
     if (detail.response) {
-      try {
-        const actions =
-          detail.actions.length > 0
-            ? detail.actions
-            : detail.response.actions || [];
-        const action = actions[0];
-        if (!action) {
-          throw new Error(
-            'No indexed covenant action is available for this contract.',
-          );
-        }
-        const preview = await this.buildIndexerImportPreview({
-          action,
-          actions,
-          covenant: detail.response.covenant,
-          activeUtxo: detail.utxos.length === 1 ? detail.utxos[0] : null,
-          currentAddress: detail.entry.currentAddress,
-        });
-        this.selectedContractId.set('');
-        this.interactContractJson.set(preview.compiledJson);
-        this.interactOutpointTxid = preview.outpoint.txid;
-        this.interactOutpointVout = String(preview.outpoint.vout);
-        this.interactInputAmount = preview.amountSompi;
-        this.interactOutputAddress = this.currentWallet()?.getAddress() || '';
-        this.interactResolvedOutputAddress = null;
-        return true;
-      } catch (error: any) {
-        this.dashboardError.set(
-          error?.message || 'Failed to prepare this contract action.',
-        );
-        return false;
-      }
+      return this.prepareIndexerDetailInteractState(detail);
     }
 
     return !!this.parsedInteractContract();
+  }
+
+  private async prepareIndexerDetailInteractState(
+    detail: ContractDetailState,
+    registryEntry?: ContractRegistryEntry,
+  ): Promise<boolean> {
+    if (!detail.response) {
+      return false;
+    }
+    try {
+      const actions =
+        detail.actions.length > 0
+          ? detail.actions
+          : detail.response.actions || [];
+      const action = actions[0];
+      if (!action) {
+        throw new Error(
+          'No indexed covenant action is available for this contract.',
+        );
+      }
+      const preview = await this.buildIndexerImportPreview({
+        action,
+        actions,
+        covenant: detail.response.covenant,
+        activeUtxo: detail.utxos.length === 1 ? detail.utxos[0] : null,
+        currentAddress: detail.entry.currentAddress,
+      });
+      if (!registryEntry) this.selectedContractId.set('');
+      this.interactContractJson.set(preview.compiledJson);
+      this.interactOutpointTxid =
+        registryEntry?.outpoint.txid || preview.outpoint.txid;
+      this.interactOutpointVout = String(
+        registryEntry?.outpoint.vout ?? preview.outpoint.vout,
+      );
+      this.interactInputAmount =
+        registryEntry?.amountSompi || preview.amountSompi;
+      this.interactOutputAddress = this.currentWallet()?.getAddress() || '';
+      this.interactResolvedOutputAddress = null;
+      return true;
+    } catch (error: any) {
+      this.dashboardError.set(
+        error?.message || 'Failed to prepare this contract action.',
+      );
+      return false;
+    }
   }
 
   /**
@@ -2374,6 +2420,12 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   private applySelectedRegistryContract(contractId: string) {
     const contract = this.registryContracts().find((c) => c.id === contractId);
     if (!contract) return;
+    this.applyRegistryContractToInteractState(contract);
+  }
+
+  private applyRegistryContractToInteractState(
+    contract: ContractRegistryEntry,
+  ) {
     this.interactContractJson.set(contract.compiledJson);
     this.interactOutpointTxid = contract.outpoint.txid;
     this.interactOutpointVout = contract.outpoint.vout.toString();
@@ -2846,6 +2898,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       order.find((name) => enabledNames.has(name)) ||
       actions.find((action) => action.enabled)?.fnName;
     if (!target) return false;
+    this.selectedFunction = target;
     this.pendingFunctionSelect.set({ fn: target });
     return true;
   }
@@ -3761,84 +3814,107 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
     const completion = new Promise<void>(
       (resolve) => (resolveCompletion = resolve),
     );
-    this.approvalFlowService.setActionIndexingCompletion(completion);
+    const pollId =
+      this.approvalFlowService.setActionIndexingCompletion(completion);
     try {
-      await this.trackActionIndexingCore(txid, registryEntryId);
+      await this.trackActionIndexingCore(txid, registryEntryId, pollId);
     } finally {
       resolveCompletion();
-      this.approvalFlowService.clearActionIndexingCompletion(completion);
+      this.approvalFlowService.clearActionIndexingCompletion(
+        completion,
+        pollId,
+      );
     }
   }
 
   private async trackActionIndexingCore(
     txid: string,
     registryEntryId?: string,
+    pollId?: number,
   ): Promise<void> {
-    this.setActionIndexerState({
-      txid,
-      status: 'checking',
-      message: 'Waiting for the indexer to see this transaction...',
-    });
+    this.setActionIndexerState(
+      {
+        txid,
+        status: 'checking',
+        message: 'Waiting for the indexer to see this transaction...',
+      },
+      pollId,
+    );
 
     let seenSettled = false;
 
     for (let attempt = 1; attempt <= 8; attempt++) {
-      if (this.bailIfLeftContractsFlow()) return;
+      if (this.bailIfLeftContractsFlow(pollId)) return;
       try {
         if (!seenSettled) {
           const status =
             await this.covenantIndexerService.getTransactionSettlementStatus(
               txid,
             );
-          if (this.bailIfLeftContractsFlow()) return;
+          if (this.bailIfLeftContractsFlow(pollId)) return;
           seenSettled = status.indexed;
         }
 
         if (seenSettled) {
           await this.loadContracts({ skipOnChainStatusRefresh: true });
-          if (this.bailIfLeftContractsFlow()) return;
+          if (this.bailIfLeftContractsFlow(pollId)) return;
           if (this.dashboardCaughtUpWithLocal(registryEntryId)) {
-            this.setActionIndexerState({
-              txid,
-              status: 'indexed',
-              message: 'Indexed. My Contracts now reflects this change.',
-            });
+            this.setActionIndexerState(
+              {
+                txid,
+                status: 'indexed',
+                message: 'Indexed. My Contracts now reflects this change.',
+              },
+              pollId,
+            );
             return;
           }
-          this.setActionIndexerState({
-            txid,
-            status: 'checking',
-            message: 'Transaction confirmed — waiting for confirmation...',
-          });
+          this.setActionIndexerState(
+            {
+              txid,
+              status: 'checking',
+              message: 'Transaction confirmed — waiting for confirmation...',
+            },
+            pollId,
+          );
         } else {
-          this.setActionIndexerState({
-            txid,
-            status: 'checking',
-            message: 'Waiting for confirmation...',
-          });
+          this.setActionIndexerState(
+            {
+              txid,
+              status: 'checking',
+              message: 'Waiting for confirmation...',
+            },
+            pollId,
+          );
         }
       } catch (error: any) {
         console.warn('[Contracts] Action indexing check failed:', error);
-        this.setActionIndexerState({
-          txid,
-          status: 'unavailable',
-          message:
-            error?.message ||
-            'Indexer status is unavailable. The transaction was still broadcast.',
-        });
+        this.setActionIndexerState(
+          {
+            txid,
+            status: 'unavailable',
+            message:
+              error?.message ||
+              'Indexer status is unavailable. The transaction was still broadcast.',
+          },
+          pollId,
+        );
         return;
       }
 
       await this.delay(2500);
-      if (this.bailIfLeftContractsFlow()) return;
+      if (this.bailIfLeftContractsFlow(pollId)) return;
     }
 
-    this.setActionIndexerState({
-      txid,
-      status: 'not-indexed',
-      message:
-        'Broadcast, but My Contracts may not reflect this change yet. Refresh in a moment.',
-    });
+    this.setActionIndexerState(
+      {
+        txid,
+        status: 'not-indexed',
+        message:
+          'Broadcast, but My Contracts may not reflect this change yet. Refresh in a moment.',
+      },
+      pollId,
+    );
   }
 
   /**
@@ -3866,14 +3942,17 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * routed hosting mode never bails just because it isn't (and never was)
    * a flow page.
    */
-  private bailIfLeftContractsFlow(): boolean {
+  private bailIfLeftContractsFlow(pollId?: number): boolean {
     if (!this.destroyed) return false;
     if (this.flowPagesService.isPageInStack('contracts')) return false;
-    this.approvalFlowService.setPendingConfirmation({
-      status: 'unavailable',
-      message:
-        'Left the contracts page before indexing finished. The transaction was still broadcast.',
-    });
+    this.approvalFlowService.setPendingConfirmation(
+      {
+        status: 'unavailable',
+        message:
+          'Left the contracts page before indexing finished. The transaction was still broadcast.',
+      },
+      pollId,
+    );
     return true;
   }
 
@@ -3884,7 +3963,7 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * actually caught up, instead of letting the user dismiss the success
    * screen and navigate to "My Contracts" while it's still stale.
    */
-  private setActionIndexerState(state: ActionIndexerState) {
+  private setActionIndexerState(state: ActionIndexerState, pollId?: number) {
     this.interactIndexerState.set(state);
 
     const statusMap: Record<
@@ -3896,10 +3975,13 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       unavailable: 'unavailable',
       'not-indexed': 'timed-out',
     };
-    this.approvalFlowService.setPendingConfirmation({
-      status: statusMap[state.status],
-      message: state.message,
-    });
+    this.approvalFlowService.setPendingConfirmation(
+      {
+        status: statusMap[state.status],
+        message: state.message,
+      },
+      pollId,
+    );
   }
 
   /**

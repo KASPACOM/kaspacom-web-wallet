@@ -155,6 +155,11 @@ export class ContractActionPanelComponent {
   importPartialJson = '';
   aliasDraft = '';
   selectedCoSignerRole = '';
+  private lastRequestedDetailFunction = signal<{
+    detailId: string;
+    fn: string;
+  } | null>(null);
+  private lastAppliedPendingFunctionSelectKey = '';
 
   // Bound to the shell's currentWalletAliasKey() — used only to recompute
   // aliasDraft the same way ContractsDashboardComponent does, so the two
@@ -194,22 +199,53 @@ export class ContractActionPanelComponent {
   }>();
   aliasRemoveRequested = output<ContractDashboardEntry>();
 
-  isDetailActionFormRoute(): boolean {
+  isDetailActionFormRoute = computed(() => {
     return (
       this.activeTab() === 'detail' &&
       this.detailPanelTab() === 'action' &&
       this.actionPageView() === 'form'
     );
-  }
+  });
 
-  isDetailActionFormLoading(): boolean {
-    return (
+  selectedActionFieldConfig = computed((): ActionFieldConfigEntry | null => {
+    const contract = this.parsedInteractContract();
+    const selectedFunction = this.effectiveSelectedFunction();
+    if (!contract || !selectedFunction) return null;
+    return this.getActionFieldConfig(contract.contract_name, selectedFunction);
+  });
+
+  effectiveSelectedFunction = computed(() => {
+    const selectedFunction = this.selectedFunction();
+    if (selectedFunction) return selectedFunction;
+    const pendingFunction = this.pendingFunctionSelect()?.fn;
+    if (pendingFunction) return pendingFunction;
+    const lastRequested = this.lastRequestedDetailFunction();
+    const selectedDetailId = this.selectedDetail()?.entry.id;
+    if (
       this.isDetailActionFormRoute() &&
+      lastRequested &&
+      lastRequested.detailId === selectedDetailId
+    ) {
+      return lastRequested.fn;
+    }
+    return '';
+  });
+
+  detailActionFormLoading = computed(() => {
+    const route = this.isDetailActionFormRoute();
+    return (
+      route &&
       (this.selectedDetailLoading() ||
         !this.selectedDetail() ||
         !this.interactContractJson() ||
-        !this.selectedFunction())
+        !this.effectiveSelectedFunction())
     );
+  });
+
+  private rememberRequestedDetailFunction(fn: string) {
+    const detailId = this.selectedDetail()?.entry.id;
+    if (!detailId) return;
+    this.lastRequestedDetailFunction.set({ detailId, fn });
   }
 
   private readonly contractsDebugEnabled = false;
@@ -236,7 +272,38 @@ export class ContractActionPanelComponent {
 
     effect(() => {
       const request = this.pendingFunctionSelect();
-      if (request) this.selectFunction(request.fn);
+      if (request) {
+        const availableFunctionNames = this.availableFunctions().map(
+          (fn) => fn.name,
+        );
+        const key = JSON.stringify({
+          fn: request.fn,
+          contractName: this.parsedInteractContract()?.contract_name || '',
+          interactJsonLength: this.interactContractJson().length,
+          availableFunctionNames,
+        });
+        if (
+          key === this.lastAppliedPendingFunctionSelectKey &&
+          this.selectedFunction() === request.fn
+        ) {
+          return;
+        }
+        this.lastAppliedPendingFunctionSelectKey = key;
+        this.rememberRequestedDetailFunction(request.fn);
+        this.selectFunction(request.fn);
+      }
+    });
+
+    effect(() => {
+      const effectiveFunction = this.effectiveSelectedFunction();
+      if (
+        !this.isDetailActionFormRoute() ||
+        !effectiveFunction ||
+        this.selectedFunction() === effectiveFunction
+      ) {
+        return;
+      }
+      this.selectFunction(effectiveFunction);
     });
 
     effect(() => {
@@ -1965,7 +2032,7 @@ export class ContractActionPanelComponent {
   /** The curated label/description for the currently selected action, for the full-page form's header. */
   getSelectedActionMeta(): AvailableAction | undefined {
     return this.availableActions().find(
-      (action) => action.fnName === this.selectedFunction(),
+      (action) => action.fnName === this.effectiveSelectedFunction(),
     );
   }
 
@@ -1975,17 +2042,13 @@ export class ContractActionPanelComponent {
    * keep rendering the old manual/ABI-driven chain instead of this form.
    */
   getSelectedActionFieldConfig(): ActionFieldConfigEntry | null {
-    const contract = this.parsedInteractContract();
-    if (!contract || !this.selectedFunction()) return null;
-    return this.getActionFieldConfig(
-      contract.contract_name,
-      this.selectedFunction(),
-    );
+    return this.selectedActionFieldConfig();
   }
 
   goBackToActionList() {
     this.actionPageView.set('list');
     this.selectedFunction.set('');
+    this.lastRequestedDetailFunction.set(null);
     this.interactError.set(null);
     this.interactResult.set(null);
     this.partialSpendJson.set(null);
@@ -2712,6 +2775,7 @@ export class ContractActionPanelComponent {
    * output fields based on the function type.
    */
   selectFunction(name: string) {
+    this.rememberRequestedDetailFunction(name);
     this.selectedFunction.set(name);
     this.useSenderFee =
       this.isSelfCustodySweepAction(name) || !this.isMultiSigFunction(name);

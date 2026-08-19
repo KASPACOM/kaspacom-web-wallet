@@ -333,8 +333,15 @@
             @if (selectedDetail().entry.status !== "spent") {
               @if (!actionsPanelReady()) {
                 <div class="action-list-skeleton">
-                  <div class="sk-row"></div>
-                  <div class="sk-row"></div>
+                  @for (row of [1, 2, 3]; track row) {
+                    <div class="action-item skeleton-action-item">
+                      <div class="sk avatar"></div>
+                      <div class="ai-text">
+                        <div class="sk line wide"></div>
+                        <div class="sk line"></div>
+                      </div>
+                    </div>
+                  }
                 </div>
               } @else if (availableActions(); as actions) {
                 @if (actions.length > 0) {

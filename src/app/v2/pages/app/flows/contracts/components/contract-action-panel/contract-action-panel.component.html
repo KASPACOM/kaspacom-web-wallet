@@ -1,8 +1,31 @@
 <!-- ═══════════════ CURATED ACTION — FULL-PAGE FORM ═══════════════ -->
+@if (isDetailActionFormLoading()) {
+  <div class="panel flex column gap-20" id="contract-action-panel">
+    <button class="back-button p-8 typo-text-2" (click)="goBackToActionList()">
+      &larr; Back to actions
+    </button>
+
+    <div class="action-form-skeleton">
+      <div class="flex gap-12">
+        <div class="sk avatar"></div>
+        <div class="flex column gap-8 flex-1">
+          <div class="sk line wide"></div>
+          <div class="sk line narrow"></div>
+        </div>
+      </div>
+      <div class="sk block"></div>
+      <div class="sk line"></div>
+      <div class="sk line narrow"></div>
+      <div class="sk line button"></div>
+    </div>
+  </div>
+}
+
 @if (
   activeTab() === "detail" &&
     detailPanelTab() === "action" &&
     actionPageView() === "form" &&
+    !isDetailActionFormLoading() &&
     selectedDetail() &&
     selectedDetail()!.entry.status === "active" &&
     interactContractJson() &&
@@ -11,7 +34,7 @@
 ) {
   <div class="panel flex column gap-20" id="contract-action-panel">
     <button class="back-button p-8 typo-text-2" (click)="goBackToActionList()">
-      ← Back to actions
+      &larr; Back to actions
     </button>
 
     <div class="action-contract-name">
@@ -209,9 +232,9 @@
       @if (isCompletePartialAction()) {
         <div class="flex column gap-12">
           <span class="text-gray-75 typo-text-2"
-            >Paste the partial spend JSON received from the co-signer, or
-            import it from a file. Your signature will be added and the
-            transaction broadcast.</span
+            >Paste the partial spend JSON received from the co-signer, or import
+            it from a file. Your signature will be added and the transaction
+            broadcast.</span
           >
           <textarea
             class="contract-input"
@@ -363,34 +386,34 @@
       }
 
       @if (!isCompletePartialAction()) {
-      <div class="form-group flex align-items-center gap-8">
-        <label class="flex align-items-center gap-8 cursor-pointer m-0"
-          ><input
-            type="checkbox"
-            class="cursor-pointer"
-            [(ngModel)]="useSenderFee"
-            [disabled]="isSenderFeeToggleDisabled(selectedFunction())"
-          /><span class="text-white typo-text-2"
-            >Use wallet to pay for fees</span
-          ></label
-        >
-        <kc-icon
-          [iconClass]="'icon-info'"
-          [size]="'xs'"
-          [kcTooltip]="getSenderFeeTooltip(selectedFunction())"
-          tooltipPosition="top-center"
-        ></kc-icon>
-        @if (isTopUpFunction(selectedFunction())) {
-          <span class="text-gray-60 typo-text-2">
-            Selected:
-            {{
-              useSenderFee
-                ? "wallet pays fees"
-                : "fees come from the top-up output"
-            }}
-          </span>
-        }
-      </div>
+        <div class="form-group flex align-items-center gap-8">
+          <label class="flex align-items-center gap-8 cursor-pointer m-0"
+            ><input
+              type="checkbox"
+              class="cursor-pointer"
+              [(ngModel)]="useSenderFee"
+              [disabled]="isSenderFeeToggleDisabled(selectedFunction())"
+            /><span class="text-white typo-text-2"
+              >Use wallet to pay for fees</span
+            ></label
+          >
+          <kc-icon
+            [iconClass]="'icon-info'"
+            [size]="'xs'"
+            [kcTooltip]="getSenderFeeTooltip(selectedFunction())"
+            tooltipPosition="top-center"
+          ></kc-icon>
+          @if (isTopUpFunction(selectedFunction())) {
+            <span class="text-gray-60 typo-text-2">
+              Selected:
+              {{
+                useSenderFee
+                  ? "wallet pays fees"
+                  : "fees come from the top-up output"
+              }}
+            </span>
+          }
+        </div>
       }
       @if (isMultiSigFunction(selectedFunction())) {
         <div
@@ -439,18 +462,20 @@
       }
 
       @if (!isCompletePartialAction()) {
-      <kc-button
-        [text]="
-          isInteracting()
-            ? 'Processing...'
-            : getFunctionLabel(selectedFunction())
-        "
-        [isDisabled]="
-          isInteracting() || !interactContractJson() || !interactOutpointTxid()
-        "
-        [isFullWidth]="true"
-        (buttonClick)="interactContract()"
-      ></kc-button>
+        <kc-button
+          [text]="
+            isInteracting()
+              ? 'Processing...'
+              : getFunctionLabel(selectedFunction())
+          "
+          [isDisabled]="
+            isInteracting() ||
+            !interactContractJson() ||
+            !interactOutpointTxid()
+          "
+          [isFullWidth]="true"
+          (buttonClick)="interactContract()"
+        ></kc-button>
       }
     }
   </div>
@@ -465,6 +490,7 @@
   (activeTab() === "detail" &&
     detailPanelTab() === "action" &&
     actionPageView() === "form" &&
+    !isDetailActionFormLoading() &&
     !getSelectedActionFieldConfig() &&
     selectedDetail() &&
     selectedDetail()!.entry.status === "active" &&
@@ -476,7 +502,7 @@
         class="back-button p-8 typo-text-2"
         (click)="goBackToActionList()"
       >
-        ← Back to actions
+        &larr; Back to actions
       </button>
 
       <div class="action-contract-name">
@@ -944,11 +970,11 @@
             "
           >
             <span class="text-yellow typo-text-2"
-              >Leaving a balance behind keeps it secured under the same heir
-              and deadline — but the owner can still call Keep Alive at any
-              time (even after the deadline passes) to reset the countdown
-              on it. Claim the full balance if you want to guarantee you
-              receive it now.</span
+              >Leaving a balance behind keeps it secured under the same heir and
+              deadline — but the owner can still call Keep Alive at any time
+              (even after the deadline passes) to reset the countdown on it.
+              Claim the full balance if you want to guarantee you receive it
+              now.</span
             >
           </div>
         }

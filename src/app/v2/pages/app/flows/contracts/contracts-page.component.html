@@ -190,6 +190,7 @@
       [availableActions]="
         selectedDetail() ? getAvailableActions(selectedDetail()!) : []
       "
+      [selectedDetailLoading]="selectedDetailLoading()"
       [actionsPanelReady]="actionsPanelReady()"
       [editingAliasKey]="editingAliasKey()"
       [aliasNotice]="aliasNotice()"

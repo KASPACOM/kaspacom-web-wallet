@@ -2586,12 +2586,26 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    * causing a disabled -> enabled flicker. Gate the panel on both settling
    * before rendering real enabled/disabled state.
    */
-  actionsPanelReady = computed(
-    () =>
-      !this.selectedDetailLoading() &&
-      !!this.selectedDetail() &&
-      !!this.currentWallet(),
-  );
+  actionsPanelReady = computed(() => {
+    const detail = this.selectedDetail();
+    if (this.selectedDetailLoading() || !detail || !this.currentWallet()) {
+      return false;
+    }
+    if (detail.entry.status !== 'active') return true;
+
+    const hasCuratedActions =
+      !!this.actionMetaTable[
+        this.normalizeContractName(detail.entry.contractName)
+      ];
+    if (!hasCuratedActions) return true;
+
+    return (
+      (!!this.parsedInteractContract() &&
+        this.availableFunctions().length > 0) ||
+      !!this.selectedDetailError() ||
+      !!this.dashboardError()
+    );
+  });
 
   /**
    * Full list of possible actions for the detail page's "Available actions"

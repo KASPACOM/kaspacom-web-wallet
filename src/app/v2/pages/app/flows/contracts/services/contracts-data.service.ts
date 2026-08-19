@@ -51,8 +51,6 @@ export class ContractsDataService {
     string,
     Promise<ContractParticipant[]>
   >();
-  private readonly INDEXER_ACTION_FETCH_CONCURRENCY = 5;
-
   clearLocalParticipantsCache(): void {
     this.localParticipantsCache.clear();
   }
@@ -738,38 +736,6 @@ export class ContractsDataService {
     'SelfCustodyVault',
   ];
 
-  private async fetchLatestIndexerAction(
-    summary: IndexerCovenantDetails,
-  ): Promise<IndexerCovenantAction | undefined> {
-    const identifier = summary.covenantIdHex || summary.scriptHashHex;
-    if (!identifier) return undefined;
-    try {
-      const actions =
-        await this.covenantIndexerService.getCovenantActions(identifier);
-      return this.latestAction(actions);
-    } catch (error) {
-      console.warn(
-        '[Contracts] Failed to load latest action for covenant',
-        identifier,
-        error,
-      );
-      return undefined;
-    }
-  }
-
-  private async mapWithConcurrency<T, R>(
-    items: T[],
-    concurrency: number,
-    mapper: (item: T) => Promise<R>,
-  ): Promise<R[]> {
-    const results: R[] = [];
-    for (let index = 0; index < items.length; index += concurrency) {
-      const batch = items.slice(index, index + concurrency);
-      results.push(...(await Promise.all(batch.map(mapper))));
-    }
-    return results;
-  }
-
   async loadIndexerDashboardEntries(
     identifiers: Array<string | undefined>,
     ctx: ContractsDashboardBuildContext,
@@ -791,21 +757,13 @@ export class ContractsDataService {
     );
 
     for (const rows of rowsByIdentifier) {
-      const filteredRows = rows
-        .filter((row) =>
-          this.supportedIndexerTemplates.includes(
-            this.getIndexerTemplateName(row),
-          ),
-        );
-      const entries = await this.mapWithConcurrency(
-        filteredRows,
-        this.INDEXER_ACTION_FETCH_CONCURRENCY,
-        async (row) =>
-          this.indexerSummaryToDashboard(
-            row,
-            ctx,
-            await this.fetchLatestIndexerAction(row),
-          ),
+      const filteredRows = rows.filter((row) =>
+        this.supportedIndexerTemplates.includes(
+          this.getIndexerTemplateName(row),
+        ),
+      );
+      const entries = filteredRows.map((row) =>
+        this.indexerSummaryToDashboard(row, ctx),
       );
       for (const entry of entries) {
         byKey.set(this.getDashboardIdentityKey(entry), entry);
@@ -873,7 +831,9 @@ export class ContractsDataService {
             source: local ? 'both' : entry.source,
             status: entry.status,
             amountSompi: entry.amountSompi,
-            latestTxid: preferLocalLatest ? local?.latestTxid : entry.latestTxid,
+            latestTxid: preferLocalLatest
+              ? local?.latestTxid
+              : entry.latestTxid,
             latestAction: preferLocalLatest
               ? local?.latestAction
               : entry.latestAction,

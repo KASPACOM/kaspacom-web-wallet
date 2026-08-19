@@ -110,6 +110,7 @@ export class ContractActionPanelComponent {
   registryContracts = input<ContractRegistryEntry[]>([]);
   registryContractOptions = input<DropdownOption[]>([]);
   availableActions = input<AvailableAction[]>([]);
+  selectedDetailLoading = input(false);
   actionsPanelReady = input<boolean>(false);
   editingAliasKey = input<string | null>(null);
   aliasNotice = input<{ key: string; message: string } | null>(null);
@@ -192,6 +193,24 @@ export class ContractActionPanelComponent {
     draft: string;
   }>();
   aliasRemoveRequested = output<ContractDashboardEntry>();
+
+  isDetailActionFormRoute(): boolean {
+    return (
+      this.activeTab() === 'detail' &&
+      this.detailPanelTab() === 'action' &&
+      this.actionPageView() === 'form'
+    );
+  }
+
+  isDetailActionFormLoading(): boolean {
+    return (
+      this.isDetailActionFormRoute() &&
+      (this.selectedDetailLoading() ||
+        !this.selectedDetail() ||
+        !this.interactContractJson() ||
+        !this.selectedFunction())
+    );
+  }
 
   private readonly contractsDebugEnabled = false;
   private readonly debugLogKeys = new Set<string>();

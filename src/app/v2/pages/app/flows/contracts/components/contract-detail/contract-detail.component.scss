@@ -242,12 +242,36 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  .sk-row {
-    height: 52px;
-    border-radius: 11px;
-    border: 1px solid var(--border-secondary);
-    background: var(--gray-10);
+
+  .skeleton-action-item {
+    min-height: 68px;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .sk {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
     animation: kc-pulse 1.4s ease-in-out infinite;
+  }
+
+  .sk.avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    flex: 0 0 24px;
+  }
+
+  .sk.line {
+    height: 12px;
+  }
+
+  .sk.wide {
+    width: 38%;
+  }
+
+  .ai-text .sk.line:not(.wide) {
+    width: 76%;
   }
 }
 .action-item {

@@ -1,5 +1,5 @@
 <!-- ═══════════════ CURATED ACTION — FULL-PAGE FORM ═══════════════ -->
-@if (isDetailActionFormLoading()) {
+@if (detailActionFormLoading()) {
   <div class="panel flex column gap-20" id="contract-action-panel">
     <button class="back-button p-8 typo-text-2" (click)="goBackToActionList()">
       &larr; Back to actions
@@ -25,11 +25,11 @@
   activeTab() === "detail" &&
     detailPanelTab() === "action" &&
     actionPageView() === "form" &&
-    !isDetailActionFormLoading() &&
+    !detailActionFormLoading() &&
     selectedDetail() &&
     selectedDetail()!.entry.status === "active" &&
     interactContractJson() &&
-    getSelectedActionFieldConfig();
+    selectedActionFieldConfig();
   as selectedActionFields
 ) {
   <div class="panel flex column gap-20" id="contract-action-panel">
@@ -491,8 +491,8 @@
   (activeTab() === "detail" &&
     detailPanelTab() === "action" &&
     actionPageView() === "form" &&
-    !isDetailActionFormLoading() &&
-    !getSelectedActionFieldConfig() &&
+    !detailActionFormLoading() &&
+    !selectedActionFieldConfig() &&
     selectedDetail() &&
     selectedDetail()!.entry.status === "active" &&
     interactContractJson())

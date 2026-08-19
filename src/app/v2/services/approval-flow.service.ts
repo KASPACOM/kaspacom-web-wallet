@@ -97,8 +97,16 @@ export class ApprovalFlowService {
     null,
   );
   pendingConfirmation = computed(() => this.pendingConfirmationSignal());
+  private actionIndexingPollCounter = 0;
+  private activeActionIndexingPollId: number | null = null;
 
-  setPendingConfirmation(state: PendingActionConfirmation | null) {
+  setPendingConfirmation(
+    state: PendingActionConfirmation | null,
+    pollId?: number,
+  ) {
+    if (pollId !== undefined && this.activeActionIndexingPollId !== pollId) {
+      return;
+    }
     this.pendingConfirmationSignal.set(state);
   }
 
@@ -113,8 +121,11 @@ export class ApprovalFlowService {
   // new instance await it before doing its own first load instead of racing it.
   private actionIndexingCompletionSignal = signal<Promise<void> | null>(null);
 
-  setActionIndexingCompletion(promise: Promise<void> | null) {
+  setActionIndexingCompletion(promise: Promise<void>): number {
+    const pollId = ++this.actionIndexingPollCounter;
+    this.activeActionIndexingPollId = pollId;
     this.actionIndexingCompletionSignal.set(promise);
+    return pollId;
   }
 
   // A poll's own cleanup must not blindly null the signal: if the user
@@ -124,8 +135,12 @@ export class ApprovalFlowService {
   // while the newer poll is still running, making the next
   // waitForActionIndexing() resolve immediately instead of waiting on it.
   // Only clear if the signal still holds the exact promise this poll set.
-  clearActionIndexingCompletion(promise: Promise<void>) {
-    if (this.actionIndexingCompletionSignal() === promise) {
+  clearActionIndexingCompletion(promise: Promise<void>, pollId: number) {
+    if (
+      this.activeActionIndexingPollId === pollId &&
+      this.actionIndexingCompletionSignal() === promise
+    ) {
+      this.activeActionIndexingPollId = null;
       this.actionIndexingCompletionSignal.set(null);
     }
   }
@@ -143,6 +158,7 @@ export class ApprovalFlowService {
   // freshly re-created Contracts instance — resolves immediately instead of
   // waiting on a promise the user explicitly opted out of.
   skipActionIndexing() {
+    this.activeActionIndexingPollId = null;
     this.actionIndexingCompletionSignal.set(null);
   }
 
@@ -276,6 +292,7 @@ export class ApprovalFlowService {
   closeApproval() {
     // Clear completion signal
     this.completionSignal.set(null);
+    this.activeActionIndexingPollId = null;
     this.pendingConfirmationSignal.set(null);
     this.cleanupApproval();
 

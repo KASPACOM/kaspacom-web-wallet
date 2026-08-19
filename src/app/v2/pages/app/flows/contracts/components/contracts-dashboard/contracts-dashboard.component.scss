@@ -139,6 +139,7 @@ $tpl-accents: (
   display: flex;
   align-items: flex-start;
   gap: 12px;
+  min-height: 74px;
 }
 
 .tpl-icon {
@@ -299,6 +300,7 @@ $tpl-accents: (
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-top: auto;
   padding-top: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   font-size: 12px;

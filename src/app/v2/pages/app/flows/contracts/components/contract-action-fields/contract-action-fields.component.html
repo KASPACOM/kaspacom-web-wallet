@@ -57,6 +57,9 @@
           [isValid]="true"
           (valueChange)="timestampChange.emit($event)"
         ></app-covenant-date-time-input>
+        @if (timestampWarning()) {
+          <span class="field-warning">{{ timestampWarning() }}</span>
+        }
         @if (field.description) {
           <span class="text-gray-60 typo-text-2">{{ field.description }}</span>
         }

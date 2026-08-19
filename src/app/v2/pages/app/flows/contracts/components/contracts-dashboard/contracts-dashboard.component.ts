@@ -107,6 +107,11 @@ export class ContractsDashboardComponent {
       .replace(/^-|-$/g, '');
   }
 
+  getVisibleRoles(contract: ContractDashboardEntry): string[] {
+    const roles = contract.currentRoles || [];
+    return roles.length ? roles : [];
+  }
+
   getAliasUnavailableMessage(): string {
     return 'Import this contract before adding a nickname.';
   }

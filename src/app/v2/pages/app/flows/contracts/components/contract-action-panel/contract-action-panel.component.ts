@@ -2172,6 +2172,18 @@ export class ContractActionPanelComponent {
     this.dmsNewExpiry = value || '';
   }
 
+  getGenericTimestampWarning(): string {
+    const value = this.dmsNewExpiry.trim();
+    if (!value) return '';
+
+    const selectedTime = new Date(value).getTime();
+    if (!Number.isFinite(selectedTime) || selectedTime >= Date.now()) {
+      return '';
+    }
+
+    return 'New check-in deadline is in the past. The heir may be able to claim immediately.';
+  }
+
   onGenericExtraArgChange(event: { name: string; value: string }) {
     this.onExtraArgValueChange(event.name, event.value);
   }

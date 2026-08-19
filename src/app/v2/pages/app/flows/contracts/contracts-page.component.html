@@ -161,7 +161,8 @@
 
         @if (
           selectedDetail() &&
-          (activeTab() !== "detail" || actionPageView() === "list")
+          activeTab() === "detail" &&
+          actionPageView() === "list"
         ) {
           <app-contract-detail
             [selectedDetail]="selectedDetail()!"

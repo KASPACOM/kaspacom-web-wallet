@@ -5,6 +5,13 @@
 // src/styles/shared-ui.scss (global), so only the rules below — which are
 // still local to the shell's own stylesheet — need a copy here.
 
+.field-warning {
+  display: block;
+  color: var(--warning-50, #f8c96a);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .alias-actions {
   display: flex;
   align-items: center;

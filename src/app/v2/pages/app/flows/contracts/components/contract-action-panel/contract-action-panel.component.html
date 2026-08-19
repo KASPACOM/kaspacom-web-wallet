@@ -272,6 +272,7 @@
               : interactOutputAmount()
           "
           [timestampValue]="dmsNewExpiry"
+          [timestampWarning]="getGenericTimestampWarning()"
           [extraArgValues]="extraArgValues"
           (addressChange)="onGenericAddressChange($event)"
           (addressResolved)="onGenericAddressResolved($event)"
@@ -696,8 +697,13 @@
             [value]="dmsNewExpiry"
             [isDisabled]="isInteracting()"
             [isValid]="true"
-            (valueChange)="dmsNewExpiry = $event"
+            (valueChange)="onGenericTimestampChange($event)"
           ></app-covenant-date-time-input>
+          @if (getGenericTimestampWarning()) {
+            <span class="field-warning">{{
+              getGenericTimestampWarning()
+            }}</span>
+          }
           <span class="text-gray-60 typo-text-2"
             >Pick when the heir should become able to claim if you do not
             refresh again.</span

@@ -261,15 +261,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
    */
   hideActionsAfterCompletion = signal(false);
   /**
-   * Registry id of the contract to open straight to details for, restored
-   * from transient state by restoreTransientState() and consumed once by
-   * loadContracts()'s tail — see markActionCompleteForDetailsLanding(). A
-   * freshly re-created instance otherwise has no route id and no
-   * selectedDetail, so it would land on the plain "My Contracts" list
-   * instead of the contract the user just finished acting on.
-   */
-  private pendingLandOnContractId?: string;
-  /**
    * Set in ngOnDestroy(). This component is torn down by the flow-page
    * outlet whenever it hosts the "contracts" flow page (see
    * bailIfLeftContractsFlow()'s doc comment) — but it's also directly
@@ -562,8 +553,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       this.interactResult.set(state.interactResult);
     if (state.hideActionsAfterCompletion)
       this.hideActionsAfterCompletion.set(true);
-    if (state.landOnContractId)
-      this.pendingLandOnContractId = state.landOnContractId;
 
     this.flowPagesService.saveTransientState('contracts', undefined);
   }
@@ -841,20 +830,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       );
       if (refreshed) {
         await this.openContractDetail(refreshed, { silent: true });
-      }
-    } else if (this.pendingLandOnContractId) {
-      // Land on the contract an action just completed on — see
-      // pendingLandOnContractId's doc comment. One-shot: clear it regardless
-      // of whether a match was found, so it doesn't stick around and hijack
-      // some later, unrelated load.
-      const contractId = this.pendingLandOnContractId;
-      this.pendingLandOnContractId = undefined;
-      const target = this.dashboardContracts().find(
-        (entry) => entry.registryEntry?.id === contractId,
-      );
-      if (target) {
-        this.activeTab.set('detail');
-        await this.openContractDetail(target);
       }
     }
   }
@@ -3753,7 +3728,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
   };
 
   onActionIndexingRequested = (event: { txid: string; registryId: string }) => {
-    this.markActionCompleteForDetailsLanding(event.registryId);
     void this.trackActionIndexing(event.txid, event.registryId);
   };
 
@@ -3865,31 +3839,6 @@ export class ContractsPageComponent implements OnInit, OnDestroy {
       message:
         'Broadcast, but My Contracts may not reflect this change yet. Refresh in a moment.',
     });
-  }
-
-  /**
-   * Call right after a covenant action succeeds — see
-   * hideActionsAfterCompletion's and pendingLandOnContractId's doc comments
-   * for what this does and why. `registryEntryId` is the acted-on contract
-   * (this.selectedContractId() at the call site) — omit it if there's no
-   * local registry entry to land back on.
-   *
-   * Also flips detailPanelTab/actionPageView back to the plain details view
-   * directly on `this`, not just via the transient state the flow-page
-   * hosting mode restores into a fresh instance. When this component is
-   * router-hosted (see `destroyed`'s doc comment) it's never torn down by
-   * the approval overlay, so this same instance is what the user sees
-   * again — without this, it would still be sitting on whatever action
-   * form (e.g. "Claim") they just submitted.
-   */
-  private markActionCompleteForDetailsLanding(registryEntryId?: string): void {
-    this.hideActionsAfterCompletion.set(true);
-    this.detailPanelTab.set('details');
-    this.actionPageView.set('list');
-    this.flowPagesService.saveTransientState('contracts', {
-      hideActionsAfterCompletion: true,
-      landOnContractId: registryEntryId || undefined,
-    } satisfies ContractsTransientState);
   }
 
   /**

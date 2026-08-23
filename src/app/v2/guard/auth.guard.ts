@@ -7,6 +7,7 @@ import {
 } from '@angular/router';
 import { LOCAL_STORAGE_KEYS } from '../../config/consts';
 import { PasswordManagerService } from '../../services/password-manager.service';
+import { IFrameCommunicationApp } from '../../services/communication-service/communication-app/iframe-communication.service';
 
 @Injectable({
   providedIn: 'root',
@@ -28,7 +29,7 @@ export class AuthGuard implements CanActivate {
     // '/onboarding' and re-trigger the redirect, looping forever.
     const path = fullPath.split('?')[0];
 
-    const onboardingPaths = ['/onboarding', '/onboarding-v2'];
+    const onboardingPaths = ['/', '/onboarding', '/onboarding-v2'];
 
     if (!userData) {
       if (onboardingPaths.includes(path)) {
@@ -60,7 +61,11 @@ export class AuthGuard implements CanActivate {
       return false;
     }
 
-    if (isLogged && onboardingPaths.includes(path)) {
+    if (
+      isLogged &&
+      onboardingPaths.includes(path) &&
+      !IFrameCommunicationApp.isIframe()
+    ) {
       this.router.navigate(['/app/home']);
       return false;
     }

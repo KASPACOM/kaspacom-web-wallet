@@ -288,7 +288,7 @@ export class WalletActionService {
       };
     }
 
-    const isUsingV2Flow = !isFromIframe && this.isV2AppContext();
+    const isUsingV2Flow = !isFromIframe;
     const result = await this.showApprovalDialogToUser(action, isFromIframe);
 
     if (!result.isApproved) {
@@ -486,7 +486,7 @@ export class WalletActionService {
     isFromIframe: boolean = false,
   ): Promise<ApprovalPageResultParams> {
     // Use the new approval flow service for modern flow-based approvals
-    if (!isFromIframe && this.isV2AppContext()) {
+    if (!isFromIframe) {
       return await this.approvalFlowService.showApproval(action, isFromIframe);
     }
 
@@ -514,14 +514,6 @@ export class WalletActionService {
 
       return data;
     });
-  }
-
-  private isV2AppContext(): boolean {
-    // Check if we're in the v2 app context (not in legacy routes)
-    return (
-      !this.router.url.startsWith('/legacy') &&
-      this.router.url.startsWith('/app')
-    );
   }
 
   getActionToApproveSignal(): Signal<

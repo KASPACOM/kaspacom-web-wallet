@@ -43,7 +43,6 @@ Wallet prefixes:
 - `/onboarding-v2`
 - `/wallet`
 - `/app`
-- `/legacy`
 
 Example function body:
 
@@ -81,7 +80,7 @@ function handler(event) {
     return request;
   }
 
-  var walletPrefixes = ['/onboarding', '/onboarding-v2', '/wallet', '/app', '/legacy'];
+  var walletPrefixes = ['/onboarding', '/onboarding-v2', '/wallet', '/app'];
   for (var i = 0; i < walletPrefixes.length; i++) {
     var prefix = walletPrefixes[i];
     if (uri === prefix || uri.indexOf(prefix + '/') === 0) {

@@ -138,24 +138,6 @@
   }
 }
 
-.public-page__wallet-return {
-  display: none;
-  position: relative;
-  z-index: 2;
-  width: min(1160px, calc(100% - 32px));
-  margin: 14px auto 0;
-  padding: 12px 14px;
-  border: 1px solid rgba(111, 199, 186, 0.32);
-  border-radius: 8px;
-  background: rgba(8, 13, 15, 0.9);
-  color: var(--white);
-  font-size: 0.88rem;
-  font-weight: 600;
-  line-height: 1.4;
-  text-align: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.24);
-}
-
 .public-nav,
 .hero,
 .content-section,
@@ -643,11 +625,6 @@ h1 {
 }
 
 @media (max-width: 640px) {
-  .public-page__wallet-return {
-    display: block;
-    width: min(100% - 24px, 1120px);
-  }
-
   .public-nav,
   .hero,
   .content-section,

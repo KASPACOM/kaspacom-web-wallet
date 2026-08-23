@@ -21,6 +21,7 @@ Rules:
 
 - Requests with a file extension pass through unchanged.
 - `/` maps to `/index.html`.
+- Trailing slash public URLs, for example `/faq/`, normalize before matching.
 - Known public routes map to their prerendered HTML.
 - Known wallet prefixes map to `/index.csr.html`.
 - Unknown extensionless paths pass through and should return the real `404.html`.
@@ -58,6 +59,10 @@ function handler(event) {
   if (uri === '/') {
     request.uri = '/index.html';
     return request;
+  }
+
+  if (uri.length > 1 && uri.charAt(uri.length - 1) === '/') {
+    uri = uri.slice(0, -1);
   }
 
   var publicRoutes = {

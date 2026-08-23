@@ -82,12 +82,13 @@ jobs:
             --cache-control "public,max-age=3600"
 
           # 3. Upload generated HTML with no-cache headers
-          aws s3 sync dist/wallet-front-new/browser s3://${{ env.S3_BUCKET_NAME }}/ \
-            --exclude "*" \
-            --include "*.html" \
-            --metadata-directive REPLACE \
-            --cache-control "no-cache, no-store, must-revalidate" \
-            --content-type "text/html"
+          find dist/wallet-front-new/browser -name '*.html' -print0 | while IFS= read -r -d '' file; do
+            key="${file#dist/wallet-front-new/browser/}"
+            aws s3 cp "$file" "s3://${{ env.S3_BUCKET_NAME }}/$key" \
+              --metadata-directive REPLACE \
+              --cache-control "no-cache, no-store, must-revalidate" \
+              --content-type "text/html"
+          done
 
           # 4. Upload crawl metadata with short-lived cache
           aws s3 sync dist/wallet-front-new/browser s3://${{ env.S3_BUCKET_NAME }}/ \

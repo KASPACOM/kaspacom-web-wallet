@@ -13,7 +13,7 @@ export class PublicSeoService {
   private readonly document = inject<Document>(DOCUMENT);
 
   applyPage(page: PublicPage, faqs: PublicFaqEntry[]): void {
-    const canonicalUrl = `${CANONICAL_ORIGIN}/${page.path}`.replace(/\/$/, '/');
+    const canonicalUrl = this.canonicalUrl(page);
 
     this.title.setTitle(page.title);
     this.meta.updateTag({ name: 'description', content: page.description });
@@ -114,6 +114,22 @@ export class PublicSeoService {
       };
     }
 
+    if (page.schemaType === 'FAQPage') {
+      return {
+        '@type': 'WebPage',
+        '@id': `${canonicalUrl}#webpage`,
+        name: page.h1,
+        url: canonicalUrl,
+        description: page.description,
+        isPartOf: {
+          '@id': `${CANONICAL_ORIGIN}/#website`,
+        },
+        publisher: {
+          '@id': `${CANONICAL_ORIGIN}/#organization`,
+        },
+      };
+    }
+
     return {
       '@type': 'Article',
       '@id': `${canonicalUrl}#article`,
@@ -127,5 +143,9 @@ export class PublicSeoService {
         '@id': `${CANONICAL_ORIGIN}/#organization`,
       },
     };
+  }
+
+  private canonicalUrl(page: PublicPage): string {
+    return page.path ? `${CANONICAL_ORIGIN}/${page.path}` : `${CANONICAL_ORIGIN}/`;
   }
 }

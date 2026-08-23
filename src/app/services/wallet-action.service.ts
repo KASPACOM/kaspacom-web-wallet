@@ -1,8 +1,11 @@
-import { Injectable, Signal, signal } from '@angular/core';
+import { Injectable, Signal, signal, inject } from '@angular/core';
 import {
   SignPsktTransactionAction,
   WalletPsktSignInput,
   CommitRevealAction,
+  CovenantDeployAction,
+  CovenantSpendAction,
+  CovenantCompletePartialAction,
   SignMessage,
   TransferKasAction,
   WalletAction,
@@ -51,6 +54,18 @@ const INSTANT_ACTIONS: { [key: string]: boolean } = {
   providedIn: 'root',
 })
 export class WalletActionService {
+  private walletService = inject(WalletService);
+  private utils = inject(UtilsHelper);
+  private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
+  private krc20WalletActionService = inject(Krc20WalletActionService);
+  private baseProtocolClassesService = inject(BaseProtocolClassesService);
+  private readonly router = inject(Router);
+  private readonly ethereumHandleActionRequestService = inject(
+    EthereumHandleActionRequestService,
+  );
+  private readonly approvalFlowService = inject(ApprovalFlowService);
+  private readonly monitorService = inject(MonitorService);
+
   private actionsListByWallet = signal<{
     [walletIdWithAccount: string]: WalletActionListItem[];
   }>({});
@@ -59,10 +74,10 @@ export class WalletActionService {
   }>({});
   private actionToApprove = signal<
     | {
-      action: WalletAction;
-      resolve: (data: { isApproved: boolean; priorityFee?: bigint }) => void;
-      additionalParams?: { [parmName: string]: any };
-    }
+        action: WalletAction;
+        resolve: (data: { isApproved: boolean; priorityFee?: bigint }) => void;
+        additionalParams?: { [parmName: string]: any };
+      }
     | undefined
   >(undefined);
 
@@ -71,17 +86,7 @@ export class WalletActionService {
     undefined,
   );
 
-  constructor(
-    private walletService: WalletService,
-    private utils: UtilsHelper,
-    private kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private krc20WalletActionService: Krc20WalletActionService,
-    private baseProtocolClassesService: BaseProtocolClassesService,
-    private readonly router: Router,
-    private readonly ethereumHandleActionRequestService: EthereumHandleActionRequestService,
-    private readonly approvalFlowService: ApprovalFlowService,
-    private readonly monitorService: MonitorService,
-  ) {
+  constructor() {
     this.actionsListByWallet.set({});
     this.isActionsRunningByWallet.set({});
 
@@ -436,6 +441,25 @@ export class WalletActionService {
     return { ...actionResult, isUsingV2Flow };
   }
 
+  async validateAndApproveAction(
+    action: WalletAction,
+    isFromIframe: boolean = false,
+  ): Promise<ApprovalPageResultParams> {
+    const validationResult = await this.validateAction(
+      action,
+      this.walletService.getCurrentWallet()!,
+    );
+    if (!validationResult.isValidated) {
+      return {
+        isApproved: false,
+      };
+    }
+
+    const result = await this.showApprovalDialogToUser(action, isFromIframe);
+
+    return result;
+  }
+
   async showCommunicationAppApprovalDialogToUser(
     app: BaseCommunicationApp,
     isFromIframe: boolean = false,
@@ -502,13 +526,13 @@ export class WalletActionService {
 
   getActionToApproveSignal(): Signal<
     | {
-      action: WalletAction;
-      resolve: (data: {
-        isApproved: boolean;
-        priorityFee?: bigint;
-        additionalParams?: { [parmName: string]: any };
-      }) => void;
-    }
+        action: WalletAction;
+        resolve: (data: {
+          isApproved: boolean;
+          priorityFee?: bigint;
+          additionalParams?: { [parmName: string]: any };
+        }) => void;
+      }
     | undefined
   > {
     return this.actionToApprove.asReadonly();
@@ -649,7 +673,21 @@ export class WalletActionService {
         const actionsList = this.actionsListByWallet()[walletIdWithAccount];
 
         if (actionsList[0] && !actionsList[0].action.rbf) {
-          await wallet.waitForWalletToBeReadyForTransactions();
+          // This wait can stall indefinitely (pending mempool txs / UTXO
+          // processor); without the warning the queued action just silently
+          // never executes and there is nothing in the console to explain it.
+          const waitingActionType = actionsList[0].action.type;
+          const slowReadinessWarning = setInterval(() => {
+            console.warn(
+              '[WalletAction] Still waiting for the wallet to be ready before executing',
+              waitingActionType,
+            );
+          }, 10_000);
+          try {
+            await wallet.waitForWalletToBeReadyForTransactions();
+          } finally {
+            clearInterval(slowReadinessWarning);
+          }
         }
 
         const action = actionsList!.shift()!;
@@ -669,6 +707,12 @@ export class WalletActionService {
             );
 
             if (!validationResult.isValidated) {
+              console.error(
+                '[WalletAction] Action failed queue-time validation:',
+                action.action.type,
+                'errorCode:',
+                validationResult.errorCode,
+              );
               action.resolve({
                 success: false,
                 errorCode: validationResult.errorCode,
@@ -731,13 +775,11 @@ export class WalletActionService {
     if (isRevealOnly) {
       const actionData = action.data as CommitRevealAction;
       // Retreive kas only, no need for validation
-      if (
-        !(
-          actionData.options?.additionalOutputs ||
-          actionData.options?.revealPriorityFee ||
-          checkAlsoProtocolData
-        )
-      ) {
+      if (!(
+        actionData.options?.additionalOutputs ||
+        actionData.options?.revealPriorityFee ||
+        checkAlsoProtocolData
+      )) {
         return {
           isValidated: true,
         };
@@ -776,6 +818,24 @@ export class WalletActionService {
         );
         break;
 
+      case WalletActionType.COVENANT_DEPLOY:
+        validationResult = this.validateCovenantDeployAction(
+          action.data as CovenantDeployAction,
+        );
+        break;
+
+      case WalletActionType.COVENANT_SPEND:
+        validationResult = this.validateCovenantSpendAction(
+          action.data as CovenantSpendAction,
+        );
+        break;
+
+      case WalletActionType.COVENANT_COMPLETE_PARTIAL:
+        validationResult = this.validateCovenantCompletePartialAction(
+          action.data as CovenantCompletePartialAction,
+        );
+        break;
+
       case WalletActionType.SIGN_MESSAGE:
         if (
           this.utils.isNullOrEmptyString((action.data as SignMessage).message)
@@ -807,6 +867,7 @@ export class WalletActionService {
       const requiredKaspaAmount =
         await this.kaspaNetworkActionsService.getMinimalRequiredAmountForAction(
           action,
+          wallet,
         );
 
       if (currentBalance < requiredKaspaAmount) {
@@ -1034,6 +1095,99 @@ export class WalletActionService {
       default:
         return false;
     }
+  }
+
+  private validateCovenantDeployAction(action: CovenantDeployAction): {
+    isValidated: boolean;
+    errorCode?: number;
+  } {
+    if (!action.compiledContractJson || action.amountSompi <= 0n) {
+      return {
+        isValidated: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
+      };
+    }
+
+    return {
+      isValidated: true,
+    };
+  }
+
+  private validateCovenantSpendAction(action: CovenantSpendAction): {
+    isValidated: boolean;
+    errorCode?: number;
+  } {
+    if (
+      !action.compiledContractJson ||
+      !action.functionName ||
+      !action.outpoint.txid ||
+      action.outpoint.vout < 0 ||
+      action.inputAmountSompi <= 0n
+    ) {
+      return {
+        isValidated: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
+      };
+    }
+
+    if (
+      !Array.isArray(action.outputs) ||
+      action.outputs.length === 0 ||
+      action.outputs.some((o) => !o.address || o.amount <= 0n)
+    ) {
+      return {
+        isValidated: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
+      };
+    }
+
+    if (action.transactionPayloadHex !== undefined) {
+      const hex = action.transactionPayloadHex;
+      if (hex.length % 2 !== 0 || !/^[0-9a-fA-F]*$/.test(hex)) {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
+        };
+      }
+    }
+
+    return {
+      isValidated: true,
+    };
+  }
+
+  private validateCovenantCompletePartialAction(
+    action: CovenantCompletePartialAction,
+  ): { isValidated: boolean; errorCode?: number } {
+    if (!action.partialSpendJson) {
+      return {
+        isValidated: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
+      };
+    }
+
+    try {
+      const partial = JSON.parse(action.partialSpendJson);
+      if (
+        !partial.compiledJson ||
+        !partial.functionName ||
+        !partial.outpoint?.txid
+      ) {
+        return {
+          isValidated: false,
+          errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
+        };
+      }
+    } catch {
+      return {
+        isValidated: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_ACTION_TYPE,
+      };
+    }
+
+    return {
+      isValidated: true,
+    };
   }
 
   private getActionSteps(action: WalletAction): number {

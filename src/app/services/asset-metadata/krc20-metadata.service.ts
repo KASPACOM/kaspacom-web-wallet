@@ -14,23 +14,34 @@ export interface Krc20TokenWithMetadata extends GetTokenListDto {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
-export class Krc20MetadataService extends BaseAssetMetadataService<GetTokenListDto, Krc20TokenWithMetadata> {
+export class Krc20MetadataService extends BaseAssetMetadataService<
+  GetTokenListDto,
+  Krc20TokenWithMetadata
+> {
+  protected assetsManager: AssetsManagerService;
+
   private kasplexService = inject(KasplexKrc20Service);
-  
-  constructor(protected assetsManager: AssetsManagerService) {
+
+  constructor() {
+    const assetsManager = inject(AssetsManagerService);
+
     super(assetsManager.getAllAssetStores().l1, L1_ASSET_KEYS.krc20);
+
+    this.assetsManager = assetsManager;
   }
 
   protected override getAssetId(asset: GetTokenListDto): string {
     return asset.tick;
   }
 
-  protected override async loadMetadata(asset: GetTokenListDto): Promise<Krc20TokenWithMetadata | null> {
+  protected override async loadMetadata(
+    asset: GetTokenListDto,
+  ): Promise<Krc20TokenWithMetadata | null> {
     try {
       const response = await firstValueFrom(
-        this.kasplexService.getTokenInfo(asset.tick)
+        this.kasplexService.getTokenInfo(asset.tick),
       );
 
       if (response.message === 'successful' && response.result?.[0]) {
@@ -40,13 +51,16 @@ export class Krc20MetadataService extends BaseAssetMetadataService<GetTokenListD
           maxSupply: tokenInfo.max,
           minted: tokenInfo.minted,
           holders: tokenInfo.holderTotal,
-          state: tokenInfo.state
+          state: tokenInfo.state,
         };
       }
 
       return null;
     } catch (error) {
-      console.error(`Failed to load metadata for KRC20 token ${asset.tick}:`, error);
+      console.error(
+        `Failed to load metadata for KRC20 token ${asset.tick}:`,
+        error,
+      );
       return null;
     }
   }
@@ -54,18 +68,19 @@ export class Krc20MetadataService extends BaseAssetMetadataService<GetTokenListD
   /**
    * Get enriched token data with metadata
    */
-  public getEnrichedTokenData(tick: string): Krc20TokenWithMetadata | undefined {
+  public getEnrichedTokenData(
+    tick: string,
+  ): Krc20TokenWithMetadata | undefined {
     const item = this.paginatedAssetsSignal().find(
-      item => this.getAssetId(item.data) === tick
+      (item) => this.getAssetId(item.data) === tick,
     );
-    
+
     if (item?.metadata) {
       return item.metadata;
     } else if (item) {
       return item.data;
     }
-    
+
     return undefined;
   }
-
-} 
+}

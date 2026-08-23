@@ -32,16 +32,19 @@ $swap-input-row-height: 45px;
   color: var(--color-text-primary);
 }
 
-.settings-btn {
-  background: transparent;
-  border: none;
-  padding: 8px;
-  cursor: pointer;
-  border-radius: 12px;
-  transition: background-color 0.2s ease;
+// tag-secondary's default sizing/selected-state contrast is tuned for
+// larger filter-chip UI, not a compact percentage selector - scope down
+// the size and use the app's primary accent color for the selected state
+// so it's actually visible against the dark theme.
+.percentage-options ::ng-deep .kc-button.tag-secondary {
+  min-height: unset;
+  padding: 5px 10px;
+  font-size: 13px;
 
-  &:hover {
-    background-color: var(--bg-secondary);
+  &.selected {
+    background-color: rgba(111, 199, 186, 0.15);
+    border-color: var(--kaspa-20, #6fc7ba);
+    color: var(--kaspa-20, #6fc7ba);
   }
 }
 
@@ -114,39 +117,6 @@ $swap-input-row-height: 45px;
 
   &.error-text {
     color: var(--error, #e04242);
-  }
-}
-
-// Percentage Options
-.percentage-options {
-  display: flex;
-  float: right;
-  gap: 8px;
-  width: max-content;
-}
-
-.percentage-btn {
-  flex: 1;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--gray-25, #404040);
-  color: var(--gray-75, #bdbdbd);
-  font-size: 13px;
-  font-weight: 500;
-  padding: 5px 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: var(--bg-secondary);
-    color: var(--white, #fff);
-    border-color: var(--gray-45, #757575);
-  }
-
-  &.active {
-    background: var(--primary-20, #2a4a5a);
-    border-color: var(--primary, #6fc7ba);
-    color: var(--primary, #6fc7ba);
   }
 }
 
@@ -247,40 +217,6 @@ $swap-input-row-height: 45px;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 2;
-}
-
-.switch-btn {
-  background-color: var(--bg-tertiary, #1a2025);
-  border: 4px solid var(--bg-primary, #0d1316);
-  border-radius: 12px;
-  padding: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &:hover {
-    background-color: var(--bg-secondary, #141a1f);
-    border-color: var(--primary-40, #3a5a5a);
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
-}
-
-.switch-arrows {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0;
-  color: var(--primary);
-
-  kc-icon {
-    transition: transform 0.2s ease;
-    font-size: 24px;
-  }
 }
 
 // Min Received

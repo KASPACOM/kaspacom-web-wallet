@@ -53,6 +53,7 @@ export interface L1NetworkConfigInterface {
   network: string;
   shortName: string;
   icon: string;
+  blocksPerSecond: number;
   kaspaWrpcUrls?: string[];
   kaspaComApiBaseurl: string;
   kaspaComDefiApiBaseurl: string;
@@ -61,7 +62,10 @@ export interface L1NetworkConfigInterface {
   krc721ApiBaseurl?: string;
   krc721CacheStreamUrl?: string;
   knsApiBaseurl?: string;
+  covenantIndexerApiBaseurl?: string;
   kaspaExplorerBaseurl: string;
+  /** Covenant explorer (covenants.kaspa.com); networks without one fall back to kaspaExplorerBaseurl. */
+  covenantExplorerBaseurl?: string;
   l1AvatarCollection: string;
 }
 

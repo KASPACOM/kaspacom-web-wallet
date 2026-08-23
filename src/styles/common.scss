@@ -1645,3 +1645,26 @@
   padding-top: 72px;
   padding-bottom: 72px;
 }
+
+// kc-input (@kaspacom/ui-kit) has no built-in slot for a validation error
+// message (only the isValid boolean, which just toggles the invalid border
+// style) - render this alongside kc-input to show the reason text.
+.kc-input-error-text {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: var(--kc-color-danger-600);
+  font-weight: 600;
+}
+
+// kc-button (@kaspacom/ui-kit) dropped the old role="danger" semantic
+// color input - only variant/size affect styling now. Apply alongside
+// variant="secondary" to recolor destructive actions (e.g. delete).
+kc-button.kc-button-danger button.secondary {
+  color: var(--kc-color-danger-600);
+  border-color: var(--kc-color-danger-600);
+
+  &:not(.disabled):not(.loading):hover {
+    border-color: var(--kc-color-danger-700);
+    color: var(--kc-color-danger-700);
+  }
+}

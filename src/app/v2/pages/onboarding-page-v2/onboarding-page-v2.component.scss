@@ -2,14 +2,18 @@
 
 .onboarding-v2 {
   position: relative;
-  min-height: 100vh;
+  height: 100%;
   width: 100%;
   padding: 64px 24px;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  // "safe" keeps content anchored to the start (instead of clipping both
+  // ends) whenever it's taller than the viewport, so the overflow below
+  // can be reached by scrolling instead of being centered off both edges.
+  align-items: safe center;
+  justify-content: safe center;
   background: var(--background);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   box-sizing: border-box;
 
   &__graph-canvas {
@@ -119,6 +123,12 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
+    // .onboarding-v2__device (the row-flex parent) defaults to
+    // align-items: stretch, which — combined with its mobile `height: 100%`
+    // — forces this frame to that definite height regardless of its own
+    // min-height, so overflowing content clips/scrolls right here instead
+    // of growing the frame and reaching .onboarding-v2's scroll. Opt out.
+    align-self: flex-start;
     gap: 24px;
     width: min(440px, 100%);
     padding: 24px 20px;
@@ -130,7 +140,13 @@
       rgba(13, 19, 22, 0.25) 100%
     );
     box-shadow: 0 40px 60px rgba(0, 0, 0, 0.55);
-    overflow: hidden;
+    // x-only: a definite vertical clip here would re-cut any step content
+    // that grows past the frame before it can reach .onboarding-v2's scroll.
+    // overflow-y must stay explicit: leaving it unset while overflow-x is
+    // non-visible makes it compute to `auto` per spec, creating a second,
+    // competing scroll container instead of passing overflow up.
+    overflow-x: hidden;
+    overflow-y: visible;
     backdrop-filter: blur(6px);
   }
 
@@ -177,17 +193,7 @@
   }
 
   &__restart {
-    background: transparent;
-    border: none;
-    color: var(--primary);
-    cursor: pointer;
-    font: inherit;
     padding: 8px 0;
-    transition: color 0.2s ease;
-
-    &:hover {
-      color: rgba(111, 199, 186, 0.8);
-    }
   }
 
   &__panel-description {
@@ -200,7 +206,6 @@
     flex-direction: column;
     align-items: center;
     width: 100%;
-    overflow: hidden;
   }
 
   &__panel-content--transitioning {
@@ -214,6 +219,13 @@
     width: 100%;
     gap: 24px;
     padding-right: 20px;
+  }
+
+  &__login-field {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
   }
 
   &__login-actions {
@@ -280,13 +292,23 @@
     width: 100%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    // horizontal-only: these three levels exist to hide the slide-transition
+    // overshoot (see slide.animation.ts's translateX steps), not to bound
+    // vertical height — clipping the y-axis here cuts off tall step content
+    // (e.g. the 12/24-word recovery grid) with no scrollbar to recover it.
+    // overflow-y must stay explicit: leaving it unset while overflow-x is
+    // non-visible makes it compute to `auto` per spec, creating extra
+    // competing scroll containers instead of passing overflow up to
+    // .onboarding-v2.
+    overflow-x: hidden;
+    overflow-y: visible;
 
     ::ng-deep > div {
       display: flex;
       flex-direction: column;
       width: 100%;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: visible;
 
       app-step-indicator {
         flex-shrink: 0;
@@ -298,7 +320,8 @@
         display: flex;
         flex-direction: column;
         width: 100%;
-        overflow: hidden;
+        overflow-x: hidden;
+        overflow-y: visible;
 
         > * {
           display: flex;
@@ -390,7 +413,7 @@
   }
 
   &__delete-highlight-text {
-    color: var(--warning-color, #FFB800);
+    color: var(--warning-color, #ffb800);
   }
 
   &__delete-confirmation {
@@ -471,7 +494,8 @@
       width: 100%;
       max-width: none;
       flex: 1;
-      height: 100%;
+      // min-height (a floor), not height (a cap) — content taller than the
+      // screen must be able to grow past it and scroll via .onboarding-v2.
       min-height: 100vh;
       min-height: 100dvh;
       padding: 32px 20px 24px;
@@ -528,4 +552,3 @@
     }
   }
 }
-

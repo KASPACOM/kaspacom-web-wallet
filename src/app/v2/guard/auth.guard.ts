@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   ActivatedRouteSnapshot,
   CanActivate,
@@ -12,10 +12,9 @@ import { PasswordManagerService } from '../../services/password-manager.service'
   providedIn: 'root',
 })
 export class AuthGuard implements CanActivate {
-  constructor(
-    private router: Router,
-    private passwordManagerService: PasswordManagerService,
-  ) {}
+  private router = inject(Router);
+  private passwordManagerService = inject(PasswordManagerService);
+
   // todo this is temp, clean this up when im sure about the flow
   async canActivate(
     route: ActivatedRouteSnapshot,
@@ -24,15 +23,21 @@ export class AuthGuard implements CanActivate {
     const userData = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA); // replace with your actual key
 
     const fullPath = state.url;
+    // Compare path only: fullPath includes the query string (e.g. returnUrl),
+    // which would otherwise make '/onboarding?returnUrl=...' fail to match
+    // '/onboarding' and re-trigger the redirect, looping forever.
+    const path = fullPath.split('?')[0];
 
     const onboardingPaths = ['/onboarding', '/onboarding-v2'];
 
     if (!userData) {
-      if (onboardingPaths.includes(fullPath)) {
+      if (onboardingPaths.includes(path)) {
         return true;
       }
 
-      this.router.navigate(['/onboarding']);
+      this.router.navigate(['/onboarding'], {
+        queryParams: { returnUrl: fullPath },
+      });
       return false;
     }
 
@@ -45,15 +50,17 @@ export class AuthGuard implements CanActivate {
     }
 
     if (!isLogged) {
-      if (onboardingPaths.includes(fullPath)) {
+      if (onboardingPaths.includes(path)) {
         return true;
       }
 
-      this.router.navigate(['/onboarding']);
+      this.router.navigate(['/onboarding'], {
+        queryParams: { returnUrl: fullPath },
+      });
       return false;
     }
 
-    if (isLogged && onboardingPaths.includes(fullPath)) {
+    if (isLogged && onboardingPaths.includes(path)) {
       this.router.navigate(['/app/home']);
       return false;
     }

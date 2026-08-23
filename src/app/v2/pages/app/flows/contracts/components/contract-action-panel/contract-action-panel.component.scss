@@ -1,0 +1,228 @@
+// Duplicated (not moved) from ../../contracts-page.component.scss — Angular's
+// emulated view encapsulation scopes CSS per-component. .panel, .back-button,
+// .contract-summary, .result-panel, .max-text, .advanced-section, .field*,
+// .banner and .contract-input/.form-input base styles already live in
+// src/styles/shared-ui.scss (global), so only the rules below — which are
+// still local to the shell's own stylesheet — need a copy here.
+
+.field-warning {
+  display: block;
+  color: var(--warning-50, #f8c96a);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.alias-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.alias-link,
+.alias-btn {
+  border: 0;
+  background: transparent;
+  color: var(--kaspa-20);
+  font: inherit;
+  font-size: 12px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.alias-link.muted,
+.alias-btn.ghost {
+  color: var(--gray-60);
+}
+
+.alias-editor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.detail-alias-editor {
+  margin-top: 0;
+}
+
+.alias-notice {
+  margin-top: 6px;
+  color: var(--warning-50, #f8c96a);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.action-contract-name {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border: 1px solid var(--border-secondary);
+  border-radius: 10px;
+  background: var(--gray-10);
+}
+
+.action-form-skeleton {
+  border: 1px solid var(--border-secondary);
+  background: var(--gray-10);
+  border-radius: 10px;
+  padding: 20px;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  .sk {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    animation: kc-pulse 1.4s ease-in-out infinite;
+    display: block;
+  }
+
+  .sk.line {
+    height: 12px;
+  }
+
+  .sk.wide {
+    width: 60%;
+  }
+
+  .sk.narrow {
+    width: 40%;
+  }
+
+  .sk.block {
+    flex: 1;
+    min-height: 120px;
+  }
+
+  .sk.avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+  }
+
+  .sk.button {
+    height: 40px;
+    width: 160px;
+  }
+}
+
+.alias-input {
+  min-width: 180px;
+  max-width: 100%;
+  height: 32px;
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+  background: var(--gray-15);
+  color: var(--white);
+  padding: 0 10px;
+  font-size: 13px;
+  outline: none;
+
+  &:focus {
+    border-color: var(--kaspa-20);
+  }
+}
+
+.error-message {
+  background: rgba(224, 66, 66, 0.1);
+  border: 1px solid var(--red-20);
+  color: var(--red-20);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  word-break: break-word;
+}
+
+// .contract-input/.form-input base styles live in src/styles/shared-ui.scss;
+// only the textarea-specific sizing stays local.
+.contract-input {
+  resize: vertical;
+  min-height: 120px;
+  font-size: 13px;
+}
+
+.interact-contract-title {
+  @media (max-width: 767px) {
+    font-size: 10px;
+  }
+}
+
+// kc-button's "m" size variant enforces a 300px min-width on its inner
+// .kc-button element (an ui-kit design-token default sized for standalone
+// CTAs). Wherever a kc-button sits inline next to an input or alongside
+// other buttons in this page (instead of opting into [isFullWidth]), that
+// fixed minimum overflows the row on narrow (320px) viewports. Let those
+// buttons hug their own content instead.
+.flex.gap-8.align-items-end.wrap kc-button,
+.flex.gap-8.wrap kc-button,
+.flex.align-items-center.gap-8 kc-button {
+  ::ng-deep .kc-button {
+    min-width: 0;
+  }
+}
+
+// Active function button highlight — kc-button's host element has no
+// border-radius of its own (the rounding lives on its inner .kc-button),
+// so styling the host directly draws a sharp-cornered box around a rounded
+// button. Target the inner element instead so the highlight follows the
+// button's actual corners.
+.active-function {
+  ::ng-deep .kc-button {
+    border-color: var(--kaspa-20) !important;
+    background: rgba(111, 199, 186, 0.22) !important;
+    box-shadow: 0 0 0 2px rgba(111, 199, 186, 0.18) !important;
+    color: #fff !important;
+  }
+}
+
+// Row content for each whitelisted wallet inside the styled kc-dropdown-select
+// (both the closed-state selected value and the open option list share this
+// template — see optionTemplate in the .html). Mirrors the read-only
+// .participant/.p-avatar/.p-body pattern used in contract-detail.component.scss.
+.whitelist-dropdown {
+  min-width: 0;
+}
+
+.whitelist-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.whitelist-option-avatar {
+  flex-shrink: 0;
+}
+
+.whitelist-option-index {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-60);
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 5px;
+  padding: 1px 6px;
+}
+
+.whitelist-option-address {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  color: var(--white);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.whitelist-option-copy {
+  flex-shrink: 0;
+}

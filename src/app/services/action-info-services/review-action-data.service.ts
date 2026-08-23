@@ -1,7 +1,10 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   CommitRevealAction,
   CompoundUtxosAction,
+  CovenantDeployAction,
+  CovenantSpendAction,
+  CovenantCompletePartialAction,
   SignPsktTransactionAction,
   TransferKasAction,
   WalletAction,
@@ -29,10 +32,12 @@ import { formatUnits } from 'ethers';
   providedIn: 'root',
 })
 export class ReviewActionDataService {
-  constructor(
-    private readonly kaspaNetworkActionsService: KaspaNetworkActionsService,
-    private readonly baseProtocolClassesService: BaseProtocolClassesService,
-  ) { }
+  private readonly kaspaNetworkActionsService = inject(
+    KaspaNetworkActionsService,
+  );
+  private readonly baseProtocolClassesService = inject(
+    BaseProtocolClassesService,
+  );
 
   public getActionDisplay(
     action: WalletAction | undefined,
@@ -49,6 +54,12 @@ export class ReviewActionDataService {
         return this.getCompoundUtxosActionDisplay(action.data, wallet);
       case WalletActionType.COMMIT_REVEAL:
         return this.getCommitRevealActionDisplay(action.data, wallet);
+      case WalletActionType.COVENANT_DEPLOY:
+        return this.getCovenantDeployActionDisplay(action.data, wallet);
+      case WalletActionType.COVENANT_SPEND:
+        return this.getCovenantSpendActionDisplay(action.data, wallet);
+      case WalletActionType.COVENANT_COMPLETE_PARTIAL:
+        return this.getCovenantCompletePartialActionDisplay(action.data, wallet);
       case WalletActionType.SIGN_PSKT_TRANSACTION:
         return this.getSignPsktTransactionActionDisplay(action.data, wallet);
       case WalletActionType.SIGN_MESSAGE:
@@ -199,6 +210,119 @@ export class ReviewActionDataService {
     return result;
   }
 
+  private getCovenantDeployActionDisplay(
+    actionData: CovenantDeployAction,
+    wallet: AppWallet,
+  ): ActionDisplay {
+    return {
+      title: 'Deploy Covenant Contract',
+      rows: [
+        {
+          fieldName: 'Wallet',
+          fieldValue: wallet.getAddress(),
+        },
+        {
+          fieldName: 'Contract',
+          fieldValue: actionData.contractName || 'Compiled covenant',
+        },
+        {
+          fieldName: 'Amount Locked',
+          fieldValue: this.kaspaNetworkActionsService.sompiToNumber(actionData.amountSompi) + ' KAS',
+        },
+      ],
+    };
+  }
+
+  private getCovenantSpendActionDisplay(
+    actionData: CovenantSpendAction,
+    wallet: AppWallet,
+  ): ActionDisplay {
+    return {
+      title: 'Interact With Covenant Contract',
+      rows: [
+        {
+          fieldName: 'Wallet',
+          fieldValue: wallet.getAddress(),
+        },
+        {
+          fieldName: 'Contract',
+          fieldValue: actionData.contractName || 'Compiled covenant',
+        },
+        {
+          fieldName: 'Function',
+          fieldValue: actionData.functionName,
+        },
+        {
+          fieldName: 'Outpoint',
+          fieldValue: actionData.outpoint.txid + ':' + actionData.outpoint.vout,
+          isCodeBlock: true,
+        },
+        {
+          fieldName: 'Outputs',
+          fieldValue: actionData.outputs
+            .map((output) => this.kaspaNetworkActionsService.sompiToNumber(output.amount) + ' KAS to ' + output.address)
+            .join('\n') || '-',
+          isCodeBlock: true,
+        },
+      ],
+    };
+  }
+
+  private getCovenantCompletePartialActionDisplay(
+    actionData: CovenantCompletePartialAction,
+    wallet: AppWallet,
+  ): ActionDisplay {
+    let functionName = '-';
+    let outpoint = '-';
+    let outputsDisplay = '-';
+
+    try {
+      const partial = JSON.parse(actionData.partialSpendJson);
+      functionName = partial.functionName || '-';
+      outpoint = partial.outpoint
+        ? partial.outpoint.txid + ':' + partial.outpoint.vout
+        : '-';
+      if (Array.isArray(partial.outputs) && partial.outputs.length) {
+        outputsDisplay = partial.outputs
+          .map(
+            (o: { address: string; amountSompi: string }) =>
+              `${this.kaspaNetworkActionsService.sompiToNumber(BigInt(o.amountSompi))} KAS to ${o.address}`,
+          )
+          .join('\n');
+      }
+    } catch {
+      // Validation will reject invalid JSON before execution.
+    }
+
+    return {
+      title: 'Complete Covenant Interaction',
+      rows: [
+        {
+          fieldName: 'Wallet',
+          fieldValue: wallet.getAddress(),
+        },
+        {
+          fieldName: 'Contract',
+          fieldValue: actionData.contractName || 'Compiled covenant',
+        },
+        {
+          fieldName: 'Function',
+          fieldValue: functionName,
+        },
+        {
+          fieldName: 'Outpoint',
+          fieldValue: outpoint,
+          isCodeBlock: true,
+        },
+        {
+          fieldName: 'Outputs',
+          fieldValue: outputsDisplay,
+          isCodeBlock: true,
+        },
+      ],
+    };
+  }
+
   private getSignPsktTransactionActionDisplay(
     actionData: SignPsktTransactionAction,
     wallet: AppWallet,
@@ -212,18 +336,18 @@ export class ReviewActionDataService {
       0n,
     );
 
-
     const outputsSum = transactionData.outputs.reduce(
       (sum, input) => sum + input.value,
       0n,
     );
 
     if (inputsSum > 0n && transactionData.outputs.length) {
-
       for (let i = 0; i < transactionData.outputs.length; i++) {
-        if (transactionData.outputs[i].scriptPublicKey.script === transactionData.inputs[0].utxo!.scriptPublicKey.script) {
+        if (
+          transactionData.outputs[i].scriptPublicKey.script ===
+          transactionData.inputs[0].utxo!.scriptPublicKey.script
+        ) {
           if (transactionData.outputs[i].value - inputsSum < 0n) {
-
             const outputs = transactionData.outputs;
             outputs.splice(i, 1);
 
@@ -240,10 +364,17 @@ export class ReviewActionDataService {
 
     const transactionFee = inputsSum - outputsSum;
 
-    const feeRow = transactionFee > 0n ? [{
-      fieldName: 'Transaction Fee',
-      fieldValue: this.kaspaNetworkActionsService.sompiToNumber(transactionFee) + ' KAS',
-    }] : [];
+    const feeRow =
+      transactionFee > 0n
+        ? [
+            {
+              fieldName: 'Transaction Fee',
+              fieldValue:
+                this.kaspaNetworkActionsService.sompiToNumber(transactionFee) +
+                ' KAS',
+            },
+          ]
+        : [];
 
     return {
       title: `Sign${actionData.submitTransaction ? ' & Submit' : ''} PSKT Transaction`,

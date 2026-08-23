@@ -1,27 +1,4 @@
-.application-container {
-  width: 100vw;
-  width: 100dvw;
-  height: 100vh;
-  height: 100dvh;
-
-  // In iframe mode, use 100% to avoid iOS keyboard pushing content offscreen
-  .iframe-mode & {
-    height: 100%;
-    width: 100%;
-  }
-  overflow-y: auto;
-  overflow-x: hidden;
+:host {
   display: block;
-  background: black url(/svgs/background.svg) 100% 100% no-repeat;
-}
-
-.not-supported-url {
-  font-size: 2rem;
-  font-weight: bold;
-  color: red;
-  text-align: center;
-  padding: 20px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  min-height: 100dvh;
 }

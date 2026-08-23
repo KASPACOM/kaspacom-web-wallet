@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   Component,
   computed,
@@ -8,19 +7,13 @@ import {
   signal,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import {
-  KcButtonComponent,
-  KcIconComponent,
-  KcInputComponent,
-  NotificationService,
-} from 'kaspacom-ui';
+import { KcInputComponent, KcButtonComponent, KcIconComponent, NotificationService } from '@kaspacom/ui-kit';
 import { ImportExistingFlowService } from '../../service/import-existing-flow.service';
 import { ImportSwitchMethod } from '../import-switch-import-existing-step/component/import-switch/import-switch-method.enum';
 
 @Component({
   selector: 'app-private-key-import-existing-step',
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     KcButtonComponent,
     KcInputComponent,

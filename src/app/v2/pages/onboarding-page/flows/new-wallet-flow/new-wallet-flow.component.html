@@ -2,7 +2,7 @@
   <app-step-indicator
     [currentStep]="currentIndex()"
     [maxSteps]="stepOrder.length"
-  ></app-step-indicator>
+  />
 
   @switch (onboardingStep()) {
     @case (NewWalletStep.CREATE_PASSWORD) {
@@ -10,7 +10,7 @@
         <app-create-password-new-wallet-step
           (next)="next()"
           (previous)="previous()"
-        ></app-create-password-new-wallet-step>
+        />
       </div>
     }
     @case (NewWalletStep.CREATE_SEED_PHRASE) {
@@ -19,7 +19,7 @@
           (next)="next()"
           (previous)="previous()"
           [hideBackButton]="skipPassword()"
-        ></app-create-seed-phrase-new-wallet-step>
+        />
       </div>
     }
     @case (NewWalletStep.SET_SEED_PASSPHRASE) {
@@ -27,7 +27,7 @@
         <app-set-seed-passphrase-new-wallet-step
           (next)="next()"
           (previous)="previous()"
-        ></app-set-seed-passphrase-new-wallet-step>
+        />
       </div>
     }
     @case (NewWalletStep.VERIFY_SEED_PHRASE) {
@@ -35,15 +35,12 @@
         <app-verify-seed-phrase-new-wallet-step
           (next)="next()"
           (previous)="previous()"
-        ></app-verify-seed-phrase-new-wallet-step>
+        />
       </div>
     }
     @case (NewWalletStep.ADDRESS) {
       <div [@stepAnimation]="slideDirection()">
-        <app-address-new-wallet-step
-          (next)="next()"
-          (previous)="previous()"
-        ></app-address-new-wallet-step>
+        <app-address-new-wallet-step (next)="next()" (previous)="previous()" />
       </div>
     }
     @case (NewWalletStep.SUCCESS) {
@@ -52,7 +49,7 @@
           @stepAnimation
           (next)="next()"
           (previous)="previous()"
-        ></app-success-new-wallet-step>
+        />
       </div>
     }
     @case (NewWalletStep.ERROR) {
@@ -61,7 +58,7 @@
           @stepAnimation
           (next)="next()"
           (previous)="previous()"
-        ></app-error-new-wallet-step>
+        />
       </div>
     }
   }

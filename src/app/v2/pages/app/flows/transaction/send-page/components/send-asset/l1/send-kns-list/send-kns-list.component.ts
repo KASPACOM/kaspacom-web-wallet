@@ -1,6 +1,5 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
-import { KcTooltipDirective } from 'kaspacom-ui';
+import { KcTooltipDirective } from '@kaspacom/ui-kit';
 import { AssetsManagerService } from '../../../../../../../../../../services/assets-manager/assets-manager.service';
 import { L1_ASSET_KEYS } from '../../../../../../../../../../services/assets-manager/assets-stores/l1-assets-store.service';
 import {
@@ -14,7 +13,7 @@ import { IFlowPageConfig } from '../../../../../../../common/flow-page/interface
 @Component({
   selector: 'app-send-kns-list',
   standalone: true,
-  imports: [CommonModule, KcTooltipDirective, SkeletonComponent],
+  imports: [KcTooltipDirective, SkeletonComponent],
   templateUrl: './send-kns-list.component.html',
   styleUrl: './send-kns-list.component.scss',
 })

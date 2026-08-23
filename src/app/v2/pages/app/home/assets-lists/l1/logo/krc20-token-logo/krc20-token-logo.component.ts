@@ -1,12 +1,17 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { ComponentSize } from '../../../../../common/types/sizing.type';
 import { environment } from '../../../../../../../../../environments/environment';
 import { KaspaComApiService } from '../../../../../../../../services/kaspacom-api/kaspacom-api.service';
 
 @Component({
   selector: 'krc20-token-logo',
-  imports: [CommonModule],
   templateUrl: './krc20-token-logo.component.html',
   styleUrl: './krc20-token-logo.component.scss',
 })
@@ -48,14 +53,12 @@ export class Krc20TokenLogoComponent {
     const ticker = this.ticker();
     if (!ticker) return '';
 
-
     try {
       const result = await this.kaspaComApiService.getTokensLogosUrl(ticker);
       if (result?.[0]?.logo) {
         return result[0].logo;
       }
-    } catch (e) {
-    }
+    } catch (e) {}
 
     return '';
   }

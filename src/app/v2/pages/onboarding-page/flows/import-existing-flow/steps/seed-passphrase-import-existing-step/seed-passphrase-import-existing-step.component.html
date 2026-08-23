@@ -1,11 +1,14 @@
-<div class="seed-passphrase-step flex column align-items-center step-layout full-width">
+<div
+  class="seed-passphrase-step flex column align-items-center step-layout full-width"
+>
   <div class="step-layout__content">
     <div class="flex column align-items-center gap-32 full-width">
       <div class="flex column align-items-center gap-12 text-align-center">
         <span class="typo-title-3">Seed passphrase (optional)</span>
         <p class="typo-text-2 text-medium">
-          Add an additional password to your recovery phrase for stronger security. Leave it empty
-          if you prefer to access the wallet with the recovery phrase alone.
+          Add an additional password to your recovery phrase for stronger
+          security. Leave it empty if you prefer to access the wallet with the
+          recovery phrase alone.
         </p>
       </div>
 
@@ -17,12 +20,15 @@
         <kc-input
           formControlName="seedPassphrase"
           [type]="passphraseFieldType()"
-          [label]="'Seed passphrase'"
+          [infoLabel]="{ label: 'Seed passphrase' }"
           [placeholder]="'Enter seed passphrase (optional)'"
-          [isFullWidth]="true"
         >
-          <div class="clickable" rightSideSlot (click)="togglePassphraseVisibility()">
-            <kc-icon [iconClass]="passphraseIcon()" [size]="'xs'"></kc-icon>
+          <div
+            class="clickable"
+            rightSideSlot
+            (click)="togglePassphraseVisibility()"
+          >
+            <kc-icon [iconClass]="passphraseIcon()" [size]="'xs'" />
           </div>
         </kc-input>
       </form>
@@ -37,15 +43,14 @@
         [isDisabled]="isSubmitting()"
         type="submit"
         (buttonClick)="onSubmit()"
-      ></kc-button>
+      />
       <kc-button
         [text]="'Back'"
-        [variant]="'tertiary'"
+        [variant]="'secondary'"
         [isFullWidth]="true"
         type="button"
         (buttonClick)="previous.emit()"
-      ></kc-button>
+      />
     </div>
   </div>
 </div>
-

@@ -1,27 +1,16 @@
 <div class="balance-container flex column p-12 gap-4 align-items-center">
   <!-- Main USD Balance -->
   @if (isLoading() || isRefreshing()) {
-    <app-skeleton
-      [height]="'76px'"
-      [width]="'300px'"
-      [fullRound]="false"
-    ></app-skeleton>
+    <app-skeleton [height]="'76px'" [width]="'300px'" [fullRound]="false" />
   } @else {
-    <div
-      class="balance-container__value text-white typo-title-6 fade-in"
-      style="font-size: 4rem"
-    >
+    <div class="balance-container__value text-white typo-title-6 fade-in">
       ${{ usdBalance() | number: "1.2" }}
     </div>
   }
 
   <!-- Network Balance -->
   @if (isLoading() || isRefreshing()) {
-    <app-skeleton
-      [height]="'33px'"
-      [width]="'200px'"
-      [fullRound]="false"
-    ></app-skeleton>
+    <app-skeleton [height]="'33px'" [width]="'200px'" [fullRound]="false" />
   } @else {
     <div
       class="kas-balance flex gap-8 align-items-center typo-title-4 fade-in"
@@ -31,10 +20,12 @@
         @if (currentNetworkIcon()) {
           <img [src]="currentNetworkIcon()!" alt="" class="native-token-icon" />
         } @else {
-          <div class="native-token-fallback">{{ nativeTokenSymbol().charAt(0) }}</div>
+          <div class="native-token-fallback">
+            {{ nativeTokenSymbol().charAt(0) }}
+          </div>
         }
       } @else {
-        <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'md'"></kc-icon>
+        <kc-icon [iconClass]="'icon-kaspa-coin'" [size]="'md'" />
       }
       <span class="balance-amount">
         {{ kasBalance() | commaFormatter }}
@@ -45,19 +36,16 @@
         [class.refresh-action--disabled]="isLoading() || isRefreshing()"
         (click)="onRefreshClick($event)"
         kcTooltip="Refresh balances"
-        tooltipPosition="top"
+        tooltipPosition="top-center"
       >
         @if (isRefreshing()) {
-          <kc-spinner
-            class="refresh-action__spinner"
-            [size]="'xs'"
-          ></kc-spinner>
+          <kc-spinner class="refresh-action__spinner" [size]="'xs'" />
         } @else {
           <kc-icon
             class="refresh-action__icon"
             [iconClass]="'icon-update'"
             [size]="'sm'"
-          ></kc-icon>
+          />
         }
       </div>
     </div>
@@ -67,10 +55,7 @@
   @if (!isLoading()) {
     <div class="wallet-address-display fade-in">
       {{ walletAddress() | shortenAddress }}
-      <app-copy-button
-        [value]="walletAddress() || ''"
-        [size]="'sm'"
-      ></app-copy-button>
+      <app-copy-button [value]="walletAddress() || ''" [size]="'sm'" />
     </div>
   }
 </div>

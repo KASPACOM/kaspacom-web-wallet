@@ -1,0 +1,359 @@
+// Duplicated (not moved) from ../../contracts-page.component.scss — Angular's
+// emulated view encapsulation scopes CSS per-component, so this component
+// needs its own copies of the grid-tab rules rather than relying on the
+// shell's scoped stylesheet, which no longer applies to markup rendered here.
+// The shell's copies are left in place (now inert there for the grid, still
+// live for the detail panel/alias editor it still renders) rather than
+// removed, to avoid any risk of affecting the tabs that still live in the shell.
+
+// Per-template accent, driven by [data-tpl] on the card / icon — must stay in
+// sync with the $tpl-accents map in ../../contracts-page.component.scss.
+$tpl-accents: (
+  deadman: var(--orange-20),
+  timelock: var(--kaspa-20),
+  multisig: var(--blue-20),
+  escrow: var(--purple-20),
+  selfcustody: var(--yellow-20),
+  default: var(--kaspa-20),
+);
+
+@each $name, $color in $tpl-accents {
+  .contract-card[data-tpl="#{$name}"],
+  .tpl-icon[data-tpl="#{$name}"] {
+    --tpl-accent: #{$color};
+  }
+}
+
+// ── toolbar / filter row ─────────────────────────────────────────────────
+.dashboard-toolbar,
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.dashboard-toolbar {
+  margin-bottom: 20px;
+}
+.dashboard-toolbar .dashboard-search {
+  flex: 1;
+  min-width: 220px;
+}
+
+.filter-row {
+  .filter-chips {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    min-width: 0;
+    max-width: 100%;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    margin-bottom: -4px;
+
+    &::-webkit-scrollbar {
+      height: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: var(--gray-30);
+      border-radius: 4px;
+    }
+  }
+  .filter-spacer {
+    margin-left: auto;
+  }
+
+  kc-button {
+    flex-shrink: 0;
+  }
+}
+
+.filter-row kc-button {
+  ::ng-deep .kc-button {
+    min-width: 0;
+  }
+}
+
+// ── contract card grid ──────────────────────────────────────────────────
+// Shares the same top margin with its mutually-exclusive loading/empty
+// siblings (.skeleton-grid/.state-block, both defined in shared-ui.scss) and
+// with .banner (the indexer-sync/error notices that can precede them) so the
+// gap under .filter-row stays constant no matter which state renders first.
+// Adjacent block margins collapse, so a banner immediately followed by the
+// grid/skeleton/empty-state doesn't double this gap.
+.card-grid,
+.skeleton-grid,
+.state-block,
+.banner {
+  margin-top: 20px;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+
+  @media (min-width: 560px) {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+}
+
+.contract-card {
+  position: relative;
+  background: var(--gray-10);
+  border: 1px solid var(--border-secondary);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: var(--tpl-accent, var(--kaspa-20));
+    opacity: 0.9;
+  }
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.03);
+  }
+  &.is-spent {
+    opacity: 0.55;
+  }
+}
+
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 74px;
+}
+
+.tpl-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tpl-accent, var(--kaspa-20));
+  background: color-mix(
+    in srgb,
+    var(--tpl-accent, var(--kaspa-20)) 14%,
+    transparent
+  );
+
+  svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.card-title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+.card-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-sub {
+  font-size: 12px;
+  color: var(--gray-60);
+}
+
+.alias-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.alias-link,
+.alias-btn {
+  border: 0;
+  background: transparent;
+  color: var(--kaspa-20);
+  font: inherit;
+  font-size: 12px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.alias-link.muted,
+.alias-btn.ghost {
+  color: var(--gray-60);
+}
+
+.alias-link.danger {
+  color: var(--red-20);
+}
+
+.alias-editor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.alias-notice {
+  margin-top: 6px;
+  color: var(--warning-50, #f8c96a);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.alias-input {
+  min-width: 180px;
+  max-width: 100%;
+  height: 32px;
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+  background: var(--gray-15);
+  color: var(--white);
+  padding: 0 10px;
+  font-size: 13px;
+  outline: none;
+
+  &:focus {
+    border-color: var(--kaspa-20);
+  }
+}
+
+.card-stats {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.stat .stat-label {
+  font-size: 11px;
+  color: var(--gray-45);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  .stat-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--white);
+    white-space: nowrap;
+  }
+  .stat-value small {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--gray-60);
+  }
+  .stat-value.sm {
+    font-size: 14px;
+  }
+}
+
+.card-id {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+
+  .card-id-label {
+    font-size: 10px;
+    color: var(--gray-45);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+  }
+  .card-id-value {
+    font-size: 11px;
+    color: var(--gray-60);
+    font-family: var(--font-mono, monospace);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+}
+
+.card-latest {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 12px;
+  color: var(--gray-75);
+  .push {
+    margin-left: auto;
+    font-size: 11px;
+  }
+}
+.card-latest .muted,
+.card-latest .push {
+  color: var(--gray-45);
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+}
+.card-actions .btn.secondary {
+  flex: 1;
+}
+.card-actions .btn.action {
+  flex: 1;
+  background: var(--tpl-accent, var(--kaspa-20));
+  color: #0a0d0c;
+}
+.card-actions .btn.action:disabled {
+  background: transparent;
+  border: 1px solid var(--border-secondary);
+  color: var(--gray-45);
+}
+
+// ── banners / empty / loading states ─────────────────────────────────────
+// .banner base + .warn/.caution/.error variants, .state-block, .sb-*,
+// .skeleton-grid/.skeleton-card (+ .sk/kc-pulse keyframes) live in
+// src/styles/shared-ui.scss. Only the .info variant (indexer-sync banner) is
+// scoped locally.
+.banner.info {
+  border: 1px solid rgba(111, 199, 186, 0.35);
+  background: rgba(111, 199, 186, 0.08);
+
+  svg {
+    color: var(--kaspa-20);
+    animation: indexer-sync-spin 1.1s linear infinite;
+  }
+
+  .banner-title {
+    color: var(--kaspa-20);
+  }
+}
+
+@keyframes indexer-sync-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

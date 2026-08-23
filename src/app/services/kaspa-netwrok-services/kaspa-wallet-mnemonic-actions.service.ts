@@ -1,19 +1,18 @@
-import { Injectable } from "@angular/core";
-import { Mnemonic, PrivateKey, XPrv } from "../../../../public/kaspa/kaspa";
-import { DEFAULT_DERIVED_PATH } from "../../config/consts";
-import { RpcService } from "./rpc.service";
+import { Injectable, inject } from '@angular/core';
+import { Mnemonic, PrivateKey, XPrv } from '../../../../public/kaspa/kaspa';
+import { DEFAULT_DERIVED_PATH } from '../../config/consts';
+import { RpcService } from './rpc.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class KaspaWalletMnemonicActionsService {
-  constructor(
-    private rpcService: RpcService,
-  ) { }
+  private rpcService = inject(RpcService);
+
   getPrivateKeyFromMnemonic(
     mnemonicWords: string,
     derivedPath: string = DEFAULT_DERIVED_PATH,
-    password?: string
+    password?: string,
   ): string | null {
     const isValid = Mnemonic.validate(mnemonicWords);
 
@@ -35,12 +34,12 @@ export class KaspaWalletMnemonicActionsService {
 
   getWalletAddressFromMnemonic(
     mnemonic: string,
-    password?: string
+    password?: string,
   ): string | null {
     const privateKey = this.getPrivateKeyFromMnemonic(
       mnemonic,
       DEFAULT_DERIVED_PATH,
-      password
+      password,
     );
     return privateKey ? this.convertPrivateKeyToAddress(privateKey) : null;
   }
@@ -56,7 +55,6 @@ export class KaspaWalletMnemonicActionsService {
     return new PrivateKey(privateKey).toPublicKey().toString();
   }
 
-
   validatePrivateKey(privateKey: string) {
     try {
       new PrivateKey(privateKey);
@@ -70,5 +68,4 @@ export class KaspaWalletMnemonicActionsService {
   generateMnemonic(wordsCount: number): string {
     return Mnemonic.random(wordsCount).phrase;
   }
-
 }

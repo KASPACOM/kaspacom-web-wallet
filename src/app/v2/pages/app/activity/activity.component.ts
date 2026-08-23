@@ -8,9 +8,9 @@ import {
   effect,
 } from '@angular/core';
 import { BaseActivityComponent } from './base-activity.component';
-import { CommonModule } from '@angular/common';
+
 import { Router } from '@angular/router';
-import { KcIconComponent } from 'kaspacom-ui';
+import { KcIconComponent } from '@kaspacom/ui-kit';
 import {
   KcLabeledTabsComponent,
   TabItem,
@@ -26,7 +26,6 @@ import {
   ERC20Transaction,
 } from '../../../../services/etherium-services/erc20-transaction.service';
 import { KaspaNetworkActionsService } from '../../../../services/kaspa-netwrok-services/kaspa-network-actions.service';
-import { TimeAgoPipe } from '../../../../pipes/time-ago.pipe';
 import { firstValueFrom, catchError, of, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -73,18 +72,14 @@ type ActivityItem = KaspaActivityItem | Krc20ActivityItem | Erc20ActivityItem;
 
 @Component({
   selector: 'app-activity',
-  imports: [
-    CommonModule,
-    KcIconComponent,
-    KcLabeledTabsComponent,
-    SkeletonComponent,
-  ],
+  imports: [KcIconComponent, KcLabeledTabsComponent, SkeletonComponent],
   templateUrl: './activity.component.html',
   styleUrl: './activity.component.scss',
 })
 export class ActivityComponent
   extends BaseActivityComponent<ActivityItem>
-  implements OnInit, OnDestroy {
+  implements OnInit, OnDestroy
+{
   private walletService = inject(WalletService);
   private kaspaApiService = inject(KaspaApiService);
   private kasplexService = inject(KasplexKrc20Service);
@@ -92,6 +87,8 @@ export class ActivityComponent
   private kaspaNetworkActionsService = inject(KaspaNetworkActionsService);
   private router = inject(Router);
   private destroy$ = new Subject<void>();
+  private currentTimeMs = signal(Date.now());
+  private timestampRefreshInterval?: ReturnType<typeof setInterval>;
 
   // Signals for reactive state
   private kaspaTransactions = signal<FullTransactionResponseItem[]>([]);
@@ -211,9 +208,15 @@ export class ActivityComponent
 
   ngOnInit() {
     // Initial load is handled by the effect in constructor
+    this.timestampRefreshInterval = setInterval(() => {
+      this.currentTimeMs.set(Date.now());
+    }, 60_000);
   }
 
   ngOnDestroy() {
+    if (this.timestampRefreshInterval) {
+      clearInterval(this.timestampRefreshInterval);
+    }
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -536,16 +539,45 @@ export class ActivityComponent
 
   // Template helper methods
   formatTimestamp(timestamp: number): string {
-    const timeAgo = new TimeAgoPipe().transform(timestamp);
+    const nowMs = this.currentTimeMs();
+    const timeAgo = this.formatTimeAgo(timestamp, nowMs);
     const date = new Date(timestamp);
+    const nowDate = new Date(nowMs);
     const formattedDate = date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year:
-        date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
+        date.getFullYear() !== nowDate.getFullYear() ? 'numeric' : undefined,
     });
 
     return `${timeAgo} • ${formattedDate}`;
+  }
+
+  private formatTimeAgo(timestamp: number, nowMs: number): string {
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return '';
+
+    const diffMs = nowMs - date.getTime();
+    const diffSeconds = Math.max(0, Math.floor(diffMs / 1000));
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    const diffHours = Math.floor(diffMinutes / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    const diffWeeks = Math.floor(diffDays / 7);
+    const diffMonths = Math.floor(diffDays / 30);
+
+    if (diffSeconds < 60) {
+      return diffSeconds <= 1 ? '1 second ago' : `${diffSeconds} seconds ago`;
+    } else if (diffMinutes < 60) {
+      return diffMinutes === 1 ? '1 minute ago' : `${diffMinutes} minutes ago`;
+    } else if (diffHours < 24) {
+      return diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`;
+    } else if (diffDays < 7) {
+      return diffDays === 1 ? '1 day ago' : `${diffDays} days ago`;
+    } else if (diffWeeks < 4) {
+      return diffWeeks === 1 ? '1 week ago' : `${diffWeeks} weeks ago`;
+    } else {
+      return diffMonths === 1 ? '1 month ago' : `${diffMonths} months ago`;
+    }
   }
 
   shortenAddress(address: string): string {

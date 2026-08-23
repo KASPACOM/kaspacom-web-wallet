@@ -17,40 +17,39 @@
   <button class="buy-button" (click)="buy()">Buy</button>
   <br />
 
-  <ng-container *ngIf="listings; else loading">
+  @if (listings) {
     <ul class="asset-list">
-      <li *ngFor="let dataEntry of listings" class="asset-item">
-        <strong class="asset-label">Ticker:</strong>
-        <span class="asset-value">{{ dataEntry.tick }}</span
-        ><br />
-        <strong class="asset-label">From:</strong>
-        <span class="asset-value">{{ dataEntry.from }}</span
-        ><br />
-        <strong class="asset-label">Amount:</strong>
-        <span class="asset-value">{{ dataEntry.amount | sompiToNumber }}</span
-        ><br />
-        <strong class="asset-label">Transaction ID:</strong>
-        <span class="asset-value">{{ dataEntry.uTxid }}</span
-        ><br />
-        <strong class="asset-label">Address:</strong>
-        <span class="asset-value">{{ dataEntry.uAddr }}</span
-        ><br />
-        <strong class="asset-label">Script:</strong>
-        <span class="asset-value">{{ dataEntry.uScript }}</span
-        ><br />
-        <strong class="asset-label">Score:</strong>
-        <span class="asset-value">{{ dataEntry.opScoreAdd }}</span>
-        <button
-          class="cancel-button"
-          (click)="cancel(dataEntry)"
-          *ngIf="dataEntry.from == currentWallet()!.getAddress()"
-        >
-          Cancel
-        </button>
-      </li>
+      @for (dataEntry of listings; track dataEntry) {
+        <li class="asset-item">
+          <strong class="asset-label">Ticker:</strong>
+          <span class="asset-value">{{ dataEntry.tick }}</span
+          ><br />
+          <strong class="asset-label">From:</strong>
+          <span class="asset-value">{{ dataEntry.from }}</span
+          ><br />
+          <strong class="asset-label">Amount:</strong>
+          <span class="asset-value">{{ dataEntry.amount | sompiToNumber }}</span
+          ><br />
+          <strong class="asset-label">Transaction ID:</strong>
+          <span class="asset-value">{{ dataEntry.uTxid }}</span
+          ><br />
+          <strong class="asset-label">Address:</strong>
+          <span class="asset-value">{{ dataEntry.uAddr }}</span
+          ><br />
+          <strong class="asset-label">Script:</strong>
+          <span class="asset-value">{{ dataEntry.uScript }}</span
+          ><br />
+          <strong class="asset-label">Score:</strong>
+          <span class="asset-value">{{ dataEntry.opScoreAdd }}</span>
+          @if (dataEntry.from == currentWallet()!.getAddress()) {
+            <button class="cancel-button" (click)="cancel(dataEntry)">
+              Cancel
+            </button>
+          }
+        </li>
+      }
     </ul>
-  </ng-container>
-  <ng-template #loading>
+  } @else {
     <p>Loading...</p>
-  </ng-template>
+  }
 </div>

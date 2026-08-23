@@ -20,36 +20,45 @@
           iconClass="icon-info"
           [size]="'sm'"
           color="var(--warning-color, #FFB800)"
-        ></kc-icon>
+        />
         <p class="password-notice__message typo-text-3">
           <span class="password-notice__label">Important:</span>
-          This password unlocks your wallet data. If you lose it, you will not be able to recover your wallet data. Please make sure to save it somewhere safe.
+          This password unlocks your wallet data. If you lose it, you will not
+          be able to recover your wallet data. Please make sure to save it
+          somewhere safe.
         </p>
       </div>
-      <form [formGroup]="passwordForm" (ngSubmit)="onSubmit()">
+      <form
+        class="flex column gap-16 full-width align-items-stretch align-self-stretch"
+        [formGroup]="passwordForm"
+        (ngSubmit)="onSubmit()"
+      >
         <div class="flex column gap-4">
           <kc-input
+            class="full-width"
             formControlName="password"
-            [label]="'Enter your password'"
+            [infoLabel]="{ label: 'Enter your password' }"
             [placeholder]="'Password'"
             [type]="passwordType()"
             [isValid]="!isInvalid('password')"
-            [prepadInvalidReason]="true"
-            [invalidReason]="getPasswordErrorMessage()"
             (keydown.enter)="onSubmit()"
           >
             <div (click)="togglePwVisibility()" class="clickable" rightSideSlot>
-              <kc-icon iconClass="{{ passwordIcon() }}" [size]="'xs'"></kc-icon>
+              <kc-icon iconClass="{{ passwordIcon() }}" [size]="'xs'" />
             </div>
           </kc-input>
+          @if (isInvalid("password") && getPasswordErrorMessage()) {
+            <span class="kc-input-error-text">{{
+              getPasswordErrorMessage()
+            }}</span>
+          }
           <kc-input
+            class="full-width"
             formControlName="confirmPassword"
-            [label]="'Confirm your password'"
+            [infoLabel]="{ label: 'Confirm your password' }"
             [placeholder]="'Confirm password'"
             [type]="passwordConfirmType()"
             [isValid]="!isInvalid('confirmPassword')"
-            [prepadInvalidReason]="true"
-            [invalidReason]="getConfirmPasswordErrorMessage()"
             (keydown.enter)="onSubmit()"
           >
             <div
@@ -57,9 +66,16 @@
               class="clickable"
               rightSideSlot
             >
-              <kc-icon [iconClass]="passwordConfirmIcon()" [size]="'xs'"></kc-icon>
+              <kc-icon [iconClass]="passwordConfirmIcon()" [size]="'xs'" />
             </div>
           </kc-input>
+          @if (
+            isInvalid("confirmPassword") && getConfirmPasswordErrorMessage()
+          ) {
+            <span class="kc-input-error-text">{{
+              getConfirmPasswordErrorMessage()
+            }}</span>
+          }
         </div>
       </form>
     </div>
@@ -71,13 +87,13 @@
         [isFullWidth]="true"
         [text]="'Back'"
         (buttonClick)="previous.emit()"
-      ></kc-button>
+      />
       <kc-button
         [isFullWidth]="true"
         [text]="'Next'"
         (buttonClick)="onSubmit()"
         [isDisabled]="!passwordForm.valid"
-      ></kc-button>
+      />
     </div>
   </div>
 </div>

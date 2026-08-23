@@ -1,0 +1,41 @@
+.application-container {
+  width: 100vw;
+  width: 100dvw;
+  height: 100vh;
+  height: 100dvh;
+
+  .iframe-mode & {
+    height: 100%;
+    width: 100%;
+  }
+
+  overflow: clip;
+  display: block;
+  background: black url(/svgs/background.svg) 100% 100% no-repeat;
+}
+
+::ng-deep .kc-snackbar-container {
+  .kc-snackbar-description {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+  }
+
+  .kc-snackbar-content {
+    gap: 0px !important;
+  }
+}
+
+::ng-deep .kc-snackbars-container {
+  z-index: 100000 !important;
+}
+
+.not-supported-url {
+  font-size: 2rem;
+  font-weight: bold;
+  color: red;
+  text-align: center;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

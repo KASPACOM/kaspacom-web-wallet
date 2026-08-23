@@ -1,7 +1,13 @@
-import { Component, computed, inject, signal, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {
+  Component,
+  computed,
+  inject,
+  signal,
+  HostListener,
+} from '@angular/core';
+
 import { QRCodeComponent } from 'angularx-qrcode';
-import { KcButtonComponent, KcIconComponent, NotificationService } from 'kaspacom-ui';
+import { KcButtonComponent, KcIconComponent, KcInputComponent, NotificationService } from '@kaspacom/ui-kit';
 import { FlowPageBaseComponent } from '../../common/flow-page/base/flow-page-base.component';
 import { IFlowPageConfig } from '../../common/flow-page/interfaces/flow-page.interface';
 import { PasswordManagerService } from '../../../../../services/password-manager.service';
@@ -12,11 +18,11 @@ import { FormsModule } from '@angular/forms';
   selector: 'app-export-kaspacom-wallet-flow-page',
   standalone: true,
   imports: [
-    CommonModule, 
-    QRCodeComponent, 
-    KcButtonComponent, 
+    QRCodeComponent,
+    KcButtonComponent,
     KcIconComponent,
-    FormsModule
+    KcInputComponent,
+    FormsModule,
   ],
   templateUrl: './export-kaspacom-wallet-flow-page.component.html',
   styleUrl: './export-kaspacom-wallet-flow-page.component.scss',
@@ -42,7 +48,11 @@ export class ExportKaspacomWalletFlowPageComponent extends FlowPageBaseComponent
   isLoading = signal<boolean>(false);
   encryptedUserData = signal<string | null>(null);
   passwordError = signal<string | null>(null);
-  
+  // kc-input's writeValue() re-emits a change event on programmatic value
+  // updates, which routes back through onPasswordInput(). This suppresses
+  // that echo so a password.set('') reset doesn't clear an error we just set.
+  private suppressNextPasswordInputEcho = false;
+
   // QR Code settings
   maxDataLength = 2331;
   qrCodeSize = signal<number>(280);
@@ -85,6 +95,10 @@ export class ExportKaspacomWalletFlowPageComponent extends FlowPageBaseComponent
   }
 
   onPasswordInput(): void {
+    if (this.suppressNextPasswordInputEcho) {
+      this.suppressNextPasswordInputEcho = false;
+      return;
+    }
     // Clear error when user starts typing
     if (this.passwordError()) {
       this.passwordError.set(null);
@@ -93,10 +107,10 @@ export class ExportKaspacomWalletFlowPageComponent extends FlowPageBaseComponent
 
   async onVerifyPassword(): Promise<void> {
     const passwordValue = this.password();
-    
+
     // Clear any existing error
     this.passwordError.set(null);
-    
+
     if (!passwordValue.trim()) {
       this.passwordError.set('Please enter your password');
       return;
@@ -105,17 +119,19 @@ export class ExportKaspacomWalletFlowPageComponent extends FlowPageBaseComponent
     this.isLoading.set(true);
 
     try {
-      const isValid = await this.passwordManagerService.checkPassword(passwordValue);
-      
+      const isValid =
+        await this.passwordManagerService.checkPassword(passwordValue);
+
       if (!isValid) {
-        this.passwordError.set('Incorrect password. Please try again.');
+        this.suppressNextPasswordInputEcho = true;
         this.password.set('');
+        this.passwordError.set('Incorrect password. Please try again.');
         return;
       }
 
       // Get encrypted user data
       const encryptedData = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA);
-      
+
       if (!encryptedData) {
         this.passwordError.set('No wallet data found to export');
         return;
@@ -123,7 +139,6 @@ export class ExportKaspacomWalletFlowPageComponent extends FlowPageBaseComponent
 
       this.encryptedUserData.set(encryptedData);
       this.currentStep.set('export');
-      
     } catch (error) {
       console.error('Password verification error:', error);
       this.passwordError.set('Failed to verify password');
@@ -143,18 +158,21 @@ export class ExportKaspacomWalletFlowPageComponent extends FlowPageBaseComponent
       const blob = new Blob([data], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      
+
       link.href = url;
       link.download = 'kaspacom-wallets.key';
       link.style.display = 'none';
-      
+
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       URL.revokeObjectURL(url);
-      
-      this.notificationService.success('Success', 'Wallet file downloaded successfully');
+
+      this.notificationService.success(
+        'Success',
+        'Wallet file downloaded successfully',
+      );
     } catch (error) {
       console.error('Download error:', error);
       this.notificationService.error('Error', 'Failed to download wallet file');
@@ -170,12 +188,15 @@ export class ExportKaspacomWalletFlowPageComponent extends FlowPageBaseComponent
 
     navigator.clipboard.writeText(data).then(
       () => {
-        this.notificationService.success('Success', 'Wallet data copied to clipboard');
+        this.notificationService.success(
+          'Success',
+          'Wallet data copied to clipboard',
+        );
       },
       (error) => {
         console.error('Copy error:', error);
         this.notificationService.error('Error', 'Failed to copy to clipboard');
-      }
+      },
     );
   }
 

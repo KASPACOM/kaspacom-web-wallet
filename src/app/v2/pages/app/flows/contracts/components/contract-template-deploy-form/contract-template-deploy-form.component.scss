@@ -1,0 +1,158 @@
+// Duplicated (not moved) from ../../contracts-page.component.scss — Angular's
+// emulated view encapsulation scopes CSS per-component, so this component
+// needs its own copies of the deploy-tab rules rather than relying on the
+// shell's scoped stylesheet, which no longer applies to markup rendered here.
+// The shell's copies are left in place (now inert there) rather than removed,
+// to avoid any risk of affecting the other tabs that still live in the shell.
+
+// Per-template accent, driven by [data-tpl] on the icon / template card —
+// must stay in sync with the $tpl-accents map in ../../contracts-page.component.scss.
+$tpl-accents: (
+  deadman: var(--orange-20),
+  timelock: var(--kaspa-20),
+  multisig: var(--blue-20),
+  escrow: var(--purple-20),
+  selfcustody: var(--yellow-20),
+  default: var(--kaspa-20),
+);
+
+@each $name, $color in $tpl-accents {
+  .tpl-icon[data-tpl="#{$name}"],
+  .template-card[data-tpl="#{$name}"] {
+    --tpl-accent: #{$color};
+  }
+}
+
+.tpl-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tpl-accent, var(--kaspa-20));
+  background: color-mix(
+    in srgb,
+    var(--tpl-accent, var(--kaspa-20)) 14%,
+    transparent
+  );
+
+  svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.deploy-stepper {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+
+  @media (max-width: 575px) {
+    display: none;
+  }
+}
+.deploy-stepper__item {
+  flex: 1;
+  min-width: 0;
+
+  ::ng-deep .stepper-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  &--last {
+    flex: 0 0 auto;
+
+    ::ng-deep .stepper-progress {
+      display: none;
+    }
+  }
+}
+
+.field-warning {
+  display: block;
+  color: var(--warning-50, #f8c96a);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.template-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.template-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  width: 100%;
+  background: var(--gray-10);
+  border: 1px solid var(--border-secondary);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  font: inherit;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: var(--tpl-accent, var(--kaspa-20));
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .tc-body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+  }
+  .tc-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--white);
+  }
+  .tc-desc {
+    font-size: 12px;
+    color: var(--gray-60);
+    line-height: 1.45;
+  }
+  .tc-chevron {
+    color: var(--gray-45);
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+  &:hover .tc-chevron {
+    color: var(--tpl-accent, var(--kaspa-20));
+  }
+}
+
+.error-message {
+  background: rgba(224, 66, 66, 0.1);
+  border: 1px solid var(--red-20);
+  color: var(--red-20);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  word-break: break-word;
+}
+
+// .contract-input/.form-input base styles live in src/styles/shared-ui.scss;
+// only the textarea-specific sizing stays local.
+.contract-input {
+  resize: vertical;
+  min-height: 120px;
+  font-size: 13px;
+}
+
+.field .btn.secondary.active {
+  background: var(--kaspa-20);
+  border-color: var(--kaspa-20);
+  color: #071f1c;
+  box-shadow: 0 0 0 1px rgba(111, 199, 186, 0.22);
+}

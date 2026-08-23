@@ -1,0 +1,235 @@
+<!--
+  contracts-page.component.html — REDESIGN (visual pass for PR #257)
+  Bound to the existing ContractsPageComponent API. New bindings required
+  (see HANDOFF.md): dashboardFilter(), setDashboardFilter(), filteredDashboardContracts(),
+  getTemplateKey(entry). Everything else already exists on the component.
+-->
+<div class="contracts-container">
+  <!-- Segmented tabs -->
+  <div class="seg-tabs" role="group" aria-label="Contracts section">
+    <button
+      class="seg-tab"
+      type="button"
+      [attr.aria-pressed]="activeTab() === 'deploy'"
+      [class.active]="activeTab() === 'deploy'"
+      (click)="switchTab('deploy')"
+    >
+      Create
+    </button>
+    <button
+      class="seg-tab"
+      type="button"
+      [attr.aria-pressed]="isMyContractsTabActive()"
+      [class.active]="isMyContractsTabActive()"
+      (click)="switchTab('my-contracts')"
+    >
+      <span class="seg-tab-label">My Contracts</span>
+      @if (dashboardContracts().length > 0) {
+        <span class="seg-tab-badge">{{ dashboardContracts().length }}</span>
+      }
+    </button>
+    <button
+      class="seg-tab"
+      type="button"
+      [attr.aria-pressed]="activeTab() === 'lookup-import'"
+      [class.active]="activeTab() === 'lookup-import'"
+      (click)="switchTab('lookup-import')"
+    >
+      Import
+    </button>
+  </div>
+
+  <div class="contracts-main">
+    <!-- ═══════════════ CREATE / DEPLOY ═══════════════ -->
+    @if (activeTab() === "deploy") {
+      <app-contract-template-deploy-form />
+    }
+
+    <!-- ═══════════════ MY CONTRACTS ═══════════════ -->
+    @if (activeTab() === "my-contracts" || activeTab() === "detail") {
+      <div class="flex column gap-20">
+        @if (activeTab() === "detail" && actionPageView() === "list") {
+          <div
+            class="detail-route-header flex justify-content-between align-items-center gap-12 wrap"
+          >
+            <button
+              class="back-button p-8 typo-text-2"
+              (click)="backToContractsList()"
+            >
+              Back to Contracts
+            </button>
+            @if (
+              selectedDetail() && selectedDetail()!.entry.status !== "spent"
+            ) {
+              <span class="text-gray-60 typo-text-2"
+                >Actions are available below</span
+              >
+            }
+          </div>
+        }
+
+        @if (activeTab() === "detail") {
+          @if (dashboardError()) {
+            <div class="banner warn">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+                />
+                <path d="M12 9v4M12 17h.01" />
+              </svg>
+              <div class="banner-body">
+                <div class="banner-title">Action unavailable</div>
+                {{ dashboardError() }}
+              </div>
+            </div>
+          }
+
+          @if (!selectedDetail() && selectedDetailLoading()) {
+            <div class="panel text-gray-60 typo-text-2">
+              Loading current indexer state...
+            </div>
+          }
+
+          @if (!selectedDetail() && selectedDetailError()) {
+            <div class="error-message">{{ selectedDetailError() }}</div>
+          }
+        }
+
+        @if (activeTab() === "my-contracts") {
+          <app-contracts-dashboard
+            [contracts]="filteredDashboardContracts()"
+            [loading]="dashboardLoading()"
+            [indexerLoading]="indexerLoading()"
+            [error]="dashboardError()"
+            [network]="network()"
+            [dashboardFilter]="dashboardFilter()"
+            [statusFilter]="statusFilter()"
+            [dashboardSearch]="dashboardSearch()"
+            [editingAliasKey]="editingAliasKey()"
+            [aliasNotice]="aliasNotice()"
+            [walletKey]="currentWalletAliasKey()"
+            [removableContractKeys]="removableTrackedContractKeys()"
+            (dashboardFilterChanged)="setDashboardFilter($event)"
+            (statusFilterChanged)="setStatusFilter($event)"
+            (dashboardSearchChanged)="dashboardSearch.set($event)"
+            (refreshRequested)="loadContracts()"
+            (tabRequested)="switchTab($event)"
+            (contractDetailsRequested)="navigateToContractDetail($event)"
+            (contractActionRequested)="openDashboardAction($event)"
+            (aliasEditRequested)="beginAliasEdit($event)"
+            (aliasEditCancelled)="cancelAliasEdit()"
+            (aliasSaveRequested)="saveAlias($event.contract, $event.draft)"
+            (aliasRemoveRequested)="removeAlias($event)"
+            (contractRemoveRequested)="removeTrackedContract($event)"
+          />
+
+          <!-- Detail panel -->
+        }
+
+        @if (
+          selectedDetail() &&
+          activeTab() === "detail" &&
+          actionPageView() === "list"
+        ) {
+          <app-contract-detail
+            [selectedDetail]="selectedDetail()!"
+            [selectedDetailLoading]="selectedDetailLoading()"
+            [selectedDetailError]="selectedDetailError()"
+            [actionPageView]="actionPageView()"
+            [hideActionsAfterCompletion]="hideActionsAfterCompletion()"
+            [actionsPanelReady]="actionsPanelReady()"
+            [availableActions]="getAvailableActions(selectedDetail()!)"
+            [partialSpendJsonForDetail]="partialSpendJsonForDetail()"
+            [editingAliasKey]="editingAliasKey()"
+            [aliasNotice]="aliasNotice()"
+            [walletKey]="currentWalletAliasKey()"
+            (actionRequested)="selectDetailAction($event)"
+            (closeRequested)="backToContractsList()"
+            (aliasEditRequested)="beginAliasEdit($event)"
+            (aliasEditCancelled)="cancelAliasEdit()"
+            (aliasSaveRequested)="saveAlias($event.contract, $event.draft)"
+            (aliasRemoveRequested)="removeAlias($event)"
+            [canRemoveContract]="
+              canRemoveTrackedContract(selectedDetail()!.entry)
+            "
+            (contractRemoveRequested)="removeTrackedContract($event)"
+          />
+        }
+      </div>
+    }
+
+    <!-- ═══════════════ LOOKUP / IMPORT ═══════════════ -->
+    @if (activeTab() === "lookup-import") {
+      <app-contract-lookup-import
+        [indexerImportQuery]="indexerImportQuery"
+        [indexerImportLoading]="indexerImportLoading()"
+        [indexerImportError]="indexerImportError()"
+        [indexerImportPreview]="indexerImportPreview()"
+        (indexerImportQueryChanged)="onIndexerImportQueryChange($event)"
+        (lookupIndexerImportRequested)="lookupIndexerImport()"
+        (importIndexerPreviewRequested)="importIndexerPreview()"
+        (interactRequested)="onLookupInteractRequested($event)"
+      />
+    }
+
+    <!-- ═══════════════ ACTION PANEL (curated form + advanced/manual interact) ═══════════════ -->
+    <app-contract-action-panel
+      [selectedDetail]="selectedDetail()"
+      [activeTab]="activeTab()"
+      [detailPanelTab]="detailPanelTab()"
+      [registryContracts]="registryContracts()"
+      [registryContractOptions]="registryContractOptions()"
+      [availableActions]="
+        selectedDetail() ? getAvailableActions(selectedDetail()!) : []
+      "
+      [selectedDetailLoading]="selectedDetailLoading()"
+      [actionsPanelReady]="actionsPanelReady()"
+      [editingAliasKey]="editingAliasKey()"
+      [aliasNotice]="aliasNotice()"
+      [walletKey]="currentWalletAliasKey()"
+      [pendingFunctionSelect]="pendingFunctionSelect()"
+      [selectedContractId]="selectedContractId()"
+      (selectedContractIdChange)="selectedContractId.set($event)"
+      [interactContractJson]="interactContractJson()"
+      (interactContractJsonChange)="interactContractJson.set($event)"
+      [interactResult]="interactResult()"
+      (interactResultChange)="interactResult.set($event)"
+      [interactError]="interactError()"
+      (interactErrorChange)="interactError.set($event)"
+      [interactIndexerState]="interactIndexerState()"
+      (interactIndexerStateChange)="interactIndexerState.set($event)"
+      [partialSpendJson]="partialSpendJson()"
+      (partialSpendJsonChange)="partialSpendJson.set($event)"
+      [partialCompleteResult]="partialCompleteResult()"
+      (partialCompleteResultChange)="partialCompleteResult.set($event)"
+      [partialCompleteError]="partialCompleteError()"
+      (partialCompleteErrorChange)="partialCompleteError.set($event)"
+      [actionPageView]="actionPageView()"
+      (actionPageViewChange)="actionPageView.set($event)"
+      [(selectedFunction)]="selectedFunction"
+      [(interactOutpointTxid)]="interactOutpointTxid"
+      [(interactOutpointVout)]="interactOutpointVout"
+      [(interactInputAmount)]="interactInputAmount"
+      [(interactOutputAddress)]="interactOutputAddress"
+      [(interactOutputAmount)]="interactOutputAmount"
+      [(topUpAmount)]="topUpAmount"
+      [(interactResolvedOutputAddress)]="interactResolvedOutputAddress"
+      [registryEntryUpdated]="onRegistryEntryUpdated"
+      [actionIndexingRequested]="onActionIndexingRequested"
+      [backToListRequested]="backToContractsListCallback"
+      (aliasEditRequested)="beginAliasEdit($event)"
+      (aliasEditCancelled)="cancelAliasEdit()"
+      (aliasSaveRequested)="saveAlias($event.contract, $event.draft)"
+      (aliasRemoveRequested)="removeAlias($event)"
+    />
+  </div>
+</div>

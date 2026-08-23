@@ -5,11 +5,11 @@ import {
   signal,
   WritableSignal,
   OnDestroy,
+  OnInit,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { KcButtonComponent } from 'kaspacom-ui';
-import { KcIconComponent } from 'kaspacom-ui';
+
+import { KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
+import { CheckboxInputComponent } from '../../../../../shared/ui/input/checkbox/checkbox-input/checkbox-input.component';
 import { PriorityFeeSelectionComponent } from '../../../../../../components/wallet-actions-reviews/priority-fee-selection/priority-fee-selection.component';
 import {
   ApprovalFlowService,
@@ -33,10 +33,9 @@ import { SwapContextService } from '../../../../../services/swap-context.service
 @Component({
   selector: 'app-approval-flow-page',
   imports: [
-    CommonModule,
-    FormsModule,
     KcButtonComponent,
     KcIconComponent,
+    CheckboxInputComponent,
     PriorityFeeSelectionComponent,
     L2PriorityFeeSelectionComponent,
     ApprovalSuccessPageComponent,
@@ -46,7 +45,7 @@ import { SwapContextService } from '../../../../../services/swap-context.service
   templateUrl: './approval-flow-page.component.html',
   styleUrl: './approval-flow-page.component.scss',
 })
-export class ApprovalFlowPageComponent implements OnDestroy {
+export class ApprovalFlowPageComponent implements OnInit, OnDestroy {
   public approvalFlowService = inject(ApprovalFlowService);
   private walletService = inject(WalletService);
   private reviewActionDataService = inject(ReviewActionDataService);
@@ -85,6 +84,7 @@ export class ApprovalFlowPageComponent implements OnDestroy {
       [
         WalletActionType.SIGN_MESSAGE,
         WalletActionType.APPROVE_COMMUNICATION_APP,
+        WalletActionType.COVENANT_COMPLETE_PARTIAL,
       ].includes(config.action.type)
     ) {
       return false;
@@ -126,7 +126,8 @@ export class ApprovalFlowPageComponent implements OnDestroy {
   });
 
   // Form state
-  protected currentPriorityFee: WritableSignal<bigint | undefined> = signal(undefined);
+  protected currentPriorityFee: WritableSignal<bigint | undefined> =
+    signal(undefined);
   protected currentL2PriorityFee: WritableSignal<
     Partial<L2PriorityInfo> | undefined
   > = signal(undefined);
@@ -184,10 +185,19 @@ export class ApprovalFlowPageComponent implements OnDestroy {
     });
   }
 
+  ngOnInit() {
+    // Cancels a deferred reject scheduled by a previous instance's destroy —
+    // happens when the app-wrapper re-parents the flow outlet between layout
+    // branches (wide workspace deactivation) and re-creates this component.
+    this.approvalFlowService.notifyApprovalPageAttached();
+  }
+
   ngOnDestroy() {
     // If the component is destroyed while approval is still pending
-    // (e.g. user navigated back), reject the pending approval cleanly
-    this.approvalFlowService.rejectIfPending();
+    // (e.g. user navigated back), reject the pending approval cleanly.
+    // Deferred one tick so a re-created instance (layout re-parenting, see
+    // ngOnInit) can cancel it instead of silently rejecting the action.
+    this.approvalFlowService.notifyApprovalPageDetached();
   }
 
   setCurrentPriorityFee(priorityFee: bigint | undefined) {
@@ -197,9 +207,9 @@ export class ApprovalFlowPageComponent implements OnDestroy {
   setL2CurrentPriorityFee(
     info:
       | {
-        priorityFee: bigint;
-        baseFee: bigint;
-      }
+          priorityFee: bigint;
+          baseFee: bigint;
+        }
       | undefined,
   ) {
     if (info == undefined) {

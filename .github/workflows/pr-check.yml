@@ -6,13 +6,17 @@ on:
       - develop
       - main
 
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
-        node-version: [18.x]
+        node-version: [24.x]
 
     steps:
       - name: Checkout code
@@ -22,11 +26,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install dependencies
         run: npm install
         continue-on-error: false
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Lint check (if applicable)
         run: |
@@ -72,10 +78,10 @@ jobs:
       #   with:
       #     script: |
       #       const buildStatus = '${{ job.status }}';
-      #       const message = buildStatus === 'success' 
+      #       const message = buildStatus === 'success'
       #         ? '✅ Build and tests passed successfully!'
       #         : '❌ Build or tests failed. Please check the logs above.';
-            
+
       #       github.rest.issues.createComment({
       #         issue_number: context.issue.number,
       #         owner: context.repo.owner,
@@ -100,11 +106,13 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: "24"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
@@ -115,13 +123,16 @@ jobs:
             playwright-${{ runner.os }}-
 
       - name: Install Playwright browsers
-        # Covers the chromium / webkit / firefox projects in the matrix above.
-        run: npx playwright install --with-deps chromium webkit firefox
+        # Only the project this matrix leg runs needs installing — pulling
+        # all three (and their apt deps) on every leg was blowing most of
+        # the 20-minute job timeout on redundant installs before a single
+        # test ran.
+        run: npx playwright install --with-deps ${{ matrix.project }}
 
       - name: Run @smoke on ${{ matrix.project }}
         run: npx playwright test --grep @smoke --project=${{ matrix.project }}
         env:
-          CI: 'true'
+          CI: "true"
           KASPA_E2E_SEED: ${{ secrets.KASPA_E2E_SEED }}
 
       - name: Upload Playwright report on failure
@@ -155,11 +166,13 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: "24"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
@@ -178,7 +191,7 @@ jobs:
         # state and doesn't need re-running per browser engine.
         run: npm run e2e:funded
         env:
-          CI: 'true'
+          CI: "true"
           KASPA_E2E_SEED: ${{ secrets.KASPA_E2E_SEED }}
 
       - name: Upload Playwright report on failure
@@ -208,11 +221,13 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: "24"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run npm audit
         run: npm audit --audit-level=moderate

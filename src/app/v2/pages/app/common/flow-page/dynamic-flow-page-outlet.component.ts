@@ -13,11 +13,9 @@ import { IFlowPageConfig } from './interfaces/flow-page.interface';
   standalone: true,
   imports: [CommonModule, NgComponentOutlet],
   template: `
-    <ng-container *ngIf="componentToRender() as comp">
-      <ng-container
-        *ngComponentOutlet="comp; inputs: componentInputs()"
-      ></ng-container>
-    </ng-container>
+    @if (componentToRender(); as comp) {
+      <ng-container *ngComponentOutlet="comp; inputs: componentInputs()" />
+    }
   `,
 })
 export class DynamicFlowPageOutletComponent {

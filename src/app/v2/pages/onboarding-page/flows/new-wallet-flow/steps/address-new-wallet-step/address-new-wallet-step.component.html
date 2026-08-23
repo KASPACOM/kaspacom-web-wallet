@@ -21,7 +21,7 @@
             {{ displayWalletAddress() }}
           </span>
           <div (click)="copyAddressToClipboard()" class="clickable">
-            <kc-icon iconClass="icon-copy"></kc-icon>
+            <kc-icon iconClass="icon-copy" />
           </div>
         </div>
       </div>
@@ -35,6 +35,6 @@
       [text]="'Finish'"
       [isDisabled]="false"
       (buttonClick)="onFinish()"
-    ></kc-button>
+    />
   </div>
 </div>

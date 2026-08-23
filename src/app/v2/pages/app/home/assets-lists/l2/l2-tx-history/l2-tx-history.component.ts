@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { type Transaction, formatUnits } from 'ethers';
-import { KcIconComponent, KcSpinnerComponent } from 'kaspacom-ui';
+import { KcIconComponent, KcSpinnerComponent } from '@kaspacom/ui-kit';
 import { CopyButtonComponent } from '../../../../../../shared/ui/copy-button/copy-button.component';
 import { L2TransactionHistory } from '../../../../../../../db/dtos/l2-transaction-history';
 import { L2TransactionHistoryService } from '../../../../../../../services/l2-services/l2-transaction-history.service';

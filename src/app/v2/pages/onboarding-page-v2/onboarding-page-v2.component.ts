@@ -2,26 +2,25 @@ import {
   Component,
   computed,
   signal,
-  ViewChild,
   ElementRef,
   AfterViewInit,
   OnDestroy,
   inject,
+  viewChild,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import {
   FormBuilder,
   FormsModule,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
+  KcInputComponent,
   KcButtonComponent,
   KcIconComponent,
-  KcInputComponent,
-  KcSnackbarComponent,
-} from 'kaspacom-ui';
+} from '@kaspacom/ui-kit';
 import { OnboardingStep } from '../onboarding-page/onboarding-step.enum';
 import { ImportExistingFlowComponent } from '../onboarding-page/flows/import-existing-flow/import-existing-flow.component';
 import { NewWalletFlowComponent } from '../onboarding-page/flows/new-wallet-flow/new-wallet-flow.component';
@@ -34,6 +33,7 @@ import {
 import { IframeAccountSelectionService } from '../../services/iframe-account-selection.service';
 import { MonitorService } from '../../../services/monitor.service';
 import { IFrameCommunicationApp } from '../../../services/communication-service/communication-app/iframe-communication.service';
+import { getSafeReturnUrl } from '../../shared/utils/return-url.util';
 
 type LoginPasswordType = 'password' | 'text';
 
@@ -45,7 +45,6 @@ interface PanelCopy {
 @Component({
   selector: 'app-onboarding-page-v2',
   imports: [
-    CommonModule,
     FormsModule,
     ReactiveFormsModule,
     KcButtonComponent,
@@ -53,14 +52,13 @@ interface PanelCopy {
     KcInputComponent,
     ImportExistingFlowComponent,
     NewWalletFlowComponent,
-    KcSnackbarComponent,
   ],
   templateUrl: './onboarding-page-v2.component.html',
   styleUrl: './onboarding-page-v2.component.scss',
 })
 export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
-  @ViewChild('graphCanvas', { static: false })
-  graphCanvas!: ElementRef<HTMLCanvasElement>;
+  readonly graphCanvas =
+    viewChild.required<ElementRef<HTMLCanvasElement>>('graphCanvas');
   readonly OnboardingStep = OnboardingStep;
 
   onboardingStep = signal(OnboardingStep.WELCOME);
@@ -69,6 +67,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
   private readonly passwordManagerService = inject(PasswordManagerService);
   private readonly walletService = inject(WalletService);
   private readonly router = inject(Router);
+  private readonly activatedRoute = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
   private readonly iframeAccountSelectionService = inject(
     IframeAccountSelectionService,
@@ -260,7 +259,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
         is_iframe: IFrameCommunicationApp.isIframe(),
       });
 
-      await this.router.navigate(['./app/home']);
+      await this.router.navigateByUrl(getSafeReturnUrl(this.activatedRoute));
     } catch (error) {
       console.error('Login failed', error);
       this.loginForm.get('password')?.setErrors({ invalidCredentials: true });
@@ -311,7 +310,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
   }
 
   private initGraphAnimation(): void {
-    const canvas = this.graphCanvas.nativeElement;
+    const canvas = this.graphCanvas().nativeElement;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     this.ctx = ctx;
@@ -340,7 +339,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
   }
 
   private resizeCanvas(): void {
-    const canvas = this.graphCanvas.nativeElement;
+    const canvas = this.graphCanvas().nativeElement;
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
   }
@@ -356,7 +355,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
   }
 
   private drawConnections(): void {
-    const canvas = this.graphCanvas.nativeElement;
+    const canvas = this.graphCanvas().nativeElement;
     const maxDistance = Math.max(canvas.width, canvas.height);
 
     for (let i = 0; i < this.nodes.length; i++) {
@@ -399,7 +398,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
   }
 
   private animate(): void {
-    const canvas = this.graphCanvas.nativeElement;
+    const canvas = this.graphCanvas().nativeElement;
 
     // Clear canvas
     this.ctx.clearRect(0, 0, canvas.width, canvas.height);

@@ -1,83 +1,100 @@
-<div class="import-token-container full-width full-height flex column p-16 gap-24">
-
+<div
+  class="import-token-container full-width full-height flex column p-16 gap-24"
+>
   <!-- Address Input Section -->
   <div class="input-section flex column gap-12">
-    <div class="section-label typo-text-1 text-gray-60">Token Contract Address</div>
-
-    <div class="address-input-row flex gap-8 align-items-start">
+    <div class="address-input-row flex gap-8 align-items-end">
       <div class="flex-1">
         <kc-input
-          [label]="'Contract Address'"
+          [infoLabel]="{ label: 'Token Contract Address' }"
           [placeholder]="'0x...'"
           [type]="'text'"
-          [isFullWidth]="true"
           [isValid]="state() !== 'error' && state() !== 'already-imported'"
-          [invalidReason]="state() === 'error' || state() === 'already-imported' ? errorMessage() : ''"
           [ngModel]="contractAddress()"
-          (valueChange)="onAddressChange($event)">
-        </kc-input>
+          (valueChange)="onAddressChange($any($event))"
+        />
       </div>
       <kc-button
         [variant]="'secondary'"
-        [size]="'md'"
+        [size]="'m'"
         [text]="'Paste'"
         class="paste-btn"
-        (buttonClick)="pasteFromClipboard()">
-      </kc-button>
+        (buttonClick)="pasteFromClipboard()"
+      />
     </div>
 
+    @if (state() === "error" || state() === "already-imported") {
+      <span class="kc-input-error-text">{{ errorMessage() }}</span>
+    }
+
     @if (showAddressError()) {
-      <div class="address-error typo-text-1 text-red">Invalid contract address format</div>
+      <span class="kc-input-error-text">Invalid contract address format</span>
     }
 
     <kc-button
       [variant]="'primary'"
-      [size]="'md'"
+      [size]="'m'"
       [text]="state() === 'loading' ? 'Looking up...' : 'Look Up Token'"
       [isDisabled]="!isAddressValid() || state() === 'loading'"
-      class="full-width"
-      (buttonClick)="lookupToken()">
-    </kc-button>
+      [isFullWidth]="true"
+      (buttonClick)="lookupToken()"
+    />
   </div>
 
   <!-- Loading State -->
-  @if (state() === 'loading') {
+  @if (state() === "loading") {
     <div class="loading-section flex column gap-16">
       <div class="token-card card-0 flex align-items-center gap-16 p-16">
-        <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="true"></app-skeleton>
+        <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="true" />
         <div class="flex column gap-8 flex-1">
-          <app-skeleton [height]="'20px'" [width]="'140px'"></app-skeleton>
-          <app-skeleton [height]="'16px'" [width]="'100px'"></app-skeleton>
+          <app-skeleton [height]="'20px'" [width]="'140px'" />
+          <app-skeleton [height]="'16px'" [width]="'100px'" />
         </div>
       </div>
     </div>
   }
 
   <!-- Already Imported State -->
-  @if (state() === 'already-imported' && tokenInfo()) {
+  @if (state() === "already-imported" && tokenInfo()) {
     <div class="token-found-section flex column gap-16">
       <!-- Token Info Card -->
       <div class="token-card card-0 flex column gap-16 p-16">
         <div class="token-header flex align-items-center gap-16">
-          <div class="token-logo-placeholder flex align-items-center justify-content-center">
-            <span class="token-symbol-initial typo-title-4">{{ tokenInfo()!.symbol.charAt(0) || '?' }}</span>
+          <div
+            class="token-logo-placeholder flex align-items-center justify-content-center"
+          >
+            <span class="token-symbol-initial typo-title-4">{{
+              tokenInfo()!.symbol.charAt(0) || "?"
+            }}</span>
           </div>
           <div class="flex column gap-4">
-            <div class="text-gray-90 typo-title-4">{{ tokenInfo()!.symbol }}</div>
+            <div class="text-gray-90 typo-title-4">
+              {{ tokenInfo()!.symbol }}
+            </div>
             <div class="text-gray-60 typo-text-1">{{ tokenInfo()!.name }}</div>
           </div>
         </div>
 
         <div class="token-details flex column gap-8">
-          <div class="detail-row flex justify-content-between align-items-center">
+          <div
+            class="detail-row flex justify-content-between align-items-center"
+          >
             <span class="text-gray-60 typo-text-1">Address</span>
-            <span class="text-gray-90 font-mono">{{ shortAddress(tokenInfo()!.address) }}</span>
+            <span class="text-gray-90 font-mono">{{
+              shortAddress(tokenInfo()!.address)
+            }}</span>
           </div>
-          <div class="detail-row flex justify-content-between align-items-center">
+          <div
+            class="detail-row flex justify-content-between align-items-center"
+          >
             <span class="text-gray-60 typo-text-1">Balance</span>
-            <span class="text-gray-90">{{ formatBalance(tokenInfo()!) }} {{ tokenInfo()!.symbol }}</span>
+            <span class="text-gray-90"
+              >{{ formatBalance(tokenInfo()!) }} {{ tokenInfo()!.symbol }}</span
+            >
           </div>
-          <div class="detail-row flex justify-content-between align-items-center">
+          <div
+            class="detail-row flex justify-content-between align-items-center"
+          >
             <span class="text-gray-60 typo-text-1">Decimals</span>
             <span class="text-gray-90">{{ tokenInfo()!.decimals }}</span>
           </div>
@@ -86,41 +103,57 @@
 
       <kc-button
         [variant]="'secondary'"
-        [size]="'md'"
+        [size]="'m'"
         [text]="'Close'"
-        class="full-width"
-        (buttonClick)="onCancel()">
-      </kc-button>
+        [isFullWidth]="true"
+        (buttonClick)="onCancel()"
+      />
     </div>
   }
 
   <!-- Token Found State -->
-  @if (state() === 'found' && tokenInfo()) {
+  @if (state() === "found" && tokenInfo()) {
     <div class="token-found-section flex column gap-16">
       <div class="section-label typo-text-1 text-gray-60">Token Found</div>
 
       <!-- Token Info Card -->
       <div class="token-card card-0 flex column gap-16 p-16">
         <div class="token-header flex align-items-center gap-16">
-          <div class="token-logo-placeholder flex align-items-center justify-content-center">
-            <span class="token-symbol-initial typo-title-4">{{ tokenInfo()!.symbol.charAt(0) || '?' }}</span>
+          <div
+            class="token-logo-placeholder flex align-items-center justify-content-center"
+          >
+            <span class="token-symbol-initial typo-title-4">{{
+              tokenInfo()!.symbol.charAt(0) || "?"
+            }}</span>
           </div>
           <div class="flex column gap-4">
-            <div class="text-gray-90 typo-title-4">{{ tokenInfo()!.symbol }}</div>
+            <div class="text-gray-90 typo-title-4">
+              {{ tokenInfo()!.symbol }}
+            </div>
             <div class="text-gray-60 typo-text-1">{{ tokenInfo()!.name }}</div>
           </div>
         </div>
 
         <div class="token-details flex column gap-8">
-          <div class="detail-row flex justify-content-between align-items-center">
+          <div
+            class="detail-row flex justify-content-between align-items-center"
+          >
             <span class="text-gray-60 typo-text-1">Address</span>
-            <span class="text-gray-90 font-mono">{{ shortAddress(tokenInfo()!.address) }}</span>
+            <span class="text-gray-90 font-mono">{{
+              shortAddress(tokenInfo()!.address)
+            }}</span>
           </div>
-          <div class="detail-row flex justify-content-between align-items-center">
+          <div
+            class="detail-row flex justify-content-between align-items-center"
+          >
             <span class="text-gray-60 typo-text-1">Balance</span>
-            <span class="text-gray-90">{{ formatBalance(tokenInfo()!) }} {{ tokenInfo()!.symbol }}</span>
+            <span class="text-gray-90"
+              >{{ formatBalance(tokenInfo()!) }} {{ tokenInfo()!.symbol }}</span
+            >
           </div>
-          <div class="detail-row flex justify-content-between align-items-center">
+          <div
+            class="detail-row flex justify-content-between align-items-center"
+          >
             <span class="text-gray-60 typo-text-1">Decimals</span>
             <span class="text-gray-90">{{ tokenInfo()!.decimals }}</span>
           </div>
@@ -131,29 +164,35 @@
       <div class="action-buttons flex gap-12">
         <kc-button
           [variant]="'secondary'"
-          [size]="'md'"
+          [size]="'m'"
           [text]="'Cancel'"
           class="flex-1"
-          (buttonClick)="onCancel()">
-        </kc-button>
+          (buttonClick)="onCancel()"
+        />
         <kc-button
           [variant]="'primary'"
-          [size]="'md'"
+          [size]="'m'"
           [text]="isSaving() ? 'Importing...' : 'Import Token'"
           [isDisabled]="isSaving()"
+          [isFullWidth]="true"
           class="flex-1"
-          (buttonClick)="onAccept()">
-        </kc-button>
+          (buttonClick)="onAccept()"
+        />
       </div>
     </div>
   }
 
   <!-- Error State -->
-  @if (state() === 'error') {
+  @if (state() === "error") {
     <div class="error-section flex column align-items-center gap-16 p-16">
-      <kc-icon [iconClass]="'icon-close'" [size]="'lg'" [color]="'var(--red-20)'"></kc-icon>
-      <div class="text-center text-gray-60 typo-text-1">{{ errorMessage() }}</div>
+      <kc-icon
+        [iconClass]="'icon-close'"
+        [size]="'lg'"
+        [color]="'var(--red-20)'"
+      />
+      <div class="text-center text-gray-60 typo-text-1">
+        {{ errorMessage() }}
+      </div>
     </div>
   }
-
 </div>

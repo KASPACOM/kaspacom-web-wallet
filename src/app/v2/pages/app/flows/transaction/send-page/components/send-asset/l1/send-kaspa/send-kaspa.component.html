@@ -1,11 +1,11 @@
 <div class="send-kaspa-content">
   <!-- Kaspa Info Header -->
   <div class="kaspa-info-header card-0 align-items-center gap-16 p-16">
-    <krc20-token-logo [ticker]="'KAS'" [size]="'lg'"></krc20-token-logo>
+    <krc20-token-logo [ticker]="'KAS'" [size]="'lg'" />
     <div class="flex column gap-4">
       <div class="text-gray-90 typo-text-2">Kaspa</div>
       <div class="text-gray-60 typo-text-1">
-        Available: {{ availableBalance() | number : "1.0-4" }}&nbsp;KAS
+        Available: {{ availableBalance() | number: "1.0-4" }}&nbsp;KAS
       </div>
     </div>
   </div>
@@ -23,39 +23,43 @@
         [value]="walletAddress"
         (valueChange)="onWalletAddressChange($event)"
         (resolved)="onAddressResolved($event)"
-        (qrClick)="onQrScanClick()">
-      </app-address-smart-input>
+        (qrClick)="onQrScanClick()"
+      />
     </div>
 
     <!-- Amount Input -->
     <div class="form-field">
-      <kc-input
-        [label]="'Amount of Kaspa'"
+      <kc-number-input
+        [infoLabel]="{ label: 'Amount of Kaspa' }"
         [placeholder]="'0.00'"
-        [type]="'number'"
-        [min]="0"
-        [max]="availableBalance()"
-        [isFullWidth]="true"
+        [available]="availableBalance().toString()"
         [isValid]="isAmountValid"
-        [invalidReason]="amountErrorMessage"
         [isDisabled]="isLoading"
         [ngModel]="kaspaAmount"
-        (valueChange)="onAmountChange($event)">
-        <div (click)="!isLoading && onMaxAmountClick()" [class]="isLoading ? 'max-text disabled' : 'max-text clickable'" rightSideSlot>
+        (valueChange)="onAmountChange($event)"
+      >
+        <div
+          (click)="!isLoading && onMaxAmountClick()"
+          [class]="isLoading ? 'max-text disabled' : 'max-text clickable'"
+          rightSideSlot
+        >
           <span>Max</span>
         </div>
-      </kc-input>
+      </kc-number-input>
+      @if (!isAmountValid && amountErrorMessage) {
+        <span class="kc-input-error-text">{{ amountErrorMessage }}</span>
+      }
     </div>
 
     <!-- Replace By Fee Checkbox -->
     <div class="form-field">
-      <kc-checkbox
-        [label]="'Replace By Fee (RBF)'"
-        [isChecked]="replaceByFee"
+      <app-checkbox-input
+        [checked]="replaceByFee"
         [isDisabled]="isLoading"
         (checkedChange)="onRbfChange($event)"
-        size="md">
-      </kc-checkbox>
+      >
+        Replace By Fee (RBF)
+      </app-checkbox-input>
     </div>
 
     <!-- Send Button -->
@@ -65,9 +69,15 @@
         [variant]="'primary'"
         [isFullWidth]="true"
         [isLoading]="isLoading"
-        [isDisabled]="!isAddressValid || !isAmountValid || isLoading || !walletAddress || !kaspaAmount"
-        (buttonClick)="onSendClick()">
-      </kc-button>
+        [isDisabled]="
+          !isAddressValid ||
+          !isAmountValid ||
+          isLoading ||
+          !walletAddress ||
+          !kaspaAmount
+        "
+        (buttonClick)="onSendClick()"
+      />
     </div>
   </div>
 </div>

@@ -2,7 +2,11 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { WalletAction, WalletActionType } from '../../types/wallet-action';
 import { FlowPagesService } from './flow-pages.service';
 import { Router } from '@angular/router';
-import { WalletActionResult, EIP1193RequestPayload, EIP1193RequestType } from '@kaspacom/wallet-messages';
+import {
+  WalletActionResult,
+  EIP1193RequestPayload,
+  EIP1193RequestType,
+} from '@kaspacom/wallet-messages';
 
 export enum ApprovalDisplayMode {
   FLOW_PAGE = 'flow_page', // For regular app usage - integrated flow
@@ -23,12 +27,17 @@ export type L2PriorityInfo = {
   gasLimit: bigint;
 };
 
+export type PendingActionConfirmation = {
+  status: 'checking' | 'confirmed' | 'unavailable' | 'timed-out';
+  message: string;
+};
+
 export type ApprovalPageResultParams = {
   isApproved: boolean;
   priorityFee?: bigint;
   l2PriorityInfo?: L2PriorityInfo;
   additionalParams?: { [key: string]: any };
-}
+};
 
 export interface ApprovalFlowConfig {
   mode: ApprovalDisplayMode;
@@ -63,9 +72,13 @@ export class ApprovalFlowService {
   );
 
   // Resolve function for the current approval
-  private currentResolve:
-    | ((result: ApprovalPageResultParams) => void)
-    | null = null;
+  private currentResolve: ((result: ApprovalPageResultParams) => void) | null =
+    null;
+
+  // Identifies the current approval instance so a deferred reject scheduled
+  // for a detached page can detect that a newer approval has since started.
+  private approvalInstanceCounter = 0;
+  private currentApprovalInstanceId = 0;
 
   // Signal to track completion events for components to listen to
   private completionSignal = signal<{
@@ -75,6 +88,79 @@ export class ApprovalFlowService {
 
   // Public computed for components to observe completion
   completion = computed(() => this.completionSignal());
+
+  // Lets a flow (e.g. contracts page) report that the backend an action
+  // depends on (the covenant indexer) hasn't caught up yet, so the success
+  // page can hold the user on it instead of letting them navigate away
+  // believing the change is already reflected everywhere.
+  private pendingConfirmationSignal = signal<PendingActionConfirmation | null>(
+    null,
+  );
+  pendingConfirmation = computed(() => this.pendingConfirmationSignal());
+  private actionIndexingPollCounter = 0;
+  private activeActionIndexingPollId: number | null = null;
+
+  setPendingConfirmation(
+    state: PendingActionConfirmation | null,
+    pollId?: number,
+  ) {
+    if (pollId !== undefined && this.activeActionIndexingPollId !== pollId) {
+      return;
+    }
+    this.pendingConfirmationSignal.set(state);
+  }
+
+  // The flow-page outlet destroys ContractsPageComponent the instant the
+  // approval overlay covers it (see isContractsWide's comment in
+  // app-wrapper.component.ts), so the action-indexing poll that started on
+  // the old instance keeps running detached from any UI once the user
+  // returns to "My Contracts" — a freshly-created instance's own initial
+  // load has no idea that check is still in flight, and races ahead with
+  // its own fetch, which is exactly the staleness the poll exists to avoid.
+  // Tracking the poll's completion here, outside the component, lets that
+  // new instance await it before doing its own first load instead of racing it.
+  private actionIndexingCompletionSignal = signal<Promise<void> | null>(null);
+
+  setActionIndexingCompletion(promise: Promise<void>): number {
+    const pollId = ++this.actionIndexingPollCounter;
+    this.activeActionIndexingPollId = pollId;
+    this.actionIndexingCompletionSignal.set(promise);
+    return pollId;
+  }
+
+  // A poll's own cleanup must not blindly null the signal: if the user
+  // skipped/moved on and started a second covenant action before this poll
+  // finished, the signal has since been overwritten with that newer poll's
+  // promise — clearing unconditionally here would wipe that reference out
+  // while the newer poll is still running, making the next
+  // waitForActionIndexing() resolve immediately instead of waiting on it.
+  // Only clear if the signal still holds the exact promise this poll set.
+  clearActionIndexingCompletion(promise: Promise<void>, pollId: number) {
+    if (
+      this.activeActionIndexingPollId === pollId &&
+      this.actionIndexingCompletionSignal() === promise
+    ) {
+      this.activeActionIndexingPollId = null;
+      this.actionIndexingCompletionSignal.set(null);
+    }
+  }
+
+  /** Resolves immediately if no action-indexing poll is in flight. */
+  async waitForActionIndexing(): Promise<void> {
+    await this.actionIndexingCompletionSignal();
+  }
+
+  // The success page's "Skip waiting" link dismisses the poll's blocking
+  // effect without cancelling the poll itself (trackActionIndexingCore()
+  // keeps running in the background and still updates the registry/
+  // pendingConfirmation when it eventually settles). Clearing the signal
+  // here just means the *next* waitForActionIndexing() call — from the
+  // freshly re-created Contracts instance — resolves immediately instead of
+  // waiting on a promise the user explicitly opted out of.
+  skipActionIndexing() {
+    this.activeActionIndexingPollId = null;
+    this.actionIndexingCompletionSignal.set(null);
+  }
 
   /**
    * Shows approval dialog using the appropriate display mode
@@ -99,6 +185,8 @@ export class ApprovalFlowService {
     }
 
     this.currentApprovalConfigSignal.set(config);
+    this.currentApprovalInstanceId = ++this.approvalInstanceCounter;
+    this.pendingConfirmationSignal.set(null);
 
     return new Promise((resolve) => {
       this.currentResolve = resolve;
@@ -204,7 +292,59 @@ export class ApprovalFlowService {
   closeApproval() {
     // Clear completion signal
     this.completionSignal.set(null);
+    this.activeActionIndexingPollId = null;
+    this.pendingConfirmationSignal.set(null);
     this.cleanupApproval();
+
+    // Cancel any pending detach-reject timer — the approval is being closed
+    // through the normal path, so the deferred reject from
+    // notifyApprovalPageDetached() would otherwise fire later against a
+    // stale instance and clear state it no longer owns.
+    if (this.pendingDetachReject !== null) {
+      clearTimeout(this.pendingDetachReject);
+      this.pendingDetachReject = null;
+    }
+  }
+
+  private pendingDetachReject: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * Called by the approval flow page when it initializes. Cancels a reject
+   * scheduled by a previous instance's destroy — the page was only relocated
+   * (e.g. the app-wrapper swapped between the overlay and two-column layout
+   * branches when a wide workspace page deactivated), not actually closed.
+   */
+  notifyApprovalPageAttached() {
+    if (this.pendingDetachReject !== null) {
+      clearTimeout(this.pendingDetachReject);
+      this.pendingDetachReject = null;
+    }
+  }
+
+  /**
+   * Called by the approval flow page when it is destroyed. The component is
+   * destroyed both when the user actually leaves the approval (back
+   * navigation / flow closed) and when the layout re-parents it, in which
+   * case a new instance is created within the same change-detection pass.
+   * Defer the auto-reject one tick so the re-created page can cancel it —
+   * otherwise a covenant deploy dispatched from the wide contracts workspace
+   * is silently rejected the moment its approval page opens.
+   */
+  notifyApprovalPageDetached() {
+    if (this.pendingDetachReject !== null) {
+      clearTimeout(this.pendingDetachReject);
+    }
+    const detachedApprovalInstanceId = this.currentApprovalInstanceId;
+    this.pendingDetachReject = setTimeout(() => {
+      this.pendingDetachReject = null;
+      // A new approval may have started since this page was detached
+      // (e.g. this one was already resolved and cleaned up while a fresh
+      // action was dispatched before this timer fired) - only reject if
+      // we're still looking at the same approval instance.
+      if (this.currentApprovalInstanceId === detachedApprovalInstanceId) {
+        this.rejectIfPending();
+      }
+    }, 0);
   }
 
   /**
@@ -310,12 +450,19 @@ export class ApprovalFlowService {
         return 'Send Kaspa';
       case WalletActionType.COMMIT_REVEAL:
         return 'Confirm Action';
+      case WalletActionType.COVENANT_DEPLOY:
+        return 'Deploy Covenant';
+      case WalletActionType.COVENANT_SPEND:
+        return 'Interact With Covenant';
+      case WalletActionType.COVENANT_COMPLETE_PARTIAL:
+        return 'Complete Covenant Interaction';
       case WalletActionType.SIGN_MESSAGE:
         return 'Sign Message';
       case WalletActionType.SIGN_PSKT_TRANSACTION:
         return 'Sign Transaction';
       case WalletActionType.EIP1193_PROVIDER_REQUEST:
-        const eipData = action.data as EIP1193RequestPayload<EIP1193RequestType>;
+        const eipData =
+          action.data as EIP1193RequestPayload<EIP1193RequestType>;
         switch (eipData.method) {
           case EIP1193RequestType.SEND_TRANSACTION:
           case EIP1193RequestType.KAS_SEND_TRANSACTION:

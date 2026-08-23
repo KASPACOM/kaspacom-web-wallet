@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, of, map, throwError } from 'rxjs';
 import {
@@ -10,16 +10,14 @@ import {
   KnsDomainCheckRequest,
   KnsDomainCheckResponse,
   KnsWalletAssetsStatus,
-  KnsDomainCollection
+  KnsDomainCollection,
 } from './dtos/kns-domain.dto';
 import { KaspaL1NetworkService } from '../kaspa-netwrok-services/kaspa-l1-network.service';
 
 @Injectable({ providedIn: 'root' })
 export class KnsApiService {
-  constructor(
-    private readonly httpClient: HttpClient,
-    private readonly kaspaL1NetworkService: KaspaL1NetworkService,
-  ) {}
+  private readonly httpClient = inject(HttpClient);
+  private readonly kaspaL1NetworkService = inject(KaspaL1NetworkService);
 
   private get baseUrl(): string | undefined {
     return this.kaspaL1NetworkService.getKnsApiBaseurl();
@@ -61,7 +59,7 @@ export class KnsApiService {
           }
           console.error(`Error fetching asset by ID ${assetId}:`, error);
           return throwError(() => error);
-        })
+        }),
       );
   }
 
@@ -73,7 +71,7 @@ export class KnsApiService {
     page: number = 1,
     pageSize: number = 20,
     asset?: string,
-    status?: KnsWalletAssetsStatus
+    status?: KnsWalletAssetsStatus,
   ): Observable<KnsDomainsResponse> {
     if (!this.baseUrl) {
       return of(this.emptyDomainsResponse(page, pageSize));
@@ -108,11 +106,11 @@ export class KnsApiService {
                 currentPage: 1,
                 totalPages: 0,
                 totalItems: 0,
-                itemsPerPage: pageSize
-              }
-            }
+                itemsPerPage: pageSize,
+              },
+            },
           });
-        })
+        }),
       );
   }
 
@@ -126,7 +124,7 @@ export class KnsApiService {
     sortOrder?: 'asc' | 'desc',
     collection?: KnsDomainCollection,
     asset?: string,
-    owner?: string
+    owner?: string,
   ): Observable<KnsDomainsResponse> {
     if (!this.baseUrl) {
       return of(this.emptyDomainsResponse(page, pageSize));
@@ -165,11 +163,11 @@ export class KnsApiService {
                 currentPage: 1,
                 totalPages: 0,
                 totalItems: 0,
-                itemsPerPage: pageSize
-              }
-            }
+                itemsPerPage: pageSize,
+              },
+            },
           });
-        })
+        }),
       );
   }
   /**
@@ -186,20 +184,27 @@ export class KnsApiService {
     const decodedDomainWithoutSuffix = decodedDomain.replace('.kas', '');
 
     // Use the URL-encoded domain name (without suffix) in the API call
-    const encodedDomainWithoutSuffix = encodeURIComponent(decodedDomainWithoutSuffix);
+    const encodedDomainWithoutSuffix = encodeURIComponent(
+      decodedDomainWithoutSuffix,
+    );
 
     return this.httpClient
-      .get<KnsDomainsResponse>(`${this.baseUrl}/api/v1/assets?asset=${encodedDomainWithoutSuffix}`)
+      .get<KnsDomainsResponse>(
+        `${this.baseUrl}/api/v1/assets?asset=${encodedDomainWithoutSuffix}`,
+      )
       .pipe(
         map((response) => {
           return response.data.assets.find(
-            (asset) => asset.asset === decodedDomain
+            (asset) => asset.asset === decodedDomain,
           );
         }),
         catchError((error) => {
-          console.error(`Error fetching domain info for ${decodedDomain}:`, error);
+          console.error(
+            `Error fetching domain info for ${decodedDomain}:`,
+            error,
+          );
           return of(undefined);
-        })
+        }),
       );
   }
 
@@ -208,22 +213,28 @@ export class KnsApiService {
    */
   updateDomainText(
     assetId: string,
-    textRecords: { [key: string]: string }
+    textRecords: { [key: string]: string },
   ): Observable<{ success: boolean; message?: string }> {
     if (!this.baseUrl) {
-      return of({ success: false, message: 'KNS is not supported on the selected network' });
+      return of({
+        success: false,
+        message: 'KNS is not supported on the selected network',
+      });
     }
 
     return this.httpClient
       .post<{ success: boolean; message?: string }>(
         `${this.baseUrl}/api/v1/asset/${assetId}/text`,
-        { text: textRecords }
+        { text: textRecords },
       )
       .pipe(
         catchError((error) => {
           console.error(`Error updating domain text for ${assetId}:`, error);
-          return of({ success: false, message: 'Failed to update domain text' });
-        })
+          return of({
+            success: false,
+            message: 'Failed to update domain text',
+          });
+        }),
       );
   }
 
@@ -232,22 +243,25 @@ export class KnsApiService {
    */
   transferDomain(
     assetId: string,
-    toAddress: string
+    toAddress: string,
   ): Observable<{ success: boolean; txId?: string; message?: string }> {
     if (!this.baseUrl) {
-      return of({ success: false, message: 'KNS is not supported on the selected network' });
+      return of({
+        success: false,
+        message: 'KNS is not supported on the selected network',
+      });
     }
 
     return this.httpClient
       .post<{ success: boolean; txId?: string; message?: string }>(
         `${this.baseUrl}/api/v1/asset/${assetId}/transfer`,
-        { to: toAddress }
+        { to: toAddress },
       )
       .pipe(
         catchError((error) => {
           console.error(`Error transferring domain ${assetId}:`, error);
           return of({ success: false, message: 'Failed to transfer domain' });
-        })
+        }),
       );
   }
 
@@ -256,7 +270,11 @@ export class KnsApiService {
    */
   async getWalletDomainCount(walletAddress: string): Promise<number> {
     try {
-      const response = await this.fetchAssetsByOwner(walletAddress, 1, 1).toPromise();
+      const response = await this.fetchAssetsByOwner(
+        walletAddress,
+        1,
+        1,
+      ).toPromise();
       return response?.data.pagination.totalItems || 0;
     } catch (error) {
       console.error('Error fetching wallet domain count:', error);
@@ -270,7 +288,11 @@ export class KnsApiService {
   async getAllWalletDomains(walletAddress: string): Promise<KnsDomainAsset[]> {
     try {
       // First get total count
-      const firstPage = await this.fetchAssetsByOwner(walletAddress, 1, 100).toPromise();
+      const firstPage = await this.fetchAssetsByOwner(
+        walletAddress,
+        1,
+        100,
+      ).toPromise();
       if (!firstPage?.data.assets.length) {
         return [];
       }
@@ -280,7 +302,11 @@ export class KnsApiService {
 
       // Fetch remaining pages if needed
       for (let page = 2; page <= totalPages; page++) {
-        const pageResponse = await this.fetchAssetsByOwner(walletAddress, page, 100).toPromise();
+        const pageResponse = await this.fetchAssetsByOwner(
+          walletAddress,
+          page,
+          100,
+        ).toPromise();
         if (pageResponse?.data.assets) {
           allDomains.push(...pageResponse.data.assets);
         }
@@ -299,8 +325,15 @@ export class KnsApiService {
   searchDomains(
     searchTerm: string,
     page: number = 1,
-    pageSize: number = 20
+    pageSize: number = 20,
   ): Observable<KnsDomainsResponse> {
-    return this.fetchAssets(page, pageSize, undefined, undefined, undefined, searchTerm);
+    return this.fetchAssets(
+      page,
+      pageSize,
+      undefined,
+      undefined,
+      undefined,
+      searchTerm,
+    );
   }
 }

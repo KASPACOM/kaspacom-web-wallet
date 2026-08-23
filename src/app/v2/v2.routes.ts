@@ -1,39 +1,69 @@
 import { Routes } from '@angular/router';
 import { OnboardingPageV2Component } from './pages/onboarding-page-v2/onboarding-page-v2.component';
-import { DesignSystemShowcaseComponent } from 'kaspacom-ui';
 import { AuthGuard } from './guard/auth.guard';
 import { routes } from '../core/app.routes';
 import { loggedRoutes } from './pages/app/logged.routes';
-import { DevelopGuard } from './guard/develop.guard';
+import { PUBLIC_PAGES } from '../public/public-content';
 
-export const V2TMP_ROUTES: Routes = [
+const publicRoutes: Routes = PUBLIC_PAGES.map((page) => ({
+  path: page.path,
+  loadComponent: () =>
+    import('../public/public-page.component').then(
+      (m) => m.PublicPageComponent,
+    ),
+  data: { pageId: page.id },
+}));
+
+const walletShell = () =>
+  import('../wallet-shell/wallet-shell.component').then(
+    (m) => m.WalletShellComponent,
+  );
+
+const walletRoutes: Routes = [
   {
     path: 'onboarding',
-    canActivate: [AuthGuard],
-    component: OnboardingPageV2Component,
+    loadComponent: walletShell,
+    children: [
+      {
+        path: '',
+        canActivate: [AuthGuard],
+        component: OnboardingPageV2Component,
+      },
+    ],
+  },
+  {
+    path: 'wallet',
+    loadComponent: walletShell,
+    children: [
+      {
+        path: '',
+        canActivate: [AuthGuard],
+        component: OnboardingPageV2Component,
+      },
+    ],
   },
   {
     path: 'onboarding-v2',
-    canActivate: [AuthGuard],
-    component: OnboardingPageV2Component,
-  },
-  {
-    path: 'ui-kit',
-    canActivate: [DevelopGuard],
-    component: DesignSystemShowcaseComponent,
+    loadComponent: walletShell,
+    children: [
+      {
+        path: '',
+        canActivate: [AuthGuard],
+        component: OnboardingPageV2Component,
+      },
+    ],
   },
   {
     path: 'app',
     canActivate: [AuthGuard],
+    loadComponent: walletShell,
     children: loggedRoutes,
   },
   {
     path: 'legacy',
+    loadComponent: walletShell,
     children: routes,
   },
-  {
-    path: '',
-    pathMatch: 'full',
-    redirectTo: 'onboarding',
-  },
 ];
+
+export const V2TMP_ROUTES: Routes = [...publicRoutes, ...walletRoutes];

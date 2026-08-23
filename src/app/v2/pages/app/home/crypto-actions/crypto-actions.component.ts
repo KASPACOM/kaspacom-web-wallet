@@ -1,5 +1,5 @@
 import { Component, inject, computed } from '@angular/core';
-import { KcIconComponent } from 'kaspacom-ui';
+import { KcIconComponent } from '@kaspacom/ui-kit';
 import { TitleCasePipe } from '@angular/common';
 import { ICryptoAction } from '../../common/interfaces/crypto-actions.interface';
 import { FlowPagesService } from '../../../../services/flow-pages.service';
@@ -47,6 +47,18 @@ export class CryptoActionsComponent {
       });
     }
 
+    if (
+      !this.walletService.getIsL2DisplaySignal()() &&
+      !environment.isProduction
+    ) {
+      baseActions.push({
+        title: 'contracts',
+        iconClass: 'icon-file-02',
+        iconColor: '',
+        action: () => this.openContractsPage(),
+      });
+    }
+
     return baseActions;
   });
 
@@ -70,6 +82,16 @@ export class CryptoActionsComponent {
     this.flowPagesService.openFlow({
       id: 'swap',
       title: 'Swap',
+      canNavigateBack: true,
+    });
+  }
+
+  private openContractsPage(): void {
+    this.flowPagesService.openFlow({
+      id: 'contracts',
+      title: 'Contracts',
+      subtitle:
+        'Deploy and track SilverScript covenants involving this wallet.',
       canNavigateBack: true,
     });
   }

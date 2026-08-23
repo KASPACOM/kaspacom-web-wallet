@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, inject, output, signal } from '@angular/core';
 import {
   AbstractControl,
@@ -7,17 +6,12 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import {
-  KcButtonComponent,
-  KcIconComponent,
-  KcInputComponent,
-} from 'kaspacom-ui';
+import { KcInputComponent, KcButtonComponent, KcIconComponent } from '@kaspacom/ui-kit';
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 
 @Component({
   selector: 'app-create-password-new-wallet-step',
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     KcInputComponent,
     KcButtonComponent,
@@ -41,7 +35,7 @@ export class CreatePasswordNewWalletStepComponent {
         [
           Validators.required,
           Validators.minLength(8),
-          Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/)
+          Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/),
         ],
       ],
       confirmPassword: [

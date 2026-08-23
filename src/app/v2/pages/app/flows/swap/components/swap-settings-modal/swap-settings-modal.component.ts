@@ -1,14 +1,7 @@
-import {
-  Component,
-  EventEmitter,
-  Input,
-  Output,
-  computed,
-  inject,
-  OnChanges,
-  SimpleChanges,
-} from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, computed, inject, Signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
+
 import {
   ReactiveFormsModule,
   FormBuilder,
@@ -16,68 +9,76 @@ import {
   Validators,
 } from '@angular/forms';
 import {
-  KcBaseModalComponent,
-  KcInputComponent,
+  KcDialogComponent,
+  KcNumberInputComponent,
   KcButtonComponent,
-} from 'kaspacom-ui';
+  SwitchOption,
+} from '@kaspacom/ui-kit';
 import { FormErrorMessageComponent } from '../../../../../../shared/components/form-error/form-error.component';
 import type { SwapSettings } from '@kaspacom/swap-sdk';
+
+export interface SwapSettingsDialogData {
+  // Reserved keys read by KcDialogComponent itself off the same DIALOG_DATA.
+  title?: string;
+  showCloseButton?: boolean;
+  initialSettings?: Partial<SwapSettings>;
+}
 
 @Component({
   selector: 'app-swap-settings-modal',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
-    KcBaseModalComponent,
-    KcInputComponent,
+    KcDialogComponent,
+    KcNumberInputComponent,
     KcButtonComponent,
     FormErrorMessageComponent,
   ],
   templateUrl: './swap-settings-modal.component.html',
   styleUrl: './swap-settings-modal.component.scss',
 })
-export class SwapSettingsModalComponent implements OnChanges {
+export class SwapSettingsModalComponent {
   private fb = inject(FormBuilder);
-
-  @Input() open = false;
-  @Input() initialSettings: Partial<SwapSettings> | undefined;
-  @Output() close = new EventEmitter<void>();
-  @Output() save = new EventEmitter<SwapSettings>();
-
-  settingsForm: FormGroup;
-
-  selectedSlippage = computed(() => {
-    const slippage = parseFloat(
-      this.settingsForm?.get('maxSlippage')?.value || '',
-    );
-    if (isNaN(slippage)) return null;
-
-    const tolerance = 0.001;
-    if (Math.abs(slippage - 0.1) < tolerance) return 0.1;
-    if (Math.abs(slippage - 0.5) < tolerance) return 0.5;
-    if (Math.abs(slippage - 1.5) < tolerance) return 1.5;
-
-    return null;
+  private dialogRef = inject(DialogRef<SwapSettings | undefined>);
+  private data = inject<SwapSettingsDialogData>(DIALOG_DATA, {
+    optional: true,
   });
 
-  constructor() {
-    this.settingsForm = this.createForm('0.5', '20');
-  }
+  settingsForm: FormGroup;
+  selectedSlippage: Signal<number | null>;
 
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['initialSettings'] || changes['open']) {
-      if (this.open && this.initialSettings) {
-        const maxSlippageValue = this.initialSettings.maxSlippage || '0.5';
-        const swapDeadlineValue = String(
-          this.initialSettings.swapDeadline || 20,
-        );
-        this.settingsForm = this.createForm(
-          maxSlippageValue,
-          swapDeadlineValue,
-        );
-      }
-    }
+  slippageOptions: SwitchOption[] = [
+    { label: '0.1%', value: 0.1 },
+    { label: '0.5%', value: 0.5 },
+    { label: '1.5%', value: 1.5 },
+  ];
+
+  constructor() {
+    const initialSettings = this.data?.initialSettings;
+    this.settingsForm = this.createForm(
+      initialSettings?.maxSlippage || '0.5',
+      String(initialSettings?.swapDeadline || 20),
+    );
+
+    // FormControl.value is a plain getter, not a signal - computed() would
+    // never re-run on click since nothing reactive is read. Bridge
+    // valueChanges into a signal so it actually updates.
+    const maxSlippageControl = this.settingsForm.get('maxSlippage')!;
+    const maxSlippageValue = toSignal(maxSlippageControl.valueChanges, {
+      initialValue: maxSlippageControl.value,
+    });
+
+    this.selectedSlippage = computed(() => {
+      const slippage = parseFloat(maxSlippageValue() || '');
+      if (isNaN(slippage)) return null;
+
+      const tolerance = 0.001;
+      if (Math.abs(slippage - 0.1) < tolerance) return 0.1;
+      if (Math.abs(slippage - 0.5) < tolerance) return 0.5;
+      if (Math.abs(slippage - 1.5) < tolerance) return 1.5;
+
+      return null;
+    });
   }
 
   private createForm(maxSlippage: string, swapDeadline: string): FormGroup {
@@ -105,7 +106,7 @@ export class SwapSettingsModalComponent implements OnChanges {
 
   onSave() {
     if (this.settingsForm.valid) {
-      this.save.emit({
+      this.dialogRef.close({
         maxSlippage: this.settingsForm.get('maxSlippage')?.value,
         swapDeadline: parseInt(
           this.settingsForm.get('swapDeadline')?.value,
@@ -113,9 +114,5 @@ export class SwapSettingsModalComponent implements OnChanges {
         ),
       });
     }
-  }
-
-  onClose() {
-    this.close.emit();
   }
 }

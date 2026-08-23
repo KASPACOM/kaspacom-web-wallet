@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   Component,
   OnInit,
@@ -8,10 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import {
-  KcButtonComponent,
-  KcInputComponent,
-} from 'kaspacom-ui';
+import { KcInputComponent, KcButtonComponent } from '@kaspacom/ui-kit';
 import { NewWalletFlowService } from '../../service/new-wallet-flow.service';
 
 interface VerificationWordEntry {
@@ -22,12 +18,7 @@ interface VerificationWordEntry {
 
 @Component({
   selector: 'app-verify-seed-phrase-new-wallet-step',
-  imports: [
-    CommonModule,
-    FormsModule,
-    KcButtonComponent,
-    KcInputComponent,
-  ],
+  imports: [FormsModule, KcButtonComponent, KcInputComponent],
   templateUrl: './verify-seed-phrase-new-wallet-step.component.html',
   styleUrl: './verify-seed-phrase-new-wallet-step.component.scss',
 })
@@ -68,17 +59,19 @@ export class VerifySeedPhraseNewWalletStepComponent implements OnInit {
     this.checkVerification();
   }
 
-  onInputChange(idx: number, value: string) {
+  onInputChange(idx: number, value: string | null | undefined) {
     const list = [...this.verificationWords()];
     const entry = list[idx];
-    list[idx] = { ...entry, input: value };
+    list[idx] = { ...entry, input: value ?? '' };
     this.verificationWords.set(list);
     this.checkVerification();
   }
 
   private checkVerification() {
     const ok = this.verificationWords().every(
-      (item) => item.input.toLowerCase().trim() === item.word.toLowerCase(),
+      (item) =>
+        (item.input ?? '').trim().toLowerCase() ===
+        (item.word ?? '').toLowerCase(),
     );
     this.isVerified.set(ok);
   }

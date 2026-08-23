@@ -1,17 +1,7 @@
-import {
-  Component,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, computed, inject, signal } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
-import {
-  KcButtonComponent,
-  KcInputComponent,
-  KcIconComponent,
-  NotificationService,
-} from 'kaspacom-ui';
+import { KcInputComponent, KcButtonComponent, KcIconComponent, NotificationService } from '@kaspacom/ui-kit';
 import { Erc20Token } from '@kaspacom/swap-sdk';
 import { ethers } from 'ethers';
 import { AssetsManagerService } from '../../../../../services/assets-manager/assets-manager.service';
@@ -25,7 +15,6 @@ type ImportState = 'idle' | 'loading' | 'found' | 'already-imported' | 'error';
   selector: 'app-import-token-flow-page',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     KcButtonComponent,
     KcInputComponent,
@@ -45,8 +34,12 @@ export class ImportTokenFlowPageComponent {
   private notificationService = inject(NotificationService);
 
   contractAddress = signal<string>('');
-  isAddressValid = computed(() => ethers.isAddress(this.contractAddress().trim()));
-  showAddressError = computed(() => this.contractAddress().trim().length > 0 && !this.isAddressValid());
+  isAddressValid = computed(() =>
+    ethers.isAddress(this.contractAddress().trim()),
+  );
+  showAddressError = computed(
+    () => this.contractAddress().trim().length > 0 && !this.isAddressValid(),
+  );
   state = signal<ImportState>('idle');
   errorMessage = signal<string>('');
   tokenInfo = signal<Erc20Token | null>(null);
@@ -56,9 +49,9 @@ export class ImportTokenFlowPageComponent {
   private lookupId = 0;
 
   private get l2Store(): L2AssetsStoreService {
-    return this.assetsManagerService.getAllAssetStores().l2 as L2AssetsStoreService;
+    return this.assetsManagerService.getAllAssetStores()
+      .l2 as L2AssetsStoreService;
   }
-
 
   onAddressChange(value: string): void {
     this.contractAddress.set(value || '');
@@ -76,7 +69,10 @@ export class ImportTokenFlowPageComponent {
       const text = await navigator.clipboard.readText();
       this.onAddressChange(text.trim());
     } catch {
-      this.notificationService.error('Clipboard Error', 'Could not read from clipboard');
+      this.notificationService.error(
+        'Clipboard Error',
+        'Could not read from clipboard',
+      );
     }
   }
 
@@ -109,16 +105,20 @@ export class ImportTokenFlowPageComponent {
 
     try {
       // Check if already imported
-      const savedToken = await this.l2Store.getSavedErc20TokenLocally(normalizedAddress);
+      const savedToken =
+        await this.l2Store.getSavedErc20TokenLocally(normalizedAddress);
 
       // Abort if the user changed the address while we were waiting
       if (this.lookupId !== thisLookupId) return;
 
       try {
         // Always try to fetch fresh token data (balance + current metadata)
-        const freshToken = await this.l2Store.getErc20InfoFromBlockchain(normalizedAddress);
+        const freshToken =
+          await this.l2Store.getErc20InfoFromBlockchain(normalizedAddress);
         if (this.lookupId !== thisLookupId) return;
-        this.tokenInfo.set(savedToken ? { ...savedToken, ...freshToken } : freshToken);
+        this.tokenInfo.set(
+          savedToken ? { ...savedToken, ...freshToken } : freshToken,
+        );
         if (savedToken) {
           this.errorMessage.set('Token has already been added.');
           this.state.set('already-imported');
@@ -133,13 +133,18 @@ export class ImportTokenFlowPageComponent {
           this.errorMessage.set('Token has already been added.');
           this.state.set('already-imported');
         } else {
-          throw new Error('Token not found. Make sure the address is a valid ERC20 contract.');
+          throw new Error(
+            'Token not found. Make sure the address is a valid ERC20 contract.',
+          );
         }
       }
     } catch (err: any) {
       if (this.lookupId !== thisLookupId) return;
       console.error('Failed to load token:', err);
-      this.errorMessage.set(err?.message || 'Token not found. Make sure the address is a valid ERC20 contract.');
+      this.errorMessage.set(
+        err?.message ||
+          'Token not found. Make sure the address is a valid ERC20 contract.',
+      );
       this.state.set('error');
     }
   }
@@ -151,10 +156,16 @@ export class ImportTokenFlowPageComponent {
     this.isSaving.set(true);
     try {
       await this.l2Store.addTokenToLocalStore(token);
-      this.notificationService.success('Token Imported', `${token.symbol} has been added to your wallet`);
+      this.notificationService.success(
+        'Token Imported',
+        `${token.symbol} has been added to your wallet`,
+      );
       this.flowPagesService.closePage();
     } catch (err: any) {
-      this.notificationService.error('Import Failed', err?.message || 'Failed to save token');
+      this.notificationService.error(
+        'Import Failed',
+        err?.message || 'Failed to save token',
+      );
     } finally {
       this.isSaving.set(false);
     }

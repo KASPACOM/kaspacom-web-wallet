@@ -55,7 +55,9 @@ jobs:
           # 1. Sync hashed build artifacts with immutable caching
           aws s3 sync dist/wallet-front-new/browser s3://${{ env.S3_BUCKET_NAME }}/ \
             --delete \
-            --exclude "index.html" \
+            --exclude "*.html" \
+            --exclude "sitemap.xml" \
+            --exclude "robots.txt" \
             --exclude "favicon.ico" \
             --exclude "logo.png" \
             --exclude "images/*" \
@@ -79,13 +81,23 @@ jobs:
             --include "kaspa/**" \
             --cache-control "public,max-age=3600"
 
-          # 3. Upload index.html separately with no-cache headers
-          aws s3 cp dist/wallet-front-new/browser/index.html s3://${{ env.S3_BUCKET_NAME }}/index.html \
+          # 3. Upload generated HTML with no-cache headers
+          aws s3 sync dist/wallet-front-new/browser s3://${{ env.S3_BUCKET_NAME }}/ \
+            --exclude "*" \
+            --include "*.html" \
             --metadata-directive REPLACE \
             --cache-control "no-cache, no-store, must-revalidate" \
             --content-type "text/html"
 
-          # 4. Invalidate CloudFront — full site to cover SPA deep links
+          # 4. Upload crawl metadata with short-lived cache
+          aws s3 sync dist/wallet-front-new/browser s3://${{ env.S3_BUCKET_NAME }}/ \
+            --exclude "*" \
+            --include "sitemap.xml" \
+            --include "robots.txt" \
+            --metadata-directive REPLACE \
+            --cache-control "public,max-age=300"
+
+          # 5. Invalidate CloudFront for public pages and wallet deep links
           aws cloudfront create-invalidation --distribution-id EOUYAPLK9PXPG --paths "/*"
 
         env:

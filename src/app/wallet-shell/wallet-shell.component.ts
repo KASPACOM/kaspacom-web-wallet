@@ -1,0 +1,164 @@
+import {
+  AfterViewInit,
+  Component,
+  NgZone,
+  OnDestroy,
+  OnInit,
+  Renderer2,
+  inject,
+} from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Meta } from '@angular/platform-browser';
+import { RouterOutlet } from '@angular/router';
+import { KcSnackbarComponent } from '@kaspacom/ui-kit';
+import { StartupBackgroundCanvasComponent } from '../components/startup-background-canvas/startup-background-canvas.component';
+import { environment } from '../../environments/environment';
+import { AssetsManagerService } from '../services/assets-manager/assets-manager.service';
+import { CommunicationManagerService } from '../services/communication-service/communication-manager.service';
+import { IFrameCommunicationApp } from '../services/communication-service/communication-app/iframe-communication.service';
+import { ConsentService } from '../services/consent.service';
+import { EthereumWalletChainManager } from '../services/etherium-services/etherium-wallet-chain.manager';
+import { KaspaNetworkActionsService } from '../services/kaspa-netwrok-services/kaspa-network-actions.service';
+import { KaspaNetworkConnectionManagerService } from '../services/kaspa-netwrok-services/kaspa-network-connection-manager.service';
+import { ReferralService } from '../services/referral.service';
+import { WalletService } from '../services/wallet.service';
+
+@Component({
+  selector: 'app-wallet-shell',
+  standalone: true,
+  imports: [
+    RouterOutlet,
+    KcSnackbarComponent,
+    StartupBackgroundCanvasComponent,
+  ],
+  templateUrl: './wallet-shell.component.html',
+  styleUrl: './wallet-shell.component.scss',
+  providers: [KaspaNetworkActionsService],
+})
+export class WalletShellComponent implements OnInit, AfterViewInit, OnDestroy {
+  private readonly communicationManagerService = inject(
+    CommunicationManagerService,
+  );
+  private readonly renderer = inject(Renderer2);
+  private readonly document = inject<Document>(DOCUMENT);
+  private readonly zone = inject(NgZone);
+  private readonly meta = inject(Meta);
+  private readonly referralService = inject(ReferralService);
+  private teardownLoader?: VoidFunction;
+
+  walletService = inject(WalletService);
+  communicationService = inject(CommunicationManagerService);
+  kaspaConnectionService = inject(KaspaNetworkConnectionManagerService);
+  ethereumWalletChainManager = inject(EthereumWalletChainManager);
+  assetsManager = inject(AssetsManagerService);
+  consentService = inject(ConsentService);
+
+  async ngOnInit() {
+    this.applyIndexingPolicy();
+
+    if (!this.isAllowedDomain()) {
+      return;
+    }
+
+    this.referralService.captureReferralCode();
+
+    let isIframe = false;
+    try {
+      isIframe = window.self !== window.top;
+    } catch {
+      isIframe = true;
+    }
+
+    if (isIframe) {
+      this.document.body.classList.add('iframe-mode');
+      const iframeApp = new IFrameCommunicationApp();
+      if (iframeApp.getApplicationId()) {
+        this.communicationManagerService.addApp(iframeApp);
+      } else {
+        console.error(
+          'Cannot establish iframe communication: parent origin is unknown. Ensure the embedding page allows the origin to be sent via the browser referrer policy.',
+        );
+      }
+    }
+
+    this.assetsManager.initializeWalletListenerAndStart();
+  }
+
+  ngAfterViewInit(): void {
+    this.teardownLoader = this.setupLoaderFadeOut();
+  }
+
+  ngOnDestroy(): void {
+    if (this.teardownLoader) {
+      this.teardownLoader();
+      this.teardownLoader = undefined;
+    }
+  }
+
+  isAllowedDomain(): boolean {
+    return environment.allowedDomains.includes(window.location.hostname);
+  }
+
+  incompatibleBrowserReason(): string | undefined {
+    if (!(window.crypto && window.crypto?.subtle)) {
+      return 'Crypto not supported';
+    }
+
+    return undefined;
+  }
+
+  private applyIndexingPolicy(): void {
+    this.meta.updateTag({ name: 'robots', content: 'noindex, nofollow' });
+  }
+
+  private setupLoaderFadeOut(): VoidFunction | undefined {
+    return this.zone.runOutsideAngular(() => {
+      const loader = this.document.getElementById('application-loader-startup');
+      if (!loader) {
+        return;
+      }
+
+      this.renderer.addClass(loader, 'fade-out');
+
+      const cleanupFns: VoidFunction[] = [];
+      let isFinalized = false;
+
+      const finalizeRemoval = () => {
+        if (isFinalized) {
+          return;
+        }
+        isFinalized = true;
+
+        cleanupFns.splice(0).forEach((cleanup) => cleanup());
+
+        const parent = loader.parentNode;
+        if (parent) {
+          this.renderer.removeChild(parent, loader);
+        } else if (
+          loader instanceof HTMLElement &&
+          typeof loader.remove === 'function'
+        ) {
+          loader.remove();
+        }
+      };
+
+      const transitionCleanup = this.renderer.listen(
+        loader,
+        'transitionend',
+        (event: TransitionEvent) => {
+          if (event.target === loader && event.propertyName === 'opacity') {
+            finalizeRemoval();
+          }
+        },
+      );
+      cleanupFns.push(transitionCleanup);
+
+      const timeoutId = setTimeout(finalizeRemoval, 800);
+      cleanupFns.push(() => clearTimeout(timeoutId));
+
+      return () => {
+        this.zone.runOutsideAngular(finalizeRemoval);
+      };
+    });
+  }
+}

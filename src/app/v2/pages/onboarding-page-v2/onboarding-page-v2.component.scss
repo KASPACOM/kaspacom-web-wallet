@@ -87,6 +87,12 @@
     gap: 12px;
   }
 
+  &__hero-actions {
+    display: flex;
+    align-items: center;
+    margin-top: 4px;
+  }
+
   &__social-links {
     display: flex;
     align-items: center;

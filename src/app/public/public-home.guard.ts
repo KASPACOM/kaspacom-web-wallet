@@ -1,0 +1,26 @@
+import { isPlatformBrowser } from '@angular/common';
+import { inject, PLATFORM_ID } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
+import { LOCAL_STORAGE_KEYS } from '../config/consts';
+import { IFrameCommunicationApp } from '../services/communication-service/communication-app/iframe-communication.service';
+
+export const publicHomeGuard: CanActivateFn = (route) => {
+  const platformId = inject(PLATFORM_ID);
+
+  if (!isPlatformBrowser(platformId)) {
+    return true;
+  }
+
+  if (route.queryParamMap.has('walletInfo')) {
+    return true;
+  }
+
+  const router = inject(Router);
+  const hasWalletData = !!localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA);
+
+  if (hasWalletData || IFrameCommunicationApp.isIframe()) {
+    return router.createUrlTree(['/onboarding']);
+  }
+
+  return true;
+};

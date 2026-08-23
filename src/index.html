@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-wallet-startup="pending">
   <head>
     <meta charset="utf-8" />
     <title>KaspaCom Web Wallet</title>
@@ -14,7 +14,7 @@
     <meta name="viewport" content="width=device-width, height=device-height,  initial-scale=1.0, user-scalable=no;user-scalable=0;"/>
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
     <style>
-      html[data-wallet-startup='redirecting'] app-root {
+      html[data-wallet-startup] app-root {
         display: none !important;
       }
     </style>
@@ -26,11 +26,6 @@
           return;
         }
 
-        function redirectToWallet() {
-          document.documentElement.setAttribute('data-wallet-startup', 'redirecting');
-          window.location.replace('/onboarding' + window.location.search + window.location.hash);
-        }
-
         var isIframe = false;
         try {
           isIframe = window.self !== window.top;
@@ -40,7 +35,12 @@
 
         var searchParams = new URLSearchParams(window.location.search);
 
+        if (searchParams.has('walletInfo')) {
+          return;
+        }
+
         if (isIframe) {
+          document.documentElement.setAttribute('data-wallet-startup', 'wallet');
           return;
         }
 
@@ -56,11 +56,7 @@
         }
 
         if (hasWalletData) {
-          redirectToWallet();
-          return;
-        }
-
-        if (searchParams.has('walletInfo')) {
+          document.documentElement.setAttribute('data-wallet-startup', 'wallet');
           return;
         }
       })();

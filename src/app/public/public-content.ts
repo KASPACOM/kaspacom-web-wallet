@@ -14,7 +14,7 @@ const FEATURES_SECTION = {
   bullets: [
     'Create or import a self-custody Kaspa wallet.',
     'Send and receive KAS on Kaspa L1.',
-    'View KRC20 tokens, KRC721 NFTs, and supported Kaspa names.',
+    'View supported tokens, NFTs, and other asset records where enabled.',
     'Use built-in swap flows where supported.',
     'Manage L2 assets on supported Kaspa L2 networks.',
     'Preview covenant tools in development environments when enabled.',
@@ -54,10 +54,10 @@ export const PUBLIC_PAGES: PublicPage[] = [
       FEATURES_SECTION,
       SECURITY_SECTION,
       {
-        title: 'Built for wallet searches that matter',
+        title: 'Choose the wallet task you need',
         body: [
-          'People searching for a Kaspa wallet usually want a place to create a wallet, open an existing wallet, check whether the site is official, or understand how browser wallet storage works.',
-          'These pages answer those questions directly and point users back to the wallet when they are ready.',
+          'Use the wallet to create a new address, open an existing wallet, receive KAS, send a payment, or review the safety model before storing funds.',
+          'When you are ready to use the wallet, the Open Wallet button takes you to the client-side wallet flow.',
         ],
         cta: OPEN_WALLET_CTA,
       },
@@ -84,7 +84,7 @@ export const PUBLIC_PAGES: PublicPage[] = [
         title: 'L1, L2, and asset support',
         body: [
           'The wallet supports KAS on Kaspa L1 and includes views for supported Kaspa assets. L2 networks and swap flows appear where the configured network supports them.',
-          'KRC20, KRC721, KNS, and L2 support are product features. They are not the main SEO target for this phase because current search data shows wallet intent is much larger.',
+          'Asset views and configured network features stay secondary to the core wallet flow: create or import, receive, send, and protect the seed phrase.',
         ],
       },
       {
@@ -396,9 +396,9 @@ export const PUBLIC_FAQ_ENTRIES: PublicFaqEntry[] = [
     pageIds: ['faq', 'store-kaspa'],
   },
   {
-    question: 'Does KaspaCom Wallet support KRC20 or NFTs?',
+    question: 'Does KaspaCom Wallet support tokens or NFTs?',
     answer:
-      'KaspaCom Wallet includes views for supported Kaspa assets such as KRC20 tokens and KRC721 NFTs. Availability can depend on the selected network and current product release.',
+      'KaspaCom Wallet includes views for supported Kaspa assets such as tokens and NFTs. Availability can depend on the selected network and current product release.',
     pageIds: ['faq', 'features'],
   },
   {

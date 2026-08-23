@@ -1,4 +1,7 @@
-<main class="public-page">
+<main
+  class="public-page"
+  [class.public-page--opening-wallet]="isOpeningWallet"
+>
   <div class="public-page__backdrop public-page__backdrop--first"></div>
   <div class="public-page__backdrop public-page__backdrop--second"></div>
   <div class="public-page__nodes" aria-hidden="true">
@@ -41,14 +44,6 @@
         >
           {{ page.primaryCta.label }}
         </a>
-        @if (page.secondaryCta) {
-          <a
-            class="public-button public-button--secondary"
-            [routerLink]="page.secondaryCta.href"
-          >
-            {{ page.secondaryCta.label }}
-          </a>
-        }
       </div>
 
       <div class="hero__trust-row" aria-label="Wallet properties">

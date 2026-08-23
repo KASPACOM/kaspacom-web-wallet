@@ -16,11 +16,20 @@ const publicRoutes: Routes = PUBLIC_PAGES.map((page) => {
   };
 
   if (page.path === '') {
-    route.canActivate = [publicHomeGuard];
+    route.canMatch = [publicHomeGuard];
   }
 
   return route;
 });
+
+const publicWalletInfoRoute: Routes[number] = {
+  path: 'wallet-info',
+  loadComponent: () =>
+    import('../public/public-page.component').then(
+      (m) => m.PublicPageComponent,
+    ),
+  data: { pageId: 'home' },
+};
 
 const walletShell = () =>
   import('../wallet-shell/wallet-shell.component').then(
@@ -32,6 +41,20 @@ const walletRoutes: Routes = [
     path: '',
     loadComponent: walletShell,
     children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        canActivate: [AuthGuard],
+        component: OnboardingPageV2Component,
+      },
+      {
+        path: 'info',
+        loadComponent: () =>
+          import('../public/public-page.component').then(
+            (m) => m.PublicPageComponent,
+          ),
+        data: { pageId: 'home' },
+      },
       {
         path: 'onboarding',
         canActivate: [AuthGuard],
@@ -56,4 +79,8 @@ const walletRoutes: Routes = [
   },
 ];
 
-export const V2TMP_ROUTES: Routes = [...publicRoutes, ...walletRoutes];
+export const V2TMP_ROUTES: Routes = [
+  ...publicRoutes,
+  publicWalletInfoRoute,
+  ...walletRoutes,
+];

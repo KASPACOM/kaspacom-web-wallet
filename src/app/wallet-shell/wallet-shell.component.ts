@@ -1,10 +1,7 @@
 import {
-  AfterViewInit,
   Component,
-  NgZone,
   OnDestroy,
   OnInit,
-  Renderer2,
   inject,
 } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
@@ -37,16 +34,13 @@ import { ReviewActionComponent } from '../components/wallet-actions-reviews/revi
   styleUrl: './wallet-shell.component.scss',
   providers: [KaspaNetworkActionsService],
 })
-export class WalletShellComponent implements OnInit, AfterViewInit, OnDestroy {
+export class WalletShellComponent implements OnInit, OnDestroy {
   private readonly communicationManagerService = inject(
     CommunicationManagerService,
   );
-  private readonly renderer = inject(Renderer2);
   private readonly document = inject<Document>(DOCUMENT);
-  private readonly zone = inject(NgZone);
   private readonly meta = inject(Meta);
   private readonly referralService = inject(ReferralService);
-  private teardownLoader?: VoidFunction;
   private iframeApp?: IFrameCommunicationApp;
 
   walletService = inject(WalletService);
@@ -57,46 +51,42 @@ export class WalletShellComponent implements OnInit, AfterViewInit, OnDestroy {
   consentService = inject(ConsentService);
 
   async ngOnInit() {
-    this.applyIndexingPolicy();
-
-    if (!this.isAllowedDomain()) {
-      return;
-    }
-
-    this.referralService.captureReferralCode();
-
-    let isIframe = false;
     try {
-      isIframe = window.self !== window.top;
-    } catch {
-      isIframe = true;
-    }
+      this.applyIndexingPolicy();
 
-    if (isIframe) {
-      this.document.body.classList.add('iframe-mode');
-      const iframeApp = new IFrameCommunicationApp();
-      if (iframeApp.getApplicationId()) {
-        this.iframeApp = iframeApp;
-        await this.communicationManagerService.addApp(iframeApp);
-      } else {
-        console.error(
-          'Cannot establish iframe communication: parent origin is unknown. Ensure the embedding page allows the origin to be sent via the browser referrer policy.',
-        );
+      if (!this.isAllowedDomain()) {
+        return;
       }
+
+      this.referralService.captureReferralCode();
+
+      let isIframe = false;
+      try {
+        isIframe = window.self !== window.top;
+      } catch {
+        isIframe = true;
+      }
+
+      if (isIframe) {
+        this.document.body.classList.add('iframe-mode');
+        const iframeApp = new IFrameCommunicationApp();
+        if (iframeApp.getApplicationId()) {
+          this.iframeApp = iframeApp;
+          await this.communicationManagerService.addApp(iframeApp);
+        } else {
+          console.error(
+            'Cannot establish iframe communication: parent origin is unknown. Ensure the embedding page allows the origin to be sent via the browser referrer policy.',
+          );
+        }
+      }
+
+      this.assetsManager.initializeWalletListenerAndStart();
+    } finally {
+      this.notifyWalletShellReady();
     }
-
-    this.assetsManager.initializeWalletListenerAndStart();
-  }
-
-  ngAfterViewInit(): void {
-    this.teardownLoader = this.setupLoaderFadeOut();
   }
 
   ngOnDestroy(): void {
-    if (this.teardownLoader) {
-      this.teardownLoader();
-      this.teardownLoader = undefined;
-    }
     if (this.iframeApp) {
       this.communicationManagerService.removeApp(this.iframeApp);
       this.iframeApp = undefined;
@@ -120,54 +110,9 @@ export class WalletShellComponent implements OnInit, AfterViewInit, OnDestroy {
     this.meta.updateTag({ name: 'robots', content: 'noindex, nofollow' });
   }
 
-  private setupLoaderFadeOut(): VoidFunction | undefined {
-    return this.zone.runOutsideAngular(() => {
-      const loader = this.document.getElementById('application-loader-startup');
-      if (!loader) {
-        return;
-      }
-
-      this.renderer.addClass(loader, 'fade-out');
-
-      const cleanupFns: VoidFunction[] = [];
-      let isFinalized = false;
-
-      const finalizeRemoval = () => {
-        if (isFinalized) {
-          return;
-        }
-        isFinalized = true;
-
-        cleanupFns.splice(0).forEach((cleanup) => cleanup());
-
-        const parent = loader.parentNode;
-        if (parent) {
-          this.renderer.removeChild(parent, loader);
-        } else if (
-          loader instanceof HTMLElement &&
-          typeof loader.remove === 'function'
-        ) {
-          loader.remove();
-        }
-      };
-
-      const transitionCleanup = this.renderer.listen(
-        loader,
-        'transitionend',
-        (event: TransitionEvent) => {
-          if (event.target === loader && event.propertyName === 'opacity') {
-            finalizeRemoval();
-          }
-        },
-      );
-      cleanupFns.push(transitionCleanup);
-
-      const timeoutId = setTimeout(finalizeRemoval, 800);
-      cleanupFns.push(() => clearTimeout(timeoutId));
-
-      return () => {
-        this.zone.runOutsideAngular(finalizeRemoval);
-      };
-    });
+  private notifyWalletShellReady(): void {
+    this.document.documentElement.setAttribute('data-wallet-shell-loaded', 'true');
+    this.document.documentElement.setAttribute('data-wallet-shell-ready', 'true');
+    window.dispatchEvent(new CustomEvent('wallet-shell-ready'));
   }
 }

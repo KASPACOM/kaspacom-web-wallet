@@ -1,36 +1,26 @@
 import { isPlatformBrowser } from '@angular/common';
 import { inject, PLATFORM_ID } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { CanMatchFn } from '@angular/router';
 import { LOCAL_STORAGE_KEYS } from '../config/consts';
 import { IFrameCommunicationApp } from '../services/communication-service/communication-app/iframe-communication.service';
 
-export const publicHomeGuard: CanActivateFn = (route) => {
+export const publicHomeGuard: CanMatchFn = () => {
   const platformId = inject(PLATFORM_ID);
 
   if (!isPlatformBrowser(platformId)) {
     return true;
   }
 
-  const router = inject(Router);
-  const hasWalletData = !!localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA);
+  const searchParams = new URLSearchParams(window.location.search);
 
-  if (hasWalletData || IFrameCommunicationApp.isIframe()) {
-    if (
-      route.queryParamMap.has('iframeInfo') &&
-      !IFrameCommunicationApp.isIframe()
-    ) {
-      return true;
-    }
-
-    return router.createUrlTree(['/onboarding'], {
-      queryParams: route.queryParams,
-      fragment: route.fragment ?? undefined,
-    });
-  }
-
-  if (route.queryParamMap.has('walletInfo')) {
+  if (searchParams.has('walletInfo')) {
     return true;
   }
 
-  return true;
+  if (IFrameCommunicationApp.isIframe()) {
+    return false;
+  }
+
+  const hasWalletData = !!localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA);
+  return !hasWalletData;
 };

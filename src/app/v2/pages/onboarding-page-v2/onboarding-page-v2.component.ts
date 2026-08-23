@@ -288,16 +288,12 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
   }
 
   openPublicWalletPage(): void {
-    const walletInfoUrl = '/?walletInfo=1&iframeInfo=1';
-
     if (this.isIframeMode) {
-      window.open(walletInfoUrl, '_blank', 'noopener,noreferrer');
+      void this.router.navigate(['/info']);
       return;
     }
 
-    void this.router.navigate(['/'], {
-      queryParams: { walletInfo: '1' },
-    });
+    void this.router.navigate(['/wallet-info']);
   }
 
   private triggerTransition(callback: () => void): void {

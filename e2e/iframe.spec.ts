@@ -2,20 +2,20 @@ import { test, expect } from '@playwright/test';
 
 /**
  * Iframe-embed coverage. The wallet is designed to render inside a host
- * site (DeFi app, marketplace) via <iframe src="/"/> — PR #185 was a
+ * site (DeFi app, marketplace) via <iframe src="/onboarding"/>. PR #185 was a
  * regression in that embed on Safari / Firefox / mobile 100dvh.
  *
  * We can't use the dev-server webServer directly because Playwright would
  * navigate to it as the top frame. Instead, set a same-origin parent
  * document via addInitScript + serve a tiny HTML shim that embeds the
  * wallet in an iframe. That way `window.self !== window.top` evaluates
- * true in the wallet — the branch the IframeAccountSelection flow uses.
+ * true in the wallet, the branch the IframeAccountSelection flow uses.
  */
 
 const IFRAME_HOST_PATH = '/__e2e_iframe_host__';
 
 async function routeIframeHost(page: import('@playwright/test').Page, baseURL: string) {
-  const target = new URL('/', baseURL).toString();
+  const target = new URL('/onboarding', baseURL).toString();
   await page.route(`${baseURL}${IFRAME_HOST_PATH}`, async (route) => {
     await route.fulfill({
       status: 200,
@@ -81,7 +81,7 @@ test.describe('Iframe embed', () => {
     expect(box.width).toBeLessThanOrEqual(viewport.width + 1);
 
     // Host document must not have a scrollable body (overflow hidden + the
-    // iframe == viewport).
+    // iframe equals viewport.
     const bodyScrollHeight = await page.evaluate(
       () => document.body.scrollHeight,
     );

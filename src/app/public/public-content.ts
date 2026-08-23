@@ -45,11 +45,6 @@ export const PUBLIC_PAGES: PublicPage[] = [
     changeFrequency: 'weekly',
     schemaType: 'WebApplication',
     primaryCta: OPEN_WALLET_CTA,
-    secondaryCta: {
-      label: 'Explore Features',
-      href: '/features',
-      variant: 'secondary',
-    },
     sections: [
       FEATURES_SECTION,
       SECURITY_SECTION,

@@ -11,12 +11,6 @@ export const publicHomeGuard: CanMatchFn = () => {
     return true;
   }
 
-  const searchParams = new URLSearchParams(window.location.search);
-
-  if (searchParams.has('walletInfo')) {
-    return true;
-  }
-
   if (IFrameCommunicationApp.isIframe()) {
     return false;
   }

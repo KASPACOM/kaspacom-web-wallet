@@ -11,18 +11,25 @@ export const publicHomeGuard: CanActivateFn = (route) => {
     return true;
   }
 
-  if (route.queryParamMap.has('walletInfo')) {
-    return true;
-  }
-
   const router = inject(Router);
   const hasWalletData = !!localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA);
 
   if (hasWalletData || IFrameCommunicationApp.isIframe()) {
+    if (
+      route.queryParamMap.has('iframeInfo') &&
+      !IFrameCommunicationApp.isIframe()
+    ) {
+      return true;
+    }
+
     return router.createUrlTree(['/onboarding'], {
       queryParams: route.queryParams,
       fragment: route.fragment ?? undefined,
     });
+  }
+
+  if (route.queryParamMap.has('walletInfo')) {
+    return true;
   }
 
   return true;

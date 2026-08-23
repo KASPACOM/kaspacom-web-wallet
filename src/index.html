@@ -13,12 +13,39 @@
     <meta name="theme-color" content="#0e100f">
     <meta name="viewport" content="width=device-width, height=device-height,  initial-scale=1.0, user-scalable=no;user-scalable=0;"/>
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <style>
+      html[data-wallet-startup='redirecting'] app-root {
+        display: none !important;
+      }
+    </style>
     <script>
       (function () {
         var isRootPath = window.location.pathname === '/';
-        var isInfoRequest = new URLSearchParams(window.location.search).has('walletInfo');
 
-        if (!isRootPath || isInfoRequest) {
+        if (!isRootPath) {
+          return;
+        }
+
+        function redirectToWallet() {
+          document.documentElement.setAttribute('data-wallet-startup', 'redirecting');
+          window.location.replace('/onboarding' + window.location.search + window.location.hash);
+        }
+
+        var isIframe = false;
+        try {
+          isIframe = window.self !== window.top;
+        } catch (_) {
+          isIframe = true;
+        }
+
+        if (isIframe) {
+          redirectToWallet();
+          return;
+        }
+
+        var searchParams = new URLSearchParams(window.location.search);
+
+        if (searchParams.has('iframeInfo')) {
           return;
         }
 
@@ -29,15 +56,13 @@
           hasWalletData = false;
         }
 
-        var isIframe = false;
-        try {
-          isIframe = window.self !== window.top;
-        } catch (_) {
-          isIframe = true;
+        if (hasWalletData) {
+          redirectToWallet();
+          return;
         }
 
-        if (hasWalletData || isIframe) {
-          window.location.replace('/onboarding' + window.location.search + window.location.hash);
+        if (searchParams.has('walletInfo')) {
+          return;
         }
       })();
     </script>

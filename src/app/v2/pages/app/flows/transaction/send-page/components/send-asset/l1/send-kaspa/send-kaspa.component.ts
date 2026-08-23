@@ -56,7 +56,7 @@ export class SendKaspaComponent
 
   // Form data
   walletAddress: string = '';
-  kaspaAmount: number | null = null;
+  kaspaAmount: string = '';
   replaceByFee: boolean = false;
 
   // Resolved address (from KNS) if present
@@ -115,7 +115,7 @@ export class SendKaspaComponent
       if (currentPage?.id === 'send-kaspa') {
         // Reset form when navigating to this page
         this.walletAddress = '';
-        this.kaspaAmount = null;
+        this.kaspaAmount = '';
         this.replaceByFee = false;
         this.addressTouched = false;
         this.amountTouched = false;
@@ -166,7 +166,7 @@ export class SendKaspaComponent
   }
 
   onAmountChange(value: any): void {
-    this.kaspaAmount = value || null;
+    this.kaspaAmount = value?.toString() || '';
     this.amountTouched = true;
     this.validateAmount();
   }
@@ -176,13 +176,10 @@ export class SendKaspaComponent
   }
 
   onMaxAmountClick(): void {
-    console.log(
-      'Max button clicked, available balance:',
-      this.availableBalance(),
-    );
-    this.kaspaAmount = this.availableBalance();
+    const maxAmount = this.availableBalance();
+    this.kaspaAmount = maxAmount > 0 ? maxAmount.toString() : '';
+    this.amountTouched = true;
     this.validateAmount();
-    console.log('Kaspa amount set to:', this.kaspaAmount);
   }
 
   onQrScanClick(): void {
@@ -204,13 +201,15 @@ export class SendKaspaComponent
   }
 
   private validateAmount(): void {
-    if (this.kaspaAmount === null || this.kaspaAmount === undefined) {
+    const amount = Number(this.kaspaAmount);
+
+    if (!this.kaspaAmount) {
       this.isAmountValid = !this.amountTouched;
       this.amountErrorMessage = this.amountTouched ? 'Amount is required' : '';
       return;
     }
 
-    if (this.kaspaAmount <= 0) {
+    if (!Number.isFinite(amount) || amount <= 0) {
       this.isAmountValid = false;
       this.amountErrorMessage = 'Amount must be greater than 0';
       return;
@@ -219,13 +218,13 @@ export class SendKaspaComponent
     const minimalAmount = this.kaspaNetworkActionsService.sompiToNumber(
       MINIMAL_AMOUNT_TO_SEND,
     );
-    if (this.kaspaAmount < minimalAmount) {
+    if (amount < minimalAmount) {
       this.isAmountValid = false;
       this.amountErrorMessage = `Amount must be at least ${minimalAmount} KAS`;
       return;
     }
 
-    if (this.kaspaAmount > this.availableBalance()) {
+    if (amount > this.availableBalance()) {
       this.isAmountValid = false;
       this.amountErrorMessage = 'Insufficient balance';
       return;
@@ -295,7 +294,7 @@ export class SendKaspaComponent
 
       const amountInSompi =
         this.kaspaNetworkActionsService.kaspaToSompiFromNumber(
-          this.kaspaAmount!,
+          Number(this.kaspaAmount),
         );
       const toAddress = this.resolvedToAddress || this.walletAddress;
 
@@ -316,7 +315,7 @@ export class SendKaspaComponent
       if (result.success) {
         // Clear form on success
         this.walletAddress = '';
-        this.kaspaAmount = null;
+        this.kaspaAmount = '';
         this.replaceByFee = false;
         this.resolvedToAddress = null;
 

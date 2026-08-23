@@ -3,87 +3,24 @@ import {
   Component,
   NgZone,
   OnDestroy,
-  OnInit,
   Renderer2,
   inject,
-  DOCUMENT,
 } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
-import { KcSnackbarComponent } from '@kaspacom/ui-kit';
-import { KaspaNetworkActionsService } from './services/kaspa-netwrok-services/kaspa-network-actions.service';
-import { environment } from '../environments/environment';
-import { StartupBackgroundCanvasComponent } from './components/startup-background-canvas/startup-background-canvas.component';
-import { AssetsManagerService } from './services/assets-manager/assets-manager.service';
-import { IFrameCommunicationApp } from './services/communication-service/communication-app/iframe-communication.service';
-import { CommunicationManagerService } from './services/communication-service/communication-manager.service';
-import { ConsentService } from './services/consent.service';
-import { EthereumWalletChainManager } from './services/etherium-services/etherium-wallet-chain.manager';
-import { KaspaNetworkConnectionManagerService } from './services/kaspa-netwrok-services/kaspa-network-connection-manager.service';
-import { ReferralService } from './services/referral.service';
-import { WalletService } from './services/wallet.service';
 
 @Component({
   selector: 'app-root',
-  imports: [
-    RouterOutlet,
-    KcSnackbarComponent,
-    StartupBackgroundCanvasComponent,
-  ],
+  imports: [RouterOutlet],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
-  providers: [KaspaNetworkActionsService],
 })
-export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
-  private readonly communicationManagerService = inject(
-    CommunicationManagerService,
-  );
+export class AppComponent implements AfterViewInit, OnDestroy {
   private readonly renderer = inject(Renderer2);
   private readonly document = inject<Document>(DOCUMENT);
   private readonly zone = inject(NgZone);
 
-  title = 'kaspiano-wallet';
-  rpcConnectionRejectReason = '';
-  walletService = inject(WalletService);
-  communicationService = inject(CommunicationManagerService);
-  kaspaConnectionService = inject(KaspaNetworkConnectionManagerService);
-  ethereumWalletChainManager = inject(EthereumWalletChainManager);
-  assetsManager = inject(AssetsManagerService);
-  consentService = inject(ConsentService);
-  private referralService = inject(ReferralService);
   private teardownLoader?: VoidFunction;
-
-  async ngOnInit() {
-    console.log('App component initialized');
-
-    if (!this.isAllowedDomain()) {
-      return;
-    }
-
-    this.referralService.captureReferralCode();
-
-    let isIframe = false;
-    try {
-      // Use a safe, non-throwing iframe detection that doesn't depend on cross-origin-sensitive APIs.
-      isIframe = window.self !== window.top;
-    } catch {
-      // If even this check fails due to unusual iframe restrictions, assume we are in an iframe.
-      isIframe = true;
-    }
-
-    if (isIframe) {
-      this.document.body.classList.add('iframe-mode');
-      const iframeApp = new IFrameCommunicationApp();
-      if (iframeApp.getApplicationId()) {
-        this.communicationManagerService.addApp(iframeApp);
-      } else {
-        console.error(
-          'Cannot establish iframe communication: parent origin is unknown. Ensure the embedding page allows the origin to be sent via the browser referrer policy (e.g., appropriate Referrer-Policy header or <iframe referrerpolicy>), so the standard Referer header and document.referrer are available.',
-        );
-      }
-    }
-
-    this.assetsManager.initializeWalletListenerAndStart();
-  }
 
   ngAfterViewInit(): void {
     this.teardownLoader = this.setupLoaderFadeOut();
@@ -94,22 +31,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       this.teardownLoader();
       this.teardownLoader = undefined;
     }
-  }
-
-  isAllowedDomain(): boolean {
-    return environment.allowedDomains.includes(window.location.hostname);
-  }
-
-  incompatibleBrowserReason(): string | undefined {
-    if (!(window.crypto && window.crypto?.subtle)) {
-      return 'Crypto not supported';
-    }
-
-    return undefined;
-  }
-
-  getCurrentHostname(): string {
-    return window.location.hostname;
   }
 
   private setupLoaderFadeOut(): VoidFunction | undefined {

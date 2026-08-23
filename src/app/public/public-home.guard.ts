@@ -12,16 +12,14 @@ export const publicHomeGuard: CanActivateFn = (route) => {
   }
 
   const router = inject(Router);
+
+  if (IFrameCommunicationApp.isIframe()) {
+    return true;
+  }
+
   const hasWalletData = !!localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA);
 
-  if (hasWalletData || IFrameCommunicationApp.isIframe()) {
-    if (
-      route.queryParamMap.has('iframeInfo') &&
-      !IFrameCommunicationApp.isIframe()
-    ) {
-      return true;
-    }
-
+  if (hasWalletData && !route.queryParamMap.has('iframeInfo')) {
     return router.createUrlTree(['/onboarding'], {
       queryParams: route.queryParams,
       fragment: route.fragment ?? undefined,

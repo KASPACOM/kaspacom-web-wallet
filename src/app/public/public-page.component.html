@@ -18,7 +18,11 @@
       <a routerLink="/faq">FAQ</a>
     </nav>
 
-    <a class="public-button public-button--small" [routerLink]="page.primaryCta.href">
+    <a
+      class="public-button public-button--small"
+      [routerLink]="page.primaryCta.href"
+      (click)="onWalletCtaClick($event)"
+    >
       {{ page.primaryCta.label }}
     </a>
   </header>
@@ -30,7 +34,11 @@
       <p class="hero__intro typo-text-4 text-medium">{{ page.intro }}</p>
 
       <div class="hero__actions" aria-label="Primary actions">
-        <a class="public-button" [routerLink]="page.primaryCta.href">
+        <a
+          class="public-button"
+          [routerLink]="page.primaryCta.href"
+          (click)="onWalletCtaClick($event)"
+        >
           {{ page.primaryCta.label }}
         </a>
         @if (page.secondaryCta) {
@@ -81,12 +89,17 @@
           </div>
 
           <div class="wallet-device__actions">
-            <a class="public-button public-button--full" routerLink="/onboarding">
+            <a
+              class="public-button public-button--full"
+              routerLink="/onboarding"
+              (click)="onWalletCtaClick($event)"
+            >
               Create New Wallet
             </a>
             <a
               class="public-button public-button--secondary public-button--full"
               routerLink="/onboarding"
+              (click)="onWalletCtaClick($event)"
             >
               Connect Existing Wallet
             </a>
@@ -120,6 +133,7 @@
           <a
             class="public-button content-section__cta"
             [routerLink]="section.cta.href"
+            (click)="onWalletCtaClick($event)"
           >
             {{ section.cta.label }}
           </a>
@@ -144,7 +158,13 @@
   <section class="final-cta" aria-labelledby="final-cta-title">
     <h2 id="final-cta-title">Open KaspaCom Wallet</h2>
     <p>Create a new wallet or import an existing one from the official wallet domain.</p>
-    <a class="public-button" routerLink="/onboarding">Open Wallet</a>
+    <a
+      class="public-button"
+      routerLink="/onboarding"
+      (click)="onWalletCtaClick($event)"
+    >
+      Open Wallet
+    </a>
   </section>
 
   <footer class="public-footer">

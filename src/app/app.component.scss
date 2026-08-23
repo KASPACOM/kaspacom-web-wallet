@@ -1,4 +1,54 @@
-:host {
+.application-container {
+  width: 100vw;
+  width: 100dvw;
+  height: 100vh;
+  height: 100dvh;
+
+  // In iframe mode, use 100% to avoid iOS keyboard pushing content offscreen
+  .iframe-mode & {
+    height: 100%;
+    width: 100%;
+  }
+  // Intentionally not scrollable: .screen/.wrapper below already fill this
+  // box exactly and manage their own internal scrolling (.wrapper__content).
+  // Use `clip`, not `hidden` — `hidden` still creates a programmatically
+  // scrollable box (no visible scrollbar, but scrollIntoView()/scrollTo()
+  // can still shift it), so a second such ancestor here lets the whole
+  // .wrapper — sticky header included — get silently scrolled out of view
+  // with no scrollbar to bring it back, whenever 100vh/100dvh momentarily
+  // disagree or scrollIntoView() needs more room than .wrapper__content
+  // alone can give it. `clip` cannot be scrolled at all, by anything.
+  overflow: clip;
   display: block;
-  min-height: 100dvh;
+  background: black url(/svgs/background.svg) 100% 100% no-repeat;
+}
+
+::ng-deep .kc-snackbar-container {
+  .kc-snackbar-description {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+  }
+
+  .kc-snackbar-content {
+    gap: 0px !important;
+  }
+}
+
+// The ui-kit snackbar container ships with a fixed z-index (1002) that sits
+// below some of our full-screen dialogs/overlays (e.g. iframe account
+// selection at 10000), causing notifications to render behind their blur
+// backdrop. Force it above every dialog/overlay z-index used in this app.
+::ng-deep .kc-snackbars-container {
+  z-index: 100000 !important;
+}
+
+.not-supported-url {
+  font-size: 2rem;
+  font-weight: bold;
+  color: red;
+  text-align: center;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }

@@ -38,12 +38,11 @@
           isIframe = true;
         }
 
+        var searchParams = new URLSearchParams(window.location.search);
+
         if (isIframe) {
-          redirectToWallet();
           return;
         }
-
-        var searchParams = new URLSearchParams(window.location.search);
 
         if (searchParams.has('iframeInfo')) {
           return;

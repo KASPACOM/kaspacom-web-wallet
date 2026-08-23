@@ -291,7 +291,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
     const walletInfoUrl = '/?walletInfo=1&iframeInfo=1';
 
     if (this.isIframeMode) {
-      window.open(walletInfoUrl, '_blank', 'noopener,noreferrer');
+      window.open(walletInfoUrl, '_blank');
       return;
     }
 

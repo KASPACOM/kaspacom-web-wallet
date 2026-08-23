@@ -24,13 +24,18 @@ export class PublicPageComponent implements OnInit, OnDestroy {
   page!: PublicPage;
   faqs: PublicFaqEntry[] = [];
   isIframeInfoPage = false;
+  showReturnToWalletMessage = false;
   private readonly isBrowser = typeof window !== 'undefined';
-  private readonly closeIframeInfoWindow = () => window.close();
+  private readonly closeIframeInfoWindow = () => {
+    this.showReturnToWalletMessage = true;
+    window.close();
+  };
 
   ngOnInit(): void {
     this.page = getPublicPageById(this.route.snapshot.data['pageId']);
     this.faqs = getPublicPageFaqs(this.page.id);
     this.isIframeInfoPage = this.route.snapshot.queryParamMap.has('iframeInfo');
+    this.showReturnToWalletMessage = this.isIframeInfoPage;
     this.registerIframeInfoBackHandler();
     this.seo.applyPage(this.page, this.faqs);
   }
@@ -53,7 +58,7 @@ export class PublicPageComponent implements OnInit, OnDestroy {
     }
 
     event.preventDefault();
-    window.close();
+    this.closeIframeInfoWindow();
   }
 
   private registerIframeInfoBackHandler(): void {
@@ -61,7 +66,16 @@ export class PublicPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    window.history.pushState({ iframeInfo: true }, '', window.location.href);
+    window.history.replaceState(
+      { ...(window.history.state ?? {}), iframeInfoCloseTarget: true },
+      '',
+      window.location.href,
+    );
+    window.history.pushState(
+      { ...(window.history.state ?? {}), iframeInfoActivePage: true },
+      '',
+      window.location.href,
+    );
     window.addEventListener('popstate', this.closeIframeInfoWindow);
   }
 }

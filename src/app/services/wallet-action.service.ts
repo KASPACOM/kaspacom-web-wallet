@@ -345,7 +345,7 @@ export class WalletActionService {
       .getCurrentWallet()!
       .getAddress();
 
-    // Show loading state for legacy/iframe flow before executing
+    // Show loading state for iframe flow before executing
     if (!isUsingV2Flow) {
       await this.showTransactionLoaderToUser(0, currentWalletAddress);
     }
@@ -366,7 +366,7 @@ export class WalletActionService {
           // Update the new approval flow with progress
           this.approvalFlowService.updateProgress(progress);
         } else {
-          // Use legacy progress display
+          // Use iframe progress display
           this.showTransactionLoaderToUser(progress, currentWalletAddress);
         }
       });
@@ -425,7 +425,7 @@ export class WalletActionService {
       // Show success page in the new approval flow
       this.approvalFlowService.setSuccessState(actionResult.result!);
     } else {
-      // Use legacy success display
+      // Use iframe success display
       await this.showTransactionResultToUser(
         actionResult.result!,
         currentWalletAddress,
@@ -485,12 +485,12 @@ export class WalletActionService {
     action: WalletAction,
     isFromIframe: boolean = false,
   ): Promise<ApprovalPageResultParams> {
-    // Use the new approval flow service for modern flow-based approvals
+    // Use the new approval flow service for app approvals.
     if (!isFromIframe) {
       return await this.approvalFlowService.showApproval(action, isFromIframe);
     }
 
-    // Legacy approval system for iframe and legacy contexts
+    // Iframe approval system
     if (this.actionToApprove()) {
       this.actionToApprove()!.resolve({ isApproved: false });
       this.actionToApprove.set(undefined);

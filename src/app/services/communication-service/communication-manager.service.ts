@@ -13,6 +13,7 @@ import { Router } from '@angular/router';
 import { EthereumWalletActionsService } from '../etherium-services/etherium-wallet-actions.service';
 import { EthereumWalletChainManager } from '../etherium-services/etherium-wallet-chain.manager';
 import { BaseCommunicationApp } from './communication-app/base-communication-app';
+import { IFrameCommunicationApp } from './communication-app/iframe-communication.service';
 import { environment } from '../../../environments/environment';
 import { AllowedApplicationsService } from './allowed-applications.service';
 import { ApprovalFlowService } from '../../v2/services/approval-flow.service';
@@ -250,7 +251,8 @@ export class CommunicationManagerService {
                 }
             } else if (actionData.action == WalletActionTypeEnum.EIP1193ProviderRequest) {
 
-                const eipResult = await this.ethereumWalletActionsService.handleRequest(actionData.data, async () => { await this.notifyActionAccepted(actionData, uuid); }, !actionData.displayIframeApproval, app?.getApplicationId());
+                const shouldUseIframeApproval = this.shouldUseIframeApproval(actionData, app);
+                const eipResult = await this.ethereumWalletActionsService.handleRequest(actionData.data, async () => { await this.notifyActionAccepted(actionData, uuid); }, !shouldUseIframeApproval, app?.getApplicationId());
 
                 result = {
                     success: true,
@@ -265,9 +267,10 @@ export class CommunicationManagerService {
                     this.getMessageWalletAction(actionData);
 
                 if (action) {
+                    const shouldUseIframeApproval = this.shouldUseIframeApproval(actionData, app);
                     result = await this.walletActionsService.validateAndDoActionAfterApproval(
                         action,
-                        actionData.displayIframeApproval,
+                        shouldUseIframeApproval,
                         async () => { await this.notifyActionAccepted(actionData, uuid); },
                     );
                 }
@@ -290,6 +293,13 @@ export class CommunicationManagerService {
                     errorCode: result.errorCode || ERROR_CODES.GENERAL.UNKNOWN_ERROR,
                 } as any,
         }, app);
+    }
+
+    private shouldUseIframeApproval(
+        actionData: WalletActionRequestPayloadInterface,
+        app?: BaseCommunicationApp,
+    ): boolean {
+        return !!actionData.displayIframeApproval || app instanceof IFrameCommunicationApp;
     }
 
     protected async notifyActionAccepted(actionData: WalletActionRequestPayloadInterface, uuid: string | undefined) {

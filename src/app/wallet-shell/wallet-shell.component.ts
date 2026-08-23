@@ -22,6 +22,7 @@ import { KaspaNetworkActionsService } from '../services/kaspa-netwrok-services/k
 import { KaspaNetworkConnectionManagerService } from '../services/kaspa-netwrok-services/kaspa-network-connection-manager.service';
 import { ReferralService } from '../services/referral.service';
 import { WalletService } from '../services/wallet.service';
+import { ReviewActionComponent } from '../components/wallet-actions-reviews/review-action/review-action.component';
 
 @Component({
   selector: 'app-wallet-shell',
@@ -30,6 +31,7 @@ import { WalletService } from '../services/wallet.service';
     RouterOutlet,
     KcSnackbarComponent,
     StartupBackgroundCanvasComponent,
+    ReviewActionComponent,
   ],
   templateUrl: './wallet-shell.component.html',
   styleUrl: './wallet-shell.component.scss',
@@ -45,6 +47,7 @@ export class WalletShellComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly meta = inject(Meta);
   private readonly referralService = inject(ReferralService);
   private teardownLoader?: VoidFunction;
+  private iframeApp?: IFrameCommunicationApp;
 
   walletService = inject(WalletService);
   communicationService = inject(CommunicationManagerService);
@@ -73,7 +76,8 @@ export class WalletShellComponent implements OnInit, AfterViewInit, OnDestroy {
       this.document.body.classList.add('iframe-mode');
       const iframeApp = new IFrameCommunicationApp();
       if (iframeApp.getApplicationId()) {
-        this.communicationManagerService.addApp(iframeApp);
+        this.iframeApp = iframeApp;
+        await this.communicationManagerService.addApp(iframeApp);
       } else {
         console.error(
           'Cannot establish iframe communication: parent origin is unknown. Ensure the embedding page allows the origin to be sent via the browser referrer policy.',
@@ -93,6 +97,11 @@ export class WalletShellComponent implements OnInit, AfterViewInit, OnDestroy {
       this.teardownLoader();
       this.teardownLoader = undefined;
     }
+    if (this.iframeApp) {
+      this.communicationManagerService.removeApp(this.iframeApp);
+      this.iframeApp = undefined;
+    }
+    this.document.body.classList.remove('iframe-mode');
   }
 
   isAllowedDomain(): boolean {

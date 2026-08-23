@@ -264,10 +264,10 @@ h1 {
   span {
     position: relative;
     display: block;
-    min-height: 96px;
-    padding: 18px 16px 16px;
-    border-radius: 18px;
-    background: rgba(4, 9, 11, 0.58);
+    min-height: auto;
+    padding: 0 0 0 18px;
+    border-radius: 0;
+    background: transparent;
     color: var(--gray-75);
     font-size: 0.84rem;
     line-height: 1.45;
@@ -283,10 +283,12 @@ h1 {
 
   span::before {
     content: "";
+    position: absolute;
+    top: 0.45em;
+    left: 0;
     display: block;
     width: 7px;
     height: 7px;
-    margin-bottom: 14px;
     border-radius: 50%;
     background: var(--kaspa-20);
     box-shadow: 0 0 14px rgba(162, 255, 241, 0.5);
@@ -459,9 +461,7 @@ h1 {
   gap: 48px;
   margin-top: 8px;
   padding: 50px 0;
-  background:
-    radial-gradient(circle at 0% 50%, rgba(111, 199, 186, 0.055), transparent 25rem),
-    transparent;
+  background: transparent;
 }
 
 .content-section h2,
@@ -508,15 +508,15 @@ h1 {
 
 .feature-list li,
 .faq-item {
-  border-radius: 18px;
-  background: rgba(4, 10, 12, 0.72);
-  backdrop-filter: blur(8px);
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
 }
 
 .feature-list li {
   position: relative;
-  min-height: 86px;
-  padding: 18px 18px 18px 42px;
+  min-height: auto;
+  padding: 0 0 0 26px;
   color: var(--gray-85);
   line-height: 1.55;
 }
@@ -524,8 +524,8 @@ h1 {
 .feature-list li::before {
   content: "";
   position: absolute;
-  top: 23px;
-  left: 18px;
+  top: 0.55em;
+  left: 0;
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -548,8 +548,8 @@ h1 {
 }
 
 .faq-item {
-  padding: 22px;
-  margin-top: 12px;
+  padding: 0;
+  margin-top: 26px;
 }
 
 .faq-item h3 {
@@ -564,10 +564,9 @@ h1 {
   margin-top: 8px;
   padding: 52px 20px 58px;
   border-radius: 0;
-  background:
-    radial-gradient(circle at 50% 0%, rgba(111, 199, 186, 0.16), transparent 30rem);
+  background: transparent;
   text-align: center;
-  backdrop-filter: blur(8px);
+  backdrop-filter: none;
 
   h2,
   p {
@@ -659,14 +658,12 @@ h1 {
 
   .hero__trust-row span {
     min-height: auto;
-    padding: 14px 14px 14px 34px;
+    padding: 0 0 0 24px;
   }
 
   .hero__trust-row span::before {
-    position: absolute;
-    top: 20px;
-    left: 14px;
-    margin: 0;
+    top: 0.45em;
+    left: 0;
   }
 
   .wallet-device {

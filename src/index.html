@@ -168,7 +168,6 @@
         var searchParams = new URLSearchParams(window.location.search);
         var path = window.location.pathname;
         var isRootPath = path === '/';
-        var isExplicitPublicInfo = searchParams.has('walletInfo');
         var isWalletPath =
           path === '/info' ||
           path === '/onboarding' ||
@@ -183,11 +182,6 @@
 
         function showWalletStartup() {
           document.documentElement.setAttribute('data-wallet-startup', 'wallet');
-        }
-
-        if (isExplicitPublicInfo) {
-          showPublicStartup();
-          return;
         }
 
         if (isIframe || isWalletPath) {

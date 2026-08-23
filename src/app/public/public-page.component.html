@@ -1,0 +1,111 @@
+<main class="public-page">
+  <header class="public-nav" aria-label="KaspaCom Wallet navigation">
+    <a class="public-nav__brand" routerLink="/">
+      <img src="/logo.png" alt="" width="32" height="32" />
+      <span>KaspaCom Wallet</span>
+    </a>
+
+    <nav class="public-nav__links" aria-label="Public pages">
+      <a routerLink="/features">Features</a>
+      <a routerLink="/security">Security</a>
+      <a routerLink="/faq">FAQ</a>
+      <a routerLink="/guides/best-kaspa-wallet">Best wallet</a>
+    </nav>
+
+    <a class="button button--small" [routerLink]="page.primaryCta.href">
+      {{ page.primaryCta.label }}
+    </a>
+  </header>
+
+  <section class="hero" aria-labelledby="page-title">
+    <div class="hero__content">
+      <p class="eyebrow">Self-custody Kaspa web wallet</p>
+      <h1 id="page-title">{{ page.h1 }}</h1>
+      <p class="hero__intro">{{ page.intro }}</p>
+
+      <div class="hero__actions" aria-label="Primary actions">
+        <a class="button" [routerLink]="page.primaryCta.href">
+          {{ page.primaryCta.label }}
+        </a>
+        @if (page.secondaryCta) {
+          <a class="button button--secondary" [routerLink]="page.secondaryCta.href">
+            {{ page.secondaryCta.label }}
+          </a>
+        }
+      </div>
+    </div>
+
+    <div class="hero__panel" aria-label="Wallet summary">
+      <div class="wallet-card">
+        <div class="wallet-card__top">
+          <span class="wallet-card__dot"></span>
+          <span>KaspaCom Wallet</span>
+        </div>
+        <div class="wallet-card__balance">KAS</div>
+        <p>Browser wallet for active Kaspa use.</p>
+        <ul>
+          <li>Open from wallet.kaspa.com</li>
+          <li>Back up your seed phrase offline</li>
+          <li>Send, receive, and manage supported assets</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="keyword-strip" aria-label="Covered search topics">
+    @for (keyword of [page.primaryKeyword, ...page.secondaryKeywords]; track keyword) {
+      <span>{{ keyword }}</span>
+    }
+  </section>
+
+  @for (section of page.sections; track section.title) {
+    <section class="content-section">
+      @if (section.eyebrow) {
+        <p class="eyebrow">{{ section.eyebrow }}</p>
+      }
+      <h2>{{ section.title }}</h2>
+      @for (paragraph of section.body; track paragraph) {
+        <p>{{ paragraph }}</p>
+      }
+      @if (section.bullets?.length) {
+        <ul class="feature-list">
+          @for (bullet of section.bullets; track bullet) {
+            <li>{{ bullet }}</li>
+          }
+        </ul>
+      }
+      @if (section.cta) {
+        <a class="button content-section__cta" [routerLink]="section.cta.href">
+          {{ section.cta.label }}
+        </a>
+      }
+    </section>
+  }
+
+  @if (faqs.length) {
+    <section class="content-section faq-list" aria-labelledby="faq-title">
+      <p class="eyebrow">Common questions</p>
+      <h2 id="faq-title">Kaspa wallet answers</h2>
+      @for (entry of faqs; track entry.question) {
+        <article class="faq-item">
+          <h3>{{ entry.question }}</h3>
+          <p>{{ entry.answer }}</p>
+        </article>
+      }
+    </section>
+  }
+
+  <section class="final-cta" aria-labelledby="final-cta-title">
+    <h2 id="final-cta-title">Open KaspaCom Wallet</h2>
+    <p>Create a new wallet or import an existing one from the official wallet domain.</p>
+    <a class="button" routerLink="/onboarding">Open Wallet</a>
+  </section>
+
+  <footer class="public-footer">
+    <a routerLink="/">Kaspa Wallet</a>
+    <a routerLink="/features">Features</a>
+    <a routerLink="/security">Security</a>
+    <a routerLink="/faq">FAQ</a>
+    <a routerLink="/guides/create-kaspa-wallet">Create wallet</a>
+  </footer>
+</main>

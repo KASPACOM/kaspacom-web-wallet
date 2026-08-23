@@ -49,8 +49,8 @@
               "graphemer"
             ],
             "server": "src/main.server.ts",
-            "prerender": false,
-            "ssr": false,
+            "prerender": true,
+            "ssr": true,
             "sourceMap": true
           },
           "configurations": {

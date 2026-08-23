@@ -24,6 +24,8 @@ export class PublicPageComponent implements OnInit, OnDestroy {
   page!: PublicPage;
   faqs: PublicFaqEntry[] = [];
   isIframeInfoPage = false;
+  isEmbeddedWalletInfoPage = false;
+  isOpeningWallet = false;
   showReturnToWalletMessage = false;
   private readonly isBrowser = typeof window !== 'undefined';
   private readonly closeIframeInfoWindow = () => {
@@ -35,6 +37,7 @@ export class PublicPageComponent implements OnInit, OnDestroy {
     this.page = getPublicPageById(this.route.snapshot.data['pageId']);
     this.faqs = getPublicPageFaqs(this.page.id);
     this.isIframeInfoPage = this.route.snapshot.queryParamMap.has('iframeInfo');
+    this.isEmbeddedWalletInfoPage = this.route.snapshot.routeConfig?.path === 'info';
     this.showReturnToWalletMessage = this.isIframeInfoPage;
     this.registerIframeInfoBackHandler();
     this.seo.applyPage(this.page, this.faqs);
@@ -53,12 +56,20 @@ export class PublicPageComponent implements OnInit, OnDestroy {
   }
 
   onWalletCtaClick(event: MouseEvent): void {
-    if (!this.isIframeInfoPage || !this.isBrowser) {
+    if (!this.isBrowser) {
       return;
     }
 
-    event.preventDefault();
-    this.closeIframeInfoWindow();
+    if (this.isIframeInfoPage) {
+      event.preventDefault();
+      this.closeIframeInfoWindow();
+      return;
+    }
+
+    if (!this.isEmbeddedWalletInfoPage) {
+      this.isOpeningWallet = true;
+      this.showWalletStartupLoader();
+    }
   }
 
   private registerIframeInfoBackHandler(): void {
@@ -77,5 +88,9 @@ export class PublicPageComponent implements OnInit, OnDestroy {
       window.location.href,
     );
     window.addEventListener('popstate', this.closeIframeInfoWindow);
+  }
+
+  private showWalletStartupLoader(): void {
+    window.dispatchEvent(new CustomEvent('wallet-startup-request'));
   }
 }

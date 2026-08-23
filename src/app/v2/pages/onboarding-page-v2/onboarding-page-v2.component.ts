@@ -293,9 +293,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
       return;
     }
 
-    void this.router.navigate(['/'], {
-      queryParams: { walletInfo: '1' },
-    });
+    void this.router.navigate(['/wallet-info']);
   }
 
   private triggerTransition(callback: () => void): void {

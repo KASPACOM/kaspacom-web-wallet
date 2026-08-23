@@ -22,6 +22,15 @@ const publicRoutes: Routes = PUBLIC_PAGES.map((page) => {
   return route;
 });
 
+const publicWalletInfoRoute: Routes[number] = {
+  path: 'wallet-info',
+  loadComponent: () =>
+    import('../public/public-page.component').then(
+      (m) => m.PublicPageComponent,
+    ),
+  data: { pageId: 'home' },
+};
+
 const walletShell = () =>
   import('../wallet-shell/wallet-shell.component').then(
     (m) => m.WalletShellComponent,
@@ -70,4 +79,8 @@ const walletRoutes: Routes = [
   },
 ];
 
-export const V2TMP_ROUTES: Routes = [...publicRoutes, ...walletRoutes];
+export const V2TMP_ROUTES: Routes = [
+  ...publicRoutes,
+  publicWalletInfoRoute,
+  ...walletRoutes,
+];

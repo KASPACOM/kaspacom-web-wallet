@@ -14,18 +14,150 @@
     <meta name="viewport" content="width=device-width, height=device-height,  initial-scale=1.0, user-scalable=no;user-scalable=0;"/>
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
     <style>
-      html[data-wallet-startup] app-root {
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #07090a;
+      }
+
+      html[data-wallet-startup='pending'] app-root {
         display: none !important;
+      }
+
+      html[data-wallet-startup='wallet'] app-root {
+        display: none !important;
+      }
+
+      #application-loader-startup {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483647;
+        width: 100vw;
+        width: 100dvw;
+        height: 100vh;
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        background-color: #07090a;
+        color: #6fc7ba;
+        font-family:
+          "Poppins",
+          "Roboto",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        opacity: 1;
+        transform: translateY(0);
+        transition:
+          opacity 0.45s ease,
+          transform 0.45s ease;
+      }
+
+      #application-loader-startup .loader-content {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        padding: 24px;
+        text-align: center;
+        transition:
+          transform 0.45s ease,
+          opacity 0.45s ease;
+      }
+
+      #application-loader-startup.fade-out {
+        opacity: 0;
+        transform: translateY(24px);
+        pointer-events: none;
+      }
+
+      #application-loader-startup.fade-out .loader-content {
+        opacity: 0;
+        transform: translateY(-12px);
+      }
+
+      html[data-wallet-startup='pending'] #application-loader-startup,
+      html[data-wallet-startup='wallet'] #application-loader-startup {
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+        pointer-events: auto !important;
+      }
+
+      html[data-wallet-startup='pending'] #application-loader-startup .loader-content,
+      html[data-wallet-startup='wallet'] #application-loader-startup .loader-content {
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+      }
+
+      #application-loader-startup .loading-text {
+        color: #ffffff;
+        font-size: 1rem;
+        letter-spacing: 0.02em;
+      }
+
+      #application-loader-startup .loading-subtext {
+        max-width: 280px;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.875rem;
+      }
+
+      #application-loader-startup .lds-ring,
+      #application-loader-startup .lds-ring div {
+        box-sizing: border-box;
+      }
+
+      #application-loader-startup .lds-ring {
+        position: relative;
+        display: inline-block;
+        width: 80px;
+        height: 80px;
+        color: #6fc7ba;
+        filter: drop-shadow(0 6px 18px rgba(111, 199, 186, 0.4));
+      }
+
+      #application-loader-startup .lds-ring div {
+        position: absolute;
+        display: block;
+        width: 64px;
+        height: 64px;
+        margin: 8px;
+        border: 8px solid currentColor;
+        border-color: currentColor transparent transparent transparent;
+        border-radius: 50%;
+        animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+      }
+
+      #application-loader-startup .lds-ring div:nth-child(1) {
+        animation-delay: -0.45s;
+      }
+
+      #application-loader-startup .lds-ring div:nth-child(2) {
+        animation-delay: -0.3s;
+      }
+
+      #application-loader-startup .lds-ring div:nth-child(3) {
+        animation-delay: -0.15s;
+      }
+
+      @keyframes lds-ring {
+        0% {
+          transform: rotate(0deg);
+        }
+
+        100% {
+          transform: rotate(360deg);
+        }
       }
     </style>
     <script>
       (function () {
-        var isRootPath = window.location.pathname === '/';
-
-        if (!isRootPath) {
-          return;
-        }
-
         var isIframe = false;
         try {
           isIframe = window.self !== window.top;
@@ -34,17 +166,37 @@
         }
 
         var searchParams = new URLSearchParams(window.location.search);
+        var path = window.location.pathname;
+        var isRootPath = path === '/';
+        var isExplicitPublicInfo = searchParams.has('walletInfo');
+        var isWalletPath =
+          path === '/info' ||
+          path === '/onboarding' ||
+          path === '/onboarding-v2' ||
+          path === '/wallet' ||
+          path === '/app' ||
+          path.startsWith('/app/');
 
-        if (searchParams.has('walletInfo')) {
-          return;
+        function showPublicStartup() {
+          document.documentElement.setAttribute('data-wallet-startup', 'public');
         }
 
-        if (isIframe) {
+        function showWalletStartup() {
           document.documentElement.setAttribute('data-wallet-startup', 'wallet');
+        }
+
+        if (isExplicitPublicInfo) {
+          showPublicStartup();
           return;
         }
 
-        if (searchParams.has('iframeInfo')) {
+        if (isIframe || isWalletPath) {
+          showWalletStartup();
+          return;
+        }
+
+        if (!isRootPath) {
+          showPublicStartup();
           return;
         }
 
@@ -56,9 +208,11 @@
         }
 
         if (hasWalletData) {
-          document.documentElement.setAttribute('data-wallet-startup', 'wallet');
+          showWalletStartup();
           return;
         }
+
+        showPublicStartup();
       })();
     </script>
   </head>

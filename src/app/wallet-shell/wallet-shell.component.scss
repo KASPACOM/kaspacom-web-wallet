@@ -12,6 +12,12 @@
   overflow: clip;
   display: block;
   background: black url(/svgs/background.svg) 100% 100% no-repeat;
+
+  &:has(app-public-page) {
+    overflow-x: clip;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 ::ng-deep .kc-snackbar-container {

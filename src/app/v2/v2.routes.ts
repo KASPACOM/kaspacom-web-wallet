@@ -4,15 +4,24 @@ import { AuthGuard } from './guard/auth.guard';
 import { routes } from '../core/app.routes';
 import { loggedRoutes } from './pages/app/logged.routes';
 import { PUBLIC_PAGES } from '../public/public-content';
+import { publicHomeGuard } from '../public/public-home.guard';
 
-const publicRoutes: Routes = PUBLIC_PAGES.map((page) => ({
-  path: page.path,
-  loadComponent: () =>
-    import('../public/public-page.component').then(
-      (m) => m.PublicPageComponent,
-    ),
-  data: { pageId: page.id },
-}));
+const publicRoutes: Routes = PUBLIC_PAGES.map((page) => {
+  const route: Routes[number] = {
+    path: page.path,
+    loadComponent: () =>
+      import('../public/public-page.component').then(
+        (m) => m.PublicPageComponent,
+      ),
+    data: { pageId: page.id },
+  };
+
+  if (page.path === '') {
+    route.canActivate = [publicHomeGuard];
+  }
+
+  return route;
+});
 
 const walletShell = () =>
   import('../wallet-shell/wallet-shell.component').then(

@@ -94,6 +94,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
   readonly isDeleteConfirmationValid = computed(() =>
     isDeleteWalletConfirmationValid(this.deleteConfirmationInput()),
   );
+  readonly isIframeMode = IFrameCommunicationApp.isIframe();
 
   private ctx!: CanvasRenderingContext2D;
   private nodes: Node[] = [];
@@ -283,6 +284,19 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
   resetFlow(): void {
     this.triggerTransition(() => {
       this.onboardingStep.set(OnboardingStep.WELCOME);
+    });
+  }
+
+  openPublicWalletPage(): void {
+    const walletInfoUrl = '/?walletInfo=1';
+
+    if (this.isIframeMode) {
+      window.open(walletInfoUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    void this.router.navigate(['/'], {
+      queryParams: { walletInfo: '1' },
     });
   }
 

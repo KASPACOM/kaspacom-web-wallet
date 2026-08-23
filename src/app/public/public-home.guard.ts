@@ -19,7 +19,10 @@ export const publicHomeGuard: CanActivateFn = (route) => {
   const hasWalletData = !!localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA);
 
   if (hasWalletData || IFrameCommunicationApp.isIframe()) {
-    return router.createUrlTree(['/onboarding']);
+    return router.createUrlTree(['/onboarding'], {
+      queryParams: route.queryParams,
+      fragment: route.fragment ?? undefined,
+    });
   }
 
   return true;

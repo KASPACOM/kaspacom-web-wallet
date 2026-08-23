@@ -37,7 +37,7 @@
         }
 
         if (hasWalletData || isIframe) {
-          window.location.replace('/onboarding');
+          window.location.replace('/onboarding' + window.location.search + window.location.hash);
         }
       })();
     </script>

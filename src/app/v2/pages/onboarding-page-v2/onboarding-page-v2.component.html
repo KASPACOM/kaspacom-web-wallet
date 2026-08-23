@@ -14,6 +14,14 @@
           experience.
         </p>
 
+        <div class="onboarding-v2__hero-actions">
+          <kc-button
+            [text]="'More Info'"
+            [variant]="'secondary'"
+            (buttonClick)="openPublicWalletPage()"
+          />
+        </div>
+
         <div class="onboarding-v2__social-links">
           <a
             href="https://github.com/KASPACOM/kaspacom-web-wallet"
@@ -211,6 +219,23 @@
           </div>
         </div>
         <div class="onboarding-v2__mobile-social">
+          <div class="onboarding-v2__mobile-hero-copy">
+            <h1 class="typo-title-2 text-light">
+              The Official KaspaCom Wallet
+            </h1>
+            <p class="typo-text-2 text-medium">
+              Set up or connect your wallet in a fast, secure, mobile-optimized
+              experience.
+            </p>
+            <div class="onboarding-v2__mobile-hero-actions">
+              <kc-button
+                [text]="'More Info'"
+                [variant]="'secondary'"
+                (buttonClick)="openPublicWalletPage()"
+              />
+            </div>
+          </div>
+
           <div class="onboarding-v2__social-links">
             <a
               href="https://github.com/KASPACOM/kaspacom-web-wallet"

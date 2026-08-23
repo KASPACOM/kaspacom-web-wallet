@@ -23,7 +23,7 @@ The new approval system provides three rendering modes:
 
 ```typescript
 // In WalletActionService.showApprovalDialogToUser()
-if (!isFromIframe && this.isV2AppContext()) {
+if (!isFromIframe) {
   // Use new flow-based approval system
   return await this.approvalFlowService.showApproval(action, isFromIframe);
 } else {

@@ -19,7 +19,6 @@ import { FlowPageComponent } from './common/flow-page/flow-page.component';
 import { AccountSettingsService } from '../../services/account-settings.service';
 import { FlowPagesService } from '../../services/flow-pages.service';
 import { QuickActionDialogService } from '../../services/quick-action-dialog.service';
-import { ReviewActionComponent } from '../../../components/wallet-actions-reviews/review-action/review-action.component';
 import { DynamicFlowPageOutletComponent } from './common/flow-page/dynamic-flow-page-outlet.component';
 import { DynamicQuickActionDialogOutletComponent } from './common/quick-action-dialog/dynamic-quick-action-dialog-outlet.component';
 import { IframeAccountSelectionComponent } from './iframe-account-selection/iframe-account-selection.component';
@@ -44,7 +43,6 @@ import { AssetsManagerService } from '../../../services/assets-manager/assets-ma
     FlowPageComponent,
     DynamicFlowPageOutletComponent,
     DynamicQuickActionDialogOutletComponent,
-    ReviewActionComponent,
     KcSpinnerComponent,
     KcIconComponent,
     IframeAccountSelectionComponent,

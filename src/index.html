@@ -3,6 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <title>KaspaCom Web Wallet</title>
+    <meta name="description" content="KaspaCom Web Wallet, a self-custody browser wallet for Kaspa. Send, receive, store, and manage KAS from wallet.kaspa.com." />
+    <meta name="robots" content="noindex, nofollow" />
     <base href="/" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -11,6 +13,34 @@
     <meta name="theme-color" content="#0e100f">
     <meta name="viewport" content="width=device-width, height=device-height,  initial-scale=1.0, user-scalable=no;user-scalable=0;"/>
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <script>
+      (function () {
+        var isRootPath = window.location.pathname === '/';
+        var isInfoRequest = new URLSearchParams(window.location.search).has('walletInfo');
+
+        if (!isRootPath || isInfoRequest) {
+          return;
+        }
+
+        var hasWalletData = false;
+        try {
+          hasWalletData = !!window.localStorage.getItem('userData');
+        } catch (_) {
+          hasWalletData = false;
+        }
+
+        var isIframe = false;
+        try {
+          isIframe = window.self !== window.top;
+        } catch (_) {
+          isIframe = true;
+        }
+
+        if (hasWalletData || isIframe) {
+          window.location.replace('/onboarding' + window.location.search + window.location.hash);
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="application-loader-startup">

@@ -48,8 +48,7 @@ export class CryptoActionsComponent {
     }
 
     if (
-      !this.walletService.getIsL2DisplaySignal()() &&
-      !environment.isProduction
+      !this.walletService.getIsL2DisplaySignal()()
     ) {
       baseActions.push({
         title: 'contracts',

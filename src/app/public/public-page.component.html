@@ -1,0 +1,177 @@
+<main class="public-page">
+  <div class="public-page__backdrop public-page__backdrop--first"></div>
+  <div class="public-page__backdrop public-page__backdrop--second"></div>
+  <div class="public-page__nodes" aria-hidden="true">
+    @for (node of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]; track node) {
+      <span></span>
+    }
+  </div>
+
+  <header class="public-nav" aria-label="KaspaCom Wallet navigation">
+    <a class="public-nav__brand" routerLink="/">
+      <img src="/logo.png" alt="KaspaCom Wallet" width="188" height="36" />
+    </a>
+
+    <nav class="public-nav__links" aria-label="Public pages">
+      <a routerLink="/features">Features</a>
+      <a routerLink="/security">Security</a>
+      <a routerLink="/faq">FAQ</a>
+    </nav>
+
+    <a
+      class="public-button public-button--small"
+      [routerLink]="page.primaryCta.href"
+      (click)="onWalletCtaClick($event)"
+    >
+      {{ page.primaryCta.label }}
+    </a>
+  </header>
+
+  <section class="hero" aria-labelledby="page-title">
+    <div class="hero__content">
+      <p class="eyebrow">Self-custody Kaspa web wallet</p>
+      <h1 id="page-title" class="typo-header-1 text-light">{{ page.h1 }}</h1>
+      <p class="hero__intro typo-text-4 text-medium">{{ page.intro }}</p>
+
+      <div class="hero__actions" aria-label="Primary actions">
+        <a
+          class="public-button"
+          [routerLink]="page.primaryCta.href"
+          (click)="onWalletCtaClick($event)"
+        >
+          {{ page.primaryCta.label }}
+        </a>
+        @if (page.secondaryCta) {
+          <a
+            class="public-button public-button--secondary"
+            [routerLink]="page.secondaryCta.href"
+          >
+            {{ page.secondaryCta.label }}
+          </a>
+        }
+      </div>
+
+      <div class="hero__trust-row" aria-label="Wallet properties">
+        <span>
+          <strong>Local keys</strong>
+          Seed phrases stay in your browser.
+        </span>
+        <span>
+          <strong>Public pages</strong>
+          Crawlers see real wallet content.
+        </span>
+        <span>
+          <strong>Wallet app</strong>
+          Open the client-side wallet when ready.
+        </span>
+      </div>
+    </div>
+
+    <div class="hero__panel" aria-label="Wallet summary">
+      <div class="wallet-device">
+        <div class="wallet-device__notch"></div>
+        <div class="wallet-device__panel">
+          <header class="wallet-device__header">
+            <img src="/images/kc-logo-square.png" alt="" width="40" height="40" />
+            <div>
+              <p>KaspaCom Wallet</p>
+              <span>Ready for Kaspa</span>
+            </div>
+          </header>
+
+          <div class="wallet-device__visual">
+            <img src="/svgs/wallet.svg" alt="" width="240" height="135" />
+          </div>
+
+          <div class="wallet-device__balance" aria-label="Example balance panel">
+            <span>KAS</span>
+            <strong>Keys stay local</strong>
+          </div>
+
+          <div class="wallet-device__actions">
+            <a
+              class="public-button public-button--full"
+              routerLink="/onboarding"
+              (click)="onWalletCtaClick($event)"
+            >
+              Create New Wallet
+            </a>
+            <a
+              class="public-button public-button--secondary public-button--full"
+              routerLink="/onboarding"
+              (click)="onWalletCtaClick($event)"
+            >
+              Connect Existing Wallet
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  @for (section of page.sections; track section.title) {
+    <section
+      class="content-section"
+      [class.content-section--cards]="section.bullets?.length"
+    >
+      @if (section.eyebrow) {
+        <p class="eyebrow">{{ section.eyebrow }}</p>
+      }
+      <h2>{{ section.title }}</h2>
+      <div class="content-section__body">
+        @for (paragraph of section.body; track paragraph) {
+          <p>{{ paragraph }}</p>
+        }
+        @if (section.bullets?.length) {
+          <ul class="feature-list">
+            @for (bullet of section.bullets; track bullet) {
+              <li>{{ bullet }}</li>
+            }
+          </ul>
+        }
+        @if (section.cta) {
+          <a
+            class="public-button content-section__cta"
+            [routerLink]="section.cta.href"
+            (click)="onWalletCtaClick($event)"
+          >
+            {{ section.cta.label }}
+          </a>
+        }
+      </div>
+    </section>
+  }
+
+  @if (faqs.length) {
+    <section class="content-section faq-list" aria-labelledby="faq-title">
+      <p class="eyebrow">Common questions</p>
+      <h2 id="faq-title">Kaspa wallet answers</h2>
+      @for (entry of faqs; track entry.question) {
+        <article class="faq-item">
+          <h3>{{ entry.question }}</h3>
+          <p>{{ entry.answer }}</p>
+        </article>
+      }
+    </section>
+  }
+
+  <section class="final-cta" aria-labelledby="final-cta-title">
+    <h2 id="final-cta-title">Open KaspaCom Wallet</h2>
+    <p>Create a new wallet or import an existing one from the official wallet domain.</p>
+    <a
+      class="public-button"
+      routerLink="/onboarding"
+      (click)="onWalletCtaClick($event)"
+    >
+      Open Wallet
+    </a>
+  </section>
+
+  <footer class="public-footer">
+    <a routerLink="/">Kaspa Wallet</a>
+    <a routerLink="/features">Features</a>
+    <a routerLink="/security">Security</a>
+    <a routerLink="/faq">FAQ</a>
+    <a routerLink="/guides/create-kaspa-wallet">Create wallet</a>
+  </footer>
+</main>

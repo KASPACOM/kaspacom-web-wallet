@@ -64,7 +64,7 @@ export class SendKrc20Component
 
   // Form data
   walletAddress: string = '';
-  tokenAmount: number | null = null;
+  tokenAmount: string = '';
   replaceByFee: boolean = false;
 
   // Resolved address (from KNS) if present
@@ -138,7 +138,7 @@ export class SendKrc20Component
       this.isAmountValid &&
       !!this.walletAddress &&
       !!this.tokenAmount &&
-      this.tokenAmount > 0 &&
+      Number(this.tokenAmount) > 0 &&
       !this.isLoading
     );
   }
@@ -199,7 +199,7 @@ export class SendKrc20Component
   }
 
   onAmountChange(amount: any): void {
-    this.tokenAmount = amount || null;
+    this.tokenAmount = amount?.toString() || '';
     this.validateAmount();
   }
 
@@ -208,13 +208,9 @@ export class SendKrc20Component
   }
 
   onMaxAmountClick(): void {
-    console.log(
-      'Max button clicked, available balance:',
-      this.availableBalance,
-    );
-    this.tokenAmount = this.availableBalance;
+    const maxAmount = this.availableBalance;
+    this.tokenAmount = maxAmount > 0 ? maxAmount.toString() : '';
     this.validateAmount();
-    console.log('Token amount set to:', this.tokenAmount);
   }
 
   onQrScanClick(): void {
@@ -256,13 +252,15 @@ export class SendKrc20Component
   }
 
   private validateAmount(): void {
-    if (!this.tokenAmount || this.tokenAmount <= 0) {
+    const amount = Number(this.tokenAmount);
+
+    if (!this.tokenAmount || !Number.isFinite(amount) || amount <= 0) {
       this.isAmountValid = false;
       this.amountErrorMessage = 'Amount must be greater than 0';
       return;
     }
 
-    if (this.tokenAmount > this.availableBalance) {
+    if (amount > this.availableBalance) {
       this.isAmountValid = false;
       this.amountErrorMessage = 'Insufficient balance';
       return;
@@ -289,7 +287,7 @@ export class SendKrc20Component
       // Convert token amount to BigInt using kaspaToSompiFromNumber (same as working sendAsset function)
       const amountInSompi =
         this.kaspaNetworkActionsService.kaspaToSompiFromNumber(
-          this.tokenAmount!,
+          Number(this.tokenAmount),
         );
       const toAddress = this.resolvedToAddress || this.walletAddress;
 
@@ -316,7 +314,7 @@ export class SendKrc20Component
       if (result.success) {
         // Clear form on success
         this.walletAddress = '';
-        this.tokenAmount = null;
+        this.tokenAmount = '';
         this.replaceByFee = false;
         this.resolvedToAddress = null;
 

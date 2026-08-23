@@ -53,9 +53,18 @@ describe('PublicSeoService', () => {
     expect(jsonLd).not.toBeNull();
 
     const parsed = JSON.parse(jsonLd!.textContent ?? '{}');
+    const webPageGraph = parsed['@graph'].find(
+      (item: Record<string, unknown>) => item['@type'] === 'WebPage',
+    );
+    const articleGraph = parsed['@graph'].find(
+      (item: Record<string, unknown>) => item['@type'] === 'Article',
+    );
     const faqGraph = parsed['@graph'].find(
       (item: Record<string, unknown>) => item['@type'] === 'FAQPage',
     );
+
+    expect(webPageGraph).toBeDefined();
+    expect(articleGraph).toBeUndefined();
     expect(faqGraph.mainEntity.length).toBe(PUBLIC_FAQ_ENTRIES.length);
   });
 

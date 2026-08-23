@@ -173,7 +173,7 @@ export async function importByPrivateKey(
 }
 
 export async function login(page: Page, password: string): Promise<void> {
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.goto('/onboarding', { waitUntil: 'domcontentloaded' });
   const loginPw = page
     .locator('form.onboarding-v2__login-form kc-input input')
     .first();

@@ -49,6 +49,62 @@ jobs:
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
+      - name: Assert AEO public artifacts
+        run: |
+          npm run assert:public-prerender
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+
+          const base = 'dist/wallet-front-new/browser';
+          const pages = [
+            'index.html',
+            'features/index.html',
+            'security/index.html',
+            'faq/index.html',
+            'guides/best-kaspa-wallet/index.html',
+            'guides/create-kaspa-wallet/index.html',
+            'guides/kaspa-desktop-wallet/index.html',
+            'guides/kaspa-wallet-app/index.html',
+            'guides/store-kaspa/index.html',
+          ];
+
+          function read(relativePath) {
+            return fs.readFileSync(path.join(base, relativePath), 'utf8');
+          }
+
+          function assert(condition, message) {
+            if (!condition) {
+              throw new Error(message);
+            }
+          }
+
+          for (const file of ['llms.txt', 'robots.txt', 'sitemap.xml']) {
+            assert(fs.existsSync(path.join(base, file)), `${file} missing`);
+          }
+
+          const robots = read('robots.txt');
+          for (const bot of ['GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'ClaudeBot', 'Claude-SearchBot', 'PerplexityBot', 'Googlebot']) {
+            assert(robots.includes(`User-agent: ${bot}`), `robots missing ${bot}`);
+          }
+
+          assert(read('llms.txt').includes('KaspaCom Wallet'), 'llms.txt missing brand');
+          assert(read('sitemap.xml').includes('https://wallet.kaspa.com/guides/best-kaspa-wallet'), 'sitemap missing guide URL');
+
+          for (const page of pages) {
+            const html = read(page);
+            assert(html.includes('type="application/ld+json"'), `${page} missing JSON-LD`);
+            assert(html.includes('Last reviewed:'), `${page} missing last reviewed date`);
+            assert(html.includes('content="index, follow"'), `${page} missing production index/follow robots`);
+
+            const jsonLd = [...html.matchAll(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)];
+            assert(jsonLd.length > 0, `${page} missing JSON-LD script`);
+            for (const match of jsonLd) {
+              JSON.parse(match[1]);
+            }
+          }
+          NODE
+
       - name: Run unit tests
         run: npm test -- --watch=false --browsers=ChromeHeadless
         continue-on-error: false

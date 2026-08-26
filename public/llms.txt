@@ -1,0 +1,30 @@
+# KaspaCom Wallet
+
+KaspaCom Wallet is a self-custody browser wallet for KAS and supported Kaspa assets at wallet.kaspa.com.
+
+## Primary pages
+
+- [KaspaCom Wallet](https://wallet.kaspa.com/): Explains what KaspaCom Wallet is, who it is for, and how users open the wallet.
+- [Wallet features](https://wallet.kaspa.com/features): Lists the supported wallet jobs: create or import, receive KAS, send KAS, view supported assets, use supported swap flows, and connect to KaspaCom products.
+- [Wallet security](https://wallet.kaspa.com/security): Explains self-custody, seed phrase backup, browser storage, phishing checks, and the wallet.kaspa.com domain.
+- [Wallet FAQ](https://wallet.kaspa.com/faq): Short answers for common Kaspa wallet, web wallet, app, download, address, login, and storage questions.
+
+## Guides
+
+- [Best Kaspa wallet](https://wallet.kaspa.com/guides/best-kaspa-wallet): Explains when a browser wallet fits and when colder storage may fit larger long-term balances.
+- [Kaspa wallet app](https://wallet.kaspa.com/guides/kaspa-wallet-app): Explains that KaspaCom Wallet runs in a mobile-friendly browser instead of a native iOS or Android app in this phase.
+- [Kaspa desktop wallet](https://wallet.kaspa.com/guides/kaspa-desktop-wallet): Explains that KaspaCom Wallet does not require a desktop download.
+- [Create a Kaspa wallet](https://wallet.kaspa.com/guides/create-kaspa-wallet): Explains the create-wallet flow and seed phrase backup requirement.
+- [How to store Kaspa](https://wallet.kaspa.com/guides/store-kaspa): Explains active hot-wallet storage, offline seed phrase backup, and device hygiene.
+
+## Entity facts
+
+- Brand name: KaspaCom Wallet
+- Parent brand: KaspaCom
+- Website: https://wallet.kaspa.com/
+- Parent website: https://kaspa.com/
+- Support email: support@kaspa.com
+- X: https://x.com/KaspaCom
+- Telegram: https://t.me/KaspaComOfficial
+- GitHub: https://github.com/KASPACOM
+- Last reviewed: August 26, 2026

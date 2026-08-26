@@ -17,6 +17,7 @@ describe('public SEO content', () => {
       expect(page.path.endsWith('/')).toBeFalse();
       expect(page.title.length).toBeGreaterThan(10);
       expect(page.description.length).toBeGreaterThan(50);
+      expect(page.lastReviewed).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(page.primaryCta.href).toBe('/onboarding');
       expect(page.sections.length).toBeGreaterThan(0);
     }

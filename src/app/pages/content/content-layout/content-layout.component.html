@@ -1,0 +1,25 @@
+<div class="content-page">
+  <header class="content-header">
+    <a class="brand" routerLink="/">KaspaCom Wallet</a>
+    <nav class="content-nav" aria-label="Main">
+      <a routerLink="/features">Features</a>
+      <a routerLink="/faq">FAQ</a>
+      <a routerLink="/learn">Learn</a>
+      <a class="cta" routerLink="/">Open Wallet</a>
+    </nav>
+  </header>
+
+  <main class="content-main">
+    <ng-content />
+  </main>
+
+  <footer class="content-footer">
+    <nav aria-label="Footer">
+      <a routerLink="/features">Features</a>
+      <a routerLink="/faq">FAQ</a>
+      <a routerLink="/learn">Learn about Kaspa</a>
+      <a routerLink="/">Open Wallet</a>
+    </nav>
+    <p>&copy; {{ year }} KaspaCom. KaspaCom Wallet is a self-custody Kaspa (KAS) wallet.</p>
+  </footer>
+</div>

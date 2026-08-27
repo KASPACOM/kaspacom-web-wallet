@@ -1,0 +1,12 @@
+@use '../content-prose.mixin' as prose;
+
+:host {
+  @include prose.text;
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kc-space-s, 0.5rem);
+  margin-top: var(--kc-space-l, 2rem);
+}

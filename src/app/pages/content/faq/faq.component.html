@@ -1,0 +1,15 @@
+<app-content-layout>
+  <h1>Frequently Asked Questions</h1>
+  <p class="lede">
+    Answers about how the KaspaCom self-custody wallet works, what it
+    supports, and how to keep your Kaspa (KAS) safe.
+  </p>
+
+  <div class="faq-list">
+    @for (item of faqItems; track item.question) {
+      <kc-accordion [title]="item.question">
+        <p>{{ item.answer }}</p>
+      </kc-accordion>
+    }
+  </div>
+</app-content-layout>

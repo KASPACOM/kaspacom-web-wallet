@@ -1,0 +1,57 @@
+{
+  "pages": [
+    {
+      "path": "/faq",
+      "title": "FAQ",
+      "description": "Answers to common questions about the KaspaCom wallet: self-custody, seed phrases, fees, supported assets, browser support and account recovery."
+    },
+    {
+      "path": "/features",
+      "title": "Features",
+      "description": "What the KaspaCom wallet can do: self-custody security, KAS/KRC-20/KRC-721/KNS support, built-in swaps and dApp connectivity."
+    },
+    {
+      "path": "/learn",
+      "title": "Learn about Kaspa",
+      "description": "Guides explaining Kaspa (KAS), its BlockDAG and GHOSTDAG technology, KRC-20 tokens, KNS domains and how to store Kaspa safely."
+    }
+  ],
+  "articles": [
+    {
+      "slug": "what-is-kaspa",
+      "title": "What Is Kaspa (KAS)?",
+      "description": "An introduction to Kaspa: the proof-of-work BlockDAG cryptocurrency built on the GHOSTDAG protocol, how it works, and why it's fast.",
+      "summary": "The BlockDAG proof-of-work network behind KAS, and how GHOSTDAG lets it confirm blocks in parallel."
+    },
+    {
+      "slug": "what-is-a-non-custodial-wallet",
+      "title": "What Is a Non-Custodial (Self-Custody) Wallet?",
+      "description": "What self-custody means, how a non-custodial wallet differs from an exchange account, and why it matters for crypto security.",
+      "summary": "Why holding your own keys is different from leaving funds on an exchange, and what that means day to day."
+    },
+    {
+      "slug": "what-is-krc-20",
+      "title": "What Is KRC-20? Kaspa's Token Standard Explained",
+      "description": "How KRC-20 tokens work on Kaspa, how they differ from KAS itself, and how a wallet reads and manages them.",
+      "summary": "How fungible tokens are inscribed and tracked on top of Kaspa's base layer."
+    },
+    {
+      "slug": "what-is-kns",
+      "title": "What Is KNS? Kaspa Name Service Explained",
+      "description": "How Kaspa Name Service (KNS) domains work, and why a human-readable name is easier and safer than a raw Kaspa address.",
+      "summary": "Human-readable Kaspa addresses, and how they reduce the risk of sending funds to the wrong place."
+    },
+    {
+      "slug": "how-to-store-kaspa-safely",
+      "title": "How to Store Kaspa (KAS) Safely",
+      "description": "Practical steps for storing Kaspa securely: seed phrase backups, avoiding phishing, hardware wallets, and common mistakes to avoid.",
+      "summary": "Seed phrase hygiene, phishing risks, and practical habits for keeping KAS safe long-term."
+    },
+    {
+      "slug": "kaspa-vs-bitcoin",
+      "title": "Kaspa vs Bitcoin: What's the Technical Difference?",
+      "description": "A technical comparison of Kaspa and Bitcoin: single-chain vs BlockDAG consensus, block times, and what each design trades off.",
+      "summary": "Single-chain Nakamoto consensus vs GHOSTDAG's BlockDAG, compared directly."
+    }
+  ]
+}

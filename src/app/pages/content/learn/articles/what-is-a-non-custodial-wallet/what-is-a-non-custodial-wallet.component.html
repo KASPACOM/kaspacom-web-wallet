@@ -1,0 +1,55 @@
+<app-content-layout>
+  <h1>What Is a Non-Custodial (Self-Custody) Wallet?</h1>
+  <p class="lede">
+    A non-custodial wallet is one where you — not a company — hold the
+    private keys that control your crypto. That single difference changes who
+    can move your funds, who can freeze them, and who is responsible if
+    something goes wrong.
+  </p>
+
+  <h2>Custodial vs. non-custodial</h2>
+  <p>
+    When you keep crypto on a centralized exchange, the exchange holds the
+    private keys on your behalf. Your account balance is really an IOU: the
+    exchange owes you that amount, and can move, freeze, or lose it —
+    intentionally or through a hack, insolvency, or a mistake on their end.
+  </p>
+  <p>
+    A non-custodial (self-custody) wallet generates and stores your private
+    keys directly on your own device. No company sits between you and your
+    funds. Every transaction is signed locally, by you, before it ever
+    reaches the network.
+  </p>
+
+  <h2>The trade-off: control comes with responsibility</h2>
+  <p>
+    Self-custody removes counterparty risk — no exchange can freeze your
+    funds or go bankrupt with your assets — but it also removes the safety
+    net of "forgot my password, please reset it." If you lose your seed
+    phrase and your device, no one, including the wallet provider, can
+    recover your funds for you. See
+    <a routerLink="/learn/how-to-store-kaspa-safely"
+      >how to store Kaspa safely</a
+    >
+    for practical steps to avoid that.
+  </p>
+
+  <h2>What this looks like in practice</h2>
+  <p>
+    In a self-custody wallet, "your password" typically unlocks a locally
+    encrypted copy of your keys on that device — it is not a password stored
+    on a server somewhere that can be reset over email. The
+    <a routerLink="/faq">seed phrase</a> generated when you create the wallet
+    is the actual backup; the password just protects local access to it.
+  </p>
+
+  <h2>Why it matters for Kaspa specifically</h2>
+  <p>
+    Kaspa's whole design — a fast, decentralized, permissionless BlockDAG (see
+    <a routerLink="/learn/what-is-kaspa">what is Kaspa</a>) — is undermined if
+    most users end up holding it through a centralized custodian instead of
+    controlling their own keys. A self-custody wallet like
+    <a routerLink="/">KaspaCom Wallet</a> keeps that decentralization
+    meaningful at the individual level.
+  </p>
+</app-content-layout>

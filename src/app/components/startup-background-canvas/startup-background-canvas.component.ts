@@ -3,8 +3,11 @@ import {
   ElementRef,
   AfterViewInit,
   OnDestroy,
+  PLATFORM_ID,
+  inject,
   viewChild,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 
 interface CanvasNode {
   x: number;
@@ -48,6 +51,8 @@ interface CanvasNode {
 export class StartupBackgroundCanvasComponent
   implements AfterViewInit, OnDestroy
 {
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
   readonly canvasRef =
     viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
 
@@ -71,6 +76,10 @@ export class StartupBackgroundCanvasComponent
   };
 
   ngAfterViewInit(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
     this.canvas = this.canvasRef().nativeElement;
     const context = this.canvas.getContext('2d');
 

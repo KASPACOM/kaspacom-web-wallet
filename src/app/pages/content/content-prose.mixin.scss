@@ -1,0 +1,45 @@
+// Shared prose styling for SEO content pages (FAQ, Features, Learn articles).
+// Usage: @use '../content-prose.mixin' as prose; :host { @include prose.text; }
+@mixin text {
+  h1 {
+    font-size: var(--kc-font-size-40, 2.5rem);
+    line-height: 1.15;
+    margin: 0 0 var(--kc-space-m, 1rem);
+  }
+
+  h2 {
+    font-size: var(--kc-font-size-26, 1.625rem);
+    margin: var(--kc-space-xl, 2.5rem) 0 var(--kc-space-sm, 0.75rem);
+  }
+
+  h3 {
+    font-size: var(--kc-font-size-20, 1.25rem);
+    margin: var(--kc-space-l, 2rem) 0 var(--kc-space-s, 0.5rem);
+  }
+
+  p,
+  li {
+    font-size: var(--kc-font-size-16, 1rem);
+    line-height: 1.65;
+    color: var(--kc-color-gray-100, #b7bdc4);
+  }
+
+  p {
+    margin: 0 0 var(--kc-space-m, 1rem);
+  }
+
+  ul,
+  ol {
+    margin: 0 0 var(--kc-space-m, 1rem);
+    padding-left: var(--kc-space-l, 2rem);
+  }
+
+  a {
+    color: var(--kc-color-primary-600, #6fc7ba);
+  }
+
+  .lede {
+    font-size: var(--kc-font-size-18, 1.125rem);
+    color: var(--kc-color-gray-100, #b7bdc4);
+  }
+}

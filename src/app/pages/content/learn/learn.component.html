@@ -1,0 +1,16 @@
+<app-content-layout>
+  <h1>Learn about Kaspa</h1>
+  <p class="lede">
+    Plain-language guides to Kaspa (KAS), how it works, and how to hold it
+    safely.
+  </p>
+
+  <div class="article-list">
+    @for (article of articles; track article.slug) {
+      <a class="article-card" [routerLink]="['/learn', article.slug]">
+        <h2>{{ article.title }}</h2>
+        <p>{{ article.summary }}</p>
+      </a>
+    }
+  </div>
+</app-content-layout>

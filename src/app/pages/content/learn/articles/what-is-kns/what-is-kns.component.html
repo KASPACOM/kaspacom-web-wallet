@@ -1,0 +1,44 @@
+<app-content-layout>
+  <h1>What Is KNS? Kaspa Name Service Explained</h1>
+  <p class="lede">
+    KNS (Kaspa Name Service) lets you register a human-readable domain name
+    and point it at your Kaspa address, so people can send you funds without
+    copying and pasting a long string of characters.
+  </p>
+
+  <h2>The problem with raw addresses</h2>
+  <p>
+    A Kaspa address is a long, machine-generated string. It's precise, but
+    it's also easy to mistype, easy to send to the wrong address by copying
+    the wrong line, and impossible to remember. This isn't unique to
+    Kaspa — it's the same reason naming systems exist on other blockchains.
+  </p>
+
+  <h2>How KNS domains work</h2>
+  <p>
+    A KNS domain is registered on-chain and mapped to one or more Kaspa
+    addresses. Once it's set up, anyone can send to your domain name instead
+    of your raw address, and the underlying transaction still settles exactly
+    like any other Kaspa transaction described in
+    <a routerLink="/learn/what-is-kaspa">what is Kaspa</a>.
+  </p>
+
+  <h2>Why it matters for safety, not just convenience</h2>
+  <p>
+    Address-related mistakes — sending to a mistyped or wrong address — are
+    generally irreversible in a self-custody system, since there's no
+    customer support desk that can claw back a transaction on a
+    decentralized network. A memorable domain name reduces the chance of that
+    class of error, particularly for funds you send often (payroll, recurring
+    payments, etc.).
+  </p>
+
+  <h2>Using KNS in a wallet</h2>
+  <p>
+    A wallet that supports KNS lets you enter a domain in the recipient field
+    the same way you'd enter an address, resolving it automatically. Combined
+    with support for KAS, KRC-20 and KRC-721 assets,
+    <a routerLink="/features">KaspaCom Wallet</a> handles KNS lookups as part
+    of normal sending and receiving.
+  </p>
+</app-content-layout>

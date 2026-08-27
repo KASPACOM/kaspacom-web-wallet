@@ -1,0 +1,5 @@
+@use '../../content-prose.mixin' as prose;
+
+:host {
+  @include prose.text;
+}

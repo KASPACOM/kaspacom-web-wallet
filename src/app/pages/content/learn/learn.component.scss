@@ -1,0 +1,35 @@
+@use '../content-prose.mixin' as prose;
+
+:host {
+  @include prose.text;
+}
+
+.article-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kc-space-m, 1rem);
+  margin-top: var(--kc-space-l, 2rem);
+}
+
+.article-card {
+  display: block;
+  padding: var(--kc-space-m, 1rem) var(--kc-space-ml, 1.5rem);
+  border: 1px solid var(--kc-color-gray-800, #1a212a);
+  border-radius: 12px;
+  text-decoration: none;
+  transition: border-color 0.15s ease;
+
+  &:hover {
+    border-color: var(--kc-color-primary-600, #6fc7ba);
+  }
+
+  h2 {
+    margin: 0 0 var(--kc-space-xs, 0.375rem);
+    font-size: var(--kc-font-size-20, 1.25rem);
+    color: var(--kc-color-white, #fff);
+  }
+
+  p {
+    margin: 0;
+  }
+}

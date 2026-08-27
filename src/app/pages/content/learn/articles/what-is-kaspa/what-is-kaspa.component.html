@@ -1,0 +1,58 @@
+<app-content-layout>
+  <h1>What Is Kaspa (KAS)?</h1>
+  <p class="lede">
+    Kaspa is a proof-of-work cryptocurrency built on a BlockDAG instead of a
+    single blockchain, using a consensus protocol called GHOSTDAG to confirm
+    many blocks per second.
+  </p>
+
+  <h2>The problem Kaspa's design solves</h2>
+  <p>
+    Traditional proof-of-work blockchains like Bitcoin produce blocks one at a
+    time on a single chain. If two miners find a valid block at nearly the
+    same moment, only one can be kept — the other is discarded as an
+    "orphan," and its work is wasted. That trade-off is part of why chains
+    like Bitcoin keep block times relatively slow: producing blocks faster
+    would mean orphaning more of them.
+  </p>
+
+  <h2>GHOSTDAG: keeping blocks instead of discarding them</h2>
+  <p>
+    Kaspa uses a protocol called <strong>GHOSTDAG</strong> (a generalization
+    of the GHOST rule), which arranges blocks into a
+    <strong>BlockDAG</strong> — a directed acyclic graph — rather than a
+    single chain. Blocks that would be orphaned on a traditional blockchain
+    are instead included in the DAG and ordered by the protocol, so
+    near-simultaneous blocks from different miners can both count instead of
+    one being wasted. That's what lets Kaspa safely produce blocks much more
+    frequently than a single-chain design.
+  </p>
+
+  <h2>Block rate and confirmation speed</h2>
+  <p>
+    Following Kaspa's 2025 "Crescendo" network upgrade, the mainnet produces
+    <strong>10 blocks per second</strong>, up from 1 block per second at
+    launch. Because new blocks arrive so frequently, transactions reach
+    practical confirmation much faster than on typical single-chain
+    proof-of-work networks.
+  </p>
+
+  <h2>Fair launch, no premine</h2>
+  <p>
+    Kaspa launched in 2021 based on research by Yonatan Sompolinsky (one of
+    the original authors of the GHOST protocol) and collaborators. It had no
+    premine, no founder allocation, and no ICO — all KAS in circulation was
+    mined the same way, through proof-of-work.
+  </p>
+
+  <h2>What you can do with Kaspa today</h2>
+  <p>
+    Beyond sending and receiving native KAS, the Kaspa ecosystem supports
+    fungible tokens (<a routerLink="/learn/what-is-krc-20">KRC-20</a>), NFTs
+    (KRC-721), and human-readable addresses through
+    <a routerLink="/learn/what-is-kns">KNS domains</a>. You can manage all of
+    these from a self-custody wallet like
+    <a routerLink="/">KaspaCom Wallet</a>, where your keys stay on your own
+    device.
+  </p>
+</app-content-layout>

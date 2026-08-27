@@ -1,0 +1,71 @@
+<app-content-layout>
+  <h1>Kaspa vs Bitcoin: What's the Technical Difference?</h1>
+  <p class="lede">
+    Kaspa and Bitcoin are both permissionless, proof-of-work
+    cryptocurrencies — the difference is in how each one decides which
+    blocks count and in what order, and that decision shapes almost
+    everything else about how each network behaves.
+  </p>
+
+  <h2>Bitcoin: a single chain, one block at a time</h2>
+  <p>
+    Bitcoin uses Nakamoto consensus: miners compete to produce the next
+    block, and the network follows the chain with the most accumulated proof
+    of work. If two blocks are found around the same time, only one survives
+    on the main chain — the other is orphaned and its work is discarded. To
+    keep orphan rates low and consensus stable, Bitcoin targets a new block
+    roughly every 10 minutes.
+  </p>
+
+  <h2>Kaspa: a BlockDAG, ordered by GHOSTDAG</h2>
+  <p>
+    Kaspa uses the <a routerLink="/learn/what-is-kaspa">GHOSTDAG protocol</a>,
+    which allows multiple blocks produced around the same time to all be
+    included in a BlockDAG rather than forcing all but one to be discarded.
+    GHOSTDAG then defines a consistent way to order every block in the DAG,
+    including which ones are treated as the "main" chain for consensus
+    purposes. This is what lets Kaspa target a much higher block rate — 10
+    blocks per second as of its 2025 Crescendo upgrade — without the same
+    orphan-rate trade-off Bitcoin faces.
+  </p>
+
+  <h2>What stays the same</h2>
+  <ul>
+    <li>Both are secured by proof-of-work mining, not staking.</li>
+    <li>
+      Both are permissionless and decentralized — anyone can run a node or
+      mine.
+    </li>
+    <li>Neither had a premine or founder allocation of coins.</li>
+  </ul>
+
+  <h2>What's genuinely different</h2>
+  <ul>
+    <li>
+      <strong>Block structure:</strong> single chain (Bitcoin) vs. BlockDAG
+      (Kaspa).
+    </li>
+    <li>
+      <strong>Block rate:</strong> ~1 block per ~10 minutes (Bitcoin) vs. 10
+      blocks per second (Kaspa).
+    </li>
+    <li>
+      <strong>Practical confirmation time:</strong> materially faster on
+      Kaspa, a direct result of the block rate difference.
+    </li>
+    <li>
+      <strong>Ecosystem age and tooling:</strong> Bitcoin's ecosystem is
+      older and larger; Kaspa's token/NFT/naming layers (
+      <a routerLink="/learn/what-is-krc-20">KRC-20</a>,
+      <a routerLink="/learn/what-is-kns">KNS</a>) are newer.
+    </li>
+  </ul>
+
+  <p class="lede">
+    Whichever network you're using, the same self-custody principle applies —
+    see <a routerLink="/learn/what-is-a-non-custodial-wallet"
+      >what a non-custodial wallet is</a
+    >
+    if you're new to holding your own keys.
+  </p>
+</app-content-layout>

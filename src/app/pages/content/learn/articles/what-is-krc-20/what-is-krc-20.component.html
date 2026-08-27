@@ -1,0 +1,44 @@
+<app-content-layout>
+  <h1>What Is KRC-20? Kaspa's Token Standard Explained</h1>
+  <p class="lede">
+    KRC-20 is a fungible token standard built on top of Kaspa, letting anyone
+    create and transfer their own tokens using Kaspa's base layer for
+    settlement.
+  </p>
+
+  <h2>KAS vs. KRC-20 tokens</h2>
+  <p>
+    KAS is Kaspa's native asset — it's what secures the network and pays
+    transaction fees. KRC-20 tokens are separate assets layered on top: they
+    use Kaspa transactions to record token actions (like minting or
+    transferring), but they are tracked and interpreted by KRC-20-aware
+    infrastructure rather than by Kaspa's base protocol itself.
+  </p>
+
+  <h2>How KRC-20 tokens work, at a high level</h2>
+  <p>
+    KRC-20 tokens are inscribed directly into Kaspa transaction data. A
+    dedicated indexing layer watches the chain, reads these inscriptions, and
+    keeps track of balances and transfers for each token — similar in spirit
+    to inscription-based token standards on other UTXO-based chains. Every
+    KRC-20 transaction still inherits Kaspa's underlying settlement: it's
+    confirmed by the same BlockDAG described in
+    <a routerLink="/learn/what-is-kaspa">what is Kaspa</a>.
+  </p>
+
+  <h2>Why build tokens this way instead of a separate chain?</h2>
+  <p>
+    Launching a token on Kaspa via KRC-20 means it benefits from Kaspa's
+    existing security and block production, instead of a new project needing
+    to bootstrap its own network and miners from scratch.
+  </p>
+
+  <h2>Managing KRC-20 tokens in a wallet</h2>
+  <p>
+    A Kaspa wallet that supports KRC-20 needs to talk to that indexing layer
+    to show accurate balances and let you send or receive tokens, not just
+    native KAS. <a routerLink="/features">KaspaCom Wallet</a> handles this
+    directly, alongside KAS, KRC-721 NFTs, and
+    <a routerLink="/learn/what-is-kns">KNS domains</a>, in one interface.
+  </p>
+</app-content-layout>

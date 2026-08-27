@@ -4,11 +4,13 @@ import {
   NgZone,
   OnDestroy,
   OnInit,
+  PLATFORM_ID,
   Renderer2,
   inject,
   DOCUMENT,
 } from '@angular/core';
 import { Meta } from '@angular/platform-browser';
+import { isPlatformBrowser } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { KcSnackbarComponent } from '@kaspacom/ui-kit';
 import { KaspaNetworkActionsService } from './services/kaspa-netwrok-services/kaspa-network-actions.service';
@@ -35,23 +37,38 @@ import { WalletService } from './services/wallet.service';
   providers: [KaspaNetworkActionsService],
 })
 export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
-  private readonly communicationManagerService = inject(
-    CommunicationManagerService,
-  );
+  // The wallet/network stack below (WalletService -> RPC client, etc.) touches
+  // browser-only APIs (localStorage, a browser-targeted WASM module) as soon as
+  // it's constructed. It must never be instantiated on the server: SSR only
+  // needs to render the static shell for a given route, the real wallet
+  // runtime spins up once the client hydrates.
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  private readonly communicationManagerService = this.isBrowser
+    ? inject(CommunicationManagerService)
+    : undefined;
   private readonly renderer = inject(Renderer2);
   private readonly document = inject<Document>(DOCUMENT);
   private readonly zone = inject(NgZone);
 
   title = 'kaspiano-wallet';
   rpcConnectionRejectReason = '';
-  walletService = inject(WalletService);
-  communicationService = inject(CommunicationManagerService);
-  kaspaConnectionService = inject(KaspaNetworkConnectionManagerService);
-  ethereumWalletChainManager = inject(EthereumWalletChainManager);
-  assetsManager = inject(AssetsManagerService);
-  consentService = inject(ConsentService);
+  walletService = this.isBrowser ? inject(WalletService) : undefined;
+  communicationService = this.isBrowser
+    ? inject(CommunicationManagerService)
+    : undefined;
+  kaspaConnectionService = this.isBrowser
+    ? inject(KaspaNetworkConnectionManagerService)
+    : undefined;
+  ethereumWalletChainManager = this.isBrowser
+    ? inject(EthereumWalletChainManager)
+    : undefined;
+  assetsManager = this.isBrowser ? inject(AssetsManagerService) : undefined;
+  consentService = this.isBrowser ? inject(ConsentService) : undefined;
   private readonly meta = inject(Meta);
-  private referralService = inject(ReferralService);
+  private referralService = this.isBrowser
+    ? inject(ReferralService)
+    : undefined;
   private teardownLoader?: VoidFunction;
 
   async ngOnInit() {
@@ -59,11 +76,15 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.applyIndexingPolicy();
 
+    if (!this.isBrowser) {
+      return;
+    }
+
     if (!this.isAllowedDomain()) {
       return;
     }
 
-    this.referralService.captureReferralCode();
+    this.referralService!.captureReferralCode();
 
     let isIframe = false;
     try {
@@ -78,7 +99,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       this.document.body.classList.add('iframe-mode');
       const iframeApp = new IFrameCommunicationApp();
       if (iframeApp.getApplicationId()) {
-        this.communicationManagerService.addApp(iframeApp);
+        this.communicationManagerService!.addApp(iframeApp);
       } else {
         console.error(
           'Cannot establish iframe communication: parent origin is unknown. Ensure the embedding page allows the origin to be sent via the browser referrer policy (e.g., appropriate Referrer-Policy header or <iframe referrerpolicy>), so the standard Referer header and document.referrer are available.',
@@ -86,7 +107,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     }
 
-    this.assetsManager.initializeWalletListenerAndStart();
+    this.assetsManager!.initializeWalletListenerAndStart();
   }
 
   ngAfterViewInit(): void {
@@ -101,13 +122,27 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   isAllowedDomain(): boolean {
+    // No hostname to check on the server (prerendering/SSR) — let the shell
+    // render so the router-outlet's content is what gets prerendered.
+    if (!this.isBrowser) {
+      return true;
+    }
     return environment.allowedDomains.includes(window.location.hostname);
   }
 
   // Only the canonical production host should be indexed by search engines.
   // dev-wallet.kaspa.com, localhost and preview hosts get noindex,nofollow.
+  // Checked against environment.isProduction first (not just
+  // window.location.hostname) because prerendering runs at build time with
+  // no `window` — a dev-config build must ship noindex baked into the static
+  // HTML itself, not rely on a client-side check that never runs for a
+  // crawler that doesn't execute JavaScript.
   private applyIndexingPolicy(): void {
-    if (typeof window === 'undefined') {
+    if (!environment.isProduction) {
+      this.meta.updateTag({ name: 'robots', content: 'noindex, nofollow' });
+      return;
+    }
+    if (!this.isBrowser) {
       return;
     }
     if (window.location.hostname !== 'wallet.kaspa.com') {
@@ -116,6 +151,9 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   incompatibleBrowserReason(): string | undefined {
+    if (!this.isBrowser) {
+      return undefined;
+    }
     if (!(window.crypto && window.crypto?.subtle)) {
       return 'Crypto not supported';
     }

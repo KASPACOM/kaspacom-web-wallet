@@ -1,5 +1,8 @@
 import { PublicFaqEntry, PublicPage } from './public-page.model';
 
+// Default review date for pages whose content hasn't changed since this batch.
+// When editing a single page's copy, set that page's `lastReviewed` to the new
+// date directly instead of bumping this shared constant for every page.
 export const PUBLIC_CONTENT_LAST_REVIEWED = '2026-08-26';
 
 export const OPEN_WALLET_CTA = {

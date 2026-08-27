@@ -38,7 +38,7 @@
       <p class="hero__reviewed">
         Last reviewed:
         <time [attr.datetime]="page.lastReviewed">
-          {{ page.lastReviewed | date: 'longDate' : 'UTC' }}
+          {{ lastReviewedDate | date: 'longDate' : 'UTC' }}
         </time>
       </p>
 

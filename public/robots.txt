@@ -1,6 +1,10 @@
 User-agent: *
 Disallow:
 
+# The wildcard group above already allows every crawler. These per-bot
+# groups don't change actual crawl permission — they exist to make AI/search
+# crawler access explicit for anyone auditing this file or building tooling
+# against it.
 User-agent: GPTBot
 Allow: /
 

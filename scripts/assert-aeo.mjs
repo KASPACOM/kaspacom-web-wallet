@@ -21,8 +21,11 @@ const requiredBots = [
   'ChatGPT-User',
   'ClaudeBot',
   'Claude-SearchBot',
+  'Claude-User',
   'PerplexityBot',
+  'Perplexity-User',
   'Googlebot',
+  'Google-Extended',
 ];
 
 function read(relativePath) {

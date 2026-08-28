@@ -942,6 +942,19 @@ export class WalletActionService {
       };
     }
 
+    if (
+      action.options?.revealPskt &&
+      !this.kaspaNetworkActionsService.isRevealPsktScriptDeterministic(
+        action,
+        wallet.getAddress(),
+      )
+    ) {
+      return {
+        isValidated: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_COMMIT_REVEAL_DATA,
+      };
+    }
+
     try {
       const validator = this.baseProtocolClassesService.getClassesFor(
         action.actionScript.type,

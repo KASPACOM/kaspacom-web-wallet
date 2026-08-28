@@ -4,6 +4,9 @@
   background: var(--background);
   color: var(--white);
   font-family: "Poppins", sans-serif;
+  /* Prevents the browser from "correcting" scroll position when the FAQ
+     accordions grow/shrink, which otherwise reads as the page jumping. */
+  overflow-anchor: none;
 }
 
 .public-page {
@@ -186,6 +189,7 @@
 
 .public-nav__links a,
 .public-footer a {
+  position: relative;
   color: var(--gray-75);
   font-size: 0.9rem;
   font-weight: 500;
@@ -199,6 +203,19 @@
   &:focus-visible {
     outline: 2px solid var(--kaspa-20);
     outline-offset: 4px;
+  }
+}
+
+.public-nav__links a {
+  padding: 8px 14px;
+  border-radius: 999px;
+  transition:
+    color 0.18s ease,
+    background 0.18s ease;
+
+  &.is-active {
+    color: var(--white);
+    background: rgba(111, 199, 186, 0.14);
   }
 }
 
@@ -402,6 +419,11 @@ h1 {
   img {
     border-radius: 13px;
   }
+}
+
+.wallet-device__header-text {
+  flex: 1;
+  min-width: 0;
 
   p {
     margin: 0 0 2px;
@@ -414,6 +436,18 @@ h1 {
     color: var(--gray-60);
     font-size: 0.82rem;
   }
+}
+
+.wallet-device__preview-badge {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border: 1px solid rgba(111, 199, 186, 0.32);
+  border-radius: 999px;
+  color: var(--kaspa-20);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .wallet-device__visual {
@@ -441,19 +475,46 @@ h1 {
   padding: 14px 16px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.03);
+}
 
-  span {
+.wallet-device__balance-amount {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wallet-device__balance-label {
+  color: var(--gray-60);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.wallet-device__balance-value {
+  color: var(--white);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+
+  em {
+    margin-left: 4px;
     color: var(--kaspa-10);
-    font-size: 2.25rem;
-    font-weight: 700;
-    letter-spacing: -0.05em;
+    font-size: 0.95rem;
+    font-style: normal;
+    font-weight: 600;
   }
+}
 
-  strong {
-    color: var(--gray-75);
-    font-size: 0.82rem;
-    font-weight: 500;
-  }
+.wallet-device__balance-badge {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border: 1px solid rgba(111, 199, 186, 0.3);
+  border-radius: 999px;
+  color: var(--kaspa-20);
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .wallet-device__actions {
@@ -463,12 +524,28 @@ h1 {
 }
 
 .content-section {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 0.52fr) minmax(0, 1fr);
+  align-items: start;
   gap: 48px;
-  margin-top: 8px;
-  padding: 50px 0;
-  background: transparent;
+  margin-top: 24px;
+  padding: 44px 40px;
+  border: 1px solid rgba(111, 199, 186, 0.14);
+  border-radius: 24px;
+  background: rgba(111, 199, 186, 0.035);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+}
+
+.content-section__index {
+  display: block;
+  grid-column: 1;
+  margin-bottom: 14px;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(111, 199, 186, 0.45);
+  font-size: 2.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .content-section h2,
@@ -523,7 +600,7 @@ h1 {
 .feature-list li {
   position: relative;
   min-height: auto;
-  padding: 0 0 0 26px;
+  padding: 0 0 0 30px;
   color: var(--gray-85);
   line-height: 1.55;
 }
@@ -531,12 +608,25 @@ h1 {
 .feature-list li::before {
   content: "";
   position: absolute;
-  top: 0.55em;
+  top: 0.15em;
   left: 0;
-  width: 8px;
-  height: 8px;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--kaspa-20);
   border-radius: 50%;
-  background: var(--kaspa-20);
+  background: rgba(111, 199, 186, 0.1);
+}
+
+.feature-list li::after {
+  content: "";
+  position: absolute;
+  top: 0.62em;
+  left: 5px;
+  width: 8px;
+  height: 4px;
+  border-left: 1.5px solid var(--kaspa-20);
+  border-bottom: 1.5px solid var(--kaspa-20);
+  transform: rotate(-45deg);
 }
 
 .content-section__cta {
@@ -546,7 +636,7 @@ h1 {
 
 .faq-list {
   display: block;
-  padding: 50px 0;
+  padding: 44px 40px;
 }
 
 .faq-list .eyebrow,
@@ -554,26 +644,31 @@ h1 {
   max-width: 720px;
 }
 
-.faq-item {
-  padding: 0;
+.faq-list__items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   margin-top: 26px;
-}
 
-.faq-item h3 {
-  margin-bottom: 10px;
-  color: var(--white);
-  font-size: 1.08rem;
-  font-weight: 600;
-  line-height: 1.4;
+  kc-accordion {
+    --kc-color-black-900: rgba(255, 255, 255, 0.03);
+    --kc-color-black-800: rgba(111, 199, 186, 0.35);
+    --kc-radius-xs: 14px;
+    --kc-text-primary: var(--white);
+    --kc-color-gray-500: var(--gray-75);
+    --kc-color-gray-100: var(--kaspa-20);
+  }
 }
 
 .final-cta {
-  margin-top: 8px;
-  padding: 52px 20px 58px;
-  border-radius: 0;
-  background: transparent;
+  margin-top: 24px;
+  padding: 64px 40px;
+  border: 1px solid rgba(111, 199, 186, 0.22);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(111, 199, 186, 0.14), transparent 60%),
+    rgba(255, 255, 255, 0.02);
   text-align: center;
-  backdrop-filter: none;
 
   h2,
   p {
@@ -616,7 +711,7 @@ h1 {
 
   .content-section {
     display: block;
-    padding: 38px 0;
+    padding: 32px 28px;
   }
 
   .content-section__body {
@@ -688,7 +783,7 @@ h1 {
   }
 
   .content-section {
-    padding: 34px 0;
+    padding: 28px 18px;
   }
 
   .final-cta {

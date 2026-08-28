@@ -16,9 +16,9 @@
     </a>
 
     <nav class="public-nav__links" aria-label="Public pages">
-      <a routerLink="/features">Features</a>
-      <a routerLink="/security">Security</a>
-      <a routerLink="/faq">FAQ</a>
+      <a routerLink="/features" routerLinkActive="is-active">Features</a>
+      <a routerLink="/security" routerLinkActive="is-active">Security</a>
+      <a routerLink="/faq" routerLinkActive="is-active">FAQ</a>
     </nav>
 
     <a
@@ -62,16 +62,17 @@
       </div>
     </div>
 
-    <div class="hero__panel" aria-label="Wallet summary">
+    <div class="hero__panel" aria-label="Wallet preview">
       <div class="wallet-device">
         <div class="wallet-device__notch"></div>
         <div class="wallet-device__panel">
           <header class="wallet-device__header">
             <img src="/images/kc-logo-square.png" alt="" width="40" height="40" />
-            <div>
+            <div class="wallet-device__header-text">
               <p>KaspaCom Wallet</p>
               <span>Ready for Kaspa</span>
             </div>
+            <span class="wallet-device__preview-badge">Preview</span>
           </header>
 
           <div class="wallet-device__visual">
@@ -79,8 +80,11 @@
           </div>
 
           <div class="wallet-device__balance" aria-label="Example balance panel">
-            <span>KAS</span>
-            <strong>Keys stay local</strong>
+            <div class="wallet-device__balance-amount">
+              <span class="wallet-device__balance-label">Balance</span>
+              <strong class="wallet-device__balance-value">1,284.50 <em>KAS</em></strong>
+            </div>
+            <span class="wallet-device__balance-badge">Keys stay local</span>
           </div>
 
           <div class="wallet-device__actions">
@@ -104,11 +108,12 @@
     </div>
   </section>
 
-  @for (section of page.sections; track section.title) {
+  @for (section of page.sections; track section.title; let i = $index) {
     <section
       class="content-section"
       [class.content-section--cards]="section.bullets?.length"
     >
+      <span class="content-section__index" aria-hidden="true">{{ (i + 1).toString().padStart(2, '0') }}</span>
       @if (section.eyebrow) {
         <p class="eyebrow">{{ section.eyebrow }}</p>
       }
@@ -141,12 +146,11 @@
     <section class="content-section faq-list" aria-labelledby="faq-title">
       <p class="eyebrow">Common questions</p>
       <h2 id="faq-title">Kaspa wallet answers</h2>
-      @for (entry of faqs; track entry.question) {
-        <article class="faq-item">
-          <h3>{{ entry.question }}</h3>
-          <p>{{ entry.answer }}</p>
-        </article>
-      }
+      <div class="faq-list__items">
+        @for (entry of faqs; track entry.question) {
+          <kc-accordion [title]="entry.question">{{ entry.answer }}</kc-accordion>
+        }
+      </div>
     </section>
   }
 

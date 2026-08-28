@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink, RouterLinkActive } from '@angular/router';
+import { KcAccordionComponent } from '@kaspacom/ui-kit';
 import {
   getPublicPageById,
   getPublicPageFaqs,
@@ -12,7 +13,7 @@ import { PublicSeoService } from './public-seo.service';
 @Component({
   selector: 'app-public-page',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, RouterLinkActive, KcAccordionComponent],
   templateUrl: './public-page.component.html',
   styleUrl: './public-page.component.scss',
 })

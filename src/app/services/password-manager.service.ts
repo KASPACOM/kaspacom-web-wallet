@@ -55,6 +55,8 @@ export class PasswordManagerService {
     }
 
     try {
+      const shouldMigrateEncryptedData =
+        this.encryptionService.isLegacyEncryptedData(encryptedMessage);
       const UserDataJson = await this.encryptionService.decrypt(
         encryptedMessage,
         password,
@@ -64,6 +66,10 @@ export class PasswordManagerService {
         const userData: UserWalletsData = JSON.parse(UserDataJson);
 
         if (userData.version) {
+          if (shouldMigrateEncryptedData) {
+            await this.saveWalletsData(userData, password);
+          }
+
           return userData;
         }
 

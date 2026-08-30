@@ -34,6 +34,14 @@ export class PublicPageComponent implements OnInit {
     this.seo.applyPage(this.page, this.faqs);
   }
 
+  get lastReviewedDate(): Date {
+    // page.lastReviewed is a plain 'YYYY-MM-DD' string. Angular's DatePipe parses
+    // date-only strings as local midnight, so combined with the 'UTC' display
+    // timezone it renders the wrong calendar day in any timezone ahead of UTC.
+    // Building the Date explicitly as UTC midnight avoids that mismatch.
+    return new Date(`${this.page.lastReviewed}T00:00:00Z`);
+  }
+
   pageHref(path: string): string {
     return `/${path}`.replace(/\/$/, '/') || '/';
   }

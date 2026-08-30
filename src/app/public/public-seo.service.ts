@@ -5,6 +5,12 @@ import { environment } from '../../environments/environment';
 import { PublicFaqEntry, PublicPage } from './public-page.model';
 
 const CANONICAL_ORIGIN = 'https://wallet.kaspa.com';
+const KASPACOM_SAME_AS = [
+  'https://x.com/KaspaCom',
+  'https://t.me/KaspaComOfficial',
+  'https://github.com/KASPACOM',
+  'https://kaspacom.gitbook.io/kaspacom',
+];
 
 @Injectable({ providedIn: 'root' })
 export class PublicSeoService {
@@ -61,12 +67,22 @@ export class PublicSeoService {
         '@id': `${CANONICAL_ORIGIN}/#organization`,
         name: 'KaspaCom',
         url: 'https://kaspa.com/',
+        logo: 'https://wallet.kaspa.com/logo.png',
+        sameAs: KASPACOM_SAME_AS,
+        contactPoint: {
+          '@type': 'ContactPoint',
+          email: 'support@kaspa.com',
+          contactType: 'customer support',
+        },
       },
       {
         '@type': 'WebSite',
         '@id': `${CANONICAL_ORIGIN}/#website`,
         name: 'KaspaCom Wallet',
         url: CANONICAL_ORIGIN,
+        publisher: {
+          '@id': `${CANONICAL_ORIGIN}/#organization`,
+        },
       },
       this.pageSchema(page, canonicalUrl),
     ];
@@ -84,6 +100,10 @@ export class PublicSeoService {
           },
         })),
       });
+    }
+
+    if (page.path) {
+      graph.push(this.breadcrumbSchema(page, canonicalUrl));
     }
 
     const script = this.document.createElement('script');
@@ -106,6 +126,11 @@ export class PublicSeoService {
         applicationCategory: 'FinanceApplication',
         operatingSystem: 'Web browser',
         description: page.description,
+        datePublished: page.lastReviewed,
+        dateModified: page.lastReviewed,
+        publisher: {
+          '@id': `${CANONICAL_ORIGIN}/#organization`,
+        },
         offers: {
           '@type': 'Offer',
           price: '0',
@@ -121,6 +146,7 @@ export class PublicSeoService {
         name: page.h1,
         url: canonicalUrl,
         description: page.description,
+        dateModified: page.lastReviewed,
         isPartOf: {
           '@id': `${CANONICAL_ORIGIN}/#website`,
         },
@@ -136,12 +162,35 @@ export class PublicSeoService {
       headline: page.h1,
       url: canonicalUrl,
       description: page.description,
+      datePublished: page.lastReviewed,
+      dateModified: page.lastReviewed,
       author: {
         '@id': `${CANONICAL_ORIGIN}/#organization`,
       },
       publisher: {
         '@id': `${CANONICAL_ORIGIN}/#organization`,
       },
+    };
+  }
+
+  private breadcrumbSchema(page: PublicPage, canonicalUrl: string): unknown {
+    return {
+      '@type': 'BreadcrumbList',
+      '@id': `${canonicalUrl}#breadcrumb`,
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'KaspaCom Wallet',
+          item: `${CANONICAL_ORIGIN}/`,
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: page.h1,
+          item: canonicalUrl,
+        },
+      ],
     };
   }
 

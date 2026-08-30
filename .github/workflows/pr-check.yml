@@ -49,6 +49,11 @@ jobs:
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
+      - name: Assert AEO public artifacts
+        run: |
+          npm run assert:public-prerender
+          npm run assert:aeo
+
       - name: Run unit tests
         run: npm test -- --watch=false --browsers=ChromeHeadless
         continue-on-error: false

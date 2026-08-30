@@ -35,6 +35,12 @@
       <p class="eyebrow">Self-custody Kaspa web wallet</p>
       <h1 id="page-title" class="typo-header-1 text-light">{{ page.h1 }}</h1>
       <p class="hero__intro typo-text-4 text-medium">{{ page.intro }}</p>
+      <p class="hero__reviewed">
+        Last reviewed:
+        <time [attr.datetime]="page.lastReviewed">
+          {{ lastReviewedDate | date: 'longDate' : 'UTC' }}
+        </time>
+      </p>
 
       <div class="hero__actions" aria-label="Primary actions">
         <a

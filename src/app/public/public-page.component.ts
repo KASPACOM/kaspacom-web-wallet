@@ -39,6 +39,16 @@ export class PublicPageComponent implements OnInit {
     return `/${path}`.replace(/\/$/, '/') || '/';
   }
 
+  get heroLead(): string {
+    const words = this.page.h1.trim().split(/\s+/);
+    return words.slice(0, -1).join(' ');
+  }
+
+  get heroAccentWord(): string {
+    const words = this.page.h1.trim().split(/\s+/);
+    return words[words.length - 1] ?? '';
+  }
+
   onWalletCtaClick(event: MouseEvent): void {
     if (!this.isBrowser) {
       return;

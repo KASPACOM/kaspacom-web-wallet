@@ -248,12 +248,16 @@
   text-transform: uppercase;
 }
 
-.eyebrow__dot {
+.eyebrow__dot,
+.hero__trust-row span::before {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: var(--kaspa-20);
   box-shadow: 0 0 14px rgba(162, 255, 241, 0.5);
+}
+
+.eyebrow__dot {
   flex-shrink: 0;
 }
 
@@ -343,11 +347,6 @@ p {
     top: 0.45em;
     left: 0;
     display: block;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--kaspa-20);
-    box-shadow: 0 0 14px rgba(162, 255, 241, 0.5);
   }
 }
 
@@ -411,24 +410,18 @@ p {
 // --- entrance + ambient motion -------------------------------------------
 
 @keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes floatChip {
+@keyframes float {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+  50% { transform: translateY(-9px); }
 }
 
 @keyframes pulseGlow {
   0%, 100% { opacity: 0.55; transform: scale(1); }
-  50% { opacity: 0.9; transform: scale(1.06); }
+  50% { opacity: 0.92; transform: scale(1.08); }
 }
 
 @keyframes spinSlow {
@@ -446,36 +439,6 @@ p {
   50% { opacity: 1; r: 5.5; }
 }
 
-@keyframes hubPulse {
-  0%, 100% { opacity: 0.55; transform: scale(1); }
-  50% { opacity: 0.95; transform: scale(1.1); }
-}
-
-@keyframes iconBob {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-3px) scale(1.05); }
-}
-
-@keyframes shieldPulse {
-  0%, 100% { opacity: 0.75; }
-  50% { opacity: 1; }
-}
-
-@keyframes lockPulse {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50% { opacity: 0.9; transform: scale(1.12); }
-}
-
-@keyframes cardFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-@keyframes dotFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-7px); }
-}
-
 .hero__content > .fade-in {
   animation: fadeUp 0.7s cubic-bezier(0.2, 0.7, 0.3, 1) both;
 }
@@ -488,14 +451,18 @@ p {
 
 // --- hero illustration -----------------------------------------------------
 
-.hero__illustration {
+.hero__illustration,
+.illustration-orb {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 100%;
   max-width: 460px;
   aspect-ratio: 1 / 1;
+}
+
+.hero__illustration {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hero__illustration-chip {
@@ -511,41 +478,31 @@ p {
   font-weight: 600;
   color: var(--kaspa-20);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
-  animation: floatChip 4.5s ease-in-out infinite;
+  animation: float 4.5s ease-in-out infinite;
   white-space: nowrap;
 }
 
 .hero__glow {
   position: absolute;
   border-radius: 999px;
-  pointer-events: none;
+  background: radial-gradient(circle at center, rgba(111, 199, 186, 0.22), rgba(111, 199, 186, 0) 70%);
   animation: pulseGlow 5s ease-in-out infinite;
 
   &--wide {
     width: 420px;
     height: 420px;
-    background: radial-gradient(circle at center, rgba(111, 199, 186, 0.22), rgba(111, 199, 186, 0) 70%);
   }
 
   &--tight {
     width: 250px;
     height: 250px;
-    background: radial-gradient(circle at center, rgba(111, 199, 186, 0.24), rgba(111, 199, 186, 0) 70%);
   }
 
   &--stack {
     width: 280px;
     height: 280px;
-    background: radial-gradient(circle at center, rgba(111, 199, 186, 0.22), rgba(111, 199, 186, 0) 70%);
     filter: blur(2px);
   }
-}
-
-.illustration-orb {
-  position: relative;
-  width: 100%;
-  max-width: 460px;
-  aspect-ratio: 1 / 1;
 }
 
 .illustration-svg {
@@ -566,52 +523,10 @@ p {
 
 .node-pulse {
   animation: nodePulse 3.2s ease-in-out infinite;
-
-  &--b { animation-delay: 0.8s; }
-  &--c { animation-delay: 1.6s; }
-  &--d { animation-delay: 2.4s; }
-}
-
-.hub-pulse {
-  animation: hubPulse 3.4s ease-in-out infinite;
-  transform-origin: 230px 230px;
 }
 
 .icon-bob {
-  animation: iconBob 3.6s ease-in-out infinite;
-
-  &--2 { animation-delay: 0.6s; }
-  &--3 { animation-delay: 1.2s; }
-  &--4 { animation-delay: 1.8s; }
-  &--5 { animation-delay: 2.4s; }
-}
-
-.icon-glow {
-  &--teal { filter: drop-shadow(0 0 10px rgba(111, 199, 186, 0.45)); }
-  &--purple { filter: drop-shadow(0 0 10px rgba(216, 131, 255, 0.45)); }
-  &--orange { filter: drop-shadow(0 0 10px rgba(255, 210, 125, 0.45)); }
-  &--mint { filter: drop-shadow(0 0 10px rgba(162, 255, 241, 0.45)); }
-  &--blue { filter: drop-shadow(0 0 10px rgba(116, 119, 255, 0.5)); }
-}
-
-.shield-pulse {
-  animation: shieldPulse 3.4s ease-in-out infinite;
-}
-
-.lock-pulse {
-  animation: lockPulse 3.2s ease-in-out infinite;
-  transform-origin: 230px 218px;
-}
-
-// --- FAQ "stacked cards" illustration ---------------------------------------
-
-.qa-stack {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  animation: float 3.6s ease-in-out infinite;
 }
 
 .qa-stack__card {
@@ -619,115 +534,6 @@ p {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.09);
-
-  &--back {
-    width: 230px;
-    height: 132px;
-    transform: rotate(-7deg) translateY(18px);
-  }
-
-  &--mid {
-    width: 236px;
-    height: 136px;
-    transform: rotate(5deg) translateY(8px);
-    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.3);
-    animation: cardFloat 5.2s ease-in-out infinite 0.6s;
-  }
-
-  &--front {
-    position: relative;
-    width: 246px;
-    padding: 22px 22px 24px;
-    border-radius: 20px;
-    background: rgba(255, 255, 255, 0.055);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 26px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    z-index: 2;
-    animation: cardFloat 7s ease-in-out infinite;
-  }
-}
-
-.qa-stack__head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.qa-stack__badge {
-  flex-shrink: 0;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(111, 199, 186, 0.14);
-  border: 1px solid rgba(111, 199, 186, 0.4);
-  animation: hubPulse 3.6s ease-in-out infinite;
-}
-
-.qa-stack__line {
-  display: block;
-  height: 7px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.12);
-  width: 96%;
-  margin-bottom: 8px;
-
-  &--head {
-    width: 80px;
-    height: 8px;
-    background: rgba(255, 255, 255, 0.16);
-    margin-bottom: 0;
-  }
-
-  &--short {
-    width: 70%;
-    margin-bottom: 16px;
-  }
-}
-
-.qa-stack__pill {
-  display: inline-flex;
-  align-items: center;
-  height: 26px;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: rgba(111, 199, 186, 0.12);
-  border: 1px solid rgba(111, 199, 186, 0.3);
-
-  span {
-    width: 44px;
-    height: 6px;
-    border-radius: 3px;
-    background: var(--kaspa-20);
-  }
-}
-
-.qa-stack__dot {
-  position: absolute;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  animation: dotFloat 4.5s ease-in-out infinite;
-
-  &--a {
-    top: 44px;
-    left: 56px;
-    background: var(--purple-10);
-    box-shadow: 0 0 10px rgba(216, 131, 255, 0.6);
-    animation-delay: -1s;
-  }
-
-  &--b {
-    bottom: 56px;
-    right: 64px;
-    width: 6px;
-    height: 6px;
-    background: var(--orange-10);
-    box-shadow: 0 0 10px rgba(255, 210, 125, 0.6);
-  }
 }
 
 .content-section {
@@ -1023,20 +829,8 @@ p {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .public-button,
-  .fade-in,
-  .hero__illustration-chip,
-  .hero__glow,
-  .spin-slow,
-  .spin-slow-rev,
-  .node-pulse,
-  .hub-pulse,
-  .icon-bob,
-  .shield-pulse,
-  .lock-pulse,
-  .qa-stack__card--mid,
-  .qa-stack__card--front,
-  .qa-stack__dot {
+  .motion,
+  .public-button {
     animation: none !important;
   }
 

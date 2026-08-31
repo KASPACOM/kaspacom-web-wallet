@@ -9,6 +9,7 @@
     "build": "ng build && npm run sentry:sourcemaps",
     "build:dev": "ng build --configuration development",
     "assert:public-prerender": "node scripts/assert-public-prerender.mjs",
+    "assert:aeo": "node scripts/assert-aeo.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:headless": "ng test --watch=false --karma-config karma.conf.cjs --browsers=ChromeHeadlessNoSandbox",

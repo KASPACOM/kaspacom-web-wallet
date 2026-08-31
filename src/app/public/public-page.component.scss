@@ -297,6 +297,13 @@ p {
   line-height: 1.72;
 }
 
+.hero__reviewed {
+  margin-top: 14px;
+  color: var(--gray-60);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
 .hero__actions {
   display: flex;
   flex-wrap: wrap;

@@ -1,5 +1,10 @@
 import { PublicFaqEntry, PublicPage } from './public-page.model';
 
+// Default review date for pages whose content hasn't changed since this batch.
+// When editing a single page's copy, set that page's `lastReviewed` to the new
+// date directly instead of bumping this shared constant for every page.
+export const PUBLIC_CONTENT_LAST_REVIEWED = '2026-08-26';
+
 export const OPEN_WALLET_CTA = {
   label: 'Open Wallet',
   href: '/onboarding',
@@ -39,6 +44,7 @@ export const PUBLIC_PAGES: PublicPage[] = [
     h1: 'Kaspa Wallet',
     intro:
       'KaspaCom Wallet is a self-custody browser wallet for KAS. Create a wallet, import an existing seed phrase, receive funds, send payments, and manage supported Kaspa assets from wallet.kaspa.com.',
+    lastReviewed: PUBLIC_CONTENT_LAST_REVIEWED,
     primaryKeyword: 'kaspa wallet',
     secondaryKeywords: ['kaspa web wallet', 'wallet kaspa', 'kaspa online wallet'],
     sitemapPriority: '1.0',
@@ -75,6 +81,7 @@ export const PUBLIC_PAGES: PublicPage[] = [
     h1: 'KaspaCom Wallet Features',
     intro:
       'KaspaCom Wallet focuses on the core wallet jobs first: create or import a wallet, receive KAS, send KAS, manage supported assets, and connect to KaspaCom apps.',
+    lastReviewed: PUBLIC_CONTENT_LAST_REVIEWED,
     primaryKeyword: 'kaspa wallet features',
     secondaryKeywords: ['kaspa wallet app', 'kaspa coin wallet', 'kaspa crypto wallet'],
     sitemapPriority: '0.8',
@@ -117,6 +124,7 @@ export const PUBLIC_PAGES: PublicPage[] = [
     h1: 'Kaspa Wallet Security',
     intro:
       'A Kaspa wallet is only safe when the seed phrase stays with the owner. KaspaCom Wallet is built as a self-custody browser wallet, so users control backup, device safety, and signing decisions.',
+    lastReviewed: PUBLIC_CONTENT_LAST_REVIEWED,
     primaryKeyword: 'kaspa official wallet',
     secondaryKeywords: ['kaspa web wallet safe', 'kaspa wallet login', 'official kaspa wallet'],
     sitemapPriority: '0.8',
@@ -159,6 +167,7 @@ export const PUBLIC_PAGES: PublicPage[] = [
     h1: 'Kaspa Wallet FAQ',
     intro:
       'These answers focus on the wallet questions people already search for: web wallet, online wallet, app, download, login, address, official site, and safe storage.',
+    lastReviewed: PUBLIC_CONTENT_LAST_REVIEWED,
     primaryKeyword: 'kaspa wallet faq',
     secondaryKeywords: ['kaspa wallet login', 'kaspa wallet address', 'kaspa online wallet'],
     sitemapPriority: '0.9',
@@ -191,6 +200,7 @@ export const PUBLIC_PAGES: PublicPage[] = [
     h1: 'Best Kaspa Wallet',
     intro:
       'The best Kaspa wallet depends on the job. A browser wallet is useful for fast access and daily transfers. Hardware or cold storage may fit larger long-term holdings.',
+    lastReviewed: PUBLIC_CONTENT_LAST_REVIEWED,
     primaryKeyword: 'best kaspa wallet',
     secondaryKeywords: ['which wallet supports kaspa', 'kaspa hot wallet', 'kaspa cold wallet'],
     sitemapPriority: '0.8',
@@ -235,6 +245,7 @@ export const PUBLIC_PAGES: PublicPage[] = [
     h1: 'Kaspa Wallet App',
     intro:
       'KaspaCom Wallet runs in the browser. That means mobile users can open wallet.kaspa.com from a phone browser without installing a native iOS or Android app.',
+    lastReviewed: PUBLIC_CONTENT_LAST_REVIEWED,
     primaryKeyword: 'kaspa wallet app',
     secondaryKeywords: ['kaspa mobile wallet', 'kaspa wallet android', 'kaspa wallet ios'],
     sitemapPriority: '0.7',
@@ -274,6 +285,7 @@ export const PUBLIC_PAGES: PublicPage[] = [
     h1: 'Kaspa Desktop Wallet',
     intro:
       'KaspaCom Wallet does not require a desktop download. It opens in a desktop browser, including Chrome and other modern browsers that support secure crypto APIs.',
+    lastReviewed: PUBLIC_CONTENT_LAST_REVIEWED,
     primaryKeyword: 'kaspa desktop wallet',
     secondaryKeywords: ['kaspa wallet download', 'kaspa wallet windows', 'kaspa wallet chrome'],
     sitemapPriority: '0.7',
@@ -313,6 +325,7 @@ export const PUBLIC_PAGES: PublicPage[] = [
     h1: 'Create a Kaspa Wallet',
     intro:
       'Creating a Kaspa wallet gives you a new seed phrase and wallet address. Back up the seed phrase before sending funds to the wallet.',
+    lastReviewed: PUBLIC_CONTENT_LAST_REVIEWED,
     primaryKeyword: 'create kaspa wallet',
     secondaryKeywords: ['wallet for kaspa', 'kaspa wallet address', 'kaspa online wallet'],
     sitemapPriority: '0.8',
@@ -351,6 +364,7 @@ export const PUBLIC_PAGES: PublicPage[] = [
     h1: 'How to Store Kaspa',
     intro:
       'To store Kaspa, use a wallet where you control the seed phrase, back it up offline, and keep wallet access limited to devices you trust.',
+    lastReviewed: PUBLIC_CONTENT_LAST_REVIEWED,
     primaryKeyword: 'store kaspa',
     secondaryKeywords: ['how to store kaspa', 'kaspa self custody', 'kaspa wallet safety'],
     sitemapPriority: '0.7',

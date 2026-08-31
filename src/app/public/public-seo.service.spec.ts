@@ -53,6 +53,9 @@ describe('PublicSeoService', () => {
     expect(jsonLd).not.toBeNull();
 
     const parsed = JSON.parse(jsonLd!.textContent ?? '{}');
+    const organizationGraph = parsed['@graph'].find(
+      (item: Record<string, unknown>) => item['@type'] === 'Organization',
+    );
     const webPageGraph = parsed['@graph'].find(
       (item: Record<string, unknown>) => item['@type'] === 'WebPage',
     );
@@ -62,10 +65,16 @@ describe('PublicSeoService', () => {
     const faqGraph = parsed['@graph'].find(
       (item: Record<string, unknown>) => item['@type'] === 'FAQPage',
     );
+    const breadcrumbGraph = parsed['@graph'].find(
+      (item: Record<string, unknown>) => item['@type'] === 'BreadcrumbList',
+    );
 
+    expect(organizationGraph.sameAs).toContain('https://x.com/KaspaCom');
     expect(webPageGraph).toBeDefined();
+    expect(webPageGraph.dateModified).toBe(page!.lastReviewed);
     expect(articleGraph).toBeUndefined();
     expect(faqGraph.mainEntity.length).toBe(PUBLIC_FAQ_ENTRIES.length);
+    expect(breadcrumbGraph.itemListElement.length).toBe(2);
   });
 
   it('replaces the previous canonical and JSON-LD when navigating pages', () => {

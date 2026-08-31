@@ -1,5 +1,39 @@
 User-agent: *
 Disallow:
 
+# The wildcard group above already allows every crawler. These per-bot
+# groups don't change actual crawl permission — they exist to make AI/search
+# crawler access explicit for anyone auditing this file or building tooling
+# against it.
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
 # Sitemap location
 Sitemap: https://wallet.kaspa.com/sitemap.xml

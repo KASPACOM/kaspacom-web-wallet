@@ -37,6 +37,7 @@ export interface PublicPage {
   description: string;
   h1: string;
   intro: string;
+  lastReviewed: string;
   primaryKeyword: string;
   secondaryKeywords: string[];
   sitemapPriority: string;

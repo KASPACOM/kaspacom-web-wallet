@@ -56,6 +56,9 @@ import { TransactionRequest } from 'ethers';
 import { createEIP1193Response } from '../etherium-services/create-eip-1193-response';
 import { KaspaWalletMnemonicActionsService } from './kaspa-wallet-mnemonic-actions.service';
 import { CovenantService } from '../covenant/covenant.service';
+import { KRC20OperationType } from '../../types/kaspa-network/krc20-operations-data.interface';
+import { Krc721OperationType } from '../../types/kaspa-network/krc721-operations-data.interface';
+import { KnsOperationType } from '../../types/kaspa-network/kns-operations-data.interface';
 
 const MINIMAL_TRANSACTION_MASS = 10000n;
 const COVENANT_ESTIMATED_TRANSACTION_MASS = 25000n;
@@ -562,10 +565,22 @@ export class KaspaNetworkActionsService {
       let psktTransaction: string | undefined;
 
       if (actionData.options?.revealPskt) {
+        const revealPsktScript = this.getDeterministicRevealPsktScript(
+          actionData,
+          wallet.getAddress(),
+        );
+
+        if (!revealPsktScript) {
+          return {
+            success: false,
+            errorCode: ERROR_CODES.WALLET_ACTION.INVALID_COMMIT_REVEAL_DATA,
+          };
+        }
+
         psktTransaction = (
           await this.transactionsManager.createPsktTransactionForRevealOperation(
             wallet,
-            actionData.options!.revealPskt!.script,
+            revealPsktScript,
             result.result?.reveal!,
             actionData.options!.revealPskt!.outputs,
           )
@@ -885,6 +900,87 @@ export class KaspaNetworkActionsService {
       type,
       stringifyAction,
       walletAddress,
+    );
+  }
+
+  getDeterministicRevealPsktScript(
+    action: CommitRevealAction,
+    walletAddress: string,
+  ): ProtocolScriptDataAndAddress | undefined {
+    if (!action.options?.revealPskt) {
+      return undefined;
+    }
+
+    let actionData: any;
+
+    try {
+      actionData = JSON.parse(action.actionScript.stringifyAction);
+    } catch {
+      return undefined;
+    }
+
+    let revealActionData: any;
+
+    if (
+      actionData?.p === 'krc-20' &&
+      actionData.op === KRC20OperationType.LIST &&
+      actionData.tick
+    ) {
+      revealActionData = {
+        p: 'krc-20',
+        op: KRC20OperationType.SEND,
+        tick: String(actionData.tick).toLowerCase(),
+      };
+    } else if (
+      actionData?.p === 'krc-721' &&
+      actionData.op === Krc721OperationType.LIST &&
+      actionData.tick &&
+      actionData.tokenId
+    ) {
+      revealActionData = {
+        p: 'krc-721',
+        op: Krc721OperationType.SEND,
+        tick: String(actionData.tick).toLowerCase(),
+        tokenId: String(actionData.tokenId),
+      };
+    } else if (
+      actionData?.op === KnsOperationType.LIST &&
+      actionData.p === 'domain' &&
+      actionData.id
+    ) {
+      revealActionData = {
+        op: KnsOperationType.SEND,
+        id: String(actionData.id),
+      };
+    } else {
+      return undefined;
+    }
+
+    return this.createGenericScriptFromString(
+      action.actionScript.type,
+      this.utils.stringifyProtocolAction(revealActionData),
+      walletAddress,
+    );
+  }
+
+  isRevealPsktScriptDeterministic(
+    action: CommitRevealAction,
+    walletAddress: string,
+  ): boolean {
+    if (!action.options?.revealPskt) {
+      return true;
+    }
+
+    const expectedScript = this.getDeterministicRevealPsktScript(
+      action,
+      walletAddress,
+    );
+
+    return (
+      !!expectedScript &&
+      action.options.revealPskt.script?.scriptAddress ===
+        expectedScript.scriptAddress &&
+      action.options.revealPskt.script?.scriptData === expectedScript.scriptData
     );
   }
 }

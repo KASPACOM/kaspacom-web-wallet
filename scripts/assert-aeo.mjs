@@ -49,6 +49,11 @@ for (const bot of requiredBots) {
 
 assert(read('llms.txt').includes('KaspaCom Wallet'), 'llms.txt missing brand');
 assert(
+  read('llms.txt').includes('https://github.com/KASPACOM/kaspacom-web-wallet'),
+  'llms.txt missing exact wallet repository',
+);
+assert(read('llms.txt').includes('MIT'), 'llms.txt missing MIT license');
+assert(
   read('sitemap.xml').includes('https://wallet.kaspa.com/guides/best-kaspa-wallet'),
   'sitemap missing guide URL',
 );

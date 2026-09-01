@@ -25,9 +25,18 @@ describe('PublicSeoService', () => {
     meta.removeTag('property="og:description"');
     meta.removeTag('property="og:url"');
     meta.removeTag('property="og:type"');
+    meta.removeTag('property="og:site_name"');
+    meta.removeTag('property="og:locale"');
+    meta.removeTag('property="og:image"');
+    meta.removeTag('property="og:image:width"');
+    meta.removeTag('property="og:image:height"');
+    meta.removeTag('property="og:image:type"');
+    meta.removeTag('property="og:image:alt"');
     meta.removeTag('name="twitter:card"');
     meta.removeTag('name="twitter:title"');
     meta.removeTag('name="twitter:description"');
+    meta.removeTag('name="twitter:image"');
+    meta.removeTag('name="twitter:image:alt"');
   });
 
   it('sets title, description, canonical, social tags, and JSON-LD', () => {
@@ -40,6 +49,27 @@ describe('PublicSeoService', () => {
     expect(meta.getTag('name="description"')?.content).toBe(page!.description);
     expect(meta.getTag('property="og:url"')?.content).toBe(
       'https://wallet.kaspa.com/faq',
+    );
+    expect(meta.getTag('property="og:type"')?.content).toBe('website');
+    expect(meta.getTag('property="og:site_name"')?.content).toBe(
+      'KaspaCom Wallet',
+    );
+    expect(meta.getTag('property="og:locale"')?.content).toBe('en_US');
+    expect(meta.getTag('property="og:image"')?.content).toBe(
+      'https://wallet.kaspa.com/images/kc-logo-square.png',
+    );
+    expect(meta.getTag('property="og:image:width"')?.content).toBe('1024');
+    expect(meta.getTag('property="og:image:height"')?.content).toBe('1024');
+    expect(meta.getTag('property="og:image:type"')?.content).toBe('image/png');
+    expect(meta.getTag('property="og:image:alt"')?.content).toBe(
+      'KaspaCom Wallet logo',
+    );
+    expect(meta.getTag('name="twitter:card"')?.content).toBe('summary');
+    expect(meta.getTag('name="twitter:image"')?.content).toBe(
+      'https://wallet.kaspa.com/images/kc-logo-square.png',
+    );
+    expect(meta.getTag('name="twitter:image:alt"')?.content).toBe(
+      'KaspaCom Wallet logo',
     );
 
     const canonical = document.querySelector<HTMLLinkElement>(
@@ -59,6 +89,9 @@ describe('PublicSeoService', () => {
     const webPageGraph = parsed['@graph'].find(
       (item: Record<string, unknown>) => item['@type'] === 'WebPage',
     );
+    const sourceGraph = parsed['@graph'].find(
+      (item: Record<string, unknown>) => item['@type'] === 'SoftwareSourceCode',
+    );
     const articleGraph = parsed['@graph'].find(
       (item: Record<string, unknown>) => item['@type'] === 'Article',
     );
@@ -70,11 +103,57 @@ describe('PublicSeoService', () => {
     );
 
     expect(organizationGraph.sameAs).toContain('https://x.com/KaspaCom');
+    expect(sourceGraph.codeRepository).toBe(
+      'https://github.com/KASPACOM/kaspacom-web-wallet',
+    );
+    expect(sourceGraph.license).toBe(
+      'https://opensource.org/license/mit',
+    );
+    expect(sourceGraph.programmingLanguage).toEqual([
+      'TypeScript',
+      'HTML',
+      'SCSS',
+    ]);
     expect(webPageGraph).toBeDefined();
     expect(webPageGraph.dateModified).toBe(page!.lastReviewed);
     expect(articleGraph).toBeUndefined();
     expect(faqGraph.mainEntity.length).toBe(PUBLIC_FAQ_ENTRIES.length);
     expect(breadcrumbGraph.itemListElement.length).toBe(2);
+  });
+
+  it('connects the web application schema to its repository and MIT license', () => {
+    const home = PUBLIC_PAGES.find((entry) => entry.id === 'home')!;
+
+    service.applyPage(home, []);
+
+    const jsonLd = document.querySelector<HTMLScriptElement>(
+      'script[data-public-json-ld="true"]',
+    );
+    const parsed = JSON.parse(jsonLd!.textContent ?? '{}');
+    const webApplication = parsed['@graph'].find(
+      (item: Record<string, unknown>) => item['@type'] === 'WebApplication',
+    );
+
+    expect(webApplication.sameAs).toContain(
+      'https://github.com/KASPACOM/kaspacom-web-wallet',
+    );
+    expect(webApplication.license).toBe(
+      'https://opensource.org/license/mit',
+    );
+    expect(webApplication.subjectOf).toEqual({
+      '@id': 'https://wallet.kaspa.com/#source',
+    });
+  });
+
+  it('uses article Open Graph type only for article pages', () => {
+    const features = PUBLIC_PAGES.find((entry) => entry.id === 'features')!;
+    const faq = PUBLIC_PAGES.find((entry) => entry.id === 'faq')!;
+
+    service.applyPage(features, []);
+    expect(meta.getTag('property="og:type"')?.content).toBe('article');
+
+    service.applyPage(faq, []);
+    expect(meta.getTag('property="og:type"')?.content).toBe('website');
   });
 
   it('replaces the previous canonical and JSON-LD when navigating pages', () => {

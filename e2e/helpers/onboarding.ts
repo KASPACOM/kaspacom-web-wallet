@@ -75,7 +75,8 @@ export async function createNewWallet(
     const placeholder =
       (await verifyInputs.nth(i).getAttribute('placeholder')) ?? '';
     const idxMatch = placeholder.match(/^(\d+)\.?/);
-    if (!idxMatch) throw new Error(`Unexpected verify placeholder: ${placeholder}`);
+    if (!idxMatch)
+      throw new Error(`Unexpected verify placeholder: ${placeholder}`);
     const idx = Number(idxMatch[1]) - 1;
     await verifyInputs.nth(i).fill(seed[idx]);
   }
@@ -98,7 +99,7 @@ export async function importBySeedPhrase(
   seed: string,
   password: string,
 ): Promise<void> {
-  await clickKcButton(page, 'Connect Existing Wallet');
+  await clickKcButton(page, 'Import Existing Wallet');
   await waitForRootTransition(page);
 
   // Step 1: Import switch — Seed Phrase is the default method, so we just
@@ -151,15 +152,19 @@ export async function importByPrivateKey(
   privateKey: string,
   password: string,
 ): Promise<void> {
-  await clickKcButton(page, 'Connect Existing Wallet');
+  await clickKcButton(page, 'Import Existing Wallet');
   await waitForRootTransition(page);
 
   await waitForHeading(page, /Import Wallet/i);
-  await page.locator('.import-switch__option', { hasText: 'Private Key' }).click();
+  await page
+    .locator('.import-switch__option', { hasText: 'Private Key' })
+    .click();
   await clickKcButton(page, 'Continue');
 
   await waitForHeading(page, /Enter private key/i);
-  const input = page.locator('kc-input[formcontrolname="privateKey"] input').first();
+  const input = page
+    .locator('kc-input[formcontrolname="privateKey"] input')
+    .first();
   await input.fill(privateKey);
   await clickKcButton(page, 'Continue');
 

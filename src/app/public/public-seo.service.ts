@@ -5,6 +5,9 @@ import { environment } from '../../environments/environment';
 import { PublicFaqEntry, PublicPage } from './public-page.model';
 
 const CANONICAL_ORIGIN = 'https://wallet.kaspa.com';
+const WALLET_REPOSITORY = 'https://github.com/KASPACOM/kaspacom-web-wallet';
+const WALLET_LICENSE = 'https://opensource.org/license/mit';
+const SOCIAL_IMAGE = `${CANONICAL_ORIGIN}/images/kc-logo-square.png`;
 const KASPACOM_SAME_AS = [
   'https://x.com/KaspaCom',
   'https://t.me/KaspaComOfficial',
@@ -27,13 +30,31 @@ export class PublicSeoService {
       name: 'robots',
       content: environment.isProduction ? 'index, follow' : 'noindex, nofollow',
     });
-    this.meta.updateTag({ property: 'og:type', content: 'website' });
+    this.meta.updateTag({
+      property: 'og:type',
+      content: page.schemaType === 'Article' ? 'article' : 'website',
+    });
     this.meta.updateTag({ property: 'og:title', content: page.title });
     this.meta.updateTag({ property: 'og:description', content: page.description });
     this.meta.updateTag({ property: 'og:url', content: canonicalUrl });
-    this.meta.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
+    this.meta.updateTag({ property: 'og:site_name', content: 'KaspaCom Wallet' });
+    this.meta.updateTag({ property: 'og:locale', content: 'en_US' });
+    this.meta.updateTag({ property: 'og:image', content: SOCIAL_IMAGE });
+    this.meta.updateTag({ property: 'og:image:width', content: '1024' });
+    this.meta.updateTag({ property: 'og:image:height', content: '1024' });
+    this.meta.updateTag({ property: 'og:image:type', content: 'image/png' });
+    this.meta.updateTag({
+      property: 'og:image:alt',
+      content: 'KaspaCom Wallet logo',
+    });
+    this.meta.updateTag({ name: 'twitter:card', content: 'summary' });
     this.meta.updateTag({ name: 'twitter:title', content: page.title });
     this.meta.updateTag({ name: 'twitter:description', content: page.description });
+    this.meta.updateTag({ name: 'twitter:image', content: SOCIAL_IMAGE });
+    this.meta.updateTag({
+      name: 'twitter:image:alt',
+      content: 'KaspaCom Wallet logo',
+    });
     this.setCanonical(canonicalUrl);
     this.setJsonLd(page, faqs, canonicalUrl);
   }
@@ -84,6 +105,20 @@ export class PublicSeoService {
           '@id': `${CANONICAL_ORIGIN}/#organization`,
         },
       },
+      {
+        '@type': 'SoftwareSourceCode',
+        '@id': `${CANONICAL_ORIGIN}/#source`,
+        name: 'KaspaCom Wallet source code',
+        codeRepository: WALLET_REPOSITORY,
+        license: WALLET_LICENSE,
+        programmingLanguage: ['TypeScript', 'HTML', 'SCSS'],
+        author: {
+          '@id': `${CANONICAL_ORIGIN}/#organization`,
+        },
+        about: {
+          '@id': `${CANONICAL_ORIGIN}/#wallet`,
+        },
+      },
       this.pageSchema(page, canonicalUrl),
     ];
 
@@ -126,6 +161,11 @@ export class PublicSeoService {
         applicationCategory: 'FinanceApplication',
         operatingSystem: 'Web browser',
         description: page.description,
+        sameAs: [WALLET_REPOSITORY],
+        license: WALLET_LICENSE,
+        subjectOf: {
+          '@id': `${CANONICAL_ORIGIN}/#source`,
+        },
         datePublished: page.lastReviewed,
         dateModified: page.lastReviewed,
         publisher: {

@@ -186,8 +186,7 @@
   }
 }
 
-.public-nav__links,
-.public-footer {
+.public-nav__links {
   display: flex;
   align-items: center;
   gap: 18px;
@@ -195,6 +194,40 @@
 
 .public-nav__links {
   padding: 0;
+}
+
+.public-nav__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.public-nav__github {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--gray-75);
+  transition:
+    color 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+
+  &:hover {
+    color: var(--kaspa-20);
+    border-color: rgba(162, 255, 241, 0.44);
+    background: rgba(111, 199, 186, 0.1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--kaspa-20);
+    outline-offset: 3px;
+  }
 }
 
 .public-nav__links a,
@@ -692,10 +725,31 @@ p {
 
 .public-footer {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 18px;
+  gap: 16px;
   padding: 36px 0 42px;
+}
+
+.public-footer__primary,
+.public-footer__guides {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px 18px;
+}
+
+.public-footer__guides {
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.public-footer__source {
+  color: var(--kaspa-20) !important;
+  font-weight: 600 !important;
 }
 
 @media (max-width: 920px) {
@@ -744,9 +798,22 @@ p {
     width: 128px;
   }
 
+  .public-nav {
+    gap: 10px;
+  }
+
+  .public-nav__actions {
+    gap: 8px;
+  }
+
   .public-button--small {
-    min-height: 38px;
+    min-height: 44px;
     padding: 0 14px;
+  }
+
+  .public-footer__primary,
+  .public-footer__guides {
+    gap: 10px 14px;
   }
 
   .hero__title {

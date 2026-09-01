@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import {
-  CovenantIndexerService,
-  IndexerCovenantDetails,
-} from './covenant-indexer.service';
+  Kcc20WalletBalancesApiService,
+  WalletProviderTokenBalanceDto,
+} from '../kcc20-api/kcc20-wallet-balances-api.service';
 
 export interface Kcc20Holding {
   covenantId: string;
@@ -13,20 +13,17 @@ export interface Kcc20Holding {
   activeUtxos: number;
 }
 
-const KCC20_TEMPLATE_NAME = 'KCC20';
-
 /**
- * Read-only KCC20 balance lookup, sourced from the covenant indexer.
- * KCC20 tokens are covenant UTXOs (not KRC20-style inscriptions): the
- * indexer decodes each covenant's constructor/state, so ticker/name/amount
- * are all available without needing the token's compiled contract JSON —
- * that's only required to *spend* a covenant, not to read its state.
+ * Read-only KCC20 balance lookup, sourced from the KCC20 wallet-provider API.
+ * `balance`/`activeUtxos` reflect only the native (spendable covenant UTXO)
+ * side of the response — wrapped/orderbook balances aren't directly
+ * transferable the same way, so they're left out of this read model.
  */
 @Injectable({
   providedIn: 'root',
 })
 export class Kcc20HoldingsService {
-  private covenantIndexerService = inject(CovenantIndexerService);
+  private walletBalancesApiService = inject(Kcc20WalletBalancesApiService);
 
   async listHoldings(
     identifiers: Array<string | undefined>,
@@ -38,12 +35,7 @@ export class Kcc20HoldingsService {
 
     const rowsByIdentifier = await Promise.all(
       safeIdentifiers.map((identifier) =>
-        this.covenantIndexerService.listCovenants({
-          wallet: identifier,
-          template: KCC20_TEMPLATE_NAME,
-          sort: 'recent',
-          limit: 100,
-        }),
+        this.walletBalancesApiService.getOwnerBalances(identifier),
       ),
     );
 
@@ -63,25 +55,18 @@ export class Kcc20HoldingsService {
     );
   }
 
-  private toHolding(row: IndexerCovenantDetails): Kcc20Holding | undefined {
-    const covenantId = row.covenantIdHex;
+  private toHolding(
+    row: WalletProviderTokenBalanceDto,
+  ): Kcc20Holding | undefined {
+    const covenantId = row.canonicalCovenantId || row.token?.covenantId;
     if (!covenantId) return undefined;
 
-    const constructorState = (row.constructor || {}) as Record<string, any>;
-    const extension = (constructorState['extension'] || {}) as Record<
-      string,
-      any
-    >;
-    const claimedArgs = this.argsArrayToRecord(row.claimedArgs?.args);
-
-    const ticker = extension['ticker'] || claimedArgs['ticker'];
+    const ticker = row.token?.ticker;
     if (!ticker) return undefined;
 
-    const name = extension['name'] || claimedArgs['name'] || ticker;
-    const displayScale = Number(
-      extension['displayScale'] ?? claimedArgs['displayScale'] ?? 1,
-    );
-    const rawAmount = constructorState['tokenAmount'];
+    const name = row.token?.name || ticker;
+    const displayScale = Number(row.token?.tokenDisplayScale ?? 1);
+    const rawAmount = row.nativeBalance?.amount;
     if (rawAmount === undefined) return undefined;
 
     const balance =
@@ -93,23 +78,14 @@ export class Kcc20HoldingsService {
       ticker: String(ticker),
       name: String(name),
       balance,
-      decimals: this.decimalsFromScale(displayScale),
-      activeUtxos: row.activeUtxos ?? 0,
+      decimals:
+        row.token?.decimals ?? this.decimalsFromScale(displayScale),
+      activeUtxos: row.nativeBalance?.utxoCount ?? 0,
     };
   }
 
   private decimalsFromScale(displayScale: number): number {
     if (!Number.isFinite(displayScale) || displayScale <= 1) return 0;
     return Math.round(Math.log10(displayScale));
-  }
-
-  private argsArrayToRecord(
-    args?: Array<{ name: string; value: string }>,
-  ): Record<string, string> {
-    const record: Record<string, string> = {};
-    for (const arg of args || []) {
-      if (arg?.name) record[arg.name] = arg.value;
-    }
-    return record;
   }
 }

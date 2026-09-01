@@ -6,6 +6,8 @@ import { KaspaL1NetworkService } from '../kaspa-netwrok-services/kaspa-l1-networ
 export interface Kcc20TransferActionDraft {
   tokenAmount: string;
   recipientOwner: string;
+  /** Kaspa wallet address that will sign and fund the PSKT. */
+  walletAddress: string;
 }
 
 /**
@@ -54,15 +56,22 @@ export class Kcc20TokenActionApiService {
     return baseUrl.replace(/\/+$/, '');
   }
 
+  /**
+   * Uses the public builder (`/kcc20/build/tokens/:covenantId/transfer`)
+   * rather than the session-authenticated `/tokens/:covenantId/actions/transfer/build`
+   * — the latter requires a KCC20 backend cookie session (OTP + wallet-sign-in),
+   * which is cross-origin from this app and 401s when that session cookie
+   * isn't present. The public builder needs no session; it just takes the
+   * sender's wallet address directly in the request body.
+   */
   async buildTransfer(
     covenantId: string,
     draft: Kcc20TransferActionDraft,
   ): Promise<Kcc20WalletOperationResponse> {
     return firstValueFrom(
       this.httpClient.post<Kcc20WalletOperationResponse>(
-        `${this.baseUrl}/tokens/${covenantId}/actions/transfer/build`,
+        `${this.baseUrl}/kcc20/build/tokens/${covenantId}/transfer`,
         draft,
-        { withCredentials: true },
       ),
     );
   }

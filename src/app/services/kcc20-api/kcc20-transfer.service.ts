@@ -9,7 +9,6 @@ import {
 } from '../../types/wallet-action';
 import { WalletPsktCovenantScript } from '../covenant/covenant-sdk/types';
 import { WalletActionResultWithError } from '../../types/wallet-action-result';
-import { Kcc20SessionService } from './kcc20-session.service';
 import { Kcc20TokenActionApiService } from './kcc20-token-action-api.service';
 
 /**
@@ -37,18 +36,17 @@ function toWalletSighashType(
 }
 
 /**
- * Orchestrates a KCC20 token transfer: sign in to the KCC20 backend if
- * needed, ask it to build the (already-funded) transfer PSKT, then sign and
- * broadcast it. The backend owns transaction construction; this wallet only
- * signs the inputs it's told to and wraps the covenant input's signature
- * into its unlock script (applyCovenantScriptsToPsktTransaction, via the
+ * Orchestrates a KCC20 token transfer: ask the KCC20 backend's public
+ * builder for the (already-funded) transfer PSKT, then sign and broadcast
+ * it. The backend owns transaction construction; this wallet only signs the
+ * inputs it's told to and wraps the covenant input's signature into its
+ * unlock script (applyCovenantScriptsToPsktTransaction, via the
  * SIGN_PSKT_TRANSACTION action's `scripts` field).
  */
 @Injectable({ providedIn: 'root' })
 export class Kcc20TransferService {
   private readonly walletService = inject(WalletService);
   private readonly walletActionService = inject(WalletActionService);
-  private readonly kcc20SessionService = inject(Kcc20SessionService);
   private readonly kcc20TokenActionApiService = inject(
     Kcc20TokenActionApiService,
   );
@@ -63,11 +61,9 @@ export class Kcc20TransferService {
       throw new Error('Connect a wallet before transferring KCC20 tokens.');
     }
 
-    await this.kcc20SessionService.ensureSignedIn(wallet);
-
     const built = await this.kcc20TokenActionApiService.buildTransfer(
       covenantId,
-      { tokenAmount, recipientOwner },
+      { tokenAmount, recipientOwner, walletAddress: wallet.getAddress() },
     );
 
     const signing = built.payload.signing;

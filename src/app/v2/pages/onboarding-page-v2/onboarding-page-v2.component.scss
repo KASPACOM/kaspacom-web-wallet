@@ -1,5 +1,19 @@
 @use "../../../../styles/responsive" as *;
 
+// Overrides the shared design-system typo-* utility classes (hardcoded to
+// Poppins) to match the KaspaCom marketing site: Raleway for headings,
+// Plus Jakarta Sans for body copy.
+.typo-title-1,
+.typo-title-2,
+.typo-title-3 {
+  font-family: "Raleway", sans-serif;
+}
+
+.typo-text-2,
+.typo-text-3 {
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
 .onboarding-v2 {
   position: relative;
   height: 100%;

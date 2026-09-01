@@ -3,7 +3,7 @@
   min-height: 100dvh;
   background: var(--background);
   color: var(--white);
-  font-family: "Poppins", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   /* Prevents the browser from "correcting" scroll position when the FAQ
      accordions grow/shrink, which otherwise reads as the page jumping. */
   overflow-anchor: none;
@@ -173,7 +173,10 @@
 .public-nav__brand {
   display: inline-flex;
   align-items: center;
-  margin: -8px 0 0 -10px;
+  // Vertical-only nudge — the horizontal position stays flush with
+  // .hero__content so the logo mark lines up with the eyebrow/button
+  // column below it.
+  margin: -8px 0 0;
   color: var(--white);
 
   img {
@@ -275,6 +278,7 @@ p {
   display: block;
   max-width: 620px;
   margin-bottom: 20px;
+  font-family: "Raleway", sans-serif;
   font-size: clamp(2.55rem, 4.9vw, 4.5rem);
   font-weight: 800;
   line-height: 0.98;
@@ -363,6 +367,7 @@ p {
   border-radius: 12px;
   background: var(--kaspa-20);
   color: var(--black);
+  font-family: "Raleway", sans-serif;
   font-size: 1rem;
   font-weight: 600;
   line-height: 1;
@@ -408,6 +413,10 @@ p {
 .hero__panel {
   display: flex;
   justify-content: center;
+  // .hero centers this against the full text column (eyebrow through the
+  // trust row), which reads too low — pull it up so the illustration's
+  // center lands near the title/intro boundary instead.
+  margin-top: -134px;
 }
 
 // --- entrance + ambient motion -------------------------------------------
@@ -471,12 +480,16 @@ p {
 .hero__illustration-chip {
   position: absolute;
   top: 30px;
+  left: 0;
   right: 0;
   z-index: 3;
+  width: fit-content;
+  margin: 0 auto;
   padding: 0;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--kaspa-20);
+  text-align: center;
   animation: float 4.5s ease-in-out infinite;
   white-space: nowrap;
 }
@@ -544,32 +557,12 @@ p {
   padding: 50px 0;
 }
 
-.content-section__index {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  grid-column: 1;
-  width: 56px;
-  margin-bottom: 16px;
-  color: var(--kaspa-20);
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.content-section--accent-1 .content-section__index {
-  color: var(--purple-10);
-}
-
-.content-section--accent-2 .content-section__index {
-  color: var(--orange-10);
-}
-
 .content-section h2,
 .final-cta h2 {
   max-width: 700px;
   margin-bottom: 18px;
   color: var(--white);
+  font-family: "Raleway", sans-serif;
   font-size: clamp(1.65rem, 2.8vw, 2.35rem);
   font-weight: 800;
   line-height: 1.12;

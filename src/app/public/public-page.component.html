@@ -258,15 +258,11 @@
     </div>
   </section>
 
-  @for (section of page.sections; track section.title; let i = $index) {
+  @for (section of page.sections; track section.title) {
     <section
       class="content-section"
       [class.content-section--cards]="section.bullets?.length"
-      [class.content-section--accent-0]="i % 3 === 0"
-      [class.content-section--accent-1]="i % 3 === 1"
-      [class.content-section--accent-2]="i % 3 === 2"
     >
-      <span class="content-section__index" aria-hidden="true">{{ (i + 1).toString().padStart(2, '0') }}</span>
       @if (section.eyebrow) {
         <p class="eyebrow">{{ section.eyebrow }}</p>
       }

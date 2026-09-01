@@ -23,6 +23,13 @@ export interface PublicPageCta {
   variant?: 'primary' | 'secondary';
 }
 
+export type PublicPageIllustration = 'blockdag' | 'chain' | 'shield' | 'cards';
+
+export interface PublicPageHeroFact {
+  title: string;
+  desc: string;
+}
+
 export interface PublicPage {
   id: PublicPageId;
   path: string;
@@ -39,6 +46,10 @@ export interface PublicPage {
   primaryCta: PublicPageCta;
   secondaryCta?: PublicPageCta;
   sections: PublicPageSection[];
+  heroKicker: string;
+  heroBadge?: string;
+  heroFacts: [PublicPageHeroFact, PublicPageHeroFact, PublicPageHeroFact];
+  heroIllustration: PublicPageIllustration;
 }
 
 export interface PublicFaqEntry {

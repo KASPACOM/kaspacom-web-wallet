@@ -51,6 +51,13 @@ export const PUBLIC_PAGES: PublicPage[] = [
     changeFrequency: 'weekly',
     schemaType: 'WebApplication',
     primaryCta: OPEN_WALLET_CTA,
+    heroKicker: 'Self-custody · Browser Wallet',
+    heroFacts: [
+      { title: 'Local keys', desc: 'Seed phrases stay in your browser.' },
+      { title: 'Public pages', desc: 'Crawlers see real wallet content.' },
+      { title: 'Wallet app', desc: 'Open the client-side wallet when ready.' },
+    ],
+    heroIllustration: 'blockdag',
     sections: [
       FEATURES_SECTION,
       SECURITY_SECTION,
@@ -80,6 +87,13 @@ export const PUBLIC_PAGES: PublicPage[] = [
     changeFrequency: 'monthly',
     schemaType: 'Article',
     primaryCta: OPEN_WALLET_CTA,
+    heroKicker: 'Wallet capabilities',
+    heroFacts: [
+      { title: 'Create & receive', desc: 'Set up a wallet and receive KAS in minutes.' },
+      { title: 'Send & manage', desc: 'Send KAS and manage supported assets.' },
+      { title: 'Connect apps', desc: 'Link to KaspaCom products from one place.' },
+    ],
+    heroIllustration: 'chain',
     sections: [
       FEATURES_SECTION,
       {
@@ -115,6 +129,14 @@ export const PUBLIC_PAGES: PublicPage[] = [
     changeFrequency: 'monthly',
     schemaType: 'Article',
     primaryCta: OPEN_WALLET_CTA,
+    heroKicker: 'Self-custody & safety',
+    heroBadge: 'Keys never leave your browser',
+    heroFacts: [
+      { title: 'Non-custodial', desc: 'Seed phrase and keys stay yours.' },
+      { title: 'Local encryption', desc: 'Wallet data stays in your browser.' },
+      { title: 'Your backup', desc: 'Recovery depends on your saved seed phrase.' },
+    ],
+    heroIllustration: 'shield',
     sections: [
       SECURITY_SECTION,
       {
@@ -150,6 +172,13 @@ export const PUBLIC_PAGES: PublicPage[] = [
     changeFrequency: 'weekly',
     schemaType: 'FAQPage',
     primaryCta: OPEN_WALLET_CTA,
+    heroKicker: 'Answers',
+    heroFacts: [
+      { title: 'Web wallet', desc: 'Runs in the browser, no install.' },
+      { title: 'Non-custodial', desc: 'You hold the seed phrase.' },
+      { title: 'Official domain', desc: 'Always check wallet.kaspa.com.' },
+    ],
+    heroIllustration: 'cards',
     sections: [
       {
         title: 'Fast answers',
@@ -175,6 +204,14 @@ export const PUBLIC_PAGES: PublicPage[] = [
     changeFrequency: 'monthly',
     schemaType: 'Article',
     primaryCta: OPEN_WALLET_CTA,
+    heroKicker: 'Choosing a wallet',
+    heroBadge: 'Compare wallet types',
+    heroFacts: [
+      { title: 'Daily use', desc: 'Good for daily wallet tasks.' },
+      { title: 'Active balances', desc: 'Good for small active balances.' },
+      { title: 'No install', desc: 'No native app install required.' },
+    ],
+    heroIllustration: 'blockdag',
     sections: [
       {
         title: 'When a browser wallet fits',
@@ -212,6 +249,14 @@ export const PUBLIC_PAGES: PublicPage[] = [
     changeFrequency: 'monthly',
     schemaType: 'Article',
     primaryCta: OPEN_WALLET_CTA,
+    heroKicker: 'Mobile & app access',
+    heroBadge: 'No app required',
+    heroFacts: [
+      { title: 'Browser-based', desc: 'Runs in the browser, no native app needed.' },
+      { title: 'Mobile-friendly', desc: 'Open wallet.kaspa.com from a phone browser.' },
+      { title: 'Same wallet', desc: 'One wallet across desktop and mobile browsers.' },
+    ],
+    heroIllustration: 'blockdag',
     sections: [
       {
         title: 'Is there a KaspaCom native app?',
@@ -244,6 +289,14 @@ export const PUBLIC_PAGES: PublicPage[] = [
     changeFrequency: 'monthly',
     schemaType: 'Article',
     primaryCta: OPEN_WALLET_CTA,
+    heroKicker: 'Desktop & download',
+    heroBadge: 'No installer required',
+    heroFacts: [
+      { title: 'No download', desc: 'Open wallet.kaspa.com, nothing to install.' },
+      { title: 'Modern browsers', desc: 'Works in Chrome and other modern browsers.' },
+      { title: 'Secure APIs', desc: 'Uses secure crypto APIs built into the browser.' },
+    ],
+    heroIllustration: 'blockdag',
     sections: [
       {
         title: 'Do I need to download a Kaspa wallet?',
@@ -276,6 +329,14 @@ export const PUBLIC_PAGES: PublicPage[] = [
     changeFrequency: 'monthly',
     schemaType: 'Article',
     primaryCta: OPEN_WALLET_CTA,
+    heroKicker: 'Getting started',
+    heroBadge: '5-step setup',
+    heroFacts: [
+      { title: 'Write it down', desc: 'Back up the seed phrase offline before funding.' },
+      { title: 'Confirm backup', desc: 'Confirm the backup before you continue.' },
+      { title: 'Copy address', desc: 'Use the receive screen to copy your address.' },
+    ],
+    heroIllustration: 'cards',
     sections: [
       {
         title: 'Steps',
@@ -307,6 +368,14 @@ export const PUBLIC_PAGES: PublicPage[] = [
     changeFrequency: 'monthly',
     schemaType: 'Article',
     primaryCta: OPEN_WALLET_CTA,
+    heroKicker: 'Storage & safety',
+    heroBadge: 'Your keys, your coins',
+    heroFacts: [
+      { title: 'Self-custody', desc: 'You hold the seed phrase, not KaspaCom.' },
+      { title: 'Offline backup', desc: 'Keep your seed phrase written down, offline.' },
+      { title: 'Split by risk', desc: 'Separate active funds from long-term holdings.' },
+    ],
+    heroIllustration: 'shield',
     sections: [
       SECURITY_SECTION,
       {

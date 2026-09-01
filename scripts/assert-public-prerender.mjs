@@ -27,6 +27,17 @@ function assert(condition, message) {
   }
 }
 
+function extractH1Text(html) {
+  const match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
+  if (!match) {
+    return null;
+  }
+  return match[1]
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 assert(existsSync(browserDir), `Missing build output: ${browserDir}`);
 
 for (const page of pages) {
@@ -35,7 +46,7 @@ for (const page of pages) {
 
   const html = readFileSync(file, 'utf8');
   assert(html.includes(`<title>${page.title}</title>`), `Missing title for ${page.path || '/'}`);
-  assert(html.includes(`>${page.h1}</h1>`), `Missing H1 for ${page.path || '/'}`);
+  assert(extractH1Text(html) === page.h1, `Missing H1 for ${page.path || '/'}`);
   assert(html.includes('rel="canonical"'), `Missing canonical for ${page.path || '/'}`);
   assert(html.includes('application/ld+json'), `Missing JSON-LD for ${page.path || '/'}`);
   assert(html.includes('Open Wallet'), `Missing Open Wallet CTA for ${page.path || '/'}`);

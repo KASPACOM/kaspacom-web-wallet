@@ -52,7 +52,6 @@ export const PUBLIC_PAGES: PublicPage[] = [
     schemaType: 'WebApplication',
     primaryCta: OPEN_WALLET_CTA,
     heroKicker: 'Self-custody · Browser Wallet',
-    heroBadge: 'Non-custodial by design',
     heroFacts: [
       { title: 'Local keys', desc: 'Seed phrases stay in your browser.' },
       { title: 'Public pages', desc: 'Crawlers see real wallet content.' },
@@ -89,7 +88,6 @@ export const PUBLIC_PAGES: PublicPage[] = [
     schemaType: 'Article',
     primaryCta: OPEN_WALLET_CTA,
     heroKicker: 'Wallet capabilities',
-    heroBadge: '6 core tools',
     heroFacts: [
       { title: 'Create & receive', desc: 'Set up a wallet and receive KAS in minutes.' },
       { title: 'Send & manage', desc: 'Send KAS and manage supported assets.' },
@@ -175,7 +173,6 @@ export const PUBLIC_PAGES: PublicPage[] = [
     schemaType: 'FAQPage',
     primaryCta: OPEN_WALLET_CTA,
     heroKicker: 'Answers',
-    heroBadge: '16 quick answers',
     heroFacts: [
       { title: 'Web wallet', desc: 'Runs in the browser, no install.' },
       { title: 'Non-custodial', desc: 'You hold the seed phrase.' },

@@ -70,7 +70,9 @@
 
     <div class="hero__panel" aria-label="Wallet illustration">
       <div class="hero__illustration" [attr.data-variant]="page.heroIllustration">
-        <span class="hero__illustration-chip motion">{{ page.heroBadge }}</span>
+        @if (page.heroBadge) {
+          <span class="hero__illustration-chip motion">{{ page.heroBadge }}</span>
+        }
 
         @switch (page.heroIllustration) {
           @case ('blockdag') {

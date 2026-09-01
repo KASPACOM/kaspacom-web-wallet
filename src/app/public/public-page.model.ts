@@ -47,7 +47,7 @@ export interface PublicPage {
   secondaryCta?: PublicPageCta;
   sections: PublicPageSection[];
   heroKicker: string;
-  heroBadge: string;
+  heroBadge?: string;
   heroFacts: [PublicPageHeroFact, PublicPageHeroFact, PublicPageHeroFact];
   heroIllustration: PublicPageIllustration;
 }

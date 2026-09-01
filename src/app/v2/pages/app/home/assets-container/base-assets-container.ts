@@ -5,6 +5,7 @@ import { WalletService } from '../../../../../services/wallet.service';
 export const ASSET_TAB_IDS = {
   UTXOS: 'utxos',
   KRC20: 'krc20',
+  KCC20: 'kcc20',
   KRC721: 'krc721',
   KNS: 'kns',
   L2_ERC20: 'l2-ERC20',

@@ -16,9 +16,9 @@
     </a>
 
     <nav class="public-nav__links" aria-label="Public pages">
-      <a routerLink="/features">Features</a>
-      <a routerLink="/security">Security</a>
-      <a routerLink="/faq">FAQ</a>
+      <a routerLink="/features" routerLinkActive="is-active">Features</a>
+      <a routerLink="/security" routerLinkActive="is-active">Security</a>
+      <a routerLink="/faq" routerLinkActive="is-active">FAQ</a>
     </nav>
 
     <a
@@ -32,9 +32,15 @@
 
   <section class="hero" aria-labelledby="page-title">
     <div class="hero__content">
-      <p class="eyebrow">Self-custody Kaspa web wallet</p>
-      <h1 id="page-title" class="typo-header-1 text-light">{{ page.h1 }}</h1>
-      <p class="hero__intro typo-text-4 text-medium">{{ page.intro }}</p>
+      <p class="eyebrow fade-in motion">
+        <span class="eyebrow__dot"></span>
+        {{ page.heroKicker }}
+      </p>
+      <h1 id="page-title" class="hero__title fade-in motion">
+        <span class="hero__title-lead">{{ heroLead }}</span>
+        <span class="hero__title-accent">{{ heroAccentWord }}</span>
+      </h1>
+      <p class="hero__intro typo-text-4 text-medium fade-in motion">{{ page.intro }}</p>
       <p class="hero__reviewed">
         Last reviewed:
         <time [attr.datetime]="page.lastReviewed">
@@ -42,7 +48,7 @@
         </time>
       </p>
 
-      <div class="hero__actions" aria-label="Primary actions">
+      <div class="hero__actions fade-in motion" aria-label="Primary actions">
         <a
           class="public-button"
           [routerLink]="page.primaryCta.href"
@@ -52,60 +58,204 @@
         </a>
       </div>
 
-      <div class="hero__trust-row" aria-label="Wallet properties">
-        <span>
-          <strong>Local keys</strong>
-          Seed phrases stay in your browser.
-        </span>
-        <span>
-          <strong>Public pages</strong>
-          Crawlers see real wallet content.
-        </span>
-        <span>
-          <strong>Wallet app</strong>
-          Open the client-side wallet when ready.
-        </span>
+      <div class="hero__trust-row fade-in motion" aria-label="Wallet properties">
+        @for (fact of page.heroFacts; track fact.title) {
+          <span>
+            <strong>{{ fact.title }}</strong>
+            {{ fact.desc }}
+          </span>
+        }
       </div>
     </div>
 
-    <div class="hero__panel" aria-label="Wallet summary">
-      <div class="wallet-device">
-        <div class="wallet-device__notch"></div>
-        <div class="wallet-device__panel">
-          <header class="wallet-device__header">
-            <img src="/images/kc-logo-square.png" alt="" width="40" height="40" />
-            <div>
-              <p>KaspaCom Wallet</p>
-              <span>Ready for Kaspa</span>
+    <div class="hero__panel" aria-label="Wallet illustration">
+      <div class="hero__illustration" [attr.data-variant]="page.heroIllustration">
+        @if (page.heroBadge) {
+          <span class="hero__illustration-chip motion">{{ page.heroBadge }}</span>
+        }
+
+        @switch (page.heroIllustration) {
+          @case ('blockdag') {
+            <div class="hero__glow hero__glow--wide motion"></div>
+            <div class="illustration-orb">
+              <svg width="460" height="460" viewBox="0 0 460 460" fill="none" class="illustration-svg">
+                <g class="spin-slow motion">
+                  <circle cx="230" cy="230" r="210" stroke="rgba(111,199,186,0.14)" stroke-width="1.5" stroke-dasharray="2 12"></circle>
+                </g>
+                <g class="spin-slow-rev motion">
+                  <circle cx="230" cy="230" r="150" stroke="rgba(216,131,255,0.16)" stroke-width="1.5" stroke-dasharray="1 10"></circle>
+                </g>
+                <circle cx="230" cy="230" r="90" stroke="rgba(255,255,255,0.1)" stroke-width="1"></circle>
+                <line x1="230" y1="230" x2="320" y2="230" stroke="rgba(255,255,255,0.1)"></line>
+                <line x1="230" y1="230" x2="185" y2="152" stroke="rgba(255,255,255,0.1)"></line>
+                <line x1="230" y1="230" x2="152" y2="285" stroke="rgba(255,255,255,0.1)"></line>
+                <line x1="230" y1="230" x2="300" y2="310" stroke="rgba(255,255,255,0.1)"></line>
+                <circle class="node-pulse motion" cx="320" cy="230" r="5" fill="var(--kaspa-20)"></circle>
+                <circle class="node-pulse motion" style="animation-delay: 0.8s;" cx="185" cy="152" r="4.5" fill="var(--purple-10)"></circle>
+                <circle class="node-pulse motion" style="animation-delay: 1.6s;" cx="152" cy="285" r="4.5" fill="var(--orange-10)"></circle>
+                <circle class="node-pulse motion" style="animation-delay: 2.4s;" cx="300" cy="310" r="4.5" fill="var(--kaspa-10)"></circle>
+                <circle cx="98" cy="140" r="3.5" fill="rgba(111,199,186,0.5)"></circle>
+                <circle cx="360" cy="120" r="3" fill="rgba(216,131,255,0.5)"></circle>
+                <circle cx="80" cy="340" r="3" fill="rgba(255,210,125,0.5)"></circle>
+                <circle cx="380" cy="350" r="3.5" fill="rgba(162,255,241,0.5)"></circle>
+                <circle cx="230" cy="230" r="16" fill="var(--kaspa-20)" opacity="0.9"></circle>
+                <circle cx="230" cy="230" r="16" stroke="rgba(162,255,241,0.5)" stroke-width="6"></circle>
+              </svg>
             </div>
-          </header>
+          }
+          @case ('chain') {
+            <div class="hero__glow hero__glow--wide motion" style="background: radial-gradient(circle at center, rgba(89,92,255,0.22), rgba(89,92,255,0) 70%);"></div>
+            <div class="hero__glow hero__glow--tight motion" style="background: radial-gradient(circle at center, rgba(111,199,186,0.24), rgba(111,199,186,0) 70%); animation-delay: -2.4s;"></div>
+            <div class="illustration-orb">
+              <svg width="460" height="460" viewBox="0 0 460 460" fill="none" class="illustration-svg">
+                <defs>
+                  <linearGradient id="hubGrad" x1="158" y1="158" x2="302" y2="302" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="var(--kaspa-10)"></stop>
+                    <stop offset="100%" stop-color="var(--blue-10)"></stop>
+                  </linearGradient>
+                </defs>
 
-          <div class="wallet-device__visual">
-            <img src="/svgs/wallet.svg" alt="" width="240" height="135" />
-          </div>
+                <line x1="230" y1="230" x2="230" y2="60" stroke="rgba(255,255,255,0.22)" stroke-width="4" stroke-dasharray="1 8" stroke-linecap="round"></line>
+                <line x1="230" y1="230" x2="381" y2="145" stroke="rgba(255,255,255,0.22)" stroke-width="4" stroke-dasharray="1 8" stroke-linecap="round"></line>
+                <line x1="230" y1="230" x2="381" y2="315" stroke="rgba(255,255,255,0.22)" stroke-width="4" stroke-dasharray="1 8" stroke-linecap="round"></line>
+                <line x1="230" y1="230" x2="230" y2="400" stroke="rgba(255,255,255,0.22)" stroke-width="4" stroke-dasharray="1 8" stroke-linecap="round"></line>
+                <line x1="230" y1="230" x2="79" y2="315" stroke="rgba(255,255,255,0.22)" stroke-width="4" stroke-dasharray="1 8" stroke-linecap="round"></line>
+                <line x1="230" y1="230" x2="79" y2="145" stroke="rgba(255,255,255,0.22)" stroke-width="4" stroke-dasharray="1 8" stroke-linecap="round"></line>
 
-          <div class="wallet-device__balance" aria-label="Example balance panel">
-            <span>KAS</span>
-            <strong>Keys stay local</strong>
-          </div>
+                <rect x="224" y="139" width="12" height="12" rx="3" fill="var(--vampire-black)" stroke="rgba(255,255,255,0.3)" stroke-width="1.2" transform="rotate(45 230 145)"></rect>
+                <rect x="299.5" y="181.5" width="12" height="12" rx="3" fill="var(--vampire-black)" stroke="rgba(255,255,255,0.3)" stroke-width="1.2" transform="rotate(45 305.5 187.5)"></rect>
+                <rect x="299.5" y="266.5" width="12" height="12" rx="3" fill="var(--vampire-black)" stroke="rgba(255,255,255,0.3)" stroke-width="1.2" transform="rotate(45 305.5 272.5)"></rect>
+                <rect x="224" y="309" width="12" height="12" rx="3" fill="var(--vampire-black)" stroke="rgba(255,255,255,0.3)" stroke-width="1.2" transform="rotate(45 230 315)"></rect>
+                <rect x="148.5" y="266.5" width="12" height="12" rx="3" fill="var(--vampire-black)" stroke="rgba(255,255,255,0.3)" stroke-width="1.2" transform="rotate(45 154.5 272.5)"></rect>
+                <rect x="148.5" y="181.5" width="12" height="12" rx="3" fill="var(--vampire-black)" stroke="rgba(255,255,255,0.3)" stroke-width="1.2" transform="rotate(45 154.5 187.5)"></rect>
 
-          <div class="wallet-device__actions">
-            <a
-              class="public-button public-button--full"
-              routerLink="/onboarding"
-              (click)="onWalletCtaClick($event)"
-            >
-              Create New Wallet
-            </a>
-            <a
-              class="public-button public-button--secondary public-button--full"
-              routerLink="/onboarding"
-              (click)="onWalletCtaClick($event)"
-            >
-              Connect Existing Wallet
-            </a>
-          </div>
-        </div>
+                <circle class="motion" style="animation: pulseGlow 3.4s ease-in-out infinite; transform-origin: 230px 230px;" cx="230" cy="230" r="90" fill="rgba(111,199,186,0.16)"></circle>
+                <rect x="163" y="163" width="134" height="134" rx="26" fill="rgba(111,199,186,0.1)"></rect>
+                <rect x="158" y="158" width="144" height="144" rx="28" fill="rgba(9,15,17,0.82)" stroke="url(#hubGrad)" stroke-width="2.2"></rect>
+                <rect x="172" y="169" width="100" height="14" rx="7" fill="rgba(255,255,255,0.1)"></rect>
+                <path d="M215 234H245M245 234L233 222M245 234L233 246" stroke="url(#hubGrad)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+
+                <g class="icon-bob motion">
+                  <rect x="207" y="37" width="46" height="46" rx="11" fill="rgba(111,199,186,0.12)"></rect>
+                  <rect x="203" y="33" width="54" height="54" rx="13" fill="rgba(9,15,17,0.85)" stroke="var(--kaspa-20)" stroke-width="1.6" style="filter: drop-shadow(0 0 10px rgba(111,199,186,0.45));"></rect>
+                  <rect x="212" y="40" width="30" height="6" rx="3" fill="rgba(255,255,255,0.12)"></rect>
+                  <path d="M222 68L230 54L238 68M230 56V72" stroke="var(--kaspa-20)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                </g>
+                <g class="icon-bob motion" style="animation-delay: 0.6s;">
+                  <rect x="358" y="122" width="46" height="46" rx="11" fill="rgba(216,131,255,0.12)"></rect>
+                  <rect x="354" y="118" width="54" height="54" rx="13" fill="rgba(9,15,17,0.85)" stroke="var(--purple-10)" stroke-width="1.6" style="filter: drop-shadow(0 0 10px rgba(216,131,255,0.45));"></rect>
+                  <rect x="363" y="125" width="30" height="6" rx="3" fill="rgba(255,255,255,0.12)"></rect>
+                  <path d="M373 143L381 157L389 143M381 155V139" stroke="var(--purple-10)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                </g>
+                <g class="icon-bob motion" style="animation-delay: 1.2s;">
+                  <rect x="358" y="292" width="46" height="46" rx="11" fill="rgba(255,210,125,0.12)"></rect>
+                  <rect x="354" y="288" width="54" height="54" rx="13" fill="rgba(9,15,17,0.85)" stroke="var(--orange-10)" stroke-width="1.6" style="filter: drop-shadow(0 0 10px rgba(255,210,125,0.45));"></rect>
+                  <rect x="363" y="295" width="30" height="6" rx="3" fill="rgba(255,255,255,0.12)"></rect>
+                  <path d="M369 315H393M387 309L393 315L387 321" stroke="var(--orange-10)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                </g>
+                <g class="icon-bob motion" style="animation-delay: 1.8s;">
+                  <rect x="207" y="377" width="46" height="46" rx="11" fill="rgba(162,255,241,0.12)"></rect>
+                  <rect x="203" y="373" width="54" height="54" rx="13" fill="rgba(9,15,17,0.85)" stroke="var(--kaspa-10)" stroke-width="1.6" style="filter: drop-shadow(0 0 10px rgba(162,255,241,0.45));"></rect>
+                  <rect x="212" y="380" width="30" height="6" rx="3" fill="rgba(255,255,255,0.12)"></rect>
+                  <rect x="219" y="393" width="22" height="19" rx="3" stroke="var(--kaspa-10)" stroke-width="1.8"></rect>
+                </g>
+                <g class="icon-bob motion" style="animation-delay: 2.4s;">
+                  <rect x="56" y="292" width="46" height="46" rx="11" fill="rgba(116,119,255,0.14)"></rect>
+                  <rect x="52" y="288" width="54" height="54" rx="13" fill="rgba(9,15,17,0.85)" stroke="var(--blue-10)" stroke-width="1.6" style="filter: drop-shadow(0 0 10px rgba(116,119,255,0.5));"></rect>
+                  <rect x="61" y="295" width="30" height="6" rx="3" fill="rgba(255,255,255,0.12)"></rect>
+                  <circle cx="79" cy="318" r="9" stroke="var(--blue-10)" stroke-width="1.8"></circle>
+                </g>
+                <g>
+                  <rect x="56" y="122" width="46" height="46" rx="11" fill="rgba(111,199,186,0.12)"></rect>
+                  <rect x="52" y="118" width="54" height="54" rx="13" fill="rgba(9,15,17,0.85)" stroke="var(--kaspa-20)" stroke-width="1.6" style="filter: drop-shadow(0 0 10px rgba(111,199,186,0.45));"></rect>
+                  <rect x="61" y="125" width="30" height="6" rx="3" fill="rgba(255,255,255,0.12)"></rect>
+                  <path d="M70 148H88M70 141H88M70 155H82" stroke="var(--kaspa-20)" stroke-width="1.8" stroke-linecap="round"></path>
+                </g>
+
+                <circle cx="304" cy="98" r="2.5" fill="rgba(255,255,255,0.4)"></circle>
+                <circle cx="150" cy="360" r="2.5" fill="rgba(255,255,255,0.4)"></circle>
+              </svg>
+            </div>
+          }
+          @case ('shield') {
+            <div class="hero__glow hero__glow--wide motion" style="background: radial-gradient(circle at center, rgba(180,58,237,0.2), rgba(180,58,237,0) 70%);"></div>
+            <div class="hero__glow hero__glow--tight motion" style="background: radial-gradient(circle at 45% 55%, rgba(111,199,186,0.22), rgba(111,199,186,0) 70%); animation-delay: -2s;"></div>
+            <div class="illustration-orb">
+              <svg width="460" height="460" viewBox="0 0 460 460" fill="none" class="illustration-svg">
+                <defs>
+                  <linearGradient id="shieldGrad" x1="138" y1="108" x2="322" y2="348" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="var(--kaspa-10)"></stop>
+                    <stop offset="55%" stop-color="var(--kaspa-20)"></stop>
+                    <stop offset="100%" stop-color="var(--purple-10)"></stop>
+                  </linearGradient>
+                  <linearGradient id="lockGrad" x1="205" y1="196" x2="255" y2="240" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="var(--kaspa-10)"></stop>
+                    <stop offset="100%" stop-color="var(--purple-10)"></stop>
+                  </linearGradient>
+                  <filter id="shieldSoft" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="7"></feGaussianBlur>
+                  </filter>
+                </defs>
+
+                <g class="spin-slow motion">
+                  <circle cx="230" cy="230" r="195" stroke="url(#shieldGrad)" stroke-opacity="0.22" stroke-width="1.5" stroke-dasharray="2 12"></circle>
+                </g>
+                <g class="spin-slow-rev motion">
+                  <circle cx="230" cy="230" r="158" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="1 9"></circle>
+                </g>
+                <circle cx="230" cy="230" r="126" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.07)" stroke-width="1"></circle>
+
+                <path d="M230 112L318 143V222C318 280 282 324 230 343C178 324 142 280 142 222V143L230 112Z"
+                  stroke="url(#shieldGrad)" stroke-width="10" fill="none" opacity="0.4" filter="url(#shieldSoft)"></path>
+
+                <path class="motion" style="animation: pulseGlow 3.4s ease-in-out infinite;" d="M230 108L322 140V222C322 282 284 328 230 348C176 328 138 282 138 222V140L230 108Z"
+                  fill="rgba(111,199,186,0.07)" stroke="url(#shieldGrad)" stroke-width="2.5" stroke-linejoin="round"></path>
+
+                <path d="M230 108V177M170 129L230 177L290 129" stroke="rgba(255,255,255,0.14)" stroke-width="1" stroke-linecap="round" fill="none"></path>
+                <path d="M158 300C158 300 190 318 230 318C270 318 302 300 302 300" stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="none"></path>
+
+                <circle class="motion" style="animation: pulseGlow 3.2s ease-in-out infinite; transform-origin: 230px 218px;" cx="230" cy="218" r="34" fill="rgba(162,255,241,0.12)"></circle>
+                <path d="M214 205V196C214 187 221 180 230 180C239 180 246 187 246 196V205" stroke="url(#lockGrad)" stroke-width="5" stroke-linecap="round" fill="none"></path>
+                <rect x="203" y="205" width="54" height="42" rx="9" fill="var(--vampire-black)" stroke="url(#lockGrad)" stroke-width="2.5"></rect>
+                <circle cx="230" cy="223" r="5.5" fill="url(#lockGrad)"></circle>
+                <path d="M230 228V236" stroke="url(#lockGrad)" stroke-width="4" stroke-linecap="round"></path>
+
+                <circle cx="120" cy="110" r="3.5" fill="var(--purple-10)"></circle>
+                <circle cx="352" cy="120" r="3" fill="var(--kaspa-20)"></circle>
+                <circle cx="88" cy="330" r="3" fill="var(--orange-10)"></circle>
+                <circle cx="372" cy="340" r="3.5" fill="var(--kaspa-10)"></circle>
+                <circle cx="352" cy="300" r="2.5" fill="rgba(255,255,255,0.4)"></circle>
+                <circle cx="108" cy="200" r="2.5" fill="rgba(255,255,255,0.4)"></circle>
+              </svg>
+            </div>
+          }
+          @case ('cards') {
+            <div class="hero__glow hero__glow--stack motion"></div>
+            <div style="position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
+              <div class="qa-stack__card" style="width:230px; height:132px; transform:rotate(-7deg) translateY(18px);"></div>
+              <div class="qa-stack__card motion" style="width:236px; height:136px; transform:rotate(5deg) translateY(8px); box-shadow:0 16px 30px rgba(0,0,0,0.3); animation:float 5.2s ease-in-out infinite 0.6s;"></div>
+              <div class="qa-stack__card motion" style="position:relative; width:246px; padding:22px 22px 24px; border-radius:20px; background:rgba(255,255,255,0.055); border:1px solid rgba(255,255,255,0.12); box-shadow:0 26px 48px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08); z-index:2; animation:float 7s ease-in-out infinite;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+                  <span class="motion" style="flex-shrink:0; width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:rgba(111,199,186,0.14); border:1px solid rgba(111,199,186,0.4); animation:pulseGlow 3.6s ease-in-out infinite;">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M5 6.2C5 4.7 6.2 3.6 8 3.6C9.7 3.6 10.9 4.6 10.9 5.9C10.9 7 10.2 7.6 9.3 8.2C8.5 8.7 8 9.1 8 9.9"
+                        stroke="var(--kaspa-20)" stroke-width="1.4" stroke-linecap="round" fill="none"></path>
+                      <circle cx="8" cy="12.3" r="1" fill="var(--kaspa-20)"></circle>
+                    </svg>
+                  </span>
+                  <span style="display:block; width:80px; height:8px; border-radius:4px; background:rgba(255,255,255,0.16);"></span>
+                </div>
+                <span style="display:block; width:96%; height:7px; border-radius:4px; background:rgba(255,255,255,0.12); margin-bottom:8px;"></span>
+                <span style="display:block; width:70%; height:7px; border-radius:4px; background:rgba(255,255,255,0.12); margin-bottom:16px;"></span>
+                <span style="display:inline-flex; align-items:center; height:26px; padding:0 12px; border-radius:999px; background:rgba(111,199,186,0.12); border:1px solid rgba(111,199,186,0.3);">
+                  <span style="display:block; width:44px; height:6px; border-radius:3px; background:var(--kaspa-20);"></span>
+                </span>
+              </div>
+              <span class="motion" style="position:absolute; top:44px; left:56px; width:7px; height:7px; border-radius:50%; background:var(--purple-10); box-shadow:0 0 10px rgba(216,131,255,0.6); animation:float 4.5s ease-in-out infinite -1s;"></span>
+              <span class="motion" style="position:absolute; bottom:56px; right:64px; width:6px; height:6px; border-radius:50%; background:var(--orange-10); box-shadow:0 0 10px rgba(255,210,125,0.6); animation:float 4.5s ease-in-out infinite;"></span>
+            </div>
+          }
+        }
       </div>
     </div>
   </section>
@@ -147,12 +297,11 @@
     <section class="content-section faq-list" aria-labelledby="faq-title">
       <p class="eyebrow">Common questions</p>
       <h2 id="faq-title">Kaspa wallet answers</h2>
-      @for (entry of faqs; track entry.question) {
-        <article class="faq-item">
-          <h3>{{ entry.question }}</h3>
-          <p>{{ entry.answer }}</p>
-        </article>
-      }
+      <div class="faq-list__items">
+        @for (entry of faqs; track entry.question) {
+          <kc-accordion [title]="entry.question">{{ entry.answer }}</kc-accordion>
+        }
+      </div>
     </section>
   }
 

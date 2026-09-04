@@ -1,5 +1,19 @@
 @use "../../../../styles/responsive" as *;
 
+// Overrides the shared design-system typo-* utility classes (hardcoded to
+// Poppins) to match the KaspaCom marketing site: Raleway for headings,
+// Plus Jakarta Sans for body copy.
+.typo-title-1,
+.typo-title-2,
+.typo-title-3 {
+  font-family: "Raleway", sans-serif;
+}
+
+.typo-text-2,
+.typo-text-3 {
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
 .onboarding-v2 {
   position: relative;
   height: 100%;
@@ -191,14 +205,6 @@
   }
 
   &__panel-logo {
-    display: none;
-  }
-
-  &__mobile-social {
-    display: none;
-  }
-
-  &__mobile-hero-copy {
     display: none;
   }
 
@@ -460,17 +466,40 @@
 
     &__content {
       flex-direction: column;
-      gap: 48px;
+      gap: 32px;
     }
 
+    // Flattens the hero section so its children become direct flex items of
+    // &__content, letting `order` interleave them with &__device below
+    // (text intro above the wallet preview, actions/socials below it)
+    // instead of the row layout's single hero-column-beside-device split.
     &__hero {
-      align-items: center;
-      text-align: center;
+      display: contents;
     }
 
     &__logo {
+      order: 1;
       align-self: center;
       width: 260px;
+    }
+
+    &__hero-copy {
+      order: 1;
+      text-align: center;
+    }
+
+    &__device {
+      order: 2;
+    }
+
+    &__hero-actions {
+      order: 3;
+      justify-content: center;
+    }
+
+    &__social-links {
+      order: 3;
+      justify-content: center;
     }
   }
 }
@@ -489,25 +518,43 @@
       min-height: 100%;
     }
 
+    // Flattens the hero section so its children become direct flex items of
+    // &__content, letting `order` put the text intro above &__device (the
+    // wallet preview) and the actions/socials below it.
     &__hero {
+      display: contents;
+    }
+
+    &__logo {
       display: none;
     }
 
+    &__hero-copy {
+      order: 1;
+      text-align: center;
+      padding: 0 20px;
+    }
+
     &__device {
+      order: 2;
       width: 100%;
-      height: 100%;
       display: flex;
+      justify-content: center;
+    }
+
+    &__hero-actions {
+      order: 3;
+      justify-content: center;
+    }
+
+    &__social-links {
+      order: 3;
       justify-content: center;
     }
 
     &__device-frame {
       width: 100%;
       max-width: none;
-      flex: 1;
-      // min-height (a floor), not height (a cap) — content taller than the
-      // screen must be able to grow past it and scroll via .onboarding-v2.
-      min-height: 100vh;
-      min-height: 100dvh;
       padding: 32px 20px 24px;
       padding-right: 0;
       border-radius: 0;
@@ -537,37 +584,6 @@
       margin: 16px auto 12px;
     }
 
-    &__mobile-hero-copy {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      max-width: 320px;
-      margin: 0 auto;
-      text-align: center;
-    }
-
-    &__mobile-hero-copy h1,
-    &__mobile-hero-copy p {
-      margin: 0;
-    }
-
-    &__mobile-hero-actions {
-      display: flex;
-      justify-content: center;
-      margin-top: 4px;
-    }
-
-    &__mobile-social {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      padding: 24px 20px 16px;
-      margin-top: auto;
-    }
-
     &__delete-overlay {
       padding: 16px;
     }
@@ -584,5 +600,13 @@
     &__backdrop {
       opacity: 0.135; // 70% lower than default 0.45
     }
+  }
+}
+
+// Matches the public landing page's desktop side gutter (48px each side).
+@include desktop {
+  .onboarding-v2 {
+    padding-left: 48px;
+    padding-right: 48px;
   }
 }

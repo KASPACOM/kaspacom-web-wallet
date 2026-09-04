@@ -850,6 +850,10 @@ export class WalletActionService {
         action.type == WalletActionType.TRANSFER_KAS &&
         (action.data as TransferKasAction).sendAll
       ) &&
+      !(
+        action.type == WalletActionType.SIGN_PSKT_TRANSACTION &&
+        (action.data as SignPsktTransactionAction).signOnly === true
+      ) &&
       action.type != WalletActionType.SIGN_MESSAGE &&
       !isRevealOnly
     ) {

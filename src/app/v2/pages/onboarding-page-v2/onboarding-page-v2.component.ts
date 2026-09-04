@@ -99,6 +99,7 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
   private ctx!: CanvasRenderingContext2D;
   private nodes: Node[] = [];
   private animationFrameId: number | null = null;
+  private prefersReducedMotion = false;
   private mouse = {
     x: null as number | null,
     y: null as number | null,
@@ -326,7 +327,15 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
     this.ctx = ctx;
 
     // Bind event handlers
-    this.boundResizeCanvas = this.resizeCanvas.bind(this);
+    this.prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+    this.boundResizeCanvas = () => {
+      this.resizeCanvas();
+      if (this.prefersReducedMotion) {
+        this.renderGraphFrame(false);
+      }
+    };
     this.boundMouseMove = this.handleMouseMove.bind(this);
     this.boundMouseLeave = this.handleMouseLeave.bind(this);
 
@@ -334,15 +343,20 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
     this.resizeCanvas();
     window.addEventListener('resize', this.boundResizeCanvas);
 
-    // Mouse events
-    window.addEventListener('mousemove', this.boundMouseMove);
-    window.addEventListener('mouseleave', this.boundMouseLeave);
-
     // Create nodes
     const nodeCount = 40;
     for (let i = 0; i < nodeCount; i++) {
       this.nodes.push(new Node(canvas));
     }
+
+    if (this.prefersReducedMotion) {
+      this.renderGraphFrame(false);
+      return;
+    }
+
+    // Mouse events
+    window.addEventListener('mousemove', this.boundMouseMove);
+    window.addEventListener('mouseleave', this.boundMouseLeave);
 
     // Start animation
     this.animate();
@@ -408,22 +422,24 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
   }
 
   private animate(): void {
-    const canvas = this.graphCanvas().nativeElement;
-
-    // Clear canvas
-    this.ctx.clearRect(0, 0, canvas.width, canvas.height);
-    this.ctx.shadowBlur = 0;
-
-    // Draw connections first (so nodes appear on top)
-    this.drawConnections();
-
-    // Update and draw nodes
-    this.nodes.forEach((node) => {
-      node.update(this.mouse, canvas);
-      node.draw(this.ctx);
-    });
+    this.renderGraphFrame(true);
 
     this.animationFrameId = requestAnimationFrame(() => this.animate());
+  }
+
+  private renderGraphFrame(updateNodes: boolean): void {
+    const canvas = this.graphCanvas().nativeElement;
+
+    this.ctx.clearRect(0, 0, canvas.width, canvas.height);
+    this.ctx.shadowBlur = 0;
+    this.drawConnections();
+
+    this.nodes.forEach((node) => {
+      if (updateNodes) {
+        node.update(this.mouse, canvas);
+      }
+      node.draw(this.ctx);
+    });
   }
 }
 

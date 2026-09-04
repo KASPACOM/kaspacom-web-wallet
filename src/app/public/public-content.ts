@@ -22,7 +22,7 @@ const FEATURES_SECTION = {
     'View supported tokens, NFTs, and other asset records where enabled.',
     'Use built-in swap flows where supported.',
     'Manage L2 assets on supported Kaspa L2 networks.',
-    'Preview covenant tools in development environments when enabled.',
+    'Preview experimental covenant tools in development environments only. Do not use them with real funds.',
   ],
 };
 
@@ -38,13 +38,13 @@ export const PUBLIC_PAGES: PublicPage[] = [
   {
     id: 'home',
     path: '',
-    title: 'Kaspa Wallet | KaspaCom Web Wallet',
+    title: 'Kaspa Web Wallet: Open Source & Self-Custody | KaspaCom',
     description:
-      'Open a self-custody Kaspa wallet in your browser. Send, receive, store, and manage KAS with KaspaCom Web Wallet.',
-    h1: 'Kaspa Wallet',
+      'Use KaspaCom, an open-source, self-custody Kaspa web wallet. Create or import a wallet, send and receive KAS, and review the MIT-licensed source on GitHub.',
+    h1: 'Open-Source Kaspa Web Wallet',
     intro:
-      'KaspaCom Wallet is a self-custody browser wallet for KAS. Create a wallet, import an existing seed phrase, receive funds, send payments, and manage supported Kaspa assets from wallet.kaspa.com.',
-    lastReviewed: PUBLIC_CONTENT_LAST_REVIEWED,
+      'KaspaCom Wallet is an open-source, self-custody browser wallet for KAS. Your encrypted wallet data stays in your browser, and the source code is public under the MIT License. Create or import a wallet, then send, receive, and manage supported Kaspa assets.',
+    lastReviewed: '2026-09-01',
     primaryKeyword: 'kaspa wallet',
     secondaryKeywords: ['kaspa web wallet', 'wallet kaspa', 'kaspa online wallet'],
     sitemapPriority: '1.0',
@@ -53,9 +53,9 @@ export const PUBLIC_PAGES: PublicPage[] = [
     primaryCta: OPEN_WALLET_CTA,
     heroKicker: 'Self-custody · Browser Wallet',
     heroFacts: [
-      { title: 'Local keys', desc: 'Seed phrases stay in your browser.' },
-      { title: 'Public pages', desc: 'Crawlers see real wallet content.' },
-      { title: 'Wallet app', desc: 'Open the client-side wallet when ready.' },
+      { title: 'Local keys', desc: 'Your seed phrase and keys stay on your device.' },
+      { title: 'Open source', desc: 'Review the MIT-licensed code on GitHub.' },
+      { title: 'Built for Kaspa', desc: 'Send and receive KAS on Kaspa L1.' },
     ],
     heroIllustration: 'blockdag',
     sections: [
@@ -80,7 +80,7 @@ export const PUBLIC_PAGES: PublicPage[] = [
     h1: 'KaspaCom Wallet Features',
     intro:
       'KaspaCom Wallet focuses on the core wallet jobs first: create or import a wallet, receive KAS, send KAS, manage supported assets, and connect to KaspaCom apps.',
-    lastReviewed: PUBLIC_CONTENT_LAST_REVIEWED,
+    lastReviewed: '2026-09-01',
     primaryKeyword: 'kaspa wallet features',
     secondaryKeywords: ['kaspa wallet app', 'kaspa coin wallet', 'kaspa crypto wallet'],
     sitemapPriority: '0.8',
@@ -107,7 +107,7 @@ export const PUBLIC_PAGES: PublicPage[] = [
         title: 'Covenant tools',
         body: [
           'The codebase includes covenant templates such as vault, escrow with arbiter, multi-signature vault, time-lock vault, and dead man switch patterns.',
-          'Public copy should call these preview or development features until the production route is enabled and tested.',
+          'These covenant tools are experimental and intended for development and testing only. Do not use them with real funds.',
         ],
         cta: OPEN_WALLET_CTA,
       },
@@ -164,8 +164,8 @@ export const PUBLIC_PAGES: PublicPage[] = [
       'Answers to common Kaspa wallet questions about web wallets, login, mobile use, desktop use, wallet addresses, storage, and safety.',
     h1: 'Kaspa Wallet FAQ',
     intro:
-      'These answers focus on the wallet questions people already search for: web wallet, online wallet, app, download, login, address, official site, and safe storage.',
-    lastReviewed: PUBLIC_CONTENT_LAST_REVIEWED,
+      'Learn how KaspaCom Wallet works, where to open it, how self-custody protects your keys, and what to consider before using a browser wallet on desktop or mobile.',
+    lastReviewed: '2026-09-01',
     primaryKeyword: 'kaspa wallet faq',
     secondaryKeywords: ['kaspa wallet login', 'kaspa wallet address', 'kaspa online wallet'],
     sitemapPriority: '0.9',
@@ -183,7 +183,7 @@ export const PUBLIC_PAGES: PublicPage[] = [
       {
         title: 'Fast answers',
         body: [
-          'Use the answers below to decide whether KaspaCom Wallet fits your wallet task. Each answer is short by design and links users back to the wallet when they are ready.',
+          'Choose a question below to find the right setup, access, security, or storage guidance for your wallet task.',
         ],
       },
     ],
@@ -242,7 +242,7 @@ export const PUBLIC_PAGES: PublicPage[] = [
     h1: 'Kaspa Wallet App',
     intro:
       'KaspaCom Wallet runs in the browser. That means mobile users can open wallet.kaspa.com from a phone browser without installing a native iOS or Android app.',
-    lastReviewed: PUBLIC_CONTENT_LAST_REVIEWED,
+    lastReviewed: '2026-09-01',
     primaryKeyword: 'kaspa wallet app',
     secondaryKeywords: ['kaspa mobile wallet', 'kaspa wallet android', 'kaspa wallet ios'],
     sitemapPriority: '0.7',
@@ -254,7 +254,7 @@ export const PUBLIC_PAGES: PublicPage[] = [
     heroFacts: [
       { title: 'Browser-based', desc: 'Runs in the browser, no native app needed.' },
       { title: 'Mobile-friendly', desc: 'Open wallet.kaspa.com from a phone browser.' },
-      { title: 'Same wallet', desc: 'One wallet across desktop and mobile browsers.' },
+      { title: 'Desktop or mobile', desc: 'Open wallet.kaspa.com in a supported browser.' },
     ],
     heroIllustration: 'blockdag',
     sections: [
@@ -398,8 +398,20 @@ export const PUBLIC_FAQ_ENTRIES: PublicFaqEntry[] = [
   {
     question: 'Is KaspaCom Wallet a web wallet?',
     answer:
-      'Yes. KaspaCom Wallet is a web wallet that runs in the browser. Public pages are static, but wallet creation, import, storage, and signing happen client-side.',
+      "Yes. KaspaCom Wallet runs in a browser. Wallet creation, import, encrypted storage, and transaction signing happen on the user's device.",
     pageIds: ['faq', 'home'],
+  },
+  {
+    question: 'Is KaspaCom Wallet open source?',
+    answer:
+      'Yes. The exact repository is https://github.com/KASPACOM/kaspacom-web-wallet, and the project is available under the MIT License. You can inspect the code and project history on GitHub.',
+    pageIds: ['faq', 'home'],
+  },
+  {
+    question: 'Does open source mean the wallet is risk-free?',
+    answer:
+      'No. Browser, device, and user risks still apply. Use the official wallet.kaspa.com domain, keep your seed phrase private and offline, and review every transaction before signing.',
+    pageIds: ['faq', 'home', 'security'],
   },
   {
     question: 'Where do I open the Kaspa web wallet?',

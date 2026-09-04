@@ -31,6 +31,21 @@
 
   <div
     class="send-option-card card-0 card-hover flex full-width align-items-center justify-content-between p-16 cursor-pointer"
+    (click)="kcc20Click.emit()"
+  >
+    <div class="send-option-card__info flex align-items-center gap-16">
+      <krc20-token-logo [ticker]="'KCC20'" [size]="'lg'" />
+      <div class="flex column gap-4">
+        <div class="text-gray-90 typo-text-2">KCC20 tokens</div>
+        <div class="text-gray-60 typo-text-1">
+          Send KCC20 tokens to another wallet address
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="send-option-card card-0 card-hover flex full-width align-items-center justify-content-between p-16 cursor-pointer"
     (click)="nftClick.emit()"
   >
     <div class="send-option-card__info flex align-items-center gap-16">

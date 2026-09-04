@@ -1088,6 +1088,24 @@ export class KaspaNetworkTransactionsManagerService {
     });
   }
 
+  /**
+   * Submits an already-signed PSKT transaction JSON. Used after
+   * applyCovenantScriptsToPsktTransaction has wrapped a covenant input's
+   * bare signature into an unlock script — a step signPsktTransaction
+   * itself cannot do, so callers with covenant scripts must sign with
+   * submitTransaction=false and call this separately once wrapped.
+   */
+  async submitSignedPsktTransaction(
+    transactionJson: string,
+  ): Promise<{ transactionId: string }> {
+    const transaction = Transaction.deserializeFromSafeJSON(transactionJson);
+    const transactionResult = await this.rpcService
+      .getRpc()!
+      .submitTransaction({ transaction });
+
+    return { transactionId: transactionResult.transactionId };
+  }
+
   //   // ================================================================
   //   // OTHER
   //   // ================================================================

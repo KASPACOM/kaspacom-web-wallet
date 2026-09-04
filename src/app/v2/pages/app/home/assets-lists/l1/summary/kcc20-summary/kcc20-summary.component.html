@@ -1,0 +1,58 @@
+<div
+  class="kcc20-summary-container flex column justify-content-center align-items-center full-width gap-16"
+>
+  @if (!supported()) {
+    <div class="empty-state flex column align-items-center gap-16 p-32">
+      <div class="text-gray-60 typo-text-2 text-center">
+        KCC20 is not available on this network
+      </div>
+    </div>
+  } @else if (loading()) {
+    <div class="skeleton-loading-container flex column gap-16 full-width">
+      @for (skeleton of loadingSkeletons; track i; let i = $index) {
+        <div
+          class="kcc20-summary-container__card card-0 flex full-width align-items-center justify-content-between p-16"
+          [style.opacity]="1 - i * 0.15"
+        >
+          <div
+            class="kcc20-summary-container__token-info flex align-items-center gap-16"
+          >
+            <app-skeleton
+              [height]="'48px'"
+              [width]="'48px'"
+              [fullRound]="true"
+            />
+            <div class="flex column gap-4">
+              <app-skeleton
+                [height]="'20px'"
+                [width]="'120px'"
+                [fullRound]="false"
+              />
+              <app-skeleton
+                [height]="'16px'"
+                [width]="'80px'"
+                [fullRound]="false"
+              />
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  } @else if (holdings().length === 0) {
+    <div class="empty-state flex column align-items-center gap-16 p-32">
+      <div class="text-gray-60 typo-text-2 text-center">
+        No KCC20 tokens found
+      </div>
+      <div class="text-gray-50 typo-text-1 text-center">
+        Tokens will appear here when available
+      </div>
+    </div>
+  } @else {
+    @for (holding of holdings(); track trackByHolding($index, holding)) {
+      <kcc20-asset-card
+        class="kcc20-summary-container__card full-width"
+        [holding]="holding"
+      />
+    }
+  }
+</div>

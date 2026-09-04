@@ -43,6 +43,14 @@ export class SendPageComponent extends FlowPageBaseComponent {
     });
   }
 
+  onKcc20CardClick(): void {
+    this.navigateToNextPage({
+      id: 'send-kcc20-list',
+      title: 'Select KCC20 Token',
+      canNavigateBack: true,
+    });
+  }
+
   onNftCardClick(): void {
     this.navigateToNextPage({
       id: 'send-nft-list',

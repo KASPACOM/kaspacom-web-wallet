@@ -1,0 +1,62 @@
+<div class="send-kcc20-content">
+  <div class="token-info-header card-0 flex align-items-center gap-16 p-16">
+    <kcc20-token-logo [covenantId]="holding()?.covenantId || ''" [size]="'lg'" />
+    <div class="flex column gap-4">
+      <div class="text-gray-90 typo-text-2">{{ holding()?.name }}</div>
+      <div class="text-gray-60 typo-text-1">
+        Available: {{ availableBalance | number: "1.0-4" }}&nbsp;{{
+          holding()?.ticker
+        }}
+      </div>
+    </div>
+  </div>
+
+  <div class="send-kcc20-form">
+    <div class="form-field">
+      <kc-input
+        [label]="'Recipient'"
+        [placeholder]="'Kaspa address or 64-character owner hex'"
+        [isDisabled]="isLoading"
+        [ngModel]="recipient"
+        (valueChange)="onRecipientChange($event)"
+      />
+      @if (!isRecipientValid && recipientErrorMessage) {
+        <span class="kc-input-error-text">{{ recipientErrorMessage }}</span>
+      }
+    </div>
+
+    <div class="form-field">
+      <kc-number-input
+        [infoLabel]="{ label: 'Amount of ' + (holding()?.ticker || '') }"
+        [placeholder]="'0.00'"
+        [available]="availableBalance.toString()"
+        [isValid]="isAmountValid"
+        [isDisabled]="isLoading"
+        [ngModel]="tokenAmount"
+        (valueChange)="onAmountChange($event)"
+      >
+        <div
+          (click)="!isLoading && onMaxAmountClick()"
+          [class]="isLoading ? 'max-text disabled' : 'max-text clickable'"
+          rightSideSlot
+        >
+          <span>Max</span>
+        </div>
+      </kc-number-input>
+      @if (!isAmountValid && amountErrorMessage) {
+        <span class="kc-input-error-text">{{ amountErrorMessage }}</span>
+      }
+    </div>
+
+    <div class="form-field">
+      <kc-button
+        [text]="isLoading ? 'Sending...' : 'Send ' + (holding()?.ticker || 'Token')"
+        [variant]="'primary'"
+        [isFullWidth]="true"
+        [isLoading]="isLoading"
+        [isDisabled]="!isFormValid"
+        (buttonClick)="onSendClick()"
+      />
+    </div>
+  </div>
+</div>

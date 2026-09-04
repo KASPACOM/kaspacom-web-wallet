@@ -4,6 +4,8 @@ import { SendPageComponent } from '../../flows/transaction/send-page/send-page.c
 import { SendKaspaComponent } from '../../flows/transaction/send-page/components/send-asset/l1/send-kaspa/send-kaspa.component';
 import { SendKrc20ListComponent } from '../../flows/transaction/send-page/components/send-asset/l1/send-krc20-list/send-krc20-list.component';
 import { SendKrc20Component } from '../../flows/transaction/send-page/components/send-asset/l1/send-krc20/send-krc20.component';
+import { SendKcc20ListComponent } from '../../flows/transaction/send-page/components/send-asset/l1/send-kcc20-list/send-kcc20-list.component';
+import { SendKcc20Component } from '../../flows/transaction/send-page/components/send-asset/l1/send-kcc20/send-kcc20.component';
 import { SendNftListComponent } from '../../flows/transaction/send-page/components/send-asset/l1/send-nft-list/send-nft-list.component';
 import { SendNftComponent } from '../../flows/transaction/send-page/components/send-asset/l1/send-nft/send-nft.component';
 import { SendKnsListComponent } from '../../flows/transaction/send-page/components/send-asset/l1/send-kns-list/send-kns-list.component';
@@ -43,6 +45,8 @@ export const FLOW_PAGE_IDS = [
   'send-kaspa',
   'send-krc20-list',
   'send-krc20',
+  'send-kcc20-list',
+  'send-kcc20',
   'send-nft-list',
   'send-nft',
   'send-kns-list',
@@ -77,6 +81,8 @@ export const FLOW_PAGE_REGISTRY: Record<FlowPageId, FlowPageRegistryEntry> = {
   'send-kaspa': SendKaspaComponent,
   'send-krc20-list': SendKrc20ListComponent,
   'send-krc20': SendKrc20Component,
+  'send-kcc20-list': SendKcc20ListComponent,
+  'send-kcc20': SendKcc20Component,
   'send-nft-list': SendNftListComponent,
   'send-nft': SendNftComponent,
   'send-kns-list': SendKnsListComponent,

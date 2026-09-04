@@ -1,0 +1,22 @@
+.send-kcc20-list-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.kcc20-tokens-container {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.kcc20-token-card {
+  border: none;
+  cursor: pointer;
+}
+
+.empty-state {
+  flex: 1;
+  min-height: 200px;
+}

@@ -36,6 +36,8 @@ export class EthereumHandleActionRequestService {
       this.handleWalletSwitchEthereumChainRequest.bind(this),
     [EIP1193RequestType.WALLET_ADD_ETHEREUM_CHAIN]:
       this.handleWalletAddEthereumChainRequest.bind(this),
+    [EIP1193RequestType.PERSONAL_SIGN]:
+      this.handlePersonalSignRequest.bind(this),
   };
 
   getSupportedActions(): EIP1193RequestType[] {
@@ -186,6 +188,41 @@ export class EthereumHandleActionRequestService {
     };
   }
 
+  async handlePersonalSignRequest(
+    action: EIP1193RequestPayload<EIP1193RequestType.PERSONAL_SIGN>,
+    wallet: AppWallet,
+  ): Promise<WalletActionResultWithError> {
+    const params = action.params;
+    const [first, second] = params ?? [];
+
+    // personal_sign params are conventionally [data, address], but some
+    // callers send [address, data] (the legacy eth_sign order). Detect the
+    // address positionally instead of assuming a fixed order.
+    const data = ethers.isAddress(first) ? second : first;
+
+    if (!data) {
+      return {
+        success: false,
+        errorCode: ERROR_CODES.EIP1193.INVALID_PARAMETERS,
+      };
+    }
+
+    const l2Wallet: ethers.Wallet = (await wallet.getL2Wallet())!;
+    const message = ethers.isHexString(data) ? ethers.getBytes(data) : data;
+    const signature = await l2Wallet.signMessage(message);
+
+    return {
+      success: true,
+      result: {
+        type: WalletActionResultType.EIP1193ProviderRequest,
+        performedByWallet: wallet.getIdWithAccount(),
+        requestData: action,
+        eip1193Response:
+          createEIP1193Response<EIP1193RequestType.PERSONAL_SIGN>(signature),
+      } as EIP1193ProviderRequestActionResult<EIP1193RequestType.PERSONAL_SIGN>,
+    };
+  }
+
   async handleWalletSwitchEthereumChainRequest(
     action: EIP1193RequestPayload<EIP1193RequestType.WALLET_SWITCH_ETHEREUM_CHAIN>,
     wallet: AppWallet,
@@ -252,6 +289,18 @@ export class EthereumHandleActionRequestService {
     wallet: AppWallet,
   ): Promise<{ isValidated: boolean; errorCode?: number }> {
     switch (action.method) {
+      case EIP1193RequestType.PERSONAL_SIGN: {
+        const params: EIP1193RequestParams[EIP1193RequestType.PERSONAL_SIGN] =
+          action.params as EIP1193RequestParams[EIP1193RequestType.PERSONAL_SIGN];
+        if (!params || !params[0]) {
+          return {
+            isValidated: false,
+            errorCode: ERROR_CODES.EIP1193.INVALID_PARAMETERS,
+          };
+        }
+        return { isValidated: true };
+      }
+
       case EIP1193RequestType.WALLET_SWITCH_ETHEREUM_CHAIN: {
         const params: EIP1193RequestParams[EIP1193RequestType.WALLET_SWITCH_ETHEREUM_CHAIN] =
           action.params as EIP1193RequestParams[EIP1193RequestType.WALLET_SWITCH_ETHEREUM_CHAIN];

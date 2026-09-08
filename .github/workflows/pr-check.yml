@@ -157,6 +157,7 @@ jobs:
           retention-days: 14
 
   e2e-funded:
+    if: contains(github.event.pull_request.labels.*.name, 'run-funded-e2e')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     # Funded tests need the KASPACOM org-level KASPA_E2E_SEED secret. When

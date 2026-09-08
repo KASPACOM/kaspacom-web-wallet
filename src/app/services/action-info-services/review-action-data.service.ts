@@ -26,7 +26,7 @@ import {
 import { Transaction } from '../../../../public/kaspa/kaspa';
 import { BaseCommunicationApp } from '../communication-service/communication-app/base-communication-app';
 import { environment } from '../../../environments/environment';
-import { formatUnits } from 'ethers';
+import { formatUnits, isAddress, isHexString, toUtf8String } from 'ethers';
 
 @Injectable({
   providedIn: 'root',
@@ -418,9 +418,48 @@ export class ReviewActionDataService {
         return this.getSignTypedDataActionDisplay(params, wallet);
       case EIP1193RequestType.SIGN_TYPED_DATA_V4:
         return this.getSignTypedDataV4ActionDisplay(params, wallet);
+      case EIP1193RequestType.PERSONAL_SIGN:
+        return this.getPersonalSignActionDisplay(params, wallet);
       default:
         return undefined;
     }
+  }
+
+  private getPersonalSignActionDisplay(
+    params: EIP1193RequestParams[EIP1193RequestType.PERSONAL_SIGN],
+    wallet: AppWallet,
+  ): ActionDisplay {
+    const [first, second] = params ?? [];
+
+    // personal_sign params are conventionally [data, address], but some
+    // callers send [address, data] (the legacy eth_sign order).
+    const data = isAddress(first) ? second : first;
+
+    let message = data;
+    if (data && isHexString(data)) {
+      try {
+        message = toUtf8String(data);
+      } catch {
+        message = data;
+      }
+    }
+
+    return {
+      title: 'Signature Request',
+      subtitle:
+        'This action is gas free and will not cost you anything, or give any permission to the requested entity.',
+      rows: [
+        {
+          fieldName: 'Wallet Address',
+          fieldValue: wallet.getAddress(),
+        },
+        {
+          fieldName: 'Message',
+          fieldValue: message,
+          isCodeBlock: true,
+        },
+      ],
+    };
   }
 
   private getSendTransactionActionDisplay(

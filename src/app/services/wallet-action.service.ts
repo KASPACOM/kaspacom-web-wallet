@@ -845,6 +845,10 @@ export class WalletActionService {
         break;
     }
 
+    if (!validationResult.isValidated) {
+      return validationResult;
+    }
+
     if (
       !(
         action.type == WalletActionType.TRANSFER_KAS &&
@@ -1002,7 +1006,18 @@ export class WalletActionService {
       };
     }
 
-    if (!Array.isArray(transaction.inputs)) {
+    if (
+      !Array.isArray(transaction.inputs) ||
+      !Array.isArray(transaction.outputs) ||
+      transaction.outputs.length === 0 ||
+      transaction.outputs.some((output) => {
+        try {
+          return !output || BigInt(output.value) < 0n;
+        } catch {
+          return true;
+        }
+      })
+    ) {
       return {
         isValidated: false,
         errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,

@@ -8,6 +8,8 @@
     "start:https": "ng serve --host 0.0.0.0 --ssl true",
     "build": "ng build && npm run sentry:sourcemaps",
     "build:dev": "ng build --configuration development",
+    "build:ci": "node scripts/write-build-release.mjs && ng build && npm run sentry:sourcemaps",
+    "build:dev:ci": "node scripts/write-build-release.mjs && ng build --configuration development && npm run sentry:sourcemaps",
     "assert:public-prerender": "node scripts/assert-public-prerender.mjs",
     "assert:aeo": "node scripts/assert-aeo.mjs",
     "watch": "ng build --watch --configuration development",

@@ -25,6 +25,7 @@ import { KaspaNetworkConnectionManagerService } from './kaspa-netwrok-services/k
 import { KaspaWalletMnemonicActionsService } from './kaspa-netwrok-services/kaspa-wallet-mnemonic-actions.service';
 import { MonitorService } from './monitor.service';
 import { KaspaL1NetworkService } from './kaspa-netwrok-services/kaspa-l1-network.service';
+import { assertUsableWalletData } from './wallet-data-state';
 
 export enum VIEW_METHOD {
   L1 = 'l1',
@@ -410,9 +411,9 @@ export class WalletService {
    * This should only be used during onboarding when new wallets are created
    */
   async forceReloadWallets(loadBalance: boolean = false): Promise<void> {
-    this.isWalletLoaded = true;
-
     const walletsData = await this.passwordManagerService.getUserData();
+    assertUsableWalletData(walletsData);
+    this.isWalletLoaded = true;
 
     const allWallets = [];
 
@@ -508,21 +509,27 @@ export class WalletService {
     return wallet;
   }
 
-  async selectCurrentWalletFromLocalStorageNullsafe(): Promise<void> {
+  async selectCurrentWalletFromLocalStorageNullsafe(): Promise<boolean> {
     let walletIdWithAccount = localStorage.getItem(
       LOCAL_STORAGE_KEYS.CURRENT_SELECTED_WALLET,
     );
     if (!walletIdWithAccount) {
       const allWallets = this.getAllWallets();
       if (!allWallets) {
-        return;
+        return false;
       }
       const len = allWallets()?.length || 0;
       if (len > 0) {
         walletIdWithAccount = allWallets()![0].getIdWithAccount();
       }
     }
-    this.selectCurrentWallet(walletIdWithAccount!);
+    if (!walletIdWithAccount) {
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.CURRENT_SELECTED_WALLET);
+      this.currentWalletSignal.set(undefined);
+      return false;
+    }
+
+    return this.selectCurrentWallet(walletIdWithAccount) !== undefined;
   }
 
   async selectCurrentWalletFromLocalStorage(): Promise<void> {

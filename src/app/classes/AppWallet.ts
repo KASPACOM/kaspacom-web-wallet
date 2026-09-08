@@ -28,6 +28,7 @@ export interface L2WalletState {
   address: string | undefined;
   balance: bigint;
   balanceFormatted: number;
+  availability: 'fresh' | 'stale' | 'unavailable';
 }
 
 export class AppWallet {
@@ -131,13 +132,13 @@ export class AppWallet {
     }
 
     if (this.ethereumWalletChainManager.getCurrentChainSignal()()) {
-      this.updateL2WalletState();
+      void this.updateL2WalletState();
     }
 
     toObservable(this.ethereumWalletChainManager.getCurrentChainSignal(), {
       injector: this.injector,
     }).subscribe((chain) => {
-      this.updateL2WalletState();
+      void this.updateL2WalletState();
     });
   }
 
@@ -374,18 +375,33 @@ export class AppWallet {
       const chainId = Number(
         this.ethereumWalletChainManager.getCurrentChainSignal()(),
       );
-      const balance = await this.getL2Balance();
+      const address = await this.getL2WalletAddress();
+      try {
+        const balance = await this.getL2Balance();
+        const nativeCurrencyDecimals =
+          this.getL2Provider()!.getConfig().nativeCurrency.decimals;
 
-      const nativeCurrencyDecimals = this.getL2Provider()!.getConfig().nativeCurrency.decimals;
-
-      this.l2WalletStateSignal.set({
-        chainId,
-        address: await this.getL2WalletAddress(),
-        balance: balance,
-        balanceFormatted:
-          parseFloat(formatUnits(balance, nativeCurrencyDecimals)) ||
-          0,
-      });
+        this.l2WalletStateSignal.set({
+          chainId,
+          address,
+          balance,
+          balanceFormatted:
+            parseFloat(formatUnits(balance, nativeCurrencyDecimals)) || 0,
+          availability: 'fresh',
+        });
+      } catch (error) {
+        const previous = this.l2WalletStateSignal();
+        console.warn('L2 balance is temporarily unavailable', error);
+        this.l2WalletStateSignal.set({
+          chainId,
+          address,
+          balance: previous?.chainId === chainId ? previous.balance : 0n,
+          balanceFormatted:
+            previous?.chainId === chainId ? previous.balanceFormatted : 0,
+          availability:
+            previous?.chainId === chainId ? 'stale' : 'unavailable',
+        });
+      }
     } else {
       this.l2WalletStateSignal.set(undefined);
     }

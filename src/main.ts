@@ -3,26 +3,30 @@ import { appConfig } from './app/core/app.config';
 import { AppComponent } from './app/app.component';
 import * as kaspa from '../public/kaspa/kaspa';
 import * as Sentry from '@sentry/angular';
+import { BUILD_RELEASE } from './build-release';
+import {
+  applyWalletSentryPolicy,
+  getWalletSentryEnvironment,
+  sanitizeSentryPath,
+} from './app/observability/sentry-policy';
+import { installChunkLoadRecovery } from './app/runtime/chunk-load-recovery';
 
 const APPLICATION_INIT_TIMEOUT = 30000;
 const KASPA_WASM_VERSION = '2.0.1-39291059';
 const KASPA_WASM_PATH = `./kaspa/kaspa_bg.wasm?v=${KASPA_WASM_VERSION}`;
 const TRANSIENT_WASM_RETRY_DELAY = 750;
 
-const sentryEnvironment =
-  window.location.hostname.includes('localhost') ||
-  window.location.hostname.includes('local.kaspa') ||
-  window.location.hostname.includes('127.0.0.1')
-    ? 'development'
-    : 'production';
+const sentryEnvironment = getWalletSentryEnvironment(window.location.hostname);
 const isProductionEnvironment = sentryEnvironment === 'production';
+
+installChunkLoadRecovery(BUILD_RELEASE);
 
 Sentry.init({
   dsn: 'https://5d158ddfd93e605cbd494bf92522964a@o4510546501959680.ingest.us.sentry.io/4510550518595584',
   environment: sentryEnvironment,
-  // Setting this option to true will send default PII data to Sentry.
-  // For example, automatic IP address collection on events
-  sendDefaultPii: true,
+  release: BUILD_RELEASE,
+  sendDefaultPii: false,
+  beforeSend: (event, hint) => applyWalletSentryPolicy(event, hint),
   // Capture unhandled promise rejections
   integrations: [Sentry.browserTracingIntegration()],
   // Performance monitoring
@@ -31,11 +35,9 @@ Sentry.init({
 
 function getStartupContext() {
   return {
-    route: window.location.pathname,
-    origin: window.location.origin,
+    route: sanitizeSentryPath(window.location.pathname),
     visibility_state: document.visibilityState,
     online: navigator.onLine,
-    user_agent: navigator.userAgent,
     hostname: window.location.hostname,
   };
 }

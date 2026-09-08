@@ -6,6 +6,9 @@
     <div class="balance-container__value text-white typo-title-6 fade-in">
       ${{ usdBalance() | number: "1.2" }}
     </div>
+    @if (isL2BalanceUnavailable()) {
+      <span class="balance-unavailable">Balance temporarily unavailable</span>
+    }
   }
 
   <!-- Network Balance -->

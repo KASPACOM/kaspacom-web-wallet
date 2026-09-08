@@ -52,6 +52,12 @@ import { MempoolTransactionManager } from '../../classes/MempoolTransactionManag
 import { keccak256, TransactionRequest } from 'ethers';
 import { EtherService } from '../etherium-services/ether.service';
 import { KaspaWalletMnemonicActionsService } from './kaspa-wallet-mnemonic-actions.service';
+import * as Sentry from '@sentry/angular';
+import {
+  annotateKaspaRpcError,
+  getKaspaRpcErrorContext,
+  isMalformedKaspaRpcResponseError,
+} from '../../observability/kaspa-rpc-errors';
 
 const MIN_TRANSACTION_FEE = 1817n;
 export const SUBMIT_REVEAL_MIN_UTXO_AMOUNT = 300000000n;
@@ -88,6 +94,26 @@ export class KaspaNetworkTransactionsManagerService {
   private readonly kaspaWalletMnemonicActionsService = inject(
     KaspaWalletMnemonicActionsService,
   );
+
+  private readonly handleRpcError = (
+    error: unknown,
+    method: string,
+    handled: boolean,
+  ): Error => {
+    const annotatedError = annotateKaspaRpcError(
+      error,
+      getKaspaRpcErrorContext(error) ?? {
+        rpc_method: method,
+        ...this.rpcService.getSafeRpcContext(),
+      },
+    );
+
+    if (handled && isMalformedKaspaRpcResponseError(annotatedError)) {
+      Sentry.captureException(annotatedError);
+    }
+
+    return annotatedError;
+  };
 
   async connectAndDo<T>(
     fn: () => Promise<T>,
@@ -146,9 +172,14 @@ export class KaspaNetworkTransactionsManagerService {
         this.rpcService.getRpc()!,
         this.rpcService.getNetwork(),
         address,
+        this.handleRpcError,
       );
 
-      await utxoProcessonManager.init();
+      try {
+        await utxoProcessonManager.init();
+      } catch (error) {
+        throw this.handleRpcError(error, 'utxoManager.init', true);
+      }
 
       return utxoProcessonManager;
     });
@@ -159,9 +190,14 @@ export class KaspaNetworkTransactionsManagerService {
       const mempoolManager = new MempoolTransactionManager(
         this.rpcService.getRpc()!,
         address,
+        this.handleRpcError,
       );
 
-      await mempoolManager.init();
+      try {
+        await mempoolManager.init();
+      } catch (error) {
+        throw this.handleRpcError(error, 'mempoolManager.init', true);
+      }
 
       return mempoolManager;
     });
@@ -1131,9 +1167,19 @@ export class KaspaNetworkTransactionsManagerService {
 
   async getWalletUtxos(address: string): Promise<UtxoEntryReference[]> {
     return await this.connectAndDo(async () => {
-      const utxos = await this.rpcService.getRpc()!.getUtxosByAddresses({
-        addresses: [address],
-      });
+      let utxos: IGetUtxosByAddressesResponse;
+      try {
+        utxos = await this.rpcService.getRpc()!.getUtxosByAddresses({
+          addresses: [address],
+        });
+      } catch (error) {
+        const annotatedError = this.handleRpcError(
+          error,
+          'getUtxosByAddresses',
+          true,
+        );
+        throw annotatedError;
+      }
 
       return utxos.entries;
     });

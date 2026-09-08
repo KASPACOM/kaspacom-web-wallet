@@ -1,3 +1,8 @@
+import {
+  getKaspaRpcErrorContext,
+  isMalformedKaspaRpcResponseError,
+} from './kaspa-rpc-errors';
+
 export type WalletSentryEnvironment = 'production' | 'development';
 
 interface SentryEventLike {
@@ -86,10 +91,12 @@ export function applyWalletSentryPolicy<T extends SentryEventLike>(
   if (isExpectedWalletError(event, hint)) return null;
 
   if (isMalformedKaspaRpcResponse(event, hint)) {
+    const rpcContext = getKaspaRpcErrorContext(hint?.originalException);
     event.tags = {
       ...event.tags,
       error_family: 'malformed_rpc_response',
       rpc_protocol: 'kaspa-wrpc',
+      ...rpcContext,
     };
   }
 
@@ -127,7 +134,10 @@ function isMalformedKaspaRpcResponse(
     .filter((value): value is string => typeof value === 'string')
     .join(' ');
 
-  return /error processing json: missing field [`']id[`']/i.test(text);
+  return (
+    isMalformedKaspaRpcResponseError(hint?.originalException) ||
+    /error processing json: missing field [`']id[`']/i.test(text)
+  );
 }
 
 function isSensitivePathSegment(segment: string): boolean {

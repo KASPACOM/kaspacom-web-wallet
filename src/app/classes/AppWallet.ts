@@ -22,6 +22,7 @@ import { ethers, formatUnits } from 'ethers';
 import { BaseEthereumProvider } from '../services/etherium-services/base-ethereum-provider';
 import { EthereumWalletChainManager } from '../services/etherium-services/etherium-wallet-chain.manager';
 import { KaspaWalletMnemonicActionsService } from '../services/kaspa-netwrok-services/kaspa-wallet-mnemonic-actions.service';
+import { isMalformedKaspaRpcResponseError } from '../observability/kaspa-rpc-errors';
 
 export interface L2WalletState {
   chainId: number | undefined;
@@ -205,10 +206,18 @@ export class AppWallet {
     }
 
     if (!this.mempoolTransactionsManager) {
-      this.mempoolTransactionsManager =
-        await this.kaspaNetworkActionsService.initMempoolTransactionManager(
-          this.getAddress(),
-        );
+      try {
+        this.mempoolTransactionsManager =
+          await this.kaspaNetworkActionsService.initMempoolTransactionManager(
+            this.getAddress(),
+          );
+      } catch (error) {
+        if (!isMalformedKaspaRpcResponseError(error)) {
+          throw error;
+        }
+        console.warn('Failed to initialize wallet mempool monitoring', error);
+        return;
+      }
       this.currentMempoolManagerTransactionSignalSubscription = toObservable(
         this.mempoolTransactionsManager.getWalletMempoolTransactionsSignal(),
         { injector: this.injector },
@@ -241,10 +250,19 @@ export class AppWallet {
 
     if (!this.isSettingUtxoProcessorManager) {
       this.isSettingUtxoProcessorManager = true;
-      this.utxoProcessorManager =
-        await this.kaspaNetworkActionsService.initUtxoProcessorManager(
-          this.getAddress(),
-        );
+      try {
+        this.utxoProcessorManager =
+          await this.kaspaNetworkActionsService.initUtxoProcessorManager(
+            this.getAddress(),
+          );
+      } catch (error) {
+        this.isSettingUtxoProcessorManager = false;
+        if (!isMalformedKaspaRpcResponseError(error)) {
+          throw error;
+        }
+        console.warn('Failed to initialize wallet UTXO monitoring', error);
+        return;
+      }
 
       this.currentUtxoProcessorManagerTransactionSignalSubscription =
         toObservable(this.utxoProcessorManager.getUtxoBalanceStateSignal(), {
@@ -257,7 +275,7 @@ export class AppWallet {
             (this.getCurrentWalletStateBalanceSignalValue()!.outgoing > 0n ||
               this.getCurrentWalletStateBalanceSignalValue()!.pending > 0n)
           ) {
-            this.mempoolTransactionsManager?.refreshMempoolTransactions();
+            this.mempoolTransactionsManager?.refreshMempoolTransactionsInBackground();
           }
 
           if (balanceData) {

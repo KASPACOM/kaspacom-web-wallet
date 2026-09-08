@@ -3,6 +3,7 @@ import {
   getWalletSentryEnvironment,
   sanitizeSentryUrl,
 } from './sentry-policy';
+import { annotateKaspaRpcError } from './kaspa-rpc-errors';
 
 describe('wallet Sentry policy', () => {
   it('classifies only the production wallet host as production', () => {
@@ -67,5 +68,32 @@ describe('wallet Sentry policy', () => {
 
     expect(event?.tags?.['error_family']).toBe('malformed_rpc_response');
     expect(event?.tags?.['rpc_protocol']).toBe('kaspa-wrpc');
+  });
+
+  it('adds safe operation context to an annotated malformed RPC response', () => {
+    const error = annotateKaspaRpcError(
+      new Error(
+        'Error processing JSON: missing field id at line 1 column 30479',
+      ),
+      {
+        rpc_method: 'getMempoolEntriesByAddresses',
+        rpc_network: 'testnet-10',
+        rpc_endpoint_source: 'configured',
+        rpc_endpoint_index: '1',
+        rpc_encoding: 'borsh',
+      },
+    );
+
+    const event = applyWalletSentryPolicy<{
+      message: string;
+      tags: Record<string, unknown>;
+    }>({ message: error.message, tags: {} }, { originalException: error });
+
+    expect(event?.tags?.['rpc_method']).toBe('getMempoolEntriesByAddresses');
+    expect(event?.tags?.['rpc_network']).toBe('testnet-10');
+    expect(event?.tags?.['rpc_endpoint_source']).toBe('configured');
+    expect(event?.tags?.['rpc_endpoint_index']).toBe('1');
+    expect(event?.tags?.['rpc_encoding']).toBe('borsh');
+    expect(JSON.stringify(event)).not.toContain('tn10-node.kaspa.com');
   });
 });

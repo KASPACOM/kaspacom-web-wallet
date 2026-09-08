@@ -1,5 +1,8 @@
 import {
   applyWalletSentryPolicy,
+  beforeBreadcrumb,
+  beforeSendSpan,
+  beforeSendTransaction,
   getWalletSentryEnvironment,
   sanitizeSentryUrl,
 } from './sentry-policy';
@@ -95,5 +98,54 @@ describe('wallet Sentry policy', () => {
     expect(event?.tags?.['rpc_endpoint_index']).toBe('1');
     expect(event?.tags?.['rpc_encoding']).toBe('borsh');
     expect(JSON.stringify(event)).not.toContain('tn10-node.kaspa.com');
+  });
+
+  it('sanitizes traced wallet routes, spans, and navigation breadcrumbs', () => {
+    const cyclicData: Record<string, unknown> = {};
+    cyclicData['self'] = cyclicData;
+    const transaction = beforeSendTransaction({
+      type: 'transaction' as const,
+      transaction: '/app/home/asset/krc20/KASPER/transaction/' + 'a'.repeat(64),
+    });
+    const span = beforeSendSpan({
+      description:
+        'GET https://wallet.kaspa.com/app/home/asset/erc20/0x' +
+        'b'.repeat(40) +
+        '?wallet=private',
+      data: {
+        'http.url':
+          'https://wallet.kaspa.com/app/home/transaction/kaspa/' +
+          'c'.repeat(64),
+      },
+    });
+    const breadcrumb = beforeBreadcrumb({
+      category: 'navigation',
+      message: '/app/home/asset/krc20/PRIVATE',
+      data: {
+        from: '/app/home/asset/krc721/COLLECTION/123',
+        to: '/app/home/asset/kns/private-domain',
+        context: cyclicData,
+      },
+    });
+
+    expect(transaction.transaction).toBe(
+      '/app/home/asset/krc20/:id/transaction/:id',
+    );
+    expect(span.description).toBe(
+      'GET https://wallet.kaspa.com/app/home/asset/erc20/:id',
+    );
+    expect(span.data['http.url']).toBe(
+      'https://wallet.kaspa.com/app/home/transaction/kaspa/:id',
+    );
+    expect(breadcrumb.data?.['from']).toBe('/app/home/asset/krc721/:id');
+    expect(breadcrumb.data?.['to']).toBe('/app/home/asset/kns/:id');
+    expect(breadcrumb.message).toBe('/app/home/asset/krc20/:id');
+    expect(
+      (breadcrumb.data?.['context'] as Record<string, unknown>)['self'],
+    ).toBe('[circular]');
+    expect(
+      beforeSendSpan({ description: 'ui.angular.render', data: {} })
+        .description,
+    ).toBe('ui.angular.render');
   });
 });

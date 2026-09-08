@@ -6,6 +6,9 @@ import * as Sentry from '@sentry/angular';
 import { BUILD_RELEASE } from './build-release';
 import {
   applyWalletSentryPolicy,
+  beforeBreadcrumb,
+  beforeSendSpan,
+  beforeSendTransaction,
   getWalletSentryEnvironment,
   sanitizeSentryPath,
 } from './app/observability/sentry-policy';
@@ -27,6 +30,9 @@ Sentry.init({
   release: BUILD_RELEASE,
   sendDefaultPii: false,
   beforeSend: (event, hint) => applyWalletSentryPolicy(event, hint),
+  beforeSendTransaction,
+  beforeSendSpan,
+  beforeBreadcrumb,
   // Capture unhandled promise rejections
   integrations: [Sentry.browserTracingIntegration()],
   // Performance monitoring

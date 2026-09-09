@@ -393,8 +393,8 @@ export class AppWallet {
       const chainId = Number(
         this.ethereumWalletChainManager.getCurrentChainSignal()(),
       );
-      const address = await this.getL2WalletAddress();
       try {
+        const address = await this.getL2WalletAddress();
         const balance = await this.getL2Balance();
         const nativeCurrencyDecimals =
           this.getL2Provider()!.getConfig().nativeCurrency.decimals;
@@ -412,7 +412,7 @@ export class AppWallet {
         console.warn('L2 balance is temporarily unavailable', error);
         this.l2WalletStateSignal.set({
           chainId,
-          address,
+          address: previous?.chainId === chainId ? previous.address : undefined,
           balance: previous?.chainId === chainId ? previous.balance : 0n,
           balanceFormatted:
             previous?.chainId === chainId ? previous.balanceFormatted : 0,

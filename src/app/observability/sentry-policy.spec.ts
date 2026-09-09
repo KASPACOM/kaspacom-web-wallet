@@ -137,6 +137,52 @@ describe('wallet Sentry policy', () => {
     );
   });
 
+  it('redacts sensitive field names regardless of their value shape', () => {
+    const event = applyWalletSentryPolicy<{
+      message: string;
+      extra: {
+        authorization: string;
+        apiKey: string;
+        nested: { session_token: string; note: string };
+      };
+    }>({
+      message: 'Bootstrap failed',
+      extra: {
+        authorization: 'Bearer opaque-token-that-is-not-hex-or-kaspa',
+        apiKey: 'plain-secret-value',
+        nested: {
+          session_token: 'plain-session-value',
+          note: 'this note is not sensitive',
+        },
+      },
+    });
+
+    expect(event?.extra.authorization).toBe('[redacted]');
+    expect(event?.extra.apiKey).toBe('[redacted]');
+    expect(event?.extra.nested.session_token).toBe('[redacted]');
+    expect(event?.extra.nested.note).toBe('this note is not sensitive');
+  });
+
+  it('strips query-string credentials from URLs embedded anywhere in a value', () => {
+    const event = applyWalletSentryPolicy<{
+      message: string;
+      contexts: { startup: { error_message: string } };
+    }>({
+      message: 'Bootstrap failed',
+      contexts: {
+        startup: {
+          error_message:
+            'GET https://rpc.example.com/v1?apiKey=verysecrettoken123 failed',
+        },
+      },
+    });
+
+    expect(event?.contexts.startup.error_message).not.toContain(
+      'verysecrettoken123',
+    );
+    expect(event?.contexts.startup.error_message).not.toContain('apiKey');
+  });
+
   it('sanitizes traced wallet routes, spans, and navigation breadcrumbs', () => {
     const cyclicData: Record<string, unknown> = {};
     cyclicData['self'] = cyclicData;

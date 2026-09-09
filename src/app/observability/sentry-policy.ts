@@ -47,6 +47,9 @@ const PRIVATE_VALUE_PATTERN =
   /kaspa(?:test)?:[a-z0-9]{20,}|0x[a-f0-9]{40,64}\b|\b[a-f0-9]{64}\b/gi;
 const PATH_DATA_KEY =
   /(?:^|[._-])(?:url|path|route|from|to|description)(?:[._-]|$)/i;
+const SENSITIVE_DATA_KEY =
+  /(?:^|[._-])(?:auth(?:orization)?|bearer|token|api[-_]?key|secret|password|credential|cookie|session|private[-_]?key|mnemonic|seed)(?:[._-]|$)/i;
+const EMBEDDED_URL_PATTERN = /https?:\/\/[^\s"'<>]+/gi;
 
 export function getWalletSentryEnvironment(
   hostname: string,
@@ -167,7 +170,12 @@ export function applyWalletSentryPolicy<T extends SentryEventLike>(
 }
 
 function scrubPrivateValues(value?: string): string | undefined {
-  return value?.replace(PRIVATE_VALUE_PATTERN, '[redacted]');
+  if (value === undefined) return value;
+  const withoutEmbeddedUrlQueries = value.replace(
+    EMBEDDED_URL_PATTERN,
+    (match) => sanitizeSentryUrl(match) ?? match,
+  );
+  return withoutEmbeddedUrlQueries.replace(PRIVATE_VALUE_PATTERN, '[redacted]');
 }
 
 function sanitizePathValue(value?: string): string | undefined {
@@ -192,6 +200,9 @@ function sanitizeSentryData(
   key = '',
   seen = new WeakSet<object>(),
 ): unknown {
+  if (key && SENSITIVE_DATA_KEY.test(key)) {
+    return '[redacted]';
+  }
   if (typeof value === 'string') {
     return PATH_DATA_KEY.test(key)
       ? sanitizePathValue(value)

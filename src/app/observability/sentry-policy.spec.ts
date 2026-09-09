@@ -100,6 +100,43 @@ describe('wallet Sentry policy', () => {
     expect(JSON.stringify(event)).not.toContain('tn10-node.kaspa.com');
   });
 
+  it('scrubs sensitive values out of event contexts and extra', () => {
+    const event = applyWalletSentryPolicy<{
+      message: string;
+      contexts: {
+        startup: { route: string; error_message: string; wasm_path: string };
+      };
+      extra: { wallet_address: string };
+    }>({
+      message: 'Bootstrap failed',
+      contexts: {
+        startup: {
+          route: '/app/home/asset/erc20/0x' + 'a'.repeat(40),
+          error_message:
+            'Failed to fetch dynamically imported module https://wallet.kaspa.com/app/home/asset/erc20/0x' +
+            'b'.repeat(40) +
+            '?wallet=kaspatest:' +
+            'c'.repeat(30),
+          wasm_path: './kaspa/kaspa_bg.wasm?v=1',
+        },
+      },
+      extra: {
+        wallet_address: 'kaspatest:' + 'd'.repeat(30),
+      },
+    });
+
+    expect(event?.contexts.startup.route).toBe(
+      '/app/home/asset/erc20/:id',
+    );
+    expect(event?.contexts.startup.error_message).not.toContain('0x' + 'b'.repeat(40));
+    expect(event?.contexts.startup.error_message).not.toContain(
+      'kaspatest:' + 'c'.repeat(30),
+    );
+    expect(event?.extra.wallet_address).not.toContain(
+      'kaspatest:' + 'd'.repeat(30),
+    );
+  });
+
   it('sanitizes traced wallet routes, spans, and navigation breadcrumbs', () => {
     const cyclicData: Record<string, unknown> = {};
     cyclicData['self'] = cyclicData;

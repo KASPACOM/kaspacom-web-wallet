@@ -13,6 +13,8 @@ interface SentryEventLike {
   transaction?: string;
   user?: unknown;
   tags?: Record<string, unknown>;
+  contexts?: Record<string, unknown>;
+  extra?: Record<string, unknown>;
 }
 
 interface SentryHintLike {
@@ -154,6 +156,12 @@ export function applyWalletSentryPolicy<T extends SentryEventLike>(
   }
   if (event.transaction) {
     event.transaction = sanitizeSentryPath(event.transaction);
+  }
+  if (event.contexts) {
+    event.contexts = sanitizeSentryData(event.contexts) as typeof event.contexts;
+  }
+  if (event.extra) {
+    event.extra = sanitizeSentryData(event.extra) as typeof event.extra;
   }
   return event;
 }

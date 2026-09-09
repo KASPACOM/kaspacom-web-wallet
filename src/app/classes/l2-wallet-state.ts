@@ -26,13 +26,14 @@ export function computeDegradedL2WalletState(
   chainId: number,
   previous: L2WalletState | undefined,
 ): L2WalletState {
-  const sameChain = previous?.chainId === chainId;
+  const hasKnownValue =
+    previous?.chainId === chainId && previous.availability !== 'unavailable';
 
   return {
     chainId,
-    address: sameChain ? previous.address : undefined,
-    balance: sameChain ? previous.balance : 0n,
-    balanceFormatted: sameChain ? previous.balanceFormatted : 0,
-    availability: sameChain ? 'stale' : 'unavailable',
+    address: hasKnownValue ? previous.address : undefined,
+    balance: hasKnownValue ? previous.balance : 0n,
+    balanceFormatted: hasKnownValue ? previous.balanceFormatted : 0,
+    availability: hasKnownValue ? 'stale' : 'unavailable',
   };
 }

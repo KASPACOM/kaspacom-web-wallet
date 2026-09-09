@@ -21,7 +21,7 @@ describe('L2 wallet state', () => {
     });
   });
 
-  it('falls back to zero when the formatted balance is not a number', () => {
+  it('formats a zero balance as 0', () => {
     const state = computeFreshL2WalletState(1, {
       address: '0xabc',
       balance: 0n,
@@ -80,6 +80,46 @@ describe('L2 wallet state', () => {
       balance: 0n,
       balanceFormatted: 0,
       availability: 'unavailable',
+    });
+  });
+
+  it('keeps reporting unavailable on repeated same-chain failures when no value was ever fetched', () => {
+    const previous: L2WalletState = {
+      chainId: 1,
+      address: undefined,
+      balance: 0n,
+      balanceFormatted: 0,
+      availability: 'unavailable',
+    };
+
+    const state = computeDegradedL2WalletState(1, previous);
+
+    expect(state).toEqual({
+      chainId: 1,
+      address: undefined,
+      balance: 0n,
+      balanceFormatted: 0,
+      availability: 'unavailable',
+    });
+  });
+
+  it('keeps chaining a stale value forward across repeated same-chain failures', () => {
+    const previous: L2WalletState = {
+      chainId: 1,
+      address: '0xabc',
+      balance: 42n,
+      balanceFormatted: 4.2,
+      availability: 'stale',
+    };
+
+    const state = computeDegradedL2WalletState(1, previous);
+
+    expect(state).toEqual({
+      chainId: 1,
+      address: '0xabc',
+      balance: 42n,
+      balanceFormatted: 4.2,
+      availability: 'stale',
     });
   });
 });

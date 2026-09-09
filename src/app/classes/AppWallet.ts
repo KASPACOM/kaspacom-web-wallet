@@ -18,11 +18,15 @@ import { MempoolTransactionManager } from './MempoolTransactionManager';
 import { IMempoolResultEntry } from '../types/kaspa-network/mempool-result.interface';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
-import { ethers, formatUnits } from 'ethers';
+import { ethers } from 'ethers';
 import { BaseEthereumProvider } from '../services/etherium-services/base-ethereum-provider';
 import { EthereumWalletChainManager } from '../services/etherium-services/etherium-wallet-chain.manager';
 import { KaspaWalletMnemonicActionsService } from '../services/kaspa-netwrok-services/kaspa-wallet-mnemonic-actions.service';
 import { isMalformedKaspaRpcResponseError } from '../observability/kaspa-rpc-errors';
+import {
+  computeDegradedL2WalletState,
+  computeFreshL2WalletState,
+} from './l2-wallet-state';
 
 export interface L2WalletState {
   chainId: number | undefined;
@@ -399,26 +403,18 @@ export class AppWallet {
         const nativeCurrencyDecimals =
           this.getL2Provider()!.getConfig().nativeCurrency.decimals;
 
-        this.l2WalletStateSignal.set({
-          chainId,
-          address,
-          balance,
-          balanceFormatted:
-            parseFloat(formatUnits(balance, nativeCurrencyDecimals)) || 0,
-          availability: 'fresh',
-        });
+        this.l2WalletStateSignal.set(
+          computeFreshL2WalletState(chainId, {
+            address,
+            balance,
+            nativeCurrencyDecimals,
+          }),
+        );
       } catch (error) {
-        const previous = this.l2WalletStateSignal();
         console.warn('L2 balance is temporarily unavailable', error);
-        this.l2WalletStateSignal.set({
-          chainId,
-          address: previous?.chainId === chainId ? previous.address : undefined,
-          balance: previous?.chainId === chainId ? previous.balance : 0n,
-          balanceFormatted:
-            previous?.chainId === chainId ? previous.balanceFormatted : 0,
-          availability:
-            previous?.chainId === chainId ? 'stale' : 'unavailable',
-        });
+        this.l2WalletStateSignal.set(
+          computeDegradedL2WalletState(chainId, this.l2WalletStateSignal()),
+        );
       }
     } else {
       this.l2WalletStateSignal.set(undefined);

@@ -5,6 +5,7 @@ import {
   IMempoolResultEntry,
 } from '../types/kaspa-network/mempool-result.interface';
 import { UtxoChangedEvent } from '../types/kaspa-network/utxo-changed-event.interface';
+import { isMalformedKaspaRpcResponseError } from '../observability/kaspa-rpc-errors';
 
 export type KaspaRpcErrorHandler = (
   error: unknown,
@@ -97,7 +98,11 @@ export class MempoolTransactionManager {
   }
 
   refreshMempoolTransactionsInBackground(): void {
-    void this.refreshMempoolTransactions(true).catch(() => undefined);
+    void this.refreshMempoolTransactions(true).catch((error) => {
+      if (!isMalformedKaspaRpcResponseError(error)) {
+        console.warn('Background mempool refresh failed', error);
+      }
+    });
   }
 
   private async runRpcOperation<T>(

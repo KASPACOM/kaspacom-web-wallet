@@ -7,7 +7,7 @@
       ${{ usdBalance() | number: "1.2" }}
     </div>
     @if (isL2BalanceUnavailable()) {
-      <span class="balance-unavailable">Balance temporarily unavailable</span>
+      <span class="balance-unavailable" role="status" aria-live="polite">Balance temporarily unavailable</span>
     }
   }
 

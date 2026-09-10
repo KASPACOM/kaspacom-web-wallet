@@ -51,8 +51,10 @@ const EXPECTED_ERROR_MESSAGES = [
   'metamask not installed',
   'no ethereum provider was found',
 ];
+// Hex runs are matched open-ended: a run longer than a private key (a 128-char
+// BIP39 seed, say) is more sensitive, not less, so it must not fall through.
 const PRIVATE_VALUE_PATTERN =
-  /kaspa(?:test)?:[a-z0-9]{20,}|0x[a-f0-9]{40,64}\b|\b[a-f0-9]{64}\b/gi;
+  /kaspa(?:test)?:[a-z0-9]{20,}|\b[xk](?:prv|pub)[1-9a-km-zA-HJ-NP-Z]{50,}|0x[a-f0-9]{40,}|\b[a-f0-9]{64,}/gi;
 const PATH_DATA_KEY =
   /(?:^|[._-])(?:url|path|route|from|to|description)(?:[._-]|$)/i;
 const SENSITIVE_DATA_KEY =

@@ -20,16 +20,23 @@ export class KaspaWalletMnemonicActionsService {
       return null;
     }
 
-    const mnemonic = new Mnemonic(mnemonicWords);
+    try {
+      const mnemonic = new Mnemonic(mnemonicWords);
 
-    const seed = mnemonic.toSeed(password);
-    const xprv = new XPrv(seed);
+      const seed = mnemonic.toSeed(password);
+      const xprv = new XPrv(seed);
 
-    if (derivedPath) {
-      return xprv.derivePath(derivedPath).toPrivateKey().toString();
+      if (derivedPath) {
+        return xprv.derivePath(derivedPath).toPrivateKey().toString();
+      }
+
+      return xprv.privateKey;
+    } catch {
+      // The original error is dropped rather than wrapped: these WASM calls
+      // receive the phrase, seed and extended key, and an error echoing any of
+      // them would reach Sentry through the global handler.
+      throw new Error('Failed to derive a private key from the mnemonic');
     }
-
-    return xprv.privateKey;
   }
 
   getWalletAddressFromMnemonic(

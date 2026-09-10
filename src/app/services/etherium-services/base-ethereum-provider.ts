@@ -67,7 +67,13 @@ export class BaseEthereumProvider {
   }
 
   private rotateReadProvider(): void {
-    this.etherProvider.destroy();
+    try {
+      this.etherProvider.destroy();
+    } catch {
+      // A provider that won't tear down must not block failover: this runs
+      // inside the retry loop's catch, so a throw here would escape it and
+      // bypass EvmRpcReadError.
+    }
     this.rpcUrlIndex = (this.rpcUrlIndex + 1) % this.config.rpcUrls.length;
     this.etherProvider = this.createProvider(
       this.config.rpcUrls[this.rpcUrlIndex],

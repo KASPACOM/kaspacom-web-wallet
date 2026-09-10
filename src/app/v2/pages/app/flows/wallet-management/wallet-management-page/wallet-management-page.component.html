@@ -1,4 +1,22 @@
 <div class="page-content">
+  @if (unusableWalletNames().length) {
+    <div class="wallet-recovery-notice" role="alert">
+      <kc-icon [iconClass]="'icon-warning'" [size]="'sm'" aria-hidden="true" />
+      <div class="wallet-recovery-notice__text">
+        <strong>
+          {{ unusableWalletNames().length === 1 ? "This wallet is" : "These wallets are" }}
+          not loaded: {{ unusableWalletNames().join(", ") }}
+        </strong>
+        <span>
+          Its recovery phrase is still stored, but the account details are
+          missing, so it can't be opened here. Your other wallets are
+          unaffected. Restore this wallet from its recovery phrase to use it
+          again.
+        </span>
+      </div>
+    </div>
+  }
+
   <!-- Custom Header -->
   <div class="custom-header">
     <div class="header-left">

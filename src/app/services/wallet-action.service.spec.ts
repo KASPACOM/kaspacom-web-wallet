@@ -169,8 +169,14 @@ describe('WalletActionService approval gating', () => {
     ).toHaveBeenCalledWith(action, wallet as never);
   });
 
-  for (const outputs of [undefined, null, []]) {
-    it(`rejects PSKTs with ${String(outputs)} outputs before balance calculation`, async () => {
+  const invalidOutputsCases: Array<[label: string, outputs: unknown]> = [
+    ['undefined', undefined],
+    ['null', null],
+    ['empty array', []],
+  ];
+
+  for (const [label, outputs] of invalidOutputsCases) {
+    it(`rejects PSKTs with ${label} outputs before balance calculation`, async () => {
       const malformed = JSON.stringify({
         inputs: JSON.parse(fundedPskt).inputs,
         outputs,

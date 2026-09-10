@@ -25,7 +25,11 @@ import { KaspaNetworkConnectionManagerService } from './kaspa-netwrok-services/k
 import { KaspaWalletMnemonicActionsService } from './kaspa-netwrok-services/kaspa-wallet-mnemonic-actions.service';
 import { MonitorService } from './monitor.service';
 import { KaspaL1NetworkService } from './kaspa-netwrok-services/kaspa-l1-network.service';
-import { assertUsableWalletData } from './wallet-data-state';
+import {
+  assertUsableWalletData,
+  partitionWalletData,
+} from './wallet-data-state';
+import { UserWalletsData } from '../types/user-wallets-data';
 
 export enum VIEW_METHOD {
   L1 = 'l1',
@@ -52,6 +56,7 @@ export class WalletService {
 
   private currentWalletSignal = signal<AppWallet | undefined>(undefined);
   private allWalletsSignal = signal<AppWallet[] | undefined>(undefined);
+  private unusableWalletsSignal = signal<UserWalletsData['wallets']>([]);
   private isL2DisplaySignal: WritableSignal<boolean>;
   private isWalletLoaded = false;
 
@@ -413,11 +418,14 @@ export class WalletService {
   async forceReloadWallets(loadBalance: boolean = false): Promise<void> {
     const walletsData = await this.passwordManagerService.getUserData();
     assertUsableWalletData(walletsData);
+
+    const { usable, unusable } = partitionWalletData(walletsData);
+    this.unusableWalletsSignal.set(unusable);
     this.isWalletLoaded = true;
 
     const allWallets = [];
 
-    for (const wallet of walletsData.wallets) {
+    for (const wallet of usable) {
       if (wallet.accounts && wallet.accounts.length) {
         for (const walletAccount of wallet.accounts) {
           allWallets.push(
@@ -449,6 +457,16 @@ export class WalletService {
     this.isWalletLoaded = false;
     this.allWalletsSignal.set(undefined);
     this.currentWalletSignal.set(undefined);
+    this.unusableWalletsSignal.set([]);
+  }
+
+  /**
+   * Wallets that were skipped during load because their data can't be derived
+   * from. Surfaced so the UI can tell the user which wallet needs recovery
+   * instead of leaving them to think it vanished.
+   */
+  getUnusableWallets(): Signal<UserWalletsData['wallets']> {
+    return this.unusableWalletsSignal.asReadonly();
   }
 
   getAllWallets(loadBalance: boolean = false): Signal<AppWallet[] | undefined> {

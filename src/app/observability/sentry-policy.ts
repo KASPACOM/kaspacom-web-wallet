@@ -174,8 +174,7 @@ function scrubPrivateValues(value?: string): string | undefined {
   if (value === undefined) return value;
   const withoutEmbeddedLocations = value.replace(
     EMBEDDED_LOCATION_PATTERN,
-    (match) =>
-      match.startsWith('/') ? sanitizeSentryPath(match) : sanitizeSentryUrl(match) ?? match,
+    (match) => sanitizeSentryUrl(match) ?? match,
   );
   return withoutEmbeddedLocations.replace(PRIVATE_VALUE_PATTERN, '[redacted]');
 }

@@ -229,6 +229,24 @@ describe('wallet Sentry policy', () => {
     );
   });
 
+  it('strips the query string from an embedded static wallet route that has no sensitive segment', () => {
+    const event = applyWalletSentryPolicy<{
+      message: string;
+      contexts: { startup: { error_message: string } };
+    }>({
+      message: 'Bootstrap failed',
+      contexts: {
+        startup: {
+          error_message: 'redirected to /app/collectables?apiKey=opaque-secret',
+        },
+      },
+    });
+
+    expect(event?.contexts.startup.error_message).toBe(
+      'redirected to /app/collectables',
+    );
+  });
+
   it('sanitizes traced wallet routes, spans, and navigation breadcrumbs', () => {
     const cyclicData: Record<string, unknown> = {};
     cyclicData['self'] = cyclicData;

@@ -1,0 +1,70 @@
+import { signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { WalletService } from '../../../../../../services/wallet.service';
+import { QuickActionDialogService } from '../../../../../services/quick-action-dialog.service';
+import { FlowPagesService } from '../../../../../services/flow-pages.service';
+import { WalletManagementPageComponent } from './wallet-management-page.component';
+
+describe('WalletManagementPageComponent recovery notice', () => {
+  const unusableWallets = signal<Array<{ name?: string }>>([]);
+
+  function setup() {
+    TestBed.configureTestingModule({
+      imports: [WalletManagementPageComponent],
+      providers: [
+        {
+          provide: WalletService,
+          useValue: {
+            getUnusableWallets: () => unusableWallets.asReadonly(),
+            getAllWallets: () => signal(undefined).asReadonly(),
+            getCurrentWallet: () => undefined,
+          },
+        },
+        { provide: QuickActionDialogService, useValue: {} },
+        { provide: FlowPagesService, useValue: {} },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(WalletManagementPageComponent);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  afterEach(() => {
+    unusableWallets.set([]);
+    TestBed.resetTestingModule();
+  });
+
+  it('shows nothing when every wallet loaded', () => {
+    const fixture = setup();
+
+    expect(
+      fixture.nativeElement.querySelector('.wallet-recovery-notice'),
+    ).toBeNull();
+  });
+
+  it('names the skipped wallet and announces it', () => {
+    unusableWallets.set([{ name: 'Savings' }]);
+    const fixture = setup();
+
+    const notice = fixture.nativeElement.querySelector(
+      '.wallet-recovery-notice',
+    );
+    expect(notice).not.toBeNull();
+    expect(notice.getAttribute('role')).toBe('alert');
+    expect(notice.textContent).toContain('This wallet is');
+    expect(notice.textContent).toContain('Savings');
+    expect(notice.textContent).toContain('other wallets are');
+  });
+
+  it('pluralises and lists every skipped wallet', () => {
+    unusableWallets.set([{ name: 'Savings' }, { name: 'Cold storage' }]);
+    const fixture = setup();
+
+    const notice = fixture.nativeElement.querySelector(
+      '.wallet-recovery-notice',
+    );
+    expect(notice.textContent).toContain('These wallets are');
+    expect(notice.textContent).toContain('Savings, Cold storage');
+  });
+});

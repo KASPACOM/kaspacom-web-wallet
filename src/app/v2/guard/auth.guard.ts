@@ -44,8 +44,8 @@ export class AuthGuard implements CanActivate {
 
     let isLogged = false;
     try {
-      const user = await this.passwordManagerService.getUserData();
-      isLogged = true;
+      const user = await this.passwordManagerService.getUserDataOrNull();
+      isLogged = user !== null;
     } catch (error) {
       isLogged = false;
     }

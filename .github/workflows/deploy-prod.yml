@@ -28,9 +28,10 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Angular app
-        run: npm run build
+        run: npm run build:ci
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_RELEASE: wallet@${{ github.sha }}
 
       - name: Install AWS CLI
         run: |

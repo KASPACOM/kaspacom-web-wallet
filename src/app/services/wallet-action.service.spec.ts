@@ -168,4 +168,37 @@ describe('WalletActionService approval gating', () => {
       kaspaNetworkActions.getMinimalRequiredAmountForAction,
     ).toHaveBeenCalledWith(action, wallet as never);
   });
+
+  const invalidOutputsCases: Array<[label: string, outputs: unknown]> = [
+    ['undefined', undefined],
+    ['null', null],
+    ['empty array', []],
+  ];
+
+  for (const [label, outputs] of invalidOutputsCases) {
+    it(`rejects PSKTs with ${label} outputs before balance calculation`, async () => {
+      const malformed = JSON.stringify({
+        inputs: JSON.parse(fundedPskt).inputs,
+        outputs,
+      });
+      const action: WalletAction = {
+        type: WalletActionType.SIGN_PSKT_TRANSACTION,
+        data: {
+          psktTransactionJson: malformed,
+          signOnly: false,
+          signInputs: [{ index: 0 }],
+        },
+      };
+
+      const result = await service.validateAction(action, {} as never);
+
+      expect(result).toEqual({
+        isValidated: false,
+        errorCode: ERROR_CODES.WALLET_ACTION.INVALID_PSKT_TX,
+      });
+      expect(
+        kaspaNetworkActions.getMinimalRequiredAmountForAction,
+      ).not.toHaveBeenCalled();
+    });
+  }
 });

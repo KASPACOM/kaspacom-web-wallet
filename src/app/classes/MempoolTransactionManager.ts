@@ -5,6 +5,13 @@ import {
   IMempoolResultEntry,
 } from '../types/kaspa-network/mempool-result.interface';
 import { UtxoChangedEvent } from '../types/kaspa-network/utxo-changed-event.interface';
+import { isMalformedKaspaRpcResponseError } from '../observability/kaspa-rpc-errors';
+
+export type KaspaRpcErrorHandler = (
+  error: unknown,
+  method: string,
+  handled: boolean,
+) => Error;
 
 export class MempoolTransactionManager {
   private walletMempoolTransactionsSignal = signal<
@@ -19,6 +26,7 @@ export class MempoolTransactionManager {
   constructor(
     private readonly rpc: RpcClient,
     private readonly publicAddress: string,
+    private readonly onRpcError?: KaspaRpcErrorHandler,
   ) {
     this.utxoChangedEventListenerWithBind =
       this.utxoChangedEventListener.bind(this);
@@ -26,7 +34,9 @@ export class MempoolTransactionManager {
 
   async init() {
     this.disposed = false;
-    await this.rpc.subscribeUtxosChanged([this.publicAddress]);
+    await this.runRpcOperation('subscribeUtxosChanged', () =>
+      this.rpc.subscribeUtxosChanged([this.publicAddress]),
+    );
     await this.rpc.addEventListener(this.utxoChangedEventListenerWithBind!);
 
     await this.refreshMempoolTransactions();
@@ -55,16 +65,21 @@ export class MempoolTransactionManager {
     this.transactionConfirmedResolve = undefined;
   }
 
-  async refreshMempoolTransactions() {
+  async refreshMempoolTransactions(handled = false) {
     if (this.disposed) {
       return;
     }
 
-    const mempoolTransactions = (await this.rpc.getMempoolEntriesByAddresses({
-      addresses: [this.publicAddress],
-      filterTransactionPool: false,
-      includeOrphanPool: false,
-    })) as any as IMempoolResult;
+    const mempoolTransactions = (await this.runRpcOperation(
+      'getMempoolEntriesByAddresses',
+      () =>
+        this.rpc.getMempoolEntriesByAddresses({
+          addresses: [this.publicAddress],
+          filterTransactionPool: false,
+          includeOrphanPool: false,
+        }),
+      handled,
+    )) as any as IMempoolResult;
 
     const currentWalletEntries = mempoolTransactions.entries[0];
 
@@ -79,7 +94,27 @@ export class MempoolTransactionManager {
   }
 
   private utxoChangedEventListener(event: UtxoChangedEvent) {
-    void this.refreshMempoolTransactions();
+    this.refreshMempoolTransactionsInBackground();
+  }
+
+  refreshMempoolTransactionsInBackground(): void {
+    void this.refreshMempoolTransactions(true).catch((error) => {
+      if (!isMalformedKaspaRpcResponseError(error)) {
+        console.warn('Background mempool refresh failed', error);
+      }
+    });
+  }
+
+  private async runRpcOperation<T>(
+    method: string,
+    operation: () => Promise<T>,
+    handled = false,
+  ): Promise<T> {
+    try {
+      return await operation();
+    } catch (error) {
+      throw this.onRpcError?.(error, method, handled) ?? error;
+    }
   }
 
   getWalletMempoolTransactionsSignal(): Signal<

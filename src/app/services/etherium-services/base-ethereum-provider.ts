@@ -4,16 +4,36 @@ import { environment } from "../../../environments/environment";
 
 export class BaseEthereumProvider {
   protected etherProvider: ethers.JsonRpcProvider;
+  private rpcUrlIndex = 0;
   constructor(protected config: EIP1193ProviderChain) {
+    if (!config.rpcUrls.length) {
+      throw new Error('EVM chain has no RPC URLs configured');
+    }
     const additionalOptions: ethers.JsonRpcApiProviderOptions = {
       batchMaxCount: environment.isProduction ? 100 : 1,
     };
 
 
-    this.etherProvider = new ethers.JsonRpcProvider(config.rpcUrls[0], {
-      name: config.chainName,
-      chainId: parseInt(config.chainId, 16),
-    }, additionalOptions);
+    this.etherProvider = this.createProvider(
+      config.rpcUrls[0],
+      additionalOptions,
+    );
+  }
+
+  protected createProvider(
+    rpcUrl: string,
+    options: ethers.JsonRpcApiProviderOptions = {
+      batchMaxCount: environment.isProduction ? 100 : 1,
+    },
+  ): ethers.JsonRpcProvider {
+    return new ethers.JsonRpcProvider(
+      rpcUrl,
+      {
+        name: this.config.chainName,
+        chainId: parseInt(this.config.chainId, 16),
+      },
+      options,
+    );
   }
 
   getChainWallet(privateKey: string): ethers.Wallet {
@@ -21,7 +41,37 @@ export class BaseEthereumProvider {
   }
 
   async getWalletBalance(address: string): Promise<bigint> {
-    return await this.etherProvider.getBalance(address);
+    const attempts = 3;
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      try {
+        return await this.etherProvider.getBalance(address);
+      } catch (error) {
+        lastError = error;
+        if (attempt + 1 < attempts) {
+          this.rotateReadProvider();
+          await new Promise((resolve) =>
+            setTimeout(resolve, 250 * Math.pow(2, attempt)),
+          );
+        }
+      }
+    }
+
+    throw new EvmRpcReadError(
+      'eth_getBalance',
+      this.config.chainId,
+      attempts,
+      lastError,
+    );
+  }
+
+  private rotateReadProvider(): void {
+    this.etherProvider.destroy();
+    this.rpcUrlIndex = (this.rpcUrlIndex + 1) % this.config.rpcUrls.length;
+    this.etherProvider = this.createProvider(
+      this.config.rpcUrls[this.rpcUrlIndex],
+    );
   }
 
   async submitTransaction(transaction: string): Promise<string> {
@@ -97,5 +147,17 @@ export class BaseEthereumProvider {
 
   disconnect(): void {
     this.etherProvider.destroy();
+  }
+}
+
+export class EvmRpcReadError extends Error {
+  constructor(
+    readonly method: string,
+    readonly chainId: string,
+    readonly attempts: number,
+    readonly originalError: unknown,
+  ) {
+    super(`${method} failed after ${attempts} attempts`);
+    this.name = 'EvmRpcReadError';
   }
 }

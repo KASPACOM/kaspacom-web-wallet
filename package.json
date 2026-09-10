@@ -6,8 +6,10 @@
     "start": "ng serve --configuration=development",
     "start:local": "ng serve --configuration=development --port 4201 --ssl true",
     "start:https": "ng serve --host 0.0.0.0 --ssl true",
-    "build": "ng build && npm run sentry:sourcemaps",
+    "build": "ng build",
     "build:dev": "ng build --configuration development",
+    "build:ci": "node scripts/write-build-release.mjs && ng build && npm run sentry:sourcemaps",
+    "build:dev:ci": "node scripts/write-build-release.mjs && ng build --configuration development && npm run sentry:sourcemaps",
     "assert:public-prerender": "node scripts/assert-public-prerender.mjs",
     "assert:aeo": "node scripts/assert-aeo.mjs",
     "watch": "ng build --watch --configuration development",
@@ -22,7 +24,7 @@
     "e2e:mobile": "playwright test --project=mobile-safari",
     "e2e:install": "playwright install --with-deps chromium webkit firefox",
     "serve:ssr:wallet-front-new": "node dist/wallet-front-new/server/server.mjs",
-    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org kaspacom --project wallet ./dist && sentry-cli sourcemaps upload --org kaspacom --project wallet ./dist"
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org kaspacom --project wallet ./dist && sentry-cli sourcemaps upload --org kaspacom --project wallet --release \"$SENTRY_RELEASE\" ./dist"
   },
   "private": true,
   "dependencies": {

@@ -26,6 +26,23 @@ describe('PasswordManagerService', () => {
     localStorage.clear();
   });
 
+  it('returns null when no encrypted wallet record exists', async () => {
+    await expectAsync(
+      service.getUserDataWithPassword('password'),
+    ).toBeResolvedTo(null);
+  });
+
+  it('rejects a corrupt encrypted wallet record without unlocking it', async () => {
+    localStorage.setItem(LOCAL_STORAGE_KEYS.USER_DATA, 'corrupt-wallet-data');
+
+    await expectAsync(
+      service.checkAndLoadPassword('password'),
+    ).toBeResolvedTo(false);
+    await expectAsync(service.getUserData()).toBeRejectedWithError(
+      'password_missing',
+    );
+  });
+
   it('stores imported legacy wallet data and migrates it after a successful password unlock', async () => {
     const legacyData = await encryptLegacyPayload(
       JSON.stringify({

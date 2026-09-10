@@ -9,6 +9,7 @@ import {
   BalanceEvent,
 } from '../types/kaspa-network/balance-event.interface';
 import { IMempoolResult } from '../types/kaspa-network/mempool-result.interface';
+import { KaspaRpcErrorHandler } from './MempoolTransactionManager';
 
 const WAIT_TIMEOUT = 20 * 1000;
 
@@ -42,6 +43,7 @@ export class UtxoProcessorManager {
     private readonly rpc: RpcClient,
     private readonly network: string,
     private readonly publicAddress: string,
+    private readonly onRpcError?: KaspaRpcErrorHandler,
   ) {
     this.processorHandlerWithBind = this.processorEventListener.bind(this);
     this.balanceEventHandlerWithBind = this.balanceEventHandler.bind(this);
@@ -115,8 +117,12 @@ export class UtxoProcessorManager {
     clearTimeout(this.processorEventListenerTimeout);
 
     try {
-      await this.context!.clear();
-      await this.context!.trackAddresses([this.publicAddress]);
+      await this.runRpcOperation('utxoContext.clear', () =>
+        this.context!.clear(),
+      );
+      await this.runRpcOperation('utxoContext.trackAddresses', () =>
+        this.context!.trackAddresses([this.publicAddress]),
+      );
       this.processorEventListenerResolve!();
     } catch (error) {
       this.processorEventListenerReject!(error);
@@ -172,7 +178,9 @@ export class UtxoProcessorManager {
       'pending',
       this.balanceEventHandlerWithBind!,
     );
-    await this.processor!.start();
+    await this.runRpcOperation('utxoProcessor.start', () =>
+      this.processor!.start(),
+    );
 
     return await this.processorEventListenerPromise;
   }
@@ -224,5 +232,16 @@ export class UtxoProcessorManager {
     }
 
     return await this.waitForOutgoingUtxoPromise;
+  }
+
+  private async runRpcOperation<T>(
+    method: string,
+    operation: () => Promise<T>,
+  ): Promise<T> {
+    try {
+      return await operation();
+    } catch (error) {
+      throw this.onRpcError?.(error, method, false) ?? error;
+    }
   }
 }

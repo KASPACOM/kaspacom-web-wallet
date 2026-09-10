@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Encoding, Resolver, RpcClient } from '../../../../public/kaspa/kaspa';
 import { KaspaL1NetworkService } from './kaspa-l1-network.service';
+import { KaspaRpcErrorContext } from '../../observability/kaspa-rpc-errors';
 
 @Injectable({
   providedIn: 'root',
@@ -117,5 +118,18 @@ export class RpcService {
 
   getNetwork() {
     return this.network;
+  }
+
+  getSafeRpcContext(): Omit<KaspaRpcErrorContext, 'rpc_method'> {
+    return {
+      rpc_network: this.network,
+      rpc_endpoint_source: this.usingConfiguredRpcUrl
+        ? 'configured'
+        : 'resolver',
+      ...(this.usingConfiguredRpcUrl
+        ? { rpc_endpoint_index: String(this.configuredRpcUrlIndex) }
+        : {}),
+      rpc_encoding: 'borsh',
+    };
   }
 }

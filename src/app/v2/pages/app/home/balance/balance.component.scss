@@ -35,6 +35,12 @@
   font-weight: 600;
 }
 
+.balance-unavailable {
+  color: var(--warning-color, #ffb800);
+  font-size: 12px;
+  line-height: 16px;
+}
+
 .native-token-icon {
   width: 24px;
   height: 24px;

@@ -82,5 +82,10 @@ const walletRoutes: Routes = [
 export const V2TMP_ROUTES: Routes = [
   ...publicRoutes,
   publicWalletInfoRoute,
+  {
+    path: 'nft/marketplace',
+    pathMatch: 'full',
+    redirectTo: 'app/collectables',
+  },
   ...walletRoutes,
 ];

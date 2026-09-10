@@ -18,16 +18,22 @@ import { MempoolTransactionManager } from './MempoolTransactionManager';
 import { IMempoolResultEntry } from '../types/kaspa-network/mempool-result.interface';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
-import { ethers, formatUnits } from 'ethers';
+import { ethers } from 'ethers';
 import { BaseEthereumProvider } from '../services/etherium-services/base-ethereum-provider';
 import { EthereumWalletChainManager } from '../services/etherium-services/etherium-wallet-chain.manager';
 import { KaspaWalletMnemonicActionsService } from '../services/kaspa-netwrok-services/kaspa-wallet-mnemonic-actions.service';
+import { isMalformedKaspaRpcResponseError } from '../observability/kaspa-rpc-errors';
+import {
+  computeDegradedL2WalletState,
+  computeFreshL2WalletState,
+} from './l2-wallet-state';
 
 export interface L2WalletState {
   chainId: number | undefined;
   address: string | undefined;
   balance: bigint;
   balanceFormatted: number;
+  availability: 'fresh' | 'stale' | 'unavailable';
 }
 
 export class AppWallet {
@@ -131,13 +137,13 @@ export class AppWallet {
     }
 
     if (this.ethereumWalletChainManager.getCurrentChainSignal()()) {
-      this.updateL2WalletState();
+      void this.updateL2WalletState();
     }
 
     toObservable(this.ethereumWalletChainManager.getCurrentChainSignal(), {
       injector: this.injector,
     }).subscribe((chain) => {
-      this.updateL2WalletState();
+      void this.updateL2WalletState();
     });
   }
 
@@ -204,10 +210,18 @@ export class AppWallet {
     }
 
     if (!this.mempoolTransactionsManager) {
-      this.mempoolTransactionsManager =
-        await this.kaspaNetworkActionsService.initMempoolTransactionManager(
-          this.getAddress(),
-        );
+      try {
+        this.mempoolTransactionsManager =
+          await this.kaspaNetworkActionsService.initMempoolTransactionManager(
+            this.getAddress(),
+          );
+      } catch (error) {
+        if (!isMalformedKaspaRpcResponseError(error)) {
+          throw error;
+        }
+        console.warn('Failed to initialize wallet mempool monitoring', error);
+        return;
+      }
       this.currentMempoolManagerTransactionSignalSubscription = toObservable(
         this.mempoolTransactionsManager.getWalletMempoolTransactionsSignal(),
         { injector: this.injector },
@@ -240,10 +254,19 @@ export class AppWallet {
 
     if (!this.isSettingUtxoProcessorManager) {
       this.isSettingUtxoProcessorManager = true;
-      this.utxoProcessorManager =
-        await this.kaspaNetworkActionsService.initUtxoProcessorManager(
-          this.getAddress(),
-        );
+      try {
+        this.utxoProcessorManager =
+          await this.kaspaNetworkActionsService.initUtxoProcessorManager(
+            this.getAddress(),
+          );
+      } catch (error) {
+        this.isSettingUtxoProcessorManager = false;
+        if (!isMalformedKaspaRpcResponseError(error)) {
+          throw error;
+        }
+        console.warn('Failed to initialize wallet UTXO monitoring', error);
+        return;
+      }
 
       this.currentUtxoProcessorManagerTransactionSignalSubscription =
         toObservable(this.utxoProcessorManager.getUtxoBalanceStateSignal(), {
@@ -256,7 +279,7 @@ export class AppWallet {
             (this.getCurrentWalletStateBalanceSignalValue()!.outgoing > 0n ||
               this.getCurrentWalletStateBalanceSignalValue()!.pending > 0n)
           ) {
-            this.mempoolTransactionsManager?.refreshMempoolTransactions();
+            this.mempoolTransactionsManager?.refreshMempoolTransactionsInBackground();
           }
 
           if (balanceData) {
@@ -374,18 +397,25 @@ export class AppWallet {
       const chainId = Number(
         this.ethereumWalletChainManager.getCurrentChainSignal()(),
       );
-      const balance = await this.getL2Balance();
+      try {
+        const address = await this.getL2WalletAddress();
+        const balance = await this.getL2Balance();
+        const nativeCurrencyDecimals =
+          this.getL2Provider()!.getConfig().nativeCurrency.decimals;
 
-      const nativeCurrencyDecimals = this.getL2Provider()!.getConfig().nativeCurrency.decimals;
-
-      this.l2WalletStateSignal.set({
-        chainId,
-        address: await this.getL2WalletAddress(),
-        balance: balance,
-        balanceFormatted:
-          parseFloat(formatUnits(balance, nativeCurrencyDecimals)) ||
-          0,
-      });
+        this.l2WalletStateSignal.set(
+          computeFreshL2WalletState(chainId, {
+            address,
+            balance,
+            nativeCurrencyDecimals,
+          }),
+        );
+      } catch (error) {
+        console.warn('L2 balance is temporarily unavailable', error);
+        this.l2WalletStateSignal.set(
+          computeDegradedL2WalletState(chainId, this.l2WalletStateSignal()),
+        );
+      }
     } else {
       this.l2WalletStateSignal.set(undefined);
     }

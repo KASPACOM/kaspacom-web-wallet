@@ -34,6 +34,7 @@ import { IframeAccountSelectionService } from '../../services/iframe-account-sel
 import { MonitorService } from '../../../services/monitor.service';
 import { IFrameCommunicationApp } from '../../../services/communication-service/communication-app/iframe-communication.service';
 import { getSafeReturnUrl } from '../../shared/utils/return-url.util';
+import { WalletDataStateError } from '../../../services/wallet-data-state';
 
 type LoginPasswordType = 'password' | 'text';
 
@@ -214,6 +215,9 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
     if (passwordControl?.hasError('invalidCredentials')) {
       return 'Invalid password';
     }
+    if (passwordControl?.hasError('walletState')) {
+      return 'Wallet data needs recovery. Restore a backup or delete this local wallet.';
+    }
     return '';
   }
 
@@ -253,7 +257,11 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
         this.iframeAccountSelectionService.openOverlay();
       } else {
         // Normal web mode - auto-select the previously selected wallet
-        await this.walletService.selectCurrentWalletFromLocalStorageNullsafe();
+        const selected =
+          await this.walletService.selectCurrentWalletFromLocalStorageNullsafe();
+        if (!selected) {
+          throw new WalletDataStateError('wallet_account_missing');
+        }
       }
 
       this.monitorService.track('Wallet Logged In', {
@@ -263,7 +271,14 @@ export class OnboardingPageV2Component implements AfterViewInit, OnDestroy {
       await this.router.navigateByUrl(getSafeReturnUrl(this.activatedRoute));
     } catch (error) {
       console.error('Login failed', error);
-      this.loginForm.get('password')?.setErrors({ invalidCredentials: true });
+      this.walletService.resetWalletLoadingState();
+      this.loginForm
+        .get('password')
+        ?.setErrors(
+          error instanceof WalletDataStateError
+            ? { walletState: true }
+            : { invalidCredentials: true },
+        );
     } finally {
       this.isSubmitting.set(false);
     }

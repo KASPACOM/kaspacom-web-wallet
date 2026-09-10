@@ -119,8 +119,22 @@ export class BalanceComponent {
       return false;
     }
 
+    if (this.walletService.isL2Display()) {
+      return wallet.getL2WalletStateSignal()() === undefined;
+    }
+
     const balanceData = wallet.getCurrentWalletStateBalanceSignalValue();
     return !balanceData;
+  });
+
+  readonly isL2BalanceUnavailable = computed(() => {
+    const wallet = this.walletService.getCurrentWallet();
+    const state = wallet?.getL2WalletStateSignal()();
+    return (
+      this.walletService.isL2Display() &&
+      state !== undefined &&
+      state.availability !== 'fresh'
+    );
   });
 
   // Get the actual balance from the wallet based on network

@@ -4,6 +4,7 @@ import { LOCAL_STORAGE_KEYS } from '../config/consts';
 import { UserWalletsData } from '../types/user-wallets-data';
 import { EncryptionService } from './encryption.service';
 import { UtilsHelper } from './utils.service';
+import { WalletDataStateError } from './wallet-data-state';
 
 @Injectable({
   providedIn: 'root',
@@ -97,16 +98,21 @@ export class PasswordManagerService {
 
   async getUserData(): Promise<UserWalletsData> {
     if (!this.password) {
-      throw new Error('Password not found');
+      throw new WalletDataStateError('password_missing');
     }
 
     const userData = await this.getUserDataWithPassword(this.password!);
 
     if (!userData) {
-      throw new Error('User data not found');
+      throw new WalletDataStateError('user_data_missing');
     }
 
     return userData;
+  }
+
+  async getUserDataOrNull(): Promise<UserWalletsData | null> {
+    if (!this.password) return null;
+    return this.getUserDataWithPassword(this.password);
   }
 
   getInitializedWalletsData(): UserWalletsData {

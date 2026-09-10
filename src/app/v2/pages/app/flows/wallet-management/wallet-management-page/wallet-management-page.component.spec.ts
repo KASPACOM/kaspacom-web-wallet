@@ -55,6 +55,10 @@ describe('WalletManagementPageComponent recovery notice', () => {
     expect(notice.textContent).toContain('This wallet is');
     expect(notice.textContent).toContain('Savings');
     expect(notice.textContent).toContain('other wallets are');
+    // The body must agree in number with the heading, not just mention wallets.
+    expect(notice.textContent).toContain('Its recovery phrase is');
+    expect(notice.textContent).toContain('Restore it from');
+    expect(notice.textContent).not.toContain('Their recovery phrases');
   });
 
   it('pluralises and lists every skipped wallet', () => {
@@ -66,5 +70,8 @@ describe('WalletManagementPageComponent recovery notice', () => {
     );
     expect(notice.textContent).toContain('These wallets are');
     expect(notice.textContent).toContain('Savings, Cold storage');
+    expect(notice.textContent).toContain('Their recovery phrases are');
+    expect(notice.textContent).toContain('Restore them from');
+    expect(notice.textContent).not.toContain('Its recovery phrase is');
   });
 });

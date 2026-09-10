@@ -3,16 +3,27 @@
     <div class="wallet-recovery-notice" role="alert">
       <kc-icon [iconClass]="'icon-warning'" [size]="'sm'" aria-hidden="true" />
       <div class="wallet-recovery-notice__text">
-        <strong>
-          {{ unusableWalletNames().length === 1 ? "This wallet is" : "These wallets are" }}
-          not loaded: {{ unusableWalletNames().join(", ") }}
-        </strong>
-        <span>
-          Its recovery phrase is still stored, but the account details are
-          missing, so it can't be opened here. Your other wallets are
-          unaffected. Restore this wallet from its recovery phrase to use it
-          again.
-        </span>
+        @if (unusableWalletNames().length === 1) {
+          <strong>
+            This wallet is not loaded: {{ unusableWalletNames()[0] }}
+          </strong>
+          <span>
+            Its recovery phrase is still stored, but its account details are
+            missing, so it can't be opened here. Your other wallets are
+            unaffected. Restore it from its recovery phrase to use it again.
+          </span>
+        } @else {
+          <strong>
+            These wallets are not loaded:
+            {{ unusableWalletNames().join(", ") }}
+          </strong>
+          <span>
+            Their recovery phrases are still stored, but their account details
+            are missing, so they can't be opened here. Your other wallets are
+            unaffected. Restore them from their recovery phrases to use them
+            again.
+          </span>
+        }
       </div>
     </div>
   }

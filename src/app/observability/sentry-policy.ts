@@ -75,7 +75,9 @@ export function sanitizeSentryUrl(
 }
 
 export function sanitizeSentryPath(path: string): string {
-  const cleanPath = path || '/';
+  // Defensive: callers must pass a bare pathname, but a query or fragment
+  // slipping through here would reach Sentry with its value intact.
+  const cleanPath = path.split('?')[0].split('#')[0] || '/';
   const routeTemplate = DYNAMIC_WALLET_ROUTES.reduce(
     (value, pattern) => value.replace(pattern, '$1:id'),
     cleanPath,
@@ -159,7 +161,7 @@ export function applyWalletSentryPolicy<T extends SentryEventLike>(
     event.request.data = undefined;
   }
   if (event.transaction) {
-    event.transaction = sanitizeSentryPath(event.transaction);
+    event.transaction = sanitizeSentryUrl(event.transaction);
   }
   if (event.contexts) {
     event.contexts = sanitizeSentryData(event.contexts) as typeof event.contexts;

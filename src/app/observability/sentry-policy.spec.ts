@@ -4,6 +4,7 @@ import {
   beforeSendSpan,
   beforeSendTransaction,
   getWalletSentryEnvironment,
+  sanitizeSentryPath,
   sanitizeSentryUrl,
 } from './sentry-policy';
 import { annotateKaspaRpcError } from './kaspa-rpc-errors';
@@ -245,6 +246,24 @@ describe('wallet Sentry policy', () => {
     expect(event?.contexts.startup.error_message).toBe(
       'redirected to /app/collectables',
     );
+  });
+
+  it('drops a query or fragment even when handed straight to sanitizeSentryPath', () => {
+    expect(sanitizeSentryPath('/app/collectables?apiKey=opaque-secret')).toBe(
+      '/app/collectables',
+    );
+    expect(sanitizeSentryPath('/app/collectables#opaque-secret')).toBe(
+      '/app/collectables',
+    );
+  });
+
+  it('strips the query string from a transaction name with no sensitive segment', () => {
+    const transaction = beforeSendTransaction({
+      type: 'transaction' as const,
+      transaction: '/app/collectables?apiKey=opaque-secret',
+    });
+
+    expect(transaction.transaction).toBe('/app/collectables');
   });
 
   it('sanitizes traced wallet routes, spans, and navigation breadcrumbs', () => {

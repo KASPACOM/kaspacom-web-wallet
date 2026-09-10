@@ -49,7 +49,8 @@ const PATH_DATA_KEY =
   /(?:^|[._-])(?:url|path|route|from|to|description)(?:[._-]|$)/i;
 const SENSITIVE_DATA_KEY =
   /(?:^|[._-])(?:auth(?:orization)?|bearer|token|api[-_]?key|secret|password|credential|cookie|session|private[-_]?key|mnemonic|seed)(?:[._-]|$)/i;
-const EMBEDDED_URL_PATTERN = /https?:\/\/[^\s"'<>]+/gi;
+const EMBEDDED_LOCATION_PATTERN =
+  /https?:\/\/[^\s"'<>]+|\/app\/[^\s"'<>]*/gi;
 
 export function getWalletSentryEnvironment(
   hostname: string,
@@ -171,11 +172,12 @@ export function applyWalletSentryPolicy<T extends SentryEventLike>(
 
 function scrubPrivateValues(value?: string): string | undefined {
   if (value === undefined) return value;
-  const withoutEmbeddedUrlQueries = value.replace(
-    EMBEDDED_URL_PATTERN,
-    (match) => sanitizeSentryUrl(match) ?? match,
+  const withoutEmbeddedLocations = value.replace(
+    EMBEDDED_LOCATION_PATTERN,
+    (match) =>
+      match.startsWith('/') ? sanitizeSentryPath(match) : sanitizeSentryUrl(match) ?? match,
   );
-  return withoutEmbeddedUrlQueries.replace(PRIVATE_VALUE_PATTERN, '[redacted]');
+  return withoutEmbeddedLocations.replace(PRIVATE_VALUE_PATTERN, '[redacted]');
 }
 
 function sanitizePathValue(value?: string): string | undefined {

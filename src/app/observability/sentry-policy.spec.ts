@@ -183,6 +183,52 @@ describe('wallet Sentry policy', () => {
     expect(event?.contexts.startup.error_message).not.toContain('apiKey');
   });
 
+  it('sanitizes a relative wallet route embedded in a non-path-keyed context field', () => {
+    const event = applyWalletSentryPolicy<{
+      message: string;
+      contexts: { startup: { error_message: string } };
+    }>({
+      message: 'Bootstrap failed',
+      contexts: {
+        startup: {
+          error_message:
+            'Failed while opening /app/home/asset/krc20/private-ticker',
+        },
+      },
+    });
+
+    expect(event?.contexts.startup.error_message).toBe(
+      'Failed while opening /app/home/asset/krc20/:id',
+    );
+  });
+
+  it('sanitizes a relative wallet route embedded in an arbitrary extra field', () => {
+    const event = applyWalletSentryPolicy<{
+      message: string;
+      extra: { debug_note: string };
+    }>({
+      message: 'Bootstrap failed',
+      extra: {
+        debug_note: 'redirected from /app/home/asset/krc20/private-ticker',
+      },
+    });
+
+    expect(event?.extra.debug_note).toBe(
+      'redirected from /app/home/asset/krc20/:id',
+    );
+  });
+
+  it('sanitizes a relative wallet route embedded in a non-navigation breadcrumb message', () => {
+    const breadcrumb = beforeBreadcrumb({
+      category: 'console',
+      message: 'Failed while opening /app/home/asset/krc20/private-ticker',
+    });
+
+    expect(breadcrumb.message).toBe(
+      'Failed while opening /app/home/asset/krc20/:id',
+    );
+  });
+
   it('sanitizes traced wallet routes, spans, and navigation breadcrumbs', () => {
     const cyclicData: Record<string, unknown> = {};
     cyclicData['self'] = cyclicData;

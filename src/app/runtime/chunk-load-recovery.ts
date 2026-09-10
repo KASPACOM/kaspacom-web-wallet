@@ -27,18 +27,29 @@ export function claimChunkRecovery(
   return true;
 }
 
-export function installChunkLoadRecovery(release: string): void {
+export function installChunkLoadRecovery(
+  release: string,
+  reload: () => void = () => window.location.reload(),
+): void {
   if (typeof window === 'undefined') return;
 
   const recover = (reason: unknown, event: Event) => {
-    if (
-      !isStaleChunkError(reason) ||
-      !claimChunkRecovery(window.sessionStorage, release)
-    ) {
+    if (!isStaleChunkError(reason)) return;
+
+    let claimed = false;
+    try {
+      claimed = claimChunkRecovery(window.sessionStorage, release);
+    } catch {
+      // Storage is blocked (cross-origin iframe on iOS Safari, private mode):
+      // reading it throws, and this runs inside an error handler. Give up on
+      // recovery rather than raising a second error from here.
       return;
     }
+
+    if (!claimed) return;
+
     event.preventDefault();
-    window.location.reload();
+    reload();
   };
 
   window.addEventListener('error', (event) => recover(event.error, event));

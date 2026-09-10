@@ -248,6 +248,68 @@ describe('wallet Sentry policy', () => {
     );
   });
 
+  it('drops every request field that can carry the query, session, or environment', () => {
+    const event = applyWalletSentryPolicy<{
+      message: string;
+      request: {
+        url?: string;
+        headers?: Record<string, unknown>;
+        data?: unknown;
+        query_string?: unknown;
+        cookies?: unknown;
+        env?: unknown;
+      };
+    }>({
+      message: 'RPC unavailable',
+      request: {
+        url: 'https://wallet.kaspa.com/app/collectables?apiKey=opaque-secret',
+        headers: { authorization: 'Bearer secret' },
+        data: { body: 'secret' },
+        query_string: 'apiKey=opaque-secret',
+        cookies: { session: 'opaque-session-value' },
+        env: { SECRET_KEY: 'value' },
+      },
+    });
+
+    expect(event?.request.url).toBe('https://wallet.kaspa.com/app/collectables');
+    expect(event?.request.headers).toBeUndefined();
+    expect(event?.request.data).toBeUndefined();
+    expect(event?.request.query_string).toBeUndefined();
+    expect(event?.request.cookies).toBeUndefined();
+    expect(event?.request.env).toBeUndefined();
+    expect(JSON.stringify(event)).not.toContain('opaque-secret');
+    expect(JSON.stringify(event)).not.toContain('opaque-session-value');
+  });
+
+  it('scrubs the structured logentry alongside the plain message', () => {
+    const event = applyWalletSentryPolicy<{
+      logentry: { message?: string; params?: unknown[] };
+    }>({
+      logentry: {
+        message: 'opening /app/home/asset/krc20/private-ticker',
+        params: ['kaspatest:' + 'd'.repeat(30)],
+      },
+    });
+
+    expect(event?.logentry.message).toBe(
+      'opening /app/home/asset/krc20/:id',
+    );
+    expect(event?.logentry.params?.[0]).toBe('[redacted]');
+  });
+
+  it('redacts a credential-shaped tag set by other code', () => {
+    const event = applyWalletSentryPolicy<{
+      message: string;
+      tags: Record<string, unknown>;
+    }>({
+      message: 'Bootstrap failed',
+      tags: { apiKey: 'opaque-secret', screen: 'collectables' },
+    });
+
+    expect(event?.tags?.['apiKey']).toBe('[redacted]');
+    expect(event?.tags?.['screen']).toBe('collectables');
+  });
+
   it('drops a query or fragment even when handed straight to sanitizeSentryPath', () => {
     expect(sanitizeSentryPath('/app/collectables?apiKey=opaque-secret')).toBe(
       '/app/collectables',

@@ -9,7 +9,15 @@ export type WalletSentryEnvironment = 'production' | 'development';
 interface SentryEventLike {
   exception?: { values?: Array<{ type?: string; value?: string }> };
   message?: string;
-  request?: { url?: string; headers?: Record<string, unknown>; data?: unknown };
+  logentry?: { message?: string; params?: unknown[] };
+  request?: {
+    url?: string;
+    headers?: Record<string, unknown>;
+    data?: unknown;
+    query_string?: unknown;
+    cookies?: unknown;
+    env?: unknown;
+  };
   transaction?: string;
   user?: unknown;
   tags?: Record<string, unknown>;
@@ -151,14 +159,26 @@ export function applyWalletSentryPolicy<T extends SentryEventLike>(
 
   event.user = undefined;
   event.message = scrubPrivateValues(event.message);
+  if (event.logentry) {
+    event.logentry.message = scrubPrivateValues(event.logentry.message);
+    event.logentry.params = event.logentry.params?.map(
+      (param) => sanitizeSentryData(param) as unknown,
+    );
+  }
   for (const exception of event.exception?.values ?? []) {
     exception.value = scrubPrivateValues(exception.value);
   }
-  event.tags = { ...event.tags, deployment_host: hostname || 'server' };
+  event.tags = {
+    ...(sanitizeSentryData(event.tags) as Record<string, unknown> | undefined),
+    deployment_host: hostname || 'server',
+  };
   if (event.request) {
     event.request.url = sanitizeSentryUrl(event.request.url);
     event.request.headers = undefined;
     event.request.data = undefined;
+    event.request.query_string = undefined;
+    event.request.cookies = undefined;
+    event.request.env = undefined;
   }
   if (event.transaction) {
     event.transaction = sanitizeSentryUrl(event.transaction);

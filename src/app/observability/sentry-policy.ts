@@ -237,8 +237,13 @@ function sanitizeSentryData(
     if (Array.isArray(value)) {
       return value.map((item) => sanitizeSentryData(item, key, seen));
     }
+    // Anything that isn't a plain object can't be walked safely, so refuse it
+    // rather than letting it through unscrubbed (an Error's message, a domain
+    // object's fields). Dates are kept: they serialize to an ISO string.
     const prototype = Object.getPrototypeOf(value);
-    if (prototype !== Object.prototype && prototype !== null) return value;
+    if (prototype !== Object.prototype && prototype !== null) {
+      return value instanceof Date ? value : '[unserialized]';
+    }
     return Object.fromEntries(
       Object.entries(value).map(([childKey, childValue]) => [
         childKey,

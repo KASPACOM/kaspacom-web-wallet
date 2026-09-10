@@ -297,6 +297,24 @@ describe('wallet Sentry policy', () => {
     expect(event?.logentry.params?.[0]).toBe('[redacted]');
   });
 
+  it('refuses non-plain objects instead of letting them through unscrubbed', () => {
+    const timestamp = new Date('2026-01-01T00:00:00.000Z');
+    const event = applyWalletSentryPolicy<{
+      extra: { cause: unknown; occurred_at: unknown; plain: { note: string } };
+    }>({
+      extra: {
+        cause: new Error('failed for kaspatest:' + 'd'.repeat(30)),
+        occurred_at: timestamp,
+        plain: { note: 'kept' },
+      },
+    });
+
+    expect(event?.extra.cause).toBe('[unserialized]');
+    expect(event?.extra.occurred_at).toBe(timestamp);
+    expect((event?.extra.plain as { note: string }).note).toBe('kept');
+    expect(JSON.stringify(event)).not.toContain('d'.repeat(30));
+  });
+
   it('redacts a credential-shaped tag set by other code', () => {
     const event = applyWalletSentryPolicy<{
       message: string;

@@ -57,8 +57,10 @@ const PATH_DATA_KEY =
   /(?:^|[._-])(?:url|path|route|from|to|description)(?:[._-]|$)/i;
 const SENSITIVE_DATA_KEY =
   /(?:^|[._-])(?:auth(?:orization)?|bearer|token|api[-_]?key|secret|password|credential|cookie|session|private[-_]?key|mnemonic|seed)(?:[._-]|$)/i;
+// Matches an absolute URL, or any absolute path - not just /app/..., since
+// every route (/onboarding, /guides/..., /nft/marketplace) can carry a query.
 const EMBEDDED_LOCATION_PATTERN =
-  /https?:\/\/[^\s"'<>]+|\/app\/[^\s"'<>]*/gi;
+  /https?:\/\/[^\s"'<>]+|\/[a-z0-9][^\s"'<>]*/gi;
 
 export function getWalletSentryEnvironment(
   hostname: string,

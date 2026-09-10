@@ -328,6 +328,28 @@ describe('wallet Sentry policy', () => {
     expect(event?.tags?.['screen']).toBe('collectables');
   });
 
+  it('strips query strings from embedded routes outside the /app namespace', () => {
+    const embedded = [
+      'redirected to /onboarding?token=opaque-secret',
+      'see /guides/create-kaspa-wallet?ref=opaque-secret',
+      'redirect /onboarding?returnUrl=/app/home&t=opaque-secret',
+      'opening /nft/marketplace?owner=opaque-secret',
+    ];
+
+    for (const note of embedded) {
+      const event = applyWalletSentryPolicy<{ extra: { note: string } }>({
+        extra: { note },
+      });
+      const breadcrumb = beforeBreadcrumb({
+        category: 'console',
+        message: note,
+      });
+
+      expect(event?.extra.note).not.toContain('opaque-secret');
+      expect(breadcrumb.message).not.toContain('opaque-secret');
+    }
+  });
+
   it('drops a query or fragment even when handed straight to sanitizeSentryPath', () => {
     expect(sanitizeSentryPath('/app/collectables?apiKey=opaque-secret')).toBe(
       '/app/collectables',

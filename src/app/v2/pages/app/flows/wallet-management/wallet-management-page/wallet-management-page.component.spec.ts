@@ -51,7 +51,8 @@ describe('WalletManagementPageComponent recovery notice', () => {
       '.wallet-recovery-notice',
     );
     expect(notice).not.toBeNull();
-    expect(notice.getAttribute('role')).toBe('alert');
+    // Polite, not assertive: pre-existing state must not interrupt a reader.
+    expect(notice.getAttribute('role')).toBe('status');
     expect(notice.textContent).toContain('This wallet is');
     expect(notice.textContent).toContain('Savings');
     expect(notice.textContent).toContain('other wallets are');

@@ -1,6 +1,9 @@
 <div class="page-content">
   @if (unusableWalletNames().length) {
-    <div class="wallet-recovery-notice" role="alert">
+    <!-- status, not alert: this reports pre-existing state the user has just
+         navigated to, so it should queue behind what they are reading rather
+         than interrupt it. -->
+    <div class="wallet-recovery-notice" role="status">
       <kc-icon [iconClass]="'icon-warning'" [size]="'sm'" aria-hidden="true" />
       <div class="wallet-recovery-notice__text">
         @if (unusableWalletNames().length === 1) {

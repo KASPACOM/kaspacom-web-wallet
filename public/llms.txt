@@ -1,6 +1,6 @@
 # KaspaCom Wallet
 
-KaspaCom Wallet is a self-custody browser wallet for KAS and supported Kaspa assets at wallet.kaspa.com.
+KaspaCom Wallet is an open-source, self-custody browser wallet for KAS and supported Kaspa assets at wallet.kaspa.com.
 
 ## Primary pages
 
@@ -27,4 +27,6 @@ KaspaCom Wallet is a self-custody browser wallet for KAS and supported Kaspa ass
 - X: https://x.com/KaspaCom
 - Telegram: https://t.me/KaspaComOfficial
 - GitHub: https://github.com/KASPACOM
-- Last reviewed: August 26, 2026
+- Wallet source repository: https://github.com/KASPACOM/kaspacom-web-wallet
+- License: MIT, https://github.com/KASPACOM/kaspacom-web-wallet/blob/main/LICENSE
+- Last reviewed: September 1, 2026

@@ -14,7 +14,10 @@ import { test, expect } from '@playwright/test';
 
 const IFRAME_HOST_PATH = '/__e2e_iframe_host__';
 
-async function routeIframeHost(page: import('@playwright/test').Page, baseURL: string) {
+async function routeIframeHost(
+  page: import('@playwright/test').Page,
+  baseURL: string,
+) {
   const target = new URL('/onboarding', baseURL).toString();
   await page.route(`${baseURL}${IFRAME_HOST_PATH}`, async (route) => {
     await route.fulfill({
@@ -40,7 +43,7 @@ async function routeIframeHost(page: import('@playwright/test').Page, baseURL: s
 }
 
 test.describe('Iframe embed', () => {
-  test('@smoke iframe-embedded landing renders Create + Connect buttons', async ({
+  test('@smoke iframe-embedded landing renders Create + Import buttons', async ({
     page,
     baseURL,
   }) => {
@@ -52,7 +55,9 @@ test.describe('Iframe embed', () => {
       wallet.locator('kc-button', { hasText: 'Create New Wallet' }).first(),
     ).toBeVisible({ timeout: 30_000 });
     await expect(
-      wallet.locator('kc-button', { hasText: 'Connect Existing Wallet' }).first(),
+      wallet
+        .locator('kc-button', { hasText: 'Import Existing Wallet' })
+        .first(),
     ).toBeVisible({ timeout: 10_000 });
   });
 

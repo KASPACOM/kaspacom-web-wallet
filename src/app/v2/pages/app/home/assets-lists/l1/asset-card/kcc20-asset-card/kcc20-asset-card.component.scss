@@ -1,0 +1,7 @@
+.asset-card {
+  min-height: 75px;
+
+  &__meta {
+    min-height: 18px; /* reserve one-line height to prevent jump */
+  }
+}

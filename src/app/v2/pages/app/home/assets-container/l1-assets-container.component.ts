@@ -4,6 +4,7 @@ import {
   TabItem,
 } from '../../../../shared/ui/kc-labeled-tabs/kc-labeled-tabs.component';
 import { Krc20SummaryComponent } from '../assets-lists/l1/summary/krc20-summary/krc20-summary.component';
+import { Kcc20SummaryComponent } from '../assets-lists/l1/summary/kcc20-summary/kcc20-summary.component';
 import { Krc721SummaryComponent } from '../assets-lists/l1/summary/krc721-summary/krc721-summary.component';
 import { KnsSummaryComponent } from '../assets-lists/l1/summary/kns-summary/kns-summary.component';
 import { UtxosSummaryComponent } from '../utxos-summary/utxos-summary.component';
@@ -19,6 +20,7 @@ import {
   imports: [
     KcLabeledTabsComponent,
     Krc20SummaryComponent,
+    Kcc20SummaryComponent,
     Krc721SummaryComponent,
     KnsSummaryComponent,
     UtxosSummaryComponent,
@@ -30,6 +32,7 @@ export class L1AssetsContainerComponent extends BaseAssetsContainerComponent {
   tabs: TabItem[] = [
     { id: ASSET_TAB_IDS.UTXOS, label: 'UTXOs' },
     { id: ASSET_TAB_IDS.KRC20, label: 'KRC20' },
+    { id: ASSET_TAB_IDS.KCC20, label: 'KCC20' },
     { id: ASSET_TAB_IDS.KRC721, label: 'KRC721' },
     { id: ASSET_TAB_IDS.KNS, label: 'KNS' },
   ];

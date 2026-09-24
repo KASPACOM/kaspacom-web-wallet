@@ -113,3 +113,27 @@ export interface PartiallySignedSpend {
 export interface CovenantTransactionOptions {
   estimateOnly?: boolean;
 }
+
+// ── PSKT covenant-script wrapping (KCC20-style backend-built PSKTs) ──
+
+export type WalletPsktSignatureScriptArgument =
+  | { type: 'i64'; value: string | number }
+  | { type: 'data'; hex: string }
+  | { type: 'byte'; value: number }
+  | { type: 'signature'; prefixHex?: string };
+
+export interface WalletPsktSignatureScriptTemplate {
+  mode: 'wrap-signature' | 'signature-first-args' | 'ordered-args';
+  args?: WalletPsktSignatureScriptArgument[];
+}
+
+/**
+ * A covenant input's PSKT signature is a bare signature by default — this
+ * describes how to wrap it into a P2SH unlock script instead. See
+ * applyCovenantScriptsToPsktTransaction in covenant.ts.
+ */
+export interface WalletPsktCovenantScript {
+  inputIndex: number;
+  scriptHex: string;
+  signatureScript?: WalletPsktSignatureScriptTemplate;
+}

@@ -63,6 +63,8 @@ export interface L1NetworkConfigInterface {
   krc721CacheStreamUrl?: string;
   knsApiBaseurl?: string;
   covenantIndexerApiBaseurl?: string;
+  /** KCC20 product backend (token metadata/logos etc.). TN10-only for now — no mainnet deployment yet. */
+  kcc20ApiBaseurl?: string;
   kaspaExplorerBaseurl: string;
   /** Covenant explorer (covenants.kaspa.com); networks without one fall back to kaspaExplorerBaseurl. */
   covenantExplorerBaseurl?: string;

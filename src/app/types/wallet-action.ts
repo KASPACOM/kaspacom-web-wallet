@@ -9,6 +9,7 @@ import {
 import { WalletActionResultWithError } from './wallet-action-result';
 import { BaseCommunicationApp } from '../services/communication-service/communication-app/base-communication-app';
 import type { CovenantFunctionArg } from '../services/covenant/covenant-sdk/covenant';
+import type { WalletPsktCovenantScript } from '../services/covenant/covenant-sdk/types';
 
 export enum WalletActionType {
   TRANSFER_KAS = 'transfer-kas',
@@ -91,6 +92,8 @@ export interface SignPsktTransactionAction {
   submitTransaction?: boolean;
   signOnly?: boolean;
   signInputs?: WalletPsktSignInput[];
+  /** When set, these inputs get their signature wrapped into a covenant P2SH unlock script after the base signing pass. */
+  scripts?: WalletPsktCovenantScript[];
   protocol?: ProtocolType | string;
   type?: PsktActionsEnum | string;
 }

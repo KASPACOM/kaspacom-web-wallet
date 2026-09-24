@@ -13,6 +13,7 @@ import { Krc20TokenLogoComponent } from '../../../home/assets-lists/l1/logo/krc2
 export class L1SendAssetsContainerComponent extends BaseSendAssetsContainerComponent {
   kaspaClick = output<void>();
   krc20Click = output<void>();
+  kcc20Click = output<void>();
   nftClick = output<void>();
   knsClick = output<void>();
 }

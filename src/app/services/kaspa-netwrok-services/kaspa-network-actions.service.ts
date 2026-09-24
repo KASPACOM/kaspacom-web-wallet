@@ -56,6 +56,7 @@ import { TransactionRequest } from 'ethers';
 import { createEIP1193Response } from '../etherium-services/create-eip-1193-response';
 import { KaspaWalletMnemonicActionsService } from './kaspa-wallet-mnemonic-actions.service';
 import { CovenantService } from '../covenant/covenant.service';
+import { applyCovenantScriptsToPsktTransaction } from '../covenant/covenant-sdk/covenant';
 import { KRC20OperationType } from '../../types/kaspa-network/krc20-operations-data.interface';
 import { Krc721OperationType } from '../../types/kaspa-network/krc721-operations-data.interface';
 import { KnsOperationType } from '../../types/kaspa-network/kns-operations-data.interface';
@@ -348,19 +349,42 @@ export class KaspaNetworkActionsService {
     }
 
     if (action.type == WalletActionType.SIGN_PSKT_TRANSACTION) {
+      const psktActionData = action.data as SignPsktTransactionAction;
+      const hasCovenantScripts = !!psktActionData.scripts?.length;
+
       const result = await this.transactionsManager.signPsktTransaction(
         wallet,
         action.data.psktTransactionJson,
         action.priorityFee || 0n,
-        action.data.submitTransaction,
-        (action.data as SignPsktTransactionAction).signOnly,
-        (action.data as SignPsktTransactionAction).signInputs,
+        // Broadcasting before covenant scripts are wrapped below would push
+        // an invalidly-unlocked transaction — defer submission in that case.
+        hasCovenantScripts ? false : action.data.submitTransaction,
+        psktActionData.signOnly,
+        psktActionData.signInputs,
       );
+
+      let psktTransactionJson = result.psktTransaction;
+      let transactionId = result.transactionId;
+
+      if (hasCovenantScripts) {
+        psktTransactionJson = applyCovenantScriptsToPsktTransaction(
+          psktTransactionJson,
+          psktActionData.scripts!,
+        );
+
+        if (action.data.submitTransaction) {
+          const submitResult =
+            await this.transactionsManager.submitSignedPsktTransaction(
+              psktTransactionJson,
+            );
+          transactionId = submitResult.transactionId;
+        }
+      }
 
       const resultData: SignPsktTransactionActionResult = {
         type: WalletActionResultType.SignPsktTransaction,
-        psktTransactionJson: result.psktTransaction,
-        transactionId: result.transactionId,
+        psktTransactionJson,
+        transactionId,
         performedByWallet: wallet.getAddress(),
       };
 
@@ -632,6 +656,15 @@ export class KaspaNetworkActionsService {
 
     if (action.type === WalletActionType.SIGN_PSKT_TRANSACTION) {
       const data = action.data as SignPsktTransactionAction;
+
+      // A PSKT with covenant scripts (e.g. KCC20) is already fully funded
+      // by whoever built it, from UTXOs the wallet already owns — summing
+      // its outputs here would double-count that as additional required
+      // balance instead of money the transaction already has covered.
+      if (data.scripts?.length) {
+        return action.priorityFee || 0n;
+      }
+
       const pskt: PsktTransaction = JSON.parse(data.psktTransactionJson);
 
       const totalOutputs = pskt.outputs.reduce(

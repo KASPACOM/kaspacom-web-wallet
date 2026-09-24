@@ -29,6 +29,8 @@ import {
   type PartiallySignedSpend,
   type SpendOutput,
   type SpendResult,
+  type WalletPsktCovenantScript,
+  type WalletPsktSignatureScriptTemplate,
 } from './types';
 
 const SUBNETWORK_ID_NATIVE = '0000000000000000000000000000000000000000';
@@ -74,6 +76,120 @@ function encodeCovenantP2shSignatureScript(
     toScriptBytes(compiled),
     COVENANT_SCRIPT_BUILDER_OPTIONS,
   ).encodePayToScriptHashSignatureScript(signaturePrefix);
+}
+
+/**
+ * Wraps already-set bare signatures on specific PSKT inputs into a covenant
+ * P2SH unlock script — used for backend-built PSKTs (e.g. KCC20 transfers)
+ * where the covenant/token input needs more than a plain signature to spend.
+ * Mirrors kcc20-frontend's own KaswarePsktScriptService.addScriptToSignature
+ * byte-for-byte (same ScriptBuilder/covenantsEnabled calls this wallet
+ * already uses for its own covenant spends via encodeCovenantP2shSignatureScript).
+ */
+export function applyCovenantScriptsToPsktTransaction(
+  transactionJson: string,
+  scripts: WalletPsktCovenantScript[],
+): string {
+  const transaction = Transaction.deserializeFromSafeJSON(transactionJson);
+
+  for (const script of scripts) {
+    const input = transaction.inputs[script.inputIndex];
+    if (!input) {
+      throw new Error(
+        `PSKT script attachment failed: no input at index ${script.inputIndex}.`,
+      );
+    }
+    const walletSignatureScript = input.signatureScript;
+    if (!walletSignatureScript) {
+      throw new Error(
+        `PSKT script attachment failed: input ${script.inputIndex} has no signature to wrap.`,
+      );
+    }
+
+    input.signatureScript = ScriptBuilder.fromScript(
+      hexToBytes(script.scriptHex),
+      COVENANT_SCRIPT_BUILDER_OPTIONS,
+    ).encodePayToScriptHashSignatureScript(
+      buildCovenantPsktSignatureScript(
+        walletSignatureScript,
+        script.signatureScript,
+      ),
+    );
+  }
+
+  return transaction.serializeToSafeJSON();
+}
+
+function buildCovenantPsktSignatureScript(
+  walletSignatureScript: string | Uint8Array,
+  template?: WalletPsktSignatureScriptTemplate,
+): string | Uint8Array {
+  const mode = template?.mode ?? 'wrap-signature';
+  if (mode === 'wrap-signature') {
+    if (template?.args?.length) {
+      throw new Error(
+        'PSKT wrap-signature mode does not accept covenant arguments.',
+      );
+    }
+    return walletSignatureScript;
+  }
+  if (mode !== 'signature-first-args' && mode !== 'ordered-args') {
+    throw new Error(`Unsupported PSKT signature-script mode "${mode}".`);
+  }
+
+  const builder = new ScriptBuilder(COVENANT_SCRIPT_BUILDER_OPTIONS);
+  const signature = normalizePsktSignatureBytes(walletSignatureScript);
+  if (mode === 'signature-first-args') {
+    builder.addData(signature);
+  }
+
+  let signatureArguments = 0;
+  for (const arg of template?.args ?? []) {
+    if (arg.type === 'i64') {
+      builder.addI64(BigInt(arg.value));
+      continue;
+    }
+    if (arg.type === 'data') {
+      builder.addData(hexToBytes(arg.hex));
+      continue;
+    }
+    if (arg.type === 'byte') {
+      if (!Number.isInteger(arg.value) || arg.value < 0 || arg.value > 255) {
+        throw new Error('PSKT byte argument must be an integer from 0 to 255.');
+      }
+      builder.addData(Uint8Array.of(arg.value));
+      continue;
+    }
+    if (arg.type === 'signature' && mode === 'ordered-args') {
+      const prefix = arg.prefixHex ? hexToBytes(arg.prefixHex) : new Uint8Array(0);
+      const value = new Uint8Array(prefix.length + signature.length);
+      value.set(prefix);
+      value.set(signature, prefix.length);
+      builder.addData(value);
+      signatureArguments += 1;
+      continue;
+    }
+    throw new Error('Unsupported PSKT signature-script argument.');
+  }
+  if (mode === 'ordered-args' && signatureArguments !== 1) {
+    throw new Error(
+      'PSKT ordered-args mode requires exactly one signature argument.',
+    );
+  }
+  return builder.drain();
+}
+
+function normalizePsktSignatureBytes(value: string | Uint8Array): Uint8Array {
+  const bytes = value instanceof Uint8Array ? value : hexToBytes(value);
+  if (bytes.length === 66 && bytes[0] === 65) {
+    return bytes.slice(1);
+  }
+  if (bytes.length !== 65) {
+    throw new Error(
+      `Expected a 65-byte Schnorr signature+sighash, got ${bytes.length}.`,
+    );
+  }
+  return bytes;
 }
 
 function requireAddress(value: Address | undefined, context: string): Address {

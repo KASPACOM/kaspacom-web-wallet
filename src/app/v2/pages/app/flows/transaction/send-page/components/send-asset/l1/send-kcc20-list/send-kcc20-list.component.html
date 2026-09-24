@@ -1,0 +1,53 @@
+<div class="send-kcc20-list-content">
+  <div
+    class="kcc20-tokens-container flex column align-items-center full-width gap-16"
+  >
+    @if (loading()) {
+      <div class="skeleton-loading-container flex column gap-16 full-width">
+        @for (item of [1, 2, 3]; track item) {
+          <app-skeleton
+            class="full-width"
+            [height]="'75px'"
+            [width]="'auto'"
+            [fullRound]="false"
+          />
+        }
+      </div>
+    } @else if (holdings().length === 0) {
+      <div
+        class="empty-state flex column align-items-center justify-content-center gap-16 p-32"
+      >
+        <div class="text-gray-60 typo-text-2 text-center">
+          No KCC20 tokens found
+        </div>
+        <div class="text-gray-50 typo-text-1 text-center">
+          You need to have KCC20 tokens in your wallet to send them.
+        </div>
+      </div>
+    } @else {
+      @for (
+        holding of holdings();
+        track trackByHolding($index, holding)
+      ) {
+        <div
+          class="kcc20-token-card card-0 card-hover flex full-width align-items-center justify-content-between p-16 cursor-pointer"
+          (click)="onHoldingClick(holding)"
+        >
+          <div class="kcc20-token-card__info flex align-items-center gap-16">
+            <kcc20-token-logo [covenantId]="holding.covenantId" [size]="'lg'" />
+            <div class="flex column gap-4">
+              <div class="text-gray-90 typo-text-2">
+                {{ holding.name | titlecase }}
+              </div>
+              <div class="text-gray-60 typo-text-1">
+                {{ holding.balance | number: "1.0-4" }}&nbsp;{{
+                  holding.ticker | uppercase
+                }}
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>

@@ -1,0 +1,11 @@
+.kcc20-summary-container {
+  min-height: 100px;
+
+  &__card {
+    border: none;
+  }
+
+  &__token-info {
+    flex: 1;
+  }
+}

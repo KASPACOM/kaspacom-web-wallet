@@ -1,0 +1,23 @@
+.send-dotk-content {
+  width: 100%;
+}
+
+.dotk-info {
+  border: 0;
+}
+
+.dotk-mark {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  border-radius: 8px;
+  background: var(--gray-20);
+  border: 1px solid var(--gray-30);
+  color: var(--gray-70);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.transfer-note {
+  line-height: 1.5;
+}

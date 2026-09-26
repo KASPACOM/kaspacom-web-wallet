@@ -459,7 +459,9 @@ export class ApprovalFlowService {
       case WalletActionType.SIGN_MESSAGE:
         return 'Sign Message';
       case WalletActionType.SIGN_PSKT_TRANSACTION:
-        return 'Sign Transaction';
+        return action.data.dotkTransfer
+          ? 'Send Dot.K Name'
+          : 'Sign Transaction';
       case WalletActionType.EIP1193_PROVIDER_REQUEST:
         const eipData =
           action.data as EIP1193RequestPayload<EIP1193RequestType>;

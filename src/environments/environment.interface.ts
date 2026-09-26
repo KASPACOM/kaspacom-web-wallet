@@ -62,6 +62,8 @@ export interface L1NetworkConfigInterface {
   krc721ApiBaseurl?: string;
   krc721CacheStreamUrl?: string;
   knsApiBaseurl?: string;
+  /** Dot.K registry API, including its /v1 version segment. */
+  dotkApiBaseurl?: string;
   covenantIndexerApiBaseurl?: string;
   kaspaExplorerBaseurl: string;
   /** Covenant explorer (covenants.kaspa.com); networks without one fall back to kaspaExplorerBaseurl. */

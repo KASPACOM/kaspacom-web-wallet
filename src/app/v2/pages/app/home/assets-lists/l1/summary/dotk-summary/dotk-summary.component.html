@@ -1,0 +1,45 @@
+<div class="dotk-summary flex column full-width gap-16">
+  @if (loading() && names().length === 0) {
+    @for (skeleton of loadingSkeletons; track $index) {
+      <div class="dotk-card card-0 flex align-items-center gap-16 p-16">
+        <app-skeleton [height]="'48px'" [width]="'48px'" [fullRound]="false" />
+        <app-skeleton [height]="'20px'" [width]="'150px'" [fullRound]="false" />
+      </div>
+    }
+  } @else if (names().length === 0) {
+    <div class="empty-state flex column align-items-center gap-16 p-32">
+      <div class="text-gray-60 typo-text-2 text-center">
+        No Dot.K names found
+      </div>
+      <div class="text-gray-50 typo-text-1 text-center">
+        Names ending in .k will appear here when this wallet owns them.
+      </div>
+    </div>
+  } @else {
+    @for (name of names(); track name.name) {
+      <button
+        type="button"
+        class="dotk-card card-0 card-hover flex full-width align-items-center justify-content-between p-16 fade-in"
+        (click)="openName(name)"
+      >
+        <div class="flex align-items-center gap-16">
+          <div class="dotk-mark flex align-items-center justify-content-center">
+            <span class="typo-text-1">.K</span>
+          </div>
+          <div class="flex column align-items-start gap-4">
+            <div class="text-gray-90 typo-text-2">{{ name.display }}</div>
+            <div class="text-gray-60 typo-text-1">Dot.K name</div>
+          </div>
+        </div>
+        <div class="flex column align-items-end gap-4">
+          @if (name.primary) {
+            <span class="primary-badge">Primary</span>
+          }
+          @if (name.proven === true) {
+            <span class="text-gray-60 typo-text-1">Verified on-chain</span>
+          }
+        </div>
+      </button>
+    }
+  }
+</div>

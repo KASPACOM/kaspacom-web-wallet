@@ -8,6 +8,8 @@ import { SendNftListComponent } from '../../flows/transaction/send-page/componen
 import { SendNftComponent } from '../../flows/transaction/send-page/components/send-asset/l1/send-nft/send-nft.component';
 import { SendKnsListComponent } from '../../flows/transaction/send-page/components/send-asset/l1/send-kns-list/send-kns-list.component';
 import { SendKnsComponent } from '../../flows/transaction/send-page/components/send-asset/l1/send-kns/send-kns.component';
+import { SendDotkListComponent } from '../../flows/transaction/send-page/components/send-asset/l1/send-dotk-list/send-dotk-list.component';
+import { SendDotkComponent } from '../../flows/transaction/send-page/components/send-asset/l1/send-dotk/send-dotk.component';
 import { SendL2KaspaComponent } from '../../flows/transaction/send-page/components/send-asset/l2/send-l2-kaspa/send-l2-kaspa.component';
 import { SendL2Erc20ListComponent } from '../../flows/transaction/send-page/components/send-asset/l2/send-l2-erc20-list/send-l2-erc20-list.component';
 import { ApprovalFlowPageComponent } from '../../flows/approval/approval-flow-page/approval-flow-page.component';
@@ -32,9 +34,9 @@ import { ContractsPageComponent } from '../../flows/contracts/contracts-page.com
 export type FlowPageRegistryEntry =
   | Type<unknown>
   | {
-    component: Type<unknown>;
-    getInputs?: (config: IFlowPageConfig | null) => Record<string, unknown>;
-  };
+      component: Type<unknown>;
+      getInputs?: (config: IFlowPageConfig | null) => Record<string, unknown>;
+    };
 
 export const FLOW_PAGE_IDS = [
   'wallet-management',
@@ -47,6 +49,8 @@ export const FLOW_PAGE_IDS = [
   'send-nft',
   'send-kns-list',
   'send-kns',
+  'send-dotk-list',
+  'send-dotk',
   'send-l2-kaspa',
   'send-l2-erc20-list',
   'send-erc20',
@@ -81,6 +85,8 @@ export const FLOW_PAGE_REGISTRY: Record<FlowPageId, FlowPageRegistryEntry> = {
   'send-nft': SendNftComponent,
   'send-kns-list': SendKnsListComponent,
   'send-kns': SendKnsComponent,
+  'send-dotk-list': SendDotkListComponent,
+  'send-dotk': SendDotkComponent,
   'send-l2-kaspa': SendL2KaspaComponent,
   'send-l2-erc20-list': SendL2Erc20ListComponent,
   'send-erc20': SendErc20Component,
@@ -104,8 +110,8 @@ export const FLOW_PAGE_REGISTRY: Record<FlowPageId, FlowPageRegistryEntry> = {
   'settings-menu': SettingsMenuComponent,
   'delete-wallet-confirmation': DeleteWalletConfirmationComponent,
   'network-selection': NetworkSelectionModalComponent,
-  'swap': SwapFlowPageComponent,
-  'contracts': ContractsPageComponent,
+  swap: SwapFlowPageComponent,
+  contracts: ContractsPageComponent,
   'import-token': ImportTokenFlowPageComponent,
   'add-custom-network': AddCustomNetworkFlowPageComponent,
 } as const;

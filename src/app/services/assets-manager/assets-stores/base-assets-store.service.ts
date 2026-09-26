@@ -211,15 +211,15 @@ export abstract class BaseAssetsStoreService<T extends BaseAssetStoreData> {
         }, this.AUTO_RELOAD_INTERVAL);
     }
 
-    getAssetSignal(key: keyof T): Signal<T[keyof T][] | undefined> {
+    getAssetSignal<K extends keyof T>(key: K): Signal<T[K][] | undefined> {
         return this.data[key].asReadonly();
     }
 
-    getAssetLoadingSignal(key: keyof T): Signal<boolean> {
+    getAssetLoadingSignal<K extends keyof T>(key: K): Signal<boolean> {
         return this.assetsLoaderInfo[key].loading.asReadonly();
     }
 
-    getAssets(key: keyof T): T[keyof T][] {
+    getAssets<K extends keyof T>(key: K): T[K][] {
         return this.data[key]() || [];
     }
 

@@ -90,6 +90,13 @@ export class ApprovalFlowPageComponent implements OnInit, OnDestroy {
       return false;
     }
 
+    if (
+      config.action.type === WalletActionType.SIGN_PSKT_TRANSACTION &&
+      config.action.data.dotkTransfer
+    ) {
+      return false;
+    }
+
     if (config.action.type === WalletActionType.EIP1193_PROVIDER_REQUEST) {
       const actionData = config.action
         .data as EIP1193RequestPayload<EIP1193RequestType>;

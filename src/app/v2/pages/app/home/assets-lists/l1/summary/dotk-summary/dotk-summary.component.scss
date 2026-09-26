@@ -1,0 +1,45 @@
+.dotk-summary {
+  min-height: 100px;
+}
+
+.dotk-card {
+  border: 0;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dotk-mark {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  border: 1px solid var(--gray-30);
+  border-radius: 8px;
+  background: var(--gray-20);
+  color: var(--gray-70);
+  font-weight: 700;
+}
+
+.primary-badge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(111, 199, 186, 0.16);
+  color: var(--green-60);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.fade-in {
+  animation: fade-in 0.3s ease-in;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

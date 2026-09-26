@@ -1,0 +1,113 @@
+.dotk-page-container {
+  padding: 0 16px 24px;
+  animation: fade-in-up 0.3s ease-out;
+}
+
+.asset-title {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.dotk-mark {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border: 1px solid var(--gray-30);
+  border-radius: 10px;
+  background: var(--gray-20);
+  color: var(--gray-70);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ownership-warning,
+.empty-state {
+  padding: 12px;
+  border: 1px solid rgba(230, 162, 35, 0.35);
+  border-radius: 8px;
+  background: rgba(230, 162, 35, 0.08);
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.detail-card {
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--gray-10);
+}
+
+.detail-label {
+  margin-bottom: 8px;
+  color: var(--gray-60);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.detail-value-row {
+  min-height: 24px;
+}
+
+.detail-value {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.verified-badge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(34, 197, 94, 0.2);
+  color: rgb(34, 197, 94);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.font-mono {
+  font-family:
+    "SF Mono", "Monaco", "Inconsolata", "Fira Code", "Droid Sans Mono",
+    "Source Code Pro", monospace;
+}
+
+.break-all {
+  word-break: break-all;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.hover-opacity:hover {
+  opacity: 0.7;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .dotk-page-container {
+    padding: 12px;
+  }
+
+  .detail-card {
+    padding: 12px;
+  }
+}

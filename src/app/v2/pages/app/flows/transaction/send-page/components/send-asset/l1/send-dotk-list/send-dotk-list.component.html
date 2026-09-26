@@ -1,0 +1,37 @@
+<div class="send-dotk-list flex column full-width gap-16">
+  @if (loading()) {
+    @for (item of [1, 2, 3, 4, 5]; track item) {
+      <app-skeleton [height]="'75px'" [width]="'auto'" [fullRound]="false" />
+    }
+  } @else if (names().length === 0) {
+    <div class="empty-state flex column align-items-center gap-16 p-32">
+      <div class="text-gray-60 typo-text-2 text-center">
+        No Dot.K names found
+      </div>
+      <div class="text-gray-50 typo-text-1 text-center">
+        This wallet needs to own a .k name before it can send one.
+      </div>
+    </div>
+  } @else {
+    @for (name of names(); track name.name) {
+      <button
+        type="button"
+        class="dotk-name-card card-0 card-hover flex full-width align-items-center justify-content-between p-16"
+        (click)="selectName(name)"
+      >
+        <div class="flex align-items-center gap-16">
+          <div class="dotk-mark flex align-items-center justify-content-center">
+            .K
+          </div>
+          <div class="flex column align-items-start gap-4">
+            <span class="text-gray-90 typo-text-2">{{ name.display }}</span>
+            <span class="text-gray-60 typo-text-1">Dot.K name</span>
+          </div>
+        </div>
+        @if (name.primary) {
+          <span class="primary-badge">Primary</span>
+        }
+      </button>
+    }
+  }
+</div>

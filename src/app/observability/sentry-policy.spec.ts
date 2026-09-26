@@ -391,7 +391,7 @@ describe('wallet Sentry policy', () => {
       message: '/app/home/asset/krc20/PRIVATE',
       data: {
         from: '/app/home/asset/krc721/COLLECTION/123',
-        to: '/app/home/asset/kns/private-domain',
+        to: '/app/home/asset/dotk/private-name',
         context: cyclicData,
       },
     });
@@ -406,7 +406,7 @@ describe('wallet Sentry policy', () => {
       'https://wallet.kaspa.com/app/home/transaction/kaspa/:id',
     );
     expect(breadcrumb.data?.['from']).toBe('/app/home/asset/krc721/:id');
-    expect(breadcrumb.data?.['to']).toBe('/app/home/asset/kns/:id');
+    expect(breadcrumb.data?.['to']).toBe('/app/home/asset/dotk/:id');
     expect(breadcrumb.message).toBe('/app/home/asset/krc20/:id');
     expect(
       (breadcrumb.data?.['context'] as Record<string, unknown>)['self'],

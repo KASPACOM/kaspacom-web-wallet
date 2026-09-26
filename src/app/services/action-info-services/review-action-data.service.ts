@@ -327,6 +327,33 @@ export class ReviewActionDataService {
     actionData: SignPsktTransactionAction,
     wallet: AppWallet,
   ): ActionDisplay {
+    if (actionData.dotkTransfer) {
+      return {
+        title: 'Transfer Dot.K Name',
+        rows: [
+          {
+            fieldName: 'Sender',
+            fieldValue: wallet.getAddress(),
+          },
+          {
+            fieldName: 'Name',
+            fieldValue: actionData.dotkTransfer.displayName,
+          },
+          {
+            fieldName: 'Recipient',
+            fieldValue: actionData.dotkTransfer.recipient,
+          },
+          {
+            fieldName: 'Network Fee',
+            fieldValue:
+              this.kaspaNetworkActionsService.sompiToNumber(
+                actionData.dotkTransfer.feeSompi,
+              ) + ' KAS',
+          },
+        ],
+      };
+    }
+
     const transactionData = Transaction.deserializeFromSafeJSON(
       actionData.psktTransactionJson,
     );

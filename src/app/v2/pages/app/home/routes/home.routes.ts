@@ -8,6 +8,7 @@ import { KaspaTransactionDetailsComponent } from '../kaspa-transaction-details/k
 import { Erc20TransactionDetailsComponent } from '../erc20-transaction-details/erc20-transaction-details.component';
 import { Krc721AssetComponent } from '../assets-lists/l1/asset/krc721-asset/krc721-asset.component';
 import { Erc20AssetComponent } from '../assets-lists/l2/asset/erc20-asset/erc20-asset.component';
+import { DotkAssetComponent } from '../assets-lists/l1/asset/dotk-asset/dotk-asset.component';
 
 export const HomeRoutes: Routes = [
   {
@@ -37,6 +38,11 @@ export const HomeRoutes: Routes = [
   {
     path: 'asset/kns/:assetId',
     component: KnsAssetComponent,
+    data: { animation: 'AssetDetail' },
+  },
+  {
+    path: 'asset/dotk/:name',
+    component: DotkAssetComponent,
     data: { animation: 'AssetDetail' },
   },
   {

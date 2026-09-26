@@ -135,7 +135,7 @@ export const CONTRACT_ACTION_FIELDS: ContractActionFieldConfig = {
           type: 'address',
           key: 'outputAddress',
           label: 'New Heir Wallet',
-          placeholder: 'Enter heir wallet address or KNS domain',
+          placeholder: 'Enter heir wallet address, KNS domain, or Dot.K name',
         },
         {
           type: 'banner',
@@ -155,7 +155,8 @@ export const CONTRACT_ACTION_FIELDS: ContractActionFieldConfig = {
           type: 'address',
           key: 'outputAddress',
           label: 'New Recovery Wallet',
-          placeholder: 'Enter recovery wallet address or KNS domain',
+          placeholder:
+            'Enter recovery wallet address, KNS domain, or Dot.K name',
         },
         {
           type: 'banner',

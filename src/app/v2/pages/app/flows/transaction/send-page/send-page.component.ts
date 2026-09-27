@@ -59,6 +59,14 @@ export class SendPageComponent extends FlowPageBaseComponent {
     });
   }
 
+  onDotkCardClick(): void {
+    this.navigateToNextPage({
+      id: 'send-dotk-list',
+      title: 'Select Dot.K Name',
+      canNavigateBack: true,
+    });
+  }
+
   // L2 asset card clicks
   onL2KaspaCardClick(): void {
     this.navigateToNextPage({

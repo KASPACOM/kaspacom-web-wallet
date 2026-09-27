@@ -15,4 +15,5 @@ export class L1SendAssetsContainerComponent extends BaseSendAssetsContainerCompo
   krc20Click = output<void>();
   nftClick = output<void>();
   knsClick = output<void>();
+  dotkClick = output<void>();
 }

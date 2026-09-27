@@ -59,7 +59,10 @@ export class ReviewActionDataService {
       case WalletActionType.COVENANT_SPEND:
         return this.getCovenantSpendActionDisplay(action.data, wallet);
       case WalletActionType.COVENANT_COMPLETE_PARTIAL:
-        return this.getCovenantCompletePartialActionDisplay(action.data, wallet);
+        return this.getCovenantCompletePartialActionDisplay(
+          action.data,
+          wallet,
+        );
       case WalletActionType.SIGN_PSKT_TRANSACTION:
         return this.getSignPsktTransactionActionDisplay(action.data, wallet);
       case WalletActionType.SIGN_MESSAGE:
@@ -227,7 +230,10 @@ export class ReviewActionDataService {
         },
         {
           fieldName: 'Amount Locked',
-          fieldValue: this.kaspaNetworkActionsService.sompiToNumber(actionData.amountSompi) + ' KAS',
+          fieldValue:
+            this.kaspaNetworkActionsService.sompiToNumber(
+              actionData.amountSompi,
+            ) + ' KAS',
         },
       ],
     };
@@ -259,9 +265,15 @@ export class ReviewActionDataService {
         },
         {
           fieldName: 'Outputs',
-          fieldValue: actionData.outputs
-            .map((output) => this.kaspaNetworkActionsService.sompiToNumber(output.amount) + ' KAS to ' + output.address)
-            .join('\n') || '-',
+          fieldValue:
+            actionData.outputs
+              .map(
+                (output) =>
+                  this.kaspaNetworkActionsService.sompiToNumber(output.amount) +
+                  ' KAS to ' +
+                  output.address,
+              )
+              .join('\n') || '-',
           isCodeBlock: true,
         },
       ],
@@ -327,6 +339,10 @@ export class ReviewActionDataService {
     actionData: SignPsktTransactionAction,
     wallet: AppWallet,
   ): ActionDisplay {
+    if (actionData.dotkTransfer) {
+      return this.getDotkTransferActionDisplay(actionData, wallet);
+    }
+
     const transactionData = Transaction.deserializeFromSafeJSON(
       actionData.psktTransactionJson,
     );
@@ -395,6 +411,142 @@ export class ReviewActionDataService {
         },
         ...feeRow,
       ],
+    };
+  }
+
+  private getDotkTransferActionDisplay(
+    actionData: SignPsktTransactionAction,
+    wallet: AppWallet,
+  ): ActionDisplay {
+    const transfer = actionData.dotkTransfer!;
+    const cards = transfer.plan.cards;
+    const recordKeysDropped = Array.from(
+      new Set([...transfer.recordKeysDropped, ...cards.dropped]),
+    );
+    const subnamesDropped = cards.subnamesDropped;
+    const cardEffectsUnknown =
+      transfer.recordEffectsUncertain || !cards.cardRead;
+    const hasDestructiveEffects =
+      transfer.recordsCardRetired ||
+      recordKeysDropped.length > 0 ||
+      subnamesDropped.length > 0 ||
+      cardEffectsUnknown;
+    const rows: ActionDisplayRow[] = [
+      {
+        fieldName: 'Sender',
+        fieldValue: wallet.getAddress(),
+      },
+      {
+        fieldName: 'Name',
+        fieldValue: transfer.displayName,
+      },
+      {
+        fieldName: 'Recipient',
+        fieldValue: transfer.recipient,
+      },
+      {
+        fieldName: 'Network Fee',
+        fieldValue:
+          this.kaspaNetworkActionsService.sompiToNumber(transfer.feeSompi) +
+          ' KAS',
+      },
+    ];
+
+    if (cardEffectsUnknown) {
+      rows.push({
+        fieldName: 'Records card',
+        fieldValue:
+          'The current records card could not be fully read. It may contain records or subnames that this transfer will remove.',
+        tone: 'warning',
+      });
+    } else if (transfer.recordsCardRetired) {
+      rows.push({
+        fieldName: 'Records card',
+        fieldValue: cards.minted
+          ? 'The current card will be retired and replaced.'
+          : 'The current card will be retired without a replacement.',
+        tone: 'warning',
+      });
+    }
+
+    if (recordKeysDropped.length > 0) {
+      rows.push({
+        fieldName: 'Records removed',
+        fieldValue: recordKeysDropped.join(', '),
+        tone: 'warning',
+      });
+    }
+
+    if (subnamesDropped.length > 0) {
+      rows.push({
+        fieldName: 'Subnames that will stop resolving',
+        fieldValue: subnamesDropped
+          .map(
+            (subname) =>
+              `${subname.label}.${transfer.displayName} -> ${
+                subname.address ??
+                `Unresolved${subname.fault ? ` (${subname.fault})` : ''}`
+              }`,
+          )
+          .join('\n'),
+        isCodeBlock: true,
+        tone: 'warning',
+      });
+    }
+
+    if (cards.subnames.length > 0) {
+      rows.push({
+        fieldName: 'Subnames written to the new card',
+        fieldValue: cards.subnames
+          .map(
+            (subname) =>
+              `${subname.label}.${transfer.displayName} (${subname.change}) -> ${
+                subname.address ??
+                `Unresolved${subname.fault ? ` (${subname.fault})` : ''}`
+              }`,
+          )
+          .join('\n'),
+        isCodeBlock: true,
+      });
+    }
+
+    if (cards.carried.length > 0) {
+      rows.push({
+        fieldName: 'Opaque records carried forward',
+        fieldValue: cards.carried.join(', '),
+      });
+    }
+
+    if (cards.swept > 0) {
+      rows.push({
+        fieldName: 'Records cards reclaimed',
+        fieldValue: String(cards.swept),
+      });
+    }
+
+    if (hasDestructiveEffects) {
+      rows.push({
+        fieldName:
+          'I understand that this transfer can permanently remove the records and subnames shown above.',
+        fieldValue: 'false',
+        tone: 'warning',
+        inputField: {
+          fieldParam: 'acknowledgeDotkDataLoss',
+          fieldType: InputFieldType.CHECKBOX,
+          requiredToApprove: true,
+        },
+      });
+    }
+
+    return {
+      title: 'Transfer Dot.K Name',
+      ...(hasDestructiveEffects
+        ? {
+            warning:
+              'This transfer retires the current records card. Records will be removed and its subnames can stop resolving immediately.',
+          }
+        : {}),
+      rows,
     };
   }
 

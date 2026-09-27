@@ -1,0 +1,159 @@
+<div class="dotk-page-container flex column full-width gap-16">
+  <div class="asset-header flex align-items-center gap-16">
+    <kc-icon
+      [iconClass]="'icon-arrow-left'"
+      [size]="'md'"
+      (click)="goBack()"
+      class="cursor-pointer hover-opacity"
+    />
+    <div class="flex align-items-center gap-12">
+      <div class="dotk-mark flex align-items-center justify-content-center">
+        .K
+      </div>
+      <h1 class="asset-title text-gray-90 m-0">
+        {{ detail()?.display || ownedName()?.display || "Dot.K Name" }}
+      </h1>
+    </div>
+  </div>
+
+  <div class="action-buttons flex gap-12">
+    <kc-button
+      [variant]="'primary'"
+      [size]="'m'"
+      [text]="'Send'"
+      [isFullWidth]="true"
+      [isDisabled]="loading() || !ownedName()"
+      (buttonClick)="sendName()"
+    />
+  </div>
+
+  @if (!loading() && !ownedName()) {
+    <div class="ownership-warning text-gray-60 typo-text-1">
+      This name is not currently owned by the selected wallet, so it cannot be
+      sent.
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="details-grid">
+      @for (item of [1, 2, 3, 4, 5]; track item) {
+        <app-skeleton [height]="'76px'" [width]="'100%'" />
+      }
+    </div>
+  } @else if (error()) {
+    <div class="empty-state card-0 text-gray-60 typo-text-2 p-24">
+      {{ error() }}
+    </div>
+  } @else if (detail(); as name) {
+    <section class="details-section flex column gap-16">
+      <h3 class="section-title text-gray-90 m-0">Name Details</h3>
+
+      <div class="details-grid">
+        <div class="detail-card">
+          <div class="detail-label">Name</div>
+          <div class="detail-value text-gray-90">{{ name.display }}</div>
+        </div>
+
+        <div class="detail-card">
+          <div class="detail-label">Status</div>
+          <div class="detail-value text-gray-90 flex align-items-center gap-8">
+            {{ verificationLabel() }}
+            @if (name.proven === true) {
+              <span class="verified-badge">Verified</span>
+            }
+          </div>
+        </div>
+
+        <div class="detail-card">
+          <div class="detail-label">Owner Address</div>
+          <div class="detail-value-row flex align-items-center gap-12">
+            <div class="detail-value text-gray-90 font-mono break-all">
+              {{ name.address || name.ownerCovenantId || "N/A" }}
+            </div>
+            @if (name.address || name.ownerCovenantId) {
+              <app-copy-button
+                [value]="name.address || name.ownerCovenantId!"
+                [size]="'xs'"
+              />
+            }
+          </div>
+        </div>
+
+        <div class="detail-card">
+          <div class="detail-label">Deed Address</div>
+          <div class="detail-value-row flex align-items-center gap-12">
+            <div class="detail-value text-gray-90 font-mono break-all">
+              {{ name.deedAddress }}
+            </div>
+            <app-copy-button [value]="name.deedAddress" [size]="'xs'" />
+            <kc-icon
+              [iconClass]="'icon-link'"
+              [size]="'xs'"
+              [color]="'var(--gray-60)'"
+              class="cursor-pointer hover-opacity"
+              (click)="openDeedInExplorer()"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    @if (name.subnames.length > 0) {
+      <section class="subnames-section flex column gap-16">
+        <div class="section-heading flex column gap-4">
+          <h3 class="section-title text-gray-90 m-0">Subnames</h3>
+          <div class="text-gray-60 typo-text-1">
+            Addresses assigned by the owner of {{ name.display }}
+          </div>
+        </div>
+
+        <div class="details-grid">
+          @for (subname of name.subnames; track subname.label) {
+            <div class="detail-card subname-card flex column gap-12">
+              <div>
+                <div class="detail-label">Subname</div>
+                <div class="subname-display text-gray-90">
+                  {{ subname.display }}
+                </div>
+              </div>
+
+              <div>
+                <div class="detail-label">Connected wallet</div>
+                @if (subname.address) {
+                  <div class="detail-value-row flex align-items-center gap-12">
+                    <div class="detail-value text-gray-90 font-mono break-all">
+                      {{ subname.address }}
+                    </div>
+                    <app-copy-button [value]="subname.address" [size]="'xs'" />
+                  </div>
+                } @else {
+                  <div class="subname-fault typo-text-1">
+                    Does not resolve{{
+                      subname.fault ? " (" + subname.fault + ")" : ""
+                    }}
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    @if (name.records.length > 0) {
+      <section class="records-section flex column gap-16">
+        <h3 class="section-title text-gray-90 m-0">Records</h3>
+        <div class="details-grid">
+          @for (record of name.records; track record.key) {
+            <div class="detail-card">
+              <div class="detail-label">{{ record.key }}</div>
+              <div class="detail-value text-gray-90 break-all">
+                {{ record.value }}
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+  }
+</div>

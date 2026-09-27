@@ -9,6 +9,7 @@ import {
 import { WalletActionResultWithError } from './wallet-action-result';
 import { BaseCommunicationApp } from '../services/communication-service/communication-app/base-communication-app';
 import type { CovenantFunctionArg } from '../services/covenant/covenant-sdk/covenant';
+import type { DotkTransferActionData } from '../services/dotk/dotk.types';
 
 export enum WalletActionType {
   TRANSFER_KAS = 'transfer-kas',
@@ -93,6 +94,8 @@ export interface SignPsktTransactionAction {
   signInputs?: WalletPsktSignInput[];
   protocol?: ProtocolType | string;
   type?: PsktActionsEnum | string;
+  /** Present when the PSKT-shaped body is an SDK-planned Dot.K covenant transfer. */
+  dotkTransfer?: DotkTransferActionData;
 }
 
 export interface SignMessage {

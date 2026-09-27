@@ -45,24 +45,45 @@
                       </h4>
                     }
                   </div>
+                  @if (actionDisplay()!.warning) {
+                    <div class="destructive-warning">
+                      <kc-icon
+                        iconClass="icon-warning"
+                        size="sm"
+                        color="var(--orange-20)"
+                      />
+                      <div>
+                        <div class="destructive-warning-title">
+                          Records and subnames will be affected
+                        </div>
+                        <div class="destructive-warning-message">
+                          {{ actionDisplay()!.warning }}
+                        </div>
+                      </div>
+                    </div>
+                  }
                   <!-- Action Detail Rows -->
                   <div class="action-details-grid">
                     @for (row of actionDisplay()!.rows; track row) {
                       <!-- Input Fields (checkboxes) -->
                       @if (row.inputField) {
-                        <div class="detail-card checkbox-container">
+                        <div
+                          class="detail-card checkbox-container"
+                          [class.warning-detail]="row.tone === 'warning'"
+                        >
                           @if (
                             row.inputField.fieldType === InputFieldType.CHECKBOX
                           ) {
                             <app-checkbox-input
                               [checked]="
-                                additionalParams[
-                                  row.inputField.fieldParam
-                                ] ?? (row.fieldValue === 'true')
+                                additionalParams()[row.inputField.fieldParam] ??
+                                row.fieldValue === 'true'
                               "
                               (checkedChange)="
-                                additionalParams[row.inputField.fieldParam] =
+                                setAdditionalParam(
+                                  row.inputField.fieldParam,
                                   $event
+                                )
                               "
                             >
                               {{ row.fieldName }}
@@ -72,14 +93,20 @@
                       } @else {
                         <!-- Signing Message Detail -->
                         @if (row.isCodeBlock) {
-                          <div class="detail-card detail-signing-message">
+                          <div
+                            class="detail-card detail-signing-message"
+                            [class.warning-detail]="row.tone === 'warning'"
+                          >
                             <div class="detail-label">{{ row.fieldName }}</div>
                             <div class="detail-value">{{ row.fieldValue }}</div>
                           </div>
                         }
                         <!-- Regular Detail -->
                         @if (!row.isCodeBlock) {
-                          <div class="detail-card">
+                          <div
+                            class="detail-card"
+                            [class.warning-detail]="row.tone === 'warning'"
+                          >
                             <div class="detail-label">{{ row.fieldName }}</div>
                             <div class="detail-value">{{ row.fieldValue }}</div>
                           </div>

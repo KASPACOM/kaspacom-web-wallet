@@ -59,6 +59,7 @@ import { CovenantService } from '../covenant/covenant.service';
 import { KRC20OperationType } from '../../types/kaspa-network/krc20-operations-data.interface';
 import { Krc721OperationType } from '../../types/kaspa-network/krc721-operations-data.interface';
 import { KnsOperationType } from '../../types/kaspa-network/kns-operations-data.interface';
+import { DotkService } from '../dotk/dotk.service';
 
 const MINIMAL_TRANSACTION_MASS = 10000n;
 const COVENANT_ESTIMATED_TRANSACTION_MASS = 25000n;
@@ -80,6 +81,7 @@ export class KaspaNetworkActionsService {
     KaspaWalletMnemonicActionsService,
   );
   private readonly covenantService = inject(CovenantService);
+  private readonly dotkService = inject(DotkService);
 
   async connectAndDo<T>(
     fn: () => Promise<T>,
@@ -187,6 +189,10 @@ export class KaspaNetworkActionsService {
     }
 
     if (action.type == WalletActionType.SIGN_PSKT_TRANSACTION) {
+      if (action.data.dotkTransfer) {
+        return [action.data.dotkTransfer.plan.assembled.mass.fee];
+      }
+
       const result = await this.transactionsManager.signPsktTransaction(
         wallet,
         (action.data as SignPsktTransactionAction).psktTransactionJson,
@@ -348,6 +354,23 @@ export class KaspaNetworkActionsService {
     }
 
     if (action.type == WalletActionType.SIGN_PSKT_TRANSACTION) {
+      if (action.data.dotkTransfer) {
+        const transactionId = await this.dotkService.submitTransfer(
+          action.data.dotkTransfer,
+          wallet,
+        );
+        await notifyUpdate(transactionId);
+
+        const resultData: SignPsktTransactionActionResult = {
+          type: WalletActionResultType.SignPsktTransaction,
+          psktTransactionJson: action.data.psktTransactionJson,
+          transactionId,
+          performedByWallet: wallet.getAddress(),
+        };
+
+        return { success: true, result: resultData };
+      }
+
       const result = await this.transactionsManager.signPsktTransaction(
         wallet,
         action.data.psktTransactionJson,
@@ -632,6 +655,9 @@ export class KaspaNetworkActionsService {
 
     if (action.type === WalletActionType.SIGN_PSKT_TRANSACTION) {
       const data = action.data as SignPsktTransactionAction;
+      if (data.dotkTransfer) {
+        return 0n;
+      }
       const pskt: PsktTransaction = JSON.parse(data.psktTransactionJson);
 
       const totalOutputs = pskt.outputs.reduce(

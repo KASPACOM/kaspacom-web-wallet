@@ -37,7 +37,7 @@ interface SentrySpanLike {
 const DYNAMIC_WALLET_ROUTES = [
   /^(\/app\/home\/asset\/(?:krc20|erc20)\/)[^/]+/i,
   /^(\/app\/home\/asset\/krc721\/)[^/]+\/[^/]+/i,
-  /^(\/app\/home\/asset\/(?:kns|utxo)\/)[^/]+/i,
+  /^(\/app\/home\/asset\/(?:kns|dotk|utxo)\/)[^/]+/i,
   /^(\/app\/home\/transaction\/(?:kaspa|erc20)\/)[^/]+/i,
 ];
 

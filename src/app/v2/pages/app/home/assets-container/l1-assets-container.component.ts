@@ -6,6 +6,7 @@ import {
 import { Krc20SummaryComponent } from '../assets-lists/l1/summary/krc20-summary/krc20-summary.component';
 import { Krc721SummaryComponent } from '../assets-lists/l1/summary/krc721-summary/krc721-summary.component';
 import { KnsSummaryComponent } from '../assets-lists/l1/summary/kns-summary/kns-summary.component';
+import { DotkSummaryComponent } from '../assets-lists/l1/summary/dotk-summary/dotk-summary.component';
 import { UtxosSummaryComponent } from '../utxos-summary/utxos-summary.component';
 import {
   BaseAssetsContainerComponent,
@@ -21,6 +22,7 @@ import {
     Krc20SummaryComponent,
     Krc721SummaryComponent,
     KnsSummaryComponent,
+    DotkSummaryComponent,
     UtxosSummaryComponent,
   ],
   templateUrl: './l1-assets-container.component.html',
@@ -32,5 +34,6 @@ export class L1AssetsContainerComponent extends BaseAssetsContainerComponent {
     { id: ASSET_TAB_IDS.KRC20, label: 'KRC20' },
     { id: ASSET_TAB_IDS.KRC721, label: 'KRC721' },
     { id: ASSET_TAB_IDS.KNS, label: 'KNS' },
+    { id: ASSET_TAB_IDS.DOTK, label: 'Dot.K' },
   ];
 }

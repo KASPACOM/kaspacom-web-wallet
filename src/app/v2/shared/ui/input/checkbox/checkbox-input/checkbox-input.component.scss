@@ -23,6 +23,7 @@
   display: inline-block;
   width: 20px;
   height: 20px;
+  flex-shrink: 0;
   border: 2px solid var(--gray-45);
   border-radius: 4px;
   box-sizing: border-box;
@@ -41,13 +42,13 @@
   content: "";
   position: absolute;
   display: none;
-  left: 5px;
-  top: 1px;
+  left: 50%;
+  top: 50%;
   width: 5px;
   height: 10px;
   border: solid var(--white);
   border-width: 0 2.5px 2.5px 0;
-  transform: rotate(45deg);
+  transform: translate(-50%, -58%) rotate(45deg);
 }
 
 .checkbox-container input[type="checkbox"]:checked + .checkmark::after {

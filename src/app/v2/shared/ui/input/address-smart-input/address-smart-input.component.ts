@@ -41,7 +41,9 @@ export class AddressSmartInputComponent implements OnChanges {
   private readonly host = inject(ElementRef<HTMLElement>);
 
   readonly label = input<string>('Wallet Address');
-  readonly placeholder = input<string>('Enter wallet address or KNS domain');
+  readonly placeholder = input<string>(
+    'Enter wallet address, KNS domain, or Dot.K name',
+  );
   readonly isDisabled = input<boolean>(false);
   readonly isFullWidth = input<boolean>(true);
   readonly showQrButton = input<boolean>(true);
@@ -145,6 +147,12 @@ export class AddressSmartInputComponent implements OnChanges {
     // Always try to resolve through the service to get proper validation
     const result = await this.resolver.resolve(input);
 
+    // Ignore a slower name-service answer after the user has already changed
+    // the field. Dot.K verification may include a node round trip.
+    if (input !== this.inputValue().trim()) {
+      return;
+    }
+
     if (result.source === 'direct') {
       // Valid kaspa address - don't show resolved address section but ensure validation states are correct
       this.isResolving.set(false);
@@ -155,8 +163,8 @@ export class AddressSmartInputComponent implements OnChanges {
       // Make sure the address is marked as valid for the warning display
       this.displayIsValid.set(true);
       this.displayInvalidReason.set('');
-    } else if (result.source === 'kns') {
-      // KNS domain resolution - show resolved address section
+    } else if (result.source === 'kns' || result.source === 'dotk') {
+      // Name-service resolution - show resolved address section
       this.isResolving.set(false);
       this.isDomainCandidate.set(false);
 

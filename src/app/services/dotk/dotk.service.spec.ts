@@ -1,11 +1,79 @@
 import { TestBed } from '@angular/core/testing';
 import type { Nodes, Tx } from '@dotk/sdk-tx';
 import { Transaction } from '../../../../public/kaspa/kaspa';
+import { AppWallet } from '../../classes/AppWallet';
 import { KaspaL1NetworkService } from '../kaspa-netwrok-services/kaspa-l1-network.service';
 import { RpcService } from '../kaspa-netwrok-services/rpc.service';
 import { DotkService } from './dotk.service';
 
 describe('DotkService', () => {
+  it('uses the fresh proven card when the cached asset missed regular records', async () => {
+    TestBed.configureTestingModule({
+      providers: [
+        DotkService,
+        { provide: KaspaL1NetworkService, useValue: {} },
+        { provide: RpcService, useValue: {} },
+      ],
+    });
+
+    const plan = {
+      name: 'alice',
+      recipient: 'kaspatest:recipient',
+      fee: 1000n,
+      cards: {
+        minted: false,
+        swept: 0,
+        value: 0n,
+        carried: [],
+        dropped: [],
+        subnames: [],
+        subnamesDropped: [],
+        cardRead: true,
+        complete: true,
+      },
+      assembled: {
+        tx: {
+          inputs: [
+            {
+              previousOutpoint: {
+                transactionId: 'current-deed-transaction',
+                index: 0,
+              },
+            },
+          ],
+        },
+      },
+    };
+    const registrar = {
+      planTransfer: jasmine.createSpy('planTransfer').and.resolveTo(plan),
+    };
+    const dotk = {
+      network: 'testnet-10',
+      display: () => 'alice.k',
+      resolveName: jasmine.createSpy('resolveName').and.resolveTo({
+        proven: true,
+        card: {
+          proven: true,
+          outpointTxid: 'current-deed-transaction',
+        },
+        records: { url: 'https://alice.example' },
+      }),
+    };
+    const service = TestBed.inject(DotkService);
+    spyOn<any>(service, 'createRegistrar').and.returnValue({ dotk, registrar });
+
+    const result = await service.planTransfer(
+      'alice',
+      'kaspatest:recipient',
+      {} as AppWallet,
+    );
+
+    expect(result.recordsCardRetired).toBeTrue();
+    expect(result.recordEffectsUncertain).toBeFalse();
+    expect(result.recordKeysDropped).toEqual(['url']);
+    expect(dotk.resolveName).toHaveBeenCalledOnceWith('alice');
+  });
+
   it('loads the wallet summary without requiring a Kaspa node', async () => {
     TestBed.configureTestingModule({
       providers: [

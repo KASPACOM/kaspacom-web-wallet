@@ -140,7 +140,6 @@ export class SendDotkComponent
         currentName.name,
         recipient,
         wallet,
-        currentName,
       );
       const action =
         this.walletActionService.createDotkTransferWalletAction(transfer);

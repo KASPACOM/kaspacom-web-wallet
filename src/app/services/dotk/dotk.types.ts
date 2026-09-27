@@ -55,6 +55,7 @@ export interface DotkTransferActionData {
   feeSompi: bigint;
   network: string;
   recordsCardRetired: boolean;
+  recordEffectsUncertain: boolean;
   recordKeysDropped: string[];
   plan: TransferPlanned;
 }

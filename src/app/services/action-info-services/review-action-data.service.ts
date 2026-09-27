@@ -424,7 +424,8 @@ export class ReviewActionDataService {
       new Set([...transfer.recordKeysDropped, ...cards.dropped]),
     );
     const subnamesDropped = cards.subnamesDropped;
-    const cardEffectsUnknown = !cards.cardRead;
+    const cardEffectsUnknown =
+      transfer.recordEffectsUncertain || !cards.cardRead;
     const hasDestructiveEffects =
       transfer.recordsCardRetired ||
       recordKeysDropped.length > 0 ||

@@ -121,10 +121,30 @@ export class DotkService {
     name: string,
     recipient: string,
     wallet: AppWallet,
-    knownName?: DotkNameAsset,
   ): Promise<DotkTransferActionData> {
     const { dotk, registrar } = this.createRegistrar(wallet);
     const plan = await registrar.planTransfer(name, recipient);
+    const resolved = await dotk.resolveName(plan.name);
+
+    // A live card is output 1 of the transaction that created the current
+    // deed. Matching its transaction id to an input of this exact plan ties
+    // the freshly proven records to the deed the transfer will actually
+    // spend, instead of trusting the cached wallet-list snapshot.
+    const plannedInputTransactionIds = new Set(
+      plan.assembled.tx.inputs.map(
+        (input) => input.previousOutpoint.transactionId,
+      ),
+    );
+    const cardMatchesPlan =
+      resolved?.proven === true &&
+      resolved.card?.proven === true &&
+      plannedInputTransactionIds.has(resolved.card.outpointTxid);
+    const noCardConfirmed =
+      plan.cards.cardRead &&
+      resolved?.proven === true &&
+      resolved.card === null;
+    const recordEffectsUncertain =
+      !plan.cards.cardRead || (!cardMatchesPlan && !noCardConfirmed);
 
     return {
       name: plan.name,
@@ -133,9 +153,11 @@ export class DotkService {
       feeSompi: plan.fee,
       network: dotk.network,
       recordsCardRetired:
-        knownName?.hasRecordsCard === true ||
-        plan.cards.subnamesDropped.length > 0,
-      recordKeysDropped: knownName?.recordKeys ?? [],
+        cardMatchesPlan || plan.cards.subnamesDropped.length > 0,
+      recordEffectsUncertain,
+      recordKeysDropped: cardMatchesPlan
+        ? this.regularRecordKeys(resolved?.records ?? {})
+        : [],
       plan,
     };
   }

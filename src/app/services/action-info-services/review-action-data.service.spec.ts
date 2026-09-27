@@ -49,6 +49,7 @@ describe('ReviewActionDataService', () => {
             feeSompi: 1000n,
             network: 'mainnet',
             recordsCardRetired: true,
+            recordEffectsUncertain: false,
             recordKeysDropped: ['url'],
             plan: {
               cards: {
@@ -90,6 +91,50 @@ describe('ReviewActionDataService', () => {
         areRequiredAcknowledgementsAccepted(display, {
           acknowledgeDotkDataLoss: true,
         }),
+      ).toBeTrue();
+    });
+
+    it('requires acknowledgement for a live regular-record card with no subnames', () => {
+      const action = {
+        type: WalletActionType.SIGN_PSKT_TRANSACTION,
+        data: {
+          psktTransactionJson: '{}',
+          dotkTransfer: {
+            name: 'alice',
+            displayName: 'alice.k',
+            recipient: 'kaspa:recipient',
+            feeSompi: 1000n,
+            network: 'mainnet',
+            recordsCardRetired: true,
+            recordEffectsUncertain: false,
+            recordKeysDropped: ['url'],
+            plan: {
+              cards: {
+                minted: false,
+                swept: 0,
+                value: 0n,
+                carried: [],
+                dropped: [],
+                subnames: [],
+                subnamesDropped: [],
+                cardRead: true,
+                complete: true,
+              },
+            },
+          },
+        },
+      } as unknown as WalletAction;
+
+      const display = service.getActionDisplay(action, wallet);
+
+      expect(
+        display?.rows.find((row) => row.fieldName === 'Records removed')
+          ?.fieldValue,
+      ).toBe('url');
+      expect(
+        display?.rows.find(
+          (row) => row.inputField?.fieldParam === 'acknowledgeDotkDataLoss',
+        )?.inputField?.requiredToApprove,
       ).toBeTrue();
     });
   });

@@ -21,7 +21,7 @@
   box-shadow: none;
   margin: 0;
   padding: 0;
-  font-family: 'Poppins', 'Roboto', sans-serif;
+  font-family: "Poppins", "Roboto", sans-serif;
   color: var(--white);
   max-width: 100%;
   width: 100%;
@@ -95,7 +95,7 @@
 
   .value {
     color: var(--white);
-    font-family: 'SF Mono', 'Monaco', monospace;
+    font-family: "SF Mono", "Monaco", monospace;
     word-wrap: break-word;
     word-break: break-all;
     overflow-wrap: break-word;
@@ -126,7 +126,7 @@
     padding: 12px;
     border-radius: 6px;
     border: none;
-    font-family: 'SF Mono', 'Monaco', monospace;
+    font-family: "SF Mono", "Monaco", monospace;
     color: var(--white);
     max-height: 200px;
   }
@@ -137,6 +137,30 @@
   background: rgba(255, 255, 255, 0.02);
   border: none;
   border-radius: 8px;
+}
+
+.destructive-warning {
+  margin: 12px 0 16px;
+  padding: 14px;
+  border: 1px solid rgba(230, 162, 35, 0.45);
+  border-radius: 8px;
+  background: rgba(230, 162, 35, 0.1);
+}
+
+.destructive-warning-title {
+  margin-bottom: 4px;
+  color: var(--orange-20);
+  font-weight: 600;
+}
+
+.destructive-warning-message {
+  color: var(--gray-75);
+  line-height: 1.5;
+}
+
+.warning-detail {
+  border: 1px solid rgba(230, 162, 35, 0.35);
+  background: rgba(230, 162, 35, 0.07);
 }
 
 .transaction-actions {
@@ -186,8 +210,13 @@
 }
 
 @keyframes progress-pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 @media (max-width: 480px) {
@@ -209,4 +238,3 @@
     padding: 12px;
   }
 }
-

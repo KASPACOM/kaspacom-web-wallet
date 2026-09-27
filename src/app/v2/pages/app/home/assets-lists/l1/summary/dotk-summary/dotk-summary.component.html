@@ -28,7 +28,21 @@
           </div>
           <div class="flex column align-items-start gap-4">
             <div class="text-gray-90 typo-text-2">{{ name.display }}</div>
-            <div class="text-gray-60 typo-text-1">Dot.K name</div>
+            <div class="asset-features flex align-items-center gap-8">
+              <span class="text-gray-60 typo-text-1">Dot.K name</span>
+              @if (name.recordKeys.length > 0) {
+                <span class="feature-badge">
+                  {{ name.recordKeys.length }}
+                  {{ name.recordKeys.length === 1 ? "record" : "records" }}
+                </span>
+              }
+              @if (name.subnames.length > 0) {
+                <span class="feature-badge subname-badge">
+                  {{ name.subnames.length }}
+                  {{ name.subnames.length === 1 ? "subname" : "subnames" }}
+                </span>
+              }
+            </div>
           </div>
         </div>
         <div class="flex column align-items-end gap-4">

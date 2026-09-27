@@ -8,11 +8,21 @@ export interface DotkNameAsset {
   deedAddress: string;
   proven: boolean | null;
   primary: boolean;
+  hasRecordsCard: boolean;
+  recordKeys: string[];
+  subnames: DotkSubname[];
 }
 
 export interface DotkNameRecord {
   key: string;
   value: string;
+}
+
+export interface DotkSubname {
+  label: string;
+  display: string;
+  address: string | null;
+  fault?: string;
 }
 
 export interface DotkNameDetail {
@@ -25,6 +35,7 @@ export interface DotkNameDetail {
   deedAddress: string;
   proven: boolean | null;
   records: DotkNameRecord[];
+  subnames: DotkSubname[];
 }
 
 export interface DotkResolution {
@@ -43,5 +54,7 @@ export interface DotkTransferActionData {
   recipient: string;
   feeSompi: bigint;
   network: string;
+  recordsCardRetired: boolean;
+  recordKeysDropped: string[];
   plan: TransferPlanned;
 }

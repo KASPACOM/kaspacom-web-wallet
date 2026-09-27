@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Dotk } from '@dotk/sdk';
+import { Dotk, SUBNAME_PREFIX, subnames, type Records } from '@dotk/sdk';
 import {
   Registrar,
   nodesOver,
@@ -22,6 +22,7 @@ import {
   DotkNameAsset,
   DotkNameDetail,
   DotkResolution,
+  DotkSubname,
   DotkTransferActionData,
 } from './dotk.types';
 import { dotkSignatureBytes } from './dotk-signing';
@@ -63,7 +64,9 @@ export class DotkService {
     // The wallet summary must not depend on the Kaspa RPC being connected.
     // Detail and transfer flows still use a node-backed client for on-chain
     // verification; the owner endpoint is sufficient to populate this list.
-    const names = await this.createClient(false).namesOf(address);
+    const dotk = this.createClient(false);
+    const owner = dotk.ownerOf(address);
+    const names = await dotk.namesOf(address);
 
     return names.map((name) => ({
       name: name.name,
@@ -71,11 +74,20 @@ export class DotkService {
       deedAddress: name.deedAddress,
       proven: name.proven,
       primary: name.primary,
+      hasRecordsCard: name.card !== null,
+      recordKeys: this.regularRecordKeys(name.records),
+      subnames: this.subnamesFor(
+        name.display,
+        owner.ownerType,
+        name.records,
+        dotk.prefix,
+      ),
     }));
   }
 
   async getNameDetail(name: string): Promise<DotkNameDetail | null> {
-    const resolved = await this.createClient(true).resolveName(name);
+    const dotk = this.createClient(true);
+    const resolved = await dotk.resolveName(name);
     if (!resolved) return null;
 
     return {
@@ -87,13 +99,21 @@ export class DotkService {
       owner: resolved.owner,
       deedAddress: resolved.deedAddress,
       proven: resolved.proven,
-      records: Object.entries(resolved.records).map(([key, value]) => ({
-        key,
-        value:
-          typeof value === 'object'
-            ? `Opaque (${value.opaque})`
-            : String(value),
-      })),
+      records: Object.entries(resolved.records)
+        .filter(([key]) => !key.startsWith(SUBNAME_PREFIX))
+        .map(([key, value]) => ({
+          key,
+          value:
+            typeof value === 'object'
+              ? `Opaque (${value.opaque})`
+              : String(value),
+        })),
+      subnames: this.subnamesFor(
+        resolved.display,
+        resolved.ownerType,
+        resolved.records,
+        dotk.prefix,
+      ),
     };
   }
 
@@ -101,6 +121,7 @@ export class DotkService {
     name: string,
     recipient: string,
     wallet: AppWallet,
+    knownName?: DotkNameAsset,
   ): Promise<DotkTransferActionData> {
     const { dotk, registrar } = this.createRegistrar(wallet);
     const plan = await registrar.planTransfer(name, recipient);
@@ -111,6 +132,10 @@ export class DotkService {
       recipient: plan.recipient,
       feeSompi: plan.fee,
       network: dotk.network,
+      recordsCardRetired:
+        knownName?.hasRecordsCard === true ||
+        plan.cards.subnamesDropped.length > 0,
+      recordKeysDropped: knownName?.recordKeys ?? [],
       plan,
     };
   }
@@ -279,6 +304,26 @@ export class DotkService {
           ? `Dot.K name cannot receive payments (${fault})`
           : 'Dot.K name does not resolve to a wallet address';
     }
+  }
+
+  private regularRecordKeys(records: Records): string[] {
+    return Object.keys(records).filter(
+      (key) => !key.startsWith(SUBNAME_PREFIX),
+    );
+  }
+
+  private subnamesFor(
+    parentDisplay: string,
+    ownerType: number,
+    records: Records,
+    prefix: string,
+  ): DotkSubname[] {
+    return subnames(ownerType, records, prefix).map((subname) => ({
+      label: subname.label,
+      display: `${subname.label}.${parentDisplay}`,
+      address: subname.address,
+      ...(subname.fault ? { fault: subname.fault } : {}),
+    }));
   }
 
   private hexToBytes(hex: string): Uint8Array {

@@ -73,6 +73,19 @@
   font-weight: 600;
 }
 
+.subname-card {
+  border: 1px solid rgba(111, 199, 186, 0.2);
+}
+
+.subname-display {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.subname-fault {
+  color: var(--orange-20);
+}
+
 .font-mono {
   font-family:
     "SF Mono", "Monaco", "Inconsolata", "Fira Code", "Droid Sans Mono",

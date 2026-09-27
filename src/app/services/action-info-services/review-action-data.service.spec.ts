@@ -6,6 +6,7 @@ import { KaspaNetworkActionsService } from '../kaspa-netwrok-services/kaspa-netw
 import { BaseProtocolClassesService } from '../protocols/base-protocol-classes.service';
 import { AppWallet } from '../../classes/AppWallet';
 import { WalletAction, WalletActionType } from '../../types/wallet-action';
+import { areRequiredAcknowledgementsAccepted } from '../../types/action-display.type';
 
 describe('ReviewActionDataService', () => {
   const walletAddress = '0xWalletAddress';
@@ -15,7 +16,10 @@ describe('ReviewActionDataService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        { provide: KaspaNetworkActionsService, useValue: {} },
+        {
+          provide: KaspaNetworkActionsService,
+          useValue: { sompiToNumber: (value: bigint) => Number(value) / 1e8 },
+        },
         { provide: BaseProtocolClassesService, useValue: {} },
       ],
     });
@@ -31,6 +35,64 @@ describe('ReviewActionDataService', () => {
       },
     } as unknown as WalletAction;
   }
+
+  describe('Dot.K transfer display', () => {
+    it('shows dropped subnames and requires destructive-action acknowledgement', () => {
+      const action = {
+        type: WalletActionType.SIGN_PSKT_TRANSACTION,
+        data: {
+          psktTransactionJson: '{}',
+          dotkTransfer: {
+            name: 'alice',
+            displayName: 'alice.k',
+            recipient: 'kaspa:recipient',
+            feeSompi: 1000n,
+            network: 'mainnet',
+            recordsCardRetired: true,
+            recordKeysDropped: ['url'],
+            plan: {
+              cards: {
+                minted: false,
+                swept: 1,
+                value: 0n,
+                carried: [],
+                dropped: [],
+                subnames: [],
+                subnamesDropped: [
+                  {
+                    label: 'bob',
+                    address: 'kaspa:subname-wallet',
+                  },
+                ],
+                cardRead: true,
+                complete: true,
+              },
+            },
+          },
+        },
+      } as unknown as WalletAction;
+
+      const display = service.getActionDisplay(action, wallet);
+      const droppedSubnames = display?.rows.find(
+        (row) => row.fieldName === 'Subnames that will stop resolving',
+      );
+      const acknowledgement = display?.rows.find(
+        (row) => row.inputField?.fieldParam === 'acknowledgeDotkDataLoss',
+      );
+
+      expect(display?.warning).toContain('subnames can stop resolving');
+      expect(droppedSubnames?.fieldValue).toContain(
+        'bob.alice.k -> kaspa:subname-wallet',
+      );
+      expect(acknowledgement?.inputField?.requiredToApprove).toBeTrue();
+      expect(areRequiredAcknowledgementsAccepted(display, {})).toBeFalse();
+      expect(
+        areRequiredAcknowledgementsAccepted(display, {
+          acknowledgeDotkDataLoss: true,
+        }),
+      ).toBeTrue();
+    });
+  });
 
   describe('personal_sign display', () => {
     const messageText = 'Sign in with Ethereum';

@@ -16,7 +16,10 @@ import {
   EIP1193RequestPayload,
   EIP1193RequestType,
 } from '@kaspacom/wallet-messages';
-import { InputFieldType } from '../../../types/action-display.type';
+import {
+  areRequiredAcknowledgementsAccepted,
+  InputFieldType,
+} from '../../../types/action-display.type';
 import { KcButtonComponent } from '@kaspacom/ui-kit';
 import { CheckboxInputComponent } from '../../../v2/shared/ui/input/checkbox/checkbox-input/checkbox-input.component';
 
@@ -69,11 +72,18 @@ export class ReviewActionComponent {
 
   // Result
   protected currentPriorityFee = signal<bigint | undefined>(undefined);
-  protected additionalParams: { [key: string]: any } = {};
-  protected isAvailableForApproval = computed(
-    () =>
-      this.currentPriorityFee() !== undefined || !this.isActionHasPriorityFee,
-  );
+  protected additionalParams = signal<Partial<Record<string, boolean>>>({});
+  protected isAvailableForApproval = computed(() => {
+    const hasRequiredFee =
+      this.currentPriorityFee() !== undefined || !this.isActionHasPriorityFee;
+    return (
+      hasRequiredFee &&
+      areRequiredAcknowledgementsAccepted(
+        this.currentActionDisplay(),
+        this.additionalParams(),
+      )
+    );
+  });
 
   requestUserConfirmation(action: WalletAction): Promise<{
     isApproved: boolean;
@@ -96,7 +106,7 @@ export class ReviewActionComponent {
     this.walletActionService.resolveCurrentWaitingForApproveAction(
       isApproved,
       isApproved ? this.currentPriorityFee() : undefined,
-      isApproved ? this.additionalParams : undefined,
+      isApproved ? this.additionalParams() : undefined,
     );
     this.clearData();
   }
@@ -105,7 +115,7 @@ export class ReviewActionComponent {
     isApproved: boolean;
     priorityFee?: bigint;
   }> {
-    this.additionalParams = {};
+    this.additionalParams.set({});
     this.currentPriorityFee.set(undefined);
     this.timeout = setTimeout(() => {
       this.resolveActionAndClear(false);
@@ -133,6 +143,13 @@ export class ReviewActionComponent {
 
   setCurrentPriorityFee(priorityFee: bigint | undefined) {
     queueMicrotask(() => this.currentPriorityFee.set(priorityFee));
+  }
+
+  protected setAdditionalParam(param: string, value: boolean): void {
+    this.additionalParams.update((current) => ({
+      ...current,
+      [param]: value,
+    }));
   }
 
   protected get walletAddress(): string {
@@ -172,8 +189,10 @@ export class ReviewActionComponent {
     if (
       this.currentActionSignal()!.action.type ===
         WalletActionType.SIGN_PSKT_TRANSACTION &&
-      (this.currentActionSignal()!.action.data as SignPsktTransactionAction)
-        .signOnly
+      ((this.currentActionSignal()!.action.data as SignPsktTransactionAction)
+        .signOnly ||
+        (this.currentActionSignal()!.action.data as SignPsktTransactionAction)
+          .dotkTransfer)
     ) {
       return false;
     }

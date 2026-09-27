@@ -111,6 +111,29 @@
   gap: 12px;
 }
 
+.destructive-warning {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 14px;
+  border: 1px solid rgba(230, 162, 35, 0.45);
+  border-radius: 8px;
+  background: rgba(230, 162, 35, 0.1);
+}
+
+.destructive-warning-title {
+  margin-bottom: 4px;
+  color: var(--orange-20);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.destructive-warning-message {
+  color: var(--gray-75);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
 // Detail Cards
 .detail-card {
   background: rgba(255, 255, 255, 0.02);
@@ -144,6 +167,11 @@
     font-weight: 500;
     line-height: 1.4;
   }
+}
+
+.warning-detail {
+  border-color: rgba(230, 162, 35, 0.35);
+  background: rgba(230, 162, 35, 0.07);
 }
 
 // Special styling for signing message

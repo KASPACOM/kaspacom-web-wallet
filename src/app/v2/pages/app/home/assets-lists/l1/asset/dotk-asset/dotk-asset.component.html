@@ -98,6 +98,48 @@
       </div>
     </section>
 
+    @if (name.subnames.length > 0) {
+      <section class="subnames-section flex column gap-16">
+        <div class="section-heading flex column gap-4">
+          <h3 class="section-title text-gray-90 m-0">Subnames</h3>
+          <div class="text-gray-60 typo-text-1">
+            Addresses assigned by the owner of {{ name.display }}
+          </div>
+        </div>
+
+        <div class="details-grid">
+          @for (subname of name.subnames; track subname.label) {
+            <div class="detail-card subname-card flex column gap-12">
+              <div>
+                <div class="detail-label">Subname</div>
+                <div class="subname-display text-gray-90">
+                  {{ subname.display }}
+                </div>
+              </div>
+
+              <div>
+                <div class="detail-label">Connected wallet</div>
+                @if (subname.address) {
+                  <div class="detail-value-row flex align-items-center gap-12">
+                    <div class="detail-value text-gray-90 font-mono break-all">
+                      {{ subname.address }}
+                    </div>
+                    <app-copy-button [value]="subname.address" [size]="'xs'" />
+                  </div>
+                } @else {
+                  <div class="subname-fault typo-text-1">
+                    Does not resolve{{
+                      subname.fault ? " (" + subname.fault + ")" : ""
+                    }}
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
     @if (name.records.length > 0) {
       <section class="records-section flex column gap-16">
         <h3 class="section-title text-gray-90 m-0">Records</h3>

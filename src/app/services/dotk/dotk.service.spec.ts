@@ -28,11 +28,15 @@ describe('DotkService', () => {
         deedAddress: 'kaspatest:deed',
         proven: null,
         primary: false,
+        card: null,
+        records: {},
       },
     ]);
     const service = TestBed.inject(DotkService);
     const createClient = spyOn<any>(service, 'createClient').and.returnValue({
       namesOf,
+      ownerOf: () => ({ ownerType: 0, owner: 'owner' }),
+      prefix: 'kaspatest',
     });
 
     await expectAsync(
@@ -44,6 +48,9 @@ describe('DotkService', () => {
         deedAddress: 'kaspatest:deed',
         proven: null,
         primary: false,
+        hasRecordsCard: false,
+        recordKeys: [],
+        subnames: [],
       },
     ]);
     expect(createClient).toHaveBeenCalledOnceWith(false);

@@ -134,7 +134,10 @@ export class SendKnsComponent
       this.walletAddress = result.effectiveAddress;
       this.isAddressValid = true;
       this.addressErrorMessage = '';
-    } else if (result.source === 'kns' && result.error) {
+    } else if (
+      (result.source === 'kns' || result.source === 'dotk') &&
+      result.error
+    ) {
       this.isAddressValid = false;
       this.addressErrorMessage = result.error;
     } else {

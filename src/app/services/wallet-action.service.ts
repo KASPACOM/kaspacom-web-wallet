@@ -44,6 +44,7 @@ import {
   ApprovalPageResultParams,
 } from '../v2/services/approval-flow.service';
 import { MonitorService } from './monitor.service';
+import { DotkTransferActionData } from './dotk/dotk.types';
 
 const INSTANT_ACTIONS: { [key: string]: boolean } = {
   [WalletActionType.SIGN_MESSAGE]: true,
@@ -250,6 +251,22 @@ export class WalletActionService {
         submitTransaction,
         protocol,
         type,
+      },
+    };
+  }
+
+  createDotkTransferWalletAction(
+    transfer: DotkTransferActionData,
+  ): WalletAction {
+    return {
+      type: WalletActionType.SIGN_PSKT_TRANSACTION,
+      data: {
+        psktTransactionJson: transfer.plan.request.txJson,
+        signOnly: true,
+        submitTransaction: true,
+        protocol: 'dotk',
+        type: 'transfer',
+        dotkTransfer: transfer,
       },
     };
   }

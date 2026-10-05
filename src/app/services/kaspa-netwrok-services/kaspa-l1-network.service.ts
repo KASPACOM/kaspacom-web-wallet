@@ -63,6 +63,10 @@ export class KaspaL1NetworkService {
     return this.getCurrentNetwork().knsApiBaseurl;
   }
 
+  getDotkApiBaseurl(): string | undefined {
+    return this.getCurrentNetwork().dotkApiBaseurl;
+  }
+
   getCovenantIndexerApiBaseurl(): string | undefined {
     return this.getCurrentNetwork().covenantIndexerApiBaseurl;
   }
@@ -85,6 +89,10 @@ export class KaspaL1NetworkService {
 
   supportsKnsAssets(): boolean {
     return !!this.getKnsApiBaseurl();
+  }
+
+  supportsDotkAssets(): boolean {
+    return !!this.getDotkApiBaseurl();
   }
 
   setCurrentNetwork(network: string): boolean {

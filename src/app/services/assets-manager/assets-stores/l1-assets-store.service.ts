@@ -14,6 +14,8 @@ import { firstValueFrom } from 'rxjs';
 import { KasplexKrc20Service } from '../../kasplex-api/kasplex-api.service';
 import { Krc721ApiService } from '../../krc721-api/krc721-api.service';
 import { KnsApiService } from '../../kns-api/kns-api.service';
+import { DotkService } from '../../dotk/dotk.service';
+import { DotkNameAsset } from '../../dotk/dotk.types';
 import { KaspaComApiService } from '../../kaspacom-api/kaspacom-api.service';
 import { KaspaL1NetworkService } from '../../kaspa-netwrok-services/kaspa-l1-network.service';
 import { L1AssetType } from '../enums/l1-asset-type.enum';
@@ -24,12 +26,14 @@ export const L1_ASSET_KEYS = {
   krc20: 'krc20',
   krc721: 'krc721',
   kns: 'kns',
-};
+  dotk: 'dotk',
+} as const;
 
 export interface L1AssetStoreData extends BaseAssetStoreData {
   [L1_ASSET_KEYS.krc20]: GetTokenListDto;
   [L1_ASSET_KEYS.krc721]: Krc721Nft;
   [L1_ASSET_KEYS.kns]: KnsDomainAsset;
+  [L1_ASSET_KEYS.dotk]: DotkNameAsset;
 }
 
 /**
@@ -50,6 +54,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
   protected kasplexKrc20Service = inject(KasplexKrc20Service);
   protected krc721ApiService = inject(Krc721ApiService);
   protected knsApiService = inject(KnsApiService);
+  protected dotkService = inject(DotkService);
   protected kaspacomApiService = inject(KaspaComApiService);
   protected kaspaL1NetworkService = inject(KaspaL1NetworkService);
 
@@ -121,6 +126,7 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
   } {
     return {
       kns: 'getKnsInfo',
+      dotk: 'getDotkInfo',
       krc20: 'getKrc20Info',
       krc721: 'getKrc721Info',
     };
@@ -135,6 +141,9 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
     }
     if (key === L1_ASSET_KEYS.kns) {
       return this.kaspaL1NetworkService.supportsKnsAssets();
+    }
+    if (key === L1_ASSET_KEYS.dotk) {
+      return this.kaspaL1NetworkService.supportsDotkAssets();
     }
     return true;
   }
@@ -893,6 +902,27 @@ export class L1AssetsStoreService extends BaseAssetsStoreService<L1AssetStoreDat
 
       return [];
     }
+  }
+
+  /**
+   * Load the complete Dot.K name list for the wallet. The registry owner
+   * endpoint returns the exact list in one response, so no local pagination is
+   * required.
+   */
+  protected async getDotkInfo(walletAddress: string): Promise<DotkNameAsset[]> {
+    const requestGeneration = this.assetRequestGeneration;
+    if (!this.kaspaL1NetworkService.supportsDotkAssets()) {
+      return [];
+    }
+
+    const existingData = this.data[L1_ASSET_KEYS.dotk]();
+
+    // Let an initial request failure propagate so the store keeps `undefined`:
+    // the summary then remains in its loading state until the scheduled retry.
+    const names = await this.dotkService.getNamesByAddress(walletAddress);
+    return this.isCurrentAssetRequest(requestGeneration)
+      ? names
+      : existingData || [];
   }
 
   /**

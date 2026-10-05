@@ -1,0 +1,39 @@
+<div class="send-dotk-content flex column gap-16">
+  <div class="dotk-info card-0 flex align-items-center gap-16 p-16">
+    <div class="dotk-mark flex align-items-center justify-content-center">
+      .K
+    </div>
+    <div class="flex column gap-4">
+      <div class="text-gray-90 typo-text-2">
+        {{ name()?.display || "Dot.K name" }}
+      </div>
+      <div class="text-gray-60 typo-text-1">Dot.K registry asset</div>
+    </div>
+  </div>
+
+  <app-address-smart-input
+    [label]="'Recipient'"
+    [placeholder]="'Enter wallet address, KNS domain, or Dot.K name'"
+    [isValid]="isAddressValid"
+    [invalidReason]="addressErrorMessage"
+    [isDisabled]="isLoading"
+    [value]="walletAddress"
+    (valueChange)="onWalletAddressChange($event)"
+    (resolved)="onAddressResolved($event)"
+    (qrClick)="onQrScanClick()"
+  />
+
+  <div class="transfer-note text-gray-60 typo-text-1">
+    Sending transfers ownership of this .k name. The network fee will be shown
+    for review before signing.
+  </div>
+
+  <kc-button
+    [text]="isLoading ? 'Preparing...' : 'Send Dot.K Name'"
+    [variant]="'primary'"
+    [isFullWidth]="true"
+    [isLoading]="isLoading"
+    [isDisabled]="!isFormValid || isLoading"
+    (buttonClick)="onSendClick()"
+  />
+</div>

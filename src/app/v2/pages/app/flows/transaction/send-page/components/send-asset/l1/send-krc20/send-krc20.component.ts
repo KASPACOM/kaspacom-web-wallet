@@ -188,7 +188,10 @@ export class SendKrc20Component
       this.resolvedToAddress = result.effectiveAddress;
       this.isAddressValid = true;
       this.addressErrorMessage = '';
-    } else if (result.source === 'kns' && result.error) {
+    } else if (
+      (result.source === 'kns' || result.source === 'dotk') &&
+      result.error
+    ) {
       this.resolvedToAddress = null;
       this.isAddressValid = false;
       this.addressErrorMessage = result.error;

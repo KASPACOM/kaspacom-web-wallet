@@ -4,7 +4,7 @@ import { join } from 'node:path';
 const browserDir = join(process.cwd(), 'dist/wallet-front-new/browser');
 
 const pages = [
-  { path: '', title: 'Kaspa Wallet | KaspaCom Web Wallet', h1: 'Kaspa Wallet' },
+  { path: '', title: 'Kaspa Web Wallet: Open Source & Self-Custody | KaspaCom', h1: 'Open-Source Kaspa Web Wallet' },
   { path: 'features', title: 'Kaspa Wallet Features | KaspaCom Web Wallet', h1: 'KaspaCom Wallet Features' },
   { path: 'security', title: 'Kaspa Wallet Security | KaspaCom Web Wallet', h1: 'Kaspa Wallet Security' },
   { path: 'faq', title: 'Kaspa Wallet FAQ | KaspaCom Web Wallet', h1: 'Kaspa Wallet FAQ' },
@@ -40,12 +40,34 @@ function extractH1Text(html) {
 
 assert(existsSync(browserDir), `Missing build output: ${browserDir}`);
 
+const homeHtml = readFileSync(pageFile(''), 'utf8');
+assert(
+  homeHtml.includes('https://github.com/KASPACOM/kaspacom-web-wallet'),
+  'Home page missing exact wallet repository URL',
+);
+assert(homeHtml.includes('open-source'), 'Home page missing open-source wording');
+assert(
+  homeHtml.includes('https://wallet.kaspa.com/images/kc-logo-square.png'),
+  'Home page missing social image metadata',
+);
+
+for (const guidePath of [
+  '/guides/best-kaspa-wallet',
+  '/guides/kaspa-wallet-app',
+  '/guides/kaspa-desktop-wallet',
+  '/guides/create-kaspa-wallet',
+  '/guides/store-kaspa',
+]) {
+  assert(homeHtml.includes(`href="${guidePath}"`), `Home page missing guide link ${guidePath}`);
+}
+
 for (const page of pages) {
   const file = pageFile(page.path);
   assert(existsSync(file), `Missing prerendered HTML: ${file}`);
 
   const html = readFileSync(file, 'utf8');
-  assert(html.includes(`<title>${page.title}</title>`), `Missing title for ${page.path || '/'}`);
+  const encodedTitle = page.title.replaceAll('&', '&amp;');
+  assert(html.includes(`<title>${encodedTitle}</title>`), `Missing title for ${page.path || '/'}`);
   assert(extractH1Text(html) === page.h1, `Missing H1 for ${page.path || '/'}`);
   assert(html.includes('rel="canonical"'), `Missing canonical for ${page.path || '/'}`);
   assert(html.includes('application/ld+json'), `Missing JSON-LD for ${page.path || '/'}`);

@@ -40,6 +40,26 @@ describe('public SEO content', () => {
     }
   });
 
+  it('answers open-source questions with the exact repository and license', () => {
+    const openSourceFaq = PUBLIC_FAQ_ENTRIES.find(
+      (entry) => entry.question === 'Is KaspaCom Wallet open source?',
+    );
+    const riskFaq = PUBLIC_FAQ_ENTRIES.find(
+      (entry) =>
+        entry.question === 'Does open source mean the wallet is risk-free?',
+    );
+
+    expect(openSourceFaq).toBeDefined();
+    expect(openSourceFaq!.answer).toContain(
+      'https://github.com/KASPACOM/kaspacom-web-wallet',
+    );
+    expect(openSourceFaq!.answer).toContain('MIT License');
+    expect(openSourceFaq!.answer).toContain('project history');
+    expect(riskFaq).toBeDefined();
+    expect(riskFaq!.answer).toContain('wallet.kaspa.com');
+    expect(riskFaq!.answer).toContain('seed phrase');
+  });
+
   it('does not create standalone low-demand topic pages in phase one', () => {
     const paths = PUBLIC_PAGES.map((page) => page.path);
 

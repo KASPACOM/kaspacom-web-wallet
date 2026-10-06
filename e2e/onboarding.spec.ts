@@ -25,17 +25,41 @@ test.describe('Onboarding', () => {
     await clearWalletState(page);
   });
 
-  test('@smoke landing page shows create + import actions', async ({ page }) => {
+  test('@smoke landing page shows create + import actions', async ({
+    page,
+  }) => {
     await gotoLanding(page);
     await expect(
       page.locator('kc-button', { hasText: 'Create New Wallet' }),
     ).toBeVisible();
     await expect(
-      page.locator('kc-button', { hasText: 'Connect Existing Wallet' }),
+      page.locator('kc-button', { hasText: 'Import Existing Wallet' }),
     ).toBeVisible();
   });
 
-  test('@smoke create new wallet (12 words) lands on home', async ({ page }) => {
+  test('reduced motion keeps the onboarding graph static', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await gotoLanding(page);
+
+    const canvas = page.locator('canvas.onboarding-v2__graph-canvas');
+    await expect(canvas).toBeVisible();
+
+    const frame = async (): Promise<string> =>
+      canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL());
+
+    const initialFrame = await frame();
+    await page.waitForTimeout(200);
+    expect(await frame()).toBe(initialFrame);
+
+    await page.mouse.move(80, 80);
+    await page.evaluate(() => window.dispatchEvent(new Event('resize')));
+    await page.waitForTimeout(50);
+    expect(await frame()).toBe(initialFrame);
+  });
+
+  test('@smoke create new wallet (12 words) lands on home', async ({
+    page,
+  }) => {
     await gotoLanding(page);
     const seed = await createNewWallet(page, TEST_PASSWORD, 12);
     expect(seed).toHaveLength(12);
@@ -79,7 +103,9 @@ test.describe('Onboarding', () => {
     await expect(continueBtn).toBeEnabled();
   });
 
-  test('@smoke import via 12-word seed phrase lands on home', async ({ page }) => {
+  test('@smoke import via 12-word seed phrase lands on home', async ({
+    page,
+  }) => {
     await gotoLanding(page);
     await importBySeedPhrase(page, BIP39_TEST_SEED_12, TEST_PASSWORD);
     expect(await hasStoredWallet(page)).toBe(true);
@@ -95,7 +121,7 @@ test.describe('Onboarding', () => {
     page,
   }) => {
     await gotoLanding(page);
-    await clickKcButton(page, 'Connect Existing Wallet');
+    await clickKcButton(page, 'Import Existing Wallet');
     await waitForRootTransition(page);
 
     // Import-switch step — Seed Phrase default, click Continue to advance.

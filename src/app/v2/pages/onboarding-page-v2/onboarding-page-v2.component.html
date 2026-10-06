@@ -1,23 +1,27 @@
 <div class="onboarding-v2">
-  <canvas #graphCanvas class="onboarding-v2__graph-canvas"></canvas>
+  <canvas
+    #graphCanvas
+    class="onboarding-v2__graph-canvas"
+    aria-hidden="true"
+  ></canvas>
   <div class="onboarding-v2__backdrop onboarding-v2__backdrop--first"></div>
   <div class="onboarding-v2__backdrop onboarding-v2__backdrop--second"></div>
 
   <div class="onboarding-v2__content">
     <section class="onboarding-v2__hero">
-      <img class="onboarding-v2__logo" src="/logo.png" alt="Kaspacom Wallet" />
+      <img class="onboarding-v2__logo" src="/logo.png" alt="KaspaCom Wallet" />
 
       <div class="onboarding-v2__hero-copy">
         <h1 class="typo-title-1 text-light">The Official KaspaCom Wallet</h1>
         <p class="typo-text-2 text-medium">
-          Set up or connect your wallet in a fast, secure, mobile-optimized
-          experience.
+          Create or import a self-custody Kaspa wallet. Your encrypted wallet
+          data stays in this browser.
         </p>
       </div>
 
       <div class="onboarding-v2__hero-actions">
         <kc-button
-          [text]="'More Info'"
+          [text]="'How the wallet works'"
           [variant]="'secondary'"
           (buttonClick)="openPublicWalletPage()"
         />
@@ -29,7 +33,7 @@
           target="_blank"
           rel="noopener noreferrer"
           class="onboarding-v2__social-link"
-          aria-label="GitHub"
+          aria-label="View KaspaCom Wallet source code on GitHub (opens in a new tab)"
         >
           <svg
             width="24"
@@ -49,7 +53,7 @@
           target="_blank"
           rel="noopener noreferrer"
           class="onboarding-v2__social-link"
-          aria-label="X (Twitter)"
+          aria-label="Follow KaspaCom on X (opens in a new tab)"
         >
           <svg
             width="24"
@@ -69,7 +73,7 @@
           target="_blank"
           rel="noopener noreferrer"
           class="onboarding-v2__social-link"
-          aria-label="Telegram"
+          aria-label="Join KaspaCom on Telegram (opens in a new tab)"
         >
           <svg
             width="24"
@@ -200,7 +204,7 @@
                       />
 
                       <kc-button
-                        [text]="'Connect Existing Wallet'"
+                        [text]="'Import Existing Wallet'"
                         [variant]="'secondary'"
                         [isFullWidth]="true"
                         (buttonClick)="startExistingWallet()"

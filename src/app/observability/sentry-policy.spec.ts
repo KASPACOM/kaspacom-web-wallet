@@ -328,6 +328,23 @@ describe('wallet Sentry policy', () => {
     expect(event?.tags?.['screen']).toBe('collectables');
   });
 
+  it('redacts key material longer than a private key, and extended keys', () => {
+    const secrets = [
+      'a'.repeat(64), // private key
+      'c'.repeat(128), // BIP39 seed
+      'xprv' + 'A'.repeat(107),
+      'kprv' + 'B'.repeat(107),
+    ];
+
+    for (const secret of secrets) {
+      const event = applyWalletSentryPolicy<{ extra: { note: string } }>({
+        extra: { note: `derive failed for ${secret}` },
+      });
+
+      expect(event?.extra.note).toBe('derive failed for [redacted]');
+    }
+  });
+
   it('strips query strings from embedded routes outside the /app namespace', () => {
     const embedded = [
       'redirected to /onboarding?token=opaque-secret',

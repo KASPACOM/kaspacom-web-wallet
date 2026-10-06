@@ -308,8 +308,18 @@ export class AppWallet {
   }
 
   async stopListiningToWalletActions() {
-    await this.utxoProcessorManager?.dispose();
-    await this.mempoolTransactionsManager?.dispose();
+    // Releasing resources must not be abandoned half-way: a rejection here
+    // would leave subscriptions and managers attached for the next switch.
+    try {
+      await this.utxoProcessorManager?.dispose();
+    } catch (error) {
+      console.warn('Failed to dispose wallet UTXO monitoring', error);
+    }
+    try {
+      await this.mempoolTransactionsManager?.dispose();
+    } catch (error) {
+      console.warn('Failed to dispose wallet mempool monitoring', error);
+    }
     this.currentMempoolManagerTransactionSignalSubscription?.unsubscribe();
     this.currentUtxoProcessorManagerTransactionSignalSubscription?.unsubscribe();
     this.utxoProcessorManager = undefined;

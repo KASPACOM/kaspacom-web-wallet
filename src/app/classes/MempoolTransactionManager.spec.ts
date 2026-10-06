@@ -30,6 +30,28 @@ describe('MempoolTransactionManager', () => {
     expect(onRpcError).toHaveBeenCalledTimes(1);
   });
 
+  it('resolves the confirmation wait when the mempool has cleared', async () => {
+    const rpc = {
+      getMempoolEntriesByAddresses: jasmine
+        .createSpy('getMempoolEntriesByAddresses')
+        .and.resolveTo({ entries: [] }),
+    };
+    const manager = new MempoolTransactionManager(
+      rpc as never,
+      'kaspatest:fixture',
+    );
+
+    let confirmed = false;
+    void manager
+      .waitForSendingTransactionsToBeConfirmed()
+      .then(() => (confirmed = true));
+
+    await manager.refreshMempoolTransactions();
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(confirmed).toBeTrue();
+  });
+
   it('logs unexpected errors from background refreshes instead of swallowing them', async () => {
     const unexpectedError = new Error('network timeout');
     const rpc = {

@@ -148,8 +148,20 @@ export class UtxoProcessorManager {
       this.resolveAndClearWaitForOutgoingUtxoPromise();
     }
 
-    await this.stopAndUnregisterProcessor();
-    await this.context!.clear();
+    // Teardown runs when the connection is already unhealthy, so neither call
+    // may abort it: dispose() is invoked as void from the timeout path, and
+    // AppWallet awaits it before releasing its own subscriptions.
+    try {
+      await this.stopAndUnregisterProcessor();
+    } catch (err) {
+      console.warn('Failed to stop UTXO processor', err);
+    }
+
+    try {
+      await this.context!.clear();
+    } catch (err) {
+      console.warn('Failed to clear UTXO context', err);
+    }
   }
 
   private async registerProcessor() {

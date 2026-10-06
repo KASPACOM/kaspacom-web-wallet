@@ -85,9 +85,11 @@ export class MempoolTransactionManager {
 
     this.walletMempoolTransactionsSignal.set(currentWalletEntries);
 
+    // No entries at all means nothing is sending, which is what clearing the
+    // mempool looks like - the moment the confirmation wait exists for.
     if (
       this.transactionConfirmedPromise &&
-      currentWalletEntries.sending.length == 0
+      (currentWalletEntries?.sending.length ?? 0) === 0
     ) {
       this.transactionConfirmedResolve!();
     }

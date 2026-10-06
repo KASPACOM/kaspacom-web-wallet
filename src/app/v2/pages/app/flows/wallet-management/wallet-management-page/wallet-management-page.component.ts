@@ -50,6 +50,18 @@ export class WalletManagementPageComponent extends FlowPageBaseComponent {
   }
   // Convert wallet accounts to our interface
   wallets = signal<WalletAccount[]>([]);
+
+  /**
+   * Wallets skipped at load because their data can't be derived from. Named
+   * here so a user who is missing a wallet learns why, instead of concluding
+   * it is gone.
+   */
+  readonly unusableWalletNames = computed(() =>
+    this.walletService
+      .getUnusableWallets()()
+      .map((wallet) => wallet.name)
+      .filter((name): name is string => !!name),
+  );
   canAddMoreAccounts = computed(() => {
     return this.wallets().length > 0 ? this.wallets()[0].wallet.supportAccounts() && this.wallets()[0].wallet.isHasMnemonic() : false;
   });

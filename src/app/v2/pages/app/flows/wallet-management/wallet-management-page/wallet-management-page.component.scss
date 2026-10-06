@@ -7,6 +7,23 @@
   padding-top: 0; // Remove padding since we have custom header
 }
 
+.wallet-recovery-notice {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--warning-color, #ffb800);
+  color: var(--warning-color, #ffb800);
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    line-height: 16px;
+  }
+}
+
 .custom-header {
   display: flex;
   align-items: center;
